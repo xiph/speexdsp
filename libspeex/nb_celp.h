@@ -98,7 +98,7 @@ typedef struct EncState {
    spx_mem_t *mem_sw;         /**< Filter memory for perceptually-weighted signal */
    spx_mem_t *mem_sw_whole;   /**< Filter memory for perceptually-weighted signal (whole frame)*/
    spx_mem_t *mem_exc;        /**< Filter memory for excitation (whole frame) */
-   float *pi_gain;        /**< Gain of LPC filter at theta=pi (fe/2) */
+   spx_word32_t *pi_gain;        /**< Gain of LPC filter at theta=pi (fe/2) */
 
    VBRState *vbr;         /**< State of the VBR data */
    float  vbr_quality;    /**< Quality setting for VBR encoding */
@@ -154,7 +154,7 @@ typedef struct DecState {
    spx_lsp_t *interp_qlsp;    /**< Interpolated quantized LSPs */
    spx_coef_t *interp_qlpc;    /**< Interpolated quantized LPCs */
    spx_mem_t *mem_sp;         /**< Filter memory for synthesis signal */
-   float *pi_gain;        /**< Gain of LPC filter at theta=pi (fe/2) */
+   spx_word32_t *pi_gain;        /**< Gain of LPC filter at theta=pi (fe/2) */
    int    last_pitch;     /**< Pitch of last correctly decoded frame */
    float  last_pitch_gain; /**< Pitch gain of last correctly decoded frame */
    float  pitch_gain_buf[3];  /**< Pitch gain of last decoded frames */

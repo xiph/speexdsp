@@ -88,7 +88,7 @@ typedef struct SBEncState {
    spx_mem_t *mem_sp;              /**< Synthesis signal memory */
    spx_mem_t *mem_sp2;
    spx_mem_t *mem_sw;              /**< Perceptual signal memory */
-   float *pi_gain;
+   spx_word32_t *pi_gain;
 
    float  vbr_quality;         /**< Quality setting for VBR encoding */
    int    vbr_enabled;         /**< 1 for enabling VBR, 0 otherwise */
@@ -135,7 +135,7 @@ typedef struct SBDecState {
    spx_coef_t *interp_qlpc;
 
    spx_mem_t *mem_sp;
-   float *pi_gain;
+   spx_word32_t *pi_gain;
 
    int    encode_submode;
    SpeexSubmode **submodes;

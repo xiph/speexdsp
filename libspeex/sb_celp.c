@@ -237,7 +237,7 @@ void *sb_encoder_init(SpeexMode *m)
    st->interp_qlsp = PUSH(st->stack, st->lpcSize, spx_lsp_t);
    st->interp_lpc = PUSH(st->stack, st->lpcSize+1, spx_coef_t);
    st->interp_qlpc = PUSH(st->stack, st->lpcSize+1, spx_coef_t);
-   st->pi_gain = PUSH(st->stack, st->nbSubframes, float);
+   st->pi_gain = PUSH(st->stack, st->nbSubframes, spx_word32_t);
 
    st->mem_sp = PUSH(st->stack, st->lpcSize, spx_mem_t);
    st->mem_sp2 = PUSH(st->stack, st->lpcSize, spx_mem_t);
@@ -273,7 +273,7 @@ int sb_encode(void *state, short *in, SpeexBits *bits)
    char *stack;
    spx_mem_t *mem;
    spx_sig_t *innov, *syn_resp;
-   float *low_pi_gain;
+   spx_word32_t *low_pi_gain;
    spx_sig_t *low_exc, *low_innov;
    SpeexSBMode *mode;
    int dtx;
@@ -307,7 +307,7 @@ int sb_encode(void *state, short *in, SpeexBits *bits)
    speex_move(st->excBuf, st->excBuf+st->frame_size, (st->bufSize-st->frame_size)*sizeof(spx_sig_t));
 
 
-   low_pi_gain = PUSH(stack, st->nbSubframes, float);
+   low_pi_gain = PUSH(stack, st->nbSubframes, spx_word32_t);
    low_exc = PUSH(stack, st->frame_size, spx_sig_t);
    low_innov = PUSH(stack, st->frame_size, spx_sig_t);
    speex_encoder_ctl(st->st_low, SPEEX_GET_PI_GAIN, low_pi_gain);
@@ -496,7 +496,7 @@ int sb_encode(void *state, short *in, SpeexBits *bits)
       float tmp;
       spx_word16_t filter_ratio;
       int offset;
-      float rl, rh;
+      spx_word32_t rl, rh;
       spx_word16_t eh=0;
 
       offset = st->subframeSize*sub;
@@ -521,24 +521,21 @@ int sb_encode(void *state, short *in, SpeexBits *bits)
 
       /* Compute mid-band (4000 Hz for wideband) response of low-band and high-band
          filters */
-      rl=rh=0;
-      tmp=1;
-      st->pi_gain[sub]=0;
-      for (i=0;i<=st->lpcSize;i++)
+      st->pi_gain[sub]=LPC_SCALING;
+      rh = LPC_SCALING;
+      for (i=1;i<=st->lpcSize;i+=2)
       {
-         rh += tmp*st->interp_qlpc[i];
-         tmp = -tmp;
-         st->pi_gain[sub]+=st->interp_qlpc[i];
+         rh += st->interp_qlpc[i+1] - st->interp_qlpc[i];
+         st->pi_gain[sub] += st->interp_qlpc[i] + st->interp_qlpc[i+1];
       }
-      rh /= LPC_SCALING;
-      st->pi_gain[sub] /= LPC_SCALING;
-
+      
       rl = low_pi_gain[sub];
 #ifdef FIXED_POINT
-      filter_ratio=DIV32_16((spx_word32_t)(32768*(rl+.01)),(spx_word16_t)(256*(.01+rh)));
+      filter_ratio=DIV32_16(SHL(rl+82,2),SHR(82+rh,5));
 #else
       filter_ratio=(rl+.01)/(rh+.01);
 #endif
+      
       /* Compute "real excitation" */
       fir_mem2(sp, st->interp_qlpc, exc, st->subframeSize, st->lpcSize, st->mem_sp2);
       /* Compute energy of low-band and high-band excitation */
@@ -748,7 +745,7 @@ void *sb_decoder_init(SpeexMode *m)
    st->interp_qlsp = PUSH(st->stack, st->lpcSize, spx_lsp_t);
    st->interp_qlpc = PUSH(st->stack, st->lpcSize+1, spx_coef_t);
 
-   st->pi_gain = PUSH(st->stack, st->nbSubframes, float);
+   st->pi_gain = PUSH(st->stack, st->nbSubframes, spx_word32_t);
    st->mem_sp = PUSH(st->stack, 2*st->lpcSize, spx_mem_t);
    
    st->lpc_enh_enabled=0;
@@ -859,7 +856,7 @@ int sb_decode(void *state, SpeexBits *bits, short *out)
    int wideband;
    int ret;
    char *stack;
-   float *low_pi_gain;
+   spx_word32_t *low_pi_gain;
    spx_sig_t *low_exc, *low_innov;
    spx_coef_t *awk1, *awk2, *awk3;
    int dtx;
@@ -948,7 +945,7 @@ int sb_decode(void *state, SpeexBits *bits, short *out)
    for (i=0;i<st->frame_size;i++)
       st->exc[i]=0;
 
-   low_pi_gain = PUSH(stack, st->nbSubframes, float);
+   low_pi_gain = PUSH(stack, st->nbSubframes, spx_word32_t);
    low_exc = PUSH(stack, st->frame_size, spx_sig_t);
    low_innov = PUSH(stack, st->frame_size, spx_sig_t);
    speex_decoder_ctl(st->st_low, SPEEX_GET_PI_GAIN, low_pi_gain);
@@ -970,9 +967,9 @@ int sb_decode(void *state, SpeexBits *bits, short *out)
    for (sub=0;sub<st->nbSubframes;sub++)
    {
       spx_sig_t *exc, *sp;
-      float tmp, filter_ratio, el=0;
+      float filter_ratio, el=0;
       int offset;
-      float rl=0,rh=0;
+      spx_word32_t rl=0,rh=0;
       
       offset = st->subframeSize*sub;
       sp=st->high+offset;
@@ -1011,22 +1008,21 @@ int sb_decode(void *state, SpeexBits *bits, short *out)
       /* Calculate reponse ratio between the low and high filter in the middle
          of the band (4000 Hz) */
       
-         tmp=1;
-         st->pi_gain[sub]=0;
-         for (i=0;i<=st->lpcSize;i++)
+         st->pi_gain[sub]=LPC_SCALING;
+         rh = LPC_SCALING;
+         for (i=1;i<=st->lpcSize;i+=2)
          {
-            rh += tmp*st->interp_qlpc[i];
-            tmp = -tmp;
-            st->pi_gain[sub]+=st->interp_qlpc[i];
+            rh += st->interp_qlpc[i+1] - st->interp_qlpc[i];
+            st->pi_gain[sub] += st->interp_qlpc[i] + st->interp_qlpc[i+1];
          }
-         rh /= LPC_SCALING;
-         st->pi_gain[sub] /= LPC_SCALING;
 
          rl = low_pi_gain[sub];
-         rl=1/(fabs(rl)+.01);
-         rh=1/(fabs(rh)+.01);
-         filter_ratio=fabs(.01+rh)/(.01+fabs(rl));
-      
+#ifdef FIXED_POINT
+         filter_ratio=DIV32_16(SHL(rl+82,2),SHR(82+rh,5));
+         filter_ratio /= 128.;
+#else
+         filter_ratio=(rl+.01)/(rh+.01);
+#endif
       
       for (i=0;i<st->subframeSize;i++)
          exc[i]=0;
@@ -1051,9 +1047,12 @@ int sb_decode(void *state, SpeexBits *bits, short *out)
 
          el = compute_rms(low_exc+offset, st->subframeSize);
 
-         gc = exp((1/3.7)*qgc-2);
+         gc = exp((1/3.7)*qgc-0.15556);
 
-         scale = gc*(1+el*sqrt(st->subframeSize))/filter_ratio;
+         if (st->subframeSize==80)
+            gc *= 1.4142;
+
+         scale = gc*(1+el)/filter_ratio;
 
          SUBMODE(innovation_unquant)(exc, SUBMODE(innovation_params), st->subframeSize, 
                                 bits, stack);
@@ -1273,7 +1272,7 @@ int sb_encoder_ctl(void *state, int request, void *ptr)
    case SPEEX_GET_PI_GAIN:
       {
          int i;
-         float *g = (float*)ptr;
+         spx_word32_t *g = (spx_word32_t*)ptr;
          for (i=0;i<st->nbSubframes;i++)
             g[i]=st->pi_gain[i];
       }
@@ -1387,7 +1386,7 @@ int sb_decoder_ctl(void *state, int request, void *ptr)
    case SPEEX_GET_PI_GAIN:
       {
          int i;
-         float *g = (float*)ptr;
+         spx_word32_t *g = (spx_word32_t*)ptr;
          for (i=0;i<st->nbSubframes;i++)
             g[i]=st->pi_gain[i];
       }

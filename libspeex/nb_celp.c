@@ -174,7 +174,7 @@ void *nb_encoder_init(SpeexMode *m)
    st->mem_sw_whole = PUSH(st->stack, st->lpcSize, spx_mem_t);
    st->mem_exc = PUSH(st->stack, st->lpcSize, spx_mem_t);
 
-   st->pi_gain = PUSH(st->stack, st->nbSubframes, float);
+   st->pi_gain = PUSH(st->stack, st->nbSubframes, spx_word32_t);
 
    st->pitch = PUSH(st->stack, st->nbSubframes, int);
 
@@ -665,7 +665,7 @@ int nb_encode(void *state, short *in, SpeexBits *bits)
          {
             pi_g += -st->interp_qlpc[i] +  st->interp_qlpc[i+1];
          }
-         st->pi_gain[sub] = (float)pi_g / LPC_SCALING;
+         st->pi_gain[sub] = pi_g;
       }
 
 
@@ -970,7 +970,7 @@ void *nb_decoder_init(SpeexMode *m)
    st->comb_mem = PUSHS(st->stack, CombFilterMem);
    comb_filter_mem_init (st->comb_mem);
 
-   st->pi_gain = PUSH(st->stack, st->nbSubframes, float);
+   st->pi_gain = PUSH(st->stack, st->nbSubframes, spx_word32_t);
    st->last_pitch = 40;
    st->count_lost=0;
    st->pitch_gain_buf[0] = st->pitch_gain_buf[1] = st->pitch_gain_buf[2] = 0;
@@ -1428,7 +1428,7 @@ int nb_decode(void *state, SpeexBits *bits, short *out)
          {
             pi_g += -st->interp_qlpc[i] +  st->interp_qlpc[i+1];
          }
-         st->pi_gain[sub] = (float)pi_g / LPC_SCALING;
+         st->pi_gain[sub] = pi_g;
       }
 
       /* Reset excitation */
@@ -1798,7 +1798,7 @@ int nb_encoder_ctl(void *state, int request, void *ptr)
    case SPEEX_GET_PI_GAIN:
       {
          int i;
-         float *g = (float*)ptr;
+         spx_word32_t *g = (spx_word32_t*)ptr;
          for (i=0;i<st->nbSubframes;i++)
             g[i]=st->pi_gain[i];
       }
@@ -1898,7 +1898,7 @@ int nb_decoder_ctl(void *state, int request, void *ptr)
    case SPEEX_GET_PI_GAIN:
       {
          int i;
-         float *g = (float*)ptr;
+         spx_word32_t *g = (spx_word32_t*)ptr;
          for (i=0;i<st->nbSubframes;i++)
             g[i]=st->pi_gain[i];
       }
