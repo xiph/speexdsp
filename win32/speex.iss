@@ -14,7 +14,7 @@ LicenseFile=..\COPYING
 InfoAfterFile=..\README
 OutputDir=.
 OutputBaseFilename=speex_win32_1.0.4_setup
-WizardImageFile=speexlogo.bmp
+;WizardImageFile=speexlogo.bmp
 ; uncomment the following line if you want your installation to run on NT 3.51 too.
 ; MinVersion=4,3.51
 
@@ -39,6 +39,8 @@ Source: "..\doc\rtp.txt"; DestDir: "{app}\doc"; Flags: ignoreversion
 Source: "..\doc\sampledec.c"; DestDir: "{app}\doc"; Flags: ignoreversion
 Source: "..\doc\sampleenc.c"; DestDir: "{app}\doc"; Flags: ignoreversion
 Source: "libspeex\Release\libspeex.lib"; DestDir: "{app}\libspeex"; Flags: ignoreversion
+Source: "libspeex\Release\libspeex.dll"; DestDir: "{app}\libspeex"; Flags: ignoreversion
+Source: "libspeex\Release\libspeex.exp"; DestDir: "{app}\libspeex"; Flags: ignoreversion
 Source: "..\include\speex.h"; DestDir: "{app}\libspeex\include"; Flags: ignoreversion
 Source: "..\include\speex_bits.h"; DestDir: "{app}\libspeex\include"; Flags: ignoreversion
 Source: "..\include\speex_callbacks.h"; DestDir: "{app}\libspeex\include"; Flags: ignoreversion
