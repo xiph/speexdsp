@@ -55,6 +55,7 @@ int porder(int *p, int *s, int *o, int len)
          }
       }
    }
+#ifdef DEBUG
    printf ("quant_pulse\n");
    for (i=0;i<len;i++)
       printf ("%d ", p[i]);
@@ -62,7 +63,7 @@ int porder(int *p, int *s, int *o, int len)
    for (i=0;i<len;i++)
       printf ("%d ", s[i]);
    printf ("\n");
-
+#endif
    for (i=0;i<len;i++)
    {
       rep[p[i]]++;
@@ -111,10 +112,11 @@ int porder(int *p, int *s, int *o, int len)
          }
       }
    }
+#ifdef DEBUG
    for (i=0;i<len;i++)
       printf ("%d ", o[i]);
    printf ("\n");
-
+#endif
    return s[0];
 }
 
@@ -158,12 +160,12 @@ void rorder(int *p, int *s, int *o, int bit, int len)
 
    ss[0]=bit;
    n=1;
-
+#ifdef DEBUG
    printf ("unquant_pulse\n");
    for (i=0;i<len;i++)
       printf ("%d ", o[i]);
    printf ("\n");
-
+#endif
    for (i=1;i<len;i++)
    {
       if (i>1&&p[i-1]==p[i-2])
@@ -190,11 +192,11 @@ void rorder(int *p, int *s, int *o, int bit, int len)
       if (i<len&&o[i]!=o[i+1])
          n++;
    }
-
+#ifdef DEBUG
    for (i=0;i<len;i++)
       printf ("%d ", s[i]);
    printf ("\n");
-
+#endif
 }
 
 
@@ -274,6 +276,9 @@ float *stack
       {
          int k;
          float dist=0;
+         /*Fill any track until it's full*/
+         /*if (nb[j%nb_tracks]==pulses_per_track)
+              continue;*/
          /*Constrain search in alternating tracks*/
          if ((i%nb_tracks) != (j%nb_tracks))
            continue;
@@ -301,7 +306,9 @@ float *stack
             best_ind=j;
          }
       }
+#ifdef DEBUG
       printf ("best pulse: %d %d %f %f %f %f\n", i, best_ind, best_gain, te, ee, g);
+#endif
       /*Remove pulse contribution from target*/
       for (j=best_ind;j<nsf;j++)
          t[j] -= best_gain * resp[j-best_ind];
@@ -343,14 +350,18 @@ float *stack
       
       for (i=0;i<nsf;i++)
          e[i]=g*pulses[i];
+#ifdef DEBUG
       printf ("global gain = %f\n", g);
+#endif
       for (i=0;i<nsf;i++)
          t[i]=target[i]-f*resp[i];
 
    }
+#ifdef DEBUG
    for (i=0;i<nsf;i++)
       printf ("%f ", e[i]);
    printf ("\n");
+#endif
    for (i=0;i<nsf;i++)
       exc[i]+=e[i];
    for (i=0;i<nsf;i++)

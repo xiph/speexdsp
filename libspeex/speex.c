@@ -277,6 +277,7 @@ void encode(EncState *st, float *in, FrameBits *bits)
          for (i=2;i<=st->lpcSize;i++)
             st->bw_lpc2[i]=0;
       }
+#ifdef DEBUG
       printf ("\nlpc0 ");
       for (i=0;i<=st->lpcSize;i++)
          printf ("%f ", st->interp_lpc[i]);
@@ -287,7 +288,7 @@ void encode(EncState *st, float *in, FrameBits *bits)
       for (i=0;i<=st->lpcSize;i++)
          printf ("%f ", st->bw_lpc2[i]);
       printf ("\n\n");
-
+#endif
       /* Reset excitation */
       for (i=0;i<st->subframeSize;i++)
          exc[i]=0;
@@ -346,7 +347,9 @@ void encode(EncState *st, float *in, FrameBits *bits)
       for (i=0;i<st->subframeSize;i++)
          enoise += target[i]*target[i];
       snr = 10*log10((esig+1)/(enoise+1));
+#ifdef DEBUG
       printf ("pitch SNR = %f\n", snr);
+#endif
 
 #if 0 /*If set to 1, compute "real innovation" i.e. cheat to get perfect reconstruction*/
       syn_filt_zero(target, st->bw_lpc1, res, st->subframeSize, st->lpcSize);
@@ -377,8 +380,9 @@ void encode(EncState *st, float *in, FrameBits *bits)
       for (i=0;i<st->subframeSize;i++)
          enoise += target[i]*target[i];
       snr = 10*log10((esig+1)/(enoise+1));
+#ifdef DEBUG
       printf ("seg SNR = %f\n", snr);
-
+#endif
       /*Keep the previous memory*/
       for (i=0;i<st->lpcSize;i++)
          mem[i]=st->mem_sp[i];

@@ -156,14 +156,12 @@ int main(int argc, char **argv)
       if (nb_read>0&&!at_end)
       {
          nb_read=fread(cbits, sizeof(char), nb_read, fin);
-         printf ("nb_read = %d\n", nb_read);
          if (feof(fin))
             at_end=1;
          if (nb_read>0 && !at_end)
             frame_bits_read_whole_bytes(&bits, cbits, nb_read);
       }
       
-      printf ("bits.nbBits = %d, bits.bytePtr = %d\n", bits.nbBits>>3, bits.bytePtr);
       if (((bits.nbBits>>3)-bits.bytePtr)<2)
          break;
 

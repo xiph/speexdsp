@@ -1,0 +1,14 @@
+See INSTALL file for instruction on how to install Speex.
+
+The Speex project aims to build an open-source patent-free voice codec. 
+Unlike other codecs like MP3 and Ogg Vorbis, Speex is specially designed 
+for compressing voice at low bit-rates for applications such as voice over 
+IP (VoIP). In some sense, it is meant to be complementary to the Ogg 
+Vorbis codec.
+
+Although we aim at providing a patent-free codec, we strongly suggest you
+have a look at patent issues if you are thinking of using Speex 
+commercially. The speech coding field is a real patent mine field and
+the scope and enforceability of all these patents is sometimes unclear,
+not to mention that each country has different laws.
+

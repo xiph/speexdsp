@@ -54,7 +54,9 @@ void open_loop_pitch(float *sw, int start, int end, int len, int *pitch, int *vu
       energy+=sw[-i-1]*sw[-i-1] - sw[-i+len]*sw[-i+len];
    }
    pred_gain=e0/(1+fabs(e0+best_gain*best_gain*best_energy-2*best_gain*best_corr));
+#ifdef DEBUG
    printf ("pred = %f\n", pred_gain);
+#endif
    *vuv=1;
 }
 
@@ -86,7 +88,9 @@ float *stack
                      &exc[-end], end-start+1, gain, pitch, p,
                      nsf);
                      *pitch=end-*pitch;
+#ifdef DEBUG
    printf ("ol score: %d %f\n", *pitch, sc);
+#endif
 #endif
    base=*pitch;
    exc_ptr=exc-*pitch;
@@ -127,7 +131,9 @@ float *stack
          frac_pitch = *pitch-(j/(float)fact);
          best_score=score;
       }
+#ifdef DEBUG
       printf ("corr: %d %d %f\n", correction, *pitch, score);
+#endif
    }
    /*for (i=0;i<nsf;i++)
      printf ("%f ", oexc[4*(i+8)]);
@@ -210,13 +216,16 @@ float *stack
      exc[i]=best_gain*x[1][i];*/
    /*for (i=0;i<nsf;i++)
      exc[i]=best_gain*oexc[fact*(best_cor+i)+frac];*/
+#ifdef DEBUG
    printf ("frac gains: %f %f %f\n", gain[0], gain[1], gain[2]);
-
+#endif
       POP(stack);
       POP(stack);
       POP(stack);
    }
+#ifdef DEBUG
    printf ("frac pitch = %f %f\n", frac_pitch, best_score);
+#endif
    POP(stack);
    POP(stack);
 
@@ -307,7 +316,9 @@ float *stack
       for (i=0;i<nsf;i++)
          tmp2+=(target[i]-gain[2]*x[0][i]-gain[1]*x[1][i]-gain[0]*x[2][i])
          * (target[i]-gain[2]*x[0][i]-gain[1]*x[1][i]-gain[0]*x[2][i]);
+#ifdef DEBUG
       printf ("prediction gain = %f\n",tmp1/(tmp2+1));
+#endif
       return tmp1/(tmp2+1);
    }
 #endif
@@ -411,8 +422,8 @@ float *stack
    /*for (i=0;i<nsf;i++)*/
    for (i=nsf-1;i>=0;i--)
       exc[i]=gain[0]*exc[i-pitch+1]+gain[1]*exc[i-pitch]+gain[2]*exc[i-pitch-1];
+#ifdef DEBUG
    printf ("3-tap pitch = %d, gains = [%f %f %f]\n",pitch, gain[0], gain[1], gain[2]);
-
    {
       float tmp1=0,tmp2=0;
       for (i=0;i<nsf;i++)
@@ -422,6 +433,7 @@ float *stack
          * (target[i]-gain[2]*x[0][i]-gain[1]*x[1][i]-gain[0]*x[2][i]);
       printf ("prediction gain = %f\n",tmp1/(tmp2+1));
    }
+#endif
 }
 
 
@@ -450,8 +462,9 @@ float *stack
    gain[0] = gain_cdbk[gain_index*12];
    gain[1] = gain_cdbk[gain_index*12+1];
    gain[2] = gain_cdbk[gain_index*12+2];
+#ifdef DEBUG
    printf ("unquantized pitch: %d %f %f %f\n", pitch, gain[0], gain[1], gain[2]);
-
+#endif
    /*FIXME: backward or forward? (ie recursive or not?)*/
    /*for(i=0;i<nsf;i++)*/
    for (i=nsf-1;i>=0;i--)

@@ -84,8 +84,6 @@ void frame_bits_flush(FrameBits *bits)
 void frame_bits_read_whole_bytes(FrameBits *bits, char *bytes, int len)
 {
    int i,pos;
-   printf ("reading:\n");
-   printf ("%d %d %d\n", bits->nbBits, bits->bytePtr, bits->bitPtr);
    frame_bits_flush(bits);
    pos=bits->nbBits>>3;
    for (i=0;i<len;i++)
