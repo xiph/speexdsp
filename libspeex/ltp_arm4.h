@@ -74,7 +74,7 @@ static spx_word32_t inner_prod(const spx_word16_t *x, const spx_word16_t *y, int
    : "=r" (deadx), "=r" (deady), "=r" (sum1),  "=r" (sum2), "=r" (deadlen),
    "=r" (dead1), "=r" (dead2), "=r" (dead3), "=r" (dead4), "=r" (dead5), "=r" (dead6)
    : "0" (x), "1" (y), "2" (sum1), "3" (sum2), "4" (len>>3)
-   : "cc", "memory"
+   : "cc"
                         );
    return (sum1+sum2)>>1;
 }
