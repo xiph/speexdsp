@@ -25,12 +25,16 @@
 #include "lsp.h"
 #include "ltp.h"
 #include "quant_lsp.h"
+#include "cb_search.h"
+
+extern float stoc[];
 
 #ifndef M_PI
 #define M_PI           3.14159265358979323846  /* pi */
 #endif
 
 #define sqr(x) ((x)*(x))
+#define min(a,b) ((a) < (b) ? (a) : (b))
 
 void encoder_init(EncState *st)
 {
@@ -225,8 +229,8 @@ void encode(EncState *st, float *in, int *outSize, void *bits)
         st->tframe[i-st->subframeSize]=st->wframe[i-st->subframeSize];*/
 
       /* Find pitch gain and delay, gains are already quantized*/
-      //pitch = ltp_closed_loop(st->tframe+offset, st->subframeSize, 20, 120, gain);
-      pitch = three_tap_ltp(st->tframe+offset, st->subframeSize, 20, 120, gain);
+      pitch = ltp_closed_loop(st->tframe+offset, st->subframeSize, 20, 120, gain);
+      /*pitch = three_tap_ltp(st->tframe+offset, st->subframeSize, 20, 120, gain);*/
 
       /* Replace weighted frame with target frame */
       /*for (i=0;i<st->subframeSize;i++)
@@ -259,7 +263,31 @@ void encode(EncState *st, float *in, int *outSize, void *bits)
       }
       /*printf ("\n");*/
       
+#if 0
       /*Analysis by synthesis and excitation quantization here*/
+      {
+         float cb_gain;
+         int cb_index;
+         overlap_cb_search(st->tframe+offset,st->interp_lpc, st->bw_lpc,stoc,512,&cb_gain,&cb_index, st->lpcSize, st->subframeSize);
+         printf ("cb index = %d, cb gain = %f\n", cb_index, cb_gain);
+         for (i=0;i<st->subframeSize;i++)
+           st->exc_frame[offset+i] = cb_gain*stoc[i+cb_index];
+         /*for (i=0;i<st->subframeSize;i++)
+            printf ("%f ", st->tframe[offset+i]);
+            printf ("bef\n");*/
+         for (i=0;i<st->subframeSize;i++)
+         {
+            st->tframe[offset+i]=st->exc_frame[offset+i];
+            for (j=1;j<=min(st->lpcSize,i);j++)
+               st->tframe[offset+i] += st->exc_frame[offset+i-j]*st->bw_lpc[j] 
+               - st->tframe[offset+i-j]*st->interp_lpc[j];
+         }
+         /*for (i=0;i<st->subframeSize;i++)
+            printf ("%f ", st->tframe[offset+i]);
+         printf ("aft\n");
+         */
+      }
+#endif
 
       /* Reverse the 3-tab pitch predictor (IIR)*/
       inverse_three_tap(st->tframe+offset, st->subframeSize, pitch, gain);
