@@ -45,11 +45,12 @@ extern "C" {
 
 /** Bit-packing data structure representing (part of) a bit-stream. */
 typedef struct SpeexBits {
-   char *bytes; /**< "raw" data */
-   int  nbBits; /**< Total number of bits stored in the stream*/
-   int  bytePtr; /**< Position of the byte "cursor" */
-   int  bitPtr;  /**< Position of the bit "cursor" within the current byte */
-   int  owner; /**< Does the struct "own" the "raw" buffer (member "bytes") */
+   char *bytes;   /**< "raw" data */
+   int   nbBits;  /**< Total number of bits stored in the stream*/
+   int   bytePtr; /**< Position of the byte "cursor" */
+   int   bitPtr;  /**< Position of the bit "cursor" within the current byte */
+   int   owner;   /**< Does the struct "own" the "raw" buffer (member "bytes") */
+   int   overflow;/**< Set to one if we try to read past the valid data */
 } SpeexBits;
 
 /** Initializes and allocates resources for a SpeexBits struct */
@@ -127,8 +128,14 @@ int speex_bits_peek(SpeexBits *bits);
  *
  * @param bits Bit-stream to operate on
  * @param n Number of bits to advance
- * */
+ */
 void speex_bits_advance(SpeexBits *bits, int n);
+
+/** Returns the number of bits remaining to be read in a stream
+ *
+ * @param bits Bit-stream to operate on
+ */
+int speex_bits_remaining(SpeexBits *bits);
 
 #ifdef __cplusplus
 }

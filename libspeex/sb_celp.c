@@ -801,7 +801,7 @@ int sb_decode(void *state, SpeexBits *bits, float *out)
    float *low_pi_gain, *low_exc, *low_innov;
    float *awk1, *awk2, *awk3;
    float dtx;
-   
+
    st = (SBDecState*)state;
    stack=st->stack;
 
@@ -829,7 +829,10 @@ int sb_decode(void *state, SpeexBits *bits, float *out)
       }
       
       /*Check "wideband bit"*/
-      wideband = speex_bits_peek(bits);
+      if (speex_bits_remaining(bits)>0)
+         wideband = speex_bits_peek(bits);
+      else
+         wideband = 0;
       if (wideband)
       {
          /*Regular wideband frame, read the submode*/

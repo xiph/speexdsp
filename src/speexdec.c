@@ -569,6 +569,11 @@ int main(int argc, char **argv)
                      fprintf (stderr, "Decoding error: corrupted stream?\n");
                      break;
                   }
+                  if (speex_bits_remaining(&bits)<0)
+                  {
+                     fprintf (stderr, "Decoding overflow: corrupted stream?\n");
+                     break;
+                  }
                   if (channels==2)
                      speex_decode_stereo(output, frame_size, &stereo);
 

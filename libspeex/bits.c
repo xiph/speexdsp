@@ -46,6 +46,7 @@ void speex_bits_init(SpeexBits *bits)
    bits->bytePtr=0;
    bits->bitPtr=0;
    bits->owner=1;
+   bits->overflow=0;
 }
 
 void speex_bits_init_buffer(SpeexBits *bits, void *buff)
@@ -59,6 +60,7 @@ void speex_bits_init_buffer(SpeexBits *bits, void *buff)
    bits->bytePtr=0;
    bits->bitPtr=0;
    bits->owner=0;
+   bits->overflow=0;
 }
 
 void speex_bits_destroy(SpeexBits *bits)
@@ -76,12 +78,14 @@ void speex_bits_reset(SpeexBits *bits)
    bits->nbBits=0;
    bits->bytePtr=0;
    bits->bitPtr=0;
+   bits->overflow=0;
 }
 
 void speex_bits_rewind(SpeexBits *bits)
 {
    bits->bytePtr=0;
    bits->bitPtr=0;
+   bits->overflow=0;
 }
 
 void speex_bits_read_from(SpeexBits *bits, char *bytes, int len)
@@ -96,6 +100,7 @@ void speex_bits_read_from(SpeexBits *bits, char *bytes, int len)
    bits->nbBits=len<<3;
    bits->bytePtr=0;
    bits->bitPtr=0;
+   bits->overflow=0;
 }
 
 void speex_bits_flush(SpeexBits *bits)
@@ -184,6 +189,10 @@ int speex_bits_unpack_signed(SpeexBits *bits, int nbBits)
 unsigned int speex_bits_unpack_unsigned(SpeexBits *bits, int nbBits)
 {
    unsigned int d=0;
+   if ((bits->bytePtr<<3)+bits->bitPtr+nbBits>bits->nbBits)
+      bits->overflow=1;
+   if (bits->overflow)
+      return 0;
    while(nbBits)
    {
       d<<=1;
@@ -204,6 +213,12 @@ unsigned int speex_bits_peek_unsigned(SpeexBits *bits, int nbBits)
    unsigned int d=0;
    int bitPtr, bytePtr;
    char *bytes;
+
+   if ((bits->bytePtr<<3)+bits->bitPtr+nbBits>bits->nbBits)
+     bits->overflow=1;
+   if (bits->overflow)
+      return 0;
+
    bitPtr=bits->bitPtr;
    bytePtr=bits->bytePtr;
    bytes = bits->bytes;
@@ -224,12 +239,22 @@ unsigned int speex_bits_peek_unsigned(SpeexBits *bits, int nbBits)
 
 int speex_bits_peek(SpeexBits *bits)
 {
+   if ((bits->bytePtr<<3)+bits->bitPtr+1>bits->nbBits)
+      bits->overflow=1;
+   if (bits->overflow)
+      return 0;
    return (bits->bytes[bits->bytePtr]>>(7-bits->bitPtr))&1;
 }
 
 void speex_bits_advance(SpeexBits *bits, int n)
 {
    int nbytes, nbits;
+
+   if ((bits->bytePtr<<3)+bits->bitPtr+n>bits->nbBits)
+      bits->overflow=1;
+   if (bits->overflow)
+      return;
+
    nbytes = n >> 3;
    nbits = n & 7;
    
@@ -241,6 +266,14 @@ void speex_bits_advance(SpeexBits *bits, int n)
       bits->bitPtr-=8;
       bits->bytePtr++;
    }
+}
+
+int speex_bits_remaining(SpeexBits *bits)
+{
+   if (bits->overflow)
+      return -1;
+   else
+      return bits->nbBits-((bits->bytePtr<<3)+bits->bitPtr);
 }
 
 int speex_bits_nbytes(SpeexBits *bits)

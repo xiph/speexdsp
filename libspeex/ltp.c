@@ -312,9 +312,6 @@ int  *cdbk_index
    
    for (i=0;i<nsf;i++)
       exc[i]=gain[0]*e[2][i]+gain[1]*e[1][i]+gain[2]*e[0][i];
-#ifdef DEBUG
-   printf ("3-tap pitch = %d, gains = [%f %f %f]\n",pitch, gain[0], gain[1], gain[2]);
-#endif
    
    err1=0;
    err2=0;
@@ -323,9 +320,6 @@ int  *cdbk_index
    for (i=0;i<nsf;i++)
       err2+=(target[i]-gain[2]*x[0][i]-gain[1]*x[1][i]-gain[0]*x[2][i])
       * (target[i]-gain[2]*x[0][i]-gain[1]*x[1][i]-gain[0]*x[2][i]);
-#ifdef DEBUG
-   printf ("prediction gain = %f\n",err1/(err2+1));
-#endif
 
    return err2;
 }
@@ -465,9 +459,6 @@ float last_pitch_gain)
 	    for (i=0;i<3;i++)
 	       gain[i]*=fact;
 
-#ifdef DEBUG
-	 printf ("recovered unquantized pitch: %d, gain: [%f %f %f] (fact=%f)\n", pitch, gain[0], gain[1], gain[2], fact);
-#endif
 	 }
 
       }
@@ -487,10 +478,6 @@ float last_pitch_gain)
    gain_val[0]=gain[0];
    gain_val[1]=gain[1];
    gain_val[2]=gain[2];
-
-#ifdef DEBUG
-   printf ("unquantized pitch: %d %f %f %f\n", pitch, gain[0], gain[1], gain[2]);
-#endif
 
    {
       float *e[3];
