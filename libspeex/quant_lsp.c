@@ -42,7 +42,7 @@
 #define LSP_DIV_256(x) (SHL((spx_word16_t)x, 5))
 #define LSP_DIV_512(x) (SHL((spx_word16_t)x, 4))
 #define LSP_DIV_1024(x) (SHL((spx_word16_t)x, 3))
-
+#define LSP_PI 25736
 #else
 
 #define LSP_LINEAR(i) (.25*(i)+.25)
@@ -50,25 +50,30 @@
 #define LSP_DIV_256(x) (0.0039062*(x))
 #define LSP_DIV_512(x) (0.0019531*(x))
 #define LSP_DIV_1024(x) (0.00097656*(x))
-
+#define LSP_PI M_PI
 #endif
 
 static void compute_quant_weights(spx_lsp_t *qlsp, spx_word16_t *quant_weight, int order)
 {
    int i;
    float tmp1, tmp2;
-   quant_weight[0] = 10/((qlsp[1]-qlsp[0])/LSP_SCALING);
-   quant_weight[order-1] = 10/((qlsp[order-1]-qlsp[order-2])/LSP_SCALING);
-   for (i=1;i<order-1;i++)
+   for (i=0;i<order;i++)
    {
-#if 1
-      tmp1 = 10/((.15+(qlsp[i]-qlsp[i-1])/LSP_SCALING)*(.15+(qlsp[i]-qlsp[i-1])/LSP_SCALING));
-      tmp2 = 10/((.15+(qlsp[i+1]-qlsp[i])/LSP_SCALING)*(.15+(qlsp[i+1]-qlsp[i])/LSP_SCALING));
+      if (i==0)
+         tmp1 = qlsp[i];
+      else
+         tmp1 = qlsp[i]-qlsp[i-1];
+      if (i==order-1)
+         tmp2 = LSP_PI-qlsp[i];
+      else
+         tmp2 = qlsp[i+1]-qlsp[i];
+      if (tmp2<tmp1)
+         tmp1 = tmp2;
+#ifdef FIXED_POINT
+      quant_weight[i] = DIV32_16(81920,ADD16(300,tmp1));
 #else
-      tmp1 = 10/(qlsp[i]-qlsp[i-1]);
-      tmp2 = 10/(qlsp[i+1]-qlsp[i]);
+      quant_weight[i] = 10/(.04+tmp1);
 #endif
-      quant_weight[i] = tmp1 > tmp2 ? tmp1 : tmp2;
    }
 
 }
@@ -87,7 +92,7 @@ static int lsp_quant(spx_word16_t *x, signed char *cdbk, int nbVec, int nbDim)
       dist=0;
       for (j=0;j<nbDim;j++)
       {
-         tmp=(x[j]-SHL((spx_word16_t)*ptr++,5));
+         tmp=SUB16(x[j],SHL((spx_word16_t)*ptr++,5));
          dist+=MULT16_16(tmp,tmp);
       }
       if (dist<best_dist || i==0)
@@ -117,7 +122,7 @@ static int lsp_weight_quant(spx_word16_t *x, spx_word16_t *weight, signed char *
       dist=0;
       for (j=0;j<nbDim;j++)
       {
-         tmp=(x[j]-SHL((spx_word16_t)*ptr++,5));
+         tmp=SUB16(x[j],SHL((spx_word16_t)*ptr++,5));
          dist+=MULT16_32_Q15(weight[j],MULT16_16(tmp,tmp));
       }
       if (dist<best_dist || i==0)
