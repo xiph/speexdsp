@@ -56,7 +56,7 @@ void *nb_encoder_init(SpeexMode *m)
    st->mode=m;
    /* Codec parameters, should eventually have several "modes"*/
    st->frameSize = mode->frameSize;
-   st->windowSize = mode->windowSize;
+   st->windowSize = st->frameSize*3/2;
    st->nbSubframes=mode->frameSize/mode->subframeSize;
    st->subframeSize=mode->subframeSize;
    st->lpcSize = mode->lpcSize;
@@ -92,11 +92,17 @@ void *nb_encoder_init(SpeexMode *m)
    st->exc2Buf = calloc(st->bufSize,sizeof(float));
    st->exc2 = st->exc2Buf + st->bufSize - st->windowSize;
 
-   /* Hanning window */
-   st->window = malloc(st->windowSize*sizeof(float));
-   for (i=0;i<st->windowSize;i++)
-      st->window[i]=.5*(1-cos(2*M_PI*i/st->windowSize));
-
+   /* Asymetric "pseudo-Hanning" window */
+   {
+      int part1, part2;
+      part1 = st->subframeSize*7/2;
+      part2 = st->subframeSize*5/2;
+      st->window = malloc(st->windowSize*sizeof(float));
+      for (i=0;i<part1;i++)
+         st->window[i]=.5*(1-cos(M_PI*i/part1));
+      for (i=0;i<part2;i++)
+         st->window[part1+i]=.5*(1+cos(M_PI*i/part2));
+   }
    /* Create the window for autocorrelation (lag-windowing) */
    st->lagWindow = malloc((st->lpcSize+1)*sizeof(float));
    for (i=0;i<st->lpcSize+1;i++)
@@ -312,7 +318,7 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
       mem = PUSH(st->stack, st->lpcSize);
 
       /* LSP interpolation (quantized and unquantized) */
-      tmp = (.5 + sub)/st->nbSubframes;
+      tmp = (1.0 + sub)/st->nbSubframes;
       for (i=0;i<st->lpcSize;i++)
          st->interp_lsp[i] = (1-tmp)*st->old_lsp[i] + tmp*st->lsp[i];
       for (i=0;i<st->lpcSize;i++)
@@ -623,7 +629,7 @@ void *nb_decoder_init(SpeexMode *m)
    st->first=1;
    /* Codec parameters, should eventually have several "modes"*/
    st->frameSize = mode->frameSize;
-   st->windowSize = mode->windowSize;
+   st->windowSize = st->frameSize*3/2;
    st->nbSubframes=mode->frameSize/mode->subframeSize;
    st->subframeSize=mode->subframeSize;
    st->lpcSize = mode->lpcSize;
@@ -743,7 +749,7 @@ void nb_decode(void *state, SpeexBits *bits, float *out, int lost)
       exc2=st->exc2+offset;
 
       /* LSP interpolation (quantized and unquantized) */
-      tmp = (.5 + sub)/st->nbSubframes;
+      tmp = (1.0 + sub)/st->nbSubframes;
       for (i=0;i<st->lpcSize;i++)
          st->interp_qlsp[i] = (1-tmp)*st->old_qlsp[i] + tmp*st->qlsp[i];
 

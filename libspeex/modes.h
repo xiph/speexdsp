@@ -53,7 +53,6 @@ typedef void (*nb_post_filter_func)(float *, float *, float *, int, int, int,
 typedef struct SpeexNBMode {
    int     frameSize;
    int     subframeSize;
-   int     windowSize;
    int     lpcSize;
    int     bufSize;
    int     pitchStart;
@@ -90,7 +89,6 @@ typedef struct SpeexSBMode {
    SpeexMode *nb_mode;
    int     frameSize;
    int     subframeSize;
-   int     windowSize;
    int     lpcSize;
    int     bufSize;
    float   gamma1;

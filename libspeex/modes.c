@@ -129,7 +129,6 @@ static split_cb_params split_cb_high_lbr = {
 SpeexNBMode nb_mode = {
    160,    /*frameSize*/
    40,     /*subframeSize*/
-   320,    /*windowSize*/
    10,     /*lpcSize*/
    640,    /*bufSize*/
    17,     /*pitchStart*/
@@ -160,7 +159,6 @@ SpeexNBMode nb_mode = {
 SpeexNBMode nb_lbr_mode = {
    160,    /*frameSize*/
    40,     /*subframeSize*/
-   320,    /*windowSize*/
    10,     /*lpcSize*/
    640,    /*bufSize*/
    17,     /*pitchStart*/
@@ -192,7 +190,6 @@ SpeexNBMode nb_lbr_mode = {
 static SpeexNBMode low_sb_mode = {
    160,    /*frameSize*/
    40,     /*subframeSize*/
-   320,    /*windowSize*/
    10,     /*lpcSize*/
    640,    /*bufSize*/
    17,     /*pitchStart*/
@@ -277,7 +274,6 @@ static SpeexSBMode sb_wb_mode = {
    &low_wb_mode,
    160,    /*frameSize*/
    40,     /*subframeSize*/
-   320,    /*windowSize*/
    8,     /*lpcSize*/
    640,    /*bufSize*/
    .9,    /*gamma1*/
@@ -322,7 +318,6 @@ static SpeexSBMode sb_wb_mode_lbr = {
    &speex_nb_mode,
    160,    /*frameSize*/
    40,     /*subframeSize*/
-   320,    /*windowSize*/
    8,     /*lpcSize*/
    640,    /*bufSize*/
    .9,    /*gamma1*/
