@@ -29,7 +29,7 @@
    NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-static spx_word32_t inner_prod(const spx_word16_t *x, const spx_word16_t *y, int
+static spx_word32_t inner_prod(const spx_word16_t *x, const spx_word16_t *y, int len)
 {
    spx_word32_t sum1=0,sum2=0;
    spx_word16_t *deadx, *deady;
@@ -72,14 +72,14 @@ static spx_word32_t inner_prod(const spx_word16_t *x, const spx_word16_t *y, int
          "\tadd %3, %3, %10, asr #5\n"
          "\tbne .inner_prod_loop\n"
    : "=r" (deadx), "=r" (deady), "=r" (sum1),  "=r" (sum2), "=r" (deadlen),
-   "=r" (dead1), "=r" (dead2), "=r" (dead3), "=r" (dead4), "=r" (dead5), "=r"
+   "=r" (dead1), "=r" (dead2), "=r" (dead3), "=r" (dead4), "=r" (dead5), "=r" (dead6)
    : "0" (x), "1" (y), "2" (sum1), "3" (sum2), "4" (len>>3)
    : "cc", "memory"
                         );
    return (sum1+sum2)>>1;
 }
          
-static void pitch_xcorr(const spx_word16_t *_x, const spx_word16_t *_y, spx_word
+static void pitch_xcorr(const spx_word16_t *_x, const spx_word16_t *_y, spx_word32_t *corr, int len, int nb_pitch, char *stack)
 {
    int i,j;
    for (i=0;i<nb_pitch;i+=4)

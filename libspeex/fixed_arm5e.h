@@ -118,7 +118,7 @@ static inline spx_word32_t MAC16_32_Q11(spx_word32_t a, spx_word16_t x, spx_word
 /*
 #define DIV32_16(a,b) ((short)(((signed int)(a))/((short)(b))))
 */
-inline short DIV3216(int a, int b)
+static inline short DIV3216(int a, int b)
 {
    int res=0;
    int dead1, dead2, dead3, dead4, dead5;
