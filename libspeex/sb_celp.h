@@ -160,8 +160,8 @@ void sb_decoder_destroy(void *state);
 /**Decodes one frame*/
 int sb_decode(void *state, SpeexBits *bits, float *out);
 
-void sb_encoder_ctl(void *state, int request, void *ptr);
+int sb_encoder_ctl(void *state, int request, void *ptr);
 
-void sb_decoder_ctl(void *state, int request, void *ptr);
+int sb_decoder_ctl(void *state, int request, void *ptr);
 
 #endif

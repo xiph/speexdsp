@@ -1086,6 +1086,7 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
                return ret;
          } else if (m>7) /* Invalid mode */
          {
+            speex_warning("Invalid mode encountered: corrupted stream?");
             return -2;
          }
       
@@ -1458,7 +1459,7 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
    return 0;
 }
 
-void nb_encoder_ctl(void *state, int request, void *ptr)
+int nb_encoder_ctl(void *state, int request, void *ptr)
 {
    EncState *st;
    st=(EncState*)state;     
@@ -1613,10 +1614,12 @@ void nb_encoder_ctl(void *state, int request, void *ptr)
       break;
    default:
       speex_warning_int("Unknown nb_ctl request: ", request);
+      return -1;
    }
+   return 0;
 }
 
-void nb_decoder_ctl(void *state, int request, void *ptr)
+int nb_decoder_ctl(void *state, int request, void *ptr)
 {
    DecState *st;
    st=(DecState*)state;
@@ -1701,5 +1704,7 @@ void nb_decoder_ctl(void *state, int request, void *ptr)
       break;
    default:
       speex_warning_int("Unknown nb_ctl request: ", request);
+      return -1;
    }
+   return 0;
 }

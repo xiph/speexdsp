@@ -95,6 +95,11 @@ void *speex_alloc (int size)
    return calloc(size,1);
 }
 
+void *speex_realloc (void *ptr, int size)
+{
+   return realloc(ptr, size);
+}
+
 void speex_free (void *ptr)
 {
    free(ptr);

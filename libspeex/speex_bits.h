@@ -51,13 +51,14 @@ typedef struct SpeexBits {
    int   bitPtr;  /**< Position of the bit "cursor" within the current byte */
    int   owner;   /**< Does the struct "own" the "raw" buffer (member "bytes") */
    int   overflow;/**< Set to one if we try to read past the valid data */
+   int   buf_size;/**< Allocated size for buffer */
 } SpeexBits;
 
 /** Initializes and allocates resources for a SpeexBits struct */
 void speex_bits_init(SpeexBits *bits);
 
 /** Initializes SpeexBits struct using a pre-allocated buffer*/
-void speex_bits_init_buffer(SpeexBits *bits, void *buff);
+void speex_bits_init_buffer(SpeexBits *bits, void *buff, int buf_size);
 
 /** Frees all resources assiociated to a SpeexBits struct. Right now this does nothing since no resources are allocated, but this could change in the future.*/
 void speex_bits_destroy(SpeexBits *bits);

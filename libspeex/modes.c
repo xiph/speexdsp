@@ -58,8 +58,8 @@ extern float exc_10_32_table[];
 extern float exc_10_16_table[];
 extern float hexc_10_32_table[];
 
-static void nb_mode_query(void *mode, int request, void *ptr);
-static void wb_mode_query(void *mode, int request, void *ptr);
+static int nb_mode_query(void *mode, int request, void *ptr);
+static int wb_mode_query(void *mode, int request, void *ptr);
 
 /* Parameters for Long-Term Prediction (LTP)*/
 static ltp_params ltp_params_nb = {
@@ -549,19 +549,19 @@ int speex_decode(void *state, SpeexBits *bits, float *out)
 }
 
 
-void speex_encoder_ctl(void *state, int request, void *ptr)
+int speex_encoder_ctl(void *state, int request, void *ptr)
 {
-   (*((SpeexMode**)state))->enc_ctl(state, request, ptr);
+   return (*((SpeexMode**)state))->enc_ctl(state, request, ptr);
 }
 
-void speex_decoder_ctl(void *state, int request, void *ptr)
+int speex_decoder_ctl(void *state, int request, void *ptr)
 {
-   (*((SpeexMode**)state))->dec_ctl(state, request, ptr);
+   return (*((SpeexMode**)state))->dec_ctl(state, request, ptr);
 }
 
 
 
-static void nb_mode_query(void *mode, int request, void *ptr)
+static int nb_mode_query(void *mode, int request, void *ptr)
 {
    SpeexNBMode *m = (SpeexNBMode*)mode;
    
@@ -580,11 +580,12 @@ static void nb_mode_query(void *mode, int request, void *ptr)
       break;
    default:
       speex_warning_int("Unknown nb_mode_query request: ", request);
+      return -1;
    }
-
+   return 0;
 }
 
-static void wb_mode_query(void *mode, int request, void *ptr)
+static int wb_mode_query(void *mode, int request, void *ptr)
 {
    SpeexSBMode *m = (SpeexSBMode*)mode;
 
@@ -603,11 +604,13 @@ static void wb_mode_query(void *mode, int request, void *ptr)
       break;
    default:
       speex_warning_int("Unknown wb_mode_query request: ", request);
+      return -1;
    }
+   return 0;
 }
 
 
-void speex_mode_query(SpeexMode *mode, int request, void *ptr)
+int speex_mode_query(SpeexMode *mode, int request, void *ptr)
 {
-   mode->query(mode->mode, request, ptr);
+   return mode->query(mode->mode, request, ptr);
 }

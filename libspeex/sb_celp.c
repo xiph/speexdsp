@@ -844,7 +844,11 @@ int sb_decode(void *state, SpeexBits *bits, float *out)
       /*Was a narrowband frame, set "null submode"*/
       st->submodeID = 0;
    }
-   /*FIXME: Check for valid submodeID */
+   if (st->submodeID != 0 && st->submodes[st->submodeID] == NULL)
+   {
+      speex_warning("Invalid mode encountered: corrupted stream?");
+      return -2;
+   }
 
    /* If null mode (no transmission), just set a couple things to zero*/
    if (st->submodes[st->submodeID] == NULL)
@@ -1043,7 +1047,7 @@ int sb_decode(void *state, SpeexBits *bits, float *out)
 }
 
 
-void sb_encoder_ctl(void *state, int request, void *ptr)
+int sb_encoder_ctl(void *state, int request, void *ptr)
 {
    SBEncState *st;
    st=(SBEncState*)state;
@@ -1230,11 +1234,12 @@ void sb_encoder_ctl(void *state, int request, void *ptr)
       break;
    default:
       speex_warning_int("Unknown nb_ctl request: ", request);
+      return -1;
    }
-
+   return 0;
 }
 
-void sb_decoder_ctl(void *state, int request, void *ptr)
+int sb_decoder_ctl(void *state, int request, void *ptr)
 {
    SBDecState *st;
    st=(SBDecState*)state;
@@ -1316,6 +1321,7 @@ void sb_decoder_ctl(void *state, int request, void *ptr)
       break;
    default:
       speex_warning_int("Unknown nb_ctl request: ", request);
+      return -1;
    }
-
+   return 0;
 }

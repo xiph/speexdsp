@@ -171,7 +171,7 @@ typedef void (*encoder_destroy_func)(void *st);
 typedef int (*encode_func)(void *state, float *in, SpeexBits *bits);
 
 /** Function for controlling the encoder options */
-typedef void (*encoder_ctl_func)(void *state, int request, void *ptr);
+typedef int (*encoder_ctl_func)(void *state, int request, void *ptr);
 
 /** Decoder state initialization function */
 typedef void *(*decoder_init_func)(struct SpeexMode *mode);
@@ -183,11 +183,11 @@ typedef void (*decoder_destroy_func)(void *st);
 typedef int  (*decode_func)(void *state, SpeexBits *bits, float *out);
 
 /** Function for controlling the decoder options */
-typedef void (*decoder_ctl_func)(void *state, int request, void *ptr);
+typedef int (*decoder_ctl_func)(void *state, int request, void *ptr);
 
 
 /** Query function for a mode */
-typedef void (*mode_query_func)(void *mode, int request, void *ptr);
+typedef int (*mode_query_func)(void *mode, int request, void *ptr);
 
 /** Struct defining a Speex mode */ 
 typedef struct SpeexMode {
@@ -263,7 +263,7 @@ int speex_encode(void *state, float *in, SpeexBits *bits);
  * @param ptr Data exchanged to-from function
  * @return 0 if frame needs not be transmitted (DTX only), 1 otherwise
  */
-void speex_encoder_ctl(void *state, int request, void *ptr);
+int speex_encoder_ctl(void *state, int request, void *ptr);
 
 
 /** Returns a handle to a newly created decoder state structure. For now, 
@@ -299,7 +299,7 @@ int speex_decode(void *state, SpeexBits *bits, float *out);
  * @param ptr Data exchanged to-from function
  * @return 0 for no error, 1 if a terminator is reached, 2 for another error
  */
-void speex_decoder_ctl(void *state, int request, void *ptr);
+int speex_decoder_ctl(void *state, int request, void *ptr);
 
 
 /** Query function for mode information
@@ -308,7 +308,7 @@ void speex_decoder_ctl(void *state, int request, void *ptr);
  * @param request ioctl-type request (one of the SPEEX_* macros)
  * @param ptr Data exchanged to-from function
  */
-void speex_mode_query(SpeexMode *mode, int request, void *ptr);
+int speex_mode_query(SpeexMode *mode, int request, void *ptr);
 
 
 /** Default narrowband mode */

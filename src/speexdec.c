@@ -272,7 +272,7 @@ static void *process_header(ogg_packet *op, int enh_enabled, int *frame_size, in
    }
    if (header->mode >= SPEEX_NB_MODES)
    {
-      fprintf (stderr, "Mode number %d does not (any longer) exist in this version\n", 
+      fprintf (stderr, "Mode number %d does not (yet/any longer) exist in this version\n", 
                header->mode);
       return NULL;
    }
@@ -325,10 +325,15 @@ static void *process_header(ogg_packet *op, int enh_enabled, int *frame_size, in
    fprintf (stderr, "Decoding %d Hz audio using %s mode", 
             *rate, mode->modeName);
 
-   if (header->vbr)
-      fprintf (stderr, " (VBR)\n");
+   if (*channels==1)
+      fprintf (stderr, " (mono");
    else
-      fprintf(stderr, "\n");
+      fprintf (stderr, " (stereo");
+      
+   if (header->vbr)
+      fprintf (stderr, ", VBR)\n");
+   else
+      fprintf(stderr, ")\n");
    /*fprintf (stderr, "Decoding %d Hz audio at %d bps using %s mode\n", 
     *rate, mode->bitrate, mode->modeName);*/
 

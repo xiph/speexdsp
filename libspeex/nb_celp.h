@@ -193,10 +193,10 @@ void nb_decoder_destroy(void *state);
 int nb_decode(void *state, SpeexBits *bits, float *out);
 
 /** ioctl-like function for controlling a narrowband encoder */
-void nb_encoder_ctl(void *state, int request, void *ptr);
+int nb_encoder_ctl(void *state, int request, void *ptr);
 
 /** ioctl-like function for controlling a narrowband decoder */
-void nb_decoder_ctl(void *state, int request, void *ptr);
+int nb_decoder_ctl(void *state, int request, void *ptr);
 
 
 #endif

@@ -39,8 +39,9 @@ void speex_bits_init(SpeexBits *bits)
 {
    int i;
    bits->bytes = (char*)speex_alloc(MAX_BYTES_PER_FRAME);
+   bits->buf_size = MAX_BYTES_PER_FRAME;
 
-   for (i=0;i<MAX_BYTES_PER_FRAME;i++)
+   for (i=0;i<bits->buf_size;i++)
       bits->bytes[i]=0;
    bits->nbBits=0;
    bits->bytePtr=0;
@@ -49,12 +50,13 @@ void speex_bits_init(SpeexBits *bits)
    bits->overflow=0;
 }
 
-void speex_bits_init_buffer(SpeexBits *bits, void *buff)
+void speex_bits_init_buffer(SpeexBits *bits, void *buff, int buf_size)
 {
    int i;
    bits->bytes = (char*)buff;
+   bits->buf_size = buf_size;
 
-   for (i=0;i<MAX_BYTES_PER_FRAME;i++)
+   for (i=0;i<buf_size;i++)
       bits->bytes[i]=0;
    bits->nbBits=0;
    bits->bytePtr=0;
@@ -73,7 +75,7 @@ void speex_bits_destroy(SpeexBits *bits)
 void speex_bits_reset(SpeexBits *bits)
 {
    int i;
-   for (i=0;i<MAX_BYTES_PER_FRAME;i++)
+   for (i=0;i<bits->buf_size;i++)
       bits->bytes[i]=0;
    bits->nbBits=0;
    bits->bytePtr=0;
@@ -91,9 +93,24 @@ void speex_bits_rewind(SpeexBits *bits)
 void speex_bits_read_from(SpeexBits *bits, char *bytes, int len)
 {
    int i;
-   if (len > MAX_BYTES_PER_FRAME)
+   if (len > bits->buf_size)
    {
-      speex_error ("Trying to init frame with too many bits");
+      speex_warning_int("Packet if larger than allocated buffer: ", len);
+      if (bits->owner)
+      {
+         char *tmp = speex_realloc(bits->bytes, len);
+         if (tmp)
+         {
+            bits->buf_size=len;
+            bits->bytes=tmp;
+         } else {
+            len=bits->buf_size;
+            speex_warning("Could not resize input buffer: truncating input");
+         }
+      } else {
+         speex_warning("Do not own input buffer: truncating input");
+         len=bits->buf_size;
+      }
    }
    for (i=0;i<len;i++)
       bits->bytes[i]=bytes[i];
@@ -118,6 +135,7 @@ void speex_bits_flush(SpeexBits *bits)
 void speex_bits_read_whole_bytes(SpeexBits *bits, char *bytes, int len)
 {
    int i,pos;
+   /*FIXME: check for overflow*/
    speex_bits_flush(bits);
    pos=bits->nbBits>>3;
    for (i=0;i<len;i++)
@@ -158,6 +176,7 @@ int speex_bits_write_whole_bytes(SpeexBits *bits, char *bytes, int max_len)
 void speex_bits_pack(SpeexBits *bits, int data, int nbBits)
 {
    unsigned int d=data;
+   /*FIXME: check for overflow*/
    while(nbBits)
    {
       int bit;
