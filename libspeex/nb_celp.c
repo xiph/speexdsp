@@ -873,6 +873,8 @@ void *nb_decoder_init(SpeexMode *m)
    st->old_qlsp = (float*)speex_alloc(st->lpcSize*sizeof(float));
    st->interp_qlsp = (float*)speex_alloc(st->lpcSize*sizeof(float));
    st->mem_sp = (float*)speex_alloc(5*st->lpcSize*sizeof(float));
+   st->comb_mem = (CombFilterMem *) speex_alloc(sizeof(CombFilterMem));
+   comp_filter_mem_init (st->comb_mem);
 
    st->pi_gain = (float*)speex_alloc(st->nbSubframes*sizeof(float));
    st->last_pitch = 40;
@@ -908,6 +910,7 @@ void nb_decoder_destroy(void *state)
    speex_free(st->stack);
    speex_free(st->mem_sp);
    speex_free(st->pi_gain);
+   speex_free(st->comb_mem);
    
    speex_free(state);
 }
@@ -1221,7 +1224,6 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
          k1=SUBMODE(lpc_enh_k1);
          k2=SUBMODE(lpc_enh_k2);
          k3=(1-(1-r*k1)/(1-r*k2))/r;
-         k3=k1-k2;
          if (!st->lpc_enh_enabled)
          {
             k1=k2;
@@ -1408,9 +1410,9 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
          sp[i]=exc[i];
 
       /* Signal synthesis */
-      if (st->lpc_enh_enabled && SUBMODE(comb_gain>0))
+      if (st->lpc_enh_enabled && SUBMODE(comb_gain)>0)
          comb_filter(exc, sp, st->interp_qlpc, st->lpcSize, st->subframeSize,
-                              pitch, pitch_gain, .5);
+                              pitch, pitch_gain, SUBMODE(comb_gain), st->comb_mem);
       if (st->lpc_enh_enabled)
       {
          /* Use enhanced LPC filter */

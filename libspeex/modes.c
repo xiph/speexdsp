@@ -168,7 +168,7 @@ static SpeexSubmode nb_submode1 = {
    noise_codebook_quant,
    noise_codebook_unquant,
    NULL,
-   0, 0, -1,
+   .7, .7, -1,
    43
 };
 
@@ -190,7 +190,7 @@ static SpeexSubmode nb_submode2 = {
    split_cb_shape_sign_unquant,
    &split_cb_nb_vlbr,
 
-   0.75, 0.6, .6,
+   0.7, 0.5, .55,
    119
 };
 
@@ -212,7 +212,7 @@ static SpeexSubmode nb_submode3 = {
    split_cb_shape_sign_unquant,
    &split_cb_nb_lbr,
 
-   0.75, 0.6, .5,
+   0.7, 0.55, .45,
    160
 };
 
@@ -234,7 +234,7 @@ static SpeexSubmode nb_submode4 = {
    split_cb_shape_sign_unquant,
    &split_cb_nb_med,
 
-   0.72, 0.65, .3,
+   0.7, 0.63, .35,
    220
 };
 
@@ -256,7 +256,7 @@ static SpeexSubmode nb_submode5 = {
    split_cb_shape_sign_unquant,
    &split_cb_nb,
 
-   0.7, 0.65, .2,
+   0.7, 0.65, .25,
    300
 };
 
@@ -300,7 +300,7 @@ static SpeexSubmode nb_submode7 = {
    split_cb_shape_sign_unquant,
    &split_cb_nb,
 
-   0.65, 0.65, 0,
+   0.65, 0.65, -1,
    492
 };
 

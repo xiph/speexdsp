@@ -40,6 +40,7 @@
 #include "speex_bits.h"
 #include "speex_callbacks.h"
 #include "vbr.h"
+#include "filters.h"
 
 /**Structure representing the full state of the narrowband encoder*/
 typedef struct EncState {
@@ -157,7 +158,7 @@ typedef struct DecState {
    SpeexSubmode **submodes; /**< Sub-mode data */
    int    submodeID;      /**< Activated sub-mode */
    int    lpc_enh_enabled; /**< 1 when LPC enhancer is on, 0 otherwise */
-
+   CombFilterMem *comb_mem;
    SpeexCallback speex_callbacks[SPEEX_MAX_CALLBACKS];
 
    SpeexCallback user_callback;

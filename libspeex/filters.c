@@ -211,6 +211,13 @@ void fir_mem_up(float *x, float *a, float *y, int N, int M, float *mem, void *st
 }
 
 
+void comp_filter_mem_init (CombFilterMem *mem)
+{
+   mem->last_pitch=0;
+   mem->last_pitch_gain[0]=mem->last_pitch_gain[1]=mem->last_pitch_gain[2]=0;
+   mem->smooth_gain=1;
+}
+
 void comb_filter(
 float *exc,          /*decoded excitation*/
 float *new_exc,      /*enhanced excitation*/
@@ -219,33 +226,67 @@ int p,               /*LPC order*/
 int nsf,             /*sub-frame size*/
 int pitch,           /*pitch period*/
 float *pitch_gain,   /*pitch gain (3-tap)*/
-float  comb_gain     /*gain of comb filter*/
+float  comb_gain,    /*gain of comb filter*/
+CombFilterMem *mem
 )
 {
    int i;
    float exc_energy=0, new_exc_energy=0;
    float gain;
-
+   float step;
+   float fact;
    /*Compute excitation energy prior to enhancement*/
    for (i=0;i<nsf;i++)
       exc_energy+=exc[i]*exc[i];
 
+   /*Some gain adjustment is pitch is too high or if unvoiced*/
+   {
+      float g=0;
+      g = .5*fabs(pitch_gain[0]+pitch_gain[1]+pitch_gain[2] +
+      mem->last_pitch_gain[0] + mem->last_pitch_gain[1] + mem->last_pitch_gain[2]);
+      if (g>1.3)
+         comb_gain*=1.3/g;
+      if (g<.5)
+         comb_gain*=2*g;
+   }
+   step = 1.0/nsf;
+   fact=0;
    /*Apply pitch comb-filter (filter out noise between pitch harmonics)*/
    for (i=0;i<nsf;i++)
    {
-      new_exc[i] = exc[i] + comb_gain * (
+      fact += step;
+
+      new_exc[i] = exc[i] + comb_gain * fact * (
                                          pitch_gain[0]*exc[i-pitch+1] +
                                          pitch_gain[1]*exc[i-pitch] +
                                          pitch_gain[2]*exc[i-pitch-1]
+                                         )
+      + comb_gain * (1-fact) * (
+                                         mem->last_pitch_gain[0]*exc[i-mem->last_pitch+1] +
+                                         mem->last_pitch_gain[1]*exc[i-mem->last_pitch] +
+                                         mem->last_pitch_gain[2]*exc[i-mem->last_pitch-1]
                                          );
    }
-   
+
+   mem->last_pitch_gain[0] = pitch_gain[0];
+   mem->last_pitch_gain[1] = pitch_gain[1];
+   mem->last_pitch_gain[2] = pitch_gain[2];
+   mem->last_pitch = pitch;
+
    /*Gain after enhancement*/
    for (i=0;i<nsf;i++)
       new_exc_energy+=new_exc[i]*new_exc[i];
 
    /*Compute scaling factor and normalize energy*/
    gain = sqrt(exc_energy)/sqrt(.1+new_exc_energy);
+   if (gain < .5)
+      gain=.5;
+   if (gain>1)
+      gain=1;
+
    for (i=0;i<nsf;i++)
-      new_exc[i] *= gain;
+   {
+      mem->smooth_gain = .96*mem->smooth_gain + .04*gain;
+      new_exc[i] *= mem->smooth_gain;
+   }
 }

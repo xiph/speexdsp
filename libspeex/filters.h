@@ -33,6 +33,14 @@
 #ifndef FILTERS_H
 #define FILTERS_H
 
+
+typedef struct CombFilterMem {
+   int   last_pitch;
+   float last_pitch_gain[3];
+   float smooth_gain;
+} CombFilterMem;
+
+
 void qmf_decomp(float *xx, float *aa, float *y1, float *y2, int N, int M, float *mem, void *stack);
 void fir_mem_up(float *x, float *a, float *y, int N, int M, float *mem, void *stack);
 
@@ -53,6 +61,8 @@ void syn_percep_zero(float *x, float *ak, float *awk1, float *awk2, float *y, in
 
 void residue_percep_zero(float *xx, float *ak, float *awk1, float *awk2, float *y, int N, int ord, void *stack);
 
+void comp_filter_mem_init (CombFilterMem *mem);
+
 void comb_filter(
 float *exc,          /*decoded excitation*/
 float *new_exc,      /*enhanced excitation*/
@@ -61,7 +71,8 @@ int p,               /*LPC order*/
 int nsf,             /*sub-frame size*/
 int pitch,           /*pitch period*/
 float *pitch_gain,   /*pitch gain (3-tap)*/
-float  comb_gain     /*gain of comb filter*/
+float  comb_gain,    /*gain of comb filter*/
+CombFilterMem *mem
 );
 
 
