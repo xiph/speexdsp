@@ -21,7 +21,18 @@ Vorbis which targets general audio) signals and providing good narrowband
 and wideband quality. This project aims to be complementary to the Vorbis
 codec.
 
+%package devel
+Summary:	Speex development files
+Group:		Development/Libraries
+Requires:	%{name} = %{version}
+
+%description devel
+Speex development files.
+
 %changelog
+* Thu Oct 03 2002 Jean-Marc Valin 
+- Added devel package inspired from PLD spec file
+
 * Tue Jul 30 2002 Fredrik Rambris <boost@users.sourceforge.net> 0.5.2
 - Added buildroot and docdir and ldconfig. Makes it builadble by non-roots
   and also doesn't write to actual library paths when building.
@@ -42,11 +53,16 @@ make DESTDIR=$RPM_BUILD_ROOT install
 %postun -p /sbin/ldconfig
 
 %files
-%defattr(-, root, root)
-%doc AUTHORS COPYING NEWS TODO README
-/usr/lib/libspeex*
-/usr/bin/speexenc
-/usr/bin/speexdec
-/usr/include/speex.h
-/usr/include/speex_bits.h
-/usr/include/speex_header.h
+%defattr(644,root,root,755)
+%doc AUTHORS ChangeLog NEWS README TODO
+/usr/share/man/man1/speexenc.1*
+/usr/share/man/man1/speexdec.1*
+%attr(755,root,root) %{_bindir}/speex*
+%attr(755,root,root) %{_libdir}/libspeex*.so
+
+%files devel
+%defattr(644,root,root,755)
+%attr(755,root,root) %{_libdir}/libspeex*.la
+%{_includedir}/speex*.h
+%{_libdir}/libspeex*.a
+

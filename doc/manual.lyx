@@ -2760,12 +2760,12 @@ The encoder takes the following options:
 \layout Description
 
 --narrowband\SpecialChar ~
-(-n) Tells Speex to treat the input as narrowband (8 kHz).
+(-n) Tell Speex to treat the input as narrowband (8 kHz).
  This is the default
 \layout Description
 
 --wideband\SpecialChar ~
-(-w) Tells Speex to treat the input as wideband (16 kHz)
+(-w) Tell Speex to treat the input as wideband (16 kHz)
 \layout Description
 
 --quality\SpecialChar ~
@@ -2792,7 +2792,7 @@ n Set encoding speed/quality tradeoff.
 \layout Description
 
 --version\SpecialChar ~
-(-v) Pring version information
+(-v) Print version information
 \layout Subsection
 
 
@@ -2809,6 +2809,10 @@ The decoder takes the following options:
 --no-enh disable post-filter (default)
 \layout Description
 
+--packet-loss\SpecialChar ~
+n Simulate n % random packet loss
+\layout Description
+
 -V Verbose operation, print bit-rate currently in use
 \layout Description
 
@@ -2817,7 +2821,7 @@ The decoder takes the following options:
 \layout Description
 
 --version\SpecialChar ~
-(-v) Pring version information
+(-v) Print version information
 \layout Section
 \pagebreak_top 
 Programming with Speex (the libspeex API)
