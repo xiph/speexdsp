@@ -98,6 +98,7 @@ typedef struct SBEncState {
    int    vad_enabled;         /**< 1 for enabling VAD, 0 otherwise */
    float  relative_quality;
 
+   int    encode_submode;
    SpeexSubmode **submodes;
    int    submodeID;
    int    submodeSelect;
@@ -135,6 +136,7 @@ typedef struct SBDecState {
    float *mem_sp;
    float *pi_gain;
 
+   int    encode_submode;
    SpeexSubmode **submodes;
    int    submodeID;
 } SBDecState;

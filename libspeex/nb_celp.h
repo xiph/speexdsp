@@ -117,6 +117,7 @@ typedef struct EncState {
    int    complexity;     /**< Complexity setting (0-10 from least complex to most complex) */
    int    sampling_rate;
 
+   int    encode_submode;
    SpeexSubmode **submodes; /**< Sub-mode data */
    int    submodeID;      /**< Activated sub-mode */
    int    submodeSelect;  /**< Mode chosen by the user (may differ from submodeID if VAD is on) */
@@ -164,6 +165,7 @@ typedef struct DecState {
    float  pitch_gain_buf[3];  /**< Pitch gain of last decoded frames */
    int    pitch_gain_buf_idx; /**< Tail of the buffer */
 
+   int    encode_submode;
    SpeexSubmode **submodes; /**< Sub-mode data */
    int    submodeID;      /**< Activated sub-mode */
    int    lpc_enh_enabled; /**< 1 when LPC enhancer is on, 0 otherwise */

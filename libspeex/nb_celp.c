@@ -100,6 +100,7 @@ void *nb_encoder_init(SpeexMode *m)
    st->pre_mem2=0;
    st->bounded_pitch = 1;
 
+   st->encode_submode = 1;
 #ifdef EPIC_48K
    st->lbr_48k=mode->lbr48k;
 #endif
@@ -472,6 +473,8 @@ int nb_encode(void *state, float *in, SpeexBits *bits)
       st->relative_quality = -1;
    }
 
+   if (st->encode_submode)
+   {
 #ifdef EPIC_48K
    if (!st->lbr_48k) {
 #endif
@@ -485,6 +488,7 @@ int nb_encode(void *state, float *in, SpeexBits *bits)
 #ifdef EPIC_48K
    }
 #endif
+   }
 
    /* If null mode (no transmission), just set a couple things to zero*/
    if (st->submodes[st->submodeID] == NULL)
@@ -929,6 +933,7 @@ void *nb_decoder_init(SpeexMode *m)
 
    st->stack = ((char*)st) + sizeof(DecState);
 
+   st->encode_submode = 1;
 #ifdef EPIC_48K
    st->lbr_48k=mode->lbr48k;
 #endif
@@ -1139,6 +1144,8 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
    st=(DecState*)state;
    stack=st->stack;
 
+   if (st->encode_submode)
+   {
 #ifdef EPIC_48K
    if (!st->lbr_48k) {
 #endif
@@ -1230,6 +1237,7 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
 #ifdef EPIC_48K
    }
 #endif
+   }
 
    /* Shift all buffers by one frame */
    speex_move(st->inBuf, st->inBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(float));
@@ -1763,6 +1771,12 @@ int nb_encoder_ctl(void *state, int request, void *ptr)
             st->excBuf[i]=st->swBuf[i]=st->inBuf[i]=st->exc2Buf[i]=0;
       }
       break;
+   case SPEEX_SET_SUBMODE_ENCODING:
+      st->encode_submode = (*(int*)ptr);
+      break;
+   case SPEEX_GET_SUBMODE_ENCODING:
+      (*(int*)ptr) = st->encode_submode;
+      break;
    case SPEEX_GET_PI_GAIN:
       {
          int i;
@@ -1852,6 +1866,12 @@ int nb_decoder_ctl(void *state, int request, void *ptr)
          for (i=0;i<st->bufSize;i++)
             st->excBuf[i]=st->inBuf[i]=0;
       }
+      break;
+   case SPEEX_SET_SUBMODE_ENCODING:
+      st->encode_submode = (*(int*)ptr);
+      break;
+   case SPEEX_GET_SUBMODE_ENCODING:
+      (*(int*)ptr) = st->encode_submode;
       break;
    case SPEEX_GET_PI_GAIN:
       {

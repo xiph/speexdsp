@@ -143,6 +143,7 @@ void *sb_encoder_init(SpeexMode *m)
    st->lpcSize=mode->lpcSize;
    st->bufSize=mode->bufSize;
 
+   st->encode_submode = 1;
    st->submodes=mode->submodes;
    st->submodeSelect = st->submodeID=mode->defaultSubmode;
    
@@ -390,11 +391,14 @@ int sb_encode(void *state, float *in, SpeexBits *bits)
       /*fprintf (stderr, "%f %f\n", ratio, low_qual);*/
    }
 
-   speex_bits_pack(bits, 1, 1);
-   if (dtx)
-      speex_bits_pack(bits, 0, SB_SUBMODE_BITS);
-   else
-      speex_bits_pack(bits, st->submodeID, SB_SUBMODE_BITS);
+   if (st->encode_submode)
+   {
+      speex_bits_pack(bits, 1, 1);
+      if (dtx)
+         speex_bits_pack(bits, 0, SB_SUBMODE_BITS);
+      else
+         speex_bits_pack(bits, st->submodeID, SB_SUBMODE_BITS);
+   }
 
    /* If null mode (no transmission), just set a couple things to zero*/
    if (dtx || st->submodes[st->submodeID] == NULL)
@@ -659,6 +663,8 @@ void *sb_decoder_init(SpeexMode *m)
    st->mode = m;
    mode=(SpeexSBMode*)m->mode;
 
+   st->encode_submode = 1;
+
    st->stack = ((char*)st) + sizeof(SBDecState);
 
 
@@ -834,25 +840,29 @@ int sb_decode(void *state, SpeexBits *bits, float *out)
       return 0;
    }
 
-   /*Check "wideband bit"*/
-   if (speex_bits_remaining(bits)>0)
-      wideband = speex_bits_peek(bits);
-   else
-      wideband = 0;
-   if (wideband)
+   if (st->encode_submode)
    {
-      /*Regular wideband frame, read the submode*/
-      wideband = speex_bits_unpack_unsigned(bits, 1);
-      st->submodeID = speex_bits_unpack_unsigned(bits, SB_SUBMODE_BITS);
-   } else
-   {
-      /*Was a narrowband frame, set "null submode"*/
-      st->submodeID = 0;
-   }
-   if (st->submodeID != 0 && st->submodes[st->submodeID] == NULL)
-   {
-      speex_warning("Invalid mode encountered: corrupted stream?");
-      return -2;
+
+      /*Check "wideband bit"*/
+      if (speex_bits_remaining(bits)>0)
+         wideband = speex_bits_peek(bits);
+      else
+         wideband = 0;
+      if (wideband)
+      {
+         /*Regular wideband frame, read the submode*/
+         wideband = speex_bits_unpack_unsigned(bits, 1);
+         st->submodeID = speex_bits_unpack_unsigned(bits, SB_SUBMODE_BITS);
+      } else
+      {
+         /*Was a narrowband frame, set "null submode"*/
+         st->submodeID = 0;
+      }
+      if (st->submodeID != 0 && st->submodes[st->submodeID] == NULL)
+      {
+         speex_warning("Invalid mode encountered: corrupted stream?");
+         return -2;
+      }
    }
 
    /* If null mode (no transmission), just set a couple things to zero*/
@@ -1207,6 +1217,13 @@ int sb_encoder_ctl(void *state, int request, void *ptr)
             st->h0_mem[i]=st->h1_mem[i]=st->g0_mem[i]=st->g1_mem[i]=0;
       }
       break;
+   case SPEEX_SET_SUBMODE_ENCODING:
+      st->encode_submode = (*(int*)ptr);
+      speex_encoder_ctl(st->st_low, SPEEX_SET_SUBMODE_ENCODING, &ptr);
+      break;
+   case SPEEX_GET_SUBMODE_ENCODING:
+      (*(int*)ptr) = st->encode_submode;
+      break;
    case SPEEX_GET_PI_GAIN:
       {
          int i;
@@ -1293,6 +1310,13 @@ int sb_decoder_ctl(void *state, int request, void *ptr)
          for (i=0;i<QMF_ORDER;i++)
             st->h0_mem[i]=st->h1_mem[i]=st->g0_mem[i]=st->g1_mem[i]=0;
       }
+      break;
+   case SPEEX_SET_SUBMODE_ENCODING:
+      st->encode_submode = (*(int*)ptr);
+      speex_decoder_ctl(st->st_low, SPEEX_SET_SUBMODE_ENCODING, &ptr);
+      break;
+   case SPEEX_GET_SUBMODE_ENCODING:
+      (*(int*)ptr) = st->encode_submode;
       break;
    case SPEEX_GET_PI_GAIN:
       {
