@@ -442,7 +442,7 @@ void fir_mem_up(spx_sig_t *x, spx_word16_t *a, spx_sig_t *y, int N, int M, spx_w
 
 
 
-void comp_filter_mem_init (CombFilterMem *mem)
+void comb_filter_mem_init (CombFilterMem *mem)
 {
    mem->last_pitch=0;
    mem->last_pitch_gain[0]=mem->last_pitch_gain[1]=mem->last_pitch_gain[2]=0;

@@ -649,10 +649,10 @@ int main(int argc, char **argv)
 		  if (strlen(outFile)!=0)
                   {
                      for (i=0;i<frame_size*channels;i++)
-                        out[i]=(short)le_short((short)floor(.5+output[i]));
+                        out[i]=le_short(output[i]);
 		  } else {
                      for (i=0;i<frame_size*channels;i++)
-                        out[i]=(short)floor(.5+output[i]);
+                        out[i]=output[i];
 		  }
 #if defined WIN32 || defined _WIN32
                   if (strlen(outFile)==0)

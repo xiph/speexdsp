@@ -968,7 +968,7 @@ void *nb_decoder_init(SpeexMode *m)
    st->interp_qlsp = PUSH(st->stack, st->lpcSize, spx_lsp_t);
    st->mem_sp = PUSH(st->stack, 5*st->lpcSize, spx_mem_t);
    st->comb_mem = PUSHS(st->stack, CombFilterMem);
-   comp_filter_mem_init (st->comb_mem);
+   comb_filter_mem_init (st->comb_mem);
 
    st->pi_gain = PUSH(st->stack, st->nbSubframes, float);
    st->last_pitch = 40;

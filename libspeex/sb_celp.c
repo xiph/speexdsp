@@ -601,11 +601,8 @@ int sb_encode(void *state, short *in, SpeexBits *bits)
          if (st->subframeSize==80)
             gc *= 1.4142;
 
-#ifdef FIXED_POINT
          scale = SHL(MULT16_16(DIV32_16(SHL(gc,SIG_SHIFT-4),filter_ratio),(1+el)),4);
-#else
-         scale = gc*(1.+el)/filter_ratio;
-#endif
+
          for (i=0;i<st->subframeSize;i++)
             exc[i]=VERY_SMALL;
          exc[0]=SIG_SCALING;

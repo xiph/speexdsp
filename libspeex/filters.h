@@ -72,7 +72,7 @@ void syn_percep_zero(spx_sig_t *x, spx_coef_t *ak, spx_coef_t *awk1, spx_coef_t 
 
 void residue_percep_zero(spx_sig_t *xx, spx_coef_t *ak, spx_coef_t *awk1, spx_coef_t *awk2, spx_sig_t *y, int N, int ord, char *stack);
 
-void comp_filter_mem_init (CombFilterMem *mem);
+void comb_filter_mem_init (CombFilterMem *mem);
 
 void comb_filter(
 spx_sig_t *exc,          /*decoded excitation*/
