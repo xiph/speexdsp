@@ -217,7 +217,7 @@ int nb_encode(void *state, float *in, SpeexBits *bits)
    /* Copy new data in input buffer */
    speex_move(st->inBuf, st->inBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(spx_sig_t));
    for (i=0;i<st->frameSize;i++)
-      st->inBuf[st->bufSize-st->frameSize+i] = SIG_SCALING*in[i];
+      st->inBuf[st->bufSize-st->frameSize+i] = SHL((int)in[i], SIG_SHIFT);
 
    /* Move signals 1 frame towards the past */
    speex_move(st->exc2Buf, st->exc2Buf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(spx_sig_t));
@@ -904,7 +904,7 @@ int nb_encode(void *state, float *in, SpeexBits *bits)
 
    /* Replace input by synthesized speech */
    for (i=0;i<st->frameSize;i++)
-     in[i]=st->frame[i]/SIG_SCALING;
+     in[i]=SHR(st->frame[i],SIG_SHIFT);
 
    if (SUBMODE(innovation_quant) == noise_codebook_quant || st->submodeID==0)
       st->bounded_pitch = 1;
@@ -1615,7 +1615,7 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
    
    /*Copy output signal*/
    for (i=0;i<st->frameSize;i++)
-     out[i]=st->frame[i]/SIG_SCALING;
+     out[i]=SHR(st->frame[i],SIG_SHIFT);
 
    /* Store the LSPs for interpolation in the next frame */
    for (i=0;i<st->lpcSize;i++)

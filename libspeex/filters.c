@@ -130,7 +130,7 @@ void filter_mem2(spx_sig_t *x, spx_coef_t *num, spx_coef_t *den, spx_sig_t *y, i
    for (i=0;i<N;i++)
    {
       int xh,xl,yh,yl;
-      xi=floor(.5+x[i]);
+      xi=x[i];
       yi = xi + (mem[0]<<2);
       xh = xi>>15; xl=xi&0x00007fff; yh = yi>>15; yl=yi&0x00007fff; 
       for (j=0;j<ord-1;j++)
@@ -150,7 +150,7 @@ void iir_mem2(spx_sig_t *x, spx_coef_t *den, spx_sig_t *y, int N, int ord, spx_m
    for (i=0;i<N;i++)
    {
       int yh,yl;
-      xi=floor(.5+x[i]);
+      xi=x[i];
       yi = xi + (mem[0]<<2);
       yh = yi>>15; yl=yi&0x00007fff; 
       for (j=0;j<ord-1;j++)
@@ -171,7 +171,7 @@ void fir_mem2(spx_sig_t *x, spx_coef_t *num, spx_sig_t *y, int N, int ord, spx_m
    for (i=0;i<N;i++)
    {
       int xh,xl;
-      xi=floor(.5+x[i]);
+      xi=x[i];
       yi = xi + (mem[0]<<2);
       xh = xi>>15; xl=xi&0x00007fff;
       for (j=0;j<ord-1;j++)

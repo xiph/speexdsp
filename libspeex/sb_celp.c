@@ -1083,7 +1083,7 @@ int sb_decode(void *state, SpeexBits *bits, float *out)
    fir_mem_up(st->high, h1, st->y1, st->full_frame_size, QMF_ORDER, st->g1_mem, stack);
 
    for (i=0;i<st->full_frame_size;i++)
-      out[i]=2*(st->y0[i]-st->y1[i]) / SIG_SCALING;
+      out[i]=SHR((st->y0[i]-st->y1[i]), SIG_SHIFT-1);
 
    for (i=0;i<st->lpcSize;i++)
       st->old_qlsp[i] = st->qlsp[i];
