@@ -71,9 +71,9 @@ SpeexMode nb_mode = {
    144,    /*pitchEnd*/
    0.9,    /*gamma1*/
    0.6,    /*gamma2*/
-   .005,
-   1.0001,
-   0.0,
+   .005,   /*lag_factor*/
+   1.0001, /*lpc_floor*/
+   0.0,    /*preemph*/
    /*LSP quantization*/
    lsp_quant_nb,
    lsp_unquant_nb,
@@ -88,7 +88,6 @@ SpeexMode nb_mode = {
 };
 
 
-
 SpeexMode wb_mode = {
    320,    /*frameSize*/
    80,     /*subframeSize*/
@@ -99,9 +98,10 @@ SpeexMode wb_mode = {
    290,    /*pitchEnd*/
    0.9,    /*gamma1*/
    0.6,    /*gamma2*/
-   .002,
-   1.00001,
-   0.0,
+   .002,   /*lag_factor*/
+   1.00001,/*lpc_floor*/
+   0.0,    /*preemph*/
+
    /*LSP quantization*/
    lsp_quant_wb,
    lsp_unquant_wb,
@@ -110,7 +110,7 @@ SpeexMode wb_mode = {
    pitch_unquant_3tap,
    &ltp_params_wb,
    /*Innovation quantization*/
-   split_cb_search,
+   split_cb_search_wb,
    split_cb_unquant,
    &split_cb_wb
 };

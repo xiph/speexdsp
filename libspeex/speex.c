@@ -271,6 +271,16 @@ void encode(EncState *st, float *in, FrameBits *bits)
       bw_lpc(st->gamma1, st->interp_lpc, st->bw_lpc1, st->lpcSize);
       bw_lpc(st->gamma2, st->interp_lpc, st->bw_lpc2, st->lpcSize);
       
+      printf ("\nlpc0 ");
+      for (i=0;i<=st->lpcSize;i++)
+         printf ("%f ", st->interp_lpc[i]);
+      printf ("\nlpc1 ");
+      for (i=0;i<=st->lpcSize;i++)
+         printf ("%f ", st->bw_lpc1[i]);
+      printf ("\nlpc2 ");
+      for (i=0;i<=st->lpcSize;i++)
+         printf ("%f ", st->bw_lpc2[i]);
+      printf ("\n\n");
       /*for (i=1;i<=st->lpcSize;i++)
          st->bw_lpc2[i]=0;
       st->bw_lpc2[1]=-st->preemph;*/
@@ -350,6 +360,7 @@ void encode(EncState *st, float *in, FrameBits *bits)
       st->innovation_quant(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2,
                            st->innovation_params, st->lpcSize,
                            st->subframeSize, exc, bits, st->stack);
+
 
 #endif
       /* Compute weighted noise energy and SNR */
