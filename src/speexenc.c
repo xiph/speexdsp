@@ -25,13 +25,14 @@
 #include "speex.h"
 #include <ogg/ogg.h>
 
+/*Write an Ogg page to a file pointer*/
 int oe_write_page(ogg_page *page, FILE *fp)
 {
-	int written;
-	written = fwrite(page->header,1,page->header_len, fp);
-	written += fwrite(page->body,1,page->body_len, fp);
-
-	return written;
+   int written;
+   written = fwrite(page->header,1,page->header_len, fp);
+   written += fwrite(page->body,1,page->body_len, fp);
+   
+   return written;
 }
 
 #define MAX_FRAME_SIZE 2000
@@ -235,6 +236,7 @@ int main(int argc, char **argv)
       op.packetno = id;
       ogg_stream_packetin(&os, &op);
 
+      /*Write all new pages (not likely 0 or 1)*/
       while (ogg_stream_pageout(&os,&og))
       {
          ret = oe_write_page(&og, fout);
@@ -255,6 +257,7 @@ int main(int argc, char **argv)
    op.granulepos = id+1;
    op.packetno = id+1;
    ogg_stream_packetin(&os, &op);
+   /*Flush all pages left to be written*/
    while (ogg_stream_flush(&os, &og))
    {
       ret = oe_write_page(&og, fout);

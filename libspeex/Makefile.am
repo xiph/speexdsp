@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in. -*-Makefile-*-
 
-# $Id: Makefile.am,v 1.27 2002/05/14 03:25:47 jmvalin Exp $
+# $Id: Makefile.am,v 1.28 2002/05/15 21:47:51 jmvalin Exp $
 
 # Disable automatic dependency tracking if using other tools than gcc and gmake
 #AUTOMAKE_OPTIONS = no-dependencies
@@ -26,7 +26,6 @@ libspeex_la_SOURCES = nb_celp.c \
 	vbr.c \
 	hexc_table.c \
 	exc_5_256_table.c \
-	exc_8_256_table.c \
 	exc_5_64_table.c
 
 

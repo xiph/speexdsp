@@ -32,7 +32,7 @@
 extern float gain_cdbk_nb[];
 extern float hexc_table[];
 extern float exc_5_256_table[];
-extern float exc_8_256_table[];
+/*extern float exc_8_256_table[];*/
 extern float exc_5_64_table[];
 
 /* Parameters for Long-Term Prediction (LTP)*/

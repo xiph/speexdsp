@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in. -*-Makefile-*-
 
-# $Id: Makefile.am,v 1.2 2002/03/27 06:30:37 jmvalin Exp $
+# $Id: Makefile.am,v 1.3 2002/05/15 21:47:51 jmvalin Exp $
 
 # Disable automatic dependency tracking if using other tools than gcc and gmake
 #AUTOMAKE_OPTIONS = no-dependencies
@@ -13,7 +13,7 @@ noinst_HEADERS =
 bin_PROGRAMS = speexenc speexdec
 
 speexenc_SOURCES = speexenc.c
-speexenc_LDADD = $(top_srcdir)/libspeex/libspeex.la
+speexenc_LDADD = $(top_srcdir)/libspeex/libspeex.la $(LIB_OGG)
 
 speexdec_SOURCES = speexdec.c
-speexdec_LDADD = $(top_srcdir)/libspeex/libspeex.la
+speexdec_LDADD = $(top_srcdir)/libspeex/libspeex.la $(LIB_OGG)
