@@ -1,5 +1,5 @@
-/* Copyright (C) 2002 Jean-Marc Valin 
-   File: sb_celp.h
+/** Copyright (C) 2002 Jean-Marc Valin 
+   @file sb_celp.h
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Lesser General Public
@@ -26,52 +26,52 @@
 
 /**Structure representing the full state of the sub-band encoder*/
 typedef struct SBEncState {
-   SpeexMode *mode;            /* Pointer to the mode (containing for vtable info) */
-   void *st_low;               /* State of the low-band (narrowband) encoder */
-   int    full_frame_size;     /* Length of full-band frames*/
-   int    frame_size;          /* Length of high-band frames*/
-   int    subframeSize;        /* Length of high-band sub-frames*/
-   int    nbSubframes;         /* Number of high-band sub-frames*/
-   int    windowSize;          /* Length of high-band LPC window*/
-   int    lpcSize;             /* Order of high-band LPC analysis */
-   int    bufSize;             /* Buffer size */
-   int    first;               /* First frame? */
-   float  lag_factor;          /* Lag-windowing control parameter */
-   float  lpc_floor;           /* Controls LPC analysis noise floor */
-   float  gamma1;              /* Perceptual weighting coef 1 */
-   float  gamma2;              /* Perceptual weighting coef 2 */
+   SpeexMode *mode;            /**< Pointer to the mode (containing for vtable info) */
+   void *st_low;               /**< State of the low-band (narrowband) encoder */
+   int    full_frame_size;     /**< Length of full-band frames*/
+   int    frame_size;          /**< Length of high-band frames*/
+   int    subframeSize;        /**< Length of high-band sub-frames*/
+   int    nbSubframes;         /**< Number of high-band sub-frames*/
+   int    windowSize;          /**< Length of high-band LPC window*/
+   int    lpcSize;             /**< Order of high-band LPC analysis */
+   int    bufSize;             /**< Buffer size */
+   int    first;               /**< First frame? */
+   float  lag_factor;          /**< Lag-windowing control parameter */
+   float  lpc_floor;           /**< Controls LPC analysis noise floor */
+   float  gamma1;              /**< Perceptual weighting coef 1 */
+   float  gamma2;              /**< Perceptual weighting coef 2 */
 
-   float *stack;               /* Temporary allocation stack */
-   float *x0, *x0d, *x1, *x1d; /* QMF filter signals*/
-   float *high;                /* High-band signal (buffer) */
-   float *y0, *y1;             /* QMF synthesis signals */
-   float *h0_mem, *h1_mem, *g0_mem, *g1_mem; /* QMF memories */
+   float *stack;               /**< Temporary allocation stack */
+   float *x0, *x0d, *x1, *x1d; /**< QMF filter signals*/
+   float *high;                /**< High-band signal (buffer) */
+   float *y0, *y1;             /**< QMF synthesis signals */
+   float *h0_mem, *h1_mem, *g0_mem, *g1_mem; /**< QMF memories */
 
-   float *excBuf;              /* High-band excitation */
-   float *exc;                 /* High-band excitation (for QMF only)*/
-   float *buf;                 /* Temporary buffer */
-   float *res;                 /* Zero-input response (ringing) */
-   float *sw;                  /* Perceptually weighted signal */
-   float *target;              /* Weighted target signal (analysis by synthesis) */
-   float *window;              /* LPC analysis window */
-   float *lagWindow;           /* Auto-correlation window */
-   float *autocorr;            /* Auto-correlation (for LPC analysis) */
-   float *rc;                  /* Reflection coefficients (unused) */
-   float *lpc;                 /* LPC coefficients */
-   float *lsp;                 /* LSP coefficients */
-   float *qlsp;                /* Quantized LSPs */
-   float *old_lsp;             /* LSPs of previous frame */
-   float *old_qlsp;            /* Quantized LSPs of previous frame */
-   float *interp_lsp;          /* Interpolated LSPs for current sub-frame */
-   float *interp_qlsp;         /* Interpolated quantized LSPs for current sub-frame */
-   float *interp_lpc;          /* Interpolated LPCs for current sub-frame */
-   float *interp_qlpc;         /* Interpolated quantized LPCs for current sub-frame */
-   float *bw_lpc1;             /* Bandwidth-expanded version of LPCs (#1) */
-   float *bw_lpc2;             /* Bandwidth-expanded version of LPCs (#2) */
+   float *excBuf;              /**< High-band excitation */
+   float *exc;                 /**< High-band excitation (for QMF only)*/
+   float *buf;                 /**< Temporary buffer */
+   float *res;                 /**< Zero-input response (ringing) */
+   float *sw;                  /**< Perceptually weighted signal */
+   float *target;              /**< Weighted target signal (analysis by synthesis) */
+   float *window;              /**< LPC analysis window */
+   float *lagWindow;           /**< Auto-correlation window */
+   float *autocorr;            /**< Auto-correlation (for LPC analysis) */
+   float *rc;                  /**< Reflection coefficients (unused) */
+   float *lpc;                 /**< LPC coefficients */
+   float *lsp;                 /**< LSP coefficients */
+   float *qlsp;                /**< Quantized LSPs */
+   float *old_lsp;             /**< LSPs of previous frame */
+   float *old_qlsp;            /**< Quantized LSPs of previous frame */
+   float *interp_lsp;          /**< Interpolated LSPs for current sub-frame */
+   float *interp_qlsp;         /**< Interpolated quantized LSPs for current sub-frame */
+   float *interp_lpc;          /**< Interpolated LPCs for current sub-frame */
+   float *interp_qlpc;         /**< Interpolated quantized LPCs for current sub-frame */
+   float *bw_lpc1;             /**< Bandwidth-expanded version of LPCs (#1) */
+   float *bw_lpc2;             /**< Bandwidth-expanded version of LPCs (#2) */
 
-   float *mem_sp;              /* Synthesis signal memory */
+   float *mem_sp;              /**< Synthesis signal memory */
    float *mem_sp2;
-   float *mem_sw;              /* Perceptual signal memory */
+   float *mem_sw;              /**< Perceptual signal memory */
 
    SpeexSubmode **submodes;
    int    submodeID;
@@ -82,8 +82,8 @@ typedef struct SBEncState {
 
 /**Structure representing the full state of the sub-band decoder*/
 typedef struct SBDecState {
-   SpeexMode *mode;            /* Pointer to the mode (containing for vtable info) */
-   void *st_low;               /* State of the low-band (narrowband) encoder */
+   SpeexMode *mode;            /**< Pointer to the mode (containing for vtable info) */
+   void *st_low;               /**< State of the low-band (narrowband) encoder */
    int    full_frame_size;
    int    frame_size;
    int    subframeSize;

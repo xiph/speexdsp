@@ -1,7 +1,6 @@
-/* Copyright (C) 2002 Jean-Marc Valin 
-   File: speex_bits.h
-
-   Handles bit packing/unpacking
+/** Copyright (C) 2002 Jean-Marc Valin
+   @file speex_bits.h
+   @brief Handles bit packing/unpacking
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Lesser General Public
@@ -30,11 +29,11 @@ extern "C" {
 
 /** Bit-packing data structure representing (part of) a bit-stream. */
 typedef struct SpeexBits {
-   char *bytes;
-   int  nbBits;
-   int  bytePtr;
-   int  bitPtr;
-   int  owner;
+   char *bytes; /**< "raw" data */
+   int  nbBits; /**< Total number of bits stored in the stream*/
+   int  bytePtr; /**< Position of the byte "cursor" */
+   int  bitPtr;  /**< Position of the bit "cursor" within the current byte */
+   int  owner; /**< Does the struct "own" the "raw" buffer (member "bytes") */
 } SpeexBits;
 
 /** Initializes and allocates resources for a SpeexBits struct */

@@ -1,6 +1,6 @@
-/* Copyright (C) 2002 Jean-Marc Valin 
-   File: speex_header.h
-   Describes the Speex header
+/** Copyright (C) 2002 Jean-Marc Valin 
+   @file speex_header.h
+   @brief Describes the Speex header
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Lesser General Public
@@ -31,6 +31,7 @@ struct SpeexMode;
 
 #define SPEEX_HEADER_VERSION -1
 
+/** Speex header info for file-based formats */
 typedef struct SpeexHeader {
    char speex_string[8];
    char speex_version[SPEEX_HEADER_VERSION_LENGTH];

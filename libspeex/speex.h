@@ -1,7 +1,6 @@
-/* Copyright (C) 2002 Jean-Marc Valin 
-   File: modes.h
-
-   Describes the different modes of the codec
+/** Copyright (C) 2002 Jean-Marc Valin
+  @file speex.h
+  @brief Describes the different modes of the codec
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Lesser General Public
@@ -63,7 +62,6 @@ extern "C" {
 
 #define SPEEX_NB_MODES 2
 
-
 struct SpeexMode;
 
 /* Prototypes for mode function pointers */
@@ -122,34 +120,62 @@ typedef struct SpeexMode {
 
 } SpeexMode;
 
-/**Returns a handle to a newly created Speex encoder state structure. For now, the 
-   "mode" arguent can be &nb_mode or &wb_mode . In the future, more modes may be 
-   added. Note that for now if you have more than one channels to encode, you need 
-   one state per channel.*/
+/**
+ * Returns a handle to a newly created Speex encoder state structure. For now, 
+ * the "mode" arguent can be &nb_mode or &wb_mode . In the future, more modes 
+ * may be added. Note that for now if you have more than one channels to 
+ * encode, you need one state per channel.
+ *
+ * @param mode The mode to use (either speex_nb_mode or speex_wb.mode) 
+ * @return A newly created encoder
+ */
 void *speex_encoder_init(SpeexMode *mode);
 
-/** Frees all resources associated to an existing Speex encoder state. */
+/** Frees all resources associated to an existing Speex encoder state. 
+ * @param state Encoder state to be destroyed */
 void speex_encoder_destroy(void *state);
 
 /** Uses an existing encoder state to encode one frame of speech pointed to by
-    "in". The encoded bit-stream is saved in "bits".*/
+    "in". The encoded bit-stream is saved in "bits".
+ @param state Encoder state
+ @param in Frame that will be encoded with a +-2^16 range
+ @param bits Bit-stream where the data will be written
+ */
 void speex_encode(void *state, float *in, SpeexBits *bits);
 
-/** Used like the ioctl function to control the encoder parameters */
+/** Used like the ioctl function to control the encoder parameters
+ *
+ * @param state Encoder state
+ * @param request ioctl-type request (one of the SPEEX_* macros)
+ * @param ptr Data exchanged to-from function
+ */
 void speex_encoder_ctl(void *state, int request, void *ptr);
 
 
-/** Returns a handle to a newly created decoder state structure. For now, the mode
-    arguent can be &nb_mode or &wb_mode . In the future, more modes may be added. 
-    Note that for now if you have more than one channels to decode, you need one 
-    state per channel. */ 
+/** Returns a handle to a newly created decoder state structure. For now, 
+ * the mode arguent can be &nb_mode or &wb_mode . In the future, more modes
+ * may be added.  Note that for now if you have more than one channels to
+ * decode, you need one state per channel.
+ *
+ * @param mode Speex mode (one of speex_nb_mode or speex_wb_mode)
+ * @return A newly created decoder state
+ */ 
 void *speex_decoder_init(SpeexMode *mode);
 
-/** Frees all resources associated to an existing decoder state. */
+/** Frees all resources associated to an existing decoder state.
+ *
+ * @param decoder state to be destroyed
+ */
 void speex_decoder_destroy(void *state);
 
-/** Uses an existing decoder state to decode one frame of speech from bit-stream 
-    bits. The output speech is saved written to out. */
+/** Uses an existing decoder state to decode one frame of speech from
+ * bit-stream bits. The output speech is saved written to out.
+ *
+ * @param state Decoder state
+ * @param bits Bit-stream from which to decode the frame
+ * @param out Where to write the decoded frame
+ * @return return status (0 for no error, -1 for end of stream, -2 other)
+ */
 int speex_decode(void *state, SpeexBits *bits, float *out);
 
 /** Used like the ioctl function to control the encoder parameters */

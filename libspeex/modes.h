@@ -1,7 +1,6 @@
-/* Copyright (C) 2002 Jean-Marc Valin 
-   File: modes.h
-
-   Describes the different modes of the codec
+/** Copyright (C) 2002 Jean-Marc Valin
+   @file modes.h
+   @brief Describes the different modes of the codec
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Lesser General Public
@@ -33,36 +32,39 @@
 #define SB_SUBMODE_BITS 3
 
 
-/* Quantizes LSPs */
+/** Quantizes LSPs */
 typedef void (*lsp_quant_func)(float *, float *, int, SpeexBits *);
 
-/* Decodes quantized LSPs */
+/** Decodes quantized LSPs */
 typedef void (*lsp_unquant_func)(float *, int, SpeexBits *);
 
 
-/*Long-term predictor quantization*/
+/** Long-term predictor quantization */
 typedef int (*ltp_quant_func)(float *, float *, float *, float *, 
                               float *, float *, void *, int, int, float, 
                               int, int, SpeexBits*, float *, float *, int);
 
-/*Long-term un-quantize*/
+/** Long-term un-quantize */
 typedef void (*ltp_unquant_func)(float *, int, int, float, void *, int, int *,
                                  float *, SpeexBits*, float*, int);
 
 
+/** Innovation quantization function */
 typedef void (*innovation_quant_func)(float *, float *, float *, float *, void *, int, int, 
                                       float *, SpeexBits *, float *, int);
 
+/** Innovation unquantization function */
 typedef void (*innovation_unquant_func)(float *, void *, int, SpeexBits*, float *);
 
+/** Description of a Speex sub-mode (wither narrowband or wideband */
 typedef struct SpeexSubmode {
-   int     lbr_pitch;
-   int     forced_pitch_gain;
-   int     have_subframe_gain;
-   int     double_codebook;
+   int     lbr_pitch; /**< Set to -1 for "normal" modes, otherwise encode pitch using a global pitch and allowing a +- lbr_pitch variation (for low not-rates)*/
+   int     forced_pitch_gain; /**< Use the same (forced) pitch gain for all sub-frames */
+   int     have_subframe_gain; /**< Number of bits to use as sub-frame innovation gain */
+   int     double_codebook; /**< Apply innovation quantization twice for higher quality (and higher bit-rate)*/
    /*LSP functions*/
-   lsp_quant_func    lsp_quant;
-   lsp_unquant_func  lsp_unquant;
+   lsp_quant_func    lsp_quant; /**< LSP quantization function */
+   lsp_unquant_func  lsp_unquant; /**< LSP unquantization function */
 
    /*Lont-term predictor functions*/
    ltp_quant_func    ltp_quant;
@@ -80,7 +82,7 @@ typedef struct SpeexSubmode {
    int               bits_per_frame;
 } SpeexSubmode;
 
-/*Struct defining the encoding/decoding mode*/
+/** Struct defining the encoding/decoding mode*/
 typedef struct SpeexNBMode {
    int     frameSize;
    int     subframeSize;
@@ -101,7 +103,7 @@ typedef struct SpeexNBMode {
 } SpeexNBMode;
 
 
-/*Struct defining the encoding/decoding mode*/
+/** Struct defining the encoding/decoding mode*/
 typedef struct SpeexSBMode {
    SpeexMode *nb_mode;
    int     frameSize;
