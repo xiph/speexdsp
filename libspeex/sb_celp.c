@@ -668,7 +668,7 @@ void *sb_decoder_init(SpeexMode *m)
    st->frame_size = mode->frameSize;
    st->subframeSize = mode->subframeSize;
    st->nbSubframes = mode->frameSize/mode->subframeSize;
-   st->lpcSize=8;
+   st->lpcSize=mode->lpcSize;
    speex_decoder_ctl(st->st_low, SPEEX_GET_SAMPLING_RATE, &st->sampling_rate);
    st->sampling_rate*=2;
 
