@@ -62,7 +62,7 @@ void open_loop_nbest_pitch(spx_sig_t *sw, int start, int end, int len, int *pitc
 {
    int i,j,k;
    spx_word32_t *best_score;
-   float e0;
+   spx_word32_t e0;
    spx_word32_t *corr, *energy;
    spx_word32_t *score;
    spx_word16_t *swn;
@@ -204,7 +204,8 @@ int cdbk_offset
    float gain[3];
    int   gain_cdbk_size;
    signed char *gain_cdbk;
-   float err1,err2;
+   spx_word16_t sgain[3];
+   float err;
 
    ltp_params *params;
    params = (ltp_params*) par;
@@ -380,21 +381,36 @@ int cdbk_offset
       gain[1] = 0.015625*gain_cdbk[best_cdbk*3+1]+ .5;
       gain[2] = 0.015625*gain_cdbk[best_cdbk*3+2]+ .5;
 
+      sgain[0] = 32+(spx_word16_t)gain_cdbk[best_cdbk*3];
+      sgain[1] = 32+(spx_word16_t)gain_cdbk[best_cdbk*3+1];
+      sgain[2] = 32+(spx_word16_t)gain_cdbk[best_cdbk*3+2];
+
       *cdbk_index=best_cdbk;
    }
    
+#ifdef FIXED_POINT
+   for (i=0;i<nsf;i++)
+      exc[i]=MULT16_16(sgain[0],SHR(e[2][i],6))+MULT16_16(sgain[1],SHR(e[1][i],6))+MULT16_16(sgain[2],SHR(e[0][i],6));
+   
+   err=0;
+   for (i=0;i<nsf;i++)
+   {
+      spx_sig_t perr=target[i]-(MULT16_16(sgain[0],SHR(x[2][i],6))+MULT16_16(sgain[1],SHR(x[1][i],6))+MULT16_16(sgain[2],SHR(x[0][i],6)));
+      spx_word16_t perr2 = SHR(perr,15);
+      err += MULT16_16(perr2,perr2);
+      
+   }
+#else
    for (i=0;i<nsf;i++)
       exc[i]=gain[0]*e[2][i]+gain[1]*e[1][i]+gain[2]*e[0][i];
    
-   err1=0;
-   err2=0;
+   err=0;
    for (i=0;i<nsf;i++)
-      err1+=target[i]*target[i];
-   for (i=0;i<nsf;i++)
-      err2+=(target[i]-gain[2]*x[0][i]-gain[1]*x[1][i]-gain[0]*x[2][i])
+      err+=(target[i]-gain[2]*x[0][i]-gain[1]*x[1][i]-gain[0]*x[2][i])
       * (target[i]-gain[2]*x[0][i]-gain[1]*x[1][i]-gain[0]*x[2][i]);
+#endif
 
-   return err2;
+   return err;
 }
 
 
