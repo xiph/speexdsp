@@ -320,7 +320,7 @@ static SpeexNBMode nb_mode = {
    {NULL, &nb_submode1, &nb_submode2, &nb_submode3, &nb_submode4, &nb_submode5, &nb_submode6, &nb_submode7,
    NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL},
    5,
-   {0, 1, 2, 3, 3, 4, 4, 5, 5, 6, 7}
+   {1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 7}
 };
 
 

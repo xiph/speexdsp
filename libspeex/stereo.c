@@ -90,8 +90,8 @@ void speex_decode_stereo(float *data, int frame_size, SpeexStereoState *stereo)
    e_left  = e_sum*balance / (1+balance);
    e_right = e_sum-e_left;
 
-   e_left  = sqrt(e_left/e_tot);
-   e_right = sqrt(e_right/e_tot);
+   e_left  = sqrt(e_left/(e_tot+.01));
+   e_right = sqrt(e_right/(e_tot+.01));
 
    for (i=frame_size-1;i>=0;i--)
    {

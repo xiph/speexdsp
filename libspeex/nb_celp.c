@@ -390,7 +390,14 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
             mode = 7;
             while (mode)
             {
-               if (level > vbr_nb_thresh[mode][vqual])
+               int v1;
+               float thresh;
+               v1=(int)floor(st->vbr_quality);
+               if (v1==10)
+                  thresh = vbr_nb_thresh[mode][v1];
+               else
+                  thresh = (st->vbr_quality-v1)*vbr_nb_thresh[mode][v1+1] + (1+v1-st->vbr_quality)*vbr_nb_thresh[mode][v1];
+               if (level > thresh)
                   break;
                mode--;
             }
@@ -418,7 +425,7 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
       st->first=1;
 
       /* Final signal synthesis from excitation */
-      iir_mem2(st->exc, st->interp_qlpc, st->frame, st->subframeSize, st->lpcSize, st->mem_sp);
+      iir_mem2(st->exc, st->interp_qlpc, st->frame, st->frameSize, st->lpcSize, st->mem_sp);
 
       in[0] = st->frame[0] + st->preemph*st->pre_mem2;
       for (i=1;i<st->frameSize;i++)
@@ -988,9 +995,9 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
       for (i=0;i<st->frameSize;i++)
          st->exc[i]=0;
       st->first=1;
-      
+
       /* Final signal synthesis from excitation */
-      iir_mem2(st->exc, st->interp_qlpc, st->frame, st->subframeSize, st->lpcSize, st->mem_sp);
+      iir_mem2(st->exc, st->interp_qlpc, st->frame, st->frameSize, st->lpcSize, st->mem_sp);
 
       out[0] = st->frame[0] + st->preemph*st->pre_mem;
       for (i=1;i<st->frameSize;i++)
