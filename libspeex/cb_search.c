@@ -33,8 +33,11 @@
 #include <cb_search.h>
 #include "filters.h"
 #include <math.h>
+#include <stdio.h>
 
+#define EXC_CB_SIZE 128
 #define min(a,b) ((a) < (b) ? (a) : (b))
+extern float exc_gains_table[128][5];
 
 /*---------------------------------------------------------------------------*\
                                                                              
@@ -143,12 +146,13 @@ float *exc
 )
 {
    int i,j;
-   float resp[64][8], E[64];
+   float resp[EXC_CB_SIZE][8], E[EXC_CB_SIZE], Ee[EXC_CB_SIZE];
    float t[40], r[40], e[40];
    float gains[5];
+   int ind[5];
    for (i=0;i<40;i++)
       t[i]=target[i];
-   for (i=0;i<64;i++)
+   for (i=0;i<EXC_CB_SIZE;i++)
    {
       residue_zero(codebook[i], awk1, resp[i], 8, p);
       syn_filt_zero(resp[i], ak, resp[i], 8, p);
@@ -156,15 +160,20 @@ float *exc
       E[i]=0;
       for(j=0;j<8;j++)
          E[i]+=resp[i][j]*resp[i][j];
+      Ee[i]=0;
+      for(j=0;j<8;j++)
+         Ee[i]+=codebook[i][j]*codebook[i][j];
+      
    }
    for (i=0;i<5;i++)
    {
-      int best_index;
-      float corr, best_gain, score, best_score=-1;
-      for (j=0;j<64;j++)
+      int best_index=0;
+      float g, corr, best_gain=0, score, best_score=-1;
+      for (j=0;j<EXC_CB_SIZE;j++)
       {
          corr=xcorr(resp[j],t+8*i,8);
          score=corr*corr/(.001+E[j]);
+         g = corr/(.001+E[j]);
          if (score>best_score)
          {
             best_index=j;
@@ -172,24 +181,28 @@ float *exc
             best_gain=corr/(.001+E[j]);
          }
       }
-
+      ind[i]=best_index;
+      gains[i]=best_gain*Ee[ind[i]];
       if (1) { /* Simulating scalar quantization of the gain*/
          float sign=1;
          printf("before: %f\n", best_gain);
          if (best_gain<0)
+         {
             sign=-1;
-         best_gain = abs(best_gain)+.1;
+         }
+         best_gain = fabs(best_gain)+.1;
          best_gain = log(best_gain);
          if (best_gain>8)
             best_gain=8;
          if (best_gain<0)
             best_gain=0;
-         /*best_gain=.25*rint(4*best_gain);*/
+         /*best_gain=.125*floor(8*best_gain+.5);*/
          best_gain=.25*floor(4*best_gain+.5);
          best_gain=sign*exp(best_gain);
+         if (fabs(best_gain)<1.01)
+            best_gain=0;
          printf("after: %f\n", best_gain);
       }
-      gains[i]=best_gain;
 
       printf ("search: %d %f %f %f\n", best_index, best_gain, best_gain*best_gain*E[best_index], best_score);
       for (j=0;j<40;j++)
@@ -203,13 +216,70 @@ float *exc
          t[j]-=r[j];
 
       /*FIXME: Should move that out of the loop if we are to vector-quantize the gains*/
-      for (j=0;j<40;j++)
-         exc[j]+=e[j];
+      /*for (j=0;j<40;j++)
+        exc[j]+=e[j];*/
    }
 
-   for (i=0;i<5;i++)
+   {
+      int best_vq_index=0, max_index;
+      float max_gain=0, log_max, min_dist=0, sign[5];
+
+      for (i=0;i<5;i++)
+      {
+         if (gains[i]<0)
+         {
+            gains[i]=-gains[i];
+            sign[i]=-1;
+         } else {
+            sign[i]=1;
+         }
+      }
+      for (i=0;i<5;i++)
+         if (gains[i]>max_gain)
+            max_gain=gains[i];
+      log_max=log(max_gain+1);
+      max_index = (int)(floor(.5+log_max-3));
+      if (max_index>7)
+         max_index=7;
+      if (max_index<0)
+         max_index=0;
+      max_gain=1/exp(max_index+3.0);
+      for (i=0;i<5;i++)
+        gains[i]*=max_gain;
+      
+      if (max_index>2)
+      {
+      for (i=0;i<5;i++)
+         printf ("%f ", gains[i]);
+      printf ("cbgains: \n");
+      }
+      /*Vector quantize gains[i]*/
+      for (i=0;i<256;i++)
+      {
+         float dist=0;
+         for (j=0;j<5;j++)
+            dist += (exc_gains_table[i][j]-gains[j])*(exc_gains_table[i][j]-gains[j]);
+         if (i==0 || dist<min_dist)
+         {
+            min_dist=dist;
+            best_vq_index=i;
+         }
+      }
+      printf ("best_gains_vq_index %d %f %d\n", best_vq_index, min_dist, max_index);
+#if 1
+      for (i=0;i<5;i++)
+         gains[i]= sign[i]*exc_gains_table[best_vq_index][i]/max_gain/(Ee[ind[i]]+.001);
+#else 
+      for (i=0;i<5;i++)
+         gains[i]= sign[i]*gains[i]/max_gain/(Ee[ind[i]]+.001);
+#endif      
+      for (i=0;i<5;i++)
+         for (j=0;j<8;j++)
+            exc[8*i+j]+=gains[i]*codebook[ind[i]][j];
+   }
+   /*for (i=0;i<5;i++)
       printf ("%f ", gains[i]);
-   printf ("cbgains: \n");
+      printf ("cbgains: \n");*/
    /*TODO: Perform joint optimization of gains and quantization with prediction*/
    
    for (i=0;i<40;i++)
