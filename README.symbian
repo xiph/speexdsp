@@ -63,48 +63,47 @@ application development using the libspeex API remain unchanged.
      constructed mode must later be free'd appropriately.
 
      * References to the statically defined array speex_mode_list[modeID]
-     must be replaced by a call to speex_mode_new_byID (modeID):
+     must be replaced by a call to speex_mode_new (modeID):
 
 -      mode = speex_mode_list[modeID];
-+      mode = speex_mode_new_byID (modeID);
++      mode = speex_mode_new (modeID);
 
      and later free'd:
 
-+      speex_mode_free_byID (mode, modeID);
-
-     note that you must remember the association between a constructed
-     mode and its modeID in order to correctly free it later. Failure to
-     do so may introduce memory leaks or runtime errors.
++      speex_mode_destroy (mode, modeID);
 
      * References to the statically defined mode structures must be replaced:
 
        SpeexMode * mode1, * mode2, * mode3;
 
 -      mode1 = &speex_nb_mode;
-+      mode1 = speex_nb_mode_new ();
++      mode1 = speex_mode_new (SPEEX_MODEID_NB);
 
 -      mode2 = &speex_wb_mode;
-+      mode2 = speex_wb_mode_new ();
++      mode2 = speex_mode_new (SPEEX_MODEID_WB);
 
 -      mode3 = &speex_uwb_mode;
-+      mode3 = speex_uwb_mode_new ();
++      mode3 = speex_mode_new (SPEEX_MODEID_UWB);
 
-     Constructed modes must be free'd after use:
+     Constructed modes must be destroyed after use:
 
-+      speex_nb_mode_free (mode1);
-+      speex_wb_mode_free (mode2);
-+      speex_uwb_mode_free (mode3);
++      speex_mode_destroy (mode1);
++      speex_mode_destroy (mode2);
++      speex_mode_destroy (mode3);
 
+     Note that the constants SPEEX_MODEID_NB, SPEEX_MODEID_WB and
+     SPEEX_MODEID_UWB were introduced in libspeex 1.1.6, and are
+     defined in <speex/speex.h>.
 
   3. It is fairly easy to conditionally build an application for either
      usage of the libspeex API. For example using GNU Autoconf, you can
-     check for the existence of a symbol such as speex_mode_new_byID in
+     check for the existence of a symbol such as speex_mode_new in
      configure.ac. The following example is from libfishsound[2]:
 
     dnl Test for libspeex SPEEX_DISABLE_GLOBAL_POINTERS API
     dnl If so, we need to use a different API to access available modes,
     dnl and free them after use.
-    AC_CHECK_LIB(speex, speex_mode_new_byID, DISABLE_GLOBAL_POINTERS="yes",
+    AC_CHECK_LIB(speex, speex_mode_new, DISABLE_GLOBAL_POINTERS="yes",
       DISABLE_GLOBAL_POINTERS="no")
     if test "x$DISABLE_GLOBAL_POINTERS" = xyes ; then
       AC_DEFINE(SPEEX_DISABLE_GLOBAL_POINTERS, ,
