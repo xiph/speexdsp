@@ -251,7 +251,7 @@ int main(int argc, char **argv)
    ogg_stream_state os;
    ogg_page 		 og;
    ogg_packet 		 op;
-   int bytes_written, ret, result;
+   int bytes_written=0, ret, result;
    int id=-1;
    SpeexHeader header;
    int nframes=1;
