@@ -43,6 +43,7 @@ typedef struct SpeexStereoState {
    float e_ratio;     /**< Ratio of energies: E(left+right)/[E(left)+E(right)]  */
 } SpeexStereoState;
 
+/** Initialization value for a stereo state */
 #define SPEEX_STEREO_STATE_INIT {1,.5}
 
 /** Transforms a stereo frame into a mono frame and stores intensity stereo info in 'bits' */

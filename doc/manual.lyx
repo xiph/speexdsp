@@ -29,7 +29,7 @@
 
 The Speex Codec Manual
 \newline 
-(draft for Speex 1.0beta4)
+(draft for Speex 1.0rc1)
 \layout Author
 
 Jean-Marc Valin
@@ -197,6 +197,17 @@ Ultra-wideband mode at 32 kHz (up to 48 kHz)
 \layout Itemize
 
 Intensity stereo encoding option
+\layout Standard
+
+The next two sections describe the internals of the codec and require some
+ signal processing knowledge.
+ If you are only interested in using Speex, you can skip to section 
+\begin_inset LatexCommand \ref{sec:Command-line-encoder/decoder}
+
+\end_inset 
+
+.
+ 
 \layout Section
 \pagebreak_top 
 Introduction to CELP Coding
@@ -3180,7 +3191,69 @@ clearpage
 
 \layout Section
 \pagebreak_top 
+Feature description
+\layout Subsection*
+
+Sampling rate
+\layout Standard
+
+Speex is mainly designed for 3 different sampling rates: 8 kHz, 16 kHz,
+ and 32 kHz.
+ These are respectively refered to as narrowband, wideband and ultra-wideband.
+ 
+\layout Subsection*
+
+Variable Bit-Rate (VBR)
+\layout Standard
+
+Variable bit-rate (VBR) allows a codec to change its bit-rate dynamically
+ to adapt to the 
+\begin_inset Quotes eld
+\end_inset 
+
+difficulty
+\begin_inset Quotes erd
+\end_inset 
+
+ of the audio being encoded.
+ In the example of Speex, sounds like vowels and high-energy transients
+ require a higher bit-rate to achieve good quality, while fricatives (s,f
+ sounds) can be coded adequately with less bits.
+ For this reason, VBR can achive lower bit-rate for the same quality, or
+ a better quality for a certain bit-rate.
+ Despite its advantages, VBR has two main drawbacks: first, by only specifying
+ quality, there's no guaranty about the final average bit-rate.
+ Second, for some real-time applications like voice over IP (VoIP), what
+ counts is the maximum bit-rate, which must be low enough for the communication
+ channel.
+\layout Subsection*
+
+Average Bit-Rate (ABR)
+\layout Standard
+
+\layout Subsection*
+
+Voice Activity Detection (VAD)
+\layout Subsection*
+
+Discontinuous Transmission (DTX)
+\layout Subsection*
+
+Perceptual enhancement
+\layout Subsection*
+
+Complexity (variable)
+\layout Subsection*
+
+Quality
+\layout Section
+
 Command-line encoder/decoder
+\begin_inset LatexCommand \label{sec:Command-line-encoder/decoder}
+
+\end_inset 
+
+
 \layout Standard
 
 The base Speex distribution includes a command-line encoder (
@@ -3545,11 +3618,15 @@ There is also a parameter that can be set for the decoder: whether or not
  This can be set by: 
 \layout LyX-Code
 
-speex_decoder_ctl(dec_state, SPEEX_SET_PF, &pf); 
+speex_decoder_ctl(dec_state, SPEEX_SET_ENH, &enh); 
 \layout Standard
 
-where pf is an int that with value 0 to have the post-filter disabled and
- 1 to have it enabled.
+where 
+\emph on 
+enh
+\emph default 
+ is an int that with value 0 to have the post-filter disabled and 1 to have
+ it enabled.
 \layout Standard
 
 Again, once the decoder initialization is done, for every input frame:
@@ -3695,10 +3772,12 @@ SPEEX_GET_VBR_QUALITY* Get the current encoder VBR speech quality (integer
  0 to 10)
 \layout Description
 
-SPEEX_SET_COMPLEXITY* Set the CPU resources allowed for the encoder
+SPEEX_SET_COMPLEXITY* Set the CPU resources allowed for the encoder (integer
+ 1 to 10)
 \layout Description
 
-SPEEX_GET_COMPLEXITY* Get the CPU resources allowed for the encoder
+SPEEX_GET_COMPLEXITY* Get the CPU resources allowed for the encoder (integer
+ 1 to 10)
 \layout Description
 
 SPEEX_SET_BITRATE* Set the bit-rate to use to the closest value not exceeding
@@ -3708,12 +3787,10 @@ SPEEX_SET_BITRATE* Set the bit-rate to use to the closest value not exceeding
 SPEEX_GET_BITRATE Get the current bit-rate in use (integer in bps)
 \layout Description
 
-SPEEX_SET_SAMPLING_RATE Set real sampling rate (is used to determine real
- bit-rate)
+SPEEX_SET_SAMPLING_RATE Set real sampling rate (integer in Hz)
 \layout Description
 
-SPEEX_GET_SAMPLING_RATE Get real sampling rate (is used to determine real
- bit-rate)
+SPEEX_GET_SAMPLING_RATE Get real sampling rate (integer in Hz)
 \layout Description
 
 * applies only to the encoder
@@ -3758,7 +3835,8 @@ SPEEX_SUBMODE_BITRATE Get the bit-rate for a submode number specified throught
 \emph on 
 ptr
 \emph default 
-.
+ (integer in bps).
+ 
 \layout Subsection
 
 Packing and in-band signalling
