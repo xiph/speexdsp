@@ -8,7 +8,7 @@ includedir=@includedir@
 Name: speex
 Description: Speex is an audio codec tuned for speech
 Version: @SPEEX_VERSION@
-Requires: ogg
+Requires:
 Conflicts:
 Libs: -L${libdir} -lspeex
 Cflags: -I${includedir}
