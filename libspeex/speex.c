@@ -268,7 +268,7 @@ void encode(EncState *st, float *in, int *outSize, void *bits)
       /* Compute target signal */
       for (i=0;i<st->subframeSize;i++)
          target[i]=sw[i]-res[i];
-#if 0
+#if 1
       /* Perform adaptive codebook search (pitch prediction) */
       overlap_cb_search(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2,
                         &exc[-120], 100, &gain[0], &pitch, st->lpcSize,
@@ -276,29 +276,29 @@ void encode(EncState *st, float *in, int *outSize, void *bits)
       printf ("gain = %f, pitch = %d\n",gain[0], 120-pitch);
       for (i=0;i<st->subframeSize;i++)
         exc[i]=gain[0]*exc[i-120+pitch];
+
+      /* Update target for adaptive codebook contribution */
       residue_zero(exc, st->bw_lpc1, res, st->subframeSize, st->lpcSize);
       syn_filt_zero(res, st->interp_qlpc, res, st->subframeSize, st->lpcSize);
-      /*syn_filt_zero(res, st->bw_lpc2, res, st->subframeSize, st->lpcSize);*/
+      syn_filt_zero(res, st->bw_lpc2, res, st->subframeSize, st->lpcSize);
       for (i=0;i<st->subframeSize;i++)
         target[i]-=res[i];
 
+      /* Perform stochastic codebook search */
       overlap_cb_search(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2,
-                        stoc, 512, &gain[0], &pitch, st->lpcSize,
+                        stoc, 1024, &gain[0], &pitch, st->lpcSize,
                         st->subframeSize);
       printf ("gain = %f, index = %d\n",gain[0], pitch);
       for (i=0;i<st->subframeSize;i++)
          exc[i]+=gain[0]*stoc[i+pitch];
-      residue_zero(exc, st->bw_lpc1, res, st->subframeSize, st->lpcSize);
+
+      /* Update target for adaptive codebook contribution (Useless for now)*/
+      residue_zero(stoc+pitch, st->bw_lpc1, res, st->subframeSize, st->lpcSize);
       syn_filt_zero(res, st->interp_qlpc, res, st->subframeSize, st->lpcSize);
-      /*syn_filt_zero(res, st->bw_lpc2, res, st->subframeSize, st->lpcSize);*/
+      syn_filt_zero(res, st->bw_lpc2, res, st->subframeSize, st->lpcSize);
       for (i=0;i<st->subframeSize;i++)
-         target[i]-=res[i];
-#endif
-
-      /* Update target for adaptive codebook contribution */
-
-      /* Perform stochastic codebook search */
-#if 1
+         target[i]-=gain[0]*res[i];
+#else
       syn_filt_zero(target, st->bw_lpc1, res, st->subframeSize, st->lpcSize);
       residue_zero(res, st->interp_qlpc, exc, st->subframeSize, st->lpcSize);
       residue_zero(exc, st->bw_lpc2, exc, st->subframeSize, st->lpcSize);
@@ -307,7 +307,7 @@ void encode(EncState *st, float *in, int *outSize, void *bits)
       /* Final signal synthesis from excitation */
       syn_filt_mem(exc, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, st->mem5);
 
-      /* Compute weighted signal again, from synthesized speech (not sure it the right thing) */
+      /* Compute weighted signal again, from synthesized speech (not sure it's the right thing) */
 #if 0
       residue_mem(sp, st->bw_lpc1, sw, st->subframeSize, st->lpcSize, st->mem6);
       for (i=0;i<st->lpcSize;i++)
