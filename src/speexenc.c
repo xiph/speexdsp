@@ -416,11 +416,7 @@ int main(int argc, char **argv)
    }
    else 
    {
-#if defined WIN32 || defined _WIN32
       fin = fopen(inFile, "rb");
-#else
-      fin = fopen(inFile, "r");
-#endif
       if (!fin)
       {
          perror(inFile);
@@ -532,11 +528,7 @@ int main(int argc, char **argv)
    }
    else 
    {
-#if defined WIN32 || defined _WIN32
       fout = fopen(outFile, "wb");
-#else
-      fout = fopen(outFile, "w");
-#endif
       if (!fout)
       {
          perror(outFile);

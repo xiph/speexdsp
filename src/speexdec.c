@@ -226,11 +226,7 @@ FILE *out_file_open(char *outFile, int rate, int *channels)
       }
       else 
       {
-#if defined WIN32 || defined _WIN32
          fout = fopen(outFile, "wb");
-#else
-         fout = fopen(outFile, "w");
-#endif
          if (!fout)
          {
             perror(outFile);
@@ -542,11 +538,7 @@ int main(int argc, char **argv)
    }
    else 
    {
-#if defined WIN32 || defined _WIN32
       fin = fopen(inFile, "rb");
-#else
-      fin = fopen(inFile, "r");
-#endif
       if (!fin)
       {
          perror(inFile);
