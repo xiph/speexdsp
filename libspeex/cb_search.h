@@ -38,7 +38,7 @@
 typedef struct split_cb_params {
    int     subvect_size;
    int     nb_subvect;
-   float  *shape_cb;
+   signed char  *shape_cb;
    int     shape_bits;
    int     have_sign;
 } split_cb_params;

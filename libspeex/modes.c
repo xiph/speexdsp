@@ -50,14 +50,14 @@ SpeexMode *speex_mode_list[SPEEX_NB_MODES] = {&speex_nb_mode, &speex_wb_mode, &s
 /* Extern declarations for all codebooks we use here */
 extern float gain_cdbk_nb[];
 extern float gain_cdbk_lbr[];
-extern float hexc_table[];
-extern float exc_5_256_table[];
-extern float exc_5_64_table[];
-extern float exc_8_128_table[];
-extern float exc_10_32_table[];
-extern float exc_10_16_table[];
-extern float exc_20_32_table[];
-extern float hexc_10_32_table[];
+extern signed char hexc_table[];
+extern signed char exc_5_256_table[];
+extern signed char exc_5_64_table[];
+extern signed char exc_8_128_table[];
+extern signed char exc_10_32_table[];
+extern signed char exc_10_16_table[];
+extern signed char exc_20_32_table[];
+extern signed char hexc_10_32_table[];
 
 static int nb_mode_query(void *mode, int request, void *ptr);
 static int wb_mode_query(void *mode, int request, void *ptr);

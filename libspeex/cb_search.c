@@ -36,6 +36,8 @@
 #include "vq.h"
 #include "misc.h"
 
+#include <math.h>
+
 void split_cb_search_shape_sign(
 float target[],			/* target vector */
 float ak[],			/* LPCs for this subframe */
@@ -60,7 +62,7 @@ int   complexity
    float **ot, **nt;
    int **nind, **oind;
    int *ind;
-   float *shape_cb;
+   signed char *shape_cb;
    int shape_cb_size, subvect_size, nb_subvect;
    split_cb_params *params;
    int N=2;
@@ -126,7 +128,7 @@ int   complexity
    for (i=0;i<shape_cb_size;i++)
    {
       float *res;
-      float *shape;
+      signed char *shape;
 
       res = resp+i*subvect_size;
       shape = shape_cb+i*subvect_size;
@@ -136,7 +138,7 @@ int   complexity
       {
          res[j]=0;
          for (k=0;k<=j;k++)
-            res[j] += shape[k]*r[j-k];
+            res[j] += 0.03125*shape[k]*r[j-k];
       }
       
       /* Compute codeword energy */
@@ -220,7 +222,7 @@ int   complexity
                      rind-=shape_cb_size;
                   }
 
-                  g=sign*shape_cb[rind*subvect_size+m];
+                  g=sign*0.03125*shape_cb[rind*subvect_size+m];
                   q=subvect_size-m;
                   for (n=subvect_size*(i+1);n<nsf;n++,q++)
                      t[n] -= g*r[q];
@@ -289,7 +291,7 @@ int   complexity
       }
 
       for (j=0;j<subvect_size;j++)
-         e[subvect_size*i+j]=sign*shape_cb[rind*subvect_size+j];
+         e[subvect_size*i+j]=sign*0.03125*shape_cb[rind*subvect_size+j];
    }   
    /* Update excitation */
    for (j=0;j<nsf;j++)
@@ -313,7 +315,7 @@ char *stack
 {
    int i,j;
    int *ind, *signs;
-   float *shape_cb;
+   signed char *shape_cb;
    int shape_cb_size, subvect_size, nb_subvect;
    split_cb_params *params;
    int have_sign;
@@ -344,7 +346,7 @@ char *stack
       if (signs[i])
          s=-1;
       for (j=0;j<subvect_size;j++)
-         exc[subvect_size*i+j]+=s*shape_cb[ind[i]*subvect_size+j];
+         exc[subvect_size*i+j]+=s*0.03125*shape_cb[ind[i]*subvect_size+j];
    }
 }
 
