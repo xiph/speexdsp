@@ -42,7 +42,7 @@
 #ifdef _USE_SSE
 #include "ltp_sse.h"
 #else
-static spx_word32_t inner_prod(spx_word16_t *x, spx_word16_t *y, int len)
+static spx_word32_t inner_prod(const spx_word16_t *x, const spx_word16_t *y, int len)
 {
    int i;
    spx_word32_t sum=0;
@@ -57,6 +57,18 @@ static spx_word32_t inner_prod(spx_word16_t *x, spx_word16_t *y, int len)
    }
    return sum;
 }
+
+static void pitch_xcorr(const float *_x, const float *_y, float *corr, int len, int nb_pitch, char *stack)
+{
+   int i;
+   for (i=0;i<nb_pitch;i++)
+   {
+      /* Compute correlation*/
+      corr[nb_pitch-1-i]=inner_prod(_x, _y+i, len);
+   }
+
+}
+
 #endif
 
 void open_loop_nbest_pitch(spx_sig_t *sw, int start, int end, int len, int *pitch, spx_word16_t *gain, int N, char *stack)
@@ -102,11 +114,7 @@ void open_loop_nbest_pitch(spx_sig_t *sw, int start, int end, int len, int *pitc
       score[i-start]=0;
    }
 
-   for (i=start;i<=end;i++)
-   {
-      /* Compute correlation*/
-      corr[i-start]=inner_prod(swn, swn-i, len);
-   }
+   pitch_xcorr(swn, swn-end, corr, len, end-start+1, stack);
 
 #ifdef FIXED_POINT
    {
