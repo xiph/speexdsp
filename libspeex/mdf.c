@@ -34,6 +34,9 @@
 #include "speex_echo.h"
 #include "smallft.h"
 #include <math.h>
+#include <stdio.h>
+
+#define BETA .65
 
 /** Creates a new echo canceller state */
 SpeexEchoState *speex_echo_state_init(int frame_size, int filter_length)
@@ -46,6 +49,7 @@ SpeexEchoState *speex_echo_state_init(int frame_size, int filter_length)
    N = st->window_size;
    M = st->M = (filter_length+N-1)/frame_size;
    st->cancel_count=0;
+   st->adapt_rate = .01;
 
    drft_init(&st->fft_lookup, N);
    
@@ -59,6 +63,9 @@ SpeexEchoState *speex_echo_state_init(int frame_size, int filter_length)
    st->PHI = (float*)speex_alloc(N*sizeof(float));
    st->power = (float*)speex_alloc((frame_size+1)*sizeof(float));
    st->power_1 = (float*)speex_alloc((frame_size+1)*sizeof(float));
+   st->grad = (float*)speex_alloc(N*M*sizeof(float));
+   st->old_grad = (float*)speex_alloc(N*M*sizeof(float));
+   
    return st;
 }
 
@@ -76,6 +83,8 @@ void speex_echo_state_destroy(SpeexEchoState *st)
    speex_free(st->PHI);
    speex_free(st->power);
    speex_free(st->power_1);
+   speex_free(st->grad);
+   speex_free(st->old_grad);
 
    speex_free(st);
 }
@@ -86,6 +95,7 @@ void speex_echo_cancel(SpeexEchoState *st, float *ref, float *echo, float *out, 
    int i,j,m;
    int N,M;
    float scale;
+   float powE=0, powY=0, powD=0;
 
    N = st->window_size;
    M = st->M;
@@ -146,6 +156,35 @@ void speex_echo_cancel(SpeexEchoState *st, float *ref, float *echo, float *out, 
 
    drft_forward(&st->fft_lookup, st->E);
 
+   for (i=0;i<st->frame_size;i++)
+   {
+      powD += N*ref[i]*ref[i];
+   }
+#if 0
+   for (i=1;i<N-1;i+=2)
+   {
+      float tmp;
+      tmp = st->Y[i]*st->Y[i] + st->Y[i+1]*st->Y[i+1];
+      powY += 1*tmp + 0*(st->E[i]*st->E[i] + st->E[i+1]*st->E[i+1]);
+      tmp = st->E[i]*st->E[i] + st->E[i+1]*st->E[i+1] - 4*tmp;
+      if (tmp<0)
+         tmp=0;
+      powE += tmp; 
+   }
+#else
+   for (i=3;i<N-3;i+=2)
+   {
+      float tmp;
+      tmp = .5*(st->Y[i]*st->Y[i] + st->Y[i+1]*st->Y[i+1]) + .25*
+      (st->Y[i-2]*st->Y[i-2] + st->Y[i-1]*st->Y[i-1] 
+       + st->Y[i+2]*st->Y[i+2] + st->Y[i+3]*st->Y[i+3]);
+      powY += 1*tmp + 0*(st->E[i]*st->E[i] + st->E[i+1]*st->E[i+1]);
+      tmp = st->E[i]*st->E[i] + st->E[i+1]*st->E[i+1] - .5*tmp;
+      if (tmp<0)
+         tmp=0;
+      powE += tmp; 
+   }
+#endif
 
    /* Compute input power in each band */
    {
@@ -162,19 +201,24 @@ void speex_echo_cancel(SpeexEchoState *st, float *ref, float *echo, float *out, 
          tmp=0;
          for (m=0;m<M;m++)
          {
-            tmp += st->X[m*N+i]*st->X[m*N+i] + st->X[m*N+i+1]*st->X[m*N+i+1];
+            float E = st->X[m*N+i]*st->X[m*N+i] + st->X[m*N+i+1]*st->X[m*N+i+1];
+            tmp += E;
+            if (st->power[j] < .2*E)
+               st->power[j] = .2*E;
+
          }
          tmp *= s;
          if (st->cancel_count<M)
             st->power[j] = tmp;
          else
-            st->power[j] = .8*st->power[j] + .2*tmp;
+            st->power[j] = BETA*st->power[j] + (1-BETA)*tmp;
       }
       tmp=tmp2=0;
       for (m=0;m<M;m++)
       {
          tmp += st->X[m*N]*st->X[m*N];
          tmp2 += st->X[(m+1)*N-1]*st->X[(m+1)*N-1];
+         /*FIXME: Should put a bound on energy like several lines above */
       }
       tmp *= s;
       tmp2 *= s;
@@ -183,12 +227,12 @@ void speex_echo_cancel(SpeexEchoState *st, float *ref, float *echo, float *out, 
          st->power[0] = tmp;
          st->power[st->frame_size] = tmp2;
       } else {
-         st->power[0] = .8*st->power[0] + .2*tmp;
-         st->power[st->frame_size] = .8*st->power[st->frame_size] + .2*tmp2;
+         st->power[0] = BETA*st->power[0] + (1-BETA)*tmp;
+         st->power[st->frame_size] = BETA*st->power[st->frame_size] + (1-BETA)*tmp2;
       }
       
       for (i=0;i<=st->frame_size;i++)
-         st->power_1[i] = 1.0/(1e-10+st->power[i]);
+         st->power_1[i] = 1.0/(1e6+st->power[i]);
    }
 
    /* Update filter weights */
@@ -202,16 +246,43 @@ void speex_echo_cancel(SpeexEchoState *st, float *ref, float *echo, float *out, 
       st->PHI[0] = st->X[j*N]*st->E[0];
       st->PHI[N-1] = st->X[(j+1)*N-1]*st->E[N-1];
 
-      /* Optionally perform some transform (normalization?) on PHI */
+#if 0
+      drft_backward(&st->fft_lookup, st->PHI);
+      for (i=0;i<N;i++)
+         st->PHI[i]*=scale;
+      for (i=st->frame_size;i<N;i++)
+        st->PHI[i]=0;
+      drft_forward(&st->fft_lookup, st->PHI);
+#endif
       
+#if 0
       for (i=1,m=1;i<N-1;i+=2,m++)
-         st->W[j*N+i] += .1*st->PHI[i]*st->power_1[m];
-      st->W[j*N] += .1*st->PHI[0]*st->power_1[0];
-      st->W[(j+1)*N-1] += .1*st->PHI[N-1]*st->power_1[st->frame_size];
-      /*
-      for (i=0,j=0;i<=N;i++,j++)
-         st->W[j*N+i] += .001*st->PHI[i];
-      */
+         st->W[j*N+i] += st->adapt_rate*st->PHI[i]*st->power_1[m];
+      st->W[j*N] += st->adapt_rate*st->PHI[0]*st->power_1[0];
+      st->W[(j+1)*N-1] += st->adapt_rate*st->PHI[N-1]*st->power_1[st->frame_size];
+#endif
+
+      for (i=0;i<N;i++)
+      {
+         st->old_grad[j*N+i] = st->PHI[i];
+         st->grad[j*N+i] = st->PHI[i];
+      }
+
+      
    }
+
+   if (st->cancel_count>2*M)
+      st->adapt_rate = .01;
+   else
+      st->adapt_rate = .0;
+
+   for (j=0;j<M;j++)
+   {
+      for (i=1,m=1;i<N-1;i+=2,m++)
+         st->W[j*N+i] += st->adapt_rate*st->grad[j*N+i]*st->power_1[m];
+      st->W[j*N] += st->adapt_rate*st->grad[j*N]*st->power_1[0];
+      st->W[(j+1)*N-1] += st->adapt_rate*st->grad[(j+1)*N-1]*st->power_1[st->frame_size];
+   }
+   /*fprintf (stderr, "%f %f %f %f\n", st->adapt_rate, powE, powY, powD);*/
 }
 
