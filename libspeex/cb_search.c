@@ -39,8 +39,6 @@
 
 #define EXC_CB_SIZE 128
 #define min(a,b) ((a) < (b) ? (a) : (b))
-extern float exc_gains_table[];
-extern float exc_table[];
 
 /*---------------------------------------------------------------------------*\
                                                                              
@@ -131,14 +129,6 @@ int   nsf                       /* number of samples in subframe */
 }
 
 
-split_cb_params split_cb_nb = {
-   8,               /*subvect_size*/
-   5,               /*nb_subvect*/
-   exc_table,       /*shape_cb*/
-   7,               /*shape_bits*/
-   exc_gains_table, /*gain_cb*/
-   8                /*gain_bits*/
-};
 
 
 void split_cb_search(
@@ -298,43 +288,65 @@ float *stack
 
 void split_cb_unquant(
 float *exc,
-float codebook[][8],		/* non-overlapping codebook */
+void *par,                      /* non-overlapping codebook */
 int   nsf,                      /* number of samples in subframe */
-FrameBits *bits
+FrameBits *bits,
+float *stack
 )
 {
    int i,j;
-   int ind[5];
-   float gains[5];
-   float sign[5];
+   int *ind;
+   float *gains;
+   float *sign;
    int max_gain_ind, vq_gain_ind;
-   float max_gain, Ee[5];
-   for (i=0;i<5;i++)
+   float max_gain, *Ee;
+   float *shape_cb, *gain_cb;
+   int shape_cb_size, gain_cb_size, subvect_size, nb_subvect;
+   split_cb_params *params;
+
+   params = (split_cb_params *) par;
+   subvect_size = params->subvect_size;
+   nb_subvect = params->nb_subvect;
+   shape_cb_size = 1<<params->shape_bits;
+   shape_cb = params->shape_cb;
+   gain_cb_size = 1<<params->gain_bits;
+   gain_cb = params->gain_cb;
+   
+   ind = (int*)PUSH(stack, nb_subvect);
+   gains = PUSH(stack, nb_subvect);
+   sign = PUSH(stack, nb_subvect);
+   Ee=PUSH(stack, nb_subvect);
+
+   for (i=0;i<nb_subvect;i++)
    {
-      ind[i] = frame_bits_unpack_unsigned(bits, 7);
+      ind[i] = frame_bits_unpack_unsigned(bits, params->shape_bits);
       if (frame_bits_unpack_unsigned(bits, 1))
          sign[i]=-1;
       else
          sign[i]=1;
       Ee[i]=.001;
-      for (j=0;j<8;j++)
-         Ee[i]+=codebook[ind[i]][j]*codebook[ind[i]][j];
+      for (j=0;j<subvect_size;j++)
+         Ee[i]+=shape_cb[ind[i]*subvect_size+j]*shape_cb[ind[i]*subvect_size+j];
    }
    max_gain_ind = frame_bits_unpack_unsigned(bits, 3);
-   vq_gain_ind = frame_bits_unpack_unsigned(bits, 8);
+   vq_gain_ind = frame_bits_unpack_unsigned(bits, params->gain_bits);
    printf ("unquant gains ind: %d %d\n", max_gain_ind, vq_gain_ind);
 
    max_gain=exp(max_gain_ind+3.0);
-   for (i=0;i<5;i++)
-      gains[i] = sign[i]*exc_gains_table[vq_gain_ind*5+i]*max_gain/Ee[i];
+   for (i=0;i<nb_subvect;i++)
+      gains[i] = sign[i]*gain_cb[vq_gain_ind*nb_subvect+i]*max_gain/Ee[i];
    
    printf ("unquant gains: ");
-   for (i=0;i<5;i++)
+   for (i=0;i<nb_subvect;i++)
       printf ("%f ", gains[i]);
    printf ("\n");
 
-   for (i=0;i<5;i++)
-      for (j=0;j<8;j++)
-         exc[8*i+j]+=gains[i]*codebook[ind[i]][j];
+   for (i=0;i<nb_subvect;i++)
+      for (j=0;j<subvect_size;j++)
+         exc[subvect_size*i+j]+=gains[i]*shape_cb[ind[i]*subvect_size+j];
    
+   POP(stack);
+   POP(stack);
+   POP(stack);
+   POP(stack);
 }

@@ -33,16 +33,17 @@ typedef void (*lsp_unquant_func)(float *, int, FrameBits *);
 
 /*Long-term predictor quantization*/
 typedef void (*ltp_quant_func)(float *, float *, float *, 
-                                float *, float *, int, int, 
+                                float *, float *, void *, int, int, 
                                 int, int, FrameBits*, float *);
 
 /*Long-term un-quantize*/
-typedef void (*ltp_unquant_func)(float *, int, int, int, FrameBits*, float*);
+typedef void (*ltp_unquant_func)(float *, int, int, void *, int, FrameBits*, float*);
 
 
 typedef void (*innovation_quant_func)(float *, float *, float *, float *, void *, int, int, 
                                       float *, FrameBits *, float *);
 
+typedef void (*innovation_unquant_func)(float *, void *, int, FrameBits*, float *);
 
 /*Struct defining the encoding/decoding mode*/
 typedef struct SpeexMode {
@@ -63,9 +64,10 @@ typedef struct SpeexMode {
    /*Lont-term predictor functions*/
    ltp_quant_func    ltp_quant;
    ltp_unquant_func  ltp_unquant;
-   
+   void             *ltp_params;
    /*Quantization of innovation */
    innovation_quant_func innovation_quant;
+   innovation_unquant_func innovation_unquant;
    void             *innovation_params;
 
 } SpeexMode;

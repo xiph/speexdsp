@@ -319,7 +319,8 @@ float target[],                 /* Target vector */
 float ak[],                     /* LPCs for this subframe */
 float awk1[],                   /* Weighted LPCs #1 for this subframe */
 float awk2[],                   /* Weighted LPCs #2 for this subframe */
-float exc[],                    /* Overlapping codebook */
+float exc[],                    /* Excitation */
+void *par,
 int   start,                    /* Smallest pitch value allowed */
 int   end,                      /* Largest pitch value allowed */
 int   p,                        /* Number of LPC coeffs */
@@ -334,8 +335,12 @@ float *stack
    float corr[3];
    float A[3][3];
    float gain[3];
-   int   pitch;
-
+   int   pitch, gain_cdbk_size;
+   float *gain_cdbk;
+   ltp_params *params;
+   params = (ltp_params*) par;
+   gain_cdbk=params->gain_cdbk;
+   gain_cdbk_size=1<<params->gain_bits;
    tmp = PUSH(stack, 3*nsf);
 
    x[0]=tmp;
@@ -367,7 +372,7 @@ float *stack
    {
       int j;
       float C[9];
-      float *ptr=gain_cdbk_nb;
+      float *ptr=gain_cdbk;
       int best_cdbk=0;
       float best_sum=0;
       C[0]=corr[2];
@@ -380,10 +385,10 @@ float *stack
       C[7]=A[1][1];
       C[8]=A[0][0];
       
-      for (i=0;i<127;i++)
+      for (i=0;i<gain_cdbk_size;i++)
       {
          float sum=0;
-         ptr = gain_cdbk_nb+12*i;
+         ptr = gain_cdbk+12*i;
          for (j=0;j<9;j++)
             sum+=C[j]*ptr[j+3];
          if (sum>best_sum || i==0)
@@ -392,11 +397,11 @@ float *stack
             best_cdbk=i;
          }
       }
-      gain[0] = gain_cdbk_nb[best_cdbk*12];
-      gain[1] = gain_cdbk_nb[best_cdbk*12+1];
-      gain[2] = gain_cdbk_nb[best_cdbk*12+2];
-      frame_bits_pack(bits,pitch-start,7);
-      frame_bits_pack(bits,best_cdbk,7);
+      gain[0] = gain_cdbk[best_cdbk*12];
+      gain[1] = gain_cdbk[best_cdbk*12+1];
+      gain[2] = gain_cdbk[best_cdbk*12+2];
+      frame_bits_pack(bits,pitch-start,params->pitch_bits);
+      frame_bits_pack(bits,best_cdbk,params->gain_bits);
 
    }
    
@@ -422,6 +427,7 @@ void pitch_unquant_3tap(
 float exc[],                    /* Excitation */
 int   start,                    /* Smallest pitch value allowed */
 int   end,                      /* Largest pitch value allowed */
+void *par,
 int   nsf,                      /* Number of samples in subframe */
 FrameBits *bits,
 float *stack
@@ -431,12 +437,17 @@ float *stack
    int pitch;
    int gain_index;
    float gain[3];
-   pitch = frame_bits_unpack_unsigned(bits, 7);
+   float *gain_cdbk;
+   ltp_params *params;
+   params = (ltp_params*) par;
+   gain_cdbk=params->gain_cdbk;
+
+   pitch = frame_bits_unpack_unsigned(bits, params->pitch_bits);
    pitch += start;
-   gain_index = frame_bits_unpack_unsigned(bits, 7);
-   gain[0] = gain_cdbk_nb[gain_index*12];
-   gain[1] = gain_cdbk_nb[gain_index*12+1];
-   gain[2] = gain_cdbk_nb[gain_index*12+2];
+   gain_index = frame_bits_unpack_unsigned(bits, params->gain_bits);
+   gain[0] = gain_cdbk[gain_index*12];
+   gain[1] = gain_cdbk[gain_index*12+1];
+   gain[2] = gain_cdbk[gain_index*12+2];
    printf ("unquantized pitch: %d %f %f %f\n", pitch, gain[0], gain[1], gain[2]);
 
    /*FIXME: backward or forward? (ie recursive or not?)*/

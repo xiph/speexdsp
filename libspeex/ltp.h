@@ -19,7 +19,13 @@
 
 #include "bits.h"
 
-extern float gain_cdbk_nb[];
+
+typedef struct ltp_params {
+   float  *gain_cdbk;
+   int     gain_bits;
+   int     pitch_bits;
+} ltp_params;
+
 
 /* Finds open-loop pitch */
 void open_loop_pitch(float *sw, int start, int end, int len, int *pitch, int *vuv);
@@ -42,6 +48,7 @@ int   nsf,                      /* Number of samples in subframe */
 float *stack
 );
 
+
 /** Finds the best quantized 3-tap pitch predictor by analysis by synthesis */
 void pitch_search_3tap(
 float target[],                 /* Target vector */
@@ -49,6 +56,7 @@ float ak[],                     /* LPCs for this subframe */
 float awk1[],                   /* Weighted LPCs #1 for this subframe */
 float awk2[],                   /* Weighted LPCs #2 for this subframe */
 float exc[],                    /* Overlapping codebook */
+void *par,
 int   start,                    /* Smallest pitch value allowed */
 int   end,                      /* Largest pitch value allowed */
 int   p,                        /* Number of LPC coeffs */
@@ -78,6 +86,7 @@ void pitch_unquant_3tap(
 float exc[],                    /* Excitation */
 int   start,                    /* Smallest pitch value allowed */
 int   end,                      /* Largest pitch value allowed */
+void *par,
 int   nsf,                      /* Number of samples in subframe */
 FrameBits *bits,
 float *stack

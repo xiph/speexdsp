@@ -56,6 +56,7 @@ void encoder_init(EncState *st, SpeexMode *mode)
 
    st->lsp_quant = mode->lsp_quant;
    st->ltp_quant = mode->ltp_quant;
+   st->ltp_params = mode->ltp_params;
    st->innovation_quant = mode->innovation_quant;
    st->innovation_params = mode->innovation_params;
 
@@ -287,7 +288,7 @@ void encode(EncState *st, float *in, FrameBits *bits)
 
       /* Long-term prediction */
       st->ltp_quant(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2,
-                        exc, 20, 147, st->lpcSize, st->subframeSize, 
+                        exc, st->ltp_params, 20, 147, st->lpcSize, st->subframeSize, 
                         bits, st->stack);
 
       /* Update target for adaptive codebook contribution */
@@ -361,6 +362,13 @@ void decoder_init(DecState *st, SpeexMode *mode)
    st->min_pitch=mode->pitchStart;
    st->max_pitch=mode->pitchEnd;
 
+   st->lsp_unquant = mode->lsp_unquant;
+   st->ltp_unquant = mode->ltp_unquant;
+   st->ltp_params = mode->ltp_params;
+
+   st->innovation_unquant = mode->innovation_unquant;
+   st->innovation_params = mode->innovation_params;
+
    st->stack = calloc(10000, sizeof(float));
 
    st->inBuf = malloc(st->bufSize*sizeof(float));
@@ -400,7 +408,7 @@ void decode(DecState *st, FrameBits *bits, float *out)
    memmove(st->excBuf, st->excBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(float));
 
 
-   lsp_unquant_nb(st->qlsp, st->lpcSize, bits);
+   st->lsp_unquant(st->qlsp, st->lpcSize, bits);
    if (st->first)
    {
       for (i=0;i<st->lpcSize;i++)
@@ -440,10 +448,10 @@ void decode(DecState *st, FrameBits *bits, float *out)
          exc[i]=0;
 
       /*Adaptive codebook contribution*/
-      pitch_unquant_3tap(exc, st->min_pitch, st->max_pitch, st->subframeSize, bits, st->stack);
+      st->ltp_unquant(exc, st->min_pitch, st->max_pitch, st->ltp_params, st->subframeSize, bits, st->stack);
        
       /*Fixed codebook contribution*/
-      split_cb_unquant(exc, exc_table, st->subframeSize, bits);
+      st->innovation_unquant(exc, st->innovation_params, st->subframeSize, bits, st->stack);
 
       /*Compute decoded signal*/
       syn_filt_mem(exc, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, st->mem_sp);

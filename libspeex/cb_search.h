@@ -22,6 +22,15 @@
 
 #include "bits.h"
 
+typedef struct split_cb_params {
+   int     subvect_size;
+   int     nb_subvect;
+   float  *shape_cb;
+   int     shape_bits;
+   float  *gain_cb;
+   int     gain_bits;
+} split_cb_params;
+
 float overlap_cb_search(
 float target[],			/* target vector */
 float ak[],			/* LPCs for this subframe */
@@ -34,18 +43,6 @@ int   *index,			/* index of optimum entry */
 int   p,                        /* number of LPC coeffs */
 int   nsf                       /* number of samples in subframe */
 );
-
-
-typedef struct split_cb_params {
-   int     subvect_size;
-   int     nb_subvect;
-   float  *shape_cb;
-   int     shape_bits;
-   float  *gain_cb;
-   int     gain_bits;
-} split_cb_params;
-
-extern split_cb_params split_cb_nb;
 
 void split_cb_search(
 float target[],			/* target vector */
@@ -62,9 +59,10 @@ float *stack
 
 void split_cb_unquant(
 float *exc,
-float codebook[][8],		/* non-overlapping codebook */
+void  *par,                     /* Innovation parameters */
 int   nsf,                      /* number of samples in subframe */
-FrameBits *bits
+FrameBits *bits,
+float *stack
 );
 
 #endif

@@ -70,6 +70,7 @@ typedef struct EncState {
 
    lsp_quant_func    lsp_quant;
    ltp_quant_func    ltp_quant;
+   void             *ltp_params;
    innovation_quant_func innovation_quant;
    void             *innovation_params;
 } EncState;
@@ -99,6 +100,9 @@ typedef struct DecState {
 
    lsp_unquant_func  lsp_unquant;
    ltp_unquant_func  ltp_unquant;
+   void             *ltp_params;
+   innovation_unquant_func innovation_unquant;
+   void             *innovation_params;
 } DecState;
 
 /**Initializes encoder state*/
