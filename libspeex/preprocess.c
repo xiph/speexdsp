@@ -110,7 +110,8 @@ SpeexPreprocessState *speex_preprocess_state_init(int frame_size, int sampling_r
    N = st->ps_size;
    N3 = 2*N - st->frame_size;
    N4 = st->frame_size - N3;
-
+   
+   st->sampling_rate = sampling_rate;
    st->denoise_enabled = 1;
    st->agc_enabled = 0;
    st->agc_level = 8000;
@@ -452,19 +453,33 @@ static void speex_compute_agc(SpeexPreprocessState *st, float mean_prior)
    int N = st->ps_size;
    float scale=.5/N;
    float agc_gain;
+   int freq_start, freq_end;
+   float active_bands = 0;
 
-   if ((mean_prior>3&&mean_prior>3))
+   freq_start = (int)(300.0*2*N/st->sampling_rate);
+   freq_end   = (int)(2000.0*2*N/st->sampling_rate);
+   for (i=freq_start;i<freq_end;i++)
+   {
+      if (st->S[i] > 20*st->Smin[i]+1000)
+         active_bands+=1;
+   }
+   active_bands /= (freq_end-freq_start+1);
+   /*fprintf (stderr, "%f\n", active_bands);*/
+
+   if (active_bands > .3)
    {
       float loudness=0;
-      float rate;
+      float rate, rate2=.03;
       st->nb_loudness_adapt++;
       rate=2.0/(1+st->nb_loudness_adapt);
-      if (rate < .005)
-         rate = .005;
-      if (rate < .1 && pow(loudness, LOUDNESS_EXP) > st->loudness)
-         rate = .1;
-      if (rate < .5 && pow(loudness, LOUDNESS_EXP) > 5*st->loudness)
-         rate = .5;
+      if (rate < .02)
+         rate = .02;
+      if (rate < .07 && pow(loudness, LOUDNESS_EXP) > st->loudness)
+         rate = .07;
+      if (rate < .15 && pow(loudness, LOUDNESS_EXP) > 3*st->loudness)
+         rate = .15;
+      if (rate < .3 && pow(loudness, LOUDNESS_EXP) > 10*st->loudness)
+         rate = .3;
 
       for (i=2;i<N;i++)
       {
@@ -475,7 +490,7 @@ static void speex_compute_agc(SpeexPreprocessState *st, float mean_prior)
         loudness*2 > pow(st->loudness, 1.0/LOUDNESS_EXP))*/
       st->loudness = (1-rate)*st->loudness + (rate)*pow(loudness, LOUDNESS_EXP);
       
-      st->loudness2 = (1-rate)*st->loudness2 + rate*pow(st->loudness, 1.0/LOUDNESS_EXP);
+      st->loudness2 = (1-rate2)*st->loudness2 + rate2*pow(st->loudness, 1.0/LOUDNESS_EXP);
 
       loudness = pow(st->loudness, 1.0/LOUDNESS_EXP);
 
@@ -525,7 +540,7 @@ static void update_noise_prob(SpeexPreprocessState *st)
 {
    int i;
    int N = st->ps_size;
-   
+
    for (i=1;i<N-1;i++)
       st->S[i] = 100+ .8*st->S[i] + .05*st->ps[i-1]+.1*st->ps[i]+.05*st->ps[i+1];
    
@@ -557,6 +572,7 @@ static void update_noise_prob(SpeexPreprocessState *st)
       /*fprintf (stderr, "%f ", st->S[i]/st->Smin[i]);*/
       /*fprintf (stderr, "%f ", st->update_prob[i]);*/
    }
+
 }
 
 int speex_preprocess(SpeexPreprocessState *st, float *x, float *echo)

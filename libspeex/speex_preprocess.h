@@ -41,6 +41,7 @@ struct drft_lookup;
 typedef struct SpeexPreprocessState {
    int    frame_size;        /**< Number of samples processed each time */
    int    ps_size;           /**< Number of points in the power spectrum */
+   int    sampling_rate;     /**< Sampling rate of the input/output */
    
    /* parameters */
    int    denoise_enabled;
