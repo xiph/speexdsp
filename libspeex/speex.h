@@ -67,6 +67,9 @@ typedef struct EncState {
    float *rc;             /* Reflection coefficients */
    float *mem_sp, *mem_sw;
    float *dmem1, *dmem2;
+
+   lsp_quant_func    lsp_quant;
+   ltp_quant_func    ltp_quant;
 } EncState;
 
 typedef struct DecState {
@@ -91,6 +94,9 @@ typedef struct DecState {
    float *interp_qlsp;    /* Interpolated quantized LSPs */
    float *interp_qlpc;    /* Interpolated quantized LPCs */
    float *mem_sp;
+
+   lsp_unquant_func  lsp_unquant;
+   ltp_unquant_func  ltp_unquant;
 } DecState;
 
 /**Initializes encoder state*/

@@ -20,6 +20,8 @@
 */
 
 #include "modes.h"
+#include "ltp.h"
+#include "quant_lsp.h"
 
 SpeexMode nb_mode = {
    160,    /*frameSize*/
@@ -30,5 +32,9 @@ SpeexMode nb_mode = {
    20,     /*pitchStart*/
    140,    /*pitchEnd*/
    0.9,    /*gamma1*/
-   0.6     /*gamma2*/
+   0.6,    /*gamma2*/
+   lsp_quant_nb,
+   lsp_unquant_nb,
+   pitch_search_3tap,
+   pitch_unquant_3tap
 };

@@ -9,7 +9,7 @@ int main(int argc, char **argv)
    char *inFile, *outFile, *bitsFile;
    FILE *fin, *fout, *fbits=NULL;
    short in[FRAME_SIZE];
-   float input[FRAME_SIZE], bak[FRAME_SIZE], bak2[FRAME_SIZE], decbuf[FRAME_SIZE];
+   float input[FRAME_SIZE], bak[FRAME_SIZE], bak2[FRAME_SIZE];
    char cbits[200];
    int nbBits;
    int i;

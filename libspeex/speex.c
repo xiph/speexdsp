@@ -54,6 +54,8 @@ void encoder_init(EncState *st, SpeexMode *mode)
    st->min_pitch=mode->pitchStart;
    st->max_pitch=mode->pitchEnd;
 
+   st->lsp_quant = mode->lsp_quant;
+   st->ltp_quant = mode->ltp_quant;
    /* Over-sampling filter (fractional pitch)*/
    st->os_fact=4;
    st->os_filt_ord2=4*st->os_fact;
@@ -193,8 +195,9 @@ void encode(EncState *st, float *in, FrameBits *bits)
       st->lsp[i] = acos(st->lsp[i]);
    
    /* LSP Quantization */
-   lsp_quant_nb(st->lsp, st->qlsp, 10, bits);
+   st->lsp_quant(st->lsp, st->qlsp, 10, bits);
 
+   /* Special case for first frame */
    if (st->first)
    {
       for (i=0;i<st->lpcSize;i++)
@@ -202,39 +205,13 @@ void encode(EncState *st, float *in, FrameBits *bits)
       for (i=0;i<st->lpcSize;i++)
          st->old_qlsp[i] = st->qlsp[i];
    }
-   printf ("encode LSPs: ");
-   for (i=0;i<st->lpcSize;i++)
-      printf ("%f ", st->qlsp[i]);
-   printf ("\n");
-
-   /*Find open-loop pitch for the whole frame*/
-   if (0) {
-      float *mem = PUSH(st->stack, st->lpcSize);
-      
-      for (i=0;i<st->lpcSize;i++)
-         st->interp_lsp[i] = .5*st->old_lsp[i] + .5*st->lsp[i];
-      for (i=0;i<st->lpcSize;i++)
-         st->interp_lsp[i] = cos(st->interp_lsp[i]);
-      lsp_to_lpc(st->interp_lsp, st->interp_lpc, st->lpcSize,st->stack);
-      bw_lpc(st->gamma1, st->interp_lpc, st->bw_lpc1, st->lpcSize);
-      bw_lpc(st->gamma2, st->interp_lpc, st->bw_lpc2, st->lpcSize);
-      for (i=0;i<st->lpcSize;i++)
-         mem[i]=st->mem_sp[i];
-      residue_mem(st->frame, st->bw_lpc1, st->sw, st->frameSize, st->lpcSize, mem);
-      for (i=0;i<st->lpcSize;i++)
-         mem[i]=st->mem_sw[i];
-         syn_filt_mem(st->sw, st->bw_lpc2, st->sw, st->frameSize, st->lpcSize, mem);
-      open_loop_pitch(st->sw, st->min_pitch, st->max_pitch, st->frameSize, &st->ol_pitch, &st->ol_voiced);
-      printf ("Open-loop pitch = %d\n", st->ol_pitch);
-      POP(st->stack);
-   }
 
    /* Loop on sub-frames */
    for (sub=0;sub<st->nbSubframes;sub++)
    {
       float tmp, gain[3];
       float esig=0, enoise=0, snr;
-      int pitch, offset, pitch_gain_index;
+      int pitch, offset;
       float *sp, *sw, *res, *exc, *target, *mem;
       
       /* Offset relative to start of frame */
@@ -303,20 +280,11 @@ void encode(EncState *st, float *in, FrameBits *bits)
 
       for (i=0;i<st->subframeSize;i++)
          exc[i]=0;
-#if 1 /*If set to 0, we compute the excitation directly from the target, i.e. we're cheating */
 
-      /* Perform adaptive codebook search (3-tap pitch predictor) */
-      pitch = st->ol_pitch;
-#if 0 /* 1 for fractional pitch, 0 for integer pitch */
-      closed_loop_fractional_pitch(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2,
-                                   exc, st->os_filt, st->os_filt_ord2, st->os_fact, 20, 147, 
-                                   &gain[0], &pitch, st->lpcSize,
-                                   st->subframeSize, st->stack);
-#else
-      pitch_search_3tap(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2,
-                        exc, 20, 147, &gain[0], &pitch, &pitch_gain_index, st->lpcSize,
-                        st->subframeSize, bits, st->stack);
-#endif
+      st->ltp_quant(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2,
+                        exc, 20, 147, st->lpcSize, st->subframeSize, 
+                        bits, st->stack);
+
       /* Update target for adaptive codebook contribution */
       residue_zero(exc, st->bw_lpc1, res, st->subframeSize, st->lpcSize);
       syn_filt_zero(res, st->interp_qlpc, res, st->subframeSize, st->lpcSize);
@@ -355,72 +323,20 @@ void encode(EncState *st, float *in, FrameBits *bits)
       for (i=0;i<st->subframeSize;i++)
          target[i]-=gain[0]*res[i];
       }
+
 #else
+      /* Perform a split-codebook search */
       split_cb_search(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2,
                         exc_table, 64, &gain[0], &pitch, st->lpcSize,
                         st->subframeSize, exc, bits);
 #endif
+
       /* Compute weighted noise energy, SNR */
       enoise=0;
       for (i=0;i<st->subframeSize;i++)
          enoise += target[i]*target[i];
       snr = 10*log10((esig+1)/(enoise+1));
       printf ("seg SNR = %f\n", snr);
-
-#else /* Cheating to get perfect reconstruction */
-
-#if 1 /* Code to calculate the exact excitation after pitch prediction  */
-      for (i=0;i<st->subframeSize;i++)
-         st->buf2[i]=target[i];
-#if 0 /* 0 for fractional pitch, 1 for integer */
-      pitch_search_3tap(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2,
-                                exc, 20, 147, &gain[0], &pitch, &pitch_gain_index, st->lpcSize,
-                        st->subframeSize);
-      for (i=0;i<st->subframeSize;i++)
-        exc[i]=gain[0]*exc[i-pitch]+gain[1]*exc[i-pitch-1]+gain[2]*exc[i-pitch-2];
-      printf ("3-tap pitch = %d, gains = [%f %f %f]\n",pitch, gain[0], gain[1], gain[2]);
-#else
-      pitch = st->ol_pitch;
-      closed_loop_fractional_pitch(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2,
-                                   exc, st->os_filt, st->os_filt_ord2, st->os_fact, 20, 147, 
-                                   &gain[0], &pitch, st->lpcSize,
-                                   st->subframeSize, st->stack);
-#endif
-      /* Update target for adaptive codebook contribution */
-      residue_zero(exc, st->bw_lpc1, res, st->subframeSize, st->lpcSize);
-      syn_filt_zero(res, st->interp_qlpc, res, st->subframeSize, st->lpcSize);
-      syn_filt_zero(res, st->bw_lpc2, res, st->subframeSize, st->lpcSize);
-      for (i=0;i<st->subframeSize;i++)
-        target[i]-=res[i];
-
-      enoise=0;
-      for (i=0;i<st->subframeSize;i++)
-         enoise += target[i]*target[i];
-      snr = 10*log10((esig+1)/(enoise+1));
-      printf ("pitch SNR = %f\n", snr);
-
-      syn_filt_zero(target, st->bw_lpc1, res, st->subframeSize, st->lpcSize);
-      residue_zero(res, st->interp_qlpc, exc, st->subframeSize, st->lpcSize);
-      residue_zero(exc, st->bw_lpc2, exc, st->subframeSize, st->lpcSize);
-      if (snr>5)
-      {
-         for (i=0;i<st->subframeSize;i++)
-         {
-            if (i%8==0&&i)
-               printf("\n");
-            printf ("%f ", exc[i]);
-         }
-         printf ("\n");
-      }
-      for (i=0;i<st->subframeSize;i++)
-         target[i]=st->buf2[i];
-#endif
-
-      /* We're cheating to get perfect reconstruction */
-      syn_filt_zero(target, st->bw_lpc1, res, st->subframeSize, st->lpcSize);
-      residue_zero(res, st->interp_qlpc, exc, st->subframeSize, st->lpcSize);
-      residue_zero(exc, st->bw_lpc2, exc, st->subframeSize, st->lpcSize);
-#endif
 
       /*Keep the previous memory*/
       for (i=0;i<st->lpcSize;i++)

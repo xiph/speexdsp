@@ -51,9 +51,6 @@ float awk2[],                   /* Weighted LPCs #2 for this subframe */
 float exc[],                    /* Overlapping codebook */
 int   start,                    /* Smallest pitch value allowed */
 int   end,                      /* Largest pitch value allowed */
-float *gain,                    /* 3-tab gains of optimum entry */
-int   *pitch,                   /* Best pitch delay */
-int   *gain_index,              /* Index of optimum gain */
 int   p,                        /* Number of LPC coeffs */
 int   nsf,                      /* Number of samples in subframe */
 FrameBits *bits,

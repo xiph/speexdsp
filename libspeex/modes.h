@@ -22,6 +22,24 @@
 #ifndef MODES_H
 #define MODES_H
 
+#include "bits.h"
+
+/* Quantizes LSPs */
+typedef void (*lsp_quant_func)(float *, float *, int, FrameBits *);
+
+/* Decodes quantized LSPs */
+typedef void (*lsp_unquant_func)(float *, int, FrameBits *);
+
+
+/*Long-term predictor quantization*/
+typedef void (*ltp_quant_func)(float *, float *, float *, 
+                                float *, float *, int, int, 
+                                int, int, FrameBits*, float *);
+
+/*Long-term un-quantize*/
+typedef void (*ltp_unquant_func)(float *, int, int, int, FrameBits*, float*);
+
+/*Struct defining the encoding/decoding mode*/
 typedef struct SpeexMode {
    int     frameSize;
    int     subframeSize;
@@ -32,8 +50,15 @@ typedef struct SpeexMode {
    int     pitchEnd;
    float   gamma1;
    float   gamma2;
-   /* Should add info about LSP quantization, pitch gain quantization 
-      and other codebooks */
+   
+   /*LSP functions*/
+   lsp_quant_func    lsp_quant;
+   lsp_unquant_func  lsp_unquant;
+
+   /*Lont-term predictor functions*/
+   ltp_quant_func    ltp_quant;
+   ltp_unquant_func  ltp_unquant;
+   
 } SpeexMode;
 
 extern SpeexMode nb_mode;

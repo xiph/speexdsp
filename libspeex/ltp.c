@@ -322,9 +322,6 @@ float awk2[],                   /* Weighted LPCs #2 for this subframe */
 float exc[],                    /* Overlapping codebook */
 int   start,                    /* Smallest pitch value allowed */
 int   end,                      /* Largest pitch value allowed */
-float *gain,                    /* 3-tab gains of optimum entry */
-int   *pitch,                   /* Index of optimum entry */
-int   *gain_index,              /* Index of optimum gain */
 int   p,                        /* Number of LPC coeffs */
 int   nsf,                      /* Number of samples in subframe */
 FrameBits *bits,
@@ -336,6 +333,8 @@ float *stack
    float *x[3];
    float corr[3];
    float A[3][3];
+   float gain[3];
+   int   pitch;
 
    tmp = PUSH(stack, 3*nsf);
 
@@ -345,15 +344,15 @@ float *stack
 
    /* Perform closed-loop 1-tap search*/
    overlap_cb_search(target, ak, awk1, awk2,
-                     &exc[-end], end-start+1, gain, pitch, p,
+                     &exc[-end], end-start+1, gain, &pitch, p,
                      nsf);
    /* Real pitch value */
-   *pitch=end-*pitch;
+   pitch=end-pitch;
    
    
    for (i=0;i<3;i++)
    {
-      residue_zero(&exc[-*pitch-1+i],awk1,x[i],nsf,p);
+      residue_zero(&exc[-pitch-1+i],awk1,x[i],nsf,p);
       syn_filt_zero(x[i],ak,x[i],nsf,p);
       syn_filt_zero(x[i],awk2,x[i],nsf,p);
    }
@@ -396,8 +395,7 @@ float *stack
       gain[0] = gain_cdbk_nb[best_cdbk*12];
       gain[1] = gain_cdbk_nb[best_cdbk*12+1];
       gain[2] = gain_cdbk_nb[best_cdbk*12+2];
-      *gain_index=best_cdbk;
-      frame_bits_pack(bits,(*pitch)-start,7);
+      frame_bits_pack(bits,pitch-start,7);
       frame_bits_pack(bits,best_cdbk,7);
 
    }
@@ -405,8 +403,8 @@ float *stack
    /*FIXME: backward or forward? (ie recursive or not?)*/
    /*for (i=0;i<nsf;i++)*/
    for (i=nsf-1;i>=0;i--)
-      exc[i]=gain[0]*exc[i-*pitch+1]+gain[1]*exc[i-*pitch]+gain[2]*exc[i-*pitch-1];
-   printf ("3-tap pitch = %d, gains = [%f %f %f]\n",*pitch, gain[0], gain[1], gain[2]);
+      exc[i]=gain[0]*exc[i-pitch+1]+gain[1]*exc[i-pitch]+gain[2]*exc[i-pitch-1];
+   printf ("3-tap pitch = %d, gains = [%f %f %f]\n",pitch, gain[0], gain[1], gain[2]);
 
    {
       float tmp1=0,tmp2=0;
