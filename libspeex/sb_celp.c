@@ -53,6 +53,10 @@
 
 #define SUBMODE(x) st->submodes[st->submodeID]->x
 
+#ifdef FIXED_POINT
+spx_word16_t gc_quant_bound[16] = {125, 164, 215, 282, 370, 484, 635, 832, 1090, 1428, 1871, 2452, 3213, 4210, 5516, 7228};
+#endif
+
 #define QMF_ORDER 64
 
 #ifdef FIXED_POINT
@@ -580,13 +584,9 @@ int sb_encode(void *state, short *in, SpeexBits *bits)
          /*printf ("%f %f %f %f\n", el, eh, filter_ratio, gc);*/
 #ifdef FIXED_POINT
          {
-            int qgc = (int)floor(.5+3.7*(log(gc/128.)+0.15556));
-            if (qgc<0)
-               qgc=0;
-            if (qgc>15)
-               qgc=15;
+            int qgc = scal_quant(gc, gc_quant_bound, 16);
             speex_bits_pack(bits, qgc, 4);
-            gc = 128*exp((1/3.7)*qgc-0.15556);
+            gc = MULT16_32_Q15(28626,gc_quant_bound[qgc]);
          }
 #else
          {
