@@ -75,7 +75,10 @@ void open_loop_nbest_pitch(float *sw, int start, int end, int len, int *pitch, f
 
    best_score = PUSH(stack,N);
    for (i=0;i<N;i++)
+   {
         best_score[i]=-1;
+        gain[i]=0;
+   }
    energy=inner_prod(sw-start, sw-start, len);
    e0=inner_prod(sw, sw, len);
    for (i=start;i<=end;i++)
