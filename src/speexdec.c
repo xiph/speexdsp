@@ -203,6 +203,7 @@ void usage()
    printf (" --force-uwb           Force decoding in ultra-wideband\n");
    printf (" --mono                Force decoding in mono\n");
    printf (" --stereo              Force decoding in stereo\n");
+   printf (" --rate n              Force decoding at sampling rate n Hz\n");
    printf (" --packet-loss n       Simulate n %% random packet loss\n");
    printf (" -V                    Verbose mode (show bit-rate)\n"); 
    printf (" -h, --help            This help\n");
@@ -273,7 +274,8 @@ static void *process_header(ogg_packet *op, int enh_enabled, int *frame_size, in
    callback.data = stereo;
    speex_decoder_ctl(st, SPEEX_SET_HANDLER, &callback);
    
-   *rate = header->rate;
+   if (!*rate)
+      *rate = header->rate;
    /* Adjust rate if --force-* options are used */
    if (forceMode!=-1)
    {
@@ -329,6 +331,7 @@ int main(int argc, char **argv)
       {"force-nb", no_argument, NULL, 0},
       {"force-wb", no_argument, NULL, 0},
       {"force-uwb", no_argument, NULL, 0},
+      {"rate", required_argument, NULL, 0},
       {"mono", no_argument, NULL, 0},
       {"stereo", no_argument, NULL, 0},
       {"packet-loss", required_argument, NULL, 0},
@@ -348,6 +351,7 @@ int main(int argc, char **argv)
    float loss_percent=-1;
    SpeexStereoState stereo = SPEEX_STEREO_STATE_INIT;
    int channels=-1;
+   int rate=0;
 
    enh_enabled = 0;
 
@@ -403,6 +407,9 @@ int main(int argc, char **argv)
          } else if (strcmp(long_options[option_index].name,"stereo")==0)
          {
             channels=2;
+         } else if (strcmp(long_options[option_index].name,"rate")==0)
+         {
+            rate=atoi (optarg);
          } else if (strcmp(long_options[option_index].name,"packet-loss")==0)
          {
             loss_percent = atof(optarg);
@@ -490,7 +497,6 @@ int main(int argc, char **argv)
             /*If first packet, process as Speex header*/
             if (packet_count==0)
             {
-               int rate;
                st = process_header(&op, enh_enabled, &frame_size, &rate, &nframes, forceMode, &channels, &stereo);
                if (!nframes)
                   nframes=1;

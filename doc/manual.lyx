@@ -244,25 +244,55 @@ Linear Prediction (LPC)
 
 \layout Standard
 
+Linear prediction is at the base of may speech coding techniques, including
+ CELP.
+ The idea behind it is to predict the signal 
+\begin_inset Formula $x(n)$
+\end_inset 
+
+ using a linear combination of its past samples:
+\layout Standard
+
 
 \begin_inset Formula \[
 y(n)=\sum _{i=1}^{N}a_{i}x(n-i)\]
 
 \end_inset 
 
+where 
+\begin_inset Formula $y(n)$
+\end_inset 
 
+ is the linear prediction of 
+\begin_inset Formula $x(n)$
+\end_inset 
+
+.
+ The prediction error is thus given by:
 \begin_inset Formula \[
 e(n)=x(n)-y(n)=x(n)-\sum _{i=1}^{N}a_{i}x(n-i)\]
 
 \end_inset 
 
 
+\layout Standard
+
+The goal of the LPC analysis is to find the best prediction coefficients
+ 
+\begin_inset Formula $a_{i}$
+\end_inset 
+
+ which minimize the quadratic error function:
 \begin_inset Formula \[
 E=\sum _{n=0}^{L-1}\left[e(n)\right]^{2}=\sum _{n=0}^{L-1}\left[x(n)-\sum _{i=1}^{N}a_{i}x(n-i)\right]^{2}\]
 
 \end_inset 
 
+That can be done by making all derivatives 
+\begin_inset Formula $\frac{\partial E}{\partial a_{i}}$
+\end_inset 
 
+ equal to zero:
 \begin_inset Formula \[
 \frac{\partial E}{\partial a_{i}}=\frac{\partial }{\partial a_{i}}\sum _{n=0}^{L-1}\left[x(n)-\sum _{i=1}^{N}a_{i}x(n-i)\right]^{2}=0\]
 
@@ -785,7 +815,7 @@ OL
 
 
 \begin_inset Float table
-placement htbp
+placement h
 wide true
 collapsed false
 
@@ -1836,7 +1866,7 @@ So far, no MOS (Mean Opinion Score
 
 
 \begin_inset Float table
-placement htbp
+placement h
 wide true
 collapsed false
 
@@ -2603,7 +2633,7 @@ For the wideband mode, all the narrowband frame is packed before the high-band
 
 
 \begin_inset Float table
-placement htbp
+placement h
 wide true
 collapsed false
 
@@ -3042,6 +3072,19 @@ Bit allocation for high-band in wideband mode
 \end_inset 
 
 
+\layout Standard
+
+
+\begin_inset ERT
+status Open
+
+\layout Standard
+
+\backslash 
+clearpage
+\end_inset 
+
+
 \layout Section
 \pagebreak_top 
 Command-line encoder/decoder
@@ -3195,8 +3238,12 @@ The decoder takes the following options:
 --stereo Force decoding in stereo 
 \layout Description
 
+--rate\SpecialChar ~
+n For decoding at n Hz sampling rate
+\layout Description
+
 --packet-loss\SpecialChar ~
-n Simulate n % random packet loss
+n Simulate n % rando m packet loss
 \layout Description
 
 -V Verbose operation, print bit-rate currently in use
@@ -4202,10 +4249,17 @@ RTP
 
 \end_inset 
 
- Payload Format
+ Payload Format 
 \layout Standard
 
-This is a work in progress.
+The latest RTP payload draft can be found at 
+\begin_inset LatexCommand \url{http://www.speex.org/drafts/latest}
+
+\end_inset 
+
+.
+ We are (2002/11/11) about to send the latest draft to the IETF for comments.
+ 
 \layout Comment
 
 Since Speex encoded frames already contain mode information, they can be
@@ -4214,6 +4268,17 @@ Since Speex encoded frames already contain mode information, they can be
  the end of frames, except the last one.
  The number of frames contained in each packet MUST be transmitted out-of-band.
  
+\layout Subsection
+
+MIME Type
+\layout Standard
+
+Speex will use the MIME type 
+\family typewriter 
+audio/speex
+\family default 
+.
+ We will apply for that type in the near future.
 \layout Subsection
 
 Ogg

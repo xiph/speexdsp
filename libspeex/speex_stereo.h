@@ -1,6 +1,9 @@
-/* Copyright (C) 2002 Jean-Marc Valin 
-   File: stereo.c
-
+/* Copyright (C) 2002 Jean-Marc Valin*/
+/**
+   @file speex_stereo.h
+   @brief Describes the handling for intensity stereo
+*/
+/*
    Redistribution and use in source and binary forms, with or without
    modification, are permitted provided that the following conditions
    are met:
@@ -34,17 +37,21 @@
 
 #include "speex_bits.h"
 
+/** State used for decoding (intensity) stereo information */
 typedef struct SpeexStereoState {
-   float balance;
-   float e_ratio;
+   float balance;     /**< Left/right balance info */
+   float e_ratio;     /**< Ratio of energies: E(left+right)/[E(left)+E(right)]  */
 } SpeexStereoState;
 
 #define SPEEX_STEREO_STATE_INIT {1,.5}
 
+/** Transforms a stereo frame into a mono frame and stores intensity stereo info in 'bits' */
 void speex_encode_stereo(float *data, int frame_size, SpeexBits *bits);
 
+/** Transforms a mono frame into a stereo frame using intensity stereo info */
 void speex_decode_stereo(float *data, int frame_size, SpeexStereoState *stereo);
 
+/** Callback handler for intensity stereo info */
 int speex_std_stereo_request_handler(SpeexBits *bits, void *state, void *data);
 
 #endif
