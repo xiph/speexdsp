@@ -1698,8 +1698,39 @@ Perceptual enhancement
 
 This part of the codec only applies to the decoder and can even be changed
  without affecting inter-operability.
- For that reason, the implementation provided should only be considered
- as a reference implementation.
+ For that reason, the implementation provided and described here should
+ only be considered as a reference implementation.
+ The enhancement system is devided in two parts.
+ First, the synthesis filter 
+\begin_inset Formula $S(z)=1/A(z)$
+\end_inset 
+
+ is replaced by an enhanced filter
+\begin_inset Formula \[
+S'(z)=\frac{A\left(z/a_{2}\right)A\left(z/a_{3}\right)}{A\left(z\right)A\left(z/a_{1}\right)}\]
+
+\end_inset 
+
+where 
+\begin_inset Formula $a_{1}$
+\end_inset 
+
+ and 
+\begin_inset Formula $a_{2}$
+\end_inset 
+
+ depend on the mode in use and 
+\begin_inset Formula $a_{3}=\frac{1}{r}\left(1-\frac{1-ra_{1}}{1-ra_{2}}\right)$
+\end_inset 
+
+ with 
+\begin_inset Formula $r=.9$
+\end_inset 
+
+.
+ The second part of the enhancement consists of using a comb filter to enhance
+ the pitch in the excitation.
+ 
 \layout Section
 \pagebreak_top 
 Speex wideband mode (sub-band CELP)
@@ -2173,6 +2204,9 @@ n Set encoding speed/quality tradeoff.
  The higher the value of n, the slower the encoding (default is 3)
 \layout Description
 
+-V Verbose operation, print bit-rate currently in use
+\layout Description
+
 --help\SpecialChar ~
 (-h) Print the help
 \layout Description
@@ -2193,6 +2227,9 @@ The decoder takes the following options:
 \layout Description
 
 --no-enh disable post-filter (default)
+\layout Description
+
+-V Verbose operation, print bit-rate currently in use
 \layout Description
 
 --help\SpecialChar ~
@@ -2715,7 +2752,7 @@ e_o_s
 \emph on 
 not
 \emph default 
- the content of the packet.
+ on the content of the packet.
 \layout Standard
 
 
@@ -3283,6 +3320,14 @@ Can Speex pass DTMF?
 I guess it all depends on the bit-rate used.
  Though no formal testing has yet been performed, I'd say don't go below
  the 14.95 kbps mode if you want DTMF to be transmitted correctly.
+ Also, make sure you don't use the lowest complexity (SPEEX_SET_COMPLEXITY),
+ as it causes important noise.
+\layout Subsection*
+
+Can Speex pass V.9x modem signals correctly?
+\layout Standard
+
+If I could to that I'd be very rich by now :-)
 \layout Section
 \pagebreak_top 
 GNU Free Documentation License
