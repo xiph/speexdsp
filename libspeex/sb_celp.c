@@ -664,3 +664,35 @@ void sb_decoder_destroy(SBDecState *st)
    free(st->stack);
    
 }
+
+
+void sb_decode(SBDecState *st, FrameBits *bits, float *out)
+{
+   int i;
+
+   /* Decode the low-band */
+   decode(&st->st_low, bits, st->x0d);
+
+   for (i=0;i<st->frame_size;i++)
+      st->exc[i]=0;
+
+   /* Up-sample coded low-band and high-band*/
+   for (i=0;i<st->frame_size;i++)
+   {
+      st->x0[(i<<1)]=st->x0d[i];
+      st->x1[(i<<1)]=st->high[i];
+      st->x0[(i<<1)+1]=0;
+      st->x1[(i<<1)+1]=0;
+   }
+   /* Reconstruct the original */
+   fir_mem(st->x0, h0, st->y0, st->full_frame_size, QMF_ORDER, st->g0_mem);
+   fir_mem(st->x1, h1, st->y1, st->full_frame_size, QMF_ORDER, st->g1_mem);
+   for (i=0;i<st->full_frame_size;i++)
+      out[i]=2*(st->y0[i]-st->y1[i]);
+
+   for (i=0;i<st->lpcSize;i++)
+      st->old_qlsp[i] = st->qlsp[i];
+
+   st->first=0;
+
+}

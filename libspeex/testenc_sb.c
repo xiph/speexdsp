@@ -14,11 +14,13 @@ int main(int argc, char **argv)
    int nbBits;
    int i;
    SBEncState st;
+   SBDecState dec;
    FrameBits bits;
 
    for (i=0;i<FRAME_SIZE;i++)
       bak2[i]=0;
    sb_encoder_init(&st, &mp_sb_mode);
+   sb_decoder_init(&dec, &mp_sb_mode);
    if (argc != 4 && argc != 3)
    {
       fprintf (stderr, "Usage: encode [in file] [out file] [bits file]\nargc = %d", argc);
@@ -57,6 +59,8 @@ int main(int argc, char **argv)
       }
       frame_bits_rewind(&bits);
       
+      sb_decode(&dec, &bits, input);
+
       frame_bits_reset(&bits);
       for (i=0;i<FRAME_SIZE;i++)
       {
@@ -73,5 +77,6 @@ int main(int argc, char **argv)
    }
    
    sb_encoder_destroy(&st);
+   sb_decoder_destroy(&dec);
    return 1;
 }

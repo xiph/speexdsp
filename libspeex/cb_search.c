@@ -318,7 +318,7 @@ float *stack
    int *ind;
    float *gains;
    float *sign;
-   float *shape_cb;
+   float *shape_cb, exc_energy;
    int shape_cb_size, subvect_size, nb_subvect;
    split_cb_params *params;
 
@@ -332,18 +332,28 @@ float *stack
    gains = PUSH(stack, nb_subvect);
    sign = PUSH(stack, nb_subvect);
 
+   /* Decode global (average) gain */
+   {
+      int id;
+      id = frame_bits_unpack_unsigned(bits, 4);
+      exc_energy=exp(.5*id+2);
+   }
+
    for (i=0;i<nb_subvect;i++)
    {
+      int gain_id;
       ind[i] = frame_bits_unpack_unsigned(bits, params->shape_bits);
       if (frame_bits_unpack_unsigned(bits, 1))
          sign[i]=-1;
       else
          sign[i]=1;
+      
+      gain_id = frame_bits_unpack_unsigned(bits, 3);
+      gains[i]=scal_gains4[gain_id];
+      if (sign[i])
+         gains[i]=-gains[i];
+      gains[i] *= exc_energy;
    }
-
-   /*FIXME: Gain quantization changed, need to re-write that part */
-   for (i=0;i<nb_subvect;i++)
-      gains[i]=0;
 
    for (i=0;i<nb_subvect;i++)
       for (j=0;j<subvect_size;j++)
