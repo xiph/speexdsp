@@ -40,7 +40,7 @@ void usage()
 
 void version()
 {
-   fprintf (stderr, "Speex version 0.0.1\n");
+   fprintf (stderr, "Speex encoder version " VERSION "\n");
 }
 
 int main(int argc, char **argv)

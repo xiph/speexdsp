@@ -15,7 +15,7 @@ int main(int argc, char **argv)
    DecState dec;
    FrameBits bits;
 
-   decoder_init(&dec, &nb_mode);
+   decoder_init(&dec, &mp_nb_mode);
    if (argc != 3)
    {
       fprintf (stderr, "Usage: encode [bits file] [out file]\nargc = %d", argc);
@@ -32,7 +32,13 @@ int main(int argc, char **argv)
       frame_bits_reset(&bits);
       frame_bits_init_from(&bits, cbits, 37);
       decode(&dec, &bits, output);
-
+      for (i=0;i<FRAME_SIZE;i++)
+      {
+         if (output[i]>32000)
+            output[i]=32000;
+         else if (output[i]<-32000)
+            output[i]=-32000;
+      }
       for (i=0;i<FRAME_SIZE;i++)
          out[i]=output[i];
       fwrite(out, sizeof(short), FRAME_SIZE, fout);

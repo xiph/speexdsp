@@ -140,7 +140,7 @@ SpeexMode wb_mode = {
    0.9,    /*gamma1*/
    -1.0,    /*gamma2*/
    .002,   /*lag_factor*/
-   1.0001,/*lpc_floor*/
+   1.0001, /*lpc_floor*/
    0.7,    /*preemph*/
 
    /*LSP quantization*/

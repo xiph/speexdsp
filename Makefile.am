@@ -5,4 +5,4 @@
 
 EXTRA_DIST = 
 
-SUBDIRS = libspeex
+SUBDIRS = libspeex src
