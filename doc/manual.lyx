@@ -29,7 +29,7 @@
 
 The Speex Codec Manual
 \newline 
-(draft for Speex 1.0)
+(draft for Speex 1.0beta1)
 \layout Author
 
 Jean-Marc Valin
@@ -334,6 +334,13 @@ The filter coefficients
  adding noise to the signal.
  Also, we can apply a window the the auto-correlation, which is equivalent
  to filtering in the frequency domain, reducing sharp resonances.
+\layout Standard
+
+Because LPC coefficients have very little robustness to quantization, they
+ are converted to Line Spectral Pair (LSP) coefficients which have a much
+ better behaviour with quantization, one of them being that it's easy to
+ keep the filter stable.
+ 
 \layout Subsection
 
 Pitch Prediction
@@ -517,9 +524,7 @@ An LPC analysis is first performed on a (Hamming) window that spans all
  the current frame and half a frame in advance.
  The LPC coefficients are then converted to Line Spectral Pair (LSP), a
  representation that is more robust to quantization.
- The LSP's are quantized using 30 bits for higher quality modes and 18 bits
- for lower quality.
- The quantized LSP's are considered to be associated to the 
+ The LSP's are considered to be associated to the 
 \begin_inset Formula $4^{th}$
 \end_inset 
 
@@ -527,11 +532,21 @@ An LPC analysis is first performed on a (Hamming) window that spans all
  interpolated using the current and previous LSP's.
 \layout Standard
 
+The LSP's are encoded using 30 bits for higher quality modes and 18 bits
+ for lower quality, through the use of a multi-stage split-vector quantizer.
+ For the lower quality modes, the 10 coefficients are first quantized with
+ 6 bits and the error is then divided in two 5-coefficient sub-vectors.
+ Each of them is quantized with 6 bits, for a total of 18 bits.
+ For the higher quality modes, the remaining error on both sub-vectors is
+ turther quantized with 6 bits each, for a total of 30 bits.
+\layout Standard
+
 The perceptual weighting filter 
 \begin_inset Formula $W(z)$
 \end_inset 
 
- used by Speex corresponds to the one described by eq.
+ used by Speex is derived from the LPC analysis and corresponds to the one
+ described by eq.
  
 \begin_inset LatexCommand \ref{eq:weighting_filter}
 
@@ -2231,7 +2246,9 @@ Linear Prediction
 The linear prediction part used for the high-band is very similar to what
  is done for narrowband.
  The only difference is that we use only 12 bits to encode the high-band
- LSP's.
+ LSP's using a multi-stage vector quantizer (MSVQ).
+ The first level quantizes the 10 coefficients with 6 bits and the error
+ is then quantized using 6 bits too.
 \layout Subsection
 
 Pitch Prediction
@@ -3150,6 +3167,38 @@ SPEEX_GET_BITRATE Get the current bit-rate in use (integer in bps)
  normally only used internally
 \layout Subsection
 
+Mode queries
+\layout Standard
+
+Speex modes have a querry system similar to the speex_encoder_ctl and speex_deco
+der_ctl calls.
+ Since modes are read-only, it is only possible to get information about
+ a particular mode.
+ The function used to do that is:
+\layout LyX-Code
+
+void speex_mode_query(SpeexMode *mode, int request, void *ptr);
+\layout Standard
+
+The admissible values for request are (unless otherwise note, the values
+ are returned through 
+\emph on 
+ptr
+\emph default 
+):
+\layout Description
+
+SPEEX_MODE_FRAME_SIZE Get the frame size (in samples) for the mode
+\layout Description
+
+SPEEX_SUBMODE_BITRATE Get the bit-rate for a submode number specified throught
+ 
+\emph on 
+ptr
+\emph default 
+.
+\layout Subsection
+
 Packing more than one frame per packet
 \layout Standard
 
@@ -3177,35 +3226,30 @@ Speex compatible
 \begin_inset Quotes erd
 \end_inset 
 
-, an implementation must implement at least a basic set of features.
+ (whatever that means), an implementation must implement at least a basic
+ set of features.
 \layout Standard
 
-At the minimum, all narrowband and wideband modes of operation MUST be supported
- at the decoder.
- For wideband, a decoder MAY either be able to decode all modes or be able
- to decode the embedded narrowband part of all modes (which includes ignoring
- the high-band bits).
-\layout Standard
-
-For encoders, at least one narrowband and one wideband mode MUST be supported.
- Note that the wideband mode MAY be the 
-\begin_inset Quotes eld
-\end_inset 
-
-null highband
-\begin_inset Quotes erd
-\end_inset 
-
- mode
+At the minimum, all narrowband modes of operation MUST be supported at the
+ decoder.
+ This includes the decoding of a wideband bit-stream by the narrowband decoder
 \begin_inset Foot
 collapsed true
 
 \layout Standard
 
-This can be done by appending 4 zero bits at the end of a narrowband frame
+The wideband bit-stream contains an embedded narrowband bit-stream which
+ can be decoded alone
 \end_inset 
 
 .
+ If present, a wideband decoder MUST be able to decode a narrowband stream,
+ and MAY either be able to decode all wideband modes or be able to decode
+ the embedded narrowband part of all modes (which includes ignoring the
+ high-band bits).
+\layout Standard
+
+For encoders, at least one narrowband or wideband mode MUST be supported.
  The main reason why all encoding modes do not have to be supported is that
  some platforms may not be able to handle the complexity of encoding in
  some modes.
@@ -3791,6 +3835,34 @@ Vorbis is a great project but its goals are not the same as Speex.
  typically 2-4 times higher compression at equal quality.
 \layout Subsection*
 
+Ogg, Speex, Vorbis, what's the difference?
+\layout Standard
+
+Ogg is a 
+\begin_inset Quotes eld
+\end_inset 
+
+file format
+\begin_inset Quotes erd
+\end_inset 
+
+ for holding multimedia data.
+ Vorbis is an audio codec that uses Ogg to store its bit-streams as files,
+ hence the name Ogg Vorbis.
+ Speex also uses the Ogg format to store its bit-streams as files, so technicall
+y they would be 
+\begin_inset Quotes eld
+\end_inset 
+
+Ogg Speex
+\begin_inset Quotes erd
+\end_inset 
+
+ files (I prefer to call them just Speex files).
+ One difference with Vorbis however, is that Speex is less tied with Ogg.
+ Actually, if what you do is Voice of IP (VoIP), you don't need Ogg at all.
+\layout Subsection*
+
 Can I use Speex for compressing music?
 \layout Standard
 
@@ -3809,6 +3881,13 @@ This is called transcoding and it will always result in much poorer quality
  This is even valid for self transcoding (tandeming), i.e.
  If you decode a Speex file and re-encode it again at the same bit-rate,
  you will lose quality.
+\layout Subsection*
+
+Does Speex run on Windows?
+\layout Standard
+
+As of 0.8.0, Speex can now compile on Windows, though limited testing has
+ been done so far.
 \layout Subsection*
 
 Why is encoding so slow compared to decoding?
@@ -3881,8 +3960,8 @@ Can Speex pass DTMF?
 I guess it all depends on the bit-rate used.
  Though no formal testing has yet been performed, I'd say don't go below
  the 15 kbps mode if you want DTMF to be transmitted correctly.
- Also, make sure you don't use the lowest complexity (see SPEEX_SET_COMPLEXITY),
- as it causes important noise.
+ Also, make sure you don't use the lowest complexity (see SPEEX_SET_COMPLEXITY
+ or --comp option), as it causes important noise.
 \layout Subsection*
 
 Can Speex pass V.9x modem signals correctly?
