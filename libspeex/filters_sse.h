@@ -55,158 +55,157 @@ void filter_mem2(float *x, float *_num, float *_den, float *y, int N, int ord, f
    {
 
       __asm__ __volatile__ 
-      ("
-       movss (%1), %%xmm0
-       movss (%0), %%xmm1
-       addss %%xmm0, %%xmm1
-       movss %%xmm1, (%2)
-       shufps $0x00, %%xmm0, %%xmm0
-       shufps $0x00, %%xmm1, %%xmm1
+      (
+       "\tmovss (%1), %%xmm0\n"
+       "\tmovss (%0), %%xmm1\n"
+       "\taddss %%xmm0, %%xmm1\n"
+       "\tmovss %%xmm1, (%2)\n"
+       "\tshufps $0x00, %%xmm0, %%xmm0\n"
+       "\tshufps $0x00, %%xmm1, %%xmm1\n"
 
-       movaps 4(%3),  %%xmm2
-       movaps 4(%4),  %%xmm3
-       mulps  %%xmm0, %%xmm2
-       mulps  %%xmm1, %%xmm3
-       movaps 20(%3), %%xmm4
-       mulps  %%xmm0, %%xmm4
-       addps  4(%0),  %%xmm2
-       movaps 20(%4), %%xmm5
-       mulps  %%xmm1, %%xmm5
-       addps  20(%0), %%xmm4
-       subps  %%xmm3, %%xmm2
-       movups %%xmm2, (%0)
-       subps  %%xmm5, %%xmm4
-       movups %%xmm4, 16(%0)
+       "\tmovaps 4(%3),  %%xmm2\n"
+       "\tmovaps 4(%4),  %%xmm3\n"
+       "\tmulps  %%xmm0, %%xmm2\n"
+       "\tmulps  %%xmm1, %%xmm3\n"
+       "\tmovaps 20(%3), %%xmm4\n"
+       "\tmulps  %%xmm0, %%xmm4\n"
+       "\taddps  4(%0),  %%xmm2\n"
+       "\tmovaps 20(%4), %%xmm5\n"
+       "\tmulps  %%xmm1, %%xmm5\n"
+       "\taddps  20(%0), %%xmm4\n"
+       "\tsubps  %%xmm3, %%xmm2\n"
+       "\tmovups %%xmm2, (%0)\n"
+       "\tsubps  %%xmm5, %%xmm4\n"
+       "\tmovups %%xmm4, 16(%0)\n"
 
-       movss  36(%3), %%xmm2
-       mulss  %%xmm0, %%xmm2
-       movss  36(%4), %%xmm3
-       mulss  %%xmm1, %%xmm3
-       addss  36(%0), %%xmm2
-       movss  40(%3), %%xmm4
-       mulss  %%xmm0, %%xmm4
-       movss  40(%4), %%xmm5
-       mulss  %%xmm1, %%xmm5
-       subss  %%xmm3, %%xmm2
-       movss  %%xmm2, 32(%0)       
-       subss  %%xmm5, %%xmm4
-       movss  %%xmm4, 36(%0)
-
-
-
-       movss 4(%1), %%xmm0
-       movss (%0), %%xmm1
-       addss %%xmm0, %%xmm1
-       movss %%xmm1, 4(%2)
-       shufps $0x00, %%xmm0, %%xmm0
-       shufps $0x00, %%xmm1, %%xmm1
-
-       movaps 4(%3),  %%xmm2
-       movaps 4(%4),  %%xmm3
-       mulps  %%xmm0, %%xmm2
-       mulps  %%xmm1, %%xmm3
-       movaps 20(%3), %%xmm4
-       mulps  %%xmm0, %%xmm4
-       addps  4(%0),  %%xmm2
-       movaps 20(%4), %%xmm5
-       mulps  %%xmm1, %%xmm5
-       addps  20(%0), %%xmm4
-       subps  %%xmm3, %%xmm2
-       movups %%xmm2, (%0)
-       subps  %%xmm5, %%xmm4
-       movups %%xmm4, 16(%0)
-
-       movss  36(%3), %%xmm2
-       mulss  %%xmm0, %%xmm2
-       movss  36(%4), %%xmm3
-       mulss  %%xmm1, %%xmm3
-       addss  36(%0), %%xmm2
-       movss  40(%3), %%xmm4
-       mulss  %%xmm0, %%xmm4
-       movss  40(%4), %%xmm5
-       mulss  %%xmm1, %%xmm5
-       subss  %%xmm3, %%xmm2
-       movss  %%xmm2, 32(%0)       
-       subss  %%xmm5, %%xmm4
-       movss  %%xmm4, 36(%0)
+       "\tmovss  36(%3), %%xmm2\n"
+       "\tmulss  %%xmm0, %%xmm2\n"
+       "\tmovss  36(%4), %%xmm3\n"
+       "\tmulss  %%xmm1, %%xmm3\n"
+       "\taddss  36(%0), %%xmm2\n"
+       "\tmovss  40(%3), %%xmm4\n"
+       "\tmulss  %%xmm0, %%xmm4\n"
+       "\tmovss  40(%4), %%xmm5\n"
+       "\tmulss  %%xmm1, %%xmm5\n"
+       "\tsubss  %%xmm3, %%xmm2\n"
+       "\tmovss  %%xmm2, 32(%0)       \n"
+       "\tsubss  %%xmm5, %%xmm4\n"
+       "\tmovss  %%xmm4, 36(%0)\n"
 
 
 
-       movss 8(%1), %%xmm0
-       movss (%0), %%xmm1
-       addss %%xmm0, %%xmm1
-       movss %%xmm1, 8(%2)
-       shufps $0x00, %%xmm0, %%xmm0
-       shufps $0x00, %%xmm1, %%xmm1
+       "\tmovss 4(%1), %%xmm0\n"
+       "\tmovss (%0), %%xmm1\n"
+       "\taddss %%xmm0, %%xmm1\n"
+       "\tmovss %%xmm1, 4(%2)\n"
+       "\tshufps $0x00, %%xmm0, %%xmm0\n"
+       "\tshufps $0x00, %%xmm1, %%xmm1\n"
 
-       movaps 4(%3),  %%xmm2
-       movaps 4(%4),  %%xmm3
-       mulps  %%xmm0, %%xmm2
-       mulps  %%xmm1, %%xmm3
-       movaps 20(%3), %%xmm4
-       mulps  %%xmm0, %%xmm4
-       addps  4(%0),  %%xmm2
-       movaps 20(%4), %%xmm5
-       mulps  %%xmm1, %%xmm5
-       addps  20(%0), %%xmm4
-       subps  %%xmm3, %%xmm2
-       movups %%xmm2, (%0)
-       subps  %%xmm5, %%xmm4
-       movups %%xmm4, 16(%0)
+       "\tmovaps 4(%3),  %%xmm2\n"
+       "\tmovaps 4(%4),  %%xmm3\n"
+       "\tmulps  %%xmm0, %%xmm2\n"
+       "\tmulps  %%xmm1, %%xmm3\n"
+       "\tmovaps 20(%3), %%xmm4\n"
+       "\tmulps  %%xmm0, %%xmm4\n"
+       "\taddps  4(%0),  %%xmm2\n"
+       "\tmovaps 20(%4), %%xmm5\n"
+       "\tmulps  %%xmm1, %%xmm5\n"
+       "\taddps  20(%0), %%xmm4\n"
+       "\tsubps  %%xmm3, %%xmm2\n"
+       "\tmovups %%xmm2, (%0)\n"
+       "\tsubps  %%xmm5, %%xmm4\n"
+       "\tmovups %%xmm4, 16(%0)\n"
 
-       movss  36(%3), %%xmm2
-       mulss  %%xmm0, %%xmm2
-       movss  36(%4), %%xmm3
-       mulss  %%xmm1, %%xmm3
-       addss  36(%0), %%xmm2
-       movss  40(%3), %%xmm4
-       mulss  %%xmm0, %%xmm4
-       movss  40(%4), %%xmm5
-       mulss  %%xmm1, %%xmm5
-       subss  %%xmm3, %%xmm2
-       movss  %%xmm2, 32(%0)       
-       subss  %%xmm5, %%xmm4
-       movss  %%xmm4, 36(%0)
+       "\tmovss  36(%3), %%xmm2\n"
+       "\tmulss  %%xmm0, %%xmm2\n"
+       "\tmovss  36(%4), %%xmm3\n"
+       "\tmulss  %%xmm1, %%xmm3\n"
+       "\taddss  36(%0), %%xmm2\n"
+       "\tmovss  40(%3), %%xmm4\n"
+       "\tmulss  %%xmm0, %%xmm4\n"
+       "\tmovss  40(%4), %%xmm5\n"
+       "\tmulss  %%xmm1, %%xmm5\n"
+       "\tsubss  %%xmm3, %%xmm2\n"
+       "\tmovss  %%xmm2, 32(%0)       \n"
+       "\tsubss  %%xmm5, %%xmm4\n"
+       "\tmovss  %%xmm4, 36(%0)\n"
 
 
 
-       movss 12(%1), %%xmm0
-       movss (%0), %%xmm1
-       addss %%xmm0, %%xmm1
-       movss %%xmm1, 12(%2)
-       shufps $0x00, %%xmm0, %%xmm0
-       shufps $0x00, %%xmm1, %%xmm1
+       "\tmovss 8(%1), %%xmm0\n"
+       "\tmovss (%0), %%xmm1\n"
+       "\taddss %%xmm0, %%xmm1\n"
+       "\tmovss %%xmm1, 8(%2)\n"
+       "\tshufps $0x00, %%xmm0, %%xmm0\n"
+       "\tshufps $0x00, %%xmm1, %%xmm1\n"
 
-       movaps 4(%3),  %%xmm2
-       movaps 4(%4),  %%xmm3
-       mulps  %%xmm0, %%xmm2
-       mulps  %%xmm1, %%xmm3
-       movaps 20(%3), %%xmm4
-       mulps  %%xmm0, %%xmm4
-       addps  4(%0),  %%xmm2
-       movaps 20(%4), %%xmm5
-       mulps  %%xmm1, %%xmm5
-       addps  20(%0), %%xmm4
-       subps  %%xmm3, %%xmm2
-       movups %%xmm2, (%0)
-       subps  %%xmm5, %%xmm4
-       movups %%xmm4, 16(%0)
+       "\tmovaps 4(%3),  %%xmm2\n"
+       "\tmovaps 4(%4),  %%xmm3\n"
+       "\tmulps  %%xmm0, %%xmm2\n"
+       "\tmulps  %%xmm1, %%xmm3\n"
+       "\tmovaps 20(%3), %%xmm4\n"
+       "\tmulps  %%xmm0, %%xmm4\n"
+       "\taddps  4(%0),  %%xmm2\n"
+       "\tmovaps 20(%4), %%xmm5\n"
+       "\tmulps  %%xmm1, %%xmm5\n"
+       "\taddps  20(%0), %%xmm4\n"
+       "\tsubps  %%xmm3, %%xmm2\n"
+       "\tmovups %%xmm2, (%0)\n"
+       "\tsubps  %%xmm5, %%xmm4\n"
+       "\tmovups %%xmm4, 16(%0)\n"
 
-       movss  36(%3), %%xmm2
-       mulss  %%xmm0, %%xmm2
-       movss  36(%4), %%xmm3
-       mulss  %%xmm1, %%xmm3
-       addss  36(%0), %%xmm2
-       movss  40(%3), %%xmm4
-       mulss  %%xmm0, %%xmm4
-       movss  40(%4), %%xmm5
-       mulss  %%xmm1, %%xmm5
-       subss  %%xmm3, %%xmm2
-       movss  %%xmm2, 32(%0)       
-       subss  %%xmm5, %%xmm4
-       movss  %%xmm4, 36(%0)
+       "\tmovss  36(%3), %%xmm2\n"
+       "\tmulss  %%xmm0, %%xmm2\n"
+       "\tmovss  36(%4), %%xmm3\n"
+       "\tmulss  %%xmm1, %%xmm3\n"
+       "\taddss  36(%0), %%xmm2\n"
+       "\tmovss  40(%3), %%xmm4\n"
+       "\tmulss  %%xmm0, %%xmm4\n"
+       "\tmovss  40(%4), %%xmm5\n"
+       "\tmulss  %%xmm1, %%xmm5\n"
+       "\tsubss  %%xmm3, %%xmm2\n"
+       "\tmovss  %%xmm2, 32(%0)       \n"
+       "\tsubss  %%xmm5, %%xmm4\n"
+       "\tmovss  %%xmm4, 36(%0)\n"
 
-       "
+
+
+       "\tmovss 12(%1), %%xmm0\n"
+       "\tmovss (%0), %%xmm1\n"
+       "\taddss %%xmm0, %%xmm1\n"
+       "\tmovss %%xmm1, 12(%2)\n"
+       "\tshufps $0x00, %%xmm0, %%xmm0\n"
+       "\tshufps $0x00, %%xmm1, %%xmm1\n"
+
+       "\tmovaps 4(%3),  %%xmm2\n"
+       "\tmovaps 4(%4),  %%xmm3\n"
+       "\tmulps  %%xmm0, %%xmm2\n"
+       "\tmulps  %%xmm1, %%xmm3\n"
+       "\tmovaps 20(%3), %%xmm4\n"
+       "\tmulps  %%xmm0, %%xmm4\n"
+       "\taddps  4(%0),  %%xmm2\n"
+       "\tmovaps 20(%4), %%xmm5\n"
+       "\tmulps  %%xmm1, %%xmm5\n"
+       "\taddps  20(%0), %%xmm4\n"
+       "\tsubps  %%xmm3, %%xmm2\n"
+       "\tmovups %%xmm2, (%0)\n"
+       "\tsubps  %%xmm5, %%xmm4\n"
+       "\tmovups %%xmm4, 16(%0)\n"
+
+       "\tmovss  36(%3), %%xmm2\n"
+       "\tmulss  %%xmm0, %%xmm2\n"
+       "\tmovss  36(%4), %%xmm3\n"
+       "\tmulss  %%xmm1, %%xmm3\n"
+       "\taddss  36(%0), %%xmm2\n"
+       "\tmovss  40(%3), %%xmm4\n"
+       "\tmulss  %%xmm0, %%xmm4\n"
+       "\tmovss  40(%4), %%xmm5\n"
+       "\tmulss  %%xmm1, %%xmm5\n"
+       "\tsubss  %%xmm3, %%xmm2\n"
+       "\tmovss  %%xmm2, 32(%0)       \n"
+       "\tsubss  %%xmm5, %%xmm4\n"
+       "\tmovss  %%xmm4, 36(%0)\n"
+
        : : "r" (mem), "r" (x+i), "r" (y+i), "r" (num), "r" (den)
        : "memory" );
 
@@ -247,39 +246,38 @@ void iir_mem2(float *x, float *_den, float *y, int N, int ord, float *_mem)
       mem[ord-1] = - den[ord]*y[i];
 #else
       __asm__ __volatile__ 
-      ("
-       movss (%1), %%xmm0
-       movss (%0), %%xmm1
-       addss %%xmm0, %%xmm1
-       movss %%xmm1, (%2)
-       shufps $0x00, %%xmm0, %%xmm0
-       shufps $0x00, %%xmm1, %%xmm1
+      (
+       "\tmovss (%1), %%xmm0\n"
+       "\tmovss (%0), %%xmm1\n"
+       "\taddss %%xmm0, %%xmm1\n"
+       "\tmovss %%xmm1, (%2)\n"
+       "\tshufps $0x00, %%xmm0, %%xmm0\n"
+       "\tshufps $0x00, %%xmm1, %%xmm1\n"
 
        
-       movaps 4(%3),  %%xmm2
-       movaps 20(%3), %%xmm3
-       mulps  %%xmm1, %%xmm2
-       mulps  %%xmm1, %%xmm3
-       movss  36(%3), %%xmm4
-       movss  40(%3), %%xmm5
-       mulss  %%xmm1, %%xmm4
-       mulss  %%xmm1, %%xmm5
-       movaps 4(%0),  %%xmm6
-       subps  %%xmm2, %%xmm6
-       movups %%xmm6, (%0)
-       movaps 20(%0), %%xmm7
-       subps  %%xmm3, %%xmm7
-       movups %%xmm7, 16(%0)
+       "\tmovaps 4(%3),  %%xmm2\n"
+       "\tmovaps 20(%3), %%xmm3\n"
+       "\tmulps  %%xmm1, %%xmm2\n"
+       "\tmulps  %%xmm1, %%xmm3\n"
+       "\tmovss  36(%3), %%xmm4\n"
+       "\tmovss  40(%3), %%xmm5\n"
+       "\tmulss  %%xmm1, %%xmm4\n"
+       "\tmulss  %%xmm1, %%xmm5\n"
+       "\tmovaps 4(%0),  %%xmm6\n"
+       "\tsubps  %%xmm2, %%xmm6\n"
+       "\tmovups %%xmm6, (%0)\n"
+       "\tmovaps 20(%0), %%xmm7\n"
+       "\tsubps  %%xmm3, %%xmm7\n"
+       "\tmovups %%xmm7, 16(%0)\n"
 
 
-       movss  36(%0), %%xmm7
-       subss  %%xmm4, %%xmm7
-       movss  %%xmm7, 32(%0)       
-       xorps  %%xmm2, %%xmm2
-       subss  %%xmm5, %%xmm2
-       movss  %%xmm2, 36(%0)
+       "\tmovss  36(%0), %%xmm7\n"
+       "\tsubss  %%xmm4, %%xmm7\n"
+       "\tmovss  %%xmm7, 32(%0)       \n"
+       "\txorps  %%xmm2, %%xmm2\n"
+       "\tsubss  %%xmm5, %%xmm2\n"
+       "\tmovss  %%xmm2, 36(%0)\n"
 
-       "
        : : "r" (mem), "r" (x+i), "r" (y+i), "r" (den)
        : "memory" );
 #endif

@@ -35,63 +35,61 @@ static float inner_prod(float *a, float *b, int len)
 {
   float sum;
   __asm__ __volatile__ (
-  "
-  push %%eax
-  push %%edi
-  push %%ecx
-  xorps %%xmm3, %%xmm3
-  xorps %%xmm4, %%xmm4
+  "\tpush %%eax\n"
+  "\tpush %%edi\n"
+  "\tpush %%ecx\n"
+  "\txorps %%xmm3, %%xmm3\n"
+  "\txorps %%xmm4, %%xmm4\n"
 
-  sub $20, %%ecx
+  "\tsub $20, %%ecx\n"
 
-.mul20_loop%=:
+".mul20_loop%=:\n"
 
-  movups (%%eax), %%xmm0
-  movups (%%edi), %%xmm1
-  mulps %%xmm0, %%xmm1
+  "\tmovups (%%eax), %%xmm0\n"
+  "\tmovups (%%edi), %%xmm1\n"
+  "\tmulps %%xmm0, %%xmm1\n"
 
-  movups 16(%%eax), %%xmm5
-  movups 16(%%edi), %%xmm6
-  mulps %%xmm5, %%xmm6
-  addps %%xmm1, %%xmm3
+  "\tmovups 16(%%eax), %%xmm5\n"
+  "\tmovups 16(%%edi), %%xmm6\n"
+  "\tmulps %%xmm5, %%xmm6\n"
+  "\taddps %%xmm1, %%xmm3\n"
 
-  movups 32(%%eax), %%xmm0
-  movups 32(%%edi), %%xmm1
-  mulps %%xmm0, %%xmm1
-  addps %%xmm6, %%xmm4
+  "\tmovups 32(%%eax), %%xmm0\n"
+  "\tmovups 32(%%edi), %%xmm1\n"
+  "\tmulps %%xmm0, %%xmm1\n"
+  "\taddps %%xmm6, %%xmm4\n"
 
-  movups 48(%%eax), %%xmm5
-  movups 48(%%edi), %%xmm6
-  mulps %%xmm5, %%xmm6
-  addps %%xmm1, %%xmm3
+  "\tmovups 48(%%eax), %%xmm5\n"
+  "\tmovups 48(%%edi), %%xmm6\n"
+  "\tmulps %%xmm5, %%xmm6\n"
+  "\taddps %%xmm1, %%xmm3\n"
 
-  movups 64(%%eax), %%xmm0
-  movups 64(%%edi), %%xmm1
-  mulps %%xmm0, %%xmm1
-  addps %%xmm6, %%xmm4
-  addps %%xmm1, %%xmm3
+  "\tmovups 64(%%eax), %%xmm0\n"
+  "\tmovups 64(%%edi), %%xmm1\n"
+  "\tmulps %%xmm0, %%xmm1\n"
+  "\taddps %%xmm6, %%xmm4\n"
+  "\taddps %%xmm1, %%xmm3\n"
 
 
-  add $80, %%eax
-  add $80, %%edi
+  "\tadd $80, %%eax\n"
+  "\tadd $80, %%edi\n"
 
-  sub $20,  %%ecx
+  "\tsub $20,  %%ecx\n"
 
-  jae .mul20_loop%=
+  "\tjae .mul20_loop%=\n"
 
-  addps %%xmm4, %%xmm3
+  "\taddps %%xmm4, %%xmm3\n"
 
-  movhlps %%xmm3, %%xmm4
-  addps %%xmm4, %%xmm3
-  movaps %%xmm3, %%xmm4
-  shufps $0x55, %%xmm4, %%xmm4
-  addss %%xmm4, %%xmm3
-  movss %%xmm3, (%%edx)
+  "\tmovhlps %%xmm3, %%xmm4\n"
+  "\taddps %%xmm4, %%xmm3\n"
+  "\tmovaps %%xmm3, %%xmm4\n"
+  "\tshufps $0x55, %%xmm4, %%xmm4\n"
+  "\taddss %%xmm4, %%xmm3\n"
+  "\tmovss %%xmm3, (%%edx)\n"
   
-  pop %%ecx
-  pop %%edi
-  pop %%eax
-  "
+  "\tpop %%ecx\n"
+  "\tpop %%edi\n"
+  "\tpop %%eax\n"
   : : "a" (a), "D" (b), "c" (len), "d" (&sum) : "memory");
   return sum;
 }
