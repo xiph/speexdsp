@@ -176,9 +176,9 @@ void usage()
    printf (" --comp n           Set encoding complexity (0-10), default 3\n"); 
    printf (" --nframes n        Number of frames per Ogg packet (1-10), default 1\n"); 
    printf (" --comment          Add the given string as an extra comment. This may be\n");
-   printf ("                     used multiple times.\n");
-   printf (" --author           Author of this track.\n");
-   printf (" --title            Title for this track.\n");
+   printf ("                     used multiple times\n");
+   printf (" --author           Author of this track\n");
+   printf (" --title            Title for this track\n");
    printf (" -h, --help         This help\n"); 
    printf (" -v, --version      Version information\n"); 
    printf (" -V                 Verbose mode (show bit-rate)\n"); 
