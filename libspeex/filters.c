@@ -337,8 +337,8 @@ void fir_mem2(const spx_sig_t *x, const spx_coef_t *num, spx_sig_t *y, int N, in
 void syn_percep_zero(const spx_sig_t *xx, const spx_coef_t *ak, const spx_coef_t *awk1, const spx_coef_t *awk2, spx_sig_t *y, int N, int ord, char *stack)
 {
    int i;
-   spx_mem_t *mem;
-   mem = PUSH(stack,ord, spx_mem_t);
+   VARDECL(spx_mem_t *mem);
+   ALLOC(mem, ord, spx_mem_t);
    for (i=0;i<ord;i++)
      mem[i]=0;
    iir_mem2(xx, ak, y, N, ord, mem);
@@ -350,8 +350,8 @@ void syn_percep_zero(const spx_sig_t *xx, const spx_coef_t *ak, const spx_coef_t
 void residue_percep_zero(const spx_sig_t *xx, const spx_coef_t *ak, const spx_coef_t *awk1, const spx_coef_t *awk2, spx_sig_t *y, int N, int ord, char *stack)
 {
    int i;
-   spx_mem_t *mem;
-   mem = PUSH(stack,ord, spx_mem_t);
+   VARDECL(spx_mem_t *mem);
+   ALLOC(mem, ord, spx_mem_t);
    for (i=0;i<ord;i++)
       mem[i]=0;
    filter_mem2(xx, ak, awk1, y, N, ord, mem);
@@ -363,12 +363,12 @@ void residue_percep_zero(const spx_sig_t *xx, const spx_coef_t *ak, const spx_co
 void qmf_decomp(const spx_word16_t *xx, const spx_word16_t *aa, spx_sig_t *y1, spx_sig_t *y2, int N, int M, spx_word16_t *mem, char *stack)
 {
    int i,j,k,M2;
-   spx_word16_t *a;
-   spx_word16_t *x;
+   VARDECL(spx_word16_t *a);
+   VARDECL(spx_word16_t *x);
    spx_word16_t *x2;
    
-   a = PUSH(stack, M, spx_word16_t);
-   x = PUSH(stack, N+M-1, spx_word16_t);
+   ALLOC(a, M, spx_word16_t);
+   ALLOC(x, N+M-1, spx_word16_t);
    x2=x+M-1;
    M2=M>>1;
    for (i=0;i<M;i++)
@@ -403,9 +403,9 @@ void fir_mem_up(const spx_sig_t *x, const spx_word16_t *a, spx_sig_t *y, int N, 
       N and M are multiples of 4 */
 {
    int i, j;
-   spx_word16_t *xx;
+   VARDECL(spx_word16_t *xx);
    
-   xx= PUSH(stack, M+N-1, spx_word16_t);
+   ALLOC(xx, M+N-1, spx_word16_t);
 
    for (i = 0; i < N/2; i++)
       xx[2*i] = SHR(x[N/2-1-i],SIG_SHIFT+1);

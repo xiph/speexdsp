@@ -52,9 +52,10 @@ static void compute_weighted_codebook(const signed char *shape_cb, const spx_sig
 {
    int i, j, k;
    __m128 resj, EE;
-   __m128 *r, *shape;
-   r = PUSH(stack, subvect_size, __m128);
-   shape = PUSH(stack, subvect_size, __m128);
+   VARDECL(__m128 *r);
+   VARDECL(__m128 *shape);
+   ALLOC(r, subvect_size, __m128);
+   ALLOC(shape, subvect_size, __m128);
    for(j=0;j<subvect_size;j++)
       r[j] = _mm_load_ps1(_r+j);
    for (i=0;i<shape_cb_size;i+=4)

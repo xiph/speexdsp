@@ -218,11 +218,12 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
    int ol_pitch;
    spx_word16_t ol_pitch_coef;
    spx_word32_t ol_gain;
-   spx_sig_t *res, *target;
-   spx_mem_t *mem;
+   VARDECL(spx_sig_t *res);
+   VARDECL(spx_sig_t *target);
+   VARDECL(spx_mem_t *mem);
    char *stack;
-   spx_sig_t *syn_resp;
-   spx_sig_t *real_exc;
+   VARDECL(spx_sig_t *syn_resp);
+   VARDECL(spx_sig_t *real_exc);
 #ifdef EPIC_48K
    int pitch_half[2];
    int ol_pitch_id=0;
@@ -242,8 +243,8 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
    speex_move(st->swBuf, st->swBuf+st->frameSize, (st->max_pitch+1)*sizeof(spx_sig_t));
 
    {
-      spx_word16_t *w_sig;
-      w_sig = PUSH(stack, st->windowSize, spx_word16_t);
+      VARDECL(spx_word16_t *w_sig);
+      ALLOC(w_sig, st->windowSize, spx_word16_t);
       /* Window for analysis */
       for (i=0;i<st->windowSize;i++)
          w_sig[i] = SHR(MULT16_16(SHR((spx_word32_t)(st->frame[i]),SIG_SHIFT),st->window[i]),SIG_SHIFT);
@@ -615,12 +616,12 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
    }
 
    /* Filter response */
-   res = PUSH(stack, st->subframeSize, spx_sig_t);
+   ALLOC(res, st->subframeSize, spx_sig_t);
    /* Target signal */
-   target = PUSH(stack, st->subframeSize, spx_sig_t);
-   syn_resp = PUSH(stack, st->subframeSize, spx_sig_t);
-   real_exc = PUSH(stack, st->subframeSize, spx_sig_t);
-   mem = PUSH(stack, st->lpcSize, spx_mem_t);
+   ALLOC(target, st->subframeSize, spx_sig_t);
+   ALLOC(syn_resp, st->subframeSize, spx_sig_t);
+   ALLOC(real_exc, st->subframeSize, spx_sig_t);
+   ALLOC(mem, st->lpcSize, spx_mem_t);
 
    /* Loop on sub-frames */
    for (sub=0;sub<st->nbSubframes;sub++)
@@ -858,8 +859,8 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
          /* In some (rare) modes, we do a second search (more bits) to reduce noise even more */
          if (SUBMODE(double_codebook)) {
             char *tmp_stack=stack;
-            spx_sig_t *innov2;
-            innov2 = PUSH(stack, st->subframeSize, spx_sig_t);
+            VARDECL(spx_sig_t *innov2);
+            ALLOC(innov2, st->subframeSize, spx_sig_t);
             for (i=0;i<st->subframeSize;i++)
                innov2[i]=0;
             for (i=0;i<st->subframeSize;i++)
@@ -1010,7 +1011,9 @@ void nb_decoder_destroy(void *state)
 static void nb_decode_lost(DecState *st, spx_word16_t *out, char *stack)
 {
    int i, sub;
-   spx_coef_t *awk1, *awk2, *awk3;
+   VARDECL(spx_coef_t *awk1);
+   VARDECL(spx_coef_t *awk2);
+   VARDECL(spx_coef_t *awk3);
    float pitch_gain, fact;
    spx_word16_t gain_med;
 
@@ -1029,9 +1032,9 @@ static void nb_decode_lost(DecState *st, spx_word16_t *out, char *stack)
    /*speex_move(st->inBuf, st->inBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(spx_sig_t));*/
    speex_move(st->excBuf, st->excBuf+st->frameSize, (st->max_pitch + 1)*sizeof(spx_sig_t));
 
-   awk1=PUSH(stack, (st->lpcSize+1), spx_coef_t);
-   awk2=PUSH(stack, (st->lpcSize+1), spx_coef_t);
-   awk3=PUSH(stack, (st->lpcSize+1), spx_coef_t);
+   ALLOC(awk1, (st->lpcSize+1), spx_coef_t);
+   ALLOC(awk2, (st->lpcSize+1), spx_coef_t);
+   ALLOC(awk3, (st->lpcSize+1), spx_coef_t);
 
    for (sub=0;sub<st->nbSubframes;sub++)
    {
@@ -1132,7 +1135,9 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
    int wideband;
    int m;
    char *stack;
-   spx_coef_t *awk1, *awk2, *awk3;
+   VARDECL(spx_coef_t *awk1);
+   VARDECL(spx_coef_t *awk2);
+   VARDECL(spx_coef_t *awk3);
    spx_word16_t pitch_average=0;
 #ifdef EPIC_48K
    int pitch_half[2];
@@ -1244,8 +1249,8 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
    /* If null mode (no transmission), just set a couple things to zero*/
    if (st->submodes[st->submodeID] == NULL)
    {
-      spx_coef_t *lpc;
-      lpc = PUSH(stack,11, spx_coef_t);
+      VARDECL(spx_coef_t *lpc);
+      ALLOC(lpc, 11, spx_coef_t);
       bw_lpc(GAMMA_SCALING*.93, st->interp_qlpc, lpc, 10);
       {
          float innov_gain=0;
@@ -1345,9 +1350,9 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
    }
 #endif
 
-   awk1=PUSH(stack, st->lpcSize+1, spx_coef_t);
-   awk2=PUSH(stack, st->lpcSize+1, spx_coef_t);
-   awk3=PUSH(stack, st->lpcSize+1, spx_coef_t);
+   ALLOC(awk1, st->lpcSize+1, spx_coef_t);
+   ALLOC(awk2, st->lpcSize+1, spx_coef_t);
+   ALLOC(awk3, st->lpcSize+1, spx_coef_t);
 
    if (st->submodeID==1)
    {
@@ -1567,8 +1572,8 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
          if (SUBMODE(double_codebook))
          {
             char *tmp_stack=stack;
-            spx_sig_t *innov2;
-            innov2 = PUSH(stack, st->subframeSize, spx_sig_t);
+            VARDECL(spx_sig_t *innov2);
+            ALLOC(innov2, st->subframeSize, spx_sig_t);
             for (i=0;i<st->subframeSize;i++)
                innov2[i]=0;
             SUBMODE(innovation_unquant)(innov2, SUBMODE(innovation_params), st->subframeSize, bits, stack);

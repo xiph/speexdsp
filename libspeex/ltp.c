@@ -151,21 +151,23 @@ static void pitch_xcorr(const spx_word16_t *_x, const spx_word16_t *_y, spx_word
 void open_loop_nbest_pitch(spx_sig_t *sw, int start, int end, int len, int *pitch, spx_word16_t *gain, int N, char *stack)
 {
    int i,j,k;
-   spx_word32_t *best_score;
+   VARDECL(spx_word32_t *best_score);
    spx_word32_t e0;
-   spx_word32_t *corr, *energy;
-   spx_word32_t *score;
+   VARDECL(spx_word32_t *corr);
+   VARDECL(spx_word32_t *energy);
+   VARDECL(spx_word32_t *score);
+   VARDECL(spx_word16_t *swn2);
    spx_word16_t *swn;
 
-   best_score = PUSH(stack,N, spx_word32_t);
-   corr = PUSH(stack,end-start+1, spx_word32_t);
-   energy = PUSH(stack,end-start+2, spx_word32_t);
-   score = PUSH(stack,end-start+1, spx_word32_t);
+   ALLOC(best_score, N, spx_word32_t);
+   ALLOC(corr, end-start+1, spx_word32_t);
+   ALLOC(energy, end-start+2, spx_word32_t);
+   ALLOC(score, end-start+1, spx_word32_t);
 
 #ifdef FIXED_POINT
-   swn = PUSH(stack, end+len, spx_word16_t);
-   normalize16(sw-end, swn, 16384, end+len);
-   swn += end;
+   ALLOC(swn2, end+len, spx_word16_t);
+   normalize16(sw-end, swn2, 16384, end+len);
+   swn = swn2 + end;
 #else
    swn = sw;
 #endif
@@ -189,10 +191,10 @@ void open_loop_nbest_pitch(spx_sig_t *sw, int start, int end, int len, int *pitc
 
 #ifdef FIXED_POINT
    {
-      spx_word16_t *corr16;
-      spx_word16_t *ener16;
-      corr16 = PUSH(stack, end-start+1, spx_word16_t);
-      ener16 = PUSH(stack, end-start+1, spx_word16_t);
+      VARDECL(spx_word16_t *corr16);
+      VARDECL(spx_word16_t *ener16);
+      ALLOC(corr16, end-start+1, spx_word16_t);
+      ALLOC(ener16, end-start+1, spx_word16_t);
       normalize16(corr, corr16, 16384, end-start+1);
       normalize16(energy, ener16, 16384, end-start+1);
 
@@ -289,7 +291,8 @@ int cdbk_offset
 )
 {
    int i,j;
-   spx_sig_t *tmp, *tmp2;
+   VARDECL(spx_sig_t *tmp);
+   VARDECL(spx_sig_t *tmp2);
    spx_sig_t *x[3];
    spx_sig_t *e[3];
    spx_word32_t corr[3];
@@ -303,8 +306,8 @@ int cdbk_offset
    params = (ltp_params*) par;
    gain_cdbk_size = 1<<params->gain_bits;
    gain_cdbk = params->gain_cdbk + 3*gain_cdbk_size*cdbk_offset;
-   tmp = PUSH(stack, 3*nsf, spx_sig_t);
-   tmp2 = PUSH(stack, 3*nsf, spx_sig_t);
+   ALLOC(tmp, 3*nsf, spx_sig_t);
+   ALLOC(tmp2, 3*nsf, spx_sig_t);
 
    x[0]=tmp;
    x[1]=tmp+nsf;
@@ -343,15 +346,23 @@ int cdbk_offset
    {
       /* If using fixed-point, we need to normalize the signals first */
       spx_word16_t *y[3];
-      spx_word16_t *t;
+      VARDECL(spx_word16_t *ytmp);
+      VARDECL(spx_word16_t *t);
 
       spx_sig_t max_val=1;
       int sig_shift;
       
-      y[0] = PUSH(stack, nsf, spx_word16_t);
-      y[1] = PUSH(stack, nsf, spx_word16_t);
-      y[2] = PUSH(stack, nsf, spx_word16_t);
-      t = PUSH(stack, nsf, spx_word16_t);
+      ALLOC(ytmp, 3*nsf, spx_word16_t);
+#if 0
+      ALLOC(y[0], nsf, spx_word16_t);
+      ALLOC(y[1], nsf, spx_word16_t);
+      ALLOC(y[2], nsf, spx_word16_t);
+#else
+      y[0] = ytmp;
+      y[1] = ytmp+nsf;
+      y[2] = ytmp+2*nsf;
+#endif
+      ALLOC(t, nsf, spx_word16_t);
       for (j=0;j<3;j++)
       {
          for (i=0;i<nsf;i++)
@@ -523,12 +534,14 @@ int cdbk_offset
 {
    int i,j;
    int cdbk_index, pitch=0, best_gain_index=0;
-   spx_sig_t *best_exc, *new_target, *best_target;
+   VARDECL(spx_sig_t *best_exc);
+   VARDECL(spx_sig_t *new_target);
+   VARDECL(spx_sig_t *best_target);
    int best_pitch=0;
    spx_word64_t err, best_err=-1;
    int N;
    ltp_params *params;
-   int *nbest;
+   VARDECL(int *nbest);
 
    N=complexity;
    if (N>10)
@@ -536,7 +549,7 @@ int cdbk_offset
    if (N<1)
       N=1;
 
-   nbest=PUSH(stack, N, int);
+   ALLOC(nbest, N, int);
    params = (ltp_params*) par;
 
    if (end<start)
@@ -548,9 +561,9 @@ int cdbk_offset
       return start;
    }
    
-   best_exc=PUSH(stack,nsf, spx_sig_t);
-   new_target=PUSH(stack,nsf, spx_sig_t);
-   best_target=PUSH(stack,nsf, spx_sig_t);
+   ALLOC(best_exc, nsf, spx_sig_t);
+   ALLOC(new_target, nsf, spx_sig_t);
+   ALLOC(best_target, nsf, spx_sig_t);
    
    if (N>end-start+1)
       N=end-start+1;
@@ -656,8 +669,8 @@ int cdbk_offset
 
    {
       spx_sig_t *e[3];
-      spx_sig_t *tmp2;
-      tmp2=PUSH(stack, 3*nsf, spx_sig_t);
+      VARDECL(spx_sig_t *tmp2);
+      ALLOC(tmp2, 3*nsf, spx_sig_t);
       e[0]=tmp2;
       e[1]=tmp2+nsf;
       e[2]=tmp2+2*nsf;

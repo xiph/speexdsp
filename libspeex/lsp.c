@@ -143,10 +143,10 @@ static inline spx_word32_t cheb_poly_eva(spx_word32_t *coef,spx_word16_t x,int m
 /*  int m 		order of the polynomial 			*/
 {
     int i;
-    spx_word16_t *T;
+    VARDECL(spx_word16_t *T);
     spx_word32_t sum;
     int m2=m>>1;
-    spx_word16_t *coefn;
+    VARDECL(spx_word16_t *coefn);
 
     /*Prevents overflows*/
     if (x>16383)
@@ -155,8 +155,8 @@ static inline spx_word32_t cheb_poly_eva(spx_word32_t *coef,spx_word16_t x,int m
        x = -16383;
 
     /* Allocate memory for Chebyshev series formulation */
-    T=PUSH(stack, m2+1, spx_word16_t);
-    coefn=PUSH(stack, m2+1, spx_word16_t);
+    ALLOC(T, m2+1, spx_word16_t);
+    ALLOC(coefn, m2+1, spx_word16_t);
 
     for (i=0;i<m2+1;i++)
     {
@@ -190,11 +190,12 @@ static float cheb_poly_eva(spx_word32_t *coef,float x,int m,char *stack)
 /*  int m 		order of the polynomial 			*/
 {
     int i;
-    float *T,sum;
+    VARDECL(float *T);
+    float sum;
     int m2=m>>1;
 
     /* Allocate memory for Chebyshev series formulation */
-    T=PUSH(stack, m2+1, float);
+    ALLOC(T, m2+1, float);
 
     /* Initialise values */
     T[0]=1;
@@ -245,8 +246,8 @@ int lpc_to_lsp (spx_coef_t *a,int lpcrdr,spx_lsp_t *freq,int nb,spx_word16_t del
     spx_word16_t temp_xr,xl,xr,xm=0;
     spx_word32_t psuml,psumr,psumm,temp_psumr/*,temp_qsumr*/;
     int i,j,m,flag,k;
-    spx_word32_t *Q;                 	/* ptrs for memory allocation 		*/
-    spx_word32_t *P;
+    VARDECL(spx_word32_t *Q);                 	/* ptrs for memory allocation 		*/
+    VARDECL(spx_word32_t *P);
     spx_word32_t *px;                	/* ptrs of respective P'(z) & Q'(z)	*/
     spx_word32_t *qx;
     spx_word32_t *p;
@@ -259,8 +260,8 @@ int lpc_to_lsp (spx_coef_t *a,int lpcrdr,spx_lsp_t *freq,int nb,spx_word16_t del
     m = lpcrdr/2;            	/* order of P'(z) & Q'(z) polynomials 	*/
 
     /* Allocate memory space for polynomials */
-    Q = PUSH(stack, (m+1), spx_word32_t);
-    P = PUSH(stack, (m+1), spx_word32_t);
+    ALLOC(Q, (m+1), spx_word32_t);
+    ALLOC(P, (m+1), spx_word32_t);
 
     /* determine P'(z)'s and Q'(z)'s coefficients where
       P'(z) = P(z)/(1 + z^(-1)) and Q'(z) = Q(z)/(1-z^(-1)) */
@@ -414,16 +415,16 @@ void lsp_to_lpc(spx_lsp_t *freq,spx_coef_t *ak,int lpcrdr, char *stack)
 {
     int i,j;
     spx_word32_t xout1,xout2,xin1,xin2;
-    spx_word32_t *Wp;
+    VARDECL(spx_word32_t *Wp);
     spx_word32_t *pw,*n1,*n2,*n3,*n4=NULL;
-    spx_word16_t *freqn;
+    VARDECL(spx_word16_t *freqn);
     int m = lpcrdr>>1;
     
-    freqn = PUSH(stack, lpcrdr, spx_word16_t);
+    ALLOC(freqn, lpcrdr, spx_word16_t);
     for (i=0;i<lpcrdr;i++)
        freqn[i] = ANGLE2X(freq[i]);
 
-    Wp = PUSH(stack, 4*m+2, spx_word32_t);
+    ALLOC(Wp, 4*m+2, spx_word32_t);
     pw = Wp;
 
 
@@ -488,12 +489,12 @@ void lsp_to_lpc(spx_lsp_t *freq,spx_coef_t *ak,int lpcrdr, char *stack)
 {
     int i,j;
     float xout1,xout2,xin1,xin2;
-    float *Wp;
+    VARDECL(float *Wp);
     float *pw,*n1,*n2,*n3,*n4=NULL;
-    float *x_freq;
+    VARDECL(float *x_freq);
     int m = lpcrdr>>1;
 
-    Wp = PUSH(stack, 4*m+2, float);
+    ALLOC(Wp, 4*m+2, float);
     pw = Wp;
 
     /* initialise contents of array */
@@ -508,7 +509,7 @@ void lsp_to_lpc(spx_lsp_t *freq,spx_coef_t *ak,int lpcrdr, char *stack)
     xin1 = 1.0;
     xin2 = 1.0;
 
-    x_freq=PUSH(stack, lpcrdr, float);
+    ALLOC(x_freq, lpcrdr, float);
     for (i=0;i<lpcrdr;i++)
        x_freq[i] = ANGLE2X(freq[i]);
 

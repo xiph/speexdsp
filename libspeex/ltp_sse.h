@@ -53,12 +53,13 @@ static float inner_prod(const float *a, const float *b, int len)
 static void pitch_xcorr(const float *_x, const float *_y, float *corr, int len, int nb_pitch, char *stack)
 {
    int i, offset;
-   __m128 *x, *y;
+   VARDECL(__m128 *x);
+   VARDECL(__m128 *y);
    int N, L;
    N = len>>2;
    L = nb_pitch>>2;
-   x = PUSH(stack, N, __m128);
-   y = PUSH(stack, N+L, __m128);
+   ALLOC(x, N, __m128);
+   ALLOC(y, N+L, __m128);
    for (i=0;i<N;i++)
       x[i] = _mm_loadu_ps(_x+(i<<2));
    for (offset=0;offset<4;offset++)

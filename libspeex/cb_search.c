@@ -98,16 +98,16 @@ int   update_target
 )
 {
    int i,j,m,n,q;
-   spx_word16_t *resp;
+   VARDECL(spx_word16_t *resp);
 #ifdef _USE_SSE
-   __m128 *resp2;
-   __m128 *E;
+   VARDECL(__m128 *resp2);
+   VARDECL(__m128 *E);
 #else
    spx_word16_t *resp2;
-   spx_word32_t *E;
+   VARDECL(spx_word32_t *E);
 #endif
-   spx_word16_t *t;
-   spx_sig_t *e;
+   VARDECL(spx_word16_t *t);
+   VARDECL(spx_sig_t *e);
    const signed char *shape_cb;
    int shape_cb_size, subvect_size, nb_subvect;
    split_cb_params *params;
@@ -127,16 +127,16 @@ int   update_target
    shape_cb_size = 1<<params->shape_bits;
    shape_cb = params->shape_cb;
    have_sign = params->have_sign;
-   resp = PUSH(stack, shape_cb_size*subvect_size, spx_word16_t);
+   ALLOC(resp, shape_cb_size*subvect_size, spx_word16_t);
 #ifdef _USE_SSE
-   resp2 = PUSH(stack, (shape_cb_size*subvect_size)>>2, __m128);
-   E = PUSH(stack, shape_cb_size>>2, __m128);
+   ALLOC(resp2, (shape_cb_size*subvect_size)>>2, __m128);
+   ALLOC(E, shape_cb_size>>2, __m128);
 #else
    resp2 = resp;
-   E = PUSH(stack, shape_cb_size, spx_word32_t);
+   ALLOC(E, shape_cb_size, spx_word32_t);
 #endif
-   t = PUSH(stack, nsf, spx_word16_t);
-   e = PUSH(stack, nsf, spx_sig_t);
+   ALLOC(t, nsf, spx_word16_t);
+   ALLOC(e, nsf, spx_sig_t);
    
    /* FIXME: make that adaptive? */
    for (i=0;i<nsf;i++)
@@ -222,8 +222,8 @@ int   update_target
    /* Update target: only update target if necessary */
    if (update_target)
    {
-      spx_sig_t *r2;
-      r2 = PUSH(stack, nsf, spx_sig_t);
+      VARDECL(spx_sig_t *r2);
+      ALLOC(r2, nsf, spx_sig_t);
       syn_percep_zero(e, ak, awk1, awk2, r2, nsf,p, stack);
       for (j=0;j<nsf;j++)
          target[j]-=r2[j];
@@ -249,28 +249,33 @@ int   update_target
 )
 {
    int i,j,k,m,n,q;
-   spx_word16_t *resp;
+   VARDECL(spx_word16_t *resp);
 #ifdef _USE_SSE
-   __m128 *resp2;
-   __m128 *E;
+   VARDECL(__m128 *resp2);
+   VARDECL(__m128 *E);
 #else
    spx_word16_t *resp2;
-   spx_word32_t *E;
+   VARDECL(spx_word32_t *E);
 #endif
-   spx_word16_t *t;
-   spx_sig_t *e, *r2;
-   spx_word16_t *tmp;
-   spx_word32_t *ndist, *odist;
-   int *itmp;
+   VARDECL(spx_word16_t *t);
+   VARDECL(spx_sig_t *e);
+   VARDECL(spx_sig_t *r2);
+   VARDECL(spx_word16_t *tmp);
+   VARDECL(spx_word32_t *ndist);
+   VARDECL(spx_word32_t *odist);
+   VARDECL(int *itmp);
+   VARDECL(spx_word16_t **ot2);
+   VARDECL(spx_word16_t **nt2);
    spx_word16_t **ot, **nt;
-   int **nind, **oind;
-   int *ind;
+   VARDECL(int **nind);
+   VARDECL(int **oind);
+   VARDECL(int *ind);
    const signed char *shape_cb;
    int shape_cb_size, subvect_size, nb_subvect;
    split_cb_params *params;
    int N=2;
-   int *best_index;
-   spx_word32_t *best_dist;
+   VARDECL(int *best_index);
+   VARDECL(spx_word32_t *best_dist);
    int have_sign;
    N=complexity;
    if (N>10)
@@ -283,10 +288,10 @@ int   update_target
       split_cb_search_shape_sign_N1(target,ak,awk1,awk2,par,p,nsf,exc,r,bits,stack,complexity,update_target);
       return;
    }
-   ot=PUSH(stack, N, spx_word16_t*);
-   nt=PUSH(stack, N, spx_word16_t*);
-   oind=PUSH(stack, N, int*);
-   nind=PUSH(stack, N, int*);
+   ALLOC(ot2, N, spx_word16_t*);
+   ALLOC(nt2, N, spx_word16_t*);
+   ALLOC(oind, N, int*);
+   ALLOC(nind, N, int*);
 
    params = (split_cb_params *) par;
    subvect_size = params->subvect_size;
@@ -294,39 +299,37 @@ int   update_target
    shape_cb_size = 1<<params->shape_bits;
    shape_cb = params->shape_cb;
    have_sign = params->have_sign;
-   resp = PUSH(stack, shape_cb_size*subvect_size, spx_word16_t);
+   ALLOC(resp, shape_cb_size*subvect_size, spx_word16_t);
 #ifdef _USE_SSE
-   resp2 = PUSH(stack, (shape_cb_size*subvect_size)>>2, __m128);
-   E = PUSH(stack, shape_cb_size>>2, __m128);
+   ALLOC(resp2, (shape_cb_size*subvect_size)>>2, __m128);
+   ALLOC(E, shape_cb_size>>2, __m128);
 #else
    resp2 = resp;
-   E = PUSH(stack, shape_cb_size, spx_word32_t);
+   ALLOC(E, shape_cb_size, spx_word32_t);
 #endif
-   t = PUSH(stack, nsf, spx_word16_t);
-   e = PUSH(stack, nsf, spx_sig_t);
-   r2 = PUSH(stack, nsf, spx_sig_t);
-   ind = PUSH(stack, nb_subvect, int);
+   ALLOC(t, nsf, spx_word16_t);
+   ALLOC(e, nsf, spx_sig_t);
+   ALLOC(r2, nsf, spx_sig_t);
+   ALLOC(ind, nb_subvect, int);
 
-   tmp = PUSH(stack, 2*N*nsf, spx_word16_t);
+   ALLOC(tmp, 2*N*nsf, spx_word16_t);
    for (i=0;i<N;i++)
    {
-      ot[i]=tmp;
-      tmp += nsf;
-      nt[i]=tmp;
-      tmp += nsf;
+      ot2[i]=tmp+2*i*nsf;
+      nt2[i]=tmp+(2*i+1)*nsf;
    }
-   best_index = PUSH(stack, N, int);
-   best_dist = PUSH(stack, N, spx_word32_t);
-   ndist = PUSH(stack, N, spx_word32_t);
-   odist = PUSH(stack, N, spx_word32_t);
+   ot=ot2;
+   nt=nt2;
+   ALLOC(best_index, N, int);
+   ALLOC(best_dist, N, spx_word32_t);
+   ALLOC(ndist, N, spx_word32_t);
+   ALLOC(odist, N, spx_word32_t);
    
-   itmp = PUSH(stack, 2*N*nb_subvect, int);
+   ALLOC(itmp, 2*N*nb_subvect, int);
    for (i=0;i<N;i++)
    {
-      nind[i]=itmp;
-      itmp+=nb_subvect;
-      oind[i]=itmp;
-      itmp+=nb_subvect;
+      nind[i]=itmp+2*i*nb_subvect;
+      oind[i]=itmp+(2*i+1)*nb_subvect;
       for (j=0;j<nb_subvect;j++)
          nind[i][j]=oind[i][j]=-1;
    }
@@ -530,7 +533,8 @@ char *stack
 )
 {
    int i,j;
-   int *ind, *signs;
+   VARDECL(int *ind);
+   VARDECL(int *signs);
    const signed char *shape_cb;
    int shape_cb_size, subvect_size, nb_subvect;
    split_cb_params *params;
@@ -543,8 +547,8 @@ char *stack
    shape_cb = params->shape_cb;
    have_sign = params->have_sign;
 
-   ind = PUSH(stack, nb_subvect, int);
-   signs = PUSH(stack, nb_subvect, int);
+   ALLOC(ind, nb_subvect, int);
+   ALLOC(signs, nb_subvect, int);
 
    /* Decode codewords and gains */
    for (i=0;i<nb_subvect;i++)
@@ -594,8 +598,8 @@ int   update_target
 )
 {
    int i;
-   spx_sig_t *tmp;
-   tmp = PUSH(stack, nsf, spx_sig_t);
+   VARDECL(spx_sig_t *tmp);
+   ALLOC(tmp, nsf, spx_sig_t);
    residue_percep_zero(target, ak, awk1, awk2, tmp, nsf, p, stack);
 
    for (i=0;i<nsf;i++)
