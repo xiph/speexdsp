@@ -61,16 +61,16 @@ static spx_word32_t inner_prod(spx_word16_t *x, spx_word16_t *y, int len)
 void open_loop_nbest_pitch(spx_sig_t *sw, int start, int end, int len, int *pitch, float *gain, int N, char *stack)
 {
    int i,j,k;
-   float *best_score;
+   spx_word32_t *best_score;
    float e0;
    spx_word32_t *corr, *energy;
-   float *score;
+   spx_word32_t *score;
    spx_word16_t *swn;
 
-   best_score = PUSH(stack,N, float);
+   best_score = PUSH(stack,N, spx_word32_t);
    corr = PUSH(stack,end-start+1, spx_word32_t);
    energy = PUSH(stack,end-start+2, spx_word32_t);
-   score = PUSH(stack,end-start+1, float);
+   score = PUSH(stack,end-start+1, spx_word32_t);
 
 #ifdef FIXED_POINT
    swn = PUSH(stack, end+len, spx_word16_t);
@@ -104,27 +104,43 @@ void open_loop_nbest_pitch(spx_sig_t *sw, int start, int end, int len, int *pitc
    {
       /* Compute correlation*/
       corr[i-start]=inner_prod(swn, swn-i, len);
-      score[i-start]=1.*corr[i-start]*corr[i-start]/(energy[i-start]+1.);
    }
 
+#ifdef FIXED_POINT
    {
       spx_word16_t *corr16;
       spx_word16_t *ener16;
-#ifdef FIXED_POINT
       corr16 = PUSH(stack, end-start+1, spx_word16_t);
       ener16 = PUSH(stack, end-start+1, spx_word16_t);
       normalize16(corr, corr16, 16384, end-start+1);
       normalize16(energy, ener16, 16384, end-start+1);
-#else
-      corr16=corr;
-      ener16=energy;
-#endif
+
       for (i=start;i<=end;i++)
       {
-         score[i-start]=DIV32_16(MULT16_16(corr16[i-start],corr16[i-start]),ener16[i-start]+1);
+         spx_word16_t g;
+         spx_word32_t tmp;
+         tmp = corr16[i-start];
+         if (SHR(corr16[i-start],4)>ener16[i-start])
+            tmp = SHL((spx_word32_t)ener16[i-start],14);
+         else if (-SHR(corr16[i-start],4)>ener16[i-start])
+            tmp = -SHL((spx_word32_t)ener16[i-start],14);
+         else
+            tmp = SHL(tmp,10);
+         g = DIV32_16(tmp, 8+ener16[i-start]);
+         score[i-start] = MULT16_16(corr16[i-start],g);
       }
    }
-
+#else
+   for (i=start;i<=end;i++)
+   {
+      float g = corr[i-start]/(1+energy[i-start]);
+      if (g>16)
+         g = 16;
+      else if (g<-16)
+         g = -16;
+      score[i-start] = g*corr[i-start];
+   }
+#endif
 
    for (i=start;i<=end;i++)
    {
