@@ -376,8 +376,10 @@ int  *cdbk_index
       {
          if (j-pp<0)
             e[i][j]=exc2[j-pp];
-         else
+         else if (j-pp-pitch<0)
             e[i][j]=exc2[j-pp-pitch];
+         else
+            e[i][j]=0;
       }
       residue_zero(e[i],awk1,x[i],nsf,p);
       syn_filt_zero(x[i],ak,x[i],nsf,p);
@@ -505,6 +507,11 @@ float *exc2
 
 
    open_loop_pitch(sw, nsf, end, nsf, &ol_pitch);
+
+   if (ol_pitch-N<start)
+      ol_pitch=start+N;
+   if (ol_pitch+N>end)
+      ol_pitch=end-N;
 
    for (pitch=ol_pitch-N; pitch<=ol_pitch+N; pitch++)
    {
