@@ -257,10 +257,10 @@ int   complexity
       /*update old-new data*/
       /* just swap pointers instead of a long copy */
       {
-         float **tmp;
-         tmp=ot;
+         float **tmp2;
+         tmp2=ot;
          ot=nt;
-         nt=tmp;
+         nt=tmp2;
       }
       for (j=0;j<N;j++)
          for (m=0;m<nb_subvect;m++)

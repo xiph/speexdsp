@@ -108,6 +108,18 @@ int speex_std_char_handler(SpeexBits *bits, void *state, void *data);
 /** Default handler for user-defined requests: in this case, just ignore */
 int speex_default_user_handler(SpeexBits *bits, void *state, void *data);
 
+
+
+
+int speex_std_low_mode_request_handler(SpeexBits *bits, void *state, void *data);
+
+int speex_std_vbr_request_handler(SpeexBits *bits, void *state, void *data);
+
+int speex_std_enh_request_handler(SpeexBits *bits, void *state, void *data);
+
+int speex_std_vbr_quality_request_handler(SpeexBits *bits, void *state, void *data);
+
+
 #ifdef __cplusplus
 }
 #endif

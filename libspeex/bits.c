@@ -120,7 +120,7 @@ void speex_bits_read_from(SpeexBits *bits, char *bytes, int len)
    bits->overflow=0;
 }
 
-void speex_bits_flush(SpeexBits *bits)
+static void speex_bits_flush(SpeexBits *bits)
 {
    int i;
    if (bits->bytePtr>0)

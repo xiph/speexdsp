@@ -40,7 +40,7 @@
 #endif
 
 /*Disable some warnings on VC++*/
-#if _MSC_VER
+#ifdef _MSC_VER
 #pragma warning(disable : 4244)
 #pragma warning(disable : 4305)
 #endif

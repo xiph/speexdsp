@@ -271,53 +271,6 @@ int  *cdbk_index
 
       *cdbk_index=best_cdbk;
    }
-   /* Calculate gains by matrix inversion... (unquantized) */
-   if (0) {
-      float tmp;
-      float B[3][3];
-      A[0][0]+=1;
-      A[1][1]+=1;
-      A[2][2]+=1;
-      
-      for (i=0;i<3;i++)
-         for (j=0;j<3;j++)
-            B[i][j]=A[i][j];
-
-
-      tmp=A[1][0]/A[0][0];
-      for (i=0;i<3;i++)
-         A[1][i] -= tmp*A[0][i];
-      corr[1] -= tmp*corr[0];
-
-      tmp=A[2][0]/A[0][0];
-      for (i=0;i<3;i++)
-         A[2][i] -= tmp*A[0][i];
-      corr[2] -= tmp*corr[0];
-      
-      tmp=A[2][1]/A[1][1];
-      A[2][2] -= tmp*A[1][2];
-      corr[2] -= tmp*corr[1];
-
-      corr[2] /= A[2][2];
-      corr[1] = (corr[1] - A[1][2]*corr[2])/A[1][1];
-      corr[0] = (corr[0] - A[0][2]*corr[2] - A[0][1]*corr[1])/A[0][0];
-      /*printf ("\n%f %f %f\n", best_corr[0], best_corr[1], best_corr[2]);*/
-
-   
-      /* Put gains in right order */
-      gain[0]=corr[2];gain[1]=corr[1];gain[2]=corr[0];
-
-      {
-         float gain_sum = gain[0]+gain[1]+gain[2];
-         if (fabs(gain_sum)>2.5)
-         {
-            float fact = 2.5/gain_sum;
-            for (i=0;i<3;i++)
-               gain[i]*=fact;
-         }
-      }
-      
-   }
    
    for (i=0;i<nsf;i++)
       exc[i]=gain[0]*e[2][i]+gain[1]*e[1][i]+gain[2]*e[0][i];
@@ -512,18 +465,18 @@ float last_pitch_gain)
          }
 #else
          {
-            int tmp1, tmp2;
+            int tmp1, tmp3;
             tmp1=nsf;
             if (tmp1>pp)
                tmp1=pp;
             for (j=0;j<tmp1;j++)
                e[i][j]=exc[j-pp];
-            tmp2=nsf;
-            if (tmp2>pp+pitch)
-               tmp2=pp+pitch;
-            for (j=tmp1;j<tmp2;j++)
+            tmp3=nsf;
+            if (tmp3>pp+pitch)
+               tmp3=pp+pitch;
+            for (j=tmp1;j<tmp3;j++)
                e[i][j]=exc[j-pp-pitch];
-            for (j=tmp2;j<nsf;j++)
+            for (j=tmp3;j<nsf;j++)
                e[i][j]=0;
          }
 #endif

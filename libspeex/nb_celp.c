@@ -1055,8 +1055,6 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
             wideband = speex_bits_unpack_unsigned(bits, 1);
             if (wideband)
             {
-               int submode;
-               int advance;
                advance = submode = speex_bits_unpack_unsigned(bits, SB_SUBMODE_BITS);
                speex_mode_query(&speex_wb_mode, SPEEX_SUBMODE_BITS_PER_FRAME, &advance);
                if (advance < 0)
@@ -1118,9 +1116,9 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
         st->exc[i]=0;*/
       {
          float innov_gain=0;
-         float pitch_gain=st->last_pitch_gain;
-         if (pitch_gain>.6)
-            pitch_gain=.6;
+         float pgain=st->last_pitch_gain;
+         if (pgain>.6)
+            pgain=.6;
          for (i=0;i<st->frameSize;i++)
             innov_gain += st->innov[i]*st->innov[i];
          innov_gain=sqrt(innov_gain/st->frameSize);
@@ -1391,9 +1389,9 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
                g=1;
             for (i=0;i<st->subframeSize;i++)
             {
-               float tmp=exc[i];
+               float exci=exc[i];
                exc[i]=.8*g*exc[i]*ol_gain + .6*g*st->voc_m1*ol_gain + .5*g*innov[i] - .5*g*st->voc_m2 + (1-g)*innov[i];
-               st->voc_m1 = tmp;
+               st->voc_m1 = exci;
                st->voc_m2=innov[i];
                st->voc_mean = .95*st->voc_mean + .05*exc[i];
                exc[i]-=st->voc_mean;

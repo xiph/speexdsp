@@ -31,6 +31,7 @@
 */
 
 #include <math.h>
+#include "math_approx.h"
 
 float cos_sin[102] = {
    1.00000000, 0.00000000,
