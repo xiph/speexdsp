@@ -39,6 +39,35 @@ Jean-Marc Valin
 \end_inset 
 
 
+\layout Section*
+
+Disclaimer
+\layout Standard
+
+This document is meant to ease the understanding of the Speex code but makes
+ no warranty of being exact.
+ Also, some techniques used in Speex are said to be 
+\begin_inset Quotes eld
+\end_inset 
+
+similar
+\begin_inset Quotes erd
+\end_inset 
+
+ to techniques used in known codecs.
+ This should not be understood as an acknowledgment that Speex is using
+ any patented algorithm used in these codecs, but merely that comprehension
+ of Speex can be facilitated by thinking that the principles of operation
+ are the same or similar.
+ Of course, there's also the obligatory 
+\begin_inset Quotes eld
+\end_inset 
+
+all trademarks are property of their respective owner
+\begin_inset Quotes erd
+\end_inset 
+
+.
 \layout Section
 
 Introduction to Speex
@@ -47,7 +76,7 @@ Introduction to Speex
 Speex has been designed with the following goals in mind:
 \layout Itemize
 
-Patent-free (imples that we can't use ACELP or other patented algorithms)
+Patent-free (implies that we can't use ACELP or other patented algorithms)
 \layout Itemize
 
 Good for Voice over IP (VoIP)
@@ -81,15 +110,15 @@ This led us to choose the CELP technique for Speex.
  Also many design decisions were based on the original goals and assumptions:
 \layout Itemize
 
-Mimimizing the amount of information extracted from past frames (for robustness
+Minimizing the amount of information extracted from past frames (for robustness
  to packet loss)
 \layout Itemize
 
 Dynamically-selectable codebooks (LSP, pitch and innovation)
 \layout Itemize
 
-LD-CELP-like fixed codebooks (without backward-adaptive grains) because
- of patent issues
+G.728-like fixed codebooks (without backward-adaptive grains) because of
+ patent issues
 \layout Section
 
 Introduction to CELP coding
@@ -329,7 +358,7 @@ This section looks at how Speex works for narrowband (
 \end_inset 
 
 , corresponding to 160 samples.
- Each frame is also subdivided into 4 subframes of 40 samples each.
+ Each frame is also subdivided into 4 sub-frames of 40 samples each.
 \layout Subsection
 
 LPC analysis
@@ -338,14 +367,14 @@ LPC analysis
 An LPC analysis is first performed on a (Hamming) window that spans all
  the current frame and half a frame in advance.
  The LPC coefficients are then converted to Line Spectral Pair (LSP), a
- represeitation that is more robust to quantization.
+ representation that is more robust to quantization.
  The LSP's are quantized using 30 bits for higher quality modes and 18 bits
  for lower quality.
  The quantized LSP's are considered to be associated to the 
 \begin_inset Formula $4^{th}$
 \end_inset 
 
- subframes and the LSP's associated to the first 3 subframes are linearly
+ sub-frames and the LSP's associated to the first 3 sub-frames are linearly
  interpolated using the current and previous LSP's.
 \layout Standard
 
@@ -409,7 +438,7 @@ n (VQ).
  This save many bits that would otherwise be allocated for a separate gain
  at the price of a slight increase in complexity.
  Except for the absence of (backward-adaptive) gain, the technique used
- in Speex is similar to LD-CELP.
+ in Speex is similar to G.728 (LD-CELP).
  However since we do not have a low-delay constraint, the search can be
  made more 
 \begin_inset Quotes eld
