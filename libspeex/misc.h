@@ -56,6 +56,8 @@ typedef spx_word32_t spx_sig_t;
 #define LPC_SHIFT    13
 #define SIG_SHIFT    14
 
+#define VERY_SMALL 0
+
 #ifdef COUNT_MIPS
 extern long long spx_mips;
 #endif
@@ -184,6 +186,8 @@ typedef float spx_word64_t;
 
 #define LPC_SHIFT    0
 #define SIG_SHIFT    0
+
+#define VERY_SMALL 1e-30
 
 #define PSHR(a,shift)       (a)
 #define SHR(a,shift)       (a)

@@ -475,7 +475,7 @@ int nb_encode(void *state, short *in, SpeexBits *bits)
    if (st->submodes[st->submodeID] == NULL)
    {
       for (i=0;i<st->frameSize;i++)
-         st->exc[i]=st->exc2[i]=st->sw[i]=0;
+         st->exc[i]=st->exc2[i]=st->sw[i]=VERY_SMALL;
 
       for (i=0;i<st->lpcSize;i++)
          st->mem_sw[i]=0;
@@ -655,15 +655,15 @@ int nb_encode(void *state, short *in, SpeexBits *bits)
 
       /* Compute impulse response of A(z/g1) / ( A(z)*A(z/g2) )*/
       for (i=0;i<st->subframeSize;i++)
-         exc[i]=0;
+         exc[i]=VERY_SMALL;
       exc[0]=SIG_SCALING;
       syn_percep_zero(exc, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2, syn_resp, st->subframeSize, st->lpcSize, stack);
 
       /* Reset excitation */
       for (i=0;i<st->subframeSize;i++)
-         exc[i]=0;
+         exc[i]=VERY_SMALL;
       for (i=0;i<st->subframeSize;i++)
-         exc2[i]=0;
+         exc2[i]=VERY_SMALL;
 
       /* Compute zero response of A(z/g1) / ( A(z/g2) * A(z) ) */
       for (i=0;i<st->lpcSize;i++)

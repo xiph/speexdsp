@@ -56,7 +56,7 @@ int main(int argc, char **argv)
 
    speex_mode_query(&speex_nb_mode, SPEEX_MODE_FRAME_SIZE, &tmp);
    fprintf (stderr, "frame size: %d\n", tmp);
-   skip_group_delay = tmp / 2;
+   skip_group_delay = 509;
 
    if (argc != 4 && argc != 3)
    {

@@ -159,7 +159,7 @@ void *sb_encoder_init(SpeexMode *m)
    SBEncState *st;
    SpeexSBMode *mode;
 
-   st = (SBEncState*)speex_alloc(sizeof(SBEncState)+8000*sizeof(spx_sig_t));
+   st = (SBEncState*)speex_alloc(sizeof(SBEncState)+10000*sizeof(spx_sig_t));
    st->mode = m;
    mode = (SpeexSBMode*)m->mode;
 
@@ -445,14 +445,14 @@ int sb_encode(void *state, short *in, SpeexBits *bits)
    if (dtx || st->submodes[st->submodeID] == NULL)
    {
       for (i=0;i<st->frame_size;i++)
-         st->exc[i]=st->sw[i]=0;
+         st->exc[i]=st->sw[i]=VERY_SMALL;
 
       for (i=0;i<st->lpcSize;i++)
          st->mem_sw[i]=0;
       st->first=1;
 
       /* Final signal synthesis from excitation */
-      iir_mem2(st->exc, st->interp_qlpc, st->high, st->subframeSize, st->lpcSize, st->mem_sp);
+      iir_mem2(st->exc, st->interp_qlpc, st->high, st->frame_size, st->lpcSize, st->mem_sp);
 
 #ifndef RELEASE
 
@@ -589,13 +589,13 @@ int sb_encode(void *state, short *in, SpeexBits *bits)
          scale_1 = 1/scale;
 
          for (i=0;i<st->subframeSize;i++)
-            exc[i]=0;
+            exc[i]=VERY_SMALL;
          exc[0]=SIG_SCALING;
          syn_percep_zero(exc, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2, syn_resp, st->subframeSize, st->lpcSize, stack);
          
          /* Reset excitation */
          for (i=0;i<st->subframeSize;i++)
-            exc[i]=0;
+            exc[i]=VERY_SMALL;
          
          /* Compute zero response (ringing) of A(z/g1) / ( A(z/g2) * Aq(z) ) */
          for (i=0;i<st->lpcSize;i++)
@@ -919,7 +919,7 @@ int sb_decode(void *state, SpeexBits *bits, short *out)
       }
 
       for (i=0;i<st->frame_size;i++)
-         st->exc[i]=0;
+         st->exc[i]=VERY_SMALL;
 
       st->first=1;
 
