@@ -54,7 +54,7 @@ make DESTDIR=$RPM_BUILD_ROOT install
 
 %files
 %defattr(644,root,root,755)
-%doc AUTHORS ChangeLog NEWS README TODO
+%doc COPYING AUTHORS ChangeLog NEWS README
 /usr/share/man/man1/speexenc.1*
 /usr/share/man/man1/speexdec.1*
 %doc doc/manual.pdf
