@@ -42,7 +42,7 @@
 
 #else /* ! __WINS__ */
 
-/* Use only fixed point arithmetic when decoding */
+/* Use only fixed point arithmetic when decoding on a device */
 
 #define FIXED_POINT 1
 
