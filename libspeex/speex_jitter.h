@@ -83,8 +83,6 @@ void speex_jitter_get(SpeexJitter *jitter, short *out);
 
 int speex_jitter_get_pointer_timestamp(SpeexJitter *jitter);
 
-int speex_jitter_set_buffersize(SpeexJitter *jitter, int size);
-
 #ifdef __cplusplus
 }
 #endif

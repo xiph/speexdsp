@@ -75,7 +75,7 @@ static spx_word16_t spx_cos(spx_word16_t x)
       x = 25736-x;
       x2 = MULT16_16_P13(x,x);
       return SUB32(-C1, MULT16_16_P13(x2, ADD32(C2, MULT16_16_P13(x2, ADD32(C3, MULT16_16_P13(C4, x2))))));
-      //return SUB32(-C1, MULT16_16_Q13(x2, ADD32(C2, MULT16_16_Q13(C3, x2))));
+      /*return SUB32(-C1, MULT16_16_Q13(x2, ADD32(C2, MULT16_16_Q13(C3, x2))));*/
    }
 }
 

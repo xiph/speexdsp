@@ -75,7 +75,6 @@ void speex_jitter_destroy(SpeexJitter *jitter)
 void speex_jitter_put(SpeexJitter *jitter, char *packet, int len, int timestamp)
 {
    int i,j;
-   int timestamp_offset;
    int arrival_margin;
 
    if (jitter->reset_state)
@@ -310,9 +309,4 @@ void speex_jitter_get(SpeexJitter *jitter, short *out)
 int speex_jitter_get_pointer_timestamp(SpeexJitter *jitter)
 {
    return jitter->pointer_timestamp;
-}
-
-int speex_jitter_set_buffersize(SpeexJitter *jitter, int size)
-{
-   jitter->buffer_size = size;
 }
