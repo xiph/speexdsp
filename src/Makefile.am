@@ -1,11 +1,13 @@
 ## Process this file with automake to produce Makefile.in. -*-Makefile-*-
 
-# $Id: Makefile.am,v 1.6 2002/08/23 04:38:22 jmvalin Exp $
+# $Id: Makefile.am,v 1.7 2002/08/23 05:47:07 jmvalin Exp $
 
 # Disable automatic dependency tracking if using other tools than gcc and gmake
 #AUTOMAKE_OPTIONS = no-dependencies
 
 INCLUDES = -I$(top_srcdir)/libspeex
+
+EXTRA_DIST = getopt_win.h getopt.c getopt1.c wave_out.c wave_out.h
 
 include_HEADERS = 
 noinst_HEADERS = wav_io.h

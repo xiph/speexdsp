@@ -29,7 +29,7 @@
 
 #if defined WIN32 || defined _WIN32
 #include <windows.h>
-#include "getopt.h"
+#include "getopt_win.h"
 #include "wave_out.h"
 /* We need the following two to set stdout to binary */
 #include <io.h>

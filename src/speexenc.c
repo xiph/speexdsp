@@ -32,7 +32,7 @@
 #include "misc.h"
 
 #if defined WIN32 || defined _WIN32
-#include "getopt.h"
+#include "getopt_win.h"
 /* We need the following two to set stdout to binary */
 #include <io.h>
 #include <fcntl.h>
