@@ -127,7 +127,7 @@ void *sb_encoder_init(SpeexMode *m);
 void sb_encoder_destroy(void *state);
 
 /**Encodes one frame*/
-void sb_encode(void *state, float *in, FrameBits *bits);
+void sb_encode(void *state, float *in, SpeexBits *bits);
 
 
 /**Initializes decoder state*/
@@ -137,7 +137,7 @@ void *sb_decoder_init(SpeexMode *m);
 void sb_decoder_destroy(void *state);
 
 /**Decodes one frame*/
-void sb_decode(void *state, FrameBits *bits, float *out);
+void sb_decode(void *state, SpeexBits *bits, float *out, int lost);
 
 
 #endif

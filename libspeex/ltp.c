@@ -241,7 +241,7 @@ int   start,                    /* Smallest pitch value allowed */
 int   end,                      /* Largest pitch value allowed */
 int   p,                        /* Number of LPC coeffs */
 int   nsf,                      /* Number of samples in subframe */
-FrameBits *bits,
+SpeexBits *bits,
 float *stack
 )
 {
@@ -336,7 +336,7 @@ void *par,
 int   pitch,                    /* Pitch value */
 int   p,                        /* Number of LPC coeffs */
 int   nsf,                      /* Number of samples in subframe */
-FrameBits *bits,
+SpeexBits *bits,
 float *stack,
 float *exc2,
 int  *cdbk_index
@@ -461,7 +461,7 @@ int   start,                    /* Smallest pitch value allowed */
 int   end,                      /* Largest pitch value allowed */
 int   p,                        /* Number of LPC coeffs */
 int   nsf,                      /* Number of samples in subframe */
-FrameBits *bits,
+SpeexBits *bits,
 float *stack,
 float *exc2
 )
@@ -537,9 +537,9 @@ int   start,                    /* Smallest pitch value allowed */
 int   end,                      /* Largest pitch value allowed */
 void *par,
 int   nsf,                      /* Number of samples in subframe */
-FrameBits *bits,
-float *stack
-)
+SpeexBits *bits,
+float *stack,
+int lost)
 {
    int i;
    int pitch;
@@ -557,6 +557,16 @@ float *stack
    gain[0] = gain_cdbk[gain_index*12];
    gain[1] = gain_cdbk[gain_index*12+1];
    gain[2] = gain_cdbk[gain_index*12+2];
+   if (lost)
+   {
+      float gain_sum = gain[0]+gain[1]+gain[2];
+      if (gain_sum>.8)
+      {
+         float fact = .8/gain_sum;
+         for (i=0;i<3;i++)
+            gain[i]*=fact;
+      }
+   }
 #ifdef DEBUG
    printf ("unquantized pitch: %d %f %f %f\n", pitch, gain[0], gain[1], gain[2]);
 #endif

@@ -311,7 +311,7 @@ void sb_encoder_destroy(void *state)
 }
 
 
-void sb_encode(void *state, float *in, FrameBits *bits)
+void sb_encode(void *state, float *in, SpeexBits *bits)
 {
    SBEncState *st;
    int i, roots, sub;
@@ -711,14 +711,14 @@ void sb_decoder_destroy(void *state)
 }
 
 
-void sb_decode(void *state, FrameBits *bits, float *out)
+void sb_decode(void *state, SpeexBits *bits, float *out, int lost)
 {
    int i, sub;
    SBDecState *st;
    
    st = state;
    /* Decode the low-band */
-   nb_decode(st->st_low, bits, st->x0d);
+   nb_decode(st->st_low, bits, st->x0d, lost);
 
    for (i=0;i<st->frame_size;i++)
       st->exc[i]=0;

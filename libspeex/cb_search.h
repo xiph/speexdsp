@@ -52,7 +52,7 @@ void *par,                      /* Codebook/search parameters*/
 int   p,                        /* number of LPC coeffs */
 int   nsf,                      /* number of samples in subframe */
 float *exc,
-FrameBits *bits,
+SpeexBits *bits,
 float *stack
 );
 
@@ -65,7 +65,7 @@ void *par,                      /* Codebook/search parameters*/
 int   p,                        /* number of LPC coeffs */
 int   nsf,                      /* number of samples in subframe */
 float *exc,
-FrameBits *bits,
+SpeexBits *bits,
 float *stack
 );
 
@@ -78,7 +78,7 @@ void *par,                      /* Codebook/search parameters*/
 int   p,                        /* number of LPC coeffs */
 int   nsf,                      /* number of samples in subframe */
 float *exc,
-FrameBits *bits,
+SpeexBits *bits,
 float *stack
 );
 
@@ -92,7 +92,7 @@ void *par,                      /* Codebook/search parameters*/
 int   p,                        /* number of LPC coeffs */
 int   nsf,                      /* number of samples in subframe */
 float *exc,
-FrameBits *bits,
+SpeexBits *bits,
 float *stack
 );
 
@@ -101,7 +101,7 @@ void split_cb_unquant(
 float *exc,
 void  *par,                     /* Innovation parameters */
 int   nsf,                      /* number of samples in subframe */
-FrameBits *bits,
+SpeexBits *bits,
 float *stack
 );
 
@@ -109,7 +109,7 @@ void split_cb_nogain_unquant(
 float *exc,
 void *par,                      /* non-overlapping codebook */
 int   nsf,                      /* number of samples in subframe */
-FrameBits *bits,
+SpeexBits *bits,
 float *stack
 );
 

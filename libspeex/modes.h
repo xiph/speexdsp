@@ -26,25 +26,25 @@
 #include "speex_bits.h"
 
 /* Quantizes LSPs */
-typedef void (*lsp_quant_func)(float *, float *, int, FrameBits *);
+typedef void (*lsp_quant_func)(float *, float *, int, SpeexBits *);
 
 /* Decodes quantized LSPs */
-typedef void (*lsp_unquant_func)(float *, int, FrameBits *);
+typedef void (*lsp_unquant_func)(float *, int, SpeexBits *);
 
 
 /*Long-term predictor quantization*/
 typedef int (*ltp_quant_func)(float *, float *, float *, float *, 
                                 float *, float *, void *, int, int, 
-                                int, int, FrameBits*, float *, float *);
+                                int, int, SpeexBits*, float *, float *);
 
 /*Long-term un-quantize*/
-typedef void (*ltp_unquant_func)(float *, int, int, void *, int, FrameBits*, float*);
+typedef void (*ltp_unquant_func)(float *, int, int, void *, int, SpeexBits*, float*, int);
 
 
 typedef void (*innovation_quant_func)(float *, float *, float *, float *, void *, int, int, 
-                                      float *, FrameBits *, float *);
+                                      float *, SpeexBits *, float *);
 
-typedef void (*innovation_unquant_func)(float *, void *, int, FrameBits*, float *);
+typedef void (*innovation_unquant_func)(float *, void *, int, SpeexBits*, float *);
 
 /*Struct defining the encoding/decoding mode*/
 typedef struct SpeexNBMode {

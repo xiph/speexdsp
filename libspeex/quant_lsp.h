@@ -38,21 +38,21 @@ extern float cdbk_nb_high1[];
 extern float cdbk_nb_high2[];
 
 /* Quantizes narrowband LSPs with 30 bits */
-void lsp_quant_nb(float *lsp, float *qlsp, int order, FrameBits *bits);
+void lsp_quant_nb(float *lsp, float *qlsp, int order, SpeexBits *bits);
 
 /* Decodes quantized narrowband LSPs */
-void lsp_unquant_nb(float *lsp, int order, FrameBits *bits);
+void lsp_unquant_nb(float *lsp, int order, SpeexBits *bits);
 
 /* Quantizes wideband LSPs with 50 bits */
-void lsp_quant_wb(float *lsp, float *qlsp, int order, FrameBits *bits);
+void lsp_quant_wb(float *lsp, float *qlsp, int order, SpeexBits *bits);
 
 /* Decodes quantized wideband LSPs */
-void lsp_unquant_wb(float *lsp, int order, FrameBits *bits);
+void lsp_unquant_wb(float *lsp, int order, SpeexBits *bits);
 
 /* Quantizes high-band LSPs with 12 bits */
-void lsp_quant_high(float *lsp, float *qlsp, int order, FrameBits *bits);
+void lsp_quant_high(float *lsp, float *qlsp, int order, SpeexBits *bits);
 
 /* Decodes high-band LSPs */
-void lsp_unquant_high(float *lsp, int order, FrameBits *bits);
+void lsp_unquant_high(float *lsp, int order, SpeexBits *bits);
 
 #endif

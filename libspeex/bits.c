@@ -23,7 +23,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-void speex_bits_init(FrameBits *bits)
+void speex_bits_init(SpeexBits *bits)
 {
    int i;
    for (i=0;i<MAX_BYTES_PER_FRAME;i++)
@@ -33,12 +33,12 @@ void speex_bits_init(FrameBits *bits)
    bits->bitPtr=0;
 }
 
-void speex_bits_destroy(FrameBits *bits)
+void speex_bits_destroy(SpeexBits *bits)
 {
    /* Will do something once the allocation is dynamic */
 }
 
-void speex_bits_reset(FrameBits *bits)
+void speex_bits_reset(SpeexBits *bits)
 {
    int i;
    for (i=0;i<MAX_BYTES_PER_FRAME;i++)
@@ -48,13 +48,13 @@ void speex_bits_reset(FrameBits *bits)
    bits->bitPtr=0;
 }
 
-void speex_bits_rewind(FrameBits *bits)
+void speex_bits_rewind(SpeexBits *bits)
 {
    bits->bytePtr=0;
    bits->bitPtr=0;
 }
 
-void speex_bits_init_from(FrameBits *bits, char *bytes, int len)
+void speex_bits_init_from(SpeexBits *bits, char *bytes, int len)
 {
    int i;
    if (len > MAX_BYTES_PER_FRAME)
@@ -69,7 +69,7 @@ void speex_bits_init_from(FrameBits *bits, char *bytes, int len)
    bits->bitPtr=0;
 }
 
-void speex_bits_flush(FrameBits *bits)
+void speex_bits_flush(SpeexBits *bits)
 {
    int i;
    if (bits->bytePtr>0)
@@ -81,7 +81,7 @@ void speex_bits_flush(FrameBits *bits)
    bits->bytePtr=0;
 }
 
-void speex_bits_read_whole_bytes(FrameBits *bits, char *bytes, int len)
+void speex_bits_read_whole_bytes(SpeexBits *bits, char *bytes, int len)
 {
    int i,pos;
    speex_bits_flush(bits);
@@ -91,7 +91,7 @@ void speex_bits_read_whole_bytes(FrameBits *bits, char *bytes, int len)
    bits->nbBits+=len<<3;
 }
 
-int speex_bits_write(FrameBits *bits, char *bytes, int max_len)
+int speex_bits_write(SpeexBits *bits, char *bytes, int max_len)
 {
    int i;
    if (max_len > ((bits->nbBits+7)>>3))
@@ -101,7 +101,7 @@ int speex_bits_write(FrameBits *bits, char *bytes, int max_len)
    return max_len;
 }
 
-int speex_bits_write_whole_bytes(FrameBits *bits, char *bytes, int max_len)
+int speex_bits_write_whole_bytes(SpeexBits *bits, char *bytes, int max_len)
 {
    int i;
    if (max_len > ((bits->nbBits)>>3))
@@ -121,7 +121,7 @@ int speex_bits_write_whole_bytes(FrameBits *bits, char *bytes, int max_len)
 }
 
 
-void speex_bits_pack(FrameBits *bits, int data, int nbBits)
+void speex_bits_pack(SpeexBits *bits, int data, int nbBits)
 {
    unsigned int d=data;
    while(nbBits)
@@ -141,7 +141,7 @@ void speex_bits_pack(FrameBits *bits, int data, int nbBits)
    }
 }
 
-int speex_bits_unpack_signed(FrameBits *bits, int nbBits)
+int speex_bits_unpack_signed(SpeexBits *bits, int nbBits)
 {
    unsigned int d=speex_bits_unpack_unsigned(bits,nbBits);
    /* If number is negative */
@@ -152,7 +152,7 @@ int speex_bits_unpack_signed(FrameBits *bits, int nbBits)
    return d;
 }
 
-unsigned int speex_bits_unpack_unsigned(FrameBits *bits, int nbBits)
+unsigned int speex_bits_unpack_unsigned(SpeexBits *bits, int nbBits)
 {
    unsigned int d=0;
    while(nbBits)

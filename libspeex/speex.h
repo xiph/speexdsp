@@ -32,10 +32,10 @@ struct SpeexMode;
 
 typedef void *(*encoder_init_func)(struct SpeexMode *mode);
 typedef void (*encoder_destroy_func)(void *st);
-typedef void (*encode_func)(void *state, float *in, FrameBits *bits);
+typedef void (*encode_func)(void *state, float *in, SpeexBits *bits);
 typedef void *(*decoder_init_func)(struct SpeexMode *mode);
 typedef void (*decoder_destroy_func)(void *st);
-typedef void (*decode_func)(void *state, FrameBits *bits, float *out);
+typedef void (*decode_func)(void *state, SpeexBits *bits, float *out, int lost);
 
 /** Struct defining a Speex mode */ 
 typedef struct SpeexMode {
@@ -49,28 +49,28 @@ typedef struct SpeexMode {
    int frameSize;
 } SpeexMode;
 
-   /** Creates an encoder state ("object") from a mode */ 
+/** Creates an encoder state ("object") from a mode */ 
 void *encoder_init(SpeexMode *mode);
 
-   /** Destroy a Speex encoder state */
+/** Destroy a Speex encoder state */
 void encoder_destroy(void *state);
 
-   /** Encode a frame */
-void encode(void *state, float *in, FrameBits *bits);
+/** Encode a frame */
+void encode(void *state, float *in, SpeexBits *bits);
 
-   /** Creates a decoder state ("object") from a mode */ 
+/** Creates a decoder state ("object") from a mode */ 
 void *decoder_init(SpeexMode *mode);
 
-   /** Destroy a Speex decoder state */
+/** Destroy a Speex decoder state */
 void decoder_destroy(void *state);
 
-   /** Decode a frame */
-void decode(void *state, FrameBits *bits, float *out);
+/** Decode a frame */
+void decode(void *state, SpeexBits *bits, float *out, int lost);
 
-   /** Default narrowband mode */
+/** Default narrowband mode */
 extern SpeexMode speex_nb_mode;
 
-   /** Default wideband mode */
+/** Default wideband mode */
 extern SpeexMode speex_wb_mode;
 
 

@@ -52,7 +52,7 @@ int main(int argc, char **argv)
    int frame_size=0;
    SpeexMode *mode=NULL;
    void *st=NULL;
-   FrameBits bits;
+   SpeexBits bits;
    int first = 1;
    struct option long_options[] =
    {
@@ -181,7 +181,7 @@ int main(int argc, char **argv)
                /*Copy Ogg packet to Speex bitstream*/
                speex_bits_init_from(&bits, (char*)op.packet, op.bytes);
                /*Decode a frame*/
-               decode(st, &bits, output);
+               decode(st, &bits, output, 0);
                
                /*PCM saturation (just in case)*/
                for (i=0;i<frame_size;i++)

@@ -62,7 +62,7 @@ int   start,                    /* Smallest pitch value allowed */
 int   end,                      /* Largest pitch value allowed */
 int   p,                        /* Number of LPC coeffs */
 int   nsf,                      /* Number of samples in subframe */
-FrameBits *bits,
+SpeexBits *bits,
 float *stack,
 float *exc2
 );
@@ -79,7 +79,7 @@ int   start,                    /* Smallest pitch value allowed */
 int   end,                      /* Largest pitch value allowed */
 int   p,                        /* Number of LPC coeffs */
 int   nsf,                      /* Number of samples in subframe */
-FrameBits *bits,
+SpeexBits *bits,
 float *stack
 );
 
@@ -90,8 +90,9 @@ int   start,                    /* Smallest pitch value allowed */
 int   end,                      /* Largest pitch value allowed */
 void *par,
 int   nsf,                      /* Number of samples in subframe */
-FrameBits *bits,
-float *stack
+SpeexBits *bits,
+float *stack,
+int lost
 );
 
 float pitch_gain_search_3tap(
@@ -104,7 +105,7 @@ void *par,
 int   pitch,                    /* Pitch value */
 int   p,                        /* Number of LPC coeffs */
 int   nsf,                      /* Number of samples in subframe */
-FrameBits *bits,
+SpeexBits *bits,
 float *stack,
 float *exc2,
 int  *cdbk_index

@@ -82,7 +82,7 @@ static int lsp_weight_quant(float *x, float *weight, float *cdbk, int nbVec, int
 }
 
 
-void lsp_quant_nb(float *lsp, float *qlsp, int order, FrameBits *bits)
+void lsp_quant_nb(float *lsp, float *qlsp, int order, SpeexBits *bits)
 {
    int i;
    float tmp1, tmp2;
@@ -118,7 +118,7 @@ void lsp_quant_nb(float *lsp, float *qlsp, int order, FrameBits *bits)
       qlsp[i]=lsp[i]-qlsp[i];
 }
 
-void lsp_unquant_nb(float *lsp, int order, FrameBits *bits)
+void lsp_unquant_nb(float *lsp, int order, SpeexBits *bits)
 {
    int i, id;
    for (i=0;i<order;i++)
@@ -157,7 +157,7 @@ extern float lsp_cdbk_wb32[];
 extern float lsp_cdbk_wb41[];
 extern float lsp_cdbk_wb42[];
 
-void lsp_quant_wb(float *lsp, float *qlsp, int order, FrameBits *bits)
+void lsp_quant_wb(float *lsp, float *qlsp, int order, SpeexBits *bits)
 {
    int i;
    float tmp1, tmp2;
@@ -206,7 +206,7 @@ void lsp_quant_wb(float *lsp, float *qlsp, int order, FrameBits *bits)
 }
 
 
-void lsp_unquant_wb(float *lsp, int order, FrameBits *bits)
+void lsp_unquant_wb(float *lsp, int order, SpeexBits *bits)
 {
 
    int i, id;
@@ -260,7 +260,7 @@ extern float high_lsp_cdbk[];
 extern float high_lsp_cdbk2[];
 
 
-void lsp_quant_high(float *lsp, float *qlsp, int order, FrameBits *bits)
+void lsp_quant_high(float *lsp, float *qlsp, int order, SpeexBits *bits)
 {
    int i;
    float tmp1, tmp2;
@@ -286,7 +286,7 @@ void lsp_quant_high(float *lsp, float *qlsp, int order, FrameBits *bits)
       qlsp[i]=lsp[i]-qlsp[i];
 }
 
-void lsp_unquant_high(float *lsp, int order, FrameBits *bits)
+void lsp_unquant_high(float *lsp, int order, SpeexBits *bits)
 {
 
    int i, id;

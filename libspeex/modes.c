@@ -192,7 +192,7 @@ void encoder_destroy(void *state)
    (*((SpeexMode**)state))->enc_destroy(state);
 }
 
-void encode(void *state, float *in, FrameBits *bits)
+void encode(void *state, float *in, SpeexBits *bits)
 {
    (*((SpeexMode**)state))->enc(state, in, bits);
 }
@@ -202,7 +202,7 @@ void decoder_destroy(void *state)
    (*((SpeexMode**)state))->dec_destroy(state);
 }
 
-void decode(void *state, FrameBits *bits, float *out)
+void decode(void *state, SpeexBits *bits, float *out, int lost)
 {
-   (*((SpeexMode**)state))->dec(state, bits, out);
+   (*((SpeexMode**)state))->dec(state, bits, out, lost);
 }

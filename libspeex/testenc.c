@@ -15,7 +15,7 @@ int main(int argc, char **argv)
    int i;
    void *st;
    void *dec;
-   FrameBits bits;
+   SpeexBits bits;
 
    for (i=0;i<FRAME_SIZE;i++)
       bak2[i]=0;
@@ -61,7 +61,7 @@ int main(int argc, char **argv)
       }
       speex_bits_rewind(&bits);
       
-      decode(dec, &bits, input);
+      decode(dec, &bits, input, 0);
 
       /* Save the bits here */
       for (i=0;i<FRAME_SIZE;i++)

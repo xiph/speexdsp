@@ -184,7 +184,7 @@ void nb_encoder_destroy(void *state)
    free(st);
 }
 
-void nb_encode(void *state, float *in, FrameBits *bits)
+void nb_encode(void *state, float *in, SpeexBits *bits)
 {
    EncState *st;
    int i, sub, roots;
@@ -618,7 +618,7 @@ void nb_decoder_destroy(void *state)
    free(state);
 }
 
-void nb_decode(void *state, FrameBits *bits, float *out)
+void nb_decode(void *state, SpeexBits *bits, float *out, int lost)
 {
    DecState *st;
    int i, sub;
@@ -672,7 +672,7 @@ void nb_decode(void *state, FrameBits *bits, float *out)
          exc[i]=0;
 
       /*Adaptive codebook contribution*/
-      st->ltp_unquant(exc, st->min_pitch, st->max_pitch, st->ltp_params, st->subframeSize, bits, st->stack);
+      st->ltp_unquant(exc, st->min_pitch, st->max_pitch, st->ltp_params, st->subframeSize, bits, st->stack, lost);
       
 
       {

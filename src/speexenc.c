@@ -67,7 +67,7 @@ int main(int argc, char **argv)
    int i,nbBytes;
    SpeexMode *mode=NULL;
    void *st;
-   FrameBits bits;
+   SpeexBits bits;
    char cbits[MAX_FRAME_BYTES];
    struct option long_options[] =
    {
