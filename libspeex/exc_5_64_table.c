@@ -31,7 +31,7 @@
 */
 
 
-signed char exc_5_64_table[320]={
+const signed char exc_5_64_table[320]={
 1,5,-15,49,-66,
 -48,-4,50,-44,7,
 37,16,-18,25,-26,

@@ -34,7 +34,7 @@
 #include "misc.h"
 
 typedef struct ltp_params {
-   signed char *gain_cdbk;
+   const signed char *gain_cdbk;
    int     gain_bits;
    int     pitch_bits;
 } ltp_params;
@@ -56,7 +56,7 @@ spx_coef_t ak[],                     /* LPCs for this subframe */
 spx_coef_t awk1[],                   /* Weighted LPCs #1 for this subframe */
 spx_coef_t awk2[],                   /* Weighted LPCs #2 for this subframe */
 spx_sig_t exc[],                    /* Overlapping codebook */
-void *par,
+const void *par,
 int   start,                    /* Smallest pitch value allowed */
 int   end,                      /* Largest pitch value allowed */
 spx_word16_t pitch_coef,               /* Voicing (pitch) coefficient */
@@ -76,7 +76,7 @@ spx_sig_t exc[],                    /* Excitation */
 int   start,                    /* Smallest pitch value allowed */
 int   end,                      /* Largest pitch value allowed */
 spx_word16_t pitch_coef,               /* Voicing (pitch) coefficient */
-void *par,
+const void *par,
 int   nsf,                      /* Number of samples in subframe */
 int *pitch_val,
 spx_word16_t *gain_val,
@@ -96,7 +96,7 @@ spx_coef_t ak[],                     /* LPCs for this subframe */
 spx_coef_t awk1[],                   /* Weighted LPCs #1 for this subframe */
 spx_coef_t awk2[],                   /* Weighted LPCs #2 for this subframe */
 spx_sig_t exc[],                    /* Excitation */
-void *par,
+const void *par,
 int   start,                    /* Smallest pitch value allowed */
 int   end,                      /* Largest pitch value allowed */
 spx_word16_t pitch_coef,               /* Voicing (pitch) coefficient */
@@ -116,7 +116,7 @@ spx_sig_t exc[],                    /* Excitation */
 int   start,                    /* Smallest pitch value allowed */
 int   end,                      /* Largest pitch value allowed */
 spx_word16_t pitch_coef,               /* Voicing (pitch) coefficient */
-void *par,
+const void *par,
 int   nsf,                      /* Number of samples in subframe */
 int *pitch_val,
 spx_word16_t *gain_val,

@@ -29,7 +29,7 @@
    POSSIBILITY OF SUCH DAMAGE.
 */
 
-signed char gain_cdbk_nb[384] = {
+const signed char gain_cdbk_nb[384] = {
 -32,-32,-32,
 -28,-67,-5,
 -42,-6,-32,

@@ -33,7 +33,7 @@
 int dummy_epic_48k_variable=0;
 #ifdef EPIC_48K
 
-signed char gain_cdbk_ulbr[192] = {
+const signed char gain_cdbk_ulbr[192] = {
 -31, -48, -30, 
 -19, -10, -18, 
 -33, -22, -45, 
@@ -101,7 +101,7 @@ signed char gain_cdbk_ulbr[192] = {
 };
 
 
-signed char exc_12_32_table[384] = {
+const signed char exc_12_32_table[384] = {
 34, 55, 9, 55, 4, 44, -2, 25, 4, -6, 13, -22, 
 20, 26, -13, -56, -37, 18, 5, 28, 4, 10, 6, -7, 
 37, -24, -31, 22, 12, -6, -4, -7, 2, 0, -3, -2, 
@@ -137,7 +137,7 @@ signed char exc_12_32_table[384] = {
 };
 
 
-signed char cdbk_lsp_vlbr[5120]={
+const signed char cdbk_lsp_vlbr[5120]={
 23, 34, 108, 100, 102, 82, 69, 48, 52, 25,
 0, -37, -55, -78, -111, -79, 58, 57, 45, 32,
 27, -9, -12, -14, -41, -29, -17, -41, 44, 35,
@@ -652,7 +652,7 @@ signed char cdbk_lsp_vlbr[5120]={
 -14, -53, -59, -17, 55, 79, 64, 39, 43, 10,
 };
 
-signed char cdbk_lsp2_vlbr[160]={
+const signed char cdbk_lsp2_vlbr[160]={
 -20, -30, -24, 17, 7, -13, -21, 61, 56, 16,
 12, 1, 10, 77, 32, 3, 7, 3, -25, -31,
 -4, 2, -36, -83, 18, 5, -5, 5, 11, 23,

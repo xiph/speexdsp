@@ -58,11 +58,11 @@
 
 
 #ifdef FIXED_POINT
-spx_word32_t ol_gain_table[32]={18900, 25150, 33468, 44536, 59265, 78865, 104946, 139653, 185838, 247297, 329081, 437913, 582736, 775454, 1031906, 1373169, 1827293, 2431601, 3235761, 4305867, 5729870, 7624808, 10146425, 13501971, 17967238, 23909222, 31816294, 42338330, 56340132, 74972501, 99766822, 132760927};
-spx_word16_t exc_gain_quant_scal3_bound[7]={1841, 3883, 6051, 8062, 10444, 13580, 18560};
-spx_word16_t exc_gain_quant_scal3[8]={1002, 2680, 5086, 7016, 9108, 11781, 15380, 21740};
-spx_word16_t exc_gain_quant_scal1_bound[1]={14385};
-spx_word16_t exc_gain_quant_scal1[2]={11546, 17224};
+const spx_word32_t ol_gain_table[32]={18900, 25150, 33468, 44536, 59265, 78865, 104946, 139653, 185838, 247297, 329081, 437913, 582736, 775454, 1031906, 1373169, 1827293, 2431601, 3235761, 4305867, 5729870, 7624808, 10146425, 13501971, 17967238, 23909222, 31816294, 42338330, 56340132, 74972501, 99766822, 132760927};
+const spx_word16_t exc_gain_quant_scal3_bound[7]={1841, 3883, 6051, 8062, 10444, 13580, 18560};
+const spx_word16_t exc_gain_quant_scal3[8]={1002, 2680, 5086, 7016, 9108, 11781, 15380, 21740};
+const spx_word16_t exc_gain_quant_scal1_bound[1]={14385};
+const spx_word16_t exc_gain_quant_scal1[2]={11546, 17224};
 
 #define LSP_MARGIN 16
 #define LSP_DELTA1 6553
@@ -70,10 +70,10 @@ spx_word16_t exc_gain_quant_scal1[2]={11546, 17224};
 
 #else
 
-float exc_gain_quant_scal3_bound[7]={0.112338, 0.236980, 0.369316, 0.492054, 0.637471, 0.828874, 1.132784};
-float exc_gain_quant_scal3[8]={0.061130, 0.163546, 0.310413, 0.428220, 0.555887, 0.719055, 0.938694, 1.326874};
-float exc_gain_quant_scal1_bound[1]={0.87798};
-float exc_gain_quant_scal1[2]={0.70469, 1.05127};
+const float exc_gain_quant_scal3_bound[7]={0.112338, 0.236980, 0.369316, 0.492054, 0.637471, 0.828874, 1.132784};
+const float exc_gain_quant_scal3[8]={0.061130, 0.163546, 0.310413, 0.428220, 0.555887, 0.719055, 0.938694, 1.326874};
+const float exc_gain_quant_scal1_bound[1]={0.87798};
+const float exc_gain_quant_scal1[2]={0.70469, 1.05127};
 
 #define LSP_MARGIN .002
 #define LSP_DELTA1 .2
@@ -86,10 +86,10 @@ float exc_gain_quant_scal1[2]={0.70469, 1.05127};
 
 #define sqr(x) ((x)*(x))
 
-void *nb_encoder_init(SpeexMode *m)
+void *nb_encoder_init(const SpeexMode *m)
 {
    EncState *st;
-   SpeexNBMode *mode;
+   const SpeexNBMode *mode;
    int i;
 
    mode=(SpeexNBMode *)m->mode;
@@ -936,10 +936,10 @@ int nb_encode(void *state, short *in, SpeexBits *bits)
 }
 
 
-void *nb_decoder_init(SpeexMode *m)
+void *nb_decoder_init(const SpeexMode *m)
 {
    DecState *st;
-   SpeexNBMode *mode;
+   const SpeexNBMode *mode;
    int i;
 
    mode=(SpeexNBMode*)m->mode;

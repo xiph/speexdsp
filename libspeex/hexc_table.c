@@ -30,7 +30,7 @@
    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-signed char hexc_table[1024] = {
+const signed char hexc_table[1024] = {
 -24, 21, -20, 5, -5, -7, 14, -10, 
 2, -27, 16, -20, 0, -32, 26, 19, 
 8, -11, -41, 31, 28, -27, -32, 34, 

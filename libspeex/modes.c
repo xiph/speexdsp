@@ -45,53 +45,53 @@
 #define NULL 0
 #endif
 
-SpeexMode *speex_mode_list[SPEEX_NB_MODES] = {&speex_nb_mode, &speex_wb_mode, &speex_uwb_mode};
+const SpeexMode *speex_mode_list[SPEEX_NB_MODES] = {&speex_nb_mode, &speex_wb_mode, &speex_uwb_mode};
 
 /* Extern declarations for all codebooks we use here */
-extern signed char gain_cdbk_nb[];
-extern signed char gain_cdbk_lbr[];
-extern signed char hexc_table[];
-extern signed char exc_5_256_table[];
-extern signed char exc_5_64_table[];
-extern signed char exc_8_128_table[];
-extern signed char exc_10_32_table[];
-extern signed char exc_10_16_table[];
-extern signed char exc_20_32_table[];
-extern signed char hexc_10_32_table[];
+extern const signed char gain_cdbk_nb[];
+extern const signed char gain_cdbk_lbr[];
+extern const signed char hexc_table[];
+extern const signed char exc_5_256_table[];
+extern const signed char exc_5_64_table[];
+extern const signed char exc_8_128_table[];
+extern const signed char exc_10_32_table[];
+extern const signed char exc_10_16_table[];
+extern const signed char exc_20_32_table[];
+extern const signed char hexc_10_32_table[];
 
-static int nb_mode_query(void *mode, int request, void *ptr);
-static int wb_mode_query(void *mode, int request, void *ptr);
+static int nb_mode_query(const void *mode, int request, void *ptr);
+static int wb_mode_query(const void *mode, int request, void *ptr);
 
 /* Parameters for Long-Term Prediction (LTP)*/
-static ltp_params ltp_params_nb = {
+static const ltp_params ltp_params_nb = {
    gain_cdbk_nb,
    7,
    7
 };
 
 /* Parameters for Long-Term Prediction (LTP)*/
-static ltp_params ltp_params_vlbr = {
+static const ltp_params ltp_params_vlbr = {
    gain_cdbk_lbr,
    5,
    0
 };
 
 /* Parameters for Long-Term Prediction (LTP)*/
-static ltp_params ltp_params_lbr = {
+static const ltp_params ltp_params_lbr = {
    gain_cdbk_lbr,
    5,
    7
 };
 
 /* Parameters for Long-Term Prediction (LTP)*/
-static ltp_params ltp_params_med = {
+static const ltp_params ltp_params_med = {
    gain_cdbk_lbr,
    5,
    7
 };
 
 /* Split-VQ innovation parameters for very low bit-rate narrowband */
-static split_cb_params split_cb_nb_vlbr = {
+static const split_cb_params split_cb_nb_vlbr = {
    10,               /*subvect_size*/
    4,               /*nb_subvect*/
    exc_10_16_table, /*shape_cb*/
@@ -100,7 +100,7 @@ static split_cb_params split_cb_nb_vlbr = {
 };
 
 /* Split-VQ innovation parameters for very low bit-rate narrowband */
-static split_cb_params split_cb_nb_ulbr = {
+static const split_cb_params split_cb_nb_ulbr = {
    20,               /*subvect_size*/
    2,               /*nb_subvect*/
    exc_20_32_table, /*shape_cb*/
@@ -109,7 +109,7 @@ static split_cb_params split_cb_nb_ulbr = {
 };
 
 /* Split-VQ innovation parameters for low bit-rate narrowband */
-static split_cb_params split_cb_nb_lbr = {
+static const split_cb_params split_cb_nb_lbr = {
    10,              /*subvect_size*/
    4,               /*nb_subvect*/
    exc_10_32_table, /*shape_cb*/
@@ -119,7 +119,7 @@ static split_cb_params split_cb_nb_lbr = {
 
 
 /* Split-VQ innovation parameters narrowband */
-static split_cb_params split_cb_nb = {
+static const split_cb_params split_cb_nb = {
    5,               /*subvect_size*/
    8,               /*nb_subvect*/
    exc_5_64_table, /*shape_cb*/
@@ -128,7 +128,7 @@ static split_cb_params split_cb_nb = {
 };
 
 /* Split-VQ innovation parameters narrowband */
-static split_cb_params split_cb_nb_med = {
+static const split_cb_params split_cb_nb_med = {
    8,               /*subvect_size*/
    5,               /*nb_subvect*/
    exc_8_128_table, /*shape_cb*/
@@ -137,7 +137,7 @@ static split_cb_params split_cb_nb_med = {
 };
 
 /* Split-VQ innovation for low-band wideband */
-static split_cb_params split_cb_sb = {
+static const split_cb_params split_cb_sb = {
    5,               /*subvect_size*/
    8,              /*nb_subvect*/
    exc_5_256_table,    /*shape_cb*/
@@ -146,7 +146,7 @@ static split_cb_params split_cb_sb = {
 };
 
 /* Split-VQ innovation for high-band wideband */
-static split_cb_params split_cb_high = {
+static const split_cb_params split_cb_high = {
    8,               /*subvect_size*/
    5,               /*nb_subvect*/
    hexc_table,       /*shape_cb*/
@@ -156,7 +156,7 @@ static split_cb_params split_cb_high = {
 
 
 /* Split-VQ innovation for high-band wideband */
-static split_cb_params split_cb_high_lbr = {
+static const split_cb_params split_cb_high_lbr = {
    10,               /*subvect_size*/
    4,               /*nb_subvect*/
    hexc_10_32_table,       /*shape_cb*/
@@ -165,7 +165,7 @@ static split_cb_params split_cb_high_lbr = {
 };
 
 /* 2150 bps "vocoder-like" mode for comfort noise */
-static SpeexSubmode nb_submode1 = {
+static const SpeexSubmode nb_submode1 = {
    0,
    1,
    0,
@@ -186,7 +186,7 @@ static SpeexSubmode nb_submode1 = {
 };
 
 /* 3.95 kbps very low bit-rate mode */
-static SpeexSubmode nb_submode8 = {
+static const SpeexSubmode nb_submode8 = {
    0,
    1,
    0,
@@ -208,7 +208,7 @@ static SpeexSubmode nb_submode8 = {
 };
 
 /* 5.95 kbps very low bit-rate mode */
-static SpeexSubmode nb_submode2 = {
+static const SpeexSubmode nb_submode2 = {
    0,
    0,
    0,
@@ -230,7 +230,7 @@ static SpeexSubmode nb_submode2 = {
 };
 
 /* 8 kbps low bit-rate mode */
-static SpeexSubmode nb_submode3 = {
+static const SpeexSubmode nb_submode3 = {
    -1,
    0,
    1,
@@ -252,7 +252,7 @@ static SpeexSubmode nb_submode3 = {
 };
 
 /* 11 kbps medium bit-rate mode */
-static SpeexSubmode nb_submode4 = {
+static const SpeexSubmode nb_submode4 = {
    -1,
    0,
    1,
@@ -274,7 +274,7 @@ static SpeexSubmode nb_submode4 = {
 };
 
 /* 15 kbps high bit-rate mode */
-static SpeexSubmode nb_submode5 = {
+static const SpeexSubmode nb_submode5 = {
    -1,
    0,
    3,
@@ -296,7 +296,7 @@ static SpeexSubmode nb_submode5 = {
 };
 
 /* 18.2 high bit-rate mode */
-static SpeexSubmode nb_submode6 = {
+static const SpeexSubmode nb_submode6 = {
    -1,
    0,
    3,
@@ -318,7 +318,7 @@ static SpeexSubmode nb_submode6 = {
 };
 
 /* 24.6 kbps high bit-rate mode */
-static SpeexSubmode nb_submode7 = {
+static const SpeexSubmode nb_submode7 = {
    -1,
    0,
    3,
@@ -341,7 +341,7 @@ static SpeexSubmode nb_submode7 = {
 
 
 /* Default mode for narrowband */
-static SpeexNBMode nb_mode = {
+static const SpeexNBMode nb_mode = {
    160,    /*frameSize*/
    40,     /*subframeSize*/
    10,     /*lpcSize*/
@@ -363,7 +363,7 @@ static SpeexNBMode nb_mode = {
 
 
 /* Default mode for narrowband */
-SpeexMode speex_nb_mode = {
+const SpeexMode speex_nb_mode = {
    &nb_mode,
    nb_mode_query,
    "narrowband",
@@ -382,7 +382,7 @@ SpeexMode speex_nb_mode = {
 
 /* Wideband part */
 
-static SpeexSubmode wb_submode1 = {
+static const SpeexSubmode wb_submode1 = {
    0,
    0,
    1,
@@ -404,7 +404,7 @@ static SpeexSubmode wb_submode1 = {
 };
 
 
-static SpeexSubmode wb_submode2 = {
+static const SpeexSubmode wb_submode2 = {
    0,
    0,
    1,
@@ -426,7 +426,7 @@ static SpeexSubmode wb_submode2 = {
 };
 
 
-static SpeexSubmode wb_submode3 = {
+static const SpeexSubmode wb_submode3 = {
    0,
    0,
    1,
@@ -447,7 +447,7 @@ static SpeexSubmode wb_submode3 = {
    192
 };
 
-static SpeexSubmode wb_submode4 = {
+static const SpeexSubmode wb_submode4 = {
    0,
    0,
    1,
@@ -470,7 +470,7 @@ static SpeexSubmode wb_submode4 = {
 
 
 /* Split-band wideband CELP mode*/
-static SpeexSBMode sb_wb_mode = {
+static const SpeexSBMode sb_wb_mode = {
    &speex_nb_mode,
    160,    /*frameSize*/
    40,     /*subframeSize*/
@@ -490,7 +490,7 @@ static SpeexSBMode sb_wb_mode = {
 };
 
 
-SpeexMode speex_wb_mode = {
+const SpeexMode speex_wb_mode = {
    &sb_wb_mode,
    wb_mode_query,
    "wideband (sub-band CELP)",
@@ -513,7 +513,7 @@ SpeexMode speex_wb_mode = {
 
 
 /* Split-band "ultra-wideband" (32 kbps) CELP mode*/
-static SpeexSBMode sb_uwb_mode = {
+static const SpeexSBMode sb_uwb_mode = {
    &speex_wb_mode,
    320,    /*frameSize*/
    80,     /*subframeSize*/
@@ -533,7 +533,7 @@ static SpeexSBMode sb_uwb_mode = {
 };
 
 
-SpeexMode speex_uwb_mode = {
+const SpeexMode speex_uwb_mode = {
    &sb_uwb_mode,
    wb_mode_query,
    "ultra-wideband (sub-band CELP)",
@@ -554,17 +554,17 @@ SpeexMode speex_uwb_mode = {
 
 #ifdef EPIC_48K
 
-extern signed char gain_cdbk_ulbr[];
-extern signed char exc_12_32_table[];
+extern const signed char gain_cdbk_ulbr[];
+extern const signed char exc_12_32_table[];
 
 /* Parameters for Long-Term Prediction (LTP)*/
-static ltp_params ltp_params_48k = {
+static const ltp_params ltp_params_48k = {
    gain_cdbk_ulbr,
    3,
    0
 };
 
-static split_cb_params split_cb_nb_48k = {
+static const split_cb_params split_cb_nb_48k = {
    12,               /*subvect_size*/
    4,               /*nb_subvect*/
    exc_12_32_table, /*shape_cb*/
@@ -574,7 +574,7 @@ static split_cb_params split_cb_nb_48k = {
 
 
 /* 4.8 kbps very low bit-rate mode */
-static SpeexSubmode nb_48k_submode = {
+static const SpeexSubmode nb_48k_submode = {
    0,
    0,
    0,
@@ -597,7 +597,7 @@ static SpeexSubmode nb_48k_submode = {
 
 
 /* Special, non-standard 4.8 kbps mode */
-static SpeexNBMode nb_48k_mode = {
+static const SpeexNBMode nb_48k_mode = {
    240,    /*frameSize*/
    48,     /*subframeSize*/
    10,     /*lpcSize*/
@@ -616,7 +616,7 @@ static SpeexNBMode nb_48k_mode = {
 
 
 /* Default mode for narrowband */
-SpeexMode speex_nb_48k_mode = {
+const SpeexMode speex_nb_48k_mode = {
    &nb_48k_mode,
    nb_mode_query,
    "narrowband 4.8 kbps",
@@ -637,12 +637,12 @@ SpeexMode speex_nb_48k_mode = {
 
 
 
-void *speex_encoder_init(SpeexMode *mode)
+void *speex_encoder_init(const SpeexMode *mode)
 {
    return mode->enc_init(mode);
 }
 
-void *speex_decoder_init(SpeexMode *mode)
+void *speex_decoder_init(const SpeexMode *mode)
 {
    return mode->dec_init(mode);
 }
@@ -680,9 +680,9 @@ int speex_decoder_ctl(void *state, int request, void *ptr)
 
 
 
-static int nb_mode_query(void *mode, int request, void *ptr)
+static int nb_mode_query(const void *mode, int request, void *ptr)
 {
-   SpeexNBMode *m = (SpeexNBMode*)mode;
+   const SpeexNBMode *m = (const SpeexNBMode*)mode;
    
    switch (request)
    {
@@ -704,9 +704,9 @@ static int nb_mode_query(void *mode, int request, void *ptr)
    return 0;
 }
 
-static int wb_mode_query(void *mode, int request, void *ptr)
+static int wb_mode_query(const void *mode, int request, void *ptr)
 {
-   SpeexSBMode *m = (SpeexSBMode*)mode;
+   const SpeexSBMode *m = (const SpeexSBMode*)mode;
 
    switch (request)
    {
@@ -729,7 +729,7 @@ static int wb_mode_query(void *mode, int request, void *ptr)
 }
 
 
-int speex_mode_query(SpeexMode *mode, int request, void *ptr)
+int speex_mode_query(const SpeexMode *mode, int request, void *ptr)
 {
    return mode->query(mode->mode, request, ptr);
 }

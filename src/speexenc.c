@@ -214,7 +214,7 @@ int main(int argc, char **argv)
    int vad_enabled=0;
    int dtx_enabled=0;
    int nbBytes;
-   SpeexMode *mode=NULL;
+   const SpeexMode *mode=NULL;
    void *st;
    SpeexBits bits;
    char cbits[MAX_FRAME_BYTES];

@@ -35,7 +35,7 @@
 #include <math.h>
 
 /*float e_ratio_quant[4] = {1, 1.26, 1.587, 2};*/
-static float e_ratio_quant[4] = {.25f, .315f, .397f, .5f};
+static const float e_ratio_quant[4] = {.25f, .315f, .397f, .5f};
 
 void speex_encode_stereo(short *data, int frame_size, SpeexBits *bits)
 {

@@ -62,7 +62,7 @@ typedef struct SpeexHeader {
 } SpeexHeader;
 */
 
-void speex_init_header(SpeexHeader *header, int rate, int nb_channels, SpeexMode *m)
+void speex_init_header(SpeexHeader *header, int rate, int nb_channels, const SpeexMode *m)
 {
    int i;
    char *h="Speex   ";

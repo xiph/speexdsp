@@ -90,7 +90,7 @@ static float hypergeom_gain(float x)
 {
    int ind;
    float integer, frac;
-   static float table[21] = {
+   static const float table[21] = {
       0.82157, 1.02017, 1.20461, 1.37534, 1.53363, 1.68092, 1.81865, 
       1.94811, 2.07038, 2.18638, 2.29688, 2.40255, 2.50391, 2.60144, 
       2.69551, 2.78647, 2.87458, 2.96015, 3.04333, 3.12431, 3.20326};

@@ -42,7 +42,7 @@
 
 /**Structure representing the full state of the sub-band encoder*/
 typedef struct SBEncState {
-   SpeexMode *mode;            /**< Pointer to the mode (containing for vtable info) */
+   const SpeexMode *mode;            /**< Pointer to the mode (containing for vtable info) */
    void *st_low;               /**< State of the low-band (narrowband) encoder */
    int    full_frame_size;     /**< Length of full-band frames*/
    int    frame_size;          /**< Length of high-band frames*/
@@ -100,7 +100,7 @@ typedef struct SBEncState {
    float  relative_quality;
 
    int    encode_submode;
-   SpeexSubmode **submodes;
+   const SpeexSubmode * const *submodes;
    int    submodeID;
    int    submodeSelect;
    int    complexity;
@@ -111,7 +111,7 @@ typedef struct SBEncState {
 
 /**Structure representing the full state of the sub-band decoder*/
 typedef struct SBDecState {
-   SpeexMode *mode;            /**< Pointer to the mode (containing for vtable info) */
+   const SpeexMode *mode;            /**< Pointer to the mode (containing for vtable info) */
    void *st_low;               /**< State of the low-band (narrowband) encoder */
    int    full_frame_size;
    int    frame_size;
@@ -138,13 +138,13 @@ typedef struct SBDecState {
    spx_word32_t *pi_gain;
 
    int    encode_submode;
-   SpeexSubmode **submodes;
+   const SpeexSubmode * const *submodes;
    int    submodeID;
 } SBDecState;
 
 
 /**Initializes encoder state*/
-void *sb_encoder_init(SpeexMode *m);
+void *sb_encoder_init(const SpeexMode *m);
 
 /**De-allocates encoder state resources*/
 void sb_encoder_destroy(void *state);
@@ -154,7 +154,7 @@ int sb_encode(void *state, short *in, SpeexBits *bits);
 
 
 /**Initializes decoder state*/
-void *sb_decoder_init(SpeexMode *m);
+void *sb_decoder_init(const SpeexMode *m);
 
 /**De-allocates decoder state resources*/
 void sb_decoder_destroy(void *state);

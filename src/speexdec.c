@@ -295,7 +295,7 @@ void version_short()
 static void *process_header(ogg_packet *op, int enh_enabled, int *frame_size, int *rate, int *nframes, int forceMode, int *channels, SpeexStereoState *stereo, int *extra_headers)
 {
    void *st;
-   SpeexMode *mode;
+   const SpeexMode *mode;
    SpeexHeader *header;
    int modeID;
    SpeexCallback callback;

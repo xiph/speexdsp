@@ -35,13 +35,13 @@
 
 #include "misc.h"
 
-spx_word16_t compute_rms(spx_sig_t *x, int len);
-void signal_mul(spx_sig_t *x, spx_sig_t *y, spx_word32_t scale, int len);
-void signal_div(spx_sig_t *x, spx_sig_t *y, spx_word32_t scale, int len);
+spx_word16_t compute_rms(const spx_sig_t *x, int len);
+void signal_mul(const spx_sig_t *x, spx_sig_t *y, spx_word32_t scale, int len);
+void signal_div(const spx_sig_t *x, spx_sig_t *y, spx_word32_t scale, int len);
 
 #ifdef FIXED_POINT
 
-int normalize16(spx_sig_t *x, spx_word16_t *y, int max_scale, int len);
+int normalize16(const spx_sig_t *x, spx_word16_t *y, int max_scale, int len);
 
 #endif
 
@@ -52,25 +52,25 @@ typedef struct CombFilterMem {
 } CombFilterMem;
 
 
-void qmf_decomp(short *xx, spx_word16_t *aa, spx_sig_t *y1, spx_sig_t *y2, int N, int M, spx_word16_t *mem, char *stack);
-void fir_mem_up(spx_sig_t *x, spx_word16_t *a, spx_sig_t *y, int N, int M, spx_word32_t *mem, char *stack);
+void qmf_decomp(const short *xx, const spx_word16_t *aa, spx_sig_t *y1, spx_sig_t *y2, int N, int M, spx_word16_t *mem, char *stack);
+void fir_mem_up(const spx_sig_t *x, const spx_word16_t *a, spx_sig_t *y, int N, int M, spx_word32_t *mem, char *stack);
 
 
-void filter_mem2(spx_sig_t *x, spx_coef_t *num, spx_coef_t *den, spx_sig_t *y, int N, int ord, spx_mem_t *mem);
-void fir_mem2(spx_sig_t *x, spx_coef_t *num, spx_sig_t *y, int N, int ord, spx_mem_t *mem);
-void iir_mem2(spx_sig_t *x, spx_coef_t *den, spx_sig_t *y, int N, int ord, spx_mem_t *mem);
+void filter_mem2(const spx_sig_t *x, const spx_coef_t *num, const spx_coef_t *den, spx_sig_t *y, int N, int ord, spx_mem_t *mem);
+void fir_mem2(const spx_sig_t *x, const spx_coef_t *num, spx_sig_t *y, int N, int ord, spx_mem_t *mem);
+void iir_mem2(const spx_sig_t *x, const spx_coef_t *den, spx_sig_t *y, int N, int ord, spx_mem_t *mem);
 
 /* Apply bandwidth expansion on LPC coef */
-void bw_lpc(spx_word16_t gamma, spx_coef_t *lpc_in, spx_coef_t *lpc_out, int order);
+void bw_lpc(spx_word16_t gamma, const spx_coef_t *lpc_in, spx_coef_t *lpc_out, int order);
 
 
 
 /* FIR filter */
-void fir_decim_mem(spx_sig_t *x, float *a, spx_sig_t *y, int N, int M, float *mem);
+void fir_decim_mem(const spx_sig_t *x, const float *a, spx_sig_t *y, int N, int M, float *mem);
 
-void syn_percep_zero(spx_sig_t *x, spx_coef_t *ak, spx_coef_t *awk1, spx_coef_t *awk2, spx_sig_t *y, int N, int ord, char *stack);
+void syn_percep_zero(const spx_sig_t *x, const spx_coef_t *ak, const spx_coef_t *awk1, const spx_coef_t *awk2, spx_sig_t *y, int N, int ord, char *stack);
 
-void residue_percep_zero(spx_sig_t *xx, spx_coef_t *ak, spx_coef_t *awk1, spx_coef_t *awk2, spx_sig_t *y, int N, int ord, char *stack);
+void residue_percep_zero(const spx_sig_t *xx, const spx_coef_t *ak, const spx_coef_t *awk1, const spx_coef_t *awk2, spx_sig_t *y, int N, int ord, char *stack);
 
 void comb_filter_mem_init (CombFilterMem *mem);
 

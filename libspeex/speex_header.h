@@ -66,7 +66,7 @@ typedef struct SpeexHeader {
 } SpeexHeader;
 
 /** Initializes a SpeexHeader using basic information */
-void speex_init_header(SpeexHeader *header, int rate, int nb_channels, struct SpeexMode *m);
+void speex_init_header(SpeexHeader *header, int rate, int nb_channels, const struct SpeexMode *m);
 
 /** Creates the header packet from the header itself (mostly involves endianness conversion) */
 char *speex_header_to_packet(SpeexHeader *header, int *size);

@@ -42,7 +42,7 @@ spx_sig_t target[],			/* target vector */
 spx_coef_t ak[],			/* LPCs for this subframe */
 spx_coef_t awk1[],			/* Weighted LPCs for this subframe */
 spx_coef_t awk2[],			/* Weighted LPCs for this subframe */
-void *par,                      /* Codebook/search parameters*/
+const void *par,                      /* Codebook/search parameters*/
 int   p,                        /* number of LPC coeffs */
 int   nsf,                      /* number of samples in subframe */
 spx_sig_t *exc,
@@ -63,7 +63,7 @@ int   complexity
    spx_word16_t **ot, **nt;
    int **nind, **oind;
    int *ind;
-   signed char *shape_cb;
+   const signed char *shape_cb;
    int shape_cb_size, subvect_size, nb_subvect;
    split_cb_params *params;
    int N=2;
@@ -133,7 +133,7 @@ int   complexity
    for (i=0;i<shape_cb_size;i++)
    {
       spx_word16_t *res;
-      signed char *shape;
+      const signed char *shape;
 
       res = resp+i*subvect_size;
       shape = shape_cb+i*subvect_size;
@@ -333,7 +333,7 @@ int   complexity
 
 void split_cb_shape_sign_unquant(
 spx_sig_t *exc,
-void *par,                      /* non-overlapping codebook */
+const void *par,                      /* non-overlapping codebook */
 int   nsf,                      /* number of samples in subframe */
 SpeexBits *bits,
 char *stack
@@ -341,7 +341,7 @@ char *stack
 {
    int i,j;
    int *ind, *signs;
-   signed char *shape_cb;
+   const signed char *shape_cb;
    int shape_cb_size, subvect_size, nb_subvect;
    split_cb_params *params;
    int have_sign;
@@ -392,7 +392,7 @@ spx_sig_t target[],			/* target vector */
 spx_coef_t ak[],			/* LPCs for this subframe */
 spx_coef_t awk1[],			/* Weighted LPCs for this subframe */
 spx_coef_t awk2[],			/* Weighted LPCs for this subframe */
-void *par,                      /* Codebook/search parameters*/
+const void *par,                      /* Codebook/search parameters*/
 int   p,                        /* number of LPC coeffs */
 int   nsf,                      /* number of samples in subframe */
 spx_sig_t *exc,
@@ -416,7 +416,7 @@ int   complexity
 
 void noise_codebook_unquant(
 spx_sig_t *exc,
-void *par,                      /* non-overlapping codebook */
+const void *par,                      /* non-overlapping codebook */
 int   nsf,                      /* number of samples in subframe */
 SpeexBits *bits,
 char *stack

@@ -44,7 +44,7 @@
 
 /**Structure representing the full state of the narrowband encoder*/
 typedef struct EncState {
-   SpeexMode *mode;       /**< Mode corresponding to the state */
+   const SpeexMode *mode;       /**< Mode corresponding to the state */
    int    first;          /**< Is this the first frame? */
    int    frameSize;      /**< Size of frames */
    int    subframeSize;   /**< Size of sub-frames */
@@ -115,14 +115,14 @@ typedef struct EncState {
    int    sampling_rate;
 
    int    encode_submode;
-   SpeexSubmode **submodes; /**< Sub-mode data */
+   const SpeexSubmode * const *submodes; /**< Sub-mode data */
    int    submodeID;      /**< Activated sub-mode */
    int    submodeSelect;  /**< Mode chosen by the user (may differ from submodeID if VAD is on) */
 } EncState;
 
 /**Structure representing the full state of the narrowband decoder*/
 typedef struct DecState {
-   SpeexMode *mode;       /**< Mode corresponding to the state */
+   const SpeexMode *mode;       /**< Mode corresponding to the state */
    int    first;          /**< Is this the first frame? */
    int    count_lost;     /**< Was the last frame lost? */
    int    frameSize;      /**< Size of frames */
@@ -161,7 +161,7 @@ typedef struct DecState {
    int    pitch_gain_buf_idx; /**< Tail of the buffer */
 
    int    encode_submode;
-   SpeexSubmode **submodes; /**< Sub-mode data */
+   const SpeexSubmode * const *submodes; /**< Sub-mode data */
    int    submodeID;      /**< Activated sub-mode */
    int    lpc_enh_enabled; /**< 1 when LPC enhancer is on, 0 otherwise */
    CombFilterMem *comb_mem;
@@ -179,7 +179,7 @@ typedef struct DecState {
 } DecState;
 
 /** Initializes encoder state*/
-void *nb_encoder_init(SpeexMode *m);
+void *nb_encoder_init(const SpeexMode *m);
 
 /** De-allocates encoder state resources*/
 void nb_encoder_destroy(void *state);
@@ -189,7 +189,7 @@ int nb_encode(void *state, short *in, SpeexBits *bits);
 
 
 /** Initializes decoder state*/
-void *nb_decoder_init(SpeexMode *m);
+void *nb_decoder_init(const SpeexMode *m);
 
 /** De-allocates decoder state resources*/
 void nb_decoder_destroy(void *state);

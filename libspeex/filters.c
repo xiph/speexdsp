@@ -38,7 +38,7 @@
 #include "ltp.h"
 
 #ifdef FIXED_POINT
-void bw_lpc(spx_word16_t gamma, spx_coef_t *lpc_in, spx_coef_t *lpc_out, int order)
+void bw_lpc(spx_word16_t gamma, const spx_coef_t *lpc_in, spx_coef_t *lpc_out, int order)
 {
    int i;
    spx_word16_t tmp=gamma;
@@ -50,7 +50,7 @@ void bw_lpc(spx_word16_t gamma, spx_coef_t *lpc_in, spx_coef_t *lpc_out, int ord
    }
 }
 #else
-void bw_lpc(spx_word16_t gamma, spx_coef_t *lpc_in, spx_coef_t *lpc_out, int order)
+void bw_lpc(spx_word16_t gamma, const spx_coef_t *lpc_in, spx_coef_t *lpc_out, int order)
 {
    int i;
    float tmp=1;
@@ -67,7 +67,7 @@ void bw_lpc(spx_word16_t gamma, spx_coef_t *lpc_in, spx_coef_t *lpc_out, int ord
 #ifdef FIXED_POINT
 
 /* FIXME: These functions are ugly and probably introduce too much error */
-void signal_mul(spx_sig_t *x, spx_sig_t *y, spx_word32_t scale, int len)
+void signal_mul(const spx_sig_t *x, spx_sig_t *y, spx_word32_t scale, int len)
 {
    int i;
    for (i=0;i<len;i++)
@@ -76,7 +76,7 @@ void signal_mul(spx_sig_t *x, spx_sig_t *y, spx_word32_t scale, int len)
    }
 }
 
-void signal_div(spx_sig_t *x, spx_sig_t *y, spx_word32_t scale, int len)
+void signal_div(const spx_sig_t *x, spx_sig_t *y, spx_word32_t scale, int len)
 {
    int i;
    spx_word16_t scale_1;
@@ -94,14 +94,14 @@ void signal_div(spx_sig_t *x, spx_sig_t *y, spx_word32_t scale, int len)
 
 #else
 
-void signal_mul(spx_sig_t *x, spx_sig_t *y, spx_word32_t scale, int len)
+void signal_mul(const spx_sig_t *x, spx_sig_t *y, spx_word32_t scale, int len)
 {
    int i;
    for (i=0;i<len;i++)
       y[i] = scale*x[i];
 }
 
-void signal_div(spx_sig_t *x, spx_sig_t *y, spx_word32_t scale, int len)
+void signal_div(const spx_sig_t *x, spx_sig_t *y, spx_word32_t scale, int len)
 {
    int i;
    float scale_1 = 1/scale;
@@ -114,7 +114,7 @@ void signal_div(spx_sig_t *x, spx_sig_t *y, spx_word32_t scale, int len)
 
 #ifdef FIXED_POINT
 
-int normalize16(spx_sig_t *x, spx_word16_t *y, int max_scale, int len)
+int normalize16(const spx_sig_t *x, spx_word16_t *y, int max_scale, int len)
 {
    int i;
    spx_sig_t max_val=1;
@@ -142,7 +142,7 @@ int normalize16(spx_sig_t *x, spx_word16_t *y, int max_scale, int len)
    return sig_shift;
 }
 
-spx_word16_t compute_rms(spx_sig_t *x, int len)
+spx_word16_t compute_rms(const spx_sig_t *x, int len)
 {
    int i;
    spx_word32_t sum=0;
@@ -184,7 +184,7 @@ spx_word16_t compute_rms(spx_sig_t *x, int len)
 }
 
 
-void filter_mem2(spx_sig_t *x, spx_coef_t *num, spx_coef_t *den, spx_sig_t *y, int N, int ord, spx_mem_t *mem)
+void filter_mem2(const spx_sig_t *x, const spx_coef_t *num, const spx_coef_t *den, spx_sig_t *y, int N, int ord, spx_mem_t *mem)
 {
    int i,j;
    spx_sig_t xi,yi,nyi;
@@ -205,7 +205,7 @@ void filter_mem2(spx_sig_t *x, spx_coef_t *num, spx_coef_t *den, spx_sig_t *y, i
    }
 }
 
-void iir_mem2(spx_sig_t *x, spx_coef_t *den, spx_sig_t *y, int N, int ord, spx_mem_t *mem)
+void iir_mem2(const spx_sig_t *x, const spx_coef_t *den, spx_sig_t *y, int N, int ord, spx_mem_t *mem)
 {
    int i,j;
    spx_word32_t xi,yi,nyi;
@@ -227,7 +227,7 @@ void iir_mem2(spx_sig_t *x, spx_coef_t *den, spx_sig_t *y, int N, int ord, spx_m
 }
 
 
-void fir_mem2(spx_sig_t *x, spx_coef_t *num, spx_sig_t *y, int N, int ord, spx_mem_t *mem)
+void fir_mem2(const spx_sig_t *x, const spx_coef_t *num, spx_sig_t *y, int N, int ord, spx_mem_t *mem)
 {
    int i,j;
    spx_word32_t xi,yi;
@@ -252,7 +252,7 @@ void fir_mem2(spx_sig_t *x, spx_coef_t *num, spx_sig_t *y, int N, int ord, spx_m
 
 
 
-spx_word16_t compute_rms(spx_sig_t *x, int len)
+spx_word16_t compute_rms(const spx_sig_t *x, int len)
 {
    int i;
    float sum=0;
@@ -268,7 +268,7 @@ spx_word16_t compute_rms(spx_sig_t *x, int len)
 #else
 
 
-void filter_mem2(spx_sig_t *x, spx_coef_t *num, spx_coef_t *den, spx_sig_t *y, int N, int ord,  spx_mem_t *mem)
+void filter_mem2(const spx_sig_t *x, const spx_coef_t *num, const spx_coef_t *den, spx_sig_t *y, int N, int ord,  spx_mem_t *mem)
 {
    int i,j;
    float xi,yi;
@@ -286,7 +286,7 @@ void filter_mem2(spx_sig_t *x, spx_coef_t *num, spx_coef_t *den, spx_sig_t *y, i
 }
 
 
-void iir_mem2(spx_sig_t *x, spx_coef_t *den, spx_sig_t *y, int N, int ord, spx_mem_t *mem)
+void iir_mem2(const spx_sig_t *x, const spx_coef_t *den, spx_sig_t *y, int N, int ord, spx_mem_t *mem)
 {
    int i,j;
    for (i=0;i<N;i++)
@@ -303,7 +303,7 @@ void iir_mem2(spx_sig_t *x, spx_coef_t *den, spx_sig_t *y, int N, int ord, spx_m
 
 #endif
 
-void fir_mem2(spx_sig_t *x, spx_coef_t *num, spx_sig_t *y, int N, int ord, spx_mem_t *mem)
+void fir_mem2(const spx_sig_t *x, const spx_coef_t *num, spx_sig_t *y, int N, int ord, spx_mem_t *mem)
 {
    int i,j;
    float xi;
@@ -323,7 +323,7 @@ void fir_mem2(spx_sig_t *x, spx_coef_t *num, spx_sig_t *y, int N, int ord, spx_m
 #endif
 
 
-void syn_percep_zero(spx_sig_t *xx, spx_coef_t *ak, spx_coef_t *awk1, spx_coef_t *awk2, spx_sig_t *y, int N, int ord, char *stack)
+void syn_percep_zero(const spx_sig_t *xx, const spx_coef_t *ak, const spx_coef_t *awk1, const spx_coef_t *awk2, spx_sig_t *y, int N, int ord, char *stack)
 {
    int i;
    spx_mem_t *mem = PUSH(stack,ord, spx_mem_t);
@@ -335,7 +335,7 @@ void syn_percep_zero(spx_sig_t *xx, spx_coef_t *ak, spx_coef_t *awk1, spx_coef_t
    filter_mem2(y, awk1, awk2, y, N, ord, mem);
 }
 
-void residue_percep_zero(spx_sig_t *xx, spx_coef_t *ak, spx_coef_t *awk1, spx_coef_t *awk2, spx_sig_t *y, int N, int ord, char *stack)
+void residue_percep_zero(const spx_sig_t *xx, const spx_coef_t *ak, const spx_coef_t *awk1, const spx_coef_t *awk2, spx_sig_t *y, int N, int ord, char *stack)
 {
    int i;
    spx_mem_t *mem = PUSH(stack,ord, spx_mem_t);
@@ -347,7 +347,7 @@ void residue_percep_zero(spx_sig_t *xx, spx_coef_t *ak, spx_coef_t *awk1, spx_co
    fir_mem2(y, awk2, y, N, ord, mem);
 }
 
-void qmf_decomp(short *xx, spx_word16_t *aa, spx_sig_t *y1, spx_sig_t *y2, int N, int M, spx_word16_t *mem, char *stack)
+void qmf_decomp(const short *xx, const spx_word16_t *aa, spx_sig_t *y1, spx_sig_t *y2, int N, int M, spx_word16_t *mem, char *stack)
 {
    int i,j,k,M2;
    spx_word16_t *a;
@@ -384,7 +384,7 @@ void qmf_decomp(short *xx, spx_word16_t *aa, spx_sig_t *y1, spx_sig_t *y2, int N
 
 
 /* By segher */
-void fir_mem_up(spx_sig_t *x, spx_word16_t *a, spx_sig_t *y, int N, int M, spx_word32_t *mem, char *stack)
+void fir_mem_up(const spx_sig_t *x, const spx_word16_t *a, spx_sig_t *y, int N, int M, spx_word32_t *mem, char *stack)
    /* assumptions:
       all odd x[i] are zero -- well, actually they are left out of the array now
       N and M are multiples of 4 */

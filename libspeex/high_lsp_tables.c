@@ -29,7 +29,7 @@
    POSSIBILITY OF SUCH DAMAGE.
 */
  
-signed char high_lsp_cdbk[512]={
+const signed char high_lsp_cdbk[512]={
 39,12,-14,-20,-29,-61,-67,-76,
 -32,-71,-67,68,77,46,34,5,
 -13,-48,-46,-72,-81,-84,-60,-58,
@@ -96,7 +96,7 @@ signed char high_lsp_cdbk[512]={
 -42,-74,-48,21,-4,70,52,10};
 
 
-signed char high_lsp_cdbk2[512]={
+const signed char high_lsp_cdbk2[512]={
 -36,-62,6,-9,-10,-14,-56,23,
 1,-26,23,-48,-17,12,8,-7,
 23,29,-36,-28,-6,-29,-17,-5,

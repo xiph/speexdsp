@@ -187,7 +187,7 @@ spx_coef_t ak[],                     /* LPCs for this subframe */
 spx_coef_t awk1[],                   /* Weighted LPCs #1 for this subframe */
 spx_coef_t awk2[],                   /* Weighted LPCs #2 for this subframe */
 spx_sig_t exc[],                    /* Excitation */
-void *par,
+const void *par,
 int   pitch,                    /* Pitch value */
 int   p,                        /* Number of LPC coeffs */
 int   nsf,                      /* Number of samples in subframe */
@@ -206,7 +206,7 @@ int cdbk_offset
    spx_word32_t corr[3];
    spx_word32_t A[3][3];
    int   gain_cdbk_size;
-   signed char *gain_cdbk;
+   const signed char *gain_cdbk;
    spx_word16_t gain[3];
    spx_word64_t err;
 
@@ -322,7 +322,7 @@ int cdbk_offset
 
    {
       spx_word32_t C[9];
-      signed char *ptr=gain_cdbk;
+      const signed char *ptr=gain_cdbk;
       int best_cdbk=0;
       spx_word32_t best_sum=0;
       C[0]=corr[2];
@@ -412,7 +412,7 @@ spx_coef_t ak[],                     /* LPCs for this subframe */
 spx_coef_t awk1[],                   /* Weighted LPCs #1 for this subframe */
 spx_coef_t awk2[],                   /* Weighted LPCs #2 for this subframe */
 spx_sig_t exc[],                    /* Excitation */
-void *par,
+const void *par,
 int   start,                    /* Smallest pitch value allowed */
 int   end,                      /* Largest pitch value allowed */
 spx_word16_t pitch_coef,               /* Voicing (pitch) coefficient */
@@ -490,7 +490,7 @@ spx_sig_t exc[],                    /* Excitation */
 int   start,                    /* Smallest pitch value allowed */
 int   end,                      /* Largest pitch value allowed */
 spx_word16_t pitch_coef,               /* Voicing (pitch) coefficient */
-void *par,
+const void *par,
 int   nsf,                      /* Number of samples in subframe */
 int *pitch_val,
 spx_word16_t *gain_val,
@@ -506,7 +506,7 @@ int cdbk_offset
    int pitch;
    int gain_index;
    spx_word16_t gain[3];
-   signed char *gain_cdbk;
+   const signed char *gain_cdbk;
    int gain_cdbk_size;
    ltp_params *params;
 
@@ -615,7 +615,7 @@ spx_coef_t ak[],                     /* LPCs for this subframe */
 spx_coef_t awk1[],                   /* Weighted LPCs #1 for this subframe */
 spx_coef_t awk2[],                   /* Weighted LPCs #2 for this subframe */
 spx_sig_t exc[],                    /* Excitation */
-void *par,
+const void *par,
 int   start,                    /* Smallest pitch value allowed */
 int   end,                      /* Largest pitch value allowed */
 spx_word16_t pitch_coef,               /* Voicing (pitch) coefficient */
@@ -646,7 +646,7 @@ spx_sig_t exc[],                    /* Excitation */
 int   start,                    /* Smallest pitch value allowed */
 int   end,                      /* Largest pitch value allowed */
 spx_word16_t pitch_coef,               /* Voicing (pitch) coefficient */
-void *par,
+const void *par,
 int   nsf,                      /* Number of samples in subframe */
 int *pitch_val,
 spx_word16_t *gain_val,
