@@ -98,7 +98,7 @@ int lpc_to_lsp (float *a,int lpcrdr,float *freq,int nb,float delta)
 {
 
     float psuml,psumr,psumm,temp_xr,xl,xr,xm;
-    float temp_psumr,temp_qsumr;
+    float temp_psumr/*,temp_qsumr*/;
     int i,j,m,flag,k;
     float *Q;                 	/* ptrs for memory allocation 		*/
     float *P;

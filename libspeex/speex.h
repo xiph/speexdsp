@@ -3,14 +3,18 @@
 
 /**Structure representing the full state of the encoder*/
 typedef struct EncState {
+   int    first;          /* Is this the first frame? */
    int    frameSize;      /* Size of frames */
    int    subframeSize;   /* Size of sub-frames */
    int    nbSubframes;    /* Number of sub-frames */
    int    windowSize;     /* Analysis (LPC) window length */
    int    lpcSize;        /* LPC order */
    int    bufSize;        /* Buffer size */
-   float *inBuf;          /* Input buffer */
-   float *frame;          /* Start of encoded frame */
+   float  gamma;          /* Perceptual filter: A(z/gamma) */
+   float *inBuf;          /* Input buffer (original signal) */
+   float *frame;          /* Start of original frame */
+   float *wBuf;           /* "Weighted" buffer */
+   float *wframe;         /* Start of "weighted" frame */
    float *window;         /* Temporary (Hanning) window */
    float *buf2;           /* 2nd temporary buffer */
    float *autocorr;       /* auto-correlation */
@@ -20,8 +24,8 @@ typedef struct EncState {
    float *old_lsp;        /* LSPs for previous frame */
    float *interp_lsp;     /* Interpolated LSPs */
    float *interp_lpc;     /* Interpolated LPCs */
+   float *bw_lpc;         /* LPCs after bandwidth expansion for perceptual weighting*/
    float *rc;             /* Reflection coefficients */
-   int    first;          /* Is this the first frame? */
 } EncState;
 
 typedef struct DecState {

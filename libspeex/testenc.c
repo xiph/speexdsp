@@ -4,7 +4,7 @@
 
 #define FRAME_SIZE 128
 
-main(int argc, char **argv)
+int main(int argc, char **argv)
 {
    char *inFile, *outFile;
    FILE *fin, *fout;
@@ -30,4 +30,6 @@ main(int argc, char **argv)
          input[i]=in[i];
       encode(&st, input, NULL, NULL);
    }
+   encoder_destroy(&st);
+   return 1;
 }
