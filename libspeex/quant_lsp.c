@@ -56,7 +56,7 @@
 static void compute_quant_weights(spx_lsp_t *qlsp, spx_word16_t *quant_weight, int order)
 {
    int i;
-   float tmp1, tmp2;
+   spx_word16_t tmp1, tmp2;
    for (i=0;i<order;i++)
    {
       if (i==0)

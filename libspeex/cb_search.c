@@ -164,7 +164,7 @@ int   complexity
    {
       /*"erase" nbest list*/
       for (j=0;j<N;j++)
-         ndist[j]=-1;
+         ndist[j]=-2;
 
       /*For all n-bests of previous subvector*/
       for (j=0;j<N;j++)
@@ -213,7 +213,7 @@ int   complexity
             for (m=i*subvect_size;m<(i+1)*subvect_size;m++)
                err += t[m]*t[m];
             /*update n-best list*/
-            if (err<ndist[N-1] || ndist[N-1]<-.5)
+            if (err<ndist[N-1] || ndist[N-1]<-1)
             {
 
                /*previous target (we don't care what happened before*/
@@ -247,7 +247,7 @@ int   complexity
 
                for (m=0;m<N;m++)
                {
-                  if (err < ndist[m] || ndist[m]<-.5)
+                  if (err < ndist[m] || ndist[m]<-1)
                   {
                      for (n=N-1;n>m;n--)
                      {

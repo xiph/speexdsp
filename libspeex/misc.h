@@ -70,7 +70,19 @@ extern long long spx_mips;
 #define ADD32(a,b) (spx_mips++,(a)+(b))
 #define SUB32(a,b) (spx_mips++,(a)-(b))
 #define MULT16_16_16(a,b)     (spx_mips++,((short)(a))*((short)(b)))
-#define MULT16_16(a,b)     (spx_mips++,((int)(a))*((short)(b)))
+
+#ifdef ARM_ASM
+static inline spx_word32_t MULT16_16(spx_word16_t x, spx_word16_t y) {
+  int res;
+  spx_mips++;
+  asm volatile("smulbb  %0,%1,%2;\n"
+               : "=&r"(res)
+               : "%r"(x),"r"(y));
+  return(res);
+}
+#else
+#define MULT16_16(a,b)     (spx_mips++,((short)(a))*((short)(b)))
+#endif
 
 #else
 
@@ -82,7 +94,17 @@ extern long long spx_mips;
 /* result fits in 16 bits */
 #define MULT16_16_16(a,b)     (((short)(a))*((short)(b)))
 /* Kludge: just making sure results are on 32 bits */
-#define MULT16_16(a,b)     (((int)(a))*((short)(b)))
+#ifdef ARM_ASM
+static inline spx_word32_t MULT16_16(spx_word16_t x, spx_word16_t y) {
+  int res;
+  asm volatile("smulbb  %0,%1,%2;\n"
+              : "=&r"(res)
+              : "%r"(x),"r"(y));
+  return(res);
+}
+#else
+#define MULT16_16(a,b)     (((short)(a))*((short)(b)))
+#endif
 
 #endif
 
