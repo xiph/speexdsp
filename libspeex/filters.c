@@ -187,7 +187,7 @@ spx_word16_t compute_rms(const spx_sig_t *x, int len)
    return SHR(SHL((spx_word32_t)spx_sqrt(1+DIV32(sum,len)),(sig_shift+3)),SIG_SHIFT);
 }
 
-#ifdef ARM4_ASM
+#if defined(ARM4_ASM) || defined(ARM5E_ASM)
 void filter_mem2(const spx_sig_t *x, const spx_coef_t *num, const spx_coef_t *den, spx_sig_t *y, int N, int ord, spx_mem_t *mem)
 {
    int i,j;

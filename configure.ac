@@ -75,9 +75,14 @@ AC_ARG_ENABLE(fixed-point, [  --enable-fixed-point    compile as fixed-point],
   AC_DEFINE([FIXED_POINT], , [Compile as fixed-point])
 fi])
 
-AC_ARG_ENABLE(arm-asm, [  --enable-arm-asm        make use of ARM assembly instructions],
+AC_ARG_ENABLE(arm4-asm, [  --enable-arm4-asm        make use of ARM4 assembly instructions],
 [if test "$enableval" = yes; then
-  AC_DEFINE([ARM_ASM], , [Make use of ARM assembly instructions])
+  AC_DEFINE([ARM4_ASM], , [Make use of ARM4 assembly instructions])
+fi])
+
+AC_ARG_ENABLE(arm5e-asm, [  --enable-arm5e-asm        make use of ARM5E assembly instructions],
+[if test "$enableval" = yes; then
+  AC_DEFINE([ARM5_ASM], , [Make use of ARM5E assembly instructions])
 fi])
 
 AC_ARG_ENABLE(fixed-point-debug, [  --enable-fixed-point-debug  Debug fixed-point implementation],

@@ -63,7 +63,7 @@ noinst_HEADERS = lsp.h \
 	math_approx.h \
 	smallft.h \
 	arch.h \
-	fixed_arm.h \
+	fixed_arm5e.h \
 	fixed_debug.h \
 	fixed_generic.h \
 	cb_search_sse.h
