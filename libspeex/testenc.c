@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define FRAME_SIZE 160
+#define FRAME_SIZE 256
 #include <math.h>
 int main(int argc, char **argv)
 {
@@ -19,8 +19,8 @@ int main(int argc, char **argv)
 
    for (i=0;i<FRAME_SIZE;i++)
       bak2[i]=0;
-   encoder_init(&st, &nb_mode);
-   decoder_init(&dec, &nb_mode);
+   encoder_init(&st, &wb_mode);
+   decoder_init(&dec, &wb_mode);
    if (argc != 4 && argc != 3)
    {
       fprintf (stderr, "Usage: encode [in file] [out file] [bits file]\nargc = %d", argc);
@@ -57,9 +57,6 @@ int main(int argc, char **argv)
          snr = 10*log10((esig+1)/(enoise+1));
          printf ("real SNR = %f\n", snr);
       }
-      frame_bits_rewind(&bits);
-      
-      decode(&dec, &bits, input);
 
       /* Save the bits here */
       frame_bits_reset(&bits);

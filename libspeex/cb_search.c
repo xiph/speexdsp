@@ -37,8 +37,6 @@
 #include "stack_alloc.h"
 #include "vq.h"
 
-#define EXC_CB_SIZE 128
-#define min(a,b) ((a) < (b) ? (a) : (b))
 
 /*---------------------------------------------------------------------------*\
                                                                              

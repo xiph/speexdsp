@@ -191,7 +191,7 @@ void encode(EncState *st, float *in, FrameBits *bits)
    roots=lpc_to_lsp (st->lpc, st->lpcSize, st->lsp, 6, 0.02, st->stack);
    if (roots!=st->lpcSize)
    {
-      fprintf (stderr, "roots!=st->lpcSize\n");
+      fprintf (stderr, "roots!=st->lpcSize (found only %d roots)\n", roots);
       exit(1);
    }
 
@@ -201,7 +201,15 @@ void encode(EncState *st, float *in, FrameBits *bits)
    
    /* LSP Quantization */
    st->lsp_quant(st->lsp, st->qlsp, st->lpcSize, bits);
-
+   printf ("LSP ");
+   for (i=0;i<st->lpcSize;i++)
+      printf ("%f ", st->lsp[i]);
+   printf ("\n");
+   printf ("QLSP ");
+   for (i=0;i<st->lpcSize;i++)
+      printf ("%f ", st->qlsp[i]);
+   printf ("\n");
+   return;
    /* Special case for first frame */
    if (st->first)
    {

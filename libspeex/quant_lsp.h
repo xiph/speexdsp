@@ -43,4 +43,7 @@ void lsp_quant_nb(float *lsp, float *qlsp, int order, FrameBits *bits);
 /* Decodes quantized narrowband LSPs */
 void lsp_unquant_nb(float *lsp, int order, FrameBits *bits);
 
+/* Quantizes wideband LSPs with 50 bits */
+void lsp_quant_wb(float *lsp, float *qlsp, int order, FrameBits *bits);
+
 #endif

@@ -78,7 +78,7 @@ SpeexMode wb_mode = {
    0.9,    /*gamma1*/
    0.2,    /*gamma2*/
    /*LSP quantization*/
-   lsp_quant_nb,
+   lsp_quant_wb,
    lsp_unquant_nb,
    /*Pitch quantization*/
    pitch_search_3tap,

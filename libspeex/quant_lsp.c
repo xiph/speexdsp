@@ -154,3 +154,61 @@ void lsp_unquant_nb(float *lsp, int order, FrameBits *bits)
    for (i=0;i<5;i++)
       lsp[i+5] += cdbk_nb_high2[id*5+i];
 }
+
+
+extern float lsp_cdbk_wb[];
+extern float lsp_cdbk_wb11[];
+extern float lsp_cdbk_wb12[];
+extern float lsp_cdbk_wb21[];
+extern float lsp_cdbk_wb22[];
+extern float lsp_cdbk_wb31[];
+extern float lsp_cdbk_wb32[];
+extern float lsp_cdbk_wb41[];
+extern float lsp_cdbk_wb42[];
+
+void lsp_quant_wb(float *lsp, float *qlsp, int order, FrameBits *bits)
+{
+   int i;
+   float tmp1, tmp2;
+   int id;
+   for (i=0;i<order;i++)
+      qlsp[i]=lsp[i];
+
+   quant_weight[0] = 1/(qlsp[1]-qlsp[0]);
+   quant_weight[order-1] = 1/(qlsp[order-1]-qlsp[order-2]);
+   for (i=1;i<order-1;i++)
+   {
+      tmp1 = 1/(qlsp[i]-qlsp[i-1]);
+      tmp2 = 1/(qlsp[i+1]-qlsp[i]);
+      quant_weight[i] = tmp1 > tmp2 ? tmp1 : tmp2;
+   }
+   id = lsp_quant(qlsp, lsp_cdbk_wb, 64, order);
+   frame_bits_pack(bits, id, 6);
+
+   id = lsp_weight_quant(qlsp, quant_weight, lsp_cdbk_wb11, 64, 4);
+   frame_bits_pack(bits, id, 6);
+
+   id = lsp_weight_quant(qlsp, quant_weight, lsp_cdbk_wb12, 64, 4);
+   frame_bits_pack(bits, id, 6);
+
+   id = lsp_weight_quant(qlsp+4, quant_weight, lsp_cdbk_wb21, 64, 4);
+   frame_bits_pack(bits, id, 6);
+
+   id = lsp_weight_quant(qlsp+4, quant_weight, lsp_cdbk_wb22, 64, 4);
+   frame_bits_pack(bits, id, 6);
+
+   id = lsp_weight_quant(qlsp+8, quant_weight, lsp_cdbk_wb31, 64, 4);
+   frame_bits_pack(bits, id, 6);
+
+   id = lsp_weight_quant(qlsp+8, quant_weight, lsp_cdbk_wb32, 16, 4);
+   frame_bits_pack(bits, id, 4);
+
+   id = lsp_weight_quant(qlsp+12, quant_weight, lsp_cdbk_wb41, 64, 4);
+   frame_bits_pack(bits, id, 6);
+
+   id = lsp_weight_quant(qlsp+12, quant_weight, lsp_cdbk_wb42, 16, 4);
+   frame_bits_pack(bits, id, 4);
+
+   for (i=0;i<order;i++)
+      qlsp[i]=lsp[i]-qlsp[i];
+}
