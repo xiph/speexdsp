@@ -119,8 +119,6 @@ spx_word16_t compute_rms(spx_sig_t *x, int len)
    return (1<<(sig_shift+3))*sqrt(1+sum/len)/(float)SIG_SCALING;
 }
 
-#define MUL_16_32_R15(a,bh,bl) ((a)*(bh) + ((a)*(bl)>>15))
-
 
 void filter_mem2(spx_sig_t *x, spx_coef_t *num, spx_coef_t *den, spx_sig_t *y, int N, int ord, spx_mem_t *mem)
 {
@@ -135,9 +133,9 @@ void filter_mem2(spx_sig_t *x, spx_coef_t *num, spx_coef_t *den, spx_sig_t *y, i
       xh = xi>>15; xl=xi&0x00007fff; yh = yi>>15; yl=yi&0x00007fff; 
       for (j=0;j<ord-1;j++)
       {
-         mem[j] = mem[j+1] +  MUL_16_32_R15(num[j+1],xh,xl) - MUL_16_32_R15(den[j+1],yh,yl);
+         mem[j] = SUB32(ADD32(mem[j+1],  MUL_16_32_R15(num[j+1],xh,xl)), MUL_16_32_R15(den[j+1],yh,yl));
       }
-      mem[ord-1] = MUL_16_32_R15(num[ord],xh,xl) - MUL_16_32_R15(den[ord],yh,yl);
+      mem[ord-1] = SUB32(MUL_16_32_R15(num[ord],xh,xl), MUL_16_32_R15(den[ord],yh,yl));
       y[i] = yi;
    }
 }
@@ -155,7 +153,7 @@ void iir_mem2(spx_sig_t *x, spx_coef_t *den, spx_sig_t *y, int N, int ord, spx_m
       yh = yi>>15; yl=yi&0x00007fff; 
       for (j=0;j<ord-1;j++)
       {
-         mem[j] = mem[j+1] - MUL_16_32_R15(den[j+1],yh,yl);
+         mem[j] = SUB32(mem[j+1], MUL_16_32_R15(den[j+1],yh,yl));
       }
       mem[ord-1] = - MUL_16_32_R15(den[ord],yh,yl);
       y[i] = yi;
@@ -176,7 +174,7 @@ void fir_mem2(spx_sig_t *x, spx_coef_t *num, spx_sig_t *y, int N, int ord, spx_m
       xh = xi>>15; xl=xi&0x00007fff;
       for (j=0;j<ord-1;j++)
       {
-         mem[j] = mem[j+1] +  MUL_16_32_R15(num[j+1],xh,xl);
+         mem[j] = ADD32(mem[j+1], MUL_16_32_R15(num[j+1],xh,xl));
       }
       mem[ord-1] = MUL_16_32_R15(num[ord],xh,xl);
       y[i] = yi;

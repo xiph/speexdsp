@@ -236,11 +236,11 @@ int   complexity
 #ifdef FIXED_POINT
                   g=sign*shape_cb[rind*subvect_size+m];
                   for (n=subvect_size*(i+1);n<nsf;n++,q++)
-                     t[n] -= MULT16_32_Q11(g,r[q]);
+                     t[n] = SUB32(t[n],MULT16_32_Q11(g,r[q]));
 #else
                   g=sign*0.03125*shape_cb[rind*subvect_size+m];
                   for (n=subvect_size*(i+1);n<nsf;n++,q++)
-                     t[n] -= g*r[q];
+                     t[n] = SUB32(t[n],g*r[q]);
 #endif
                }
 

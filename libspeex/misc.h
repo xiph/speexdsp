@@ -81,6 +81,9 @@ typedef spx_word32_t spx_sig_t;
 
 #define MULT16_16_P14(a,b) (SHR(ADD16(8192,MULT16_16((a),(b))),14))
 
+#define MUL_16_32_R15(a,bh,bl) ADD32(MULT16_16((a),(bh)), SHR(MULT16_16((a),(bl)),15))
+
+
 
 #define DIV32_16(a,b) (((signed int)(a))/((short)(b)))
 
