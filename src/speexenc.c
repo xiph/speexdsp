@@ -154,6 +154,19 @@ int main(int argc, char **argv)
       }
    }
 
+   /*Temporary header*/
+   {
+      char *header;
+      if (narrowband)
+         header="spexn";
+      if (wideband)
+         header="spexw";
+      if (fwrite(header, 1, 5, fout)!=5)
+      {
+         perror("Cannot write header");
+      }
+   }
+
    encoder_init(&st, mode);
    frame_size=mode->frameSize;
 

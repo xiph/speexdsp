@@ -45,7 +45,6 @@ int main(int argc, char **argv)
 {
    int c;
    int option_index = 0;
-   int narrowband=0, wideband=0;
    char *inFile, *outFile;
    FILE *fin, *fout;
    short out[MAX_FRAME_SIZE];
@@ -62,7 +61,7 @@ int main(int argc, char **argv)
       {"version", no_argument, NULL, 0},
       {0, 0, 0, 0}
    };
-
+   
    while(1)
    {
       c = getopt_long (argc, argv, "nwhv",
@@ -127,14 +126,33 @@ int main(int argc, char **argv)
       }
    }
 
-   mode=&mp_nb_mode;
+   /*This is only the temporary header*/
+   {
+      char header[6];
+      if(fread(header, sizeof(char), 5, fin)!=5)
+      {
+         perror("cannot read header");
+         exit(1);
+      }
+      header[5]=0;
+      if (strcmp(header,"spexn")==0)
+         mode=&mp_nb_mode;
+      else if (strcmp(header,"spexw")==0)
+         mode=&mp_wb_mode;
+      else 
+      {
+         fprintf (stderr, "This does not look like a Speex " VERSION " file\n");
+         exit(1);
+      }
+   }
+
    decoder_init(&st, mode);
    frame_size=mode->frameSize;
    frame_bits_init(&bits);
    while (1)
    {
-      int i,nbBytes, nb_read;
-      nb_read=300-((bits.nbBits>>3)-bits.bytePtr);
+      int i, nb_read;
+      nb_read=200-((bits.nbBits>>3)-bits.bytePtr);
       if (nb_read>0&&!at_end)
       {
          nb_read=fread(cbits, sizeof(char), nb_read, fin);
@@ -146,7 +164,7 @@ int main(int argc, char **argv)
       }
       
       printf ("bits.nbBits = %d, bits.bytePtr = %d\n", bits.nbBits>>3, bits.bytePtr);
-      if (((bits.nbBits>>3)-bits.bytePtr)<1)
+      if (((bits.nbBits>>3)-bits.bytePtr)<2)
          break;
 
       decode(&st, &bits, output);

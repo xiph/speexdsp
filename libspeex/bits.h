@@ -22,7 +22,7 @@
 #ifndef BITS_H
 #define BITS_H
 
-#define MAX_BYTES_PER_FRAME 1000000
+#define MAX_BYTES_PER_FRAME 1000
 
 typedef struct FrameBits {
    char bytes[MAX_BYTES_PER_FRAME];
