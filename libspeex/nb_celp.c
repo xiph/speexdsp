@@ -299,15 +299,17 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
          st->interp_lsp[i] = cos(st->interp_lsp[i]);
       lsp_to_lpc(st->interp_lsp, st->interp_lpc, st->lpcSize,stack);
 
-      bw_lpc(st->gamma1, st->interp_lpc, st->bw_lpc1, st->lpcSize);
-      bw_lpc(st->gamma2, st->interp_lpc, st->bw_lpc2, st->lpcSize);
-
-      filter_mem2(st->frame, st->bw_lpc1, st->bw_lpc2, st->sw, st->frameSize, st->lpcSize, st->mem_sw_whole);
 
       /*Open-loop pitch*/
       if (SUBMODE(lbr_pitch) != -1 || st->vbr_enabled || SUBMODE(forced_pitch_gain)) {
          int nol_pitch[4];
          float nol_pitch_coef[4];
+
+         bw_lpc(st->gamma1, st->interp_lpc, st->bw_lpc1, st->lpcSize);
+         bw_lpc(st->gamma2, st->interp_lpc, st->bw_lpc2, st->lpcSize);
+         
+         filter_mem2(st->frame, st->bw_lpc1, st->bw_lpc2, st->sw, st->frameSize, st->lpcSize, st->mem_sw_whole);
+
          open_loop_nbest_pitch(st->sw, st->min_pitch, st->max_pitch, st->frameSize, 
                                nol_pitch, nol_pitch_coef, 4, stack);
          ol_pitch=nol_pitch[0];
