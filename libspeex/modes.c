@@ -80,7 +80,7 @@ ltp_params ltp_params_nb = {
 ltp_params ltp_params_lbr = {
    gain_cdbk_lbr,
    5,
-   4
+   7
 };
 
 /* Parameters for Long-Term Prediction (LTP)*/
@@ -162,7 +162,7 @@ SpeexSubmode nb_submode1 = {
 };
 
 SpeexSubmode nb_submode2 = {
-   8,
+   -1,
    1,
    /*LSP quantization*/
    lsp_quant_lbr,
@@ -183,8 +183,8 @@ SpeexSubmode nb_submode3 = {
    -1,
    1,
    /*LSP quantization*/
-   lsp_quant_nb,
-   lsp_unquant_nb,
+   lsp_quant_lbr,
+   lsp_unquant_lbr,
    /*Pitch quantization*/
    pitch_search_3tap,
    pitch_unquant_3tap,
