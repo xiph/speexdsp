@@ -177,32 +177,32 @@ SpeexMode speex_wb_mode = {
 
 
 
-void *encoder_init(SpeexMode *mode)
+void *speex_encoder_init(SpeexMode *mode)
 {
    return mode->enc_init(mode);
 }
 
-void *decoder_init(SpeexMode *mode)
+void *speex_decoder_init(SpeexMode *mode)
 {
    return mode->dec_init(mode);
 }
 
-void encoder_destroy(void *state)
+void speex_encoder_destroy(void *state)
 {
    (*((SpeexMode**)state))->enc_destroy(state);
 }
 
-void encode(void *state, float *in, SpeexBits *bits)
+void speex_encode(void *state, float *in, SpeexBits *bits)
 {
    (*((SpeexMode**)state))->enc(state, in, bits);
 }
 
-void decoder_destroy(void *state)
+void speex_decoder_destroy(void *state)
 {
    (*((SpeexMode**)state))->dec_destroy(state);
 }
 
-void decode(void *state, SpeexBits *bits, float *out, int lost)
+void speex_decode(void *state, SpeexBits *bits, float *out, int lost)
 {
    (*((SpeexMode**)state))->dec(state, bits, out, lost);
 }

@@ -171,7 +171,7 @@ int main(int argc, char **argv)
                   exit(1);
                }
                /*Initialize Speex decoder*/
-               st = decoder_init(mode);
+               st = speex_decoder_init(mode);
                frame_size=mode->frameSize;
                first=0;
             } else {
@@ -181,7 +181,7 @@ int main(int argc, char **argv)
                /*Copy Ogg packet to Speex bitstream*/
                speex_bits_init_from(&bits, (char*)op.packet, op.bytes);
                /*Decode a frame*/
-               decode(st, &bits, output, 0);
+               speex_decode(st, &bits, output, 0);
                
                /*PCM saturation (just in case)*/
                for (i=0;i<frame_size;i++)
@@ -203,8 +203,10 @@ int main(int argc, char **argv)
 
    }
 
-   decoder_destroy(st);
-
+   speex_decoder_destroy(st);
+   speex_bits_destroy(&bits);
+   ogg_stream_clear(&os);
+ 
    exit(0);
    return 1;
 }

@@ -156,7 +156,7 @@ int main(int argc, char **argv)
       mode=&speex_wb_mode;
 
    /*Initialize Speex encoder*/
-   st = encoder_init(mode);
+   st = speex_encoder_init(mode);
 
    if (strcmp(inFile, "-")==0)
       fin=stdin;
@@ -222,7 +222,7 @@ int main(int argc, char **argv)
       for (i=0;i<frame_size;i++)
          input[i]=in[i];
       /*Encode current frame*/
-      encode(st, input, &bits);
+      speex_encode(st, input, &bits);
 
       /*if (id%5!=0)
         continue;*/
@@ -271,8 +271,8 @@ int main(int argc, char **argv)
    }
    
 
-   encoder_destroy(st);
-
+   speex_encoder_destroy(st);
+   speex_bits_destroy(&bits);
    ogg_stream_clear(&os);
 
    exit(0);

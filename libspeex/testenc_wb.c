@@ -19,8 +19,8 @@ int main(int argc, char **argv)
 
    for (i=0;i<FRAME_SIZE;i++)
       bak2[i]=0;
-   st = encoder_init(&speex_wb_mode);
-   dec = decoder_init(&speex_wb_mode);
+   st = speex_encoder_init(&speex_wb_mode);
+   dec = speex_decoder_init(&speex_wb_mode);
    if (argc != 4 && argc != 3)
    {
       fprintf (stderr, "Usage: encode [in file] [out file] [bits file]\nargc = %d", argc);
@@ -44,7 +44,7 @@ int main(int argc, char **argv)
       for (i=0;i<FRAME_SIZE;i++)
          bak[i]=input[i]=in[i];
       speex_bits_reset(&bits);
-      encode(st, input, &bits);
+      speex_encode(st, input, &bits);
       nbBits = speex_bits_write(&bits, cbits, 200);
       printf ("Encoding frame in %d bits\n", nbBits*8);
       if (argc==4)
@@ -61,7 +61,7 @@ int main(int argc, char **argv)
       }
       speex_bits_rewind(&bits);
       
-      decode(dec, &bits, input, 0);
+      speex_decode(dec, &bits, input, 0);
 
       /* Save the bits here */
       for (i=0;i<FRAME_SIZE;i++)
@@ -79,7 +79,7 @@ int main(int argc, char **argv)
       fwrite(in, sizeof(short), FRAME_SIZE, fout);
    }
    
-   encoder_destroy(st);
-   decoder_destroy(dec);
+   speex_encoder_destroy(st);
+   speex_decoder_destroy(dec);
    return 1;
 }
