@@ -870,45 +870,47 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
       return 0;
    }
 
-   m = speex_bits_peek_unsigned(bits, 5);
-   if (m==15)
-   {
-      speex_bits_unpack_unsigned(bits, 5);
-      return -1;
-   } else if (m==14)
-   {
-      int ret = speex_inband_handler(bits, st->speex_callbacks, state);
-      if (ret)
-         return ret;
-   } else if (m==13)
-   {
-      int ret = st->user_callback.func(bits, state, st->user_callback.data);
-      if (ret)
-         return ret;
-   } else if (m>7)
-   {
-      return -2;
-   }
-
-   wideband = speex_bits_unpack_unsigned(bits, 1);
-   if (wideband)
-   {
-      int submode;
-      int advance;
-      submode = speex_bits_unpack_unsigned(bits, SB_SUBMODE_BITS);
-      advance = submode;
-      speex_mode_query(&speex_wb_mode, SPEEX_SUBMODE_BITS_PER_FRAME, &advance);
-      advance -= (SB_SUBMODE_BITS+1);
-      speex_bits_advance(bits, advance);
+   do {
       wideband = speex_bits_unpack_unsigned(bits, 1);
       if (wideband)
       {
-         fprintf (stderr, "Corrupted stream\n");
+         int submode;
+         int advance;
+         submode = speex_bits_unpack_unsigned(bits, SB_SUBMODE_BITS);
+         advance = submode;
+         speex_mode_query(&speex_wb_mode, SPEEX_SUBMODE_BITS_PER_FRAME, &advance);
+         advance -= (SB_SUBMODE_BITS+1);
+         speex_bits_advance(bits, advance);
+         wideband = speex_bits_unpack_unsigned(bits, 1);
+         if (wideband)
+         {
+            fprintf (stderr, "Corrupted stream?\n");
+         }
       }
-   }
+
+      m = speex_bits_unpack_unsigned(bits, 4);
+      if (m==15)
+      {
+         return -1;
+      } else if (m==14)
+      {
+         int ret = speex_inband_handler(bits, st->speex_callbacks, state);
+         if (ret)
+            return ret;
+      } else if (m==13)
+      {
+         int ret = st->user_callback.func(bits, state, st->user_callback.data);
+         if (ret)
+            return ret;
+      } else if (m>7)
+      {
+         return -2;
+      }
+      
+   } while (m>7);
 
    /* Get the sub-mode that was used */
-   st->submodeID = speex_bits_unpack_unsigned(bits, NB_SUBMODE_BITS);
+   st->submodeID = m;
 
    /* Shift all buffers by one frame */
    speex_move(st->inBuf, st->inBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(float));
@@ -1157,9 +1159,11 @@ void nb_encoder_ctl(void *state, int request, void *ptr)
    case SPEEX_GET_FRAME_SIZE:
       (*(int*)ptr) = st->frameSize;
       break;
+   case SPEEX_SET_LOW_MODE:
    case SPEEX_SET_MODE:
       st->submodeID = (*(int*)ptr);
       break;
+   case SPEEX_GET_LOW_MODE:
    case SPEEX_GET_MODE:
       (*(int*)ptr) = st->submodeID;
       break;
@@ -1235,6 +1239,22 @@ void nb_decoder_ctl(void *state, int request, void *ptr)
          (*(int*)ptr) = 50*SUBMODE(bits_per_frame);
       else
          (*(int*)ptr) = 50*(NB_SUBMODE_BITS+1);
+      break;
+   case SPEEX_SET_HANDLER:
+      {
+         SpeexCallback *c = ptr;
+         st->speex_callbacks[c->callback_id].func=c->func;
+         st->speex_callbacks[c->callback_id].data=c->data;
+         st->speex_callbacks[c->callback_id].callback_id=c->callback_id;
+      }
+      break;
+   case SPEEX_SET_USER_HANDLER:
+      {
+         SpeexCallback *c = ptr;
+         st->user_callback.func=c->func;
+         st->user_callback.data=c->data;
+         st->user_callback.callback_id=c->callback_id;
+      }
       break;
    default:
       fprintf(stderr, "Unknown nb_ctl request: %d\n", request);

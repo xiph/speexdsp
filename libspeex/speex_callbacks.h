@@ -31,12 +31,19 @@ extern "C" {
 
 #define SPEEX_MAX_CALLBACKS 16
 
+/* Describes all the in-band requests */
 
-#define SPEEX_INBAND_MODE_REQUEST        0
-#define SPEEX_INBAND_HIGH_MODE_REQUEST   1
-#define SPEEX_INBAND_CHAR                2
+#define SPEEX_INBAND_ENH_REQUEST        0
+#define SPEEX_INBAND_VBR_REQUEST        1
+#define SPEEX_INBAND_MODE_REQUEST        2
+#define SPEEX_INBAND_LOW_MODE_REQUEST    3
+#define SPEEX_INBAND_HIGH_MODE_REQUEST   4
+#define SPEEX_INBAND_VBR_QUALITY_REQUEST 5
 
+/** Send a character in-band */
+#define SPEEX_INBAND_CHAR                8
 
+/** Callback function type */
 typedef int (*speex_callback_func)(SpeexBits *bits, void *state, void *data);
 
 typedef struct SpeexCallback {

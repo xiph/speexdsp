@@ -1,6 +1,7 @@
 #include "speex.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include "speex_callbacks.h"
 
 #define FRAME_SIZE 160
 #include <math.h>
@@ -18,17 +19,28 @@ int main(int argc, char **argv)
    SpeexBits bits;
    int tmp;
    int bitCount=0;
+   SpeexCallback callback;
 
    for (i=0;i<FRAME_SIZE;i++)
       bak2[i]=0;
    st = speex_encoder_init(&speex_nb_mode);
    dec = speex_decoder_init(&speex_nb_mode);
 
-   tmp=1;
+   callback.callback_id = SPEEX_INBAND_CHAR;
+   callback.func = speex_std_char_handler;
+   callback.data = stderr;
+   speex_decoder_ctl(dec, SPEEX_SET_HANDLER, &callback);
+
+   callback.callback_id = SPEEX_INBAND_MODE_REQUEST;
+   callback.func = speex_std_mode_request_handler;
+   callback.data = st;
+   speex_decoder_ctl(dec, SPEEX_SET_HANDLER, &callback);
+
+   tmp=0;
    speex_decoder_ctl(dec, SPEEX_SET_ENH, &tmp);
    tmp=0;
    speex_encoder_ctl(st, SPEEX_SET_VBR, &tmp);
-   tmp=6;
+   tmp=8;
    speex_encoder_ctl(st, SPEEX_SET_QUALITY, &tmp);
    tmp=4;
    speex_encoder_ctl(st, SPEEX_SET_COMPLEXITY, &tmp);
@@ -59,6 +71,19 @@ int main(int argc, char **argv)
       for (i=0;i<FRAME_SIZE;i++)
          bak[i]=input[i]=in[i];
       speex_bits_reset(&bits);
+
+      speex_bits_pack(&bits, 14, 5);
+      speex_bits_pack(&bits, SPEEX_INBAND_CHAR, 4);
+      speex_bits_pack(&bits, 'A', 8);
+      
+      speex_bits_pack(&bits, 14, 5);
+      speex_bits_pack(&bits, SPEEX_INBAND_MODE_REQUEST, 4);
+      speex_bits_pack(&bits, 7, 4);
+
+      speex_bits_pack(&bits, 15, 5);
+      speex_bits_pack(&bits, 2, 4);
+      speex_bits_pack(&bits, 0, 16);
+
       speex_encode(st, input, &bits);
       nbBits = speex_bits_write(&bits, cbits, 200);
       bitCount+=bits.nbBits;
