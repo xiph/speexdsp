@@ -487,7 +487,7 @@ float *stack
 
       solve(&A[0][0],b,c, 10);
       for (i=0;i<10;i++)
-         gains[i]*=c[i];
+        gains[i]*=c[i];
       
       for (i=0;i<10;i++)
          gains[i]*=Ee[ind[i]];

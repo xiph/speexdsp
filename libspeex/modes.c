@@ -24,6 +24,7 @@
 #include "ltp.h"
 #include "quant_lsp.h"
 #include "cb_search.h"
+#include "mpulse.h"
 
 extern float gain_cdbk_nb[];
 extern float exc_gains_table[];
@@ -82,7 +83,7 @@ SpeexMode nb_mode = {
    pitch_unquant_3tap,
    &ltp_params_nb,
    /*Innovation quantization*/
-   split_cb_search,
+   split_cb_search/*mpulse_search*/,
    split_cb_unquant,
    &split_cb_nb
 };
@@ -97,10 +98,10 @@ SpeexMode wb_mode = {
    35,     /*pitchStart*/
    290,    /*pitchEnd*/
    0.9,    /*gamma1*/
-   0.6,    /*gamma2*/
+   -1.0,    /*gamma2*/
    .002,   /*lag_factor*/
-   1.00001,/*lpc_floor*/
-   0.0,    /*preemph*/
+   1.0001,/*lpc_floor*/
+   0.7,    /*preemph*/
 
    /*LSP quantization*/
    lsp_quant_wb,

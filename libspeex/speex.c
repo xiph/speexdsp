@@ -269,8 +269,15 @@ void encode(EncState *st, float *in, FrameBits *bits)
 
       /* Compute bandwidth-expanded (unquantized) LPCs for perceptual weighting */
       bw_lpc(st->gamma1, st->interp_lpc, st->bw_lpc1, st->lpcSize);
-      bw_lpc(st->gamma2, st->interp_lpc, st->bw_lpc2, st->lpcSize);
-      
+      if (st->gamma2>=0)
+         bw_lpc(st->gamma2, st->interp_lpc, st->bw_lpc2, st->lpcSize);
+      else
+      {
+         st->bw_lpc2[0]=1;
+         st->bw_lpc2[1]=-st->preemph;
+         for (i=2;i<=st->lpcSize;i++)
+            st->bw_lpc2[i]=0;
+      }
       printf ("\nlpc0 ");
       for (i=0;i<=st->lpcSize;i++)
          printf ("%f ", st->interp_lpc[i]);
@@ -281,9 +288,6 @@ void encode(EncState *st, float *in, FrameBits *bits)
       for (i=0;i<=st->lpcSize;i++)
          printf ("%f ", st->bw_lpc2[i]);
       printf ("\n\n");
-      /*for (i=1;i<=st->lpcSize;i++)
-         st->bw_lpc2[i]=0;
-      st->bw_lpc2[1]=-st->preemph;*/
 
       /* Reset excitation */
       for (i=0;i<st->subframeSize;i++)
@@ -320,10 +324,17 @@ void encode(EncState *st, float *in, FrameBits *bits)
          exc[i]=0;
 
       /* Long-term prediction */
+#if 1
       st->ltp_quant(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2,
                     exc, st->ltp_params, st->min_pitch, st->max_pitch, 
                     st->lpcSize, st->subframeSize, bits, st->stack);
-
+#else
+      {
+         float gain[3];
+         int pitch;
+         closed_loop_fractional_pitch(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2,                                      exc, st->os_filt, st->os_filt_ord2, st->os_fact, 35, 290,                                      &gain[0], &pitch, st->lpcSize,                                      st->subframeSize, st->stack);
+      }
+#endif
       /* Update target for adaptive codebook contribution */
       residue_zero(exc, st->bw_lpc1, res, st->subframeSize, st->lpcSize);
       syn_filt_zero(res, st->interp_qlpc, res, st->subframeSize, st->lpcSize);
@@ -360,7 +371,6 @@ void encode(EncState *st, float *in, FrameBits *bits)
       st->innovation_quant(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2,
                            st->innovation_params, st->lpcSize,
                            st->subframeSize, exc, bits, st->stack);
-
 
 #endif
       /* Compute weighted noise energy and SNR */

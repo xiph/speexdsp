@@ -59,7 +59,7 @@ int main(int argc, char **argv)
       }
       frame_bits_rewind(&bits);
       
-      decode(&dec, &bits, input);
+      /*decode(&dec, &bits, input);*/
 
       /* Save the bits here */
       frame_bits_reset(&bits);
