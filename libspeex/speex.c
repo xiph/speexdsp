@@ -202,6 +202,10 @@ void encode(EncState *st, float *in, FrameBits *bits)
       for (i=0;i<st->lpcSize;i++)
          st->old_qlsp[i] = st->qlsp[i];
    }
+   printf ("encode LSPs: ");
+   for (i=0;i<st->lpcSize;i++)
+      printf ("%f ", st->qlsp[i]);
+   printf ("\n");
 
    /*Find open-loop pitch for the whole frame*/
    if (0) {
@@ -466,6 +470,7 @@ void decoder_init(DecState *st, SpeexMode *mode)
    st->min_pitch=mode->pitchStart;
    st->max_pitch=mode->pitchEnd;
 
+   st->stack = calloc(10000, sizeof(float));
 
    st->inBuf = malloc(st->bufSize*sizeof(float));
    st->frame = st->inBuf + st->bufSize - st->windowSize;
@@ -477,12 +482,10 @@ void decoder_init(DecState *st, SpeexMode *mode)
       st->excBuf[i]=0;
 
    st->interp_qlpc = malloc((st->lpcSize+1)*sizeof(float));
-   st->bw_lpc1 = malloc((st->lpcSize+1)*sizeof(float));
-   st->bw_lpc2 = malloc((st->lpcSize+1)*sizeof(float));
-
    st->qlsp = malloc(st->lpcSize*sizeof(float));
    st->old_qlsp = malloc(st->lpcSize*sizeof(float));
    st->interp_qlsp = malloc(st->lpcSize*sizeof(float));
+   st->mem_sp = calloc(st->lpcSize, sizeof(float));
 
 }
 
@@ -491,17 +494,16 @@ void decoder_destroy(DecState *st)
    free(st->inBuf);
    free(st->excBuf);
    free(st->interp_qlpc);
-   free(st->bw_lpc1);
-   free(st->bw_lpc2);
    free(st->qlsp);
    free(st->old_qlsp);
    free(st->interp_qlsp);
- 
+   free(st->stack);
+   free(st->mem_sp);
 }
 
 void decode(DecState *st, FrameBits *bits, float *out)
 {
-   int i;
+   int i, sub;
 
    lsp_unquant_nb(st->qlsp, st->lpcSize, bits);
    if (st->first)
@@ -510,6 +512,50 @@ void decode(DecState *st, FrameBits *bits, float *out)
          st->old_qlsp[i] = st->qlsp[i];
    }
 
+   printf ("decode LSPs: ");
+   for (i=0;i<st->lpcSize;i++)
+      printf ("%f ", st->qlsp[i]);
+   printf ("\n");
+
+   /*Loop on subframes */
+   for (sub=0;sub<st->nbSubframes;sub++)
+   {
+      int offset;
+      float *sp, *exc, tmp;
+      
+      /* Offset relative to start of frame */
+      offset = st->subframeSize*sub;
+      /* Original signal */
+      sp=st->frame+offset;
+      /* Excitation */
+      exc=st->exc+offset;
+
+      /* LSP interpolation (quantized and unquantized) */
+      tmp = (.5 + sub)/st->nbSubframes;
+      for (i=0;i<st->lpcSize;i++)
+         st->interp_qlsp[i] = (1-tmp)*st->old_qlsp[i] + tmp*st->qlsp[i];
+
+      /* Compute interpolated LPCs (unquantized) */
+      for (i=0;i<st->lpcSize;i++)
+         st->interp_qlsp[i] = cos(st->interp_qlsp[i]);
+      lsp_to_lpc(st->interp_qlsp, st->interp_qlpc, st->lpcSize, st->stack);
+
+      /* Reset excitation */
+      for (i=0;i<st->subframeSize;i++)
+         exc[i]=0;
+
+      /*Adaptive codebook contribution*/
+
+      /*Fixed codebook contribution*/
+
+      /*Compute decoded signal*/
+      syn_filt_mem(exc, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, st->mem_sp);
+
+   }
+   
+   /*Copy output signal*/
+   for (i=0;i<st->frameSize;i++)
+      out[i]=st->frame[i];
 
    /* Store the LSPs for interpolation in the next frame */
    for (i=0;i<st->lpcSize;i++)

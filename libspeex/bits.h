@@ -37,6 +37,8 @@ void frame_bits_destroy(FrameBits *bits);
 
 void frame_bits_reset(FrameBits *bits);
 
+void frame_bits_rewind(FrameBits *bits);
+
 void frame_bits_init_from(FrameBits *bits, char *bytes, int len);
 
 int frame_bits_write(FrameBits *bits, char *bytes, int max_len);

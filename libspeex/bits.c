@@ -48,6 +48,12 @@ void frame_bits_reset(FrameBits *bits)
    bits->bitPtr=0;
 }
 
+void frame_bits_rewind(FrameBits *bits)
+{
+   bits->bytePtr=0;
+   bits->bitPtr=0;
+}
+
 void frame_bits_init_from(FrameBits *bits, char *bytes, int len)
 {
    int i;

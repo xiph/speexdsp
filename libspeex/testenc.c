@@ -9,16 +9,18 @@ int main(int argc, char **argv)
    char *inFile, *outFile, *bitsFile;
    FILE *fin, *fout, *fbits=NULL;
    short in[FRAME_SIZE];
-   float input[FRAME_SIZE], bak[FRAME_SIZE], bak2[FRAME_SIZE];
+   float input[FRAME_SIZE], bak[FRAME_SIZE], bak2[FRAME_SIZE], decbuf[FRAME_SIZE];
    char cbits[200];
    int nbBits;
    int i;
    EncState st;
+   DecState dec;
    FrameBits bits;
 
    for (i=0;i<FRAME_SIZE;i++)
       bak2[i]=0;
    encoder_init(&st, &nb_mode);
+   decoder_init(&dec, &nb_mode);
    if (argc != 4 && argc != 3)
    {
       fprintf (stderr, "Usage: encode [in file] [out file] [bits file]\nargc = %d", argc);
@@ -55,6 +57,10 @@ int main(int argc, char **argv)
          snr = 10*log10((esig+1)/(enoise+1));
          printf ("real SNR = %f\n", snr);
       }
+      frame_bits_rewind(&bits);
+      
+      decode(&dec, &bits, decbuf);
+
       /* Save the bits here */
       frame_bits_reset(&bits);
       for (i=0;i<FRAME_SIZE;i++)
@@ -65,5 +71,6 @@ int main(int argc, char **argv)
    }
    
    encoder_destroy(&st);
+   decoder_destroy(&dec);
    return 1;
 }

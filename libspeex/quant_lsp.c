@@ -99,22 +99,27 @@ void lsp_quant_nb(float *lsp, float *qlsp, int order, FrameBits *bits)
       quant_weight[i] = tmp1 > tmp2 ? tmp1 : tmp2;
    }
    id = lsp_quant(qlsp, cdbk_nb, NB_CDBK_SIZE, order);
-   frame_bits_pack(bits, id, 5);
+   printf ("qid = %d\n", id);
+   frame_bits_pack(bits, id, 6);
 
    id = lsp_weight_quant(qlsp, quant_weight, cdbk_nb_low1, NB_CDBK_SIZE_LOW1, 5);
-   frame_bits_pack(bits, id, 5);
+   printf ("qid = %d\n", id);
+   frame_bits_pack(bits, id, 6);
 
    id = lsp_weight_quant(qlsp, quant_weight, cdbk_nb_low2, NB_CDBK_SIZE_LOW2, 5);
-   frame_bits_pack(bits, id, 5);
+   printf ("qid = %d\n", id);
+   frame_bits_pack(bits, id, 6);
 
    id = lsp_weight_quant(qlsp+5, quant_weight+5, cdbk_nb_high1, NB_CDBK_SIZE_HIGH1, 5);
-   frame_bits_pack(bits, id, 5);
+   printf ("qid = %d\n", id);
+   frame_bits_pack(bits, id, 6);
 
    id = lsp_weight_quant(qlsp+5, quant_weight+5, cdbk_nb_high2, NB_CDBK_SIZE_HIGH2, 5);
-   frame_bits_pack(bits, id, 5);
+   printf ("qid = %d\n", id);
+   frame_bits_pack(bits, id, 6);
 
    for (i=0;i<order;i++)
-      qlsp[i]=qlsp[i]-lsp[i];
+      qlsp[i]=lsp[i]-qlsp[i];
 }
 
 void lsp_unquant_nb(float *lsp, int order, FrameBits *bits)
@@ -124,23 +129,28 @@ void lsp_unquant_nb(float *lsp, int order, FrameBits *bits)
       lsp[i]=0;
 
 
-   id=frame_bits_unpack_unsigned(bits, 5);
+   id=frame_bits_unpack_unsigned(bits, 6);
+   printf ("did = %d\n", id);
    for (i=0;i<10;i++)
       lsp[i] += cdbk_nb[id*10+i];
 
-   id=frame_bits_unpack_unsigned(bits, 5);
+   id=frame_bits_unpack_unsigned(bits, 6);
+   printf ("did = %d\n", id);
    for (i=0;i<5;i++)
       lsp[i] += cdbk_nb_low1[id*5+i];
 
-   id=frame_bits_unpack_unsigned(bits, 5);
+   id=frame_bits_unpack_unsigned(bits, 6);
+   printf ("did = %d\n", id);
    for (i=0;i<5;i++)
       lsp[i] += cdbk_nb_low2[id*5+i];
 
-   id=frame_bits_unpack_unsigned(bits, 5);
+   id=frame_bits_unpack_unsigned(bits, 6);
+   printf ("did = %d\n", id);
    for (i=0;i<5;i++)
       lsp[i+5] += cdbk_nb_high1[id*5+i];
    
-   id=frame_bits_unpack_unsigned(bits, 5);
+   id=frame_bits_unpack_unsigned(bits, 6);
+   printf ("did = %d\n", id);
    for (i=0;i<5;i++)
       lsp[i+5] += cdbk_nb_high2[id*5+i];
 }

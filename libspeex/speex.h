@@ -81,6 +81,7 @@ typedef struct DecState {
    int    max_pitch;      /* Maximum pitch value allowed */
    float  gamma1;         /* Perceptual filter: A(z/gamma1) */
    float  gamma2;         /* Perceptual filter: A(z/gamma2) */
+   float *stack;
    float *inBuf;          /* Input buffer (original signal) */
    float *frame;          /* Start of original frame */
    float *excBuf;         /* Excitation buffer */
@@ -89,9 +90,7 @@ typedef struct DecState {
    float *old_qlsp;       /* Quantized LSPs for previous frame */
    float *interp_qlsp;    /* Interpolated quantized LSPs */
    float *interp_qlpc;    /* Interpolated quantized LPCs */
-   float *bw_lpc1;        /* LPCs after bandwidth expansion by gamma1 for perceptual weighting*/
-   float *bw_lpc2;        /* LPCs after bandwidth expansion by gamma2 for perceptual weighting*/
-
+   float *mem_sp;
 } DecState;
 
 /**Initializes encoder state*/
