@@ -1,4 +1,4 @@
-docdir=$(prefix)/share/doc
+docdir=$(prefix)/share/doc/@PACKAGE@-@VERSION@
 
 doc_DATA = manual.pdf
 

@@ -808,7 +808,7 @@ int sb_decode(void *state, SpeexBits *bits, float *out)
    char *stack;
    float *low_pi_gain, *low_exc, *low_innov;
    float *awk1, *awk2, *awk3;
-   float dtx;
+   int dtx;
    SpeexSBMode *mode;
 
    st = (SBDecState*)state;

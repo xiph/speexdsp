@@ -5439,7 +5439,7 @@ Vorbis is open-source
 
 \end_inset 
 
-, why do we need Speex?
+; why do we need Speex?
 \layout Standard
 
 Vorbis is a great project but its goals are not the same as Speex.
@@ -5509,7 +5509,7 @@ What's the extension for Speex?
 \layout Standard
 
 Speex files have the .spx extension.
- Note however that all the Speex tools (speexenc, speexdec) do not rely
+ Note, however that all the Speex tools (speexenc, speexdec) do not rely
  on the extension at all so any extension will work.
 \layout Subsection*
 
@@ -5609,6 +5609,22 @@ There are many possible causes for that.
  causing clipping when saving as 16-bit PCM.
 \layout Subsection*
 
+How does Speex compare to other proprietary codecs?
+\layout Standard
+
+It's hard to give precise figures since no formal listening tests have been
+ performed yet.
+ All I can say is that in terms of quality, Speex competes on the same ground
+ as other proprietary (not necessarily the best, but not the worst either).
+ Speex also has many features that are not present in most other codecs.
+ These include variable bit-rate (VBR), integration of narrowband and wideband,
+ as well as stereo support.
+ Of course, another area where Speex is really hard to beat is the quality/price
+ ratio.
+ Unlike many very expensive codecs, Speex is free and anyone may distribute/modi
+fy it at will.
+\layout Subsection*
+
 Can Speex pass DTMF
 \begin_inset LatexCommand \index{DTMF}
 
@@ -5628,14 +5644,14 @@ I guess it all depends on the bit-rate used.
 Can Speex pass V.9x modem signals correctly?
 \layout Standard
 
-If I could to that I'd be very rich by now :-)
+If I could do that I'd be very rich by now :-)
 \layout Subsection*
 
 What is your (Jean-Marc) relationship with the University of Sherbrooke
  and how does Speex fit into that?
 \layout Standard
 
-I am currently (2003/03/09) doing a Ph.D.
+Currently (2003/03/09), I'm doing a Ph.D.
  at the University of Sherbrooke in mobile robotics.
  Although I did my master with the Sherbrooke speech coding group (in speech
  enhancement, not coding), I am not associated with them anymore.
