@@ -21,6 +21,17 @@
 
 #define min(a,b) ((a) < (b) ? (a) : (b))
 
+void bw_lpc(float gamma, float *lpc_in, float *lpc_out, int order)
+{
+   int i;
+   float tmp=1;
+   for (i=0;i<order+1;i++)
+   {
+      lpc_out[i] = tmp * lpc_in[i];
+      tmp *= gamma;
+   }
+}
+
 void syn_filt(float *x, float *a, float *y, int N, int ord)
 {
    int i,j;

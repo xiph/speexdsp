@@ -24,7 +24,200 @@
 
 #define abs(x) ((x)<0 ? -(x) : (x))
 
+void open_loop_pitch(float *sw, int start, int end, int len, int *pitch, int *vuv)
+{
+   int i;
+   float e0, corr, energy, best_gain, pred_gain, best_corr, best_energy;
+   float score, best_score=-1;
+   e0=xcorr(sw, sw, len);
+   energy=xcorr(sw-start, sw-start, len);
+   for (i=start;i<=end;i++)
+   {
+      corr=xcorr(sw, sw-i, len);
+      score=corr*corr/(energy+1);
+      if (score>best_score)
+      {
+         if ((abs(i-2**pitch)>4 && abs(i-3**pitch)>6) || score>1.2*best_score)
+         {
+         best_score=score;
+         best_gain=corr/(energy+1);
+         best_corr=corr;
+         best_energy=energy;
+         *pitch=i;
+         }
+      }
 
+      /* Update energy for next pitch*/
+      energy+=sw[-i-1]*sw[-i-1] - sw[-i+len]*sw[-i+len];
+   }
+   pred_gain=e0/(1+fabs(e0+best_gain*best_gain*best_energy-2*best_gain*best_corr));
+   printf ("pred = %f\n", pred_gain);
+   *vuv=1;
+}
+
+void closed_loop_fractional_pitch(
+float target[],                 /* Target vector */
+float ak[],                     /* LPCs for this subframe */
+float awk1[],                   /* Weighted LPCs #1 for this subframe */
+float awk2[],                   /* Weighted LPCs #2 for this subframe */
+float exc[],                    /* Overlapping codebook */
+float *filt,                    /* Over-sampling filter */
+int   filt_side,                /* Over-sampling factor */
+int   fact,                     /* Over-sampling factor */
+int   start,                    /* Smallest pitch value allowed */
+int   end,                      /* Largest pitch value allowed */
+float *gain,                    /* 3-tab gains of optimum entry */
+int   *pitch,                   /* Index of optimum entry */
+int   p,                        /* Number of LPC coeffs */
+int   nsf,                      /* Number of samples in subframe */
+float *stack
+)
+{
+   int i, j, size, filt_size, base, frac, best_cor;
+   float *oexc_mem, *oexc, *exc_ptr, *fexc, *f, frac_pitch, best_score=-1, best_gain;
+   float sc;
+   float corr[3];
+   float A[3][3];
+#if 1
+   sc = overlap_cb_search(target, ak, awk1, awk2,
+                     &exc[-end], end-start+1, gain, pitch, p,
+                     nsf);
+                     *pitch=end-*pitch;
+   printf ("ol score: %d %f\n", *pitch, sc);
+#endif
+   base=*pitch;
+   exc_ptr=exc-*pitch;
+   size = fact*nsf + filt_side*2 + 16*fact;
+   filt_size = 2*filt_side+1;
+   oexc_mem = PUSH(stack, size);
+   oexc=oexc_mem+filt_side;
+   fexc = PUSH(stack, size/fact);
+   f=filt+filt_side;
+
+   for(i=0;i<size;i++)
+      oexc_mem[i]=0;
+   for (i=-8;i<nsf+8;i++)
+   {
+      for (j=-filt_side;j<=filt_side;j++)
+         oexc[fact*(i+8)+j] += fact*exc_ptr[i]*f[j];
+   }
+
+   /*for (i=0;i<size;i++)
+     printf ("%f ", oexc_mem[i]);
+   printf ("eee\n");
+   */
+   for (j=0;j<fact;j++)
+   {
+      int correction;
+      float score;
+      for (i=0;i<size/fact;i++)
+         fexc[i]=oexc[fact*i+j];
+      score=overlap_cb_search(target, ak, awk1, awk2,
+                        fexc, 16, gain, &correction, p,
+                        nsf);
+      if (score>best_score)
+      {
+         best_cor = correction;
+         *pitch = base+8-correction;
+         frac = j;
+         best_gain=*gain;
+         frac_pitch = *pitch-(j/(float)fact);
+         best_score=score;
+      }
+      printf ("corr: %d %d %f\n", correction, *pitch, score);
+   }
+   /*for (i=0;i<nsf;i++)
+     printf ("%f ", oexc[4*(i+8)]);
+   printf ("aaa\n");
+   for (i=0;i<nsf;i++)
+     printf ("%f ", exc[i-base]);
+     printf ("bbb\n");*/
+
+   /*if (best_gain>1.2)
+      best_gain=1.2;
+   if (best_gain<-.2)
+   best_gain=-.2;*/
+   for (i=0;i<nsf;i++)
+     exc[i]=best_gain*oexc[fact*(best_cor+i)+frac];
+   
+   {
+      float *x[3];
+      x[0] = PUSH(stack, nsf);
+      x[1] = PUSH(stack, nsf);
+      x[2] = PUSH(stack, nsf);
+      
+      for (j=0;j<3;j++)
+         for (i=0;i<nsf;i++)
+            x[j][i]=oexc[fact*(best_cor+i)+frac+fact*(j-1)];
+
+
+   for (i=0;i<3;i++)
+   {
+      residue_zero(x[i],awk1,x[i],nsf,p);
+      syn_filt_zero(x[i],ak,x[i],nsf,p);
+      syn_filt_zero(x[i],awk2,x[i],nsf,p);
+   }
+
+   for (i=0;i<3;i++)
+      corr[i]=xcorr(x[i],target,nsf);
+   
+   for (i=0;i<3;i++)
+      for (j=0;j<=i;j++)
+         A[i][j]=A[j][i]=xcorr(x[i],x[j],nsf);
+   /*for (i=0;i<3;i++)
+   {
+      for (j=0;j<3;j++)
+         printf ("%f ", A[i][j]);
+      printf ("\n");
+      }*/
+   A[0][0]+=1;
+   A[1][1]+=1;
+   A[2][2]+=1;
+   {
+      float tmp=A[1][0]/A[0][0];
+      for (i=0;i<3;i++)
+         A[1][i] -= tmp*A[0][i];
+      corr[1] -= tmp*corr[0];
+
+      tmp=A[2][0]/A[0][0];
+      for (i=0;i<3;i++)
+         A[2][i] -= tmp*A[0][i];
+      corr[2] -= tmp*corr[0];
+      
+      tmp=A[2][1]/A[1][1];
+      A[2][2] -= tmp*A[1][2];
+      corr[2] -= tmp*corr[1];
+
+      corr[2] /= A[2][2];
+      corr[1] = (corr[1] - A[1][2]*corr[2])/A[1][1];
+      corr[0] = (corr[0] - A[0][2]*corr[2] - A[0][1]*corr[1])/A[0][0];
+      /*printf ("\n%f %f %f\n", best_corr[0], best_corr[1], best_corr[2]);*/
+
+   }
+   /* Put gains in right order */
+   /*gain[0]=corr[2];gain[1]=corr[1];gain[2]=corr[0];*/
+   gain[0]=corr[0];gain[1]=corr[1];gain[2]=corr[2];
+
+   for (i=0;i<nsf;i++)
+      exc[i]=gain[0]*oexc[fact*(best_cor+i)+frac-fact] + 
+             gain[1]*oexc[fact*(best_cor+i)+frac] + 
+             gain[2]*oexc[fact*(best_cor+i)+frac+fact];
+   
+   /*for (i=0;i<nsf;i++)
+     exc[i]=best_gain*x[1][i];*/
+   /*for (i=0;i<nsf;i++)
+     exc[i]=best_gain*oexc[fact*(best_cor+i)+frac];*/
+   printf ("frac gains: %f %f %f\n", gain[0], gain[1], gain[2]);
+
+      POP(stack);
+      POP(stack);
+      POP(stack);
+   }
+   printf ("frac pitch = %f %f\n", frac_pitch, best_score);
+   POP(stack);
+   POP(stack);
+
+}
 
 /** Finds the best quantized 3-tap pitch predictor by analysis by synthesis */
 float pitch_search_3tap_unquant(

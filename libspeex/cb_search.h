@@ -20,7 +20,7 @@
 #ifndef CB_SEARCH_H
 #define CB_SEARCH_H
 
-void overlap_cb_search(
+float overlap_cb_search(
 float target[],			/* target vector */
 float ak[],			/* LPCs for this subframe */
 float awk1[],			/* Weighted LPCs for this subframe */
@@ -31,6 +31,21 @@ float *gain,			/* gain of optimum entry */
 int   *index,			/* index of optimum entry */
 int   p,                        /* number of LPC coeffs */
 int   nsf                       /* number of samples in subframe */
+);
+
+
+float split_cb_search(
+float target[],			/* target vector */
+float ak[],			/* LPCs for this subframe */
+float awk1[],			/* Weighted LPCs for this subframe */
+float awk2[],			/* Weighted LPCs for this subframe */
+float codebook[][8],		/* overlapping codebook */
+int   entries,			/* number of entries to search */
+float *gain,			/* gain of optimum entries */
+int   *index,			/* index of optimum entries */
+int   p,                        /* number of LPC coeffs */
+int   nsf,                      /* number of samples in subframe */
+float *exc
 );
 
 #endif

@@ -46,7 +46,7 @@
                                                                              
 \*---------------------------------------------------------------------------*/
 
-void overlap_cb_search(
+float overlap_cb_search(
 float target[],			/* target vector */
 float ak[],			/* LPCs for this subframe */
 float awk1[],			/* Weighted LPCs for this subframe */
@@ -120,6 +120,73 @@ int   nsf                       /* number of samples in subframe */
   free(resp);
   free(h);
   free(impulse);
+  return bscore;
+}
 
+
+
+
+
+float split_cb_search(
+float target[],			/* target vector */
+float ak[],			/* LPCs for this subframe */
+float awk1[],			/* Weighted LPCs for this subframe */
+float awk2[],			/* Weighted LPCs for this subframe */
+float codebook[][8],		/* overlapping codebook */
+int   entries,			/* number of entries to search */
+float *gain,			/* gain of optimum entries */
+int   *index,			/* index of optimum entries */
+int   p,                        /* number of LPC coeffs */
+int   nsf,                      /* number of samples in subframe */
+float *exc
+)
+{
+   int i,j;
+   float resp[64][8], E[64];
+   float t[40], r[40], e[40];
+   for (i=0;i<40;i++)
+      t[i]=target[i];
+   for (i=0;i<64;i++)
+   {
+      residue_zero(codebook[i], awk1, resp[i], 8, p);
+      syn_filt_zero(resp[i], ak, resp[i], 8, p);
+      syn_filt_zero(resp[i], awk2, resp[i], 8,p);
+      E[i]=0;
+      for(j=0;j<8;j++)
+         E[i]+=resp[i][j]*resp[i][j];
+   }
+   for (i=0;i<5;i++)
+   {
+      int best_index;
+      float corr, best_gain, score, best_score=-1;
+      for (j=0;j<64;j++)
+      {
+         corr=xcorr(resp[j],t+8*i,8);
+         score=corr*corr/(.001+E[j]);
+         if (score>best_score)
+         {
+            best_index=j;
+            best_score=score;
+            best_gain=corr/(.001+E[j]);
+         }
+      }
+      printf ("search: %d %f %f\n", best_index, best_gain, best_score);
+      for (j=0;j<40;j++)
+         e[j]=0;
+      for (j=0;j<8;j++)
+         e[8*i+j]=best_gain*codebook[best_index][j];
+      residue_zero(e, awk1, r, 40, p);
+      syn_filt_zero(r, ak, r, 40, p);
+      syn_filt_zero(r, awk2, r, 40,p);
+      for (j=0;j<40;j++)
+         t[j]-=r[j];
+
+      for (j=0;j<40;j++)
+         exc[j]+=e[j];
+   }
+
+
+   for (i=0;i<40;i++)
+      target[i]=t[i];
 }
 

@@ -32,17 +32,23 @@ typedef struct EncState {
    int    windowSize;     /* Analysis (LPC) window length */
    int    lpcSize;        /* LPC order */
    int    bufSize;        /* Buffer size */
+   int    min_pitch;      /* Minimum pitch value allowed */
+   int    max_pitch;      /* Maximum pitch value allowed */
+   int    ol_pitch;       /* Open-loop pitch */
+   int    ol_voiced;      /* Open-loop voiced/non-voiced decision */
    float  gamma1;         /* Perceptual filter: A(z/gamma1) */
    float  gamma2;         /* Perceptual filter: A(z/gamma2) */
    float *stack;          /* Pseudo-stack allocation */
    int    os_fact;        /* Over-sampling factor for fractional pitch */
-   int    os_filt_ord;    /* Over-sampling filter size for fractional pitch */
+   int    os_filt_ord2;   /* Over-sampling filter size for fractional pitch */
    float *os_exc;         /* Over-sampled excitation for fractional pitch */
    float *os_filt;        /* Over-sampling filter for fractional pitch */
    float *inBuf;          /* Input buffer (original signal) */
    float *frame;          /* Start of original frame */
    float *excBuf;         /* Excitation buffer */
    float *exc;            /* Start of excitation frame */
+   float *swBuf;          /* Weighted signal buffer */
+   float *sw;             /* Start of weighted signal frame */
    float *window;         /* Temporary (Hanning) window */
    float *buf2;           /* 2nd temporary buffer */
    float *autocorr;       /* auto-correlation */

@@ -30,7 +30,7 @@
 #include "stack_alloc.h"
 
 extern float stoc[];
-
+extern float exc_table[][8];
 #ifndef M_PI
 #define M_PI           3.14159265358979323846  /* pi */
 #endif
@@ -41,6 +41,7 @@ extern float stoc[];
 void encoder_init(EncState *st, SpeexMode *mode)
 {
    int i;
+   float tmp;
    /* Codec parameters, should eventually have several "modes"*/
    st->frameSize = mode->frameSize;
    st->windowSize = mode->windowSize;
@@ -50,16 +51,39 @@ void encoder_init(EncState *st, SpeexMode *mode)
    st->bufSize = mode->bufSize;
    st->gamma1=mode->gamma1;
    st->gamma2=mode->gamma2;
+   st->min_pitch=mode->pitchStart;
+   st->max_pitch=mode->pitchEnd;
 
+   /* Over-sampling filter (fractional pitch)*/
+   st->os_fact=4;
+   st->os_filt_ord2=4*st->os_fact;
+   st->os_filt = malloc((1+2*st->os_filt_ord2)*sizeof(float));
+   st->os_filt[st->os_filt_ord2] = 1;
+   for (i=1;i<=st->os_filt_ord2;i++)
+   {
+      float x=M_PI*i/st->os_fact;
+      st->os_filt[st->os_filt_ord2-i] = st->os_filt[st->os_filt_ord2+i]=sin(x)/x*(.5+.5*cos(M_PI*i/st->os_filt_ord2));
+   }
+   /* Normalizing the over-sampling filter */
+   tmp=0;
+   for (i=0;i<2*st->os_filt_ord2+1;i++)
+      tmp += st->os_filt[i];
+   tmp=1/tmp;
+   for (i=0;i<2*st->os_filt_ord2+1;i++)
+      st->os_filt[i] *= tmp;
 
-   st->inBuf = malloc(st->bufSize*sizeof(float));
+   /*for (i=0;i<2*st->os_filt_ord2+1;i++)
+      printf ("%f ", st->os_filt[i]);
+      printf ("\n");*/
+
+   /* Allocating input buffer */
+   st->inBuf = calloc(st->bufSize,sizeof(float));
    st->frame = st->inBuf + st->bufSize - st->windowSize;
-   st->excBuf = malloc(st->bufSize*sizeof(float));
+   /* Allocating excitation buffer */
+   st->excBuf = calloc(st->bufSize,sizeof(float));
    st->exc = st->excBuf + st->bufSize - st->windowSize;
-   for (i=0;i<st->bufSize;i++)
-      st->inBuf[i]=0;
-   for (i=0;i<st->bufSize;i++)
-      st->excBuf[i]=0;
+   st->swBuf = calloc(st->bufSize,sizeof(float));
+   st->sw = st->swBuf + st->bufSize - st->windowSize;
 
    /* Hanning window */
    st->window = malloc(st->windowSize*sizeof(float));
@@ -73,7 +97,7 @@ void encoder_init(EncState *st, SpeexMode *mode)
 
    st->autocorr = malloc((st->lpcSize+1)*sizeof(float));
 
-   st->stack = calloc(2000, sizeof(float));
+   st->stack = calloc(10000, sizeof(float));
 
    st->buf2 = malloc(st->windowSize*sizeof(float));
 
@@ -102,6 +126,7 @@ void encoder_destroy(EncState *st)
    /* Free all allocated memory */
    free(st->inBuf);
    free(st->excBuf);
+   free(st->swBuf);
    
    free(st->stack);
 
@@ -138,6 +163,7 @@ void encode(EncState *st, float *in, FrameBits *bits)
    for (i=0;i<st->frameSize;i++)
       st->inBuf[st->bufSize-st->frameSize+i] = in[i];
    memmove(st->excBuf, st->excBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(float));
+   memmove(st->swBuf, st->swBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(float));
 
    /* Window for analysis */
    for (i=0;i<st->windowSize;i++)
@@ -177,6 +203,28 @@ void encode(EncState *st, float *in, FrameBits *bits)
       lsp_unquant_nb(st->qlsp,10,id);
    }
 
+   /*Find open-loop pitch for the whole frame*/
+   {
+      float *mem = PUSH(st->stack, st->lpcSize);
+      
+      for (i=0;i<st->lpcSize;i++)
+         st->interp_lsp[i] = .5*st->old_lsp[i] + .5*st->lsp[i];
+      for (i=0;i<st->lpcSize;i++)
+         st->interp_lsp[i] = cos(st->interp_lsp[i]);
+      lsp_to_lpc(st->interp_lsp, st->interp_lpc, st->lpcSize,st->stack);
+      bw_lpc(st->gamma1, st->interp_lpc, st->bw_lpc1, st->lpcSize);
+      bw_lpc(st->gamma2, st->interp_lpc, st->bw_lpc2, st->lpcSize);
+      for (i=0;i<st->lpcSize;i++)
+         mem[i]=st->mem_sp[i];
+      residue_mem(st->frame, st->bw_lpc1, st->sw, st->frameSize, st->lpcSize, mem);
+      for (i=0;i<st->lpcSize;i++)
+         mem[i]=st->mem_sw[i];
+         syn_filt_mem(st->sw, st->bw_lpc2, st->sw, st->frameSize, st->lpcSize, mem);
+      open_loop_pitch(st->sw, st->min_pitch, st->max_pitch, st->frameSize, &st->ol_pitch, &st->ol_voiced);
+      printf ("Open-loop pitch = %d\n", st->ol_pitch);
+      POP(st->stack);
+   }
+
    /* Loop on sub-frames */
    for (sub=0;sub<st->nbSubframes;sub++)
    {
@@ -187,10 +235,12 @@ void encode(EncState *st, float *in, FrameBits *bits)
       
       /* Offset relative to start of frame */
       offset = st->subframeSize*sub;
+      /* Original signal */
       sp=st->frame+offset;
+      /* Excitation */
       exc=st->exc+offset;
       /* Weighted signal */
-      sw = PUSH(st->stack, st->subframeSize);
+      sw=st->sw+offset;
       /* Filter response */
       res = PUSH(st->stack, st->subframeSize);
       /* Target signal */
@@ -214,18 +264,8 @@ void encode(EncState *st, float *in, FrameBits *bits)
       lsp_to_lpc(st->interp_qlsp, st->interp_qlpc, st->lpcSize, st->stack);
 
       /* Compute bandwidth-expanded (unquantized) LPCs for perceptual weighting */
-      tmp=1;
-      for (i=0;i<st->lpcSize+1;i++)
-      {
-         st->bw_lpc1[i] = tmp * st->interp_lpc[i];
-         tmp *= st->gamma1;
-      }
-      tmp=1;
-      for (i=0;i<st->lpcSize+1;i++)
-      {
-         st->bw_lpc2[i] = tmp * st->interp_lpc[i];
-         tmp *= st->gamma2;
-      }
+      bw_lpc(st->gamma1, st->interp_lpc, st->bw_lpc1, st->lpcSize);
+      bw_lpc(st->gamma2, st->interp_lpc, st->bw_lpc2, st->lpcSize);
       
       /* Reset excitation */
       for (i=0;i<st->subframeSize;i++)
@@ -262,27 +302,39 @@ void encode(EncState *st, float *in, FrameBits *bits)
 #if 1 /*If set to 0, we compute the excitation directly from the target, i.e. we're cheating */
 
       /* Perform adaptive codebook search (3-tap pitch predictor) */
-      pitch_search_3tap(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2,
+      pitch = st->ol_pitch;
+      closed_loop_fractional_pitch(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2,
+                                   exc, st->os_filt, st->os_filt_ord2, st->os_fact, 20, 147, 
+                                   &gain[0], &pitch, st->lpcSize,
+                                   st->subframeSize, st->stack);
+      /*pitch_search_3tap(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2,
                         exc, 20, 147, &gain[0], &pitch, &pitch_gain_index, st->lpcSize,
                         st->subframeSize);
       for (i=0;i<st->subframeSize;i++)
         exc[i]=gain[0]*exc[i-pitch]+gain[1]*exc[i-pitch-1]+gain[2]*exc[i-pitch-2];
       printf ("3-tap pitch = %d, gains = [%f %f %f]\n",pitch, gain[0], gain[1], gain[2]);
-
+      */
       /* Update target for adaptive codebook contribution */
       residue_zero(exc, st->bw_lpc1, res, st->subframeSize, st->lpcSize);
       syn_filt_zero(res, st->interp_qlpc, res, st->subframeSize, st->lpcSize);
       syn_filt_zero(res, st->bw_lpc2, res, st->subframeSize, st->lpcSize);
       for (i=0;i<st->subframeSize;i++)
         target[i]-=res[i];
-      {
+
+      enoise=0;
+      for (i=0;i<st->subframeSize;i++)
+         enoise += target[i]*target[i];
+      snr = 10*log10((esig+1)/(enoise+1));
+      printf ("pitch SNR = %f\n", snr);
+#if 0
+      for(j=0;j<1;j++){
          /*float stoc2[1080];*/
          float *stoc2 = PUSH(st->stack,1080);
          for (i=0;i<1080;i++)
          {
             stoc2[i]=stoc[i];
             if (i-(pitch-1)>=0)
-               stoc2[i] += .8*stoc[i-(pitch-1)];
+               stoc2[i] += .0*stoc[i-(pitch-1)];
          }
          POP(st->stack);
       /* Perform stochastic codebook search */
@@ -292,7 +344,7 @@ void encode(EncState *st, float *in, FrameBits *bits)
       printf ("gain = %f index = %d energy = %f\n",gain[0], pitch, esig);
       for (i=0;i<st->subframeSize;i++)
          exc[i]+=gain[0]*stoc2[i+pitch];
-
+      
       /* Update target for adaptive codebook contribution (Useless for now)*/
       residue_zero(stoc2+pitch, st->bw_lpc1, res, st->subframeSize, st->lpcSize);
       syn_filt_zero(res, st->interp_qlpc, res, st->subframeSize, st->lpcSize);
@@ -300,8 +352,13 @@ void encode(EncState *st, float *in, FrameBits *bits)
       for (i=0;i<st->subframeSize;i++)
          target[i]-=gain[0]*res[i];
       }
-
+#else
+      split_cb_search(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2,
+                        exc_table, 64, &gain[0], &pitch, st->lpcSize,
+                        st->subframeSize, exc);
+#endif
       /* Compute weighted noise energy, SNR */
+      enoise=0;
       for (i=0;i<st->subframeSize;i++)
          enoise += target[i]*target[i];
       snr = 10*log10((esig+1)/(enoise+1));
@@ -309,17 +366,23 @@ void encode(EncState *st, float *in, FrameBits *bits)
 
 #else
 
-#if 0 /* Code to calculate the exact excitation after pitch prediction  */
+#if 1 /* Code to calculate the exact excitation after pitch prediction  */
       for (i=0;i<st->subframeSize;i++)
          st->buf2[i]=target[i];
-
+#if 0
       pitch_search_3tap(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2,
-                        exc, 20, 147, &gain[0], &pitch, &pitch_gain_index, st->lpcSize,
+                                exc, 20, 147, &gain[0], &pitch, &pitch_gain_index, st->lpcSize,
                         st->subframeSize);
       for (i=0;i<st->subframeSize;i++)
         exc[i]=gain[0]*exc[i-pitch]+gain[1]*exc[i-pitch-1]+gain[2]*exc[i-pitch-2];
       printf ("3-tap pitch = %d, gains = [%f %f %f]\n",pitch, gain[0], gain[1], gain[2]);
-
+#else
+      pitch = st->ol_pitch;
+      closed_loop_fractional_pitch(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2,
+                                   exc, st->os_filt, st->os_filt_ord2, st->os_fact, 20, 147, 
+                                   &gain[0], &pitch, st->lpcSize,
+                                   st->subframeSize, st->stack);
+#endif
       /* Update target for adaptive codebook contribution */
       residue_zero(exc, st->bw_lpc1, res, st->subframeSize, st->lpcSize);
       syn_filt_zero(res, st->interp_qlpc, res, st->subframeSize, st->lpcSize);
@@ -327,13 +390,25 @@ void encode(EncState *st, float *in, FrameBits *bits)
       for (i=0;i<st->subframeSize;i++)
         target[i]-=res[i];
 
+      enoise=0;
+      for (i=0;i<st->subframeSize;i++)
+         enoise += target[i]*target[i];
+      snr = 10*log10((esig+1)/(enoise+1));
+      printf ("pitch SNR = %f\n", snr);
+
       syn_filt_zero(target, st->bw_lpc1, res, st->subframeSize, st->lpcSize);
       residue_zero(res, st->interp_qlpc, exc, st->subframeSize, st->lpcSize);
       residue_zero(exc, st->bw_lpc2, exc, st->subframeSize, st->lpcSize);
-      for (i=0;i<st->subframeSize;i++)
-         printf ("%f ", exc[i]);
-      printf ("\n");
-      
+      if (snr>5)
+      {
+         for (i=0;i<st->subframeSize;i++)
+         {
+            if (i%8==0&&i)
+               printf("\n");
+            printf ("%f ", exc[i]);
+         }
+         printf ("\n");
+      }
       for (i=0;i<st->subframeSize;i++)
          target[i]=st->buf2[i];
 #endif
@@ -354,7 +429,6 @@ void encode(EncState *st, float *in, FrameBits *bits)
       residue_mem(sp, st->bw_lpc1, sw, st->subframeSize, st->lpcSize, mem);
       syn_filt_mem(sw, st->bw_lpc2, sw, st->subframeSize, st->lpcSize, st->mem_sw);
 
-      POP(st->stack);
       POP(st->stack);
       POP(st->stack);
       POP(st->stack);
