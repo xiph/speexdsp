@@ -61,10 +61,12 @@ extern int training_weight;
 float exc_gain_quant_scal3[8]={-2.794750, -1.810660, -1.169850, -0.848119, -0.587190, -0.329818, -0.063266, 0.282826};
 
 float exc_gain_quant_scal1[2]={-0.35, 0.05};
-/*float exc_gain_quant_scal1[2]={-0.35, 0.05};*/
 
 #define sqr(x) ((x)*(x))
+
+#ifndef min
 #define min(a,b) ((a) < (b) ? (a) : (b))
+#endif
 
 void *nb_encoder_init(SpeexMode *m)
 {
