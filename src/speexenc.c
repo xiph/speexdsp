@@ -105,6 +105,7 @@ int main(int argc, char **argv)
       {"version", no_argument, NULL, 0},
       {0, 0, 0, 0}
    };
+   int print_bitrate=0;
    int rate, chan, fmt, size;
    int quality=-1;
    int lbr=0;
@@ -121,7 +122,7 @@ int main(int argc, char **argv)
    /*Process command-line options*/
    while(1)
    {
-      c = getopt_long (argc, argv, "nwhv",
+      c = getopt_long (argc, argv, "nwhvV",
                        long_options, &option_index);
       if (c==-1)
          break;
@@ -166,6 +167,9 @@ int main(int argc, char **argv)
       case 'v':
          version();
          exit(0);
+         break;
+      case 'V':
+         print_bitrate=1;
          break;
       case 'w':
          wideband=1;
@@ -322,7 +326,6 @@ int main(int argc, char **argv)
    /*Main encoding loop (one frame per iteration)*/
    while (1)
    {
-      id++;
       /*Read input audio*/
       fread(in, sizeof(short), frame_size, fin);
       if (feof(fin))
@@ -331,8 +334,15 @@ int main(int argc, char **argv)
          input[i]=(short)le_short(in[i]);
       /*Encode current frame*/
       speex_encode(st, input, &bits);
-
-      if (id%nframes!=0)
+      
+      if (print_bitrate) {
+         int tmp;
+         char ch=13;
+         speex_encoder_ctl(st, SPEEX_GET_BITRATE, &tmp);
+         fputc (ch, stderr);
+         fprintf (stderr, "Bitrate is use: %d bps     ", tmp);
+      }
+      if ((id+1)%nframes!=0)
          continue;
       nbBytes = speex_bits_write(&bits, cbits, MAX_FRAME_BYTES);
       speex_bits_reset(&bits);
@@ -356,6 +366,7 @@ int main(int argc, char **argv)
          else
             bytes_written += ret;
       }
+      id++;
    }
    
    op.packet = (unsigned char *)"END OF STREAM";

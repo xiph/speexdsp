@@ -210,13 +210,14 @@ int main(int argc, char **argv)
    ogg_stream_state os;
    int pf_enabled;
    int nframes=2;
+   int print_bitrate=0;
 
    pf_enabled = 0;
 
    /*Process options*/
    while(1)
    {
-      c = getopt_long (argc, argv, "hv",
+      c = getopt_long (argc, argv, "hvV",
                        long_options, &option_index);
       if (c==-1)
          break;
@@ -247,6 +248,9 @@ int main(int argc, char **argv)
       case 'v':
          version();
          exit(0);
+         break;
+      case 'V':
+         print_bitrate=1;
          break;
       case '?':
          usage();
@@ -333,19 +337,26 @@ int main(int argc, char **argv)
                   /*Decode frame*/
                   speex_decode(st, &bits, output, 0);
                
-               /*PCM saturation (just in case)*/
-               for (i=0;i<frame_size;i++)
-               {
-                  if (output[i]>32000)
-                     output[i]=32000;
-                  else if (output[i]<-32000)
-                     output[i]=-32000;
-               }
-               /*Convert to short and save to output file*/
-               for (i=0;i<frame_size;i++)
-                  out[i]=(short)le_short(output[i]);
-               fwrite(out, sizeof(short), frame_size, fout);
+                  if (print_bitrate) {
+                     int tmp;
+                     char ch=13;
+                     speex_decoder_ctl(st, SPEEX_GET_BITRATE, &tmp);
+                     fputc (ch, stderr);
+                     fprintf (stderr, "Bitrate is use: %d bps     ", tmp);
                   }
+                  /*PCM saturation (just in case)*/
+                  for (i=0;i<frame_size;i++)
+                  {
+                     if (output[i]>32000)
+                        output[i]=32000;
+                     else if (output[i]<-32000)
+                        output[i]=-32000;
+                  }
+                  /*Convert to short and save to output file*/
+                  for (i=0;i<frame_size;i++)
+                     out[i]=(short)le_short(output[i]);
+                  fwrite(out, sizeof(short), frame_size, fout);
+               }
             }
             packet_count++;
          }
