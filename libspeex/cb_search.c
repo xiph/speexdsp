@@ -510,7 +510,6 @@ float *stack
    for (i=0;i<nb_subvect;i++)
    {
       ind[i] = speex_bits_unpack_unsigned(bits, params->shape_bits);
-      ind[i] = rand()%(1<<params->shape_bits);
    }
    /* Compute decoded excitation */
    for (i=0;i<nb_subvect;i++)
@@ -602,5 +601,5 @@ float *stack
    int i;
 
    for (i=0;i<nsf;i++)
-      exc[i]+=2.5*((((float)rand())/RAND_MAX)-.5);
+      exc[i]+=2*((((float)rand())/RAND_MAX)-.5);
 }
