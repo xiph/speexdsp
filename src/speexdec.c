@@ -51,6 +51,33 @@
 
 #define MAX_FRAME_SIZE 2000
 
+#define readint(buf, base) ((buf[base+3]<<24)&0xff000000| \
+                           (buf[base+2]<<16)&0xff0000| \
+                           (buf[base+1]<<8)&0xff00| \
+  	           	    buf[base]&0xff)
+
+static void print_comments(char *comments, int length)
+{
+   char *c=comments;
+   int len, i, nb_fields;
+
+   len=readint(c, 0);
+   c+=4;
+   fwrite(c, 1, len, stderr);
+   c+=len;
+   fprintf (stderr, "\n");
+   nb_fields=readint(c, 0);
+   c+=4;
+   for (i=0;i<nb_fields;i++)
+   {
+      len=readint(c, 0);
+      c+=4;
+      fwrite(c, 1, len, stderr);
+      c+=len;
+      fprintf (stderr, "\n");
+   }
+}
+
 FILE *out_file_open(char *outFile, int rate)
 {
    FILE *fout;
@@ -392,9 +419,12 @@ int main(int argc, char **argv)
                fout = out_file_open(outFile, rate);
 
             } else if (packet_count==1){
+               print_comments(op.packet, op.bytes);
+               /*
                fprintf (stderr, "File comments: ");
                fwrite(op.packet, 1, op.bytes, stderr);
                fprintf (stderr, "\n");
+               */
             } else {
 
                /*End of stream condition*/

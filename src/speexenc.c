@@ -38,6 +38,10 @@
 #include <fcntl.h>
 #endif
 
+void comment_init();
+void comment_add();
+
+
 /*Write an Ogg page to a file pointer*/
 int oe_write_page(ogg_page *page, FILE *fp)
 {
@@ -124,6 +128,9 @@ void usage()
    fprintf (stderr, "  --vbr              Enable variable bit-rate (VBR)\n"); 
    fprintf (stderr, "  --comp n           Set encoding complexity (0-10), default 3\n"); 
    fprintf (stderr, "  --nframes n        Number of frames per Ogg packet (1-10), default 1\n"); 
+   fprintf (stderr, "  --comment          Add the given string as an extra comment. This may be\n                     used multiple times.\n");
+   fprintf (stderr, "  --author           Author of this track.\n");
+   fprintf (stderr, "  --title            Title for this track.\n");
    fprintf (stderr, "  --help       -h    This help\n"); 
    fprintf (stderr, "  --version    -v    Version information\n"); 
    fprintf (stderr, "  -V                 Verbose mode (show bit-rate)\n"); 
@@ -171,6 +178,9 @@ int main(int argc, char **argv)
       {"lin8", no_argument, NULL, 0},
       {"lin16", no_argument, NULL, 0},
       {"version", no_argument, NULL, 0},
+      {"comment", required_argument, NULL, 0},
+      {"author", required_argument, NULL, 0},
+      {"title", required_argument, NULL, 0},
       {0, 0, 0, 0}
    };
    int print_bitrate=0;
@@ -188,9 +198,13 @@ int main(int argc, char **argv)
    SpeexHeader header;
    int nframes=1;
    int complexity=3;
-   char *comments = "Encoded with Speex " VERSION;
+   char *vendor_string = "Encoded with Speex " VERSION;
+   char *comments;
+   int comments_length;
    int close_in=0, close_out=0;
    int eos=0;
+
+   comment_init(&comments, &comments_length, vendor_string);
 
    /*Process command-line options*/
    while(1)
@@ -244,7 +258,17 @@ int main(int argc, char **argv)
          } else if (strcmp(long_options[option_index].name,"lin16")==0)
          {
             fmt=16;
+         } else if (strcmp(long_options[option_index].name,"comment")==0)
+         {
+           comment_add(&comments, &comments_length, NULL, optarg); 
+         } else if (strcmp(long_options[option_index].name,"author")==0)
+         {
+           comment_add(&comments, &comments_length, "AUTHOR=", optarg); 
+         } else if (strcmp(long_options[option_index].name,"title")==0)
+         {
+           comment_add(&comments, &comments_length, "TITLE=", optarg); 
          }
+
          break;
       case 'n':
          narrowband=1;
@@ -396,7 +420,7 @@ int main(int argc, char **argv)
       free(op.packet);
 
       op.packet = (unsigned char *)comments;
-      op.bytes = strlen((char*)op.packet);
+      op.bytes = comments_length;
       op.b_o_s = 0;
       op.e_o_s = 0;
       op.granulepos = 0;
@@ -416,6 +440,8 @@ int main(int argc, char **argv)
             bytes_written += ret;
       }
    }
+
+   free(comments);
 
    speex_encoder_ctl(st, SPEEX_GET_FRAME_SIZE, &frame_size);
    speex_encoder_ctl(st, SPEEX_SET_COMPLEXITY, &complexity);
@@ -530,3 +556,70 @@ int main(int argc, char **argv)
    return 1;
 }
 
+/*                 
+ Comments will be stored in the Vorbis style.            
+ It is describled in the "Structure" section of
+    http://www.xiph.org/ogg/vorbis/doc/v-comment.html
+
+The comment header is decoded as follows:
+  1) [vendor_length] = read an unsigned integer of 32 bits
+  2) [vendor_string] = read a UTF-8 vector as [vendor_length] octets
+  3) [user_comment_list_length] = read an unsigned integer of 32 bits
+  4) iterate [user_comment_list_length] times {
+     5) [length] = read an unsigned integer of 32 bits
+     6) this iteration's user comment = read a UTF-8 vector as [length] octets
+     }
+  7) [framing_bit] = read a single bit as boolean
+  8) if ( [framing_bit]  unset or end of packet ) then ERROR
+  9) done.
+
+  If you have troubles, please write to ymnk@jcraft.com.
+ */
+
+#define readint(buf, base) ((buf[base+3]<<24)&0xff000000| \
+                           (buf[base+2]<<16)&0xff0000| \
+                           (buf[base+1]<<8)&0xff00| \
+  	           	    buf[base]&0xff)
+#define writeint(buf, base, val) do{ buf[base+3]=(val>>24)&0xff; \
+                                     buf[base+2]=(val>>16)&0xff; \
+                                     buf[base+1]=(val>>8)&0xff; \
+                                     buf[base]=(val)&0xff; \
+                                 }while(0)
+
+void comment_init(char **comments, int* length, char *vendor_string)
+{
+  int vendor_length=strlen(vendor_string);
+  int user_comment_list_length=0;
+  int len=4+vendor_length+4;
+  char *p=(char*)malloc(len);
+  if(p==NULL){
+  }
+  writeint(p, 0, vendor_length);
+  memcpy(p+4, vendor_string, vendor_length);
+  writeint(p, 4+vendor_length, user_comment_list_length);
+  *length=len;
+  *comments=p;
+}
+void comment_add(char **comments, int* length, char *tag, char *val)
+{
+  char* p=*comments;
+  int vendor_length=readint(p, 0);
+  int user_comment_list_length=readint(p, 4+vendor_length);
+  int tag_len=(tag?strlen(tag):0);
+  int val_len=strlen(val);
+  int len=(*length)+4+tag_len+val_len;
+
+  p=realloc(p, len);
+  if(p==NULL){
+  }
+
+  writeint(p, *length, tag_len+val_len);      /* length of comment */
+  if(tag) memcpy(p+*length+4, tag, tag_len);  /* comment */
+  memcpy(p+*length+4+tag_len, val, val_len);  /* comment */
+  writeint(p, 4+vendor_length, user_comment_list_length+1);
+
+  *comments=p;
+  *length=len;
+}
+#undef readint
+#undef writeint
