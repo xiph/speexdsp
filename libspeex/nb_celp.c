@@ -381,7 +381,7 @@ int nb_encode(void *state, float *in, SpeexBits *bits)
          mode=choice;
          if (mode==0)
          {
-            if (st->dtx_count==0 || lsp_dist>.05 || st->dtx_count>20)
+            if (st->dtx_count==0 || lsp_dist>.05 || !st->dtx_enabled || st->dtx_count>20)
             {
                mode=1;
                st->dtx_count=1;

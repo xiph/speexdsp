@@ -265,6 +265,8 @@ int main(int argc, char **argv)
    double cumul_bits=0, enc_frames=0;
    char first_bytes[12];
    int wave_input=0;
+   int tmp;
+
    comment_init(&comments, &comments_length, vendor_string);
 
    /*Process command-line options*/
@@ -598,17 +600,15 @@ int main(int argc, char **argv)
    }
    if (vbr_enabled)
    {
-      int tmp;
       tmp=1;
       speex_encoder_ctl(st, SPEEX_SET_VBR, &tmp);
    } else if (vad_enabled)
    {
-      int tmp;
       tmp=1;
       speex_encoder_ctl(st, SPEEX_SET_VAD, &tmp);
-      if (dtx_enabled)
-         speex_encoder_ctl(st, SPEEX_SET_DTX, &tmp);
    }
+   if (dtx_enabled)
+      speex_encoder_ctl(st, SPEEX_SET_DTX, &tmp);
    if (dtx_enabled && !(vbr_enabled || abr_enabled || vad_enabled))
    {
       fprintf (stderr, "Warning: --dtx is useless without --vad\n");

@@ -52,6 +52,8 @@ typedef struct SpeexBits {
    int   owner;   /**< Does the struct "own" the "raw" buffer (member "bytes") */
    int   overflow;/**< Set to one if we try to read past the valid data */
    int   buf_size;/**< Allocated size for buffer */
+   int   reserved1; /**< Reserved for future use */
+   void *reserved2; /**< Reserved for future use */
 } SpeexBits;
 
 /** Initializes and allocates resources for a SpeexBits struct */

@@ -89,6 +89,8 @@ typedef struct SpeexCallback {
    int callback_id;             /**< ID associated to the callback */
    speex_callback_func func;    /**< Callback handler function */
    void *data;                  /**< Data that will be sent to the handler */
+   void *reserved1;             /**< Reserved for future use */
+   int   reserved2;             /**< Reserved for future use */
 } SpeexCallback;
 
 /** Handle in-band request */

@@ -43,6 +43,8 @@ typedef struct SpeexStereoState {
    float e_ratio;      /**< Ratio of energies: E(left+right)/[E(left)+E(right)]  */
    float smooth_left;  /**< Smoothed left channel gain */
    float smooth_right; /**< Smoothed right channel gain */
+   float reserved1;    /**< Reserved for future use */
+   float reserved2;    /**< Reserved for future use */
 } SpeexStereoState;
 
 /** Initialization value for a stereo state */

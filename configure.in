@@ -53,6 +53,7 @@ fi
 AC_SUBST(src)
 
 AC_CHECK_LIB(m, sin)
+AC_CHECK_LIB(gnugetopt, getopt_long)
 
 AC_DEFINE_UNQUOTED(VERSION, "${VERSION}")
 
