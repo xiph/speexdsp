@@ -524,12 +524,23 @@ CombFilterMem *mem
    gain = (exc_energy)/(.1+new_exc_energy);
    if (gain < .5)
       gain=.5;
-   if (gain>1)
-      gain=1;
+   if (gain>.9999)
+      gain=.9999;
 
+#ifdef FIXED_POINT
+   {
+      spx_word16_t gg = gain*32768;
+      for (i=0;i<nsf;i++)
+   {
+      mem->smooth_gain = MULT16_16_Q15(31457,mem->smooth_gain) + MULT16_16_Q15(1311,gg);
+      new_exc[i] = MULT16_32_Q15(mem->smooth_gain, new_exc[i]);
+   }
+   }
+#else
    for (i=0;i<nsf;i++)
    {
       mem->smooth_gain = .96*mem->smooth_gain + .04*gain;
       new_exc[i] *= mem->smooth_gain;
    }
+#endif
 }

@@ -48,7 +48,7 @@ int normalize16(spx_sig_t *x, spx_word16_t *y, int max_scale, int len);
 typedef struct CombFilterMem {
    int   last_pitch;
    spx_word16_t last_pitch_gain[3];
-   float smooth_gain;
+   spx_word16_t smooth_gain;
 } CombFilterMem;
 
 
