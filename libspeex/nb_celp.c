@@ -230,7 +230,6 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
    spx_mem_t *mem;
    char *stack;
    spx_sig_t *syn_resp;
-   spx_sig_t *orig;
    spx_sig_t *real_exc;
 #ifdef EPIC_48K
    int pitch_half[2];
@@ -632,9 +631,6 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
    syn_resp = PUSH(stack, st->subframeSize, spx_sig_t);
    real_exc = PUSH(stack, st->subframeSize, spx_sig_t);
    mem = PUSH(stack, st->lpcSize, spx_mem_t);
-   orig = PUSH(stack, st->frameSize, spx_sig_t);
-   for (i=0;i<st->frameSize;i++)
-      orig[i]=st->frame[i];
 
    /* Loop on sub-frames */
    for (sub=0;sub<st->nbSubframes;sub++)
@@ -827,10 +823,10 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
          
          /*FIXME: Check that I'm really allowed to replace the residue_percep_zero */
          for (i=0;i<st->subframeSize;i++)
-            st->buf2[i] = real_exc[i] - exc[i];
+            real_exc[i] = SUB32(real_exc[i], exc[i]);
          /*residue_percep_zero(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2, st->buf2, st->subframeSize, st->lpcSize, stack);*/
 
-         ener = SHL((spx_word32_t)compute_rms(st->buf2, st->subframeSize),SIG_SHIFT);
+         ener = SHL((spx_word32_t)compute_rms(real_exc, st->subframeSize),SIG_SHIFT);
 
          /*for (i=0;i<st->subframeSize;i++)
             printf ("%f\n", st->buf2[i]/ener);
@@ -938,18 +934,6 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
 
    /* The next frame will not be the first (Duh!) */
    st->first = 0;
-
-   if (0) {
-      float ener=0, err=0;
-      float snr;
-      for (i=0;i<st->frameSize;i++)
-      {
-         ener+=st->frame[i]*st->frame[i];
-         err += (st->frame[i]-orig[i])*(st->frame[i]-orig[i]);
-      }
-      snr = 10*log10((ener+1)/(err+1));
-      /*printf ("%f %f %f\n", snr, ener, err);*/
-   }
 
    /* Replace input by synthesized speech */
    for (i=0;i<st->frameSize;i++)
