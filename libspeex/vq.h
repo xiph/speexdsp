@@ -35,6 +35,8 @@
 
 #include "misc.h"
 
+int scal_quant(float in, float *boundary, int entries);
+
 int vq_index(float *in, float *codebook, int len, int entries);
 
 void vq_nbest(spx_word16_t *in, spx_word16_t *codebook, int len, int entries, spx_word32_t *E, int N, int *nbest, spx_word32_t *best_dist);

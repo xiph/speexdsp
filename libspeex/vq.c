@@ -32,6 +32,17 @@
 
 #include "vq.h"
 
+int scal_quant(float in, float *boundary, int entries)
+{
+   int i=0;
+   while (i<entries-1 && in>boundary[0])
+   {
+      boundary++;
+      i++;
+   }
+   return i;
+}
+
 /*Finds the index of the entry in a codebook that best matches the input*/
 int vq_index(float *in, float *codebook, int len, int entries)
 {

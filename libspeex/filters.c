@@ -68,21 +68,21 @@ void bw_lpc(float gamma, spx_coef_t *lpc_in, spx_coef_t *lpc_out, int order)
 #ifdef FIXED_POINT
 
 /* FIXME: These functions are ugly and probably might too much error */
-void signal_mul(spx_sig_t *x, spx_sig_t *y, spx_word16_t scale, int len)
+void signal_mul(spx_sig_t *x, spx_sig_t *y, spx_word32_t scale, int len)
 {
    int i;
-   spx_word32_t s=16384*scale;
    for (i=0;i<len;i++)
    {
-      y[i] = MULT16_32_Q14((x[i]>>4),s)<<4;
+      y[i] = MULT16_32_Q14((x[i]>>4),scale)<<4;
    }
 }
 
-void signal_div(spx_sig_t *x, spx_sig_t *y, spx_word16_t scale, int len)
+void signal_div(spx_sig_t *x, spx_sig_t *y, spx_word32_t scale, int len)
 {
    int i;
    spx_word16_t scale_1;
 
+   scale = PSHR(scale, SIG_SHIFT);
    if (scale<2)
       scale_1 = 32767;
    else
