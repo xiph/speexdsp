@@ -178,7 +178,7 @@ int   complexity
          for (k=0;k<N;k++)
          {
             spx_word16_t *ct;
-            float err=0;
+            spx_word32_t err=0;
             ct = ot[j];
             /*update target*/
 
@@ -190,7 +190,7 @@ int   complexity
             {
                int rind;
                spx_word16_t *res;
-               float sign=1;
+               spx_word16_t sign=1;
                rind = best_index[k];
                if (rind>=shape_cb_size)
                {
@@ -222,7 +222,7 @@ int   complexity
                {
                   spx_word16_t g;
                   int rind;
-                  float sign=1;
+                  spx_word16_t sign=1;
                   rind = best_index[k];
                   if (rind>=shape_cb_size)
                   {
@@ -366,7 +366,7 @@ char *stack
    /* Compute decoded excitation */
    for (i=0;i<nb_subvect;i++)
    {
-      float s=1;
+      spx_word16_t s=1;
       if (signs[i])
          s=-1;
 #ifdef FIXED_POINT
