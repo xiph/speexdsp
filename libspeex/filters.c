@@ -282,83 +282,99 @@ void residue_percep_zero(spx_sig_t *xx, spx_coef_t *ak, spx_coef_t *awk1, spx_co
    fir_mem2(y, awk2, y, N, ord, mem);
 }
 
-
-void qmf_decomp(float *xx, float *aa, spx_sig_t *y1, spx_sig_t *y2, int N, int M, float *mem, char *stack)
+void qmf_decomp(short *xx, float *aa, spx_sig_t *y1, spx_sig_t *y2, int N, int M, float *mem, char *stack)
 {
    int i,j,k,M2;
-   float *a;
-   float *x;
-   float *x2;
+   spx_word16_t *a;
+   spx_word16_t *x;
+   spx_word16_t *x2;
    
-   a = PUSH(stack, M, float);
-   x = PUSH(stack, N+M-1, float);
+   a = PUSH(stack, M, spx_word16_t);
+   x = PUSH(stack, N+M-1, spx_word16_t);
    x2=x+M-1;
    M2=M>>1;
+#ifdef FIXED_POINT
    for (i=0;i<M;i++)
-      a[M-i-1]=aa[i];
+      a[M-i-1]=floor(.5+65536*aa[i]);
+#else
+   for (i=0;i<M;i++)
+      a[M-i-1]= aa[i];
+#endif
    for (i=0;i<M-1;i++)
       x[i]=mem[M-i-2];
    for (i=0;i<N;i++)
-      x[i+M-1]=xx[i];
+      x[i+M-1]=PSHR(xx[i],1);
    for (i=0,k=0;i<N;i+=2,k++)
    {
       y1[k]=0;
       y2[k]=0;
       for (j=0;j<M2;j++)
       {
-         y1[k]+=a[j]*(x[i+j]+x2[i-j]);
-         y2[k]-=a[j]*(x[i+j]-x2[i-j]);
+         y1[k]+=SHR(MULT16_16(a[j],(x[i+j]+x2[i-j])),1);
+         y2[k]-=SHR(MULT16_16(a[j],(x[i+j]-x2[i-j])),1);
          j++;
-         y1[k]+=a[j]*(x[i+j]+x2[i-j]);
-         y2[k]+=a[j]*(x[i+j]-x2[i-j]);
+         y1[k]+=SHR(MULT16_16(a[j],(x[i+j]+x2[i-j])),1);
+         y2[k]+=SHR(MULT16_16(a[j],(x[i+j]-x2[i-j])),1);
       }
    }
    for (i=0;i<M-1;i++)
-     mem[i]=xx[N-i-1];
+     mem[i]=PSHR(xx[N-i-1],1);
 }
 
+
 /* By segher */
-void fir_mem_up(spx_sig_t *x, float *a, spx_sig_t *y, int N, int M, float *mem, char *stack)
+void fir_mem_up(spx_sig_t *x, float *aa, spx_sig_t *y, int N, int M, float *mem, char *stack)
    /* assumptions:
       all odd x[i] are zero -- well, actually they are left out of the array now
       N and M are multiples of 4 */
 {
    int i, j;
-   float *xx=PUSH(stack, M+N-1, float);
+   spx_word16_t *a;
+   spx_word16_t *xx;
+   
+   xx= PUSH(stack, M+N-1, spx_word16_t);
 
    for (i = 0; i < N/2; i++)
-      xx[2*i] = x[N/2-1-i];
+      xx[2*i] = SHR(x[N/2-1-i],SIG_SHIFT+1);
    for (i = 0; i < M - 1; i += 2)
       xx[N+i] = mem[i+1];
 
+#ifdef FIXED_POINT
+   a = PUSH(stack, M, spx_word16_t);
+   for (i=0;i<M;i++)
+      a[i] = floor(.5+65536*aa[i]);
+#else
+   a = aa;
+#endif
+
    for (i = 0; i < N; i += 4) {
-      float y0, y1, y2, y3;
-      float x0;
+      spx_sig_t y0, y1, y2, y3;
+      spx_word16_t x0;
 
       y0 = y1 = y2 = y3 = 0.f;
       x0 = xx[N-4-i];
 
       for (j = 0; j < M; j += 4) {
-         float x1;
-         float a0, a1;
+         spx_word16_t x1;
+         spx_word16_t a0, a1;
 
          a0 = a[j];
          a1 = a[j+1];
          x1 = xx[N-2+j-i];
 
-         y0 += a0 * x1;
-         y1 += a1 * x1;
-         y2 += a0 * x0;
-         y3 += a1 * x0;
+         y0 += SHR(MULT16_16(a0, x1),1);
+         y1 += SHR(MULT16_16(a1, x1),1);
+         y2 += SHR(MULT16_16(a0, x0),1);
+         y3 += SHR(MULT16_16(a1, x0),1);
 
          a0 = a[j+2];
          a1 = a[j+3];
          x0 = xx[N+j-i];
 
-         y0 += a0 * x0;
-         y1 += a1 * x0;
-         y2 += a0 * x1;
-         y3 += a1 * x1;
+         y0 += SHR(MULT16_16(a0, x0),1);
+         y1 += SHR(MULT16_16(a1, x0),1);
+         y2 += SHR(MULT16_16(a0, x1),1);
+         y3 += SHR(MULT16_16(a1, x1),1);
       }
       y[i] = y0;
       y[i+1] = y1;
@@ -369,6 +385,7 @@ void fir_mem_up(spx_sig_t *x, float *a, spx_sig_t *y, int N, int M, float *mem, 
    for (i = 0; i < M - 1; i += 2)
       mem[i+1] = xx[i];
 }
+
 
 
 void comp_filter_mem_init (CombFilterMem *mem)

@@ -250,30 +250,20 @@ int sb_encode(void *state, short *in, SpeexBits *bits)
    mode = (SpeexSBMode*)(st->mode->mode);
 
    {
-      float *sig_in;
       short *low = PUSH(stack, st->frame_size, short);
 
-      sig_in = PUSH(stack, st->full_frame_size, float);
-      for (i=0;i<st->full_frame_size;i++)
-         sig_in[i] = in[i];
-
       /* Compute the two sub-bands by filtering with h0 and h1*/
-      qmf_decomp(sig_in, h0, st->x0d, st->x1d, st->full_frame_size, QMF_ORDER, st->h0_mem, stack);
+      qmf_decomp(in, h0, st->x0d, st->x1d, st->full_frame_size, QMF_ORDER, st->h0_mem, stack);
       
       for (i=0;i<st->frame_size;i++)
-         low[i] = st->x0d[i];
+         low[i] = PSHR(st->x0d[i],SIG_SHIFT);
       
       /* Encode the narrowband part*/
       speex_encode(st->st_low, low, bits);
 
       for (i=0;i<st->frame_size;i++)
-         st->x0d[i] = low[i];
+         st->x0d[i] = SHL(low[i],SIG_SHIFT);
    }
-
-   for (i=0;i<st->frame_size;i++)
-      st->x0d[i] *= SIG_SCALING;
-   for (i=0;i<st->frame_size;i++)
-      st->x1d[i] *= SIG_SCALING;
 
    /* High-band buffering / sync with low band */
    for (i=0;i<st->windowSize-st->frame_size;i++)

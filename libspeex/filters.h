@@ -47,7 +47,7 @@ typedef struct CombFilterMem {
 } CombFilterMem;
 
 
-void qmf_decomp(float *xx, float *aa, spx_sig_t *y1, spx_sig_t *y2, int N, int M, float *mem, char *stack);
+void qmf_decomp(short *xx, float *aa, spx_sig_t *y1, spx_sig_t *y2, int N, int M, float *mem, char *stack);
 void fir_mem_up(spx_sig_t *x, float *a, spx_sig_t *y, int N, int M, float *mem, char *stack);
 
 
