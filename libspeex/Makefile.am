@@ -17,6 +17,7 @@ libspeex_la_SOURCES = nb_celp.c \
 	filters.c \
 	bits.c \
 	modes.c \
+	speex.c \
 	vq.c \
 	high_lsp_tables.c \
 	vbr.c \

@@ -148,4 +148,7 @@ typedef struct SpeexSBMode {
 int speex_encode_native(void *state, spx_word16_t *in, SpeexBits *bits);
 int speex_decode_native(void *state, SpeexBits *bits, spx_word16_t *out);
 
+int nb_mode_query(const void *mode, int request, void *ptr);
+int wb_mode_query(const void *mode, int request, void *ptr);
+
 #endif
