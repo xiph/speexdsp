@@ -1,3 +1,4 @@
-- VBR logic for choosing mode
+- Better VBR logic for choosing mode
 - VAD
-- Post-filter
+- Improve narrowband vocoder
+- High-band "pseudo-vocoder"
