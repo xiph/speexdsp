@@ -383,18 +383,17 @@ int cdbk_offset
 #endif
       *cdbk_index=best_cdbk;
    }
-   
+
 #ifdef FIXED_POINT
    for (i=0;i<nsf;i++)
-     exc[i]=MULT16_32_Q13(SHL(gain[0],7),e[2][i])+MULT16_32_Q13(SHL(gain[1],7),e[1][i])+MULT16_32_Q13(SHL(gain[2],7),e[0][i]);
+     exc[i]=SHL(MULT16_32_Q14(SHL(gain[0],7),e[2][i])+MULT16_32_Q14(SHL(gain[1],7),e[1][i])+MULT16_32_Q14(SHL(gain[2],7),e[0][i]),1);
    
    err=0;
    for (i=0;i<nsf;i++)
    {
-      spx_sig_t perr=target[i]-(MULT16_32_Q13(SHL(gain[0],7),x[2][i])+MULT16_32_Q13(SHL(gain[1],7),x[1][i])+MULT16_32_Q13(SHL(gain[2],7),x[0][i]));
-      spx_word16_t perr2 = SHR(perr,15);
+      spx_sig_t perr=target[i]-SHL((MULT16_32_Q14(SHL(gain[0],7),x[2][i])+MULT16_32_Q14(SHL(gain[1],7),x[1][i])+MULT16_32_Q14(SHL(gain[2],7),x[0][i])),1);
+      spx_word16_t perr2 = PSHR(perr,15);
       err = ADD64(err,MULT16_16(perr2,perr2));
-      
    }
 #else
    for (i=0;i<nsf;i++)
@@ -625,7 +624,7 @@ int cdbk_offset
 #ifdef FIXED_POINT
       {
          for (i=0;i<nsf;i++)
-            exc[i]=MULT16_32_Q13(SHL(sgain[0],7),e[2][i])+MULT16_32_Q13(SHL(sgain[1],7),e[1][i])+MULT16_32_Q13(SHL(sgain[2],7),e[0][i]);
+            exc[i]=SHL(MULT16_32_Q14(SHL(sgain[0],7),e[2][i])+MULT16_32_Q14(SHL(sgain[1],7),e[1][i])+MULT16_32_Q14(SHL(sgain[2],7),e[0][i]),1);
       }
 #else
       for (i=0;i<nsf;i++)

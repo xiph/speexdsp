@@ -250,12 +250,12 @@ static inline int DIV32_16(long long a, long long b)
    long long res;
    if (b==0)
    {
-      fprintf(stderr, "DIV32_16: divide by zero: %d/%d\n", a, b);
+      fprintf(stderr, "DIV32_16: divide by zero: %d/%d\n", (int)a, (int)b);
       return 0;
    }
    if (!VERIFY_INT(a) || !VERIFY_SHORT(b))
    {
-      fprintf (stderr, "DIV32_16: inputs are not int/short: %d %d\n", a, b);
+      fprintf (stderr, "DIV32_16: inputs are not int/short: %d %d\n", (int)a, (int)b);
    }
    res = a/b;
    if (!VERIFY_SHORT(res))
