@@ -129,7 +129,7 @@ void *nb_encoder_init(SpeexMode *m)
 
    st->autocorr = (float*)speex_alloc((st->lpcSize+1)*sizeof(float));
 
-   st->stack = (float*)speex_alloc(4000*sizeof(float));
+   st->stack = (char*)speex_alloc(4000*sizeof(float));
 
    st->buf2 = (float*)speex_alloc(st->windowSize*sizeof(float));
 
@@ -186,7 +186,7 @@ void nb_encoder_destroy(void *state)
    speex_free(st->swBuf);
    speex_free(st->exc2Buf);
    speex_free(st->innov);
-   speex_free((float*)st->stack);
+   speex_free(st->stack);
 
    speex_free(st->window);
    speex_free(st->buf2);
@@ -228,7 +228,7 @@ int nb_encode(void *state, float *in, SpeexBits *bits)
    float ol_pitch_coef;
    float ol_gain;
    float *res, *target, *mem;
-   void *stack;
+   char *stack;
    float *syn_resp;
    float lsp_dist=0;
    float *orig;
@@ -775,7 +775,7 @@ int nb_encode(void *state, float *in, SpeexBits *bits)
 
          /* In some (rare) modes, we do a second search (more bits) to reduce noise even more */
          if (SUBMODE(double_codebook)) {
-            void *tmp_stack=stack;
+            char *tmp_stack=stack;
             float *innov2 = PUSH(tmp_stack, st->subframeSize, float);
             for (i=0;i<st->subframeSize;i++)
                innov2[i]=0;
@@ -876,7 +876,7 @@ void *nb_decoder_init(SpeexMode *m)
    st->pre_mem=0;
    st->lpc_enh_enabled=0;
 
-   st->stack = speex_alloc(2000*sizeof(float));
+   st->stack = (char*)speex_alloc(2000*sizeof(float));
 
    st->inBuf = (float*)speex_alloc(st->bufSize*sizeof(float));
    st->frame = st->inBuf + st->bufSize - st->windowSize;
@@ -937,7 +937,7 @@ void nb_decoder_destroy(void *state)
 
 #define median3(a, b, c)	((a) < (b) ? ((b) < (c) ? (b) : ((a) < (c) ? (c) : (a))) : ((c) < (b) ? (b) : ((c) < (a) ? (c) : (a))))
 
-static void nb_decode_lost(DecState *st, float *out, void *stack)
+static void nb_decode_lost(DecState *st, float *out, char *stack)
 {
    int i, sub;
    float *awk1, *awk2, *awk3;
@@ -1063,7 +1063,7 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
    float best_pitch_gain=0;
    int wideband;
    int m;
-   void *stack;
+   char *stack;
    float *awk1, *awk2, *awk3;
    float pitch_average=0;
 
@@ -1420,7 +1420,7 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
          /* Decode second codebook (only for some modes) */
          if (SUBMODE(double_codebook))
          {
-            void *tmp_stack=stack;
+            char *tmp_stack=stack;
             float *innov2 = PUSH(tmp_stack, st->subframeSize, float);
             for (i=0;i<st->subframeSize;i++)
                innov2[i]=0;

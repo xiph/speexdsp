@@ -47,7 +47,7 @@ int   nsf,                      /* number of samples in subframe */
 float *exc,
 float *r,
 SpeexBits *bits,
-void *stack,
+char *stack,
 int   complexity
 )
 {
@@ -308,7 +308,7 @@ float *exc,
 void *par,                      /* non-overlapping codebook */
 int   nsf,                      /* number of samples in subframe */
 SpeexBits *bits,
-void *stack
+char *stack
 )
 {
    int i,j;
@@ -359,7 +359,7 @@ int   nsf,                      /* number of samples in subframe */
 float *exc,
 float *r,
 SpeexBits *bits,
-void *stack,
+char *stack,
 int   complexity
 )
 {
@@ -380,7 +380,7 @@ float *exc,
 void *par,                      /* non-overlapping codebook */
 int   nsf,                      /* number of samples in subframe */
 SpeexBits *bits,
-void *stack
+char *stack
 )
 {
    speex_rand_vec(1, exc, nsf);

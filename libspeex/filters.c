@@ -98,7 +98,7 @@ void fir_mem2(float *x, float *num, float *y, int N, int ord, float *mem)
    }
 }
 
-void syn_percep_zero(float *xx, float *ak, float *awk1, float *awk2, float *y, int N, int ord, void *stack)
+void syn_percep_zero(float *xx, float *ak, float *awk1, float *awk2, float *y, int N, int ord, char *stack)
 {
    int i;
    float *mem = PUSH(stack,ord, float);
@@ -110,7 +110,7 @@ void syn_percep_zero(float *xx, float *ak, float *awk1, float *awk2, float *y, i
    iir_mem2(y, awk2, y, N, ord, mem);
 }
 
-void residue_percep_zero(float *xx, float *ak, float *awk1, float *awk2, float *y, int N, int ord, void *stack)
+void residue_percep_zero(float *xx, float *ak, float *awk1, float *awk2, float *y, int N, int ord, char *stack)
 {
    int i;
    float *mem = PUSH(stack,ord, float);
@@ -123,7 +123,7 @@ void residue_percep_zero(float *xx, float *ak, float *awk1, float *awk2, float *
 }
 
 
-void qmf_decomp(float *xx, float *aa, float *y1, float *y2, int N, int M, float *mem, void *stack)
+void qmf_decomp(float *xx, float *aa, float *y1, float *y2, int N, int M, float *mem, char *stack)
 {
    int i,j,k,M2;
    float *a;
@@ -158,7 +158,7 @@ void qmf_decomp(float *xx, float *aa, float *y1, float *y2, int N, int M, float 
 }
 
 /* By segher */
-void fir_mem_up(float *x, float *a, float *y, int N, int M, float *mem, void *stack)
+void fir_mem_up(float *x, float *a, float *y, int N, int M, float *mem, char *stack)
    /* assumptions:
       all odd x[i] are zero -- well, actually they are left out of the array now
       N and M are multiples of 4 */

@@ -152,7 +152,7 @@ void *sb_encoder_init(SpeexMode *m)
    st->gamma1=mode->gamma1;
    st->gamma2=mode->gamma2;
    st->first=1;
-   st->stack = speex_alloc(4000*sizeof(float));
+   st->stack = (char*)speex_alloc(4000*sizeof(float));
 
    st->x0d=(float*)speex_alloc(st->frame_size*sizeof(float));
    st->x1d=(float*)speex_alloc(st->frame_size*sizeof(float));
@@ -261,7 +261,7 @@ void sb_encoder_destroy(void *state)
    speex_free(st->mem_sw);
    speex_free(st->pi_gain);
 
-   speex_free(st->stack);
+   speex_free((float*)st->stack);
 
    speex_free(st);
 }
@@ -271,7 +271,7 @@ int sb_encode(void *state, float *in, SpeexBits *bits)
 {
    SBEncState *st;
    int i, roots, sub;
-   void *stack;
+   char *stack;
    float *mem, *innov, *syn_resp;
    float *low_pi_gain, *low_exc, *low_innov;
    SpeexSBMode *mode;
@@ -660,7 +660,7 @@ int sb_encode(void *state, float *in, SpeexBits *bits)
             exc[i] += innov[i]*scale;
 
          if (SUBMODE(double_codebook)) {
-            void *tmp_stack=stack;
+            char *tmp_stack=stack;
             float *innov2 = PUSH(tmp_stack, st->subframeSize, float);
             for (i=0;i<st->subframeSize;i++)
                innov2[i]=0;
@@ -743,7 +743,7 @@ void *sb_decoder_init(SpeexMode *m)
    st->submodeID=mode->defaultSubmode;
 
    st->first=1;
-   st->stack = speex_alloc(2000*sizeof(float));
+   st->stack = (char*)speex_alloc(2000*sizeof(float));
 
    st->x0d=(float*)speex_alloc(st->frame_size*sizeof(float));
    st->x1d=(float*)speex_alloc(st->frame_size*sizeof(float));
@@ -795,12 +795,12 @@ void sb_decoder_destroy(void *state)
 
    speex_free(st->mem_sp);
 
-   speex_free(st->stack);
+   speex_free((float*)st->stack);
 
    speex_free(state);
 }
 
-static void sb_decode_lost(SBDecState *st, float *out, int dtx, void *stack)
+static void sb_decode_lost(SBDecState *st, float *out, int dtx, char *stack)
 {
    int i;
    float *awk1, *awk2, *awk3;
@@ -887,7 +887,7 @@ int sb_decode(void *state, SpeexBits *bits, float *out)
    SBDecState *st;
    int wideband;
    int ret;
-   void *stack;
+   char *stack;
    float *low_pi_gain, *low_exc, *low_innov;
    float *awk1, *awk2, *awk3;
    float dtx;
@@ -1080,7 +1080,7 @@ int sb_decode(void *state, SpeexBits *bits, float *out)
             exc[i]*=scale;
 
          if (SUBMODE(double_codebook)) {
-            void *tmp_stack=stack;
+            char *tmp_stack=stack;
             float *innov2 = PUSH(tmp_stack, st->subframeSize, float);
             for (i=0;i<st->subframeSize;i++)
                innov2[i]=0;

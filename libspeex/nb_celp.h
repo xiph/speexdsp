@@ -67,7 +67,7 @@ typedef struct EncState {
    float  preemph;        /**< Pre-emphasis: P(z) = 1 - a*z^-1*/
    float  pre_mem;        /**< 1-element memory for pre-emphasis */
    float  pre_mem2;       /**< 1-element memory for pre-emphasis */
-   void  *stack;          /**< Pseudo-stack allocation for temporary memory */
+   char  *stack;          /**< Pseudo-stack allocation for temporary memory */
    float *inBuf;          /**< Input buffer (original signal) */
    float *frame;          /**< Start of original frame */
    float *excBuf;         /**< Excitation buffer */
@@ -139,7 +139,7 @@ typedef struct DecState {
    float  gamma2;         /**< Perceptual filter: A(z/gamma2) */
    float  preemph;        /**< Pre-emphasis: P(z) = 1 - a*z^-1*/
    float  pre_mem;        /**< 1-element memory for pre-emphasis */
-   void  *stack;          /**< Pseudo-stack allocation for temporary memory */
+   char  *stack;          /**< Pseudo-stack allocation for temporary memory */
    float *inBuf;          /**< Input buffer (original signal) */
    float *frame;          /**< Start of original frame */
    float *excBuf;         /**< Excitation buffer */

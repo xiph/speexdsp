@@ -69,7 +69,7 @@ Modified by Jean-Marc Valin
 
 
 
-static float cheb_poly_eva(float *coef,float x,int m,void *stack)
+static float cheb_poly_eva(float *coef,float x,int m,char *stack)
 /*  float coef[]  	coefficients of the polynomial to be evaluated 	*/
 /*  float x   		the point where polynomial is to be evaluated 	*/
 /*  int m 		order of the polynomial 			*/
@@ -112,7 +112,7 @@ static float cheb_poly_eva(float *coef,float x,int m,void *stack)
 \*---------------------------------------------------------------------------*/
 
 
-int lpc_to_lsp (float *a,int lpcrdr,float *freq,int nb,float delta, void *stack)
+int lpc_to_lsp (float *a,int lpcrdr,float *freq,int nb,float delta, char *stack)
 /*  float *a 		     	lpc coefficients			*/
 /*  int lpcrdr			order of LPC coefficients (10) 		*/
 /*  float *freq 	      	LSP frequencies in the x domain       	*/
@@ -248,7 +248,7 @@ int lpc_to_lsp (float *a,int lpcrdr,float *freq,int nb,float delta, void *stack)
 \*---------------------------------------------------------------------------*/
 
 
-void lsp_to_lpc(float *freq,float *ak,int lpcrdr, void *stack)
+void lsp_to_lpc(float *freq,float *ak,int lpcrdr, char *stack)
 /*  float *freq 	array of LSP frequencies in the x domain	*/
 /*  float *ak 		array of LPC coefficients 			*/
 /*  int lpcrdr  	order of LPC coefficients 			*/

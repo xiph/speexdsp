@@ -41,8 +41,8 @@ typedef struct CombFilterMem {
 } CombFilterMem;
 
 
-void qmf_decomp(float *xx, float *aa, float *y1, float *y2, int N, int M, float *mem, void *stack);
-void fir_mem_up(float *x, float *a, float *y, int N, int M, float *mem, void *stack);
+void qmf_decomp(float *xx, float *aa, float *y1, float *y2, int N, int M, float *mem, char *stack);
+void fir_mem_up(float *x, float *a, float *y, int N, int M, float *mem, char *stack);
 
 
 void filter_mem2(float *x, float *num, float *den, float *y, int N, int ord, float *mem);
@@ -57,9 +57,9 @@ void bw_lpc(float gamma, float *lpc_in, float *lpc_out, int order);
 /* FIR filter */
 void fir_decim_mem(float *x, float *a, float *y, int N, int M, float *mem);
 
-void syn_percep_zero(float *x, float *ak, float *awk1, float *awk2, float *y, int N, int ord, void *stack);
+void syn_percep_zero(float *x, float *ak, float *awk1, float *awk2, float *y, int N, int ord, char *stack);
 
-void residue_percep_zero(float *xx, float *ak, float *awk1, float *awk2, float *y, int N, int ord, void *stack);
+void residue_percep_zero(float *xx, float *ak, float *awk1, float *awk2, float *y, int N, int ord, char *stack);
 
 void comp_filter_mem_init (CombFilterMem *mem);
 

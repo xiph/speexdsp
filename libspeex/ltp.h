@@ -40,7 +40,7 @@ typedef struct ltp_params {
 } ltp_params;
 
 
-void open_loop_nbest_pitch(float *sw, int start, int end, int len, int *pitch, float *gain, int N, void *stack);
+void open_loop_nbest_pitch(float *sw, int start, int end, int len, int *pitch, float *gain, int N, char *stack);
 
 
 /** Finds the best quantized 3-tap pitch predictor by analysis by synthesis */
@@ -58,7 +58,7 @@ float pitch_coef,               /* Voicing (pitch) coefficient */
 int   p,                        /* Number of LPC coeffs */
 int   nsf,                      /* Number of samples in subframe */
 SpeexBits *bits,
-void *stack,
+char *stack,
 float *exc2,
 float *r,
 int   complexity
@@ -75,7 +75,7 @@ int   nsf,                      /* Number of samples in subframe */
 int *pitch_val,
 float *gain_val,
 SpeexBits *bits,
-void *stack,
+char *stack,
 int lost,
 int subframe_offset,
 float last_pitch_gain
@@ -92,7 +92,7 @@ int   pitch,                    /* Pitch value */
 int   p,                        /* Number of LPC coeffs */
 int   nsf,                      /* Number of samples in subframe */
 SpeexBits *bits,
-void *stack,
+char *stack,
 float *exc2,
 float *r,
 int  *cdbk_index
@@ -114,7 +114,7 @@ float pitch_coef,               /* Voicing (pitch) coefficient */
 int   p,                        /* Number of LPC coeffs */
 int   nsf,                      /* Number of samples in subframe */
 SpeexBits *bits,
-void *stack,
+char *stack,
 float *exc2,
 float *r,
 int complexity
@@ -131,7 +131,7 @@ int   nsf,                      /* Number of samples in subframe */
 int *pitch_val,
 float *gain_val,
 SpeexBits *bits,
-void *stack,
+char *stack,
 int lost,
 int subframe_offset,
 float last_pitch_gain
