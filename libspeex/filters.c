@@ -36,6 +36,21 @@
 #include "misc.h"
 #include "math_approx.h"
 
+
+#ifdef FIXED_POINT
+void bw_lpc(float gamma, spx_coef_t *lpc_in, spx_coef_t *lpc_out, int order)
+{
+   int i;
+   lpc_out[0] = lpc_in[0];
+   spx_word16_t g=gamma*32768;
+   spx_word16_t tmp=g;
+   for (i=1;i<order+1;i++)
+   {
+      lpc_out[i] = MULT16_16_Q15(tmp,lpc_in[i]);
+      tmp = MULT16_16_Q15(tmp, g);
+   }
+}
+#else
 void bw_lpc(float gamma, spx_coef_t *lpc_in, spx_coef_t *lpc_out, int order)
 {
    int i;
@@ -46,6 +61,9 @@ void bw_lpc(float gamma, spx_coef_t *lpc_in, spx_coef_t *lpc_out, int order)
       tmp *= gamma;
    }
 }
+
+#endif
+
 
 #ifdef FIXED_POINT
 
