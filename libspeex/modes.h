@@ -77,7 +77,7 @@ typedef struct SpeexSubmode {
    /*Post-filter*/
    nb_post_filter_func post_filter_func;
    void             *post_filter_params;
-
+   int               bitrate;
 } SpeexSubmode;
 
 /*Struct defining the encoding/decoding mode*/

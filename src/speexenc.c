@@ -66,6 +66,7 @@ void usage()
    fprintf (stderr, "  --nframes n        Number of frames per Ogg packet\n"); 
    fprintf (stderr, "  --help       -h    This help\n"); 
    fprintf (stderr, "  --version    -v    Version information\n"); 
+   fprintf (stderr, "  -V                 Verbose mode (show bit-rate)\n"); 
    fprintf (stderr, "\n");  
    fprintf (stderr, "Input must be mono\n"); 
    fprintf (stderr, "Raw PCM needs to be 16-bit little-endian\n"); 
@@ -113,7 +114,7 @@ int main(int argc, char **argv)
    ogg_page 		 og;
    ogg_packet 		 op;
    int bytes_written, ret, result;
-   int id=0;
+   int id=-1;
    SpeexHeader header;
    int nframes=1;
    int complexity=3;
@@ -330,6 +331,7 @@ int main(int argc, char **argv)
    /*Main encoding loop (one frame per iteration)*/
    while (1)
    {
+      id++;
       /*Read input audio*/
       fread(in, sizeof(short), frame_size, fin);
       if (feof(fin))
@@ -370,7 +372,6 @@ int main(int argc, char **argv)
          else
             bytes_written += ret;
       }
-      id++;
    }
    
    op.packet = (unsigned char *)"END OF STREAM";

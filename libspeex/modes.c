@@ -174,7 +174,8 @@ static SpeexSubmode nb_submode1 = {
    NULL,
    /* No Post-filter */
    NULL,
-   NULL
+   NULL,
+   2500
 };
 
 static SpeexSubmode nb_submode2 = {
@@ -192,7 +193,8 @@ static SpeexSubmode nb_submode2 = {
    split_cb_nogain_unquant,
    &split_cb_nb_vlbr,
    nb_post_filter,
-   &pf_params_lbr
+   &pf_params_lbr,
+   5900
 };
 
 
@@ -211,7 +213,8 @@ static SpeexSubmode nb_submode3 = {
    split_cb_nogain_unquant,
    &split_cb_nb_lbr,
    nb_post_filter,
-   &pf_params_lbr
+   &pf_params_lbr,
+   8350
 };
 
 static SpeexSubmode nb_submode4 = {
@@ -229,7 +232,8 @@ static SpeexSubmode nb_submode4 = {
    split_cb_nogain_unquant,
    &split_cb_nb_med,
    nb_post_filter,
-   &pf_params_med
+   &pf_params_med,
+   11350
 };
 
 static SpeexSubmode nb_submode5 = {
@@ -247,7 +251,8 @@ static SpeexSubmode nb_submode5 = {
    split_cb_nogain_unquant,
    &split_cb_nb,
    nb_post_filter,
-   &pf_params_nb
+   &pf_params_nb,
+   14950
 };
 
 static SpeexSubmode nb_submode6 = {
@@ -265,7 +270,8 @@ static SpeexSubmode nb_submode6 = {
    split_cb_nogain_unquant,
    &split_cb_sb,
    nb_post_filter,
-   &pf_params_sb
+   &pf_params_sb,
+   18150
 };
 
 
@@ -302,7 +308,7 @@ SpeexMode speex_nb_mode = {
    &nb_encoder_ctl,
    &nb_decoder_ctl,
    160,
-   14750,
+   -1,
    0
 };
 
@@ -322,7 +328,8 @@ static SpeexSubmode wb_submode1 = {
    NULL,
    /*No post-filter*/
    NULL,
-   NULL
+   NULL,
+   1750
 };
 
 
@@ -341,7 +348,8 @@ static SpeexSubmode wb_submode2 = {
    split_cb_nogain_unquant,
    &split_cb_high_lbr,
    NULL,
-   NULL
+   NULL,
+   5550
 };
 
 
@@ -360,7 +368,8 @@ static SpeexSubmode wb_submode3 = {
    split_cb_shape_sign_unquant,
    &split_cb_high,
    NULL,
-   NULL
+   NULL,
+   9550
 };
 
 
@@ -395,7 +404,7 @@ SpeexMode speex_wb_mode = {
    &sb_encoder_ctl,
    &sb_decoder_ctl,
    320,
-   27350,
+   -1,
    0
 };
 

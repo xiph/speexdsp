@@ -119,10 +119,11 @@ void usage()
    fprintf (stderr, "  (nothing)             will be played to soundcard\n");
    fprintf (stderr, "\n");  
    fprintf (stderr, "options:\n");
-   fprintf (stderr, "  --help       -h      This help\n");
-   fprintf (stderr, "  --version    -v      Version information\n");
    fprintf (stderr, "  --pf                 Enable post-filter\n");
    fprintf (stderr, "  --no-pf              Disable post-filter (default FOR NOW)\n");
+   fprintf (stderr, "  --help       -h      This help\n");
+   fprintf (stderr, "  --version    -v      Version information\n");
+   fprintf (stderr, "  -V                 Verbose mode (show bit-rate)\n"); 
 }
 
 void version()

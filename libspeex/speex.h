@@ -47,7 +47,8 @@ extern "C" {
 #define SPEEX_GET_VBR_QUALITY 15
 #define SPEEX_SET_COMPLEXITY 16
 #define SPEEX_GET_COMPLEXITY 17
-
+/*Would be SPEEX_SET_FRAME_SIZE, but it's (currently) invalid*/
+#define SPEEX_GET_BITRATE 19
 
 #define SPEEX_NB_MODES 2
 

@@ -1022,6 +1022,9 @@ void nb_encoder_ctl(void *state, int request, void *ptr)
    case SPEEX_GET_COMPLEXITY:
       (*(int*)ptr) = st->complexity;
       break;
+   case SPEEX_GET_BITRATE:
+      (*(int*)ptr) = SUBMODE(bitrate);
+      break;
    default:
       fprintf(stderr, "Unknown nb_ctl request: %d\n", request);
    }
@@ -1038,6 +1041,9 @@ void nb_decoder_ctl(void *state, int request, void *ptr)
       break;
    case SPEEX_GET_FRAME_SIZE:
       (*(int*)ptr) = st->frameSize;
+      break;
+   case SPEEX_GET_BITRATE:
+      (*(int*)ptr) = SUBMODE(bitrate);
       break;
    default:
       fprintf(stderr, "Unknown nb_ctl request: %d\n", request);
