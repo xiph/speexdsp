@@ -686,6 +686,33 @@ void sb_decoder_destroy(void *state)
    speex_free(state);
 }
 
+static void sb_decode_lost(SBDecState *st, float *out)
+{
+   int i;
+   for (i=0;i<st->frame_size;i++)
+      st->exc[i]*=0.8;
+   
+   st->first=1;
+   
+   /* Final signal synthesis from excitation */
+   syn_filt_mem(st->exc, st->interp_qlpc, st->high, st->subframeSize, st->lpcSize, st->mem_sp);
+   
+   /* Up-sample coded low-band and high-band*/
+   for (i=0;i<st->frame_size;i++)
+   {
+      st->x0[(i<<1)]=st->x0d[i];
+      st->x1[(i<<1)]=st->high[i];
+      st->x0[(i<<1)+1]=0;
+      st->x1[(i<<1)+1]=0;
+   }
+   /* Reconstruct the original */
+   fir_mem(st->x0, h0, st->y0, st->full_frame_size, QMF_ORDER, st->g0_mem);
+   fir_mem(st->x1, h1, st->y1, st->full_frame_size, QMF_ORDER, st->g1_mem);
+   for (i=0;i<st->full_frame_size;i++)
+      out[i]=2*(st->y0[i]-st->y1[i]);
+   
+   return;
+}
 
 void sb_decode(void *state, SpeexBits *bits, float *out, int lost)
 {
@@ -696,6 +723,12 @@ void sb_decode(void *state, SpeexBits *bits, float *out, int lost)
    st = state;
    /* Decode the low-band */
    nb_decode(st->st_low, bits, st->x0d, lost);
+
+   if (lost)
+   {
+      sb_decode_lost(st, out);
+      return;
+   }
 
    /*Check "wideband bit"*/
    wideband = speex_bits_peek(bits);

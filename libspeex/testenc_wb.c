@@ -34,7 +34,7 @@ int main(int argc, char **argv)
    speex_encoder_ctl(st, SPEEX_SET_COMPLEXITY, &tmp);
    tmp=3;
    speex_encoder_ctl(st, SPEEX_SET_HIGH_MODE, &tmp);
-   tmp=4;
+   tmp=6;
    speex_encoder_ctl(st, SPEEX_SET_LOW_MODE, &tmp);
    
    if (argc != 4 && argc != 3)
