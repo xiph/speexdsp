@@ -42,6 +42,8 @@
 
 #ifdef _USE_SSE
 #include "cb_search_sse.h"
+#elif defined(ARM4_ASM) || defined(ARM5E_ASM)
+#include "cb_search_arm4.h"
 #else
 
 static void compute_weighted_codebook(const signed char *shape_cb, const spx_sig_t *r, spx_word16_t *resp, spx_word16_t *resp2, spx_word32_t *E, int shape_cb_size, int subvect_size, char *stack)

@@ -69,7 +69,8 @@ noinst_HEADERS = lsp.h \
 	fixed_arm5e.h \
 	fixed_debug.h \
 	fixed_generic.h \
-	cb_search_sse.h
+	cb_search_sse.h \
+	cb_search_arm4.h
 
 
 libspeex_la_LDFLAGS = -version-info @SPEEX_LT_CURRENT@:@SPEEX_LT_REVISION@:@SPEEX_LT_AGE@
