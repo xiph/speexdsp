@@ -612,8 +612,20 @@ int cdbk_offset
          }
 #endif
       }
+
+#ifndef FIXED_POINT
+      {
+         spx_word16_t sgain[3];
+         sgain[0] = 64*gain[0];
+         sgain[1] = 64*gain[1];
+         sgain[2] = 64*gain[2];
+         for (i=0;i<nsf;i++)
+            exc[i]=MULT16_16(sgain[0],SHR(e[2][i],6))+MULT16_16(sgain[1],SHR(e[1][i],6))+MULT16_16(sgain[2],SHR(e[0][i],6));
+      }
+#else
       for (i=0;i<nsf;i++)
-           exc[i]=gain[0]*e[2][i]+gain[1]*e[1][i]+gain[2]*e[0][i];
+         exc[i]=gain[0]*e[2][i]+gain[1]*e[1][i]+gain[2]*e[0][i];
+#endif
    }
 }
 
