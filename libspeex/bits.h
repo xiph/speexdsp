@@ -43,6 +43,8 @@ void frame_bits_init_from(FrameBits *bits, char *bytes, int len);
 
 int frame_bits_write(FrameBits *bits, char *bytes, int max_len);
 
+int frame_bits_write_whole_bytes(FrameBits *bits, char *bytes, int max_len);
+
 void frame_bits_pack(FrameBits *bits, int data, int nbBits);
 
 int frame_bits_unpack_signed(FrameBits *bits, int nbBits);

@@ -20,6 +20,7 @@
 #include <unistd.h>
 #include <getopt.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "modes.h"
 #include "speex.h"
@@ -53,9 +54,10 @@ int main(int argc, char **argv)
    short in[MAX_FRAME_SIZE];
    float input[MAX_FRAME_SIZE];
    int frame_size;
-   SpeexMode *mode;
+   SpeexMode *mode=NULL;
    EncState st;
    FrameBits bits;
+   char cbits[MAX_FRAME_BYTES];
    struct option long_options[] =
    {
       {"wideband", no_argument, NULL, 0},
@@ -115,7 +117,7 @@ int main(int argc, char **argv)
    }
    inFile=argv[optind];
    outFile=argv[optind+1];
-   printf ("input: %s\noutput: %s\n", inFile, outFile);
+
    if (wideband && narrowband)
    {
       fprintf (stderr,"Cannot specify both wideband and narrowband at the same time\n");
@@ -128,25 +130,45 @@ int main(int argc, char **argv)
    if (wideband)
       mode=&mp_wb_mode;
 
-   fin = fopen(inFile, "r");
-   fout = fopen(outFile, "w");
+   if (strcmp(inFile, "-")==0)
+      fin=stdin;
+   else 
+   {
+      fin = fopen(inFile, "r");
+      if (!fin)
+      {
+         perror(inFile);
+         exit(1);
+      }
+   }
+   if (strcmp(outFile,"-")==0)
+      fout=stdout;
+   else 
+   {
+      fout = fopen(outFile, "w");
+      if (!fout)
+      {
+         perror(outFile);
+         exit(1);
+      }
+   }
 
    encoder_init(&st, mode);
    frame_size=mode->frameSize;
 
-   while (!feof(fin))
+   while (1)
    {
       int i,nbBytes;
-      char cbits[MAX_FRAME_BYTES];
       fread(in, sizeof(short), frame_size, fin);
+      if (feof(fin))
+         break;
       for (i=0;i<frame_size;i++)
          input[i]=in[i];
-      frame_bits_reset(&bits);
       encode(&st, input, &bits);
-      nbBytes = frame_bits_write(&bits, cbits, 200);
+      nbBytes = frame_bits_write_whole_bytes(&bits, cbits, 200);
       fwrite(cbits, 1, nbBytes, fout);
    }
-   
+   frame_bits_write(&bits, cbits, 200);
    encoder_destroy(&st);
    exit(0);
    return 1;
