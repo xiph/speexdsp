@@ -31,6 +31,8 @@
    POSSIBILITY OF SUCH DAMAGE.
 */
 
+#ifndef SPEEX_PREPROCESS_H
+#define SPEEX_PREPROCESS_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -125,4 +127,6 @@ int speex_preprocess_ctl(SpeexPreprocessState *st, int request, void *ptr);
 
 #ifdef __cplusplus
 }
+#endif
+
 #endif
