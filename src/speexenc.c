@@ -53,10 +53,6 @@
 #include "misc.h"
 #include <speex/speex_preprocess.h>
 
-#ifdef DISABLE_GLOBAL_POINTERS
-#include <speex/speex_noglobals.h>
-#endif
-
 #if defined WIN32 || defined _WIN32
 #include "getopt_win.h"
 /* We need the following two to set stdout to binary */
@@ -228,7 +224,7 @@ int main(int argc, char **argv)
    int dtx_enabled=0;
    int nbBytes;
    const SpeexMode *mode=NULL;
-   int modeID = 0;
+   int modeID = -1;
    void *st;
    SpeexBits bits;
    char cbits[MAX_FRAME_BYTES];
@@ -475,12 +471,12 @@ int main(int argc, char **argv)
       }
    }
 
-   if (!mode && !rate)
+   if (modeID==-1 && !rate)
    {
       /* By default, use narrowband/8 kHz */
       modeID = SPEEX_MODEID_NB;
       rate=8000;
-   } else if (mode && rate)
+   } else if (modeID!=-1 && rate)
    {
       if (rate>48000)
       {
@@ -508,7 +504,7 @@ int main(int argc, char **argv)
          fprintf (stderr, "Error: sampling rate too low: %d Hz\n", rate);
          exit(1);
       }
-   } else if (!mode)
+   } else if (modeID==-1)
    {
       if (rate>48000)
       {
@@ -541,11 +537,7 @@ int main(int argc, char **argv)
       if (rate!=8000 && rate!=16000 && rate!=32000)
          fprintf (stderr, "Warning: Speex is only optimized for 8, 16 and 32 kHz. It will still work at %d Hz but your mileage may vary\n", rate); 
 
-#ifdef DISABLE_GLOBAL_POINTERS
-   mode = speex_mode_new (modeID);
-#else
-   mode = speex_mode_list[modeID];
-#endif
+   mode = speex_get_mode (modeID);
 
    speex_init_header(&header, rate, 1, mode);
    header.frames_per_packet=nframes;
@@ -793,10 +785,6 @@ int main(int argc, char **argv)
       else
          bytes_written += ret;
    }
-
-#ifdef DISABLE_GLOBAL_POINTERS
-   speex_mode_destroy (mode);
-#endif   
 
    speex_encoder_destroy(st);
    speex_bits_destroy(&bits);
