@@ -90,12 +90,31 @@ static spx_word16_t spx_cos(spx_word16_t x)
 
 #else
 
-#define C1 0.99940307
+/*#define C1 0.99940307
 #define C2 -0.49558072
-#define C3 0.03679168
+#define C3 0.03679168*/
 
+#define C1 0.9999932946
+#define C2 -0.4999124376
+#define C3 0.0414877472
+#define C4 -0.0012712095
+
+
+#define SPX_PI_2 1.5707963268
+static inline spx_word16_t spx_cos(spx_word16_t x)
+{
+   if (x<SPX_PI_2)
+   {
+      x *= x;
+      return C1 + x*(C2+x*(C3+C4*x));
+   } else {
+      x = M_PI-x;
+      x *= x;
+      return -(C1 + x*(C2+x*(C3+C4*x)));
+   }
+}
 #define FREQ_SCALE 1.
-#define ANGLE2X(a) (cos(a))
+#define ANGLE2X(a) (spx_cos(a))
 #define X2ANGLE(x) (acos(x))
 
 #endif
@@ -465,7 +484,7 @@ void lsp_to_lpc(spx_lsp_t *freq,spx_coef_t *ak,int lpcrdr, char *stack)
     float xout1,xout2,xin1,xin2;
     float *Wp;
     float *pw,*n1,*n2,*n3,*n4=NULL;
-    int m = lpcrdr/2;
+    int m = lpcrdr>>1;
 
     Wp = PUSH(stack, 4*m+2, float);
     pw = Wp;
