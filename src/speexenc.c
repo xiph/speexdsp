@@ -74,12 +74,13 @@ int main(int argc, char **argv)
    {
       {"wideband", no_argument, NULL, 0},
       {"narrowband", no_argument, NULL, 0},
+      {"lbr", no_argument, NULL, 0},
       {"help", no_argument, NULL, 0},
       {"version", no_argument, NULL, 0},
       {0, 0, 0, 0}
    };
    int rate, chan, fmt, size;
-
+   int lbr=0;
    ogg_stream_state os;
    ogg_page 		 og;
    ogg_packet 		 op;
@@ -101,6 +102,8 @@ int main(int argc, char **argv)
             narrowband=1;
          else if (strcmp(long_options[option_index].name,"wideband")==0)
                wideband=1;
+         else if (strcmp(long_options[option_index].name,"lbr")==0)
+               lbr=1;
          else if (strcmp(long_options[option_index].name,"help")==0)
          {
             usage();
@@ -184,7 +187,12 @@ int main(int argc, char **argv)
    if (!wideband)
       narrowband=1;
    if (narrowband)
-      mode=&speex_nb_mode;
+   {
+      if (lbr)
+         mode=&speex_nb_lbr_mode;
+      else
+         mode=&speex_nb_mode;
+   }
    if (wideband)
       mode=&speex_wb_mode;
 
@@ -208,6 +216,9 @@ int main(int argc, char **argv)
    {
 
       if (narrowband)
+      if (lbr)
+         op.packet = (unsigned char *)"speex narrow-lbr";
+      else
          op.packet = (unsigned char *)"speex narrowband";
       if (wideband)
          op.packet = (unsigned char *)"speex wideband**";

@@ -243,6 +243,10 @@ int main(int argc, char **argv)
                {
                   rate=8000;
                   mode = &speex_nb_mode;
+               } else if (strncmp((char *)op.packet, "speex narrow-lbr", 12)==0)
+               {
+                  rate=8000;
+                  mode = &speex_nb_lbr_mode;
                } else {
                   fprintf (stderr, "This Ogg file is not a Speex bitstream\n");
                   exit(1);
