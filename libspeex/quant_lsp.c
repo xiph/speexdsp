@@ -35,8 +35,6 @@
 
 #include "misc.h"
 
-/* FIXME: Get rid of this kludge quick before someone gets hurt */
-
 #ifdef FIXED_POINT
 
 #define LSP_LINEAR(i) (SHL(i+1,11))
@@ -98,7 +96,7 @@ static int lsp_quant(spx_word16_t *x, signed char *cdbk, int nbVec, int nbDim)
       for (j=0;j<nbDim;j++)
       {
          tmp=SUB16(x[j],SHL((spx_word16_t)*ptr++,5));
-         dist+=MULT16_16(tmp,tmp);
+         dist=MAC16_16(dist,tmp,tmp);
       }
       if (dist<best_dist || i==0)
       {
@@ -128,7 +126,7 @@ static int lsp_weight_quant(spx_word16_t *x, spx_word16_t *weight, signed char *
       for (j=0;j<nbDim;j++)
       {
          tmp=SUB16(x[j],SHL((spx_word16_t)*ptr++,5));
-         dist+=MULT16_32_Q15(weight[j],MULT16_16(tmp,tmp));
+         dist=MAC16_32_Q15(dist,weight[j],MULT16_16(tmp,tmp));
       }
       if (dist<best_dist || i==0)
       {
@@ -147,7 +145,6 @@ void lsp_quant_nb(spx_lsp_t *lsp, spx_lsp_t *qlsp, int order, SpeexBits *bits)
 {
    int i;
    int id;
-   /* FIXME: get rid of that static allocation */
    spx_word16_t quant_weight[10];
    
    for (i=0;i<order;i++)

@@ -66,7 +66,7 @@ void bw_lpc(spx_word16_t gamma, spx_coef_t *lpc_in, spx_coef_t *lpc_out, int ord
 
 #ifdef FIXED_POINT
 
-/* FIXME: These functions are ugly and probably might too much error */
+/* FIXME: These functions are ugly and probably introduce too much error */
 void signal_mul(spx_sig_t *x, spx_sig_t *y, spx_word32_t scale, int len)
 {
    int i;
@@ -180,8 +180,7 @@ spx_word16_t compute_rms(spx_sig_t *x, int len)
       sum += SHR(sum2,6);
    }
    
-   /*FIXME: remove division*/
-   return SHR(SHL((spx_word32_t)spx_sqrt(1+sum/len),(sig_shift+3)),SIG_SHIFT);
+   return SHR(SHL((spx_word32_t)spx_sqrt(1+DIV32(sum,len)),(sig_shift+3)),SIG_SHIFT);
 }
 
 

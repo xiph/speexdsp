@@ -245,10 +245,7 @@ int cdbk_offset
          x[i][0]=0;
          for (j=0;j<nsf;j++)
          {
-            /* FIXME: Check for overflows */
-            /*x[i][j]+=e[i][0]*r[j]/SIG_SCALING;*/
-            x[i][j]+=SHL(MULT16_32_Q15(r[j], e[i][0]),1);
-            /*printf ("%d\n", (int)r[j]);*/
+            x[i][j]=ADD32(x[i][j],SHL(MULT16_32_Q15(r[j], e[i][0]),1));
          }
       }
    }
@@ -351,16 +348,15 @@ int cdbk_offset
          g1=ptr[1]+32;
          g2=ptr[2]+32;
 
-         /* FIXME: check for possible overflows on sum and MULT16_32 */
-         sum += MULT16_32_Q14(MULT16_16_16(g0,64),C[0]);
-         sum += MULT16_32_Q14(MULT16_16_16(g1,64),C[1]);
-         sum += MULT16_32_Q14(MULT16_16_16(g2,64),C[2]);
-         sum -= MULT16_32_Q14(MULT16_16_16(g0,g1),C[3]);
-         sum -= MULT16_32_Q14(MULT16_16_16(g2,g1),C[4]);
-         sum -= MULT16_32_Q14(MULT16_16_16(g2,g0),C[5]);
-         sum -= MULT16_32_Q15(MULT16_16_16(g0,g0),C[6]);
-         sum -= MULT16_32_Q15(MULT16_16_16(g1,g1),C[7]);
-         sum -= MULT16_32_Q15(MULT16_16_16(g2,g2),C[8]);
+         sum = ADD32(sum,MULT16_32_Q14(MULT16_16_16(g0,64),C[0]));
+         sum = ADD32(sum,MULT16_32_Q14(MULT16_16_16(g1,64),C[1]));
+         sum = ADD32(sum,MULT16_32_Q14(MULT16_16_16(g2,64),C[2]));
+         sum = SUB32(sum,MULT16_32_Q14(MULT16_16_16(g0,g1),C[3]));
+         sum = SUB32(sum,MULT16_32_Q14(MULT16_16_16(g2,g1),C[4]));
+         sum = SUB32(sum,MULT16_32_Q14(MULT16_16_16(g2,g0),C[5]));
+         sum = SUB32(sum,MULT16_32_Q15(MULT16_16_16(g0,g0),C[6]));
+         sum = SUB32(sum,MULT16_32_Q15(MULT16_16_16(g1,g1),C[7]));
+         sum = SUB32(sum,MULT16_32_Q15(MULT16_16_16(g2,g2),C[8]));
 
          /* We could force "safe" pitch values to handle packet loss better */
 
