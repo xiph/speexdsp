@@ -440,12 +440,12 @@ void sb_encode(void *state, float *in, FrameBits *bits)
       filter_ratio=fabs(.01+rh)/(.01+fabs(rl));
 
       fold = filter_ratio<5;
-      printf ("filter_ratio %f\n", filter_ratio);
+      /*printf ("filter_ratio %f\n", filter_ratio);*/
       fold=0;
 
       if (fold) {/* 1 for spectral folding excitation, 0 for stochastic */
          float el=0,eh=0,g;
-         speex_bits_pack(bits, 1, 1);
+         /*speex_bits_pack(bits, 1, 1);*/
          /* Compute "real excitation" */
          residue_mem(sp, st->interp_qlpc, exc, st->subframeSize, st->lpcSize, st->mem_sp2);
 
@@ -470,7 +470,7 @@ void sb_encode(void *state, float *in, FrameBits *bits)
             speex_bits_pack(bits, quant, 5);
             g= .1*exp(quant/9.4);
          }
-         printf ("folding gain: %f\n", g);
+         /*printf ("folding gain: %f\n", g);*/
          g /= filter_ratio;
 
          /* High-band excitation using the low-band excitation and a gain */
@@ -488,7 +488,7 @@ void sb_encode(void *state, float *in, FrameBits *bits)
          float gc;
          float *innov;
 
-         speex_bits_pack(bits, 0, 1);
+         /*speex_bits_pack(bits, 0, 1);*/
          innov = PUSH(st->stack, st->subframeSize);
 
          for (i=0;i<st->subframeSize;i++)
@@ -534,11 +534,11 @@ void sb_encode(void *state, float *in, FrameBits *bits)
          for (i=0;i<st->subframeSize;i++)
             innov[i]=0;
 
-         print_vec(target, st->subframeSize, "\ntarget");
+         /*print_vec(target, st->subframeSize, "\ntarget");*/
          st->innovation_quant(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2, 
                                 st->innovation_params, st->lpcSize, st->subframeSize, 
                                 innov, bits, st->stack);
-         print_vec(target, st->subframeSize, "after");
+         /*print_vec(target, st->subframeSize, "after");*/
 
          for (i=0;i<st->subframeSize;i++)
             exc[i] += innov[i]/gc;
@@ -748,14 +748,14 @@ void sb_decode(void *state, FrameBits *bits, float *out)
       
       for (i=0;i<st->subframeSize;i++)
          exc[i]=0;
-      if (speex_bits_unpack_unsigned(bits, 1))
+      if (0/*speex_bits_unpack_unsigned(bits, 1)*/)
       {
          float g;
          int quant;
          quant = speex_bits_unpack_unsigned(bits, 5);
          g= .1*exp(quant/9.4);
          
-         printf ("unquant folding gain: %f\n", g);
+         /*printf ("unquant folding gain: %f\n", g);*/
          g /= filter_ratio;
          
          g *= .8;
@@ -810,7 +810,7 @@ void sb_decode(void *state, FrameBits *bits, float *out)
       }
       st->pf_bwlpc[0]=1;
       
-      print_vec(st->pf_lpc, st->pf_order, "post-filter LPC");
+      /*print_vec(st->pf_lpc, st->pf_order, "post-filter LPC");*/
       residue_mem(out, st->pf_lpc, st->pf_exc, st->full_frame_size, 
                   st->pf_order, st->mem_pf_exc1);
       for (i=0;i<st->full_frame_size;i++)
@@ -820,7 +820,7 @@ void sb_decode(void *state, FrameBits *bits, float *out)
       for (i=0;i<st->full_frame_size;i++)
          e2 += st->pf_exc[i]*st->pf_exc[i];
       g=sqrt(e1/(e2+.1));
-      printf ("post-filter gain: %f\n", g);
+      /*printf ("post-filter gain: %f\n", g);*/
       for (i=0;i<st->full_frame_size;i++)
          st->pf_exc[i]=g*st->pf_exc[i];
 

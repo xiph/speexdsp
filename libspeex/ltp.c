@@ -521,7 +521,7 @@ float *exc2
 
    speex_bits_pack(bits, best_pitch-start, params->pitch_bits);
    speex_bits_pack(bits, best_gain_index, params->gain_bits);
-   printf ("encode pitch: %d %d\n", best_pitch, best_gain_index);
+   /*printf ("encode pitch: %d %d\n", best_pitch, best_gain_index);*/
    for (i=0;i<nsf;i++)
       exc[i]=best_exc[i];
 
@@ -552,7 +552,7 @@ float *stack
    pitch = speex_bits_unpack_unsigned(bits, params->pitch_bits);
    pitch += start;
    gain_index = speex_bits_unpack_unsigned(bits, params->gain_bits);
-   printf ("decode pitch: %d %d\n", pitch, gain_index);
+   /*printf ("decode pitch: %d %d\n", pitch, gain_index);*/
    gain[0] = gain_cdbk[gain_index*12];
    gain[1] = gain_cdbk[gain_index*12+1];
    gain[2] = gain_cdbk[gain_index*12+2];

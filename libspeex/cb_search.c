@@ -664,7 +664,7 @@ float *stack
       else
          speex_bits_pack(bits, 0, 1);
       speex_bits_pack(bits, gain_ind[i], 3);
-      printf ("encode split: %d %d %f\n", i, ind[i], gains[i]);
+      /*printf ("encode split: %d %d %f\n", i, ind[i], gains[i]);*/
 
    }
    /* Put everything back together */
@@ -746,7 +746,7 @@ float *stack
       gains[i] *= sign[i];
       gains[i] *= exc_energy;
 
-      printf ("decode split: %d %d %f\n", i, ind[i], gains[i]);
+      /*printf ("decode split: %d %d %f\n", i, ind[i], gains[i]);*/
    }
 
    /* Compute decoded excitation */
