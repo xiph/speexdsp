@@ -33,17 +33,17 @@ AM_PROG_LIBTOOL
 
 AC_C_BIGENDIAN
 AC_CHECK_HEADERS(sys/soundcard.h)
-src=src
-AC_CHECK_HEADERS(ogg/ogg.h, [], [src=])
-AC_CHECK_LIB(m, sin)
 
-AC_CHECK_LIB(ogg, ogg_stream_init, [LIB_OGG='-logg'; AC_SUBST(LIB_OGG)] , [ src=])
+AC_PATH_LIBOGG
+if test "$have_libogg" = yes; then
+   src=src
+else
+   src=
+fi
 AC_SUBST(src)
 
-dnl AC_CHECK_LIB(ogg, ogg_stream_init, [LIB_OGG='-logg'; AC_SUBST(LIB_OGG)] , [ echo; echo "error: libogg is now required by speex"; echo "Get it from: http://www.ogg.org/ogg/index.html"; exit 1 ])
+AC_CHECK_LIB(m, sin)
 
-AC_FUNC_ALLOCA
-dnl AC_DEFINE(VERSION, "$VERSION")
 AC_DEFINE_UNQUOTED(VERSION, "${VERSION}")
 
 dnl Output the makefiles and version.h.
