@@ -193,8 +193,8 @@ void filter_mem2(spx_sig_t *x, spx_coef_t *num, spx_coef_t *den, spx_sig_t *y, i
    for (i=0;i<N;i++)
    {
       int xh,xl,yh,yl;
-      xi=x[i];
-      yi = xi + (mem[0]<<2);
+      xi=SATURATE(x[i],805306368);
+      yi = SATURATE(ADD32(xi, SHL(mem[0],2)),805306368);
       nyi = -yi;
       xh = xi>>15; xl=xi&0x00007fff; yh = yi>>15; yl=yi&0x00007fff; 
       for (j=0;j<ord-1;j++)
@@ -214,8 +214,8 @@ void iir_mem2(spx_sig_t *x, spx_coef_t *den, spx_sig_t *y, int N, int ord, spx_m
    for (i=0;i<N;i++)
    {
       int yh,yl;
-      xi=x[i];
-      yi = xi + (mem[0]<<2);
+      xi=SATURATE(x[i],805306368);
+      yi = SATURATE(xi + (mem[0]<<2),805306368);
       nyi = -yi;
       yh = yi>>15; yl=yi&0x00007fff; 
       for (j=0;j<ord-1;j++)
@@ -236,7 +236,7 @@ void fir_mem2(spx_sig_t *x, spx_coef_t *num, spx_sig_t *y, int N, int ord, spx_m
    for (i=0;i<N;i++)
    {
       int xh,xl;
-      xi=x[i];
+      xi=SATURATE(x[i],805306368);
       yi = xi + (mem[0]<<2);
       xh = xi>>15; xl=xi&0x00007fff;
       for (j=0;j<ord-1;j++)
@@ -244,7 +244,7 @@ void fir_mem2(spx_sig_t *x, spx_coef_t *num, spx_sig_t *y, int N, int ord, spx_m
          mem[j] = MAC16_32_Q15(mem[j+1], num[j+1],xi);
       }
       mem[ord-1] = MULT16_32_Q15(num[ord],xi);
-      y[i] = yi;
+      y[i] = SATURATE(yi,805306368);
    }
 
 }

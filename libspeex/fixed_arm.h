@@ -38,6 +38,8 @@
 #define SHR(a,shift) ((a) >> (shift))
 #define SHL(a,shift) ((a) << (shift))
 
+#define SATURATE(x,a) ((x)>(a) ? (a) : (x)<-(a) ? -(a) : (x))
+
 
 #define ADD16(a,b) ((short)((short)(a)+(short)(b)))
 #define SUB16(a,b) ((a)-(b))
@@ -99,6 +101,9 @@ static inline spx_word32_t MAC16_32_Q11(spx_word32_t a, spx_word16_t x, spx_word
   return(res);
 }
 
+#define MAC16_16_Q11(c,a,b)     (ADD32((c),SHR(MULT16_16((a),(b)),11)))
+
+#define MULT16_16_Q11(a,b) (SHR(MULT16_16((a),(b)),11))
 #define MULT16_16_Q13(a,b) (SHR(MULT16_16((a),(b)),13))
 #define MULT16_16_Q14(a,b) (SHR(MULT16_16((a),(b)),14))
 #define MULT16_16_Q15(a,b) (SHR(MULT16_16((a),(b)),15))

@@ -180,7 +180,6 @@ void open_loop_nbest_pitch(spx_sig_t *sw, int start, int end, int len, int *pitc
 }
 
 
-
 /** Finds the best quantized 3-tap pitch predictor by analysis by synthesis */
 static spx_word64_t pitch_gain_search_3tap(
 spx_sig_t target[],                 /* Target vector */
@@ -225,7 +224,6 @@ int cdbk_offset
    e[0]=tmp2;
    e[1]=tmp2+nsf;
    e[2]=tmp2+2*nsf;
-   
    for (i=2;i>=0;i--)
    {
       int pp=pitch+1-i;
@@ -249,7 +247,7 @@ int cdbk_offset
          {
             /* FIXME: Check for overflows */
             /*x[i][j]+=e[i][0]*r[j]/SIG_SCALING;*/
-            x[i][j]+=MULT16_32_Q13(SHR(r[j],1), e[i][0]);
+            x[i][j]+=SHL(MULT16_32_Q15(r[j], e[i][0]),1);
             /*printf ("%d\n", (int)r[j]);*/
          }
       }
@@ -386,14 +384,15 @@ int cdbk_offset
 
 #ifdef FIXED_POINT
    for (i=0;i<nsf;i++)
-     exc[i]=SHL(MULT16_32_Q14(SHL(gain[0],7),e[2][i])+MULT16_32_Q14(SHL(gain[1],7),e[1][i])+MULT16_32_Q14(SHL(gain[2],7),e[0][i]),1);
+     exc[i]=SHL(MULT16_32_Q15(SHL(gain[0],7),e[2][i])+MULT16_32_Q15(SHL(gain[1],7),e[1][i])+MULT16_32_Q15(SHL(gain[2],7),e[0][i]),2);
    
    err=0;
    for (i=0;i<nsf;i++)
    {
-      spx_sig_t perr=target[i]-SHL((MULT16_32_Q14(SHL(gain[0],7),x[2][i])+MULT16_32_Q14(SHL(gain[1],7),x[1][i])+MULT16_32_Q14(SHL(gain[2],7),x[0][i])),1);
+      spx_sig_t perr=target[i]-SHL((MULT16_32_Q15(SHL(gain[0],7),x[2][i])+MULT16_32_Q15(SHL(gain[1],7),x[1][i])+MULT16_32_Q15(SHL(gain[2],7),x[0][i])),2);
       spx_word16_t perr2 = PSHR(perr,15);
       err = ADD64(err,MULT16_16(perr2,perr2));
+      
    }
 #else
    for (i=0;i<nsf;i++)
@@ -624,7 +623,7 @@ int cdbk_offset
 #ifdef FIXED_POINT
       {
          for (i=0;i<nsf;i++)
-            exc[i]=SHL(MULT16_32_Q14(SHL(sgain[0],7),e[2][i])+MULT16_32_Q14(SHL(sgain[1],7),e[1][i])+MULT16_32_Q14(SHL(sgain[2],7),e[0][i]),1);
+            exc[i]=SHL(MULT16_32_Q15(SHL(sgain[0],7),e[2][i])+MULT16_32_Q15(SHL(sgain[1],7),e[1][i])+MULT16_32_Q15(SHL(sgain[2],7),e[0][i]),2);
       }
 #else
       for (i=0;i<nsf;i++)

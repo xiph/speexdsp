@@ -780,7 +780,7 @@ int nb_encode(void *state, short *in, SpeexBits *bits)
       /* Update target for adaptive codebook contribution */
       syn_percep_zero(exc, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2, res, st->subframeSize, st->lpcSize, stack);
       for (i=0;i<st->subframeSize;i++)
-         target[i]-=res[i];
+         target[i]=SATURATE(SUB32(target[i],res[i]),805306368);
 
 
       /* Quantization of innovation */

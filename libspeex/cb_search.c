@@ -143,7 +143,7 @@ int   complexity
       {
          spx_word32_t resj=0;
          for (k=0;k<=j;k++)
-            resj = MAC16_32_Q11(resj,shape[k],r[j-k]);
+            resj = MAC16_16_Q11(resj,shape[k],r[j-k]);
 #ifndef FIXED_POINT
          resj *= 0.03125;
 #endif
@@ -236,7 +236,7 @@ int   complexity
 #ifdef FIXED_POINT
                   g=sign*shape_cb[rind*subvect_size+m];
                   for (n=subvect_size*(i+1);n<nsf;n++,q++)
-                     t[n] = SUB32(t[n],MULT16_32_Q11(g,r[q]));
+                     t[n] = SUB32(t[n],MULT16_16_Q11(g,r[q]));
 #else
                   g=sign*0.03125*shape_cb[rind*subvect_size+m];
                   for (n=subvect_size*(i+1);n<nsf;n++,q++)

@@ -133,8 +133,10 @@ static inline int MULT16_16(int a, int b)
    spx_mips++;
    return res;
 }
+#define MULT16_16B(a,b)     (((short)(a))*((short)(b)))
 
 #define MAC16_16(c,a,b)     (ADD32((c),MULT16_16((a),(b))))
+#define MAC16_16_Q11(c,a,b)     (ADD32((c),SHR(MULT16_16((a),(b)),11)))
 
 #define MULT16_32_Q12(a,b) ADD32(MULT16_16((a),SHR((b),12)), SHR(MULT16_16((a),((b)&0x00000fff)),12))
 #define MULT16_32_Q13(a,b) ADD32(MULT16_16((a),SHR((b),13)), SHR(MULT16_16((a),((b)&0x00001fff)),13))
@@ -146,7 +148,29 @@ static inline int MULT16_16(int a, int b)
 #define MULT16_32_Q15(a,b) ADD32(MULT16_16((a),SHR((b),15)), SHR(MULT16_16((a),((b)&0x00007fff)),15))
 #define MAC16_32_Q15(c,a,b) ADD32(c,ADD32(MULT16_16((a),SHR((b),15)), SHR(MULT16_16((a),((b)&0x00007fff)),15)))
 
+static inline int SATURATE(int a, int b)
+{
+   if (a>b)
+      a=b;
+   if (a<-b)
+      a = -b;
+   return a;
+}
 
+static inline short MULT16_16_Q11(int a, int b) 
+{
+   long long res;
+   if (!VERIFY_SHORT(a) || !VERIFY_SHORT(b))
+   {
+      fprintf (stderr, "MULT16_16_Q11: inputs are not short: %d %d\n", a, b);
+   }
+   res = ((long long)a)*b;
+   res >>= 11;
+   if (!VERIFY_SHORT(res))
+      fprintf (stderr, "MULT16_16_Q11: output is not short: %d*%d=%d\n", a, b, res);
+   spx_mips++;
+   return res;
+}
 static inline short MULT16_16_Q13(int a, int b) 
 {
    long long res;
