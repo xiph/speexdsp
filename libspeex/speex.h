@@ -13,7 +13,7 @@ typedef struct EncState {
    float *buf2;
    float *autocorr;
    float *lpc;
-   float *lsf;
+   float *lsp;
    float *rc;
 } EncState;
 

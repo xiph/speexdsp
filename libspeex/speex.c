@@ -1,8 +1,13 @@
-#include "speex.h"
-#include "lpc.h"
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include "speex.h"
+#include "lpc.h"
+#include "lsp.h"
+
+#ifndef M_PI
+#define M_PI           3.14159265358979323846  /* pi */
+#endif
 
 void encoder_init(EncState *st)
 {
@@ -22,7 +27,7 @@ void encoder_init(EncState *st)
    st->buf2 = malloc(st->windowSize*sizeof(float));
    st->lpc = malloc(st->lpcSize*sizeof(float));
    st->autocorr = malloc(st->lpcSize*sizeof(float));
-   st->lsf = malloc(st->lpcSize*sizeof(float));
+   st->lsp = malloc(st->lpcSize*sizeof(float));
    st->rc = malloc(st->lpcSize*sizeof(float));
 }
 
@@ -33,13 +38,13 @@ void encoder_destroy(EncState *st)
    free(st->buf2);
    free(st->lpc);
    free(st->autocorr);
-   free(st->lsf);
+   free(st->lsp);
    free(st->rc);
 }
 
 void encode(EncState *st, float *in, int *outSize, void *bits)
 {
-   int i;
+   int i, roots;
    float error;
 
    /* Copy new data in input buffer */
@@ -58,7 +63,10 @@ void encode(EncState *st, float *in, int *outSize, void *bits)
    error = wld(st->lpc, st->autocorr, st->rc, st->lpcSize-1);
    printf ("prediction error = %f, R[0] = %f, gain = %f\n", error, st->autocorr[0], 
            st->autocorr[0]/error);
-
+   roots=lpc_to_lsp (st->lpc, st->lpcSize-1, st->lsp, 4, 0.02);
+   for (i=0;i<st->lpcSize-1;i++)
+      printf("%f ", st->lsp[i]);
+   printf ("\nfound %d roots\n", roots);
 }
 
 
