@@ -35,7 +35,9 @@ void encoder_init(EncState *st)
    for (i=0;i<st->lpcSize+1;i++)
       st->lagWindow[i]=exp(-.5*sqr(2*M_PI*.01*i));
    st->lsp = malloc(st->lpcSize*sizeof(float));
+   st->old_lsp = malloc(st->lpcSize*sizeof(float));
    st->rc = malloc(st->lpcSize*sizeof(float));
+   st->first = 1;
 }
 
 void encoder_destroy(EncState *st)
@@ -47,6 +49,7 @@ void encoder_destroy(EncState *st)
    free(st->autocorr);
    free(st->lagWindow);
    free(st->lsp);
+   free(st->old_lsp);
    free(st->rc);
 }
 
@@ -94,6 +97,11 @@ void encode(EncState *st, float *in, int *outSize, void *bits)
    /* Compute "weighted" residue */
 
    /* Find pitch */
+
+   for (i=0;i<st->lpcSize;i++)
+      st->old_lsp[i] = st->lsp[i];
+   st->first = 0;
+
 }
 
 

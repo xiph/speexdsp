@@ -3,19 +3,22 @@
 
 
 typedef struct EncState {
-   int    frameSize;
-   int    subframeSize;
-   int    lpcSize;
-   int    bufSize;
-   float *inBuf;
-   float *window;
-   int    windowSize;
-   float *buf2;
-   float *autocorr;
-   float *lagWindow;
-   float *lpc;
-   float *lsp;
-   float *rc;
+   int    frameSize;      /* Size of frames */
+   int    subframeSize;   /* Size of sub-frames */
+   int    nbSubframes;    /* Number of sub-frames */
+   int    lpcSize;        /* LPC order */
+   int    bufSize;        /* Buffer size */
+   float *inBuf;          /* Input buffer */
+   float *window;         /* Temporary (Hanning) window */
+   int    windowSize;     /* Window length */
+   float *buf2;           /* 2nd temporary buffer */
+   float *autocorr;       /* auto-correlation */
+   float *lagWindow;      /* Window applied to auto-correlation */
+   float *lpc;            /* LPCs for current frame */
+   float *lsp;            /* LSPs for current frame */
+   float *old_lsp;        /* LSPs for previous frame */
+   float *rc;             /* Reflection coefficients */
+   int    first;          /* Is this the first frame? */
 } EncState;
 
 typedef struct DecState {
