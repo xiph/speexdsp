@@ -1,4 +1,4 @@
-/* Copyright (C) 2002 Jean-Marc Valin 
+/* Copyright (C) 2002-2003 Jean-Marc Valin 
    File: speexdec.c
 
    Redistribution and use in source and binary forms, with or without
@@ -247,13 +247,13 @@ void usage()
 void version()
 {
    printf ("speexdec (Speex decoder) version " VERSION " (compiled " __DATE__ ")\n");
-   printf ("Copyright (C) 2002 Jean-Marc Valin\n");
+   printf ("Copyright (C) 2002-2003 Jean-Marc Valin\n");
 }
 
 void version_short()
 {
    printf ("speexdec version " VERSION "\n");
-   printf ("Copyright (C) 2002 Jean-Marc Valin\n");
+   printf ("Copyright (C) 2002-2003 Jean-Marc Valin\n");
 }
 
 static void *process_header(ogg_packet *op, int enh_enabled, int *frame_size, int *rate, int *nframes, int forceMode, int *channels, SpeexStereoState *stereo, int *extra_headers)

@@ -1,4 +1,4 @@
-/* Copyright (C) 2002 Jean-Marc Valin 
+/* Copyright (C) 2002-2003 Jean-Marc Valin 
    File: speexenc.c
 
    Redistribution and use in source and binary forms, with or without
@@ -139,13 +139,13 @@ static int read_samples(FILE *fin,int frame_size, int bits, int channels, int ls
 void version()
 {
    printf ("speexenc (Speex encoder) version " VERSION " (compiled " __DATE__ ")\n");
-   printf ("Copyright (C) 2002 Jean-Marc Valin\n");
+   printf ("Copyright (C) 2002-2003 Jean-Marc Valin\n");
 }
 
 void version_short()
 {
    printf ("speexenc version " VERSION "\n");
-   printf ("Copyright (C) 2002 Jean-Marc Valin\n");
+   printf ("Copyright (C) 2002-2003 Jean-Marc Valin\n");
 }
 
 void usage()
