@@ -92,7 +92,7 @@ typedef struct SpeexPreprocessState {
 } SpeexPreprocessState;
 
 /** Creates a new preprocessing state */
-SpeexPreprocessState *speex_preprocess_state_init(int frame_size);
+SpeexPreprocessState *speex_preprocess_state_init(int frame_size, int sampling_rate);
 
 /** Destroys a denoising state */
 void speex_preprocess_state_destroy(SpeexPreprocessState *st);

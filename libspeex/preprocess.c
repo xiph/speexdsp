@@ -80,7 +80,7 @@ static void conj_window(float *w, int len)
    }
 }
 
-SpeexPreprocessState *speex_preprocess_state_init(int frame_size)
+SpeexPreprocessState *speex_preprocess_state_init(int frame_size, int sampling_rate)
 {
    int i;
    int N, N3, N4;
@@ -171,8 +171,10 @@ SpeexPreprocessState *speex_preprocess_state_init(int frame_size)
 
    for (i=0;i<N;i++)
    {
-      float ff=((float)i)*128.0/4000.0;
+      float ff=((float)i)*.5*sampling_rate/((float)N);
       st->loudness_weight[i] = .35-.35*ff/16000+.73*exp(-.5*(ff-3800)*(ff-3800)/9e5);
+      if (st->loudness_weight[i]<.01)
+         st->loudness_weight[i]=.01;
       st->loudness_weight[i] *= st->loudness_weight[i];
    }
 
@@ -554,7 +556,7 @@ int speex_preprocess(SpeexPreprocessState *st, float *x, float *echo)
    st->nb_preprocess++;
 
    /* Noise estimation always updated for the 20 first times */
-   if (st->nb_adapt<15)
+   if (st->nb_adapt<20)
       /*if (st->nb_adapt<25 && st->nb_adapt>15)*/
    {
       update_noise(st, ps, echo);

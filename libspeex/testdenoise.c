@@ -11,9 +11,10 @@ int main()
    int i;
    SpeexPreprocessState *st;
 
-   st = speex_preprocess_state_init(NN);
+   st = speex_preprocess_state_init(NN, 8000);
    i=1;
    speex_preprocess_ctl(st, SPEEX_PREPROCESS_SET_DENOISE, &i);
+   speex_preprocess_ctl(st, SPEEX_PREPROCESS_SET_AGC, &i);
    while (1)
    {
       int vad;
@@ -26,7 +27,7 @@ int main()
       vad = speex_preprocess(st, x, NULL);
       for (i=0;i<NN;i++)
          out[i]=x[i];
-      fprintf (stderr, "%d\n", vad);
+      /*fprintf (stderr, "%d\n", vad);*/
       fwrite(out, sizeof(short), NN, stdout);
    }
    speex_preprocess_state_destroy(st);
