@@ -157,7 +157,7 @@ static SpeexSBMode sb_wb_mode = {
    lsp_quant_high,
    lsp_unquant_high,
    /*Innovation quantization*/
-   split_cb_search_nogain,
+   split_cb_search_nogain2,
    split_cb_nogain_unquant,
    &split_cb_high
 };

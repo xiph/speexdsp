@@ -605,7 +605,7 @@ void *sb_decoder_init(SpeexMode *m)
    st->nbSubframes = 4;
    st->lpcSize=8;
    st->pf_order=15;
-   st->pf_gamma=.1;
+   st->pf_gamma=.05;
 
    st->first=1;
    st->stack = calloc(10000, sizeof(float));
