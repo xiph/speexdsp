@@ -136,6 +136,11 @@ SpeexPreprocessState *speex_preprocess_state_init(int frame_size, int sampling_r
    st->outbuf = (float*)speex_alloc(N3*sizeof(float));
    st->echo_noise = (float*)speex_alloc(N*sizeof(float));
 
+   st->S = (float*)speex_alloc(N*sizeof(float));
+   st->Smin = (float*)speex_alloc(N*sizeof(float));
+   st->Stmp = (float*)speex_alloc(N*sizeof(float));
+   st->update_prob = (float*)speex_alloc(N*sizeof(float));
+
    st->noise_bands = (float*)speex_alloc(NB_BANDS*sizeof(float));
    st->noise_bands2 = (float*)speex_alloc(NB_BANDS*sizeof(float));
    st->speech_bands = (float*)speex_alloc(NB_BANDS*sizeof(float));
@@ -212,6 +217,11 @@ void speex_preprocess_state_destroy(SpeexPreprocessState *st)
    speex_free(st->last_ps);
    speex_free(st->loudness_weight);
    speex_free(st->echo_noise);
+
+   speex_free(st->S);
+   speex_free(st->Smin);
+   speex_free(st->Stmp);
+   speex_free(st->update_prob);
 
    speex_free(st->noise_bands);
    speex_free(st->noise_bands2);
@@ -528,6 +538,38 @@ int speex_preprocess(SpeexPreprocessState *st, float *x, float *echo)
    for (i=1;i<N;i++)
       ps[i]=1+st->frame[2*i-1]*st->frame[2*i-1] + st->frame[2*i]*st->frame[2*i];
 
+   for (i=1;i<N-1;i++)
+      st->S[i] = 100+ .8*st->S[i] + .05*ps[i-1]+.1*ps[i]+.05*ps[i+1];
+
+   if (st->nb_preprocess<1)
+   {
+      for (i=1;i<N-1;i++)
+         st->Smin[i] = st->Stmp[i] = st->S[i]+100;
+   }
+
+   if (st->nb_preprocess%80==0)
+   {
+      for (i=1;i<N-1;i++)
+      {
+         st->Smin[i] = min(st->Stmp[i], st->S[i]);
+         st->Stmp[i] = st->S[i];
+      }
+   } else {
+      for (i=1;i<N-1;i++)
+      {
+         st->Smin[i] = min(st->Smin[i], st->S[i]);
+         st->Stmp[i] = min(st->Stmp[i], st->S[i]);      
+      }
+   }
+   for (i=1;i<N-1;i++)
+   {
+      st->update_prob[i] *= .2;
+      if (st->S[i] > 5*st->Smin[i])
+         st->update_prob[i] += .8;
+      /*fprintf (stderr, "%f ", st->S[i]/st->Smin[i]);*/
+      /*fprintf (stderr, "%f ", st->update_prob[i]);*/
+   }
+   /*fprintf (stderr, "\n");*/
    energy=0;
    for (i=1;i<N;i++)
       energy += log(100+ps[i]);
@@ -607,7 +649,6 @@ int speex_preprocess(SpeexPreprocessState *st, float *x, float *echo)
       if (min_gamma<.01)
          min_gamma = .01;
 #endif
-      min_gamma = .6;
 
       if (gamma<min_gamma)
          gamma=min_gamma;
@@ -670,6 +711,11 @@ int speex_preprocess(SpeexPreprocessState *st, float *x, float *echo)
       st->last_update=0;
    } else {
       st->last_update++;
+      for (i=1;i<N-1;i++)
+      {
+         if (st->update_prob[i]<.5)
+            st->noise[i] = .90*st->noise[i] + .1*st->ps[i];
+      }
    }
 
 
