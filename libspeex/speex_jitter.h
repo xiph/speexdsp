@@ -59,11 +59,14 @@ typedef struct SpeexJitter {
    void *dec;
    int frame_size;
    int frame_time;
-
-   int underflow_count;
-   int drop_frame;
-   int interp_frame;
-
+   int reset_state;
+   
+   int lost_count;
+   float drift_average;
+   float late_ratio;
+   float ontime_ratio;
+   float early_ratio;
+   float loss_rate;
 } SpeexJitter;
 
 void speex_jitter_init(SpeexJitter *jitter, void *decoder, int sampling_rate);
@@ -73,6 +76,10 @@ void speex_jitter_destroy(SpeexJitter *jitter);
 void speex_jitter_put(SpeexJitter *jitter, char *packet, int len, int time);
 
 void speex_jitter_get(SpeexJitter *jitter, short *out);
+
+int speex_jitter_get_pointer_timestamp(SpeexJitter *jitter);
+
+int speex_jitter_set_buffersize(SpeexJitter *jitter, int size);
 
 #ifdef __cplusplus
 }

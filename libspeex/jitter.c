@@ -39,6 +39,7 @@
 #include "speex.h"
 #include "speex_bits.h"
 #include "speex_jitter.h"
+#include <stdio.h>
 
 void speex_jitter_init(SpeexJitter *jitter, void *decoder, int sampling_rate)
 {
@@ -56,13 +57,12 @@ void speex_jitter_init(SpeexJitter *jitter, void *decoder, int sampling_rate)
    speex_bits_init(&jitter->current_packet);
    jitter->valid_bits = 0;
 
-   jitter->buffer_size = 10;
+   jitter->buffer_size = 4;
 
    jitter->pointer_timestamp = -jitter->frame_time * jitter->buffer_size;
-   
-   jitter->underflow_count = 0;
-   jitter->drop_frame = 0;
-   jitter->interp_frame = 0;
+   jitter->reset_state = 1;
+   jitter->lost_count = 0;
+   jitter->loss_rate = 0;
 }
 
 void speex_jitter_destroy(SpeexJitter *jitter)
@@ -73,12 +73,28 @@ void speex_jitter_destroy(SpeexJitter *jitter)
 void speex_jitter_put(SpeexJitter *jitter, char *packet, int len, int timestamp)
 {
    int i,j;
-
+   int timestamp_offset;
+   int arrival_margin;
+   
+   if (jitter->reset_state)
+   {
+      jitter->reset_state=0;
+      jitter->pointer_timestamp = timestamp-jitter->frame_time * jitter->buffer_size;
+      jitter->drift_average = 0;
+      jitter->late_ratio = 0;
+      jitter->early_ratio = 0;
+      jitter->ontime_ratio = 0;
+   }
+   
    /* Cleanup buffer (remove old packets that weren't played) */
    for (i=0;i<SPEEX_JITTER_MAX_BUFFER_SIZE;i++)
    {
       if (jitter->timestamp[i]<jitter->pointer_timestamp)
+      {
          jitter->len[i]=-1;
+         /*if (jitter->timestamp[i] != -1)
+            fprintf (stderr, "discarding %d %d\n", jitter->timestamp[i], jitter->pointer_timestamp);*/
+      }
    }
 
    /*Find an empty slot in the buffer*/
@@ -88,8 +104,10 @@ void speex_jitter_put(SpeexJitter *jitter, char *packet, int len, int timestamp)
          break;
    }
 
+   /*fprintf(stderr, "%d %d %f\n", timestamp, jitter->pointer_timestamp, jitter->drift_average);*/
    if (i==SPEEX_JITTER_MAX_BUFFER_SIZE)
    {
+      fprintf (stderr, "Buffer is full, discarding frame\n");
       /*No place left in the buffer*/
       
       /*skip some frame(s) */
@@ -104,34 +122,70 @@ void speex_jitter_put(SpeexJitter *jitter, char *packet, int len, int timestamp)
    jitter->timestamp[i]=timestamp;
    jitter->len[i]=len;
    
-   /* Detect when it's time to drop frames (too much stuff in buffer) */
-   if (timestamp-jitter->pointer_timestamp > (jitter->buffer_size+3)*jitter->frame_time)
-      jitter->drop_frame = 1;
-
-   /*Detect when it's time to interpolate a frame (not wnough stuff in buffer) */
-   if (timestamp-jitter->pointer_timestamp < (jitter->buffer_size-3)*jitter->frame_time)
-      jitter->underflow_count++;
-   else
-      jitter->underflow_count=0;
-   if (jitter->underflow_count > 10)
+   /* Don't count late packets when adjusting the synchro (we're taking care of them elsewhere) */
+   if (timestamp > jitter->pointer_timestamp)
    {
-      jitter->underflow_count=0;
-      jitter->interp_frame = 1;
+      timestamp_offset = timestamp-jitter->pointer_timestamp - (jitter->buffer_size+1)*jitter->frame_time;
+      jitter->drift_average = .99*jitter->drift_average + .01*timestamp_offset;
+   } else {
+      fprintf (stderr, "frame for timestamp %d arrived too late\n", timestamp);
    }
 
    /* Adjust the buffer size depending on network conditions */
+   arrival_margin = (timestamp - jitter->pointer_timestamp - jitter->frame_time) - (int)jitter->drift_average;
+   if (arrival_margin >= -2*jitter->frame_time)
+   {
+      jitter->late_ratio *= .99;
+      jitter->early_ratio *= .99;
+      jitter->ontime_ratio *= .99;
+   }
+   
+   if (arrival_margin < 0 && arrival_margin >= -3*jitter->frame_time)
+   {
+      jitter->late_ratio += .01;
+   } else if (arrival_margin <= jitter->frame_time && arrival_margin >= 0) 
+   {
+      jitter->ontime_ratio += .01;
+   } else if (arrival_margin > jitter->frame_time)
+   {
+      jitter->early_ratio += .01;
+   }
+   
+   if (jitter->late_ratio + jitter->ontime_ratio < .01 && jitter->early_ratio > .8)
+   {
+      jitter->buffer_size--;
+      jitter->early_ratio = 0;
+      jitter->drift_average += jitter->frame_time;
+      fprintf (stderr, "buffer %d -> %d\n", jitter->buffer_size+1, jitter->buffer_size);
+   }
+   if (jitter->late_ratio > .03)
+   {
+      jitter->buffer_size++;
+      jitter->late_ratio = 0;
+      jitter->drift_average -= jitter->frame_time;
+      fprintf (stderr, "buffer %d -> %d\n", jitter->buffer_size-1, jitter->buffer_size);
+   }
+   /*fprintf (stderr, "margin : %d %d %f %f %f %f\n", arrival_margin, jitter->buffer_size, 100*jitter->loss_rate, 100*jitter->late_ratio, 100*jitter->ontime_ratio, 100*jitter->early_ratio);*/
 }
 
 void speex_jitter_get(SpeexJitter *jitter, short *out)
 {
    int i;
    int ret;
+   int drop, interp;
+   int drop_margin, interp_margin;
    
-   /* Handle frame interpolation (receiving too fast) */
-   if (jitter->interp_frame)
+   drop_margin = (1+jitter->buffer_size) * jitter->frame_time/2;
+   interp_margin = jitter->frame_time/2;
+   /*drop_margin = 15;
+   interp_margin = 15;*/
+   
+   /* Handle frame interpolation (playing too fast) */
+   if (-jitter->drift_average > interp_margin)
    {
+      fprintf (stderr, "interpolate frame\n");
       speex_decode_int(jitter->dec, NULL, out);
-      jitter->interp_frame = 0;
+      jitter->drift_average += jitter->frame_time;
       return;
    }
 
@@ -139,10 +193,11 @@ void speex_jitter_get(SpeexJitter *jitter, short *out)
    jitter->pointer_timestamp += jitter->frame_time;
 
    /* Handle frame dropping (receiving too fast) */
-   if (jitter->drop_frame)
+   if (jitter->drift_average > drop_margin)
    {
+      fprintf (stderr, "drop frame\n");
       jitter->pointer_timestamp += jitter->frame_time;
-      jitter->drop_frame = 0;
+      jitter->drift_average -= jitter->frame_time;
    }
 
    /* Send zeros while we fill in the buffer */
@@ -173,8 +228,17 @@ void speex_jitter_get(SpeexJitter *jitter, short *out)
             jitter->valid_bits = 0;
       }
 
+      fprintf (stderr, "lost/late frame %d\n", jitter->pointer_timestamp);
       /*Packet is late or lost*/
       speex_decode_int(jitter->dec, NULL, out);
+      jitter->lost_count++;
+      if (jitter->lost_count>=25)
+      {
+         jitter->lost_count = 0;
+         jitter->reset_state = 1;
+         speex_decoder_ctl(jitter->dec, SPEEX_RESET_STATE, NULL);
+      }
+      jitter->loss_rate = .999*jitter->loss_rate + .001;
    } else {
       /* Found the right packet */
       speex_bits_read_from(&jitter->current_packet, jitter->buf[i], jitter->len[i]);
@@ -189,8 +253,18 @@ void speex_jitter_get(SpeexJitter *jitter, short *out)
          for (i=0;i<jitter->frame_size;i++)
             out[i]=0;
       }
+      jitter->loss_rate = .999*jitter->loss_rate;
    }
 
 
 }
 
+int speex_jitter_get_pointer_timestamp(SpeexJitter *jitter)
+{
+   return jitter->pointer_timestamp;
+}
+
+int speex_jitter_set_buffersize(SpeexJitter *jitter, int size)
+{
+   jitter->buffer_size = size;
+}
