@@ -39,10 +39,9 @@ void _spx_autocorr(
               int lag, int   n);
 
 float                      /* returns minimum mean square error    */
-wld(
+_spx_lpc(
     float       * lpc, /*      [0...p-1] LPC coefficients      */
     const float * ac,  /*  in: [0...p] autocorrelation values  */
-    float       * ref, /* out: [0...p-1] reflection coef's     */
     int p
     );
 

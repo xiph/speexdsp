@@ -97,7 +97,6 @@ typedef struct EncState {
    float *interp_qlpc;    /**< Interpolated quantized LPCs */
    float *bw_lpc1;        /**< LPCs after bandwidth expansion by gamma1 for perceptual weighting*/
    float *bw_lpc2;        /**< LPCs after bandwidth expansion by gamma2 for perceptual weighting*/
-   float *rc;             /**< Reflection coefficients */
    float *mem_sp;         /**< Filter memory for signal synthesis */
    float *mem_sw;         /**< Filter memory for perceptually-weighted signal */
    float *mem_sw_whole;   /**< Filter memory for perceptually-weighted signal (whole frame)*/

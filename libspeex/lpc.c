@@ -17,7 +17,7 @@
   Carsten Bormann
 
 
-   Code slightly modified by Jean-Marc Valin
+   Code modified by Jean-Marc Valin
 
    Speex License:
 
@@ -51,7 +51,7 @@
 
 
 
-/* LPC- and Reflection Coefficients
+/* LPC analysis
  *
  * The next two functions calculate linear prediction coefficients
  * and/or the related reflection coefficients from the first P_MAX+1
@@ -63,36 +63,39 @@
 
 #include "lpc.h"
 
-float                      /* returns minimum mean square error    */
-wld(
-    float       * lpc, /*      [0...p-1] LPC coefficients      */
-    const float * ac,  /*  in: [0...p] autocorrelation values  */
-    float       * ref, /* out: [0...p-1] reflection coef's     */
-    int p
-    )
+/* returns minimum mean square error    */
+float _spx_lpc(
+float       *lpc, /* out: [0...p-1] LPC coefficients      */
+const float *ac,  /* in:  [0...p] autocorrelation values  */
+int          p
+)
 {
    int i, j;  float r, error = ac[0];
 
-   if (ac[0] == 0) {
-      for (i = 0; i < p; i++) ref[i] = 0; return 0; }
+   if (ac[0] == 0)
+   {
+      for (i = 0; i < p; i++)
+         lpc[i] = 0;
+      return 0;
+   }
 
    for (i = 0; i < p; i++) {
 
-      /* Sum up this iteration's reflection coefficient.
-       */
+      /* Sum up this iteration's reflection coefficient */
       r = -ac[i + 1];
-      for (j = 0; j < i; j++) r -= lpc[j] * ac[i - j];
-      ref[i] = r /= error;
+      for (j = 0; j < i; j++) 
+         r -= lpc[j] * ac[i - j];
 
-      /*  Update LPC coefficients and total error.
-       */
+      /*  Update LPC coefficients and total error */
       lpc[i] = r;
-      for (j = 0; j < i/2; j++) {
+      for (j = 0; j < i/2; j++) 
+      {
          float tmp  = lpc[j];
          lpc[j]     += r * lpc[i-1-j];
          lpc[i-1-j] += r * tmp;
       }
-      if (i % 2) lpc[j] += lpc[j] * r;
+      if (i & 1) 
+         lpc[j] += lpc[j] * r;
 
       error *= 1.0 - r * r;
    }
@@ -107,13 +110,18 @@ wld(
  * for lags between 0 and lag-1, and x == 0 outside 0...n-1
  */
 void _spx_autocorr(
-              const float * x,   /*  in: [0...n-1] samples x   */
-              float *ac,   /* out: [0...lag-1] ac values */
-              int lag, int   n)
+const float *x,   /*  in: [0...n-1] samples x   */
+float       *ac,  /* out: [0...lag-1] ac values */
+int          lag, 
+int          n
+)
 {
-   float d; int i;
-   while (lag--) {
-      for (i = lag, d = 0; i < n; i++) d += x[i] * x[i-lag];
+   float d;
+   int i;
+   while (lag--) 
+   {
+      for (i = lag, d = 0; i < n; i++) 
+         d += x[i] * x[i-lag];
       ac[lag] = d;
    }
 }

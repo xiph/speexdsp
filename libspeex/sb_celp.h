@@ -72,7 +72,6 @@ typedef struct SBEncState {
    float *window;              /**< LPC analysis window */
    float *lagWindow;           /**< Auto-correlation window */
    float *autocorr;            /**< Auto-correlation (for LPC analysis) */
-   float *rc;                  /**< Reflection coefficients (unused) */
    float *lpc;                 /**< LPC coefficients */
    float *lsp;                 /**< LSP coefficients */
    float *qlsp;                /**< Quantized LSPs */

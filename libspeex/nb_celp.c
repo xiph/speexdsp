@@ -150,7 +150,7 @@ void *nb_encoder_init(SpeexMode *m)
    st->old_qlsp = PUSH(st->stack, st->lpcSize, float);
    st->interp_lsp = PUSH(st->stack, st->lpcSize, float);
    st->interp_qlsp = PUSH(st->stack, st->lpcSize, float);
-   st->rc = PUSH(st->stack, st->lpcSize, float);
+
    st->first = 1;
    for (i=0;i<st->lpcSize;i++)
    {
@@ -241,7 +241,7 @@ int nb_encode(void *state, float *in, SpeexBits *bits)
       st->autocorr[i] *= st->lagWindow[i];
 
    /* Levinson-Durbin */
-   wld(st->lpc+1, st->autocorr, st->rc, st->lpcSize);
+   _spx_lpc(st->lpc+1, st->autocorr, st->lpcSize);
    st->lpc[0]=1;
 
    /* LPC to LSPs (x-domain) transform */

@@ -189,7 +189,6 @@ void *sb_encoder_init(SpeexMode *m)
    for (i=0;i<st->lpcSize+1;i++)
       st->lagWindow[i]=exp(-.5*sqr(2*M_PI*st->lag_factor*i));
 
-   st->rc = PUSH(st->stack, st->lpcSize, float);
    st->autocorr = PUSH(st->stack, st->lpcSize+1, float);
    st->lpc = PUSH(st->stack, st->lpcSize+1, float);
    st->bw_lpc1 = PUSH(st->stack, st->lpcSize+1, float);
@@ -288,7 +287,7 @@ int sb_encode(void *state, float *in, SpeexBits *bits)
       st->autocorr[i] *= st->lagWindow[i];
 
    /* Levinson-Durbin */
-   wld(st->lpc+1, st->autocorr, st->rc, st->lpcSize);
+   _spx_lpc(st->lpc+1, st->autocorr, st->lpcSize);
    st->lpc[0]=1;
 
    /* LPC to LSPs (x-domain) transform */
