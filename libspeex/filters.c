@@ -88,6 +88,11 @@ void iir_mem2(float *x, spx_coef_t *den, float *y, int N, int ord, spx_mem_t *me
    
    for (i=0;i<11;i++)
    {
+      if (fabs(den[i])>3.999)
+      {
+         speex_warning_int("tata", den[i]*100);
+         den[i]=3.999;
+      }
       dens[i] = (int)floor(.5+8192*den[i]);
    }
 

@@ -235,7 +235,6 @@ int nb_encode(void *state, float *in, SpeexBits *bits)
    /* Compute auto-correlation */
    _spx_autocorr(st->buf2, st->autocorr, st->lpcSize+1, st->windowSize);
 
-   st->autocorr[0] += 10;        /* prevents NANs */
    st->autocorr[0] *= st->lpc_floor; /* Noise floor in auto-correlation domain */
 
    /* Lag windowing: equivalent to filtering in the power-spectrum domain */

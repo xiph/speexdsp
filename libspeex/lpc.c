@@ -63,6 +63,90 @@
 
 #include "lpc.h"
 
+#ifdef FIXED_POINT
+#include <math.h>
+
+/* returns minimum mean square error    */
+float _spx_lpc(
+spx_coef_t       *lpc, /* out: [0...p-1] LPC coefficients      */
+const float *ac,  /* in:  [0...p] autocorrelation values  */
+int          p
+)
+{
+   int i, j;  
+   spx_word16_t r;
+   spx_word16_t error = floor(ac[0]);
+   spx_word16_t lpcq[10];
+
+   if (ac[0] == 0)
+   {
+      for (i = 0; i < p; i++)
+         lpc[i] = 0;
+      return 0;
+   }
+
+   for (i = 0; i < p; i++) {
+
+      /* Sum up this iteration's reflection coefficient */
+      int rr = -8192.*floor(ac[i + 1]);
+      for (j = 0; j < i; j++) 
+         rr -= lpcq[j] * floor(ac[i - j]);
+      r = DIV32_16(rr,error+16);
+
+      /*  Update LPC coefficients and total error */
+      lpcq[i] = r;
+      for (j = 0; j < i/2; j++) 
+      {
+         spx_word16_t tmp  = lpcq[j];
+         lpcq[j]     += MULT16_16_Q13(r,lpcq[i-1-j]);
+         lpcq[i-1-j] += MULT16_16_Q13(r,tmp);
+      }
+      if (i & 1) 
+         lpcq[j] += MULT16_16_Q13(lpcq[j],r);
+
+      error -= MULT16_16_Q13(r,MULT16_16_Q13(error,r));
+   }
+   for (i = 0; i < p; i++)
+      lpc[i] = lpcq[i]/8192.;
+   return error;
+}
+
+
+/* Compute the autocorrelation
+ *                      ,--,
+ *              ac(i) = >  x(n) * x(n-i)  for all n
+ *                      `--'
+ * for lags between 0 and lag-1, and x == 0 outside 0...n-1
+ */
+void _spx_autocorr(
+const float *x,   /*  in: [0...n-1] samples x   */
+float       *ac,  /* out: [0...lag-1] ac values */
+int          lag, 
+int          n
+)
+{
+   float d;
+   int i, j;
+   for (i=0;i<lag;i++)
+   {
+      d=0;
+      for (j=i;j<n;j++)
+      {
+         d += x[j] * x[j-i];
+      }
+      if (i==0)
+         ac[i] = d+.01;
+      else
+         ac[i] = 8192.*d/ac[0];
+   }
+   ac[0] = 8192.;
+}
+
+
+#else
+
+
+
 /* returns minimum mean square error    */
 float _spx_lpc(
 spx_coef_t       *lpc, /* out: [0...p-1] LPC coefficients      */
@@ -125,4 +209,9 @@ int          n
          d += x[i] * x[i-lag];
       ac[lag] = d;
    }
+   ac[0] += 10;
 }
+
+#endif
+
+

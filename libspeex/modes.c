@@ -350,8 +350,8 @@ static SpeexNBMode nb_mode = {
    144,    /*pitchEnd*/
    0.9,    /*gamma1*/
    0.6,    /*gamma2*/
-   .01,   /*lag_factor*/
-   1.0001, /*lpc_floor*/
+   .012,   /*lag_factor*/
+   1.0002, /*lpc_floor*/
    0.0,    /*preemph*/
 #ifdef EPIC_48K
    0,

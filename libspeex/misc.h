@@ -63,6 +63,9 @@ typedef int spx_word32_t;
 
 #define MULT16_16_P14(a,b) ((8192+((signed int)(a))*(b))>>14)
 
+
+#define DIV32_16(a,b) (((signed int)(a))/(b))
+
 #else
 
 typedef float spx_mem_t;

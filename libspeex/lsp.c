@@ -67,15 +67,9 @@ Modified by Jean-Marc Valin
 
 \*---------------------------------------------------------------------------*/
 
+#undef FIXED_POINT
 
 #ifdef FIXED_POINT
-
-#define SCALE1 8192.
-#define SCALE2 16384.
-#define SCALE 16384.
-
-#include <stdio.h>
-
 
 static float cheb_poly_eva(float *coef,float x,int m,char *stack)
 /*  float coef[]  	coefficients of the polynomial to be evaluated 	*/
@@ -299,7 +293,7 @@ int lpc_to_lsp (spx_coef_t *a,int lpcrdr,float *freq,int nb,float delta, char *s
 
 \*---------------------------------------------------------------------------*/
 
-#if FIXED_POINT
+#ifdef FIXED_POINT
 
 void lsp_to_lpc(float *freq,spx_coef_t *ak,int lpcrdr, char *stack)
 /*  float *freq 	array of LSP frequencies in the x domain	*/
