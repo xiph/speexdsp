@@ -169,9 +169,13 @@ static void *process_header(ogg_packet *op, int pf_enabled, int *frame_size, int
    *rate = header->rate;
    *nframes = header->frames_per_packet;
    
-   fprintf (stderr, "Decoding %d Hz audio using %s mode\n", 
+   fprintf (stderr, "Decoding %d Hz audio using %s mode", 
             *rate, mode->modeName);
 
+   if (header->vbr)
+      fprintf (stderr, " (VBR)\n");
+   else
+      fprintf(stderr, "\n");
    /*fprintf (stderr, "Decoding %d Hz audio at %d bps using %s mode\n", 
     *rate, mode->bitrate, mode->modeName);*/
 
@@ -191,6 +195,7 @@ int main(int argc, char **argv)
    void *st=NULL;
    SpeexBits bits;
    int packet_count=0;
+   int stream_init = 0;
    struct option long_options[] =
    {
       {"help", no_argument, NULL, 0},
@@ -276,7 +281,6 @@ int main(int argc, char **argv)
 
    /*Init Ogg data struct*/
    ogg_sync_init(&oy);
-   ogg_stream_init(&os, 0);
    
    speex_bits_init(&bits);
    /*Main decoding loop*/
@@ -293,6 +297,10 @@ int main(int argc, char **argv)
       /*Loop for all complete pages we got (most likely only one)*/
       while (ogg_sync_pageout(&oy, &og)==1)
       {
+         if (stream_init == 0) {
+            ogg_stream_init(&os, ogg_page_serialno(&og));
+            stream_init = 1;
+         }
          /*Add page to the bitstream*/
          ogg_stream_pagein(&os, &og);
          /*Extract all available packets*/

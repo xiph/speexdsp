@@ -191,7 +191,8 @@ int main(int argc, char **argv)
    };
 
    /*Initialize Ogg stream struct*/
-   if (ogg_stream_init(&os, 0)==-1)
+   srand(time(NULL));
+   if (ogg_stream_init(&os, rand())==-1)
    {
       fprintf(stderr,"Stream init failed\n");
       exit(1);
@@ -244,6 +245,7 @@ int main(int argc, char **argv)
 
    speex_init_header(&header, rate, 1, mode);
    header.frames_per_packet=nframes;
+   header.vbr=vbr_enabled;
 
    fprintf (stderr, "Encoding %d Hz audio using %s mode\n", 
             header.rate, mode->modeName);
