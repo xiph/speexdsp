@@ -38,16 +38,15 @@
 
 
 #ifdef FIXED_POINT
-void bw_lpc(float gamma, spx_coef_t *lpc_in, spx_coef_t *lpc_out, int order)
+void bw_lpc(spx_word16_t gamma, spx_coef_t *lpc_in, spx_coef_t *lpc_out, int order)
 {
    int i;
-   spx_word16_t g=gamma*32768;
-   spx_word16_t tmp=g;
+   spx_word16_t tmp=gamma;
    lpc_out[0] = lpc_in[0];
    for (i=1;i<order+1;i++)
    {
       lpc_out[i] = MULT16_16_P15(tmp,lpc_in[i]);
-      tmp = MULT16_16_P15(tmp, g);
+      tmp = MULT16_16_P15(tmp, gamma);
    }
 }
 #else

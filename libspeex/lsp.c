@@ -204,7 +204,7 @@ static float cheb_poly_eva(spx_word32_t *coef,float x,int m,char *stack)
 #endif
 
 
-int lpc_to_lsp (spx_coef_t *a,int lpcrdr,spx_lsp_t *freq,int nb,float delta, char *stack)
+int lpc_to_lsp (spx_coef_t *a,int lpcrdr,spx_lsp_t *freq,int nb,spx_word16_t delta, char *stack)
 /*  float *a 		     	lpc coefficients			*/
 /*  int lpcrdr			order of LPC coefficients (10) 		*/
 /*  float *freq 	      	LSP frequencies in the x domain       	*/
@@ -213,7 +213,6 @@ int lpc_to_lsp (spx_coef_t *a,int lpcrdr,spx_lsp_t *freq,int nb,float delta, cha
 
 
 {
-    spx_word16_t ndelta;
     spx_word16_t temp_xr,xl,xr,xm=0;
     spx_word32_t psuml,psumr,psumm,temp_psumr/*,temp_qsumr*/;
     int i,j,m,flag,k;
@@ -229,7 +228,6 @@ int lpc_to_lsp (spx_coef_t *a,int lpcrdr,spx_lsp_t *freq,int nb,float delta, cha
     flag = 1;                	/*  program is searching for a root when,
 				1 else has found one 			*/
     m = lpcrdr/2;            	/* order of P'(z) & Q'(z) polynomials 	*/
-    ndelta = delta*32768;
 
     /* Allocate memory space for polynomials */
     Q = PUSH(stack, (m+1), spx_word32_t);
@@ -304,7 +302,7 @@ int lpc_to_lsp (spx_coef_t *a,int lpcrdr,spx_lsp_t *freq,int nb,float delta, cha
            spx_word16_t dd;
            /* Modified by JMV to provide smaller steps around x=+-1 */
 #ifdef FIXED_POINT
-           dd = MULT16_16_Q15(ndelta,(FREQ_SCALE - MULT16_16_Q14(MULT16_16_Q14(xl,xl),14000)));
+           dd = MULT16_16_Q15(delta,(FREQ_SCALE - MULT16_16_Q14(MULT16_16_Q14(xl,xl),14000)));
            if (psuml<512 && psuml>-512)
               dd = PSHR(dd,1);
 #else

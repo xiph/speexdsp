@@ -54,8 +54,8 @@ typedef struct SBEncState {
    int    first;               /**< First frame? */
    float  lag_factor;          /**< Lag-windowing control parameter */
    float  lpc_floor;           /**< Controls LPC analysis noise floor */
-   float  gamma1;              /**< Perceptual weighting coef 1 */
-   float  gamma2;              /**< Perceptual weighting coef 2 */
+   spx_word16_t  gamma1;              /**< Perceptual weighting coef 1 */
+   spx_word16_t  gamma2;              /**< Perceptual weighting coef 2 */
 
    char  *stack;               /**< Temporary allocation stack */
    spx_sig_t *x0d, *x1d; /**< QMF filter signals*/

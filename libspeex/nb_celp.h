@@ -65,8 +65,8 @@ typedef struct EncState {
    int    lbr_48k;
 #endif
 
-   float  gamma1;         /**< Perceptual filter: A(z/gamma1) */
-   float  gamma2;         /**< Perceptual filter: A(z/gamma2) */
+   spx_word16_t  gamma1;         /**< Perceptual filter: A(z/gamma1) */
+   spx_word16_t  gamma2;         /**< Perceptual filter: A(z/gamma2) */
    float  lag_factor;     /**< Lag windowing Gaussian width */
    float  lpc_floor;      /**< Noise floor multiplier for A[0] in LPC analysis*/
    char  *stack;          /**< Pseudo-stack allocation for temporary memory */

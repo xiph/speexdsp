@@ -65,7 +65,8 @@ spx_word16_t exc_gain_quant_scal1_bound[1]={14385};
 spx_word16_t exc_gain_quant_scal1[2]={11546, 17224};
 
 #define LSP_MARGIN 16
-#define LSP_DELTA 
+#define LSP_DELTA1 6553
+#define LSP_DELTA2 1638
 
 #else
 
@@ -75,7 +76,8 @@ float exc_gain_quant_scal1_bound[1]={0.87798};
 float exc_gain_quant_scal1[2]={0.70469, 1.05127};
 
 #define LSP_MARGIN .002
-#define LSP_DELTA 
+#define LSP_DELTA1 .2
+#define LSP_DELTA2 .05
 
 #endif
 
@@ -105,8 +107,8 @@ void *nb_encoder_init(SpeexMode *m)
    st->subframeSize=mode->subframeSize;
    st->lpcSize = mode->lpcSize;
    st->bufSize = mode->bufSize;
-   st->gamma1=mode->gamma1;
-   st->gamma2=mode->gamma2;
+   st->gamma1=GAMMA_SCALING*mode->gamma1;
+   st->gamma2=GAMMA_SCALING*mode->gamma2;
    st->min_pitch=mode->pitchStart;
    st->max_pitch=mode->pitchEnd;
    st->lag_factor=mode->lag_factor;
@@ -262,13 +264,13 @@ int nb_encode(void *state, short *in, SpeexBits *bits)
    st->lpc[0]=(spx_coef_t)LPC_SCALING;
 
    /* LPC to LSPs (x-domain) transform */
-   roots=lpc_to_lsp (st->lpc, st->lpcSize, st->lsp, 15, 0.2, stack);
+   roots=lpc_to_lsp (st->lpc, st->lpcSize, st->lsp, 15, LSP_DELTA1, stack);
    /* Check if we found all the roots */
    if (roots!=st->lpcSize)
    {
       /* Search again if we can afford it */
       if (st->complexity>1)
-         roots = lpc_to_lsp (st->lpc, st->lpcSize, st->lsp, 11, 0.05, stack);
+         roots = lpc_to_lsp (st->lpc, st->lpcSize, st->lsp, 11, LSP_DELTA2, stack);
       if (roots!=st->lpcSize) 
       {
          /*If we can't find all LSP's, do some damage control and use previous filter*/
@@ -1068,9 +1070,9 @@ static void nb_decode_lost(DecState *st, short *out, char *stack)
             k1=k2;
             k3=0;
          }
-         bw_lpc(k1, st->interp_qlpc, awk1, st->lpcSize);
-         bw_lpc(k2, st->interp_qlpc, awk2, st->lpcSize);
-         bw_lpc(k3, st->interp_qlpc, awk3, st->lpcSize);
+         bw_lpc(GAMMA_SCALING*k1, st->interp_qlpc, awk1, st->lpcSize);
+         bw_lpc(GAMMA_SCALING*k2, st->interp_qlpc, awk2, st->lpcSize);
+         bw_lpc(GAMMA_SCALING*k3, st->interp_qlpc, awk3, st->lpcSize);
       }
         
       /* Make up a plausible excitation */
@@ -1258,7 +1260,7 @@ int nb_decode(void *state, SpeexBits *bits, short *out)
    {
       spx_coef_t *lpc;
       lpc = PUSH(stack,11, spx_coef_t);
-      bw_lpc(.93, st->interp_qlpc, lpc, 10);
+      bw_lpc(GAMMA_SCALING*.93, st->interp_qlpc, lpc, 10);
       /*for (i=0;i<st->frameSize;i++)
         st->exc[i]=0;*/
       {
@@ -1427,9 +1429,9 @@ int nb_decode(void *state, SpeexBits *bits, short *out)
             k1=k2;
             k3=0;
          }
-         bw_lpc(k1, st->interp_qlpc, awk1, st->lpcSize);
-         bw_lpc(k2, st->interp_qlpc, awk2, st->lpcSize);
-         bw_lpc(k3, st->interp_qlpc, awk3, st->lpcSize);
+         bw_lpc(GAMMA_SCALING*k1, st->interp_qlpc, awk1, st->lpcSize);
+         bw_lpc(GAMMA_SCALING*k2, st->interp_qlpc, awk2, st->lpcSize);
+         bw_lpc(GAMMA_SCALING*k3, st->interp_qlpc, awk3, st->lpcSize);
          
       }
 
@@ -1507,8 +1509,7 @@ int nb_decode(void *state, SpeexBits *bits, short *out)
                exc[i]*=fact;
          }
 
-         tmp = fabs(pitch_gain[0]+pitch_gain[1]+pitch_gain[2]);
-         tmp = fabs(pitch_gain[1]);
+         tmp = ABS(pitch_gain[1]);
          if (pitch_gain[0]>0)
             tmp += pitch_gain[0];
          else
@@ -1516,7 +1517,7 @@ int nb_decode(void *state, SpeexBits *bits, short *out)
          if (pitch_gain[2]>0)
             tmp += pitch_gain[2];
          else
-            tmp -= .5*pitch_gain[0];
+            tmp -= .5*pitch_gain[2];
 
 
          pitch_average += tmp;

@@ -56,10 +56,14 @@
 #ifdef FIXED_POINT
 spx_word16_t gc_quant_bound[16] = {125, 164, 215, 282, 370, 484, 635, 832, 1090, 1428, 1871, 2452, 3213, 4210, 5516, 7228};
 #define LSP_MARGIN 410
+#define LSP_DELTA1 6553
+#define LSP_DELTA2 1638
 
 #else
 
 #define LSP_MARGIN .05
+#define LSP_DELTA1 .2
+#define LSP_DELTA2 .05
 
 #endif
 
@@ -193,8 +197,8 @@ void *sb_encoder_init(SpeexMode *m)
 
    st->lag_factor = mode->lag_factor;
    st->lpc_floor = mode->lpc_floor;
-   st->gamma1=mode->gamma1;
-   st->gamma2=mode->gamma2;
+   st->gamma1=GAMMA_SCALING*mode->gamma1;
+   st->gamma2=GAMMA_SCALING*mode->gamma2;
    st->first=1;
 
    st->x0d=PUSH(st->stack, st->frame_size, spx_sig_t);
@@ -348,10 +352,10 @@ int sb_encode(void *state, short *in, SpeexBits *bits)
    st->lpc[0] = (spx_coef_t)LPC_SCALING;
 
    /* LPC to LSPs (x-domain) transform */
-   roots=lpc_to_lsp (st->lpc, st->lpcSize, st->lsp, 15, 0.2, stack);
+   roots=lpc_to_lsp (st->lpc, st->lpcSize, st->lsp, 15, LSP_DELTA1, stack);
    if (roots!=st->lpcSize)
    {
-      roots = lpc_to_lsp (st->lpc, st->lpcSize, st->lsp, 11, 0.02, stack);
+      roots = lpc_to_lsp (st->lpc, st->lpcSize, st->lsp, 11, LSP_DELTA2, stack);
       if (roots!=st->lpcSize) {
          /*If we can't find all LSP's, do some damage control and use a flat filter*/
          for (i=0;i<st->lpcSize;i++)
@@ -778,7 +782,7 @@ static void sb_decode_lost(SBDecState *st, short *out, int dtx, char *stack)
       saved_modeid=st->submodeID;
       st->submodeID=1;
    } else {
-      bw_lpc(0.99, st->interp_qlpc, st->interp_qlpc, st->lpcSize);
+      bw_lpc(GAMMA_SCALING*0.99, st->interp_qlpc, st->interp_qlpc, st->lpcSize);
    }
 
    st->first=1;
@@ -806,9 +810,9 @@ static void sb_decode_lost(SBDecState *st, short *out, int dtx, char *stack)
          k1=k2;
          k3=0;
       }
-      bw_lpc(k1, st->interp_qlpc, awk1, st->lpcSize);
-      bw_lpc(k2, st->interp_qlpc, awk2, st->lpcSize);
-      bw_lpc(k3, st->interp_qlpc, awk3, st->lpcSize);
+      bw_lpc(GAMMA_SCALING*k1, st->interp_qlpc, awk1, st->lpcSize);
+      bw_lpc(GAMMA_SCALING*k2, st->interp_qlpc, awk2, st->lpcSize);
+      bw_lpc(GAMMA_SCALING*k3, st->interp_qlpc, awk3, st->lpcSize);
       /*fprintf (stderr, "%f %f %f\n", k1, k2, k3);*/
    }
    
@@ -1004,9 +1008,9 @@ int sb_decode(void *state, SpeexBits *bits, short *out)
             k1=k2;
             k3=0;
          }
-         bw_lpc(k1, st->interp_qlpc, awk1, st->lpcSize);
-         bw_lpc(k2, st->interp_qlpc, awk2, st->lpcSize);
-         bw_lpc(k3, st->interp_qlpc, awk3, st->lpcSize);
+         bw_lpc(GAMMA_SCALING*k1, st->interp_qlpc, awk1, st->lpcSize);
+         bw_lpc(GAMMA_SCALING*k2, st->interp_qlpc, awk2, st->lpcSize);
+         bw_lpc(GAMMA_SCALING*k3, st->interp_qlpc, awk3, st->lpcSize);
          /*fprintf (stderr, "%f %f %f\n", k1, k2, k3);*/
       }
 
