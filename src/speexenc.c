@@ -71,23 +71,36 @@ int oe_write_page(ogg_page *page, FILE *fp)
 #define MAX_FRAME_BYTES 2000
 
 /* Convert input audio bits, endians and channels */
-static int read_samples(FILE *fin,int frame_size, int bits, int channels, int lsb, float * input, char *buff)
+static int read_samples(FILE *fin,int frame_size, int bits, int channels, int lsb, float * input, char *buff, int *size)
 {   
    unsigned char in[MAX_FRAME_BYTES*2];
    int i;
    short *s;
+   int nb_read;
 
+   if (size && *size<=0)
+   {
+      return 1;
+   }
    /*Read input audio*/
+   if (size)
+      *size -= bits/8*channels*frame_size;
    if (buff)
    {
       for (i=0;i<12;i++)
          in[i]=buff[i];
-      fread(in+12,1,bits/8*channels*frame_size-12, fin);
+      nb_read = fread(in+12,1,bits/8*channels*frame_size-12, fin) + 12;
+      if (size)
+         *size += 12;
    } else {
-      fread(in,bits/8*channels, frame_size, fin);
+      nb_read = fread(in,1,bits/8*channels* frame_size, fin);
    }
-   if (feof(fin))
+   nb_read /= bits/8*channels;
+
+   fprintf (stderr, "%d\n", nb_read);
+   if (nb_read==0)
       return 1;
+
    s=(short*)in;
    if(bits==8)
    {
@@ -113,6 +126,12 @@ static int read_samples(FILE *fin,int frame_size, int bits, int channels, int ls
    {
       input[i]=(short)s[i];
    }
+
+   for (i=nb_read*channels;i<frame_size*channels;i++)
+   {
+      input[i]=0;
+   }
+
 
    return 0;
 }
@@ -412,7 +431,6 @@ int main(int argc, char **argv)
       fread(first_bytes, 1, 12, fin);
       if (strncmp(first_bytes,"RIFF",4)==0 && strncmp(first_bytes,"RIFF",4)==0)
       {
-         size = le_int((*(int*)(first_bytes+4))-36);
          if (read_wav_header(fin, &rate, &chan, &fmt, &size)==-1)
             exit(1);
          wave_input=1;
@@ -600,10 +618,10 @@ int main(int argc, char **argv)
 
    if (!wave_input)
    {
-      if (read_samples(fin,frame_size,fmt,chan,lsb,input, first_bytes))
+      if (read_samples(fin,frame_size,fmt,chan,lsb,input, first_bytes, NULL))
          eos=1;
    } else {
-      if (read_samples(fin,frame_size,fmt,chan,lsb,input, NULL))
+      if (read_samples(fin,frame_size,fmt,chan,lsb,input, NULL, &size))
          eos=1;
    }
    /*Main encoding loop (one frame per iteration)*/
@@ -629,10 +647,19 @@ int main(int argc, char **argv)
          
       }
 
-      if (read_samples(fin,frame_size,fmt,chan,lsb,input, NULL))
+      if (wave_input)
       {
-         eos=1;
-         op.e_o_s = 1;
+         if (read_samples(fin,frame_size,fmt,chan,lsb,input, NULL, &size))
+         {
+            eos=1;
+            op.e_o_s = 1;
+         }
+      } else {
+         if (read_samples(fin,frame_size,fmt,chan,lsb,input, NULL, NULL))
+         {
+            eos=1;
+            op.e_o_s = 1;
+         }
       }
 
       if ((id+1)%nframes!=0)
@@ -668,7 +695,7 @@ int main(int argc, char **argv)
       while ((id+1)%nframes!=0)
       {
          id++;
-         speex_bits_pack(&bits, 0, 7);
+         speex_bits_pack(&bits, 15, 5);
       }
       nbBytes = speex_bits_write(&bits, cbits, MAX_FRAME_BYTES);
       op.packet = (unsigned char *)cbits;
