@@ -63,6 +63,22 @@ typedef struct EncState {
 } EncState;
 
 typedef struct DecState {
+   int    first;          /* Is this the first frame? */
+   int    frameSize;      /* Size of frames */
+   int    subframeSize;   /* Size of sub-frames */
+   int    nbSubframes;    /* Number of sub-frames */
+   int    windowSize;     /* Analysis (LPC) window length */
+   int    lpcSize;        /* LPC order */
+   int    bufSize;        /* Buffer size */
+   float *inBuf;          /* Input buffer (original signal) */
+   float *frame;          /* Start of original frame */
+   float *excBuf;         /* Excitation buffer */
+   float *exc;            /* Start of excitation frame */
+   float *qlsp;           /* Quantized LSPs for current frame */
+   float *old_qlsp;       /* Quantized LSPs for previous frame */
+   float *interp_qlsp;    /* Interpolated quantized LSPs */
+   float *interp_qlpc;    /* Interpolated quantized LPCs */
+
 } DecState;
 
 /**Initializes encoder state*/

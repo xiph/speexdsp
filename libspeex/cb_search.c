@@ -83,7 +83,7 @@ int   nsf                       /* number of samples in subframe */
       d += target[i]*resp[i];
       e += resp[i]*resp[i]+1;
     }
-    g = d/e;
+    g = d/(e+.1);
     score = g*d;
     /*printf ("score: %f %f %f %f\n", target[0],d,e,score);*/
     if (score >= bscore) {
