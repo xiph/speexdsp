@@ -1545,7 +1545,7 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
             while (st->voc_offset<st->subframeSize)
             {
                if (st->voc_offset>=0)
-                  exc[st->voc_offset]=sqrt(1.0*ol_pitch);
+                  exc[st->voc_offset]=SIG_SCALING*sqrt(1.0*ol_pitch);
                st->voc_offset+=ol_pitch;
             }
             st->voc_offset -= st->subframeSize;
@@ -1591,6 +1591,8 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
       if (st->lpc_enh_enabled && SUBMODE(comb_gain)>0)
          comb_filter(exc, sp, st->interp_qlpc, st->lpcSize, st->subframeSize,
                               pitch, pitch_gain, SUBMODE(comb_gain), st->comb_mem);
+      FIXED_SIGNAL;
+
       if (st->lpc_enh_enabled)
       {
          /* Use enhanced LPC filter */
@@ -1605,11 +1607,13 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
          iir_mem2(sp, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, 
                      st->mem_sp);
       }
+
+      FLOAT_SIGNAL;
    }
    
    /*Copy output signal*/
    for (i=0;i<st->frameSize;i++)
-     out[i]=st->frame[i];
+     out[i]=st->frame[i]/SIG_SCALING;
 
    /* Store the LSPs for interpolation in the next frame */
    for (i=0;i<st->lpcSize;i++)

@@ -41,6 +41,10 @@
 
 #ifdef FIXED_POINT
 
+extern int fixed_point_on;
+#define FIXED_SIGNAL fixed_point_on=1;
+#define FLOAT_SIGNAL fixed_point_on=0;
+
 typedef short        spx_word16_t;
 typedef int          spx_word32_t;
 typedef spx_word32_t spx_mem_t;
@@ -48,6 +52,7 @@ typedef spx_word16_t spx_coef_t;
 typedef float   spx_sig_t;
 
 #define LPC_SCALING  8192.
+#define SIG_SCALING  16384.
 
 #define MULT16_32_Q14(a,b) (((a)*((b)>>14)) + ((a)*((signed int)((b)&0x00003fff))>>14))
 #define MULT16_32_Q15(a,b) (((a)*((b)>>15)) + ((a)*((signed int)((b)&0x00007fff))>>15))
@@ -63,6 +68,9 @@ typedef float   spx_sig_t;
 
 #else
 
+#define FIXED_SIGNAL
+#define FLOAT_SIGNAL
+
 typedef float spx_mem_t;
 typedef float spx_coef_t;
 typedef float spx_sig_t;
@@ -70,7 +78,7 @@ typedef float spx_word16_t;
 typedef float spx_word32_t;
 
 #define LPC_SCALING  1.
-
+#define SIG_SCALING  1.
 #endif
 
 #ifndef RELEASE

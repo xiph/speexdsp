@@ -344,8 +344,13 @@ char *stack
       float s=1;
       if (signs[i])
          s=-1;
+#ifdef FIXED_POINT
       for (j=0;j<subvect_size;j++)
-         exc[subvect_size*i+j]+=s*0.03125*shape_cb[ind[i]*subvect_size+j];
+         exc[subvect_size*i+j]+=s*0.03125*SIG_SCALING*shape_cb[ind[i]*subvect_size+j];
+#else
+      for (j=0;j<subvect_size;j++)
+         exc[subvect_size*i+j]+=s*0.03125*shape_cb[ind[i]*subvect_size+j];      
+#endif
    }
 }
 
