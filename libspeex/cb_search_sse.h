@@ -48,7 +48,7 @@ static inline void _spx_mm_getr_ps (__m128 U, float *__Z, float *__Y, float *__X
 }
 
 
-static void compute_weighted_codebook(const signed char *shape_cb, const spx_sig_t *_r, spx_word16_t *resp, spx_word32_t *E, int shape_cb_size, int subvect_size, char *stack)
+static void compute_weighted_codebook(const signed char *shape_cb, const spx_sig_t *_r, float *resp, __m128 *resp2, __m128 *E, int shape_cb_size, int subvect_size, char *stack)
 {
    int i, j, k;
    __m128 resj, EE;
@@ -72,8 +72,9 @@ static void compute_weighted_codebook(const signed char *shape_cb, const spx_sig
          for (k=0;k<=j;k++)
             resj = _mm_add_ps(resj, _mm_mul_ps(shape[k],r[j-k]));
          _spx_mm_getr_ps(resj, _res+j, _res+subvect_size+j, _res+2*subvect_size+j, _res+3*subvect_size+j);
+         *resp2++ = resj;
          EE = _mm_add_ps(EE, _mm_mul_ps(resj, resj));
-         _mm_storeu_ps(E+i, EE);
       }
+      E[i>>2] = EE;
    }
 }

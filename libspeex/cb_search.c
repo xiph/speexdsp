@@ -41,7 +41,7 @@
 #include "cb_search_sse.h"
 #else
 
-static void compute_weighted_codebook(const signed char *shape_cb, const spx_sig_t *r, spx_word16_t *resp, spx_word32_t *E, int shape_cb_size, int subvect_size, char *stack)
+static void compute_weighted_codebook(const signed char *shape_cb, const spx_sig_t *r, spx_word16_t *resp, float *resp2, spx_word32_t *E, int shape_cb_size, int subvect_size, char *stack)
 {
    int i, j, k;
    for (i=0;i<shape_cb_size;i++)
@@ -93,9 +93,15 @@ int   complexity
 {
    int i,j,k,m,n,q;
    spx_word16_t *resp;
+#ifdef _USE_SSE
+   __m128 *resp2;
+   __m128 *E;
+#else
+   spx_word16_t *resp2;
+   spx_word32_t *E;
+#endif
    spx_word16_t *t;
    spx_sig_t *e, *r2;
-   spx_word32_t *E;
    spx_word16_t *tmp;
    spx_word32_t *ndist, *odist;
    int *itmp;
@@ -109,7 +115,6 @@ int   complexity
    int *best_index;
    spx_word32_t *best_dist;
    int have_sign;
-
    N=complexity;
    if (N>10)
       N=10;
@@ -126,10 +131,16 @@ int   complexity
    shape_cb = params->shape_cb;
    have_sign = params->have_sign;
    resp = PUSH(stack, shape_cb_size*subvect_size, spx_word16_t);
+#ifdef _USE_SSE
+   resp2 = PUSH(stack, (shape_cb_size*subvect_size)>>2, __m128);
+   E = PUSH(stack, shape_cb_size>>2, __m128);
+#else
+   resp2 = resp;
+   E = PUSH(stack, shape_cb_size, spx_word32_t);
+#endif
    t = PUSH(stack, nsf, spx_word16_t);
    e = PUSH(stack, nsf, spx_sig_t);
    r2 = PUSH(stack, nsf, spx_sig_t);
-   E = PUSH(stack, shape_cb_size, spx_word32_t);
    ind = PUSH(stack, nb_subvect, int);
 
    tmp = PUSH(stack, 2*N*nsf, spx_word16_t);
@@ -168,7 +179,7 @@ int   complexity
      printf ("%d\n", (int)t[i]);*/
 
    /* Pre-compute codewords response and energy */
-   compute_weighted_codebook(shape_cb, r, resp, E, shape_cb_size, subvect_size, stack);
+   compute_weighted_codebook(shape_cb, r, resp, resp2, E, shape_cb_size, subvect_size, stack);
 
    for (j=0;j<N;j++)
       odist[j]=0;
@@ -185,9 +196,9 @@ int   complexity
          spx_word16_t *x=ot[j]+subvect_size*i;
          /*Find new n-best based on previous n-best j*/
          if (have_sign)
-            vq_nbest_sign(x, resp, subvect_size, shape_cb_size, E, N, best_index, best_dist);
+            vq_nbest_sign(x, resp2, subvect_size, shape_cb_size, E, N, best_index, best_dist, stack);
          else
-            vq_nbest(x, resp, subvect_size, shape_cb_size, E, N, best_index, best_dist);
+            vq_nbest(x, resp2, subvect_size, shape_cb_size, E, N, best_index, best_dist, stack);
 
          /*For all new n-bests*/
          for (k=0;k<N;k++)
