@@ -29,6 +29,10 @@
    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 
 int dummy_epic_48k_variable=0;
 #ifdef EPIC_48K

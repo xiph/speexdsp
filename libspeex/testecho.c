@@ -1,3 +1,7 @@
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <speex/speex_echo.h>
 #include <stdio.h>
 #include <stdlib.h>

@@ -32,6 +32,10 @@
 
 */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #ifndef NULL
 #define NULL 0
 #endif

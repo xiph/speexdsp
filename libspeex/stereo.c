@@ -29,6 +29,10 @@
    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <speex/speex_stereo.h>
 #include <speex/speex_callbacks.h>
 #include "vq.h"

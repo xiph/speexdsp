@@ -32,6 +32,10 @@
 
 */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "modes.h"
 #include "ltp.h"
 #include "quant_lsp.h"

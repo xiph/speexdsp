@@ -31,6 +31,10 @@
 
 */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <speex/speex_header.h>
 #include "misc.h"
 #include <speex/speex.h>
