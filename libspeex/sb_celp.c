@@ -133,6 +133,26 @@ static float h1[64] = {
 };
 #endif
 
+static void mix_and_saturate(spx_word32_t *y0, spx_word32_t *y1, short *out, int len)
+{
+   int i;
+   for (i=0;i<len;i++)
+   {
+      spx_word32_t tmp;
+#ifdef FIXED_POINT
+      tmp=PSHR(y0[i]-y1[i],SIG_SHIFT-1);
+#else
+      tmp=2*(y0[i]-y1[i]);
+#endif
+      if (tmp>32767)
+         out[i] = 32767;
+      else if (tmp<-32767)
+         out[i] = -32767;
+      else
+         out[i] = tmp;
+   }
+}
+
 void *sb_encoder_init(SpeexMode *m)
 {
    int i;
@@ -809,13 +829,7 @@ static void sb_decode_lost(SBDecState *st, short *out, int dtx, char *stack)
    fir_mem_up(st->x0d, h0, st->y0, st->full_frame_size, QMF_ORDER, st->g0_mem, stack);
    fir_mem_up(st->high, h1, st->y1, st->full_frame_size, QMF_ORDER, st->g1_mem, stack);
 
-#ifdef FIXED_POINT
-   for (i=0;i<st->full_frame_size;i++)
-      out[i]=PSHR(st->y0[i]-st->y1[i],SIG_SHIFT-1);
-#else
-   for (i=0;i<st->full_frame_size;i++)
-      out[i]=2*(st->y0[i]-st->y1[i]);   
-#endif
+   mix_and_saturate(st->y0, st->y1, out, st->full_frame_size);
 
    if (dtx)
    {
@@ -912,14 +926,8 @@ int sb_decode(void *state, SpeexBits *bits, short *out)
       fir_mem_up(st->x0d, h0, st->y0, st->full_frame_size, QMF_ORDER, st->g0_mem, stack);
       fir_mem_up(st->high, h1, st->y1, st->full_frame_size, QMF_ORDER, st->g1_mem, stack);
 
-#ifdef FIXED_POINT
-      for (i=0;i<st->full_frame_size;i++)
-         out[i]=PSHR(st->y0[i]-st->y1[i],SIG_SHIFT-1);
-#else
-      for (i=0;i<st->full_frame_size;i++)
-         out[i]=2*(st->y0[i]-st->y1[i]);   
-#endif
-      
+      mix_and_saturate(st->y0, st->y1, out, st->full_frame_size);
+
       return 0;
 
    }
@@ -1079,13 +1087,7 @@ int sb_decode(void *state, SpeexBits *bits, short *out)
    fir_mem_up(st->x0d, h0, st->y0, st->full_frame_size, QMF_ORDER, st->g0_mem, stack);
    fir_mem_up(st->high, h1, st->y1, st->full_frame_size, QMF_ORDER, st->g1_mem, stack);
 
-#ifdef FIXED_POINT
-   for (i=0;i<st->full_frame_size;i++)
-      out[i]=PSHR(st->y0[i]-st->y1[i],SIG_SHIFT-1);
-#else
-   for (i=0;i<st->full_frame_size;i++)
-      out[i]=2*(st->y0[i]-st->y1[i]);   
-#endif
+   mix_and_saturate(st->y0, st->y1, out, st->full_frame_size);
 
    for (i=0;i<st->lpcSize;i++)
       st->old_qlsp[i] = st->qlsp[i];
