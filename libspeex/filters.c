@@ -218,7 +218,6 @@ void residue_percep_zero(float *xx, float *ak, float *awk1, float *awk2, float *
 #define MAX_FILTER 100
 #define MAX_SIGNAL 1000
 
-#if 1
 void qmf_decomp(float *xx, float *aa, float *y1, float *y2, int N, int M, float *mem)
 {
    int i,j,k,M2;
@@ -249,34 +248,6 @@ void qmf_decomp(float *xx, float *aa, float *y1, float *y2, int N, int M, float 
    for (i=0;i<M-1;i++)
      mem[i]=xx[N-i-1];
 }
-#else
-void qmf_decomp(float *xx, float *aa, float *bb, float *y1, float *y2, int N, int M, float *mem)
-{
-   int i,j,k;
-   float a[MAX_FILTER];
-   float b[MAX_FILTER];
-   float x[MAX_SIGNAL];
-   for (i=0;i<M;i++)
-      a[M-i-1]=aa[i];
-   for (i=0;i<M;i++)
-      b[M-i-1]=bb[i];
-   for (i=0;i<M-1;i++)
-      x[i]=mem[M-i-2];
-   for (i=0;i<N;i++)
-      x[i+M-1]=xx[i];
-   for (i=0,k=0;i<N;i+=2,k++)
-   {
-      y1[k]=0;
-      for (j=0;j<M;j++)
-         y1[k]+=a[j]*x[i+j];
-      y2[k]=0;
-      for (j=0;j<M;j++)
-         y2[k]+=b[j]*x[i+j];
-   }
-   for (i=0;i<M-1;i++)
-     mem[i]=xx[N-i-1];
-}
-#endif
 
 void fir_decim_mem(float *xx, float *aa, float *y, int N, int M, float *mem)
 {
