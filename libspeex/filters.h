@@ -33,6 +33,8 @@
 #ifndef FILTERS_H
 #define FILTERS_H
 
+void qmf_decomp(float *xx, float *aa, float *y1, float *y2, int N, int M, float *mem);
+
 void print_vec(float *vec, int len, char *name);
 
 void filter_mem2(float *x, float *num, float *den, float *y, int N, int ord, float *mem);
@@ -59,8 +61,9 @@ void residue_zero(float *x, float *a, float *y, int N, int ord);
 
 
 
+
 /* FIR filter */
-void fir_mem(float *x, float *a, float *y, int N, int M, float *mem);
+void fir_decim_mem(float *x, float *a, float *y, int N, int M, float *mem);
 
 void syn_percep_zero(float *x, float *ak, float *awk1, float *awk2, float *y, int N, int ord, float *stack);
 

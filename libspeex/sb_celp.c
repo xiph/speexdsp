@@ -276,16 +276,19 @@ void sb_encode(void *state, float *in, SpeexBits *bits)
    stack=st->stack;
 
    /* Compute the two sub-bands by filtering with h0 and h1*/
+#if 0
    fir_mem(in, h0, st->x0, st->full_frame_size, QMF_ORDER, st->h0_mem);
    fir_mem(in, h1, st->x1, st->full_frame_size, QMF_ORDER, st->h1_mem);
-
+   
    /* Down-sample x0 and x1 */
    for (i=0;i<st->frame_size;i++)
       st->x1d[i]=st->x1[i<<1];
 
    for (i=0;i<st->frame_size;i++)
       st->x0d[i]=st->x0[i<<1];
-
+#else
+   qmf_decomp(in, h0, st->x0d, st->x1d, st->full_frame_size, QMF_ORDER, st->h0_mem);
+#endif
    /* Encode the narrowband part*/
    nb_encode(st->st_low, st->x0d, bits);
 
@@ -361,8 +364,8 @@ void sb_encode(void *state, float *in, SpeexBits *bits)
          st->x1[(i<<1)+1]=0;
       }
       /* Reconstruct the original */
-      fir_mem(st->x0, h0, st->y0, st->full_frame_size, QMF_ORDER, st->g0_mem);
-      fir_mem(st->x1, h1, st->y1, st->full_frame_size, QMF_ORDER, st->g1_mem);
+      fir_decim_mem(st->x0, h0, st->y0, st->full_frame_size, QMF_ORDER, st->g0_mem);
+      fir_decim_mem(st->x1, h1, st->y1, st->full_frame_size, QMF_ORDER, st->g1_mem);
       for (i=0;i<st->full_frame_size;i++)
          in[i]=2*(st->y0[i]-st->y1[i]);
 #endif
@@ -627,8 +630,8 @@ void sb_encode(void *state, float *in, SpeexBits *bits)
       st->x1[(i<<1)+1]=0;
    }
    /* Reconstruct the original */
-   fir_mem(st->x0, h0, st->y0, st->full_frame_size, QMF_ORDER, st->g0_mem);
-   fir_mem(st->x1, h1, st->y1, st->full_frame_size, QMF_ORDER, st->g1_mem);
+   fir_decim_mem(st->x0, h0, st->y0, st->full_frame_size, QMF_ORDER, st->g0_mem);
+   fir_decim_mem(st->x1, h1, st->y1, st->full_frame_size, QMF_ORDER, st->g1_mem);
    for (i=0;i<st->full_frame_size;i++)
       in[i]=2*(st->y0[i]-st->y1[i]);
 #endif
@@ -739,8 +742,8 @@ static void sb_decode_lost(SBDecState *st, float *out, float *stack)
       st->x1[(i<<1)+1]=0;
    }
    /* Reconstruct the original */
-   fir_mem(st->x0, h0, st->y0, st->full_frame_size, QMF_ORDER, st->g0_mem);
-   fir_mem(st->x1, h1, st->y1, st->full_frame_size, QMF_ORDER, st->g1_mem);
+   fir_decim_mem(st->x0, h0, st->y0, st->full_frame_size, QMF_ORDER, st->g0_mem);
+   fir_decim_mem(st->x1, h1, st->y1, st->full_frame_size, QMF_ORDER, st->g1_mem);
    for (i=0;i<st->full_frame_size;i++)
       out[i]=2*(st->y0[i]-st->y1[i]);
    
@@ -809,8 +812,8 @@ int sb_decode(void *state, SpeexBits *bits, float *out)
          st->x1[(i<<1)+1]=0;
       }
       /* Reconstruct the original */
-      fir_mem(st->x0, h0, st->y0, st->full_frame_size, QMF_ORDER, st->g0_mem);
-      fir_mem(st->x1, h1, st->y1, st->full_frame_size, QMF_ORDER, st->g1_mem);
+      fir_decim_mem(st->x0, h0, st->y0, st->full_frame_size, QMF_ORDER, st->g0_mem);
+      fir_decim_mem(st->x1, h1, st->y1, st->full_frame_size, QMF_ORDER, st->g1_mem);
       for (i=0;i<st->full_frame_size;i++)
          out[i]=2*(st->y0[i]-st->y1[i]);
 
@@ -928,8 +931,8 @@ int sb_decode(void *state, SpeexBits *bits, float *out)
       st->x1[(i<<1)+1]=0;
    }
    /* Reconstruct the original */
-   fir_mem(st->x0, h0, st->y0, st->full_frame_size, QMF_ORDER, st->g0_mem);
-   fir_mem(st->x1, h1, st->y1, st->full_frame_size, QMF_ORDER, st->g1_mem);
+   fir_decim_mem(st->x0, h0, st->y0, st->full_frame_size, QMF_ORDER, st->g0_mem);
+   fir_decim_mem(st->x1, h1, st->y1, st->full_frame_size, QMF_ORDER, st->g1_mem);
    for (i=0;i<st->full_frame_size;i++)
       out[i]=2*(st->y0[i]-st->y1[i]);
 
