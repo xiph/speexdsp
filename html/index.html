@@ -73,20 +73,46 @@ You can listen to samples encoded with Speex <A href="/audio/samples/">here</A>
 
 <h2>News</h2>
 
+<h3>2002/07/08</h3>
+
+Speex 0.5.0 is out. The most important new feature is Varible Bit-Rate
+(VBR). It can be enabled by using the --vbr option to speexenc. When
+encoding in VBR, the --quality option can still be used. Note VBR
+implementation in this release is experimental and still requires lots of
+tuning.
+
+<h3>2002/06/23</h3>
+
+Speex 0.4.0 is here, adding many more bit-rates to both narrowband and wideband, as
+well as the ability to change bit-rate dynamically from frame to frame. The
+narrowband modes now range from 8 kbps to 18 kbps, while wideband range from
+10 kbps to 28 kbps. There is also a "noise coding" mode at 2 kbps for
+narrowband and 3 kbps for wideband. All this will lead to real Variable
+Bit-Rate (VBR) in the future. Also, worth mentioning the codec latency has
+been reduced from 40 ms to 30 ms (20 ms frames + 10 ms lookahead).
+
 <h3>2002/06/12</h3>
 
-Speex 0.3.0 has been released. There is now a new "low bit-rate" narrowband mode for coding speech at 8 kbps. There's also support for big-endian machines (untested, please report bugs). Speex files now have real header containing information like bit-stream version (revents from playing an incompatible bit-stream), sampling rate, bit-rate and user comments. On the quality side, the post-filter has been improved and there has been more codebook optimization. Note that this release breaks bit-stream compatibility with previous releases. 
+Speex 0.3.0 has been released. There is now a new "low bit-rate" narrowband
+mode for coding speech at 8 kbps. There's also support for big-endian
+machines (untested, please report bugs). Speex files now have real header
+containing information like bit-stream version (revents from playing an
+incompatible bit-stream), sampling rate, bit-rate and user comments. On the
+quality side, the post-filter has been improved and there has been more
+codebook optimization. Note that this release breaks bit-stream
+compatibility with previous releases.
 
 <h3>2002/06/07</h3>
 
-Speex 0.2.0 is out. This is a major release with lots of improvements and bugfixes. First, the 
-encoder and decoder can work directly from wav files (mono only for now) and 
-the decoder can play directly to soundcard. Also, most of the codebooks have 
-been re-trained in order to improve quality (but this also breaks format 
-compatibility with previous versions), while slightly decreasing complexity. 
-Speex is now able to encode both DTMF and music (not as good as Vorbis of 
-course) after bugs were fixed in the pitch prediction and LSP quantization. 
-Last but not the least, the perceptual post-filter has been improved.
+Speex 0.2.0 is out. This is a major release with lots of improvements and
+bugfixes. First, the encoder and decoder can work directly from wav files
+(mono only for now) and the decoder can play directly to soundcard. Also,
+most of the codebooks have been re-trained in order to improve quality (but
+this also breaks format compatibility with previous versions), while
+slightly decreasing complexity. Speex is now able to encode both DTMF and
+music (not as good as Vorbis of course) after bugs were fixed in the pitch
+prediction and LSP quantization. Last but not the least, the perceptual
+post-filter has been improved.
 
 <h3>2002/06/04</h3>
 
@@ -97,18 +123,24 @@ and wideband.
 
 <h3>2002/05/15</h3>
 
-Speex 0.1.0 has been released. Speex now uses the Ogg bitstream (using libogg). That means that
-there is now (limited) bitstream error recovery. Also, the narrowband bit-rate has been reduced
-from 15.7 kbps to 15.1 kbps and the wideband bit-rate has been reduced from 31.3 kbps to 27.7 kbps.
-The quality remains roughly the same for both narrowband and wideband.
-Once again, this breaks compatibility with previous versions.
+Speex 0.1.0 has been released. Speex now uses the Ogg bitstream (using
+libogg). That means that there is now (limited) bitstream error
+recovery. Also, the narrowband bit-rate has been reduced from 15.7 kbps to
+15.1 kbps and the wideband bit-rate has been reduced from 31.3 kbps to 27.7
+kbps.  The quality remains roughly the same for both narrowband and
+wideband.  Once again, this breaks compatibility with previous versions.
 
 <hr width="100%" size="2">          
-<div align="right"><img src="http://sourceforge.net/sflogo.php?group_id=46651&amp;amp;type=5" alt="SourceForge Logo">
+<div align="right"><a href="http://uk.eurorights.org/issues/cd/quick/"><img 
+border="0" width="160" height="40" src="badcd002.png" 
+alt="Say NO to corrupt audio discs" /></a>
 <br>
-<a href="mailto:valj01@gel.usherb.ca">Jean-Mrc Valin</a>       <br>
+<img src="http://sourceforge.net/sflogo.php?group_id=46651&amp;amp;type=5" alt="SourceForge Logo">
+<br>
+
+<a href="mailto:jean-marc.valin@hermes.usherb.ca">Jean-Mrc Valin</a>       <br>
             <a href="mailto:david@voicetronix.com.au">David Rowe</a> <br>
-            $Date: 2002/06/18 22:10:06 $</div>
+            $Date: 2002/07/19 18:46:49 $</div>
 
 
 
