@@ -324,7 +324,6 @@ void sb_encode(void *state, float *in, SpeexBits *bits)
    /* If null mode (no transmission), just set a couple things to zero*/
    if (st->submodes[st->submodeID] == NULL)
    {
-      fprintf (stderr, "Null mode\n");
       for (i=0;i<st->frame_size;i++)
          st->exc[i]=st->sw[i]=0;
 
@@ -737,7 +736,6 @@ void sb_decode(void *state, SpeexBits *bits, float *out, int lost)
    /* If null mode (no transmission), just set a couple things to zero*/
    if (st->submodes[st->submodeID] == NULL)
    {
-      fprintf (stderr, "Null mode\n");
       for (i=0;i<st->frame_size;i++)
          st->exc[i]=0;
 
