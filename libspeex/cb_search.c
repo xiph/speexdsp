@@ -332,7 +332,7 @@ FrameBits *bits,
 float *stack
 )
 {
-   int i,j,k,half;
+   int i,j;
    float *resp, *E, *Ee;
    float *t, *r, *e, *tresp;
    float *gains;
@@ -376,6 +376,8 @@ float *stack
       
    }
 #if 0
+   {
+      int half,k;
    for (half=0;half<2;half++)
    {
       int nb_half=nb_subvect/2;
@@ -432,6 +434,7 @@ float *stack
             exc[j]+=e[j];
          }
       }
+   }
    }
 #else
    for (i=0;i<nb_subvect;i++)

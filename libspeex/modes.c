@@ -111,7 +111,7 @@ SpeexMode wb_mode = {
    pitch_unquant_3tap,
    &ltp_params_wb,
    /*Innovation quantization*/
-   split_cb_search_wb,
+   split_cb_search_wb/*mpulse_search*/,
    split_cb_unquant,
    &split_cb_wb
 };
