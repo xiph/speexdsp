@@ -48,10 +48,18 @@ void encoder_init(EncState *st)
    st->frame = st->inBuf + st->bufSize - st->windowSize;
    st->wBuf = malloc(st->bufSize*sizeof(float));
    st->wframe = st->wBuf + st->bufSize - st->windowSize;
+   st->excBuf = malloc(st->bufSize*sizeof(float));
+   st->exc_frame = st->excBuf + st->bufSize - st->windowSize;
+   st->tBuf = malloc(st->bufSize*sizeof(float));
+   st->tframe = st->tBuf + st->bufSize - st->windowSize;
    for (i=0;i<st->bufSize;i++)
       st->inBuf[i]=0;
    for (i=0;i<st->bufSize;i++)
       st->wBuf[i]=0;
+   for (i=0;i<st->bufSize;i++)
+      st->excBuf[i]=0;
+   for (i=0;i<st->bufSize;i++)
+      st->tBuf[i]=0;
 
    st->window = malloc(st->windowSize*sizeof(float));
    /* Hanning window */
@@ -80,6 +88,8 @@ void encoder_destroy(EncState *st)
    /* Free all allocated memory */
    free(st->inBuf);
    free(st->wBuf);
+   free(st->excBuf);
+   free(st->tBuf);
    free(st->window);
    free(st->buf2);
    free(st->lpc);
@@ -103,6 +113,8 @@ void encode(EncState *st, float *in, int *outSize, void *bits)
    for (i=0;i<st->frameSize;i++)
       st->inBuf[st->bufSize-st->frameSize+i] = in[i];
    memmove(st->wBuf, st->wBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(float));
+   memmove(st->excBuf, st->excBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(float));
+   memmove(st->tBuf, st->tBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(float));
 
    /* Window for analysis */
    for (i=0;i<st->windowSize;i++)
@@ -192,29 +204,71 @@ void encode(EncState *st, float *in, int *outSize, void *bits)
            st->wframe[offset+i] += st->frame[offset+i-j]*st->bw_lpc[j];
       }
 
+
+      /*Subtract ringing from previous frame to find target*/
+      for (i=0;i<st->bufSize;i++)
+         st->tBuf[i] = st->wBuf[i];
+      for (i=0;i<st->subframeSize;i++)
+         st->exc_frame[offset+i]=0;
+      for (i=0;i<st->lpcSize;i++)
+         st->buf2[i]=st->wframe[offset+i-st->lpcSize-1];
+      for (i=0;i<st->subframeSize;i++)
+      {
+         st->buf2[i+st->lpcSize]=0;
+         for (j=1;j<st->lpcSize+1;j++)
+            st->buf2[i+st->lpcSize] += st->exc_frame[offset+i-j]*st->bw_lpc[j] 
+                                - st->buf2[i+st->lpcSize-j]*st->interp_lpc[j];
+         st->tframe[offset+i] = st->wframe[offset+i] - st->buf2[i+st->lpcSize];
+      }
+      
+      /*for (i=0;i<st->subframeSize;i++)
+        st->tframe[i-st->subframeSize]=st->wframe[i-st->subframeSize];*/
+
       /* Find pitch gain and delay, gains are already quantized*/
-      pitch = ltp_closed_loop(st->wframe+offset, st->subframeSize, 20, 120, gain);
-      /*pitch = three_tap_ltp(st->wframe+offset, st->subframeSize, 20, 120, gain);*/
+      //pitch = ltp_closed_loop(st->tframe+offset, st->subframeSize, 20, 120, gain);
+      pitch = three_tap_ltp(st->tframe+offset, st->subframeSize, 20, 120, gain);
+
+      /* Replace weighted frame with target frame */
+      /*for (i=0;i<st->subframeSize;i++)
+        st->wframe[offset+i] = st->tframe[offset+i];*/
 
       printf ("pitch = %d, gains = %f %f %f\n",pitch,gain[0], gain[1], gain[2]);
       /*printf ("%f %f %f ",gain[0], gain[1], gain[2]);*/
       
+
       tmp1=0;
       for (i=0;i<st->subframeSize;i++)
-         tmp1+=st->wframe[offset+i]*st->wframe[offset+i];
-      predictor_three_tap(st->wframe+offset, st->subframeSize, pitch, gain);
+         tmp1+=st->tframe[offset+i]*st->tframe[offset+i];
+
+      predictor_three_tap(st->tframe+offset, st->subframeSize, pitch, gain);
       
       tmp2=0;
       for (i=0;i<st->subframeSize;i++)
-         tmp2+=st->wframe[offset+i]*st->wframe[offset+i];
+         tmp2+=st->tframe[offset+i]*st->tframe[offset+i];
       printf ("pitch prediction gain: %f\n", tmp1/(tmp2+.001));
+      
+      /* Calculate excitation from weighted residue with W(z)=A(z)/A(z/gamma) */
+      for (i=0;i<st->subframeSize;i++)
+      {
+         st->exc_frame[offset+i]=st->tframe[offset+i];
+         for (j=1;j<st->lpcSize+1;j++)
+           st->exc_frame[offset+i] += st->tframe[offset+i-j]*st->interp_lpc[j] 
+                                   - st->exc_frame[offset+i-j]*st->bw_lpc[j];
+         /*printf ("%f ", st->exc_frame[offset+i]);*/
+
+      }
+      /*printf ("\n");*/
       
       /*Analysis by synthesis and excitation quantization here*/
 
       /* Reverse the 3-tab pitch predictor (IIR)*/
-      inverse_three_tap(st->wframe+offset, st->subframeSize, pitch, gain);
+      inverse_three_tap(st->tframe+offset, st->subframeSize, pitch, gain);
+      
+      for (i=0;i<st->subframeSize;i++)
+         st->wframe[offset+i] = st->tframe[offset+i] + st->buf2[i+st->lpcSize];
+      
 
-      /*Inverse short-term predictor (1/W(z/gamma))*/
+      /*Inverse weighting filter (1/W(z/gamma))*/
       for (i=0;i<st->subframeSize;i++)
       {
          st->frame[offset+i]=st->wframe[offset+i];
@@ -232,7 +286,7 @@ void encode(EncState *st, float *in, int *outSize, void *bits)
    st->first = 0;
    /* Replace input by synthesized speech */
    for (i=0;i<st->frameSize;i++)
-      in[i]=st->frame[i];
+     in[i]=st->frame[i];
 }
 
 

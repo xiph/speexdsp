@@ -34,6 +34,10 @@ typedef struct EncState {
    float *frame;          /* Start of original frame */
    float *wBuf;           /* "Weighted" buffer */
    float *wframe;         /* Start of "weighted" frame */
+   float *excBuf;         /* Excitation buffer */
+   float *exc_frame;      /* Start of excitation frame */
+   float *tBuf;           /* "weighted target" buffer */
+   float *tframe;         /* Start of "weighted target" frame */
    float *window;         /* Temporary (Hanning) window */
    float *buf2;           /* 2nd temporary buffer */
    float *autocorr;       /* auto-correlation */

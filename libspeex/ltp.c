@@ -262,6 +262,7 @@ void predictor_three_tap(float *x, int len, int period, float *gain)
 {
    int i;
    for (i=len-1;i>=0;i--)
+   /*for (i=0;i<len;i++)*/
    {
       x[i] -= gain[0]*x[i-period] + gain[1]*x[i-period-1] + gain[2]*x[i-period-2];
    }
