@@ -30,6 +30,7 @@
 
 /* Extern declarations for all codebooks we use here */
 extern float gain_cdbk_nb[];
+extern float gain_cdbk_lbr[];
 extern float hexc_table[];
 extern float exc_5_256_table[];
 extern float exc_5_64_table[];
@@ -58,7 +59,7 @@ ltp_params ltp_params_nb = {
 
 /* Parameters for Long-Term Prediction (LTP)*/
 ltp_params ltp_params_lbr = {
-   gain_cdbk_nb,
+   gain_cdbk_lbr,
    5,
    4
 };
