@@ -67,10 +67,11 @@ int   complexity
    float *resp;
    float *t, *r, *e, *E;
    /*FIXME: Should make this dynamic*/
-   float *tmp, *ot[20], *nt[20];
+   float *tmp, *_ot[20], *_nt[20];
    float *ndist, *odist;
-   int *itmp, *nind[20], *oind[20];
-
+   int *itmp, *_nind[20], *_oind[20];
+   float **ot, **nt;
+   int **nind, **oind;
    int *ind;
    float *shape_cb;
    int shape_cb_size, subvect_size, nb_subvect;
@@ -79,6 +80,10 @@ int   complexity
    int *best_index;
    float *best_dist;
 
+   ot=_ot;
+   nt=_nt;
+   oind=_oind;
+   nind=_nind;
    N=complexity;
    if (N<1)
       N=1;
@@ -135,26 +140,44 @@ int   complexity
    e[0]=1;
    for (i=1;i<nsf;i++)
       e[i]=0;
-   /*residue_zero(e, awk1, r, nsf, p);
-   syn_filt_zero(r, ak, r, nsf, p);
-   syn_filt_zero(r, awk2, r, nsf,p);
-   */
    syn_percep_zero(e, ak, awk1, awk2, r, nsf,p, stack);
 
    /* Pre-compute codewords response and energy */
    for (i=0;i<shape_cb_size;i++)
    {
-      float *res = resp+i*subvect_size;
-
-      /* Compute codeword response */
+      float *res;
+      float *shape;
       int k;
+      res = resp+i*subvect_size;
+      shape = shape_cb+i*subvect_size;
+      /* Compute codeword response */
+      k=0;
+#if 0
       for(j=0;j<subvect_size;j++)
          res[j]=0;
       for(j=0;j<subvect_size;j++)
       {
+#if 1
+         float s=shape[j];
+         float *rr;
+         int lim=subvect_size-j;
+         float *ress=res+j;
+         rr=r;
+         while(lim--)
+            *ress+++=s* *rr++;
+#else
          for (k=j;k<subvect_size;k++)
-            res[k]+=shape_cb[i*subvect_size+j]*r[k-j];
+           res[k]+=shape_cb[i*subvect_size+j]*r[k-j];
+#endif
       }
+#else
+      for(j=0;j<subvect_size;j++)
+      {
+         res[j]=0;
+         for (k=0;k<=j;k++)
+            res[j] += shape[k]*r[j-k];
+      }
+#endif
       E[i]=0;
       for(j=0;j<subvect_size;j++)
          E[i]+=res[j]*res[j];
@@ -179,13 +202,15 @@ int   complexity
          /*For all new n-bests*/
          for (k=0;k<N;k++)
          {
+            float *ct;
             float err=0;
-            /*previous target*/
-            for (m=0;m<nsf;m++)
-               t[m]=ot[j][m];
+            ct = ot[j];
             /*update target*/
 
 #if 0
+            /*previous target*/
+            for (m=0;m<nsf;m++)
+               t[m]=ct[m];
             /* Old code: update all target */
             for (m=0;m<subvect_size;m++)
             {
@@ -195,6 +220,9 @@ int   complexity
             }
             
 #else
+            /*previous target*/
+            for (m=i*subvect_size;m<(i+1)*subvect_size;m++)
+               t[m]=ct[m];
             /* New code: update only enough to calculate error*/
             {
                float *res = resp+best_index[k]*subvect_size;
@@ -211,6 +239,9 @@ int   complexity
             if (err<ndist[N-1] || ndist[N-1]<-.5)
             {
 #if 1
+            /*previous target*/
+            for (m=0;m<nsf;m++)
+               t[m]=ct[m];
                /* New code: update the rest of the target only if it's worth it */
                for (m=0;m<subvect_size;m++)
                {
@@ -248,10 +279,20 @@ int   complexity
            break;
       }
 
-      /*opdate old-new data*/
+      /*update old-new data*/
+#if 1
+      /* just swap pointers instead of a long copy */
+      {
+         float **tmp;
+         tmp=ot;
+         ot=nt;
+         nt=tmp;
+      }
+#else
       for (j=0;j<N;j++)
          for (m=0;m<nsf;m++)
             ot[j][m]=nt[j][m];
+#endif
       for (j=0;j<N;j++)
          for (m=0;m<nb_subvect;m++)
             oind[j][m]=nind[j][m];
@@ -276,9 +317,6 @@ int   complexity
       exc[j]+=e[j];
    
    /* Update target */
-   /*residue_zero(e, awk1, r, nsf, p);
-   syn_filt_zero(r, ak, r, nsf, p);
-   syn_filt_zero(r, awk2, r, nsf,p);*/
    syn_percep_zero(e, ak, awk1, awk2, r, nsf,p, stack);
    for (j=0;j<nsf;j++)
       target[j]-=r[j];
@@ -332,9 +370,6 @@ int   complexity
    e[0]=1;
    for (i=1;i<nsf;i++)
       e[i]=0;
-   /*residue_zero(e, awk1, r, nsf, p);
-   syn_filt_zero(r, ak, r, nsf, p);
-   syn_filt_zero(r, awk2, r, nsf,p);*/
    syn_percep_zero(e, ak, awk1, awk2, r, nsf,p, stack);
 
    /* Pre-compute codewords response and energy */
@@ -500,9 +535,6 @@ int   complexity
       exc[j]+=e[j];
    
    /* Update target */
-   /*residue_zero(e, awk1, r, nsf, p);
-   syn_filt_zero(r, ak, r, nsf, p);
-   syn_filt_zero(r, awk2, r, nsf,p);*/
    syn_percep_zero(e, ak, awk1, awk2, r, nsf,p, stack);
 
    for (j=0;j<nsf;j++)
