@@ -54,7 +54,7 @@
 
 static inline spx_word32_t MULT16_16(spx_word16_t x, spx_word16_t y) {
   int res;
-  asm volatile("smulbb  %0,%1,%2;\n"
+  asm ("smulbb  %0,%1,%2;\n"
               : "=&r"(res)
               : "%r"(x),"r"(y));
   return(res);
@@ -62,7 +62,7 @@ static inline spx_word32_t MULT16_16(spx_word16_t x, spx_word16_t y) {
 
 static inline spx_word32_t MAC16_16(spx_word32_t a, spx_word16_t x, spx_word32_t y) {
   int res;
-  asm volatile("smlabb  %0,%1,%2,%3;\n"
+  asm ("smlabb  %0,%1,%2,%3;\n"
               : "=&r"(res)
                : "%r"(x),"r"(y),"r"(a));
   return(res);
@@ -74,28 +74,28 @@ static inline spx_word32_t MAC16_16(spx_word32_t a, spx_word16_t x, spx_word32_t
 
 static inline spx_word32_t MULT16_32_Q15(spx_word16_t x, spx_word32_t y) {
   int res;
-  asm volatile("smulwb  %0,%1,%2;\n"
+  asm ("smulwb  %0,%1,%2;\n"
               : "=&r"(res)
                : "%r"(y<<1),"r"(x));
   return(res);
 }
 static inline spx_word32_t MAC16_32_Q15(spx_word32_t a, spx_word16_t x, spx_word32_t y) {
   int res;
-  asm volatile("smlawb  %0,%1,%2,%3;\n"
+  asm ("smlawb  %0,%1,%2,%3;\n"
               : "=&r"(res)
                : "%r"(y<<1),"r"(x),"r"(a));
   return(res);
 }
 static inline spx_word32_t MULT16_32_Q11(spx_word16_t x, spx_word32_t y) {
   int res;
-  asm volatile("smulwb  %0,%1,%2;\n"
+  asm ("smulwb  %0,%1,%2;\n"
               : "=&r"(res)
                : "%r"(y<<5),"r"(x));
   return(res);
 }
 static inline spx_word32_t MAC16_32_Q11(spx_word32_t a, spx_word16_t x, spx_word32_t y) {
   int res;
-  asm volatile("smlawb  %0,%1,%2,%3;\n"
+  asm ("smlawb  %0,%1,%2,%3;\n"
               : "=&r"(res)
                : "%r"(y<<5),"r"(x),"r"(a));
   return(res);
