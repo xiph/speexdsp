@@ -1192,7 +1192,7 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
                wideband = speex_bits_unpack_unsigned(bits, 1);
                if (wideband)
                {
-                  speex_warning ("More than to wideband layers found: corrupted stream?");
+                  speex_warning ("More than two wideband layers found: corrupted stream?");
                   return -2;
                }
 
