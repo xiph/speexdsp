@@ -70,17 +70,17 @@ typedef struct EncState {
    float  lag_factor;     /**< Lag windowing Gaussian width */
    float  lpc_floor;      /**< Noise floor multiplier for A[0] in LPC analysis*/
    char  *stack;          /**< Pseudo-stack allocation for temporary memory */
-   float *inBuf;          /**< Input buffer (original signal) */
-   float *frame;          /**< Start of original frame */
-   float *excBuf;         /**< Excitation buffer */
-   float *exc;            /**< Start of excitation frame */
-   float *exc2Buf;        /**< "Pitch enhanced" excitation */
-   float *exc2;           /**< "Pitch enhanced" excitation */
-   float *swBuf;          /**< Weighted signal buffer */
-   float *sw;             /**< Start of weighted signal frame */
-   float *innov;          /**< Innovation for the frame */
+   spx_sig_t *inBuf;          /**< Input buffer (original signal) */
+   spx_sig_t *frame;          /**< Start of original frame */
+   spx_sig_t *excBuf;         /**< Excitation buffer */
+   spx_sig_t *exc;            /**< Start of excitation frame */
+   spx_sig_t *exc2Buf;        /**< "Pitch enhanced" excitation */
+   spx_sig_t *exc2;           /**< "Pitch enhanced" excitation */
+   spx_sig_t *swBuf;          /**< Weighted signal buffer */
+   spx_sig_t *sw;             /**< Start of weighted signal frame */
+   spx_sig_t *innov;          /**< Innovation for the frame */
    spx_word16_t *window;         /**< Temporary (Hanning) window */
-   float *buf2;           /**< 2nd temporary buffer */
+   spx_sig_t *buf2;           /**< 2nd temporary buffer */
    spx_word16_t *autocorr;       /**< auto-correlation */
    float *lagWindow;      /**< Window applied to auto-correlation */
    spx_coef_t *lpc;            /**< LPCs for current frame */
@@ -144,11 +144,11 @@ typedef struct DecState {
    float  gamma1;         /**< Perceptual filter: A(z/gamma1) */
    float  gamma2;         /**< Perceptual filter: A(z/gamma2) */
    char  *stack;          /**< Pseudo-stack allocation for temporary memory */
-   float *inBuf;          /**< Input buffer (original signal) */
-   float *frame;          /**< Start of original frame */
-   float *excBuf;         /**< Excitation buffer */
-   float *exc;            /**< Start of excitation frame */
-   float *innov;          /**< Innovation for the frame */
+   spx_sig_t *inBuf;          /**< Input buffer (original signal) */
+   spx_sig_t *frame;          /**< Start of original frame */
+   spx_sig_t *excBuf;         /**< Excitation buffer */
+   spx_sig_t *exc;            /**< Start of excitation frame */
+   spx_sig_t *innov;          /**< Innovation for the frame */
    float *qlsp;           /**< Quantized LSPs for current frame */
    float *old_qlsp;       /**< Quantized LSPs for previous frame */
    float *interp_qlsp;    /**< Interpolated quantized LSPs */

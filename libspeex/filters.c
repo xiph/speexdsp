@@ -55,7 +55,7 @@ int fixed_point_on = 1;
 #define MUL_16_32_R15(a,bh,bl) ((a)*(bh) + ((a)*(bl)>>15))
 
 
-void filter_mem2(float *x, spx_coef_t *num, spx_coef_t *den, float *y, int N, int ord, spx_mem_t *mem)
+void filter_mem2(spx_sig_t *x, spx_coef_t *num, spx_coef_t *den, spx_sig_t *y, int N, int ord, spx_mem_t *mem)
 {
    int i,j;
    int xi,yi;
@@ -79,7 +79,7 @@ void filter_mem2(float *x, spx_coef_t *num, spx_coef_t *den, float *y, int N, in
    }
 }
 
-void iir_mem2(float *x, spx_coef_t *den, float *y, int N, int ord, spx_mem_t *mem)
+void iir_mem2(spx_sig_t *x, spx_coef_t *den, spx_sig_t *y, int N, int ord, spx_mem_t *mem)
 {
    int i,j;
    int xi,yi;
@@ -104,7 +104,7 @@ void iir_mem2(float *x, spx_coef_t *den, float *y, int N, int ord, spx_mem_t *me
 }
 
 
-void fir_mem2(float *x, spx_coef_t *num, float *y, int N, int ord, spx_mem_t *mem)
+void fir_mem2(spx_sig_t *x, spx_coef_t *num, spx_sig_t *y, int N, int ord, spx_mem_t *mem)
 {
    int i,j;
    int xi,yi;
@@ -138,7 +138,7 @@ void fir_mem2(float *x, spx_coef_t *num, float *y, int N, int ord, spx_mem_t *me
 #else
 
 
-void filter_mem2(float *x, spx_coef_t *num, spx_coef_t *den, float *y, int N, int ord,  spx_mem_t *mem)
+void filter_mem2(spx_sig_t *x, spx_coef_t *num, spx_coef_t *den, spx_sig_t *y, int N, int ord,  spx_mem_t *mem)
 {
    int i,j;
    float xi,yi;
@@ -156,7 +156,7 @@ void filter_mem2(float *x, spx_coef_t *num, spx_coef_t *den, float *y, int N, in
 }
 
 
-void iir_mem2(float *x, spx_coef_t *den, float *y, int N, int ord, spx_mem_t *mem)
+void iir_mem2(spx_sig_t *x, spx_coef_t *den, spx_sig_t *y, int N, int ord, spx_mem_t *mem)
 {
    int i,j;
    for (i=0;i<N;i++)
@@ -173,7 +173,7 @@ void iir_mem2(float *x, spx_coef_t *den, float *y, int N, int ord, spx_mem_t *me
 
 #endif
 
-void fir_mem2(float *x, spx_coef_t *num, float *y, int N, int ord, spx_mem_t *mem)
+void fir_mem2(spx_sig_t *x, spx_coef_t *num, spx_sig_t *y, int N, int ord, spx_mem_t *mem)
 {
    int i,j;
    float xi;
@@ -193,7 +193,7 @@ void fir_mem2(float *x, spx_coef_t *num, float *y, int N, int ord, spx_mem_t *me
 #endif
 
 
-void syn_percep_zero(float *xx, spx_coef_t *ak, spx_coef_t *awk1, spx_coef_t *awk2, float *y, int N, int ord, char *stack)
+void syn_percep_zero(spx_sig_t *xx, spx_coef_t *ak, spx_coef_t *awk1, spx_coef_t *awk2, spx_sig_t *y, int N, int ord, char *stack)
 {
    int i;
    spx_mem_t *mem = PUSH(stack,ord, spx_mem_t);
@@ -205,7 +205,7 @@ void syn_percep_zero(float *xx, spx_coef_t *ak, spx_coef_t *awk1, spx_coef_t *aw
    filter_mem2(y, awk1, awk2, y, N, ord, mem);
 }
 
-void residue_percep_zero(float *xx, spx_coef_t *ak, spx_coef_t *awk1, spx_coef_t *awk2, float *y, int N, int ord, char *stack)
+void residue_percep_zero(spx_sig_t *xx, spx_coef_t *ak, spx_coef_t *awk1, spx_coef_t *awk2, spx_sig_t *y, int N, int ord, char *stack)
 {
    int i;
    spx_mem_t *mem = PUSH(stack,ord, spx_mem_t);
@@ -218,7 +218,7 @@ void residue_percep_zero(float *xx, spx_coef_t *ak, spx_coef_t *awk1, spx_coef_t
 }
 
 
-void qmf_decomp(float *xx, float *aa, float *y1, float *y2, int N, int M, float *mem, char *stack)
+void qmf_decomp(float *xx, float *aa, spx_sig_t *y1, spx_sig_t *y2, int N, int M, float *mem, char *stack)
 {
    int i,j,k,M2;
    float *a;
@@ -253,7 +253,7 @@ void qmf_decomp(float *xx, float *aa, float *y1, float *y2, int N, int M, float 
 }
 
 /* By segher */
-void fir_mem_up(float *x, float *a, float *y, int N, int M, float *mem, char *stack)
+void fir_mem_up(spx_sig_t *x, float *a, spx_sig_t *y, int N, int M, float *mem, char *stack)
    /* assumptions:
       all odd x[i] are zero -- well, actually they are left out of the array now
       N and M are multiples of 4 */
@@ -314,8 +314,8 @@ void comp_filter_mem_init (CombFilterMem *mem)
 }
 
 void comb_filter(
-float *exc,          /*decoded excitation*/
-float *new_exc,      /*enhanced excitation*/
+spx_sig_t *exc,          /*decoded excitation*/
+spx_sig_t *new_exc,      /*enhanced excitation*/
 spx_coef_t *ak,           /*LPC filter coefs*/
 int p,               /*LPC order*/
 int nsf,             /*sub-frame size*/

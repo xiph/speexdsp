@@ -126,7 +126,7 @@ void speex_warning_int(char *str, int val)
    fprintf (stderr, "warning: %s %d\n", str, val);
 }
 
-void speex_rand_vec(float std, float *data, int len)
+void speex_rand_vec(float std, spx_sig_t *data, int len)
 {
    int i;
    for (i=0;i<len;i++)

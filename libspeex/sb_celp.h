@@ -58,17 +58,17 @@ typedef struct SBEncState {
    float  gamma2;              /**< Perceptual weighting coef 2 */
 
    char  *stack;               /**< Temporary allocation stack */
-   float *x0d, *x1d; /**< QMF filter signals*/
-   float *high;                /**< High-band signal (buffer) */
-   float *y0, *y1;             /**< QMF synthesis signals */
+   spx_sig_t *x0d, *x1d; /**< QMF filter signals*/
+   spx_sig_t *high;                /**< High-band signal (buffer) */
+   spx_sig_t *y0, *y1;             /**< QMF synthesis signals */
    float *h0_mem, *h1_mem, *g0_mem, *g1_mem; /**< QMF memories */
 
-   float *excBuf;              /**< High-band excitation */
-   float *exc;                 /**< High-band excitation (for QMF only)*/
-   float *buf;                 /**< Temporary buffer */
-   float *res;                 /**< Zero-input response (ringing) */
-   float *sw;                  /**< Perceptually weighted signal */
-   float *target;              /**< Weighted target signal (analysis by synthesis) */
+   spx_sig_t *excBuf;              /**< High-band excitation */
+   spx_sig_t *exc;                 /**< High-band excitation (for QMF only)*/
+   spx_sig_t *buf;                 /**< Temporary buffer */
+   spx_sig_t *res;                 /**< Zero-input response (ringing) */
+   spx_sig_t *sw;                  /**< Perceptually weighted signal */
+   spx_sig_t *target;              /**< Weighted target signal (analysis by synthesis) */
    spx_word16_t *window;              /**< LPC analysis window */
    float *lagWindow;           /**< Auto-correlation window */
    spx_word16_t *autocorr;            /**< Auto-correlation (for LPC analysis) */
@@ -122,12 +122,12 @@ typedef struct SBDecState {
    int    lpc_enh_enabled;
 
    char  *stack;
-   float *x0d, *x1d;
-   float *high;
-   float *y0, *y1;
+   spx_sig_t *x0d, *x1d;
+   spx_sig_t *high;
+   spx_sig_t *y0, *y1;
    float *h0_mem, *h1_mem, *g0_mem, *g1_mem;
 
-   float *exc;
+   spx_sig_t *exc;
    float *qlsp;
    float *old_qlsp;
    float *interp_qlsp;

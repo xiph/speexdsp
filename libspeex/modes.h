@@ -55,21 +55,21 @@ typedef void (*lsp_unquant_func)(float *, int, SpeexBits *);
 
 
 /** Long-term predictor quantization */
-typedef int (*ltp_quant_func)(float *, float *, spx_coef_t *, spx_coef_t *, 
-                              spx_coef_t *, float *, void *, int, int, float, 
-                              int, int, SpeexBits*, char *, float *, float *, int, int);
+typedef int (*ltp_quant_func)(spx_sig_t *, spx_sig_t *, spx_coef_t *, spx_coef_t *, 
+                              spx_coef_t *, spx_sig_t *, void *, int, int, float, 
+                              int, int, SpeexBits*, char *, spx_sig_t *, spx_sig_t *, int, int);
 
 /** Long-term un-quantize */
-typedef void (*ltp_unquant_func)(float *, int, int, float, void *, int, int *,
+typedef void (*ltp_unquant_func)(spx_sig_t *, int, int, float, void *, int, int *,
                                  float *, SpeexBits*, char*, int, int, float, int);
 
 
 /** Innovation quantization function */
-typedef void (*innovation_quant_func)(float *, spx_coef_t *, spx_coef_t *, spx_coef_t *, void *, int, int, 
-                                      float *, float *, SpeexBits *, char *, int);
+typedef void (*innovation_quant_func)(spx_sig_t *, spx_coef_t *, spx_coef_t *, spx_coef_t *, void *, int, int, 
+                                      spx_sig_t *, spx_sig_t *, SpeexBits *, char *, int);
 
 /** Innovation unquantization function */
-typedef void (*innovation_unquant_func)(float *, void *, int, SpeexBits*, char *);
+typedef void (*innovation_unquant_func)(spx_sig_t *, void *, int, SpeexBits*, char *);
 
 /** Description of a Speex sub-mode (wither narrowband or wideband */
 typedef struct SpeexSubmode {

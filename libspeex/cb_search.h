@@ -46,22 +46,22 @@ typedef struct split_cb_params {
 
 
 void split_cb_search_shape_sign(
-float target[],			/* target vector */
+spx_sig_t target[],			/* target vector */
 spx_coef_t ak[],			/* LPCs for this subframe */
 spx_coef_t awk1[],			/* Weighted LPCs for this subframe */
 spx_coef_t awk2[],			/* Weighted LPCs for this subframe */
 void *par,                      /* Codebook/search parameters*/
 int   p,                        /* number of LPC coeffs */
 int   nsf,                      /* number of samples in subframe */
-float *exc,
-float *r,
+spx_sig_t *exc,
+spx_sig_t *r,
 SpeexBits *bits,
 char *stack,
 int   complexity
 );
 
 void split_cb_shape_sign_unquant(
-float *exc,
+spx_sig_t *exc,
 void *par,                      /* non-overlapping codebook */
 int   nsf,                      /* number of samples in subframe */
 SpeexBits *bits,
@@ -70,15 +70,15 @@ char *stack
 
 
 void noise_codebook_quant(
-float target[],			/* target vector */
+spx_sig_t target[],			/* target vector */
 spx_coef_t ak[],			/* LPCs for this subframe */
 spx_coef_t awk1[],			/* Weighted LPCs for this subframe */
 spx_coef_t awk2[],			/* Weighted LPCs for this subframe */
 void *par,                      /* Codebook/search parameters*/
 int   p,                        /* number of LPC coeffs */
 int   nsf,                      /* number of samples in subframe */
-float *exc,
-float *r,
+spx_sig_t *exc,
+spx_sig_t *r,
 SpeexBits *bits,
 char *stack,
 int   complexity
@@ -86,7 +86,7 @@ int   complexity
 
 
 void noise_codebook_unquant(
-float *exc,
+spx_sig_t *exc,
 void *par,                      /* non-overlapping codebook */
 int   nsf,                      /* number of samples in subframe */
 SpeexBits *bits,

@@ -42,13 +42,13 @@ typedef struct CombFilterMem {
 } CombFilterMem;
 
 
-void qmf_decomp(float *xx, float *aa, float *y1, float *y2, int N, int M, float *mem, char *stack);
-void fir_mem_up(float *x, float *a, float *y, int N, int M, float *mem, char *stack);
+void qmf_decomp(float *xx, float *aa, spx_sig_t *y1, spx_sig_t *y2, int N, int M, float *mem, char *stack);
+void fir_mem_up(spx_sig_t *x, float *a, spx_sig_t *y, int N, int M, float *mem, char *stack);
 
 
-void filter_mem2(float *x, spx_coef_t *num, spx_coef_t *den, float *y, int N, int ord, spx_mem_t *mem);
-void fir_mem2(float *x, spx_coef_t *num, float *y, int N, int ord, spx_mem_t *mem);
-void iir_mem2(float *x, spx_coef_t *den, float *y, int N, int ord, spx_mem_t *mem);
+void filter_mem2(spx_sig_t *x, spx_coef_t *num, spx_coef_t *den, spx_sig_t *y, int N, int ord, spx_mem_t *mem);
+void fir_mem2(spx_sig_t *x, spx_coef_t *num, spx_sig_t *y, int N, int ord, spx_mem_t *mem);
+void iir_mem2(spx_sig_t *x, spx_coef_t *den, spx_sig_t *y, int N, int ord, spx_mem_t *mem);
 
 /* Apply bandwidth expansion on LPC coef */
 void bw_lpc(float gamma, spx_coef_t *lpc_in, spx_coef_t *lpc_out, int order);
@@ -56,17 +56,17 @@ void bw_lpc(float gamma, spx_coef_t *lpc_in, spx_coef_t *lpc_out, int order);
 
 
 /* FIR filter */
-void fir_decim_mem(float *x, float *a, float *y, int N, int M, float *mem);
+void fir_decim_mem(spx_sig_t *x, float *a, spx_sig_t *y, int N, int M, float *mem);
 
-void syn_percep_zero(float *x, spx_coef_t *ak, spx_coef_t *awk1, spx_coef_t *awk2, float *y, int N, int ord, char *stack);
+void syn_percep_zero(spx_sig_t *x, spx_coef_t *ak, spx_coef_t *awk1, spx_coef_t *awk2, spx_sig_t *y, int N, int ord, char *stack);
 
-void residue_percep_zero(float *xx, spx_coef_t *ak, spx_coef_t *awk1, spx_coef_t *awk2, float *y, int N, int ord, char *stack);
+void residue_percep_zero(spx_sig_t *xx, spx_coef_t *ak, spx_coef_t *awk1, spx_coef_t *awk2, spx_sig_t *y, int N, int ord, char *stack);
 
 void comp_filter_mem_init (CombFilterMem *mem);
 
 void comb_filter(
-float *exc,          /*decoded excitation*/
-float *new_exc,      /*enhanced excitation*/
+spx_sig_t *exc,          /*decoded excitation*/
+spx_sig_t *new_exc,      /*enhanced excitation*/
 spx_coef_t *ak,           /*LPC filter coefs*/
 int p,               /*LPC order*/
 int nsf,             /*sub-frame size*/

@@ -33,10 +33,12 @@
 #ifndef VQ_H
 #define VQ_H
 
+#include "misc.h"
+
 int vq_index(float *in, float *codebook, int len, int entries);
 
-void vq_nbest(float *in, float *codebook, int len, int entries, float *E, int N, int *nbest, float *best_dist);
+void vq_nbest(spx_sig_t *in, spx_sig_t *codebook, int len, int entries, float *E, int N, int *nbest, float *best_dist);
 
-void vq_nbest_sign(float *in, float *codebook, int len, int entries, float *E, int N, int *nbest, float *best_dist);
+void vq_nbest_sign(spx_sig_t *in, spx_sig_t *codebook, int len, int entries, float *E, int N, int *nbest, float *best_dist);
 
 #endif

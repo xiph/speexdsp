@@ -158,24 +158,24 @@ void *sb_encoder_init(SpeexMode *m)
    st->gamma2=mode->gamma2;
    st->first=1;
 
-   st->x0d=PUSH(st->stack, st->frame_size, float);
-   st->x1d=PUSH(st->stack, st->frame_size, float);
-   st->high=PUSH(st->stack, st->full_frame_size, float);
-   st->y0=PUSH(st->stack, st->full_frame_size, float);
-   st->y1=PUSH(st->stack, st->full_frame_size, float);
+   st->x0d=PUSH(st->stack, st->frame_size, spx_sig_t);
+   st->x1d=PUSH(st->stack, st->frame_size, spx_sig_t);
+   st->high=PUSH(st->stack, st->full_frame_size, spx_sig_t);
+   st->y0=PUSH(st->stack, st->full_frame_size, spx_sig_t);
+   st->y1=PUSH(st->stack, st->full_frame_size, spx_sig_t);
 
    st->h0_mem=PUSH(st->stack, QMF_ORDER, float);
    st->h1_mem=PUSH(st->stack, QMF_ORDER, float);
    st->g0_mem=PUSH(st->stack, QMF_ORDER, float);
    st->g1_mem=PUSH(st->stack, QMF_ORDER, float);
 
-   st->buf=PUSH(st->stack, st->windowSize, float);
-   st->excBuf=PUSH(st->stack, st->bufSize, float);
+   st->buf=PUSH(st->stack, st->windowSize, spx_sig_t);
+   st->excBuf=PUSH(st->stack, st->bufSize, spx_sig_t);
    st->exc = st->excBuf + st->bufSize - st->windowSize;
 
-   st->res=PUSH(st->stack, st->frame_size, float);
-   st->sw=PUSH(st->stack, st->frame_size, float);
-   st->target=PUSH(st->stack, st->frame_size, float);
+   st->res=PUSH(st->stack, st->frame_size, spx_sig_t);
+   st->sw=PUSH(st->stack, st->frame_size, spx_sig_t);
+   st->target=PUSH(st->stack, st->frame_size, spx_sig_t);
    /*Asymmetric "pseudo-Hamming" window*/
    {
       int part1, part2;
@@ -239,8 +239,9 @@ int sb_encode(void *state, float *in, SpeexBits *bits)
    int i, roots, sub;
    char *stack;
    spx_mem_t *mem;
-   float *innov, *syn_resp;
-   float *low_pi_gain, *low_exc, *low_innov;
+   spx_sig_t *innov, *syn_resp;
+   float *low_pi_gain;
+   spx_sig_t *low_exc, *low_innov;
    SpeexSBMode *mode;
    int dtx;
 
@@ -248,11 +249,21 @@ int sb_encode(void *state, float *in, SpeexBits *bits)
    stack=st->stack;
    mode = (SpeexSBMode*)(st->mode->mode);
 
-   /* Compute the two sub-bands by filtering with h0 and h1*/
-   qmf_decomp(in, h0, st->x0d, st->x1d, st->full_frame_size, QMF_ORDER, st->h0_mem, stack);
-    
-   /* Encode the narrowband part*/
-   speex_encode(st->st_low, st->x0d, bits);
+   {
+      float *low = PUSH(stack, st->frame_size, float);
+
+      /* Compute the two sub-bands by filtering with h0 and h1*/
+      qmf_decomp(in, h0, st->x0d, st->x1d, st->full_frame_size, QMF_ORDER, st->h0_mem, stack);
+      
+      for (i=0;i<st->frame_size;i++)
+         low[i] = st->x0d[i];
+      
+      /* Encode the narrowband part*/
+      speex_encode(st->st_low, low, bits);
+
+      for (i=0;i<st->frame_size;i++)
+         st->x0d[i] = low[i];
+   }
 
    for (i=0;i<st->frame_size;i++)
       st->x0d[i] *= SIG_SCALING;
@@ -269,8 +280,8 @@ int sb_encode(void *state, float *in, SpeexBits *bits)
 
 
    low_pi_gain = PUSH(stack, st->nbSubframes, float);
-   low_exc = PUSH(stack, st->frame_size, float);
-   low_innov = PUSH(stack, st->frame_size, float);
+   low_exc = PUSH(stack, st->frame_size, spx_sig_t);
+   low_innov = PUSH(stack, st->frame_size, spx_sig_t);
    speex_encoder_ctl(st->st_low, SPEEX_GET_PI_GAIN, low_pi_gain);
    speex_encoder_ctl(st->st_low, SPEEX_GET_EXC, low_exc);
    speex_encoder_ctl(st->st_low, SPEEX_GET_INNOV, low_innov);
@@ -454,12 +465,13 @@ int sb_encode(void *state, float *in, SpeexBits *bits)
    }
    
    mem=PUSH(stack, st->lpcSize, spx_mem_t);
-   syn_resp=PUSH(stack, st->subframeSize, float);
-   innov = PUSH(stack, st->subframeSize, float);
+   syn_resp=PUSH(stack, st->subframeSize, spx_sig_t);
+   innov = PUSH(stack, st->subframeSize, spx_sig_t);
 
    for (sub=0;sub<st->nbSubframes;sub++)
    {
-      float *exc, *sp, *res, *target, *sw, tmp, filter_ratio;
+      spx_sig_t *exc, *sp, *res, *target, *sw;
+      float tmp, filter_ratio;
       int offset;
       float rl, rh, eh=0, el=0;
       int fold;
@@ -605,9 +617,6 @@ int sb_encode(void *state, float *in, SpeexBits *bits)
          for (i=0;i<st->subframeSize;i++)
             target[i]*=scale_1;
 
-         for (i=0;i<st->subframeSize;i++)
-            syn_resp[i]/=SIG_SCALING;
-
          /* Reset excitation */
          for (i=0;i<st->subframeSize;i++)
             innov[i]=0;
@@ -623,7 +632,7 @@ int sb_encode(void *state, float *in, SpeexBits *bits)
 
          if (SUBMODE(double_codebook)) {
             char *tmp_stack=stack;
-            float *innov2 = PUSH(tmp_stack, st->subframeSize, float);
+            spx_sig_t *innov2 = PUSH(tmp_stack, st->subframeSize, spx_sig_t);
             for (i=0;i<st->subframeSize;i++)
                innov2[i]=0;
             for (i=0;i<st->subframeSize;i++)
@@ -636,9 +645,6 @@ int sb_encode(void *state, float *in, SpeexBits *bits)
             for (i=0;i<st->subframeSize;i++)
                exc[i] += innov2[i];
          }
-
-         for (i=0;i<st->subframeSize;i++)
-            syn_resp[i]/=SIG_SCALING;
 
       }
 
@@ -705,18 +711,18 @@ void *sb_decoder_init(SpeexMode *m)
    st->first=1;
 
 
-   st->x0d=PUSH(st->stack, st->frame_size, float);
-   st->x1d=PUSH(st->stack, st->frame_size, float);
-   st->high=PUSH(st->stack, st->full_frame_size, float);
-   st->y0=PUSH(st->stack, st->full_frame_size, float);
-   st->y1=PUSH(st->stack, st->full_frame_size, float);
+   st->x0d=PUSH(st->stack, st->frame_size, spx_sig_t);
+   st->x1d=PUSH(st->stack, st->frame_size, spx_sig_t);
+   st->high=PUSH(st->stack, st->full_frame_size, spx_sig_t);
+   st->y0=PUSH(st->stack, st->full_frame_size, spx_sig_t);
+   st->y1=PUSH(st->stack, st->full_frame_size, spx_sig_t);
 
    st->h0_mem=PUSH(st->stack, QMF_ORDER, float);
    st->h1_mem=PUSH(st->stack, QMF_ORDER, float);
    st->g0_mem=PUSH(st->stack, QMF_ORDER, float);
    st->g1_mem=PUSH(st->stack, QMF_ORDER, float);
 
-   st->exc=PUSH(st->stack, st->frame_size, float);
+   st->exc=PUSH(st->stack, st->frame_size, spx_sig_t);
 
    st->qlsp = PUSH(st->stack, st->lpcSize, float);
    st->old_qlsp = PUSH(st->stack, st->lpcSize, float);
@@ -835,7 +841,8 @@ int sb_decode(void *state, SpeexBits *bits, float *out)
    int wideband;
    int ret;
    char *stack;
-   float *low_pi_gain, *low_exc, *low_innov;
+   float *low_pi_gain;
+   spx_sig_t *low_exc, *low_innov;
    spx_coef_t *awk1, *awk2, *awk3;
    int dtx;
    SpeexSBMode *mode;
@@ -844,11 +851,16 @@ int sb_decode(void *state, SpeexBits *bits, float *out)
    stack=st->stack;
    mode = (SpeexSBMode*)(st->mode->mode);
 
-   /* Decode the low-band */
-   ret = speex_decode(st->st_low, bits, st->x0d);
-
-   for (i=0;i<st->frame_size;i++)
-      st->x0d[i] *= SIG_SCALING;
+   {
+      float *low;
+      low = PUSH(stack, st->frame_size, float);
+      
+      /* Decode the low-band */
+      ret = speex_decode(st->st_low, bits, low);
+      
+      for (i=0;i<st->frame_size;i++)
+         st->x0d[i] = low[i]*SIG_SCALING;
+   }
 
    speex_decoder_ctl(st->st_low, SPEEX_GET_DTX_STATUS, &dtx);
 
@@ -920,8 +932,8 @@ int sb_decode(void *state, SpeexBits *bits, float *out)
       st->exc[i]=0;
 
    low_pi_gain = PUSH(stack, st->nbSubframes, float);
-   low_exc = PUSH(stack, st->frame_size, float);
-   low_innov = PUSH(stack, st->frame_size, float);
+   low_exc = PUSH(stack, st->frame_size, spx_sig_t);
+   low_innov = PUSH(stack, st->frame_size, spx_sig_t);
    speex_decoder_ctl(st->st_low, SPEEX_GET_PI_GAIN, low_pi_gain);
    speex_decoder_ctl(st->st_low, SPEEX_GET_EXC, low_exc);
    speex_decoder_ctl(st->st_low, SPEEX_GET_INNOV, low_innov);
@@ -940,7 +952,8 @@ int sb_decode(void *state, SpeexBits *bits, float *out)
 
    for (sub=0;sub<st->nbSubframes;sub++)
    {
-      float *exc, *sp, tmp, filter_ratio, el=0;
+      spx_sig_t *exc, *sp;
+      float tmp, filter_ratio, el=0;
       int offset;
       float rl=0,rh=0;
       
@@ -1041,7 +1054,7 @@ int sb_decode(void *state, SpeexBits *bits, float *out)
 
          if (SUBMODE(double_codebook)) {
             char *tmp_stack=stack;
-            float *innov2 = PUSH(tmp_stack, st->subframeSize, float);
+            spx_sig_t *innov2 = PUSH(tmp_stack, st->subframeSize, spx_sig_t);
             for (i=0;i<st->subframeSize;i++)
                innov2[i]=0;
             SUBMODE(innovation_unquant)(innov2, SUBMODE(innovation_params), st->subframeSize, 

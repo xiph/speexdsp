@@ -72,7 +72,7 @@ void *nb_encoder_init(SpeexMode *m)
    int i;
 
    mode=(SpeexNBMode *)m->mode;
-   st = (EncState*)speex_alloc(sizeof(EncState)+8000*sizeof(float));
+   st = (EncState*)speex_alloc(sizeof(EncState)+8000*sizeof(spx_sig_t));
    if (!st)
       return NULL;
 
@@ -103,18 +103,18 @@ void *nb_encoder_init(SpeexMode *m)
 #endif
 
    /* Allocating input buffer */
-   st->inBuf = PUSH(st->stack, st->bufSize, float);
+   st->inBuf = PUSH(st->stack, st->bufSize, spx_sig_t);
    st->frame = st->inBuf + st->bufSize - st->windowSize;
    /* Allocating excitation buffer */
-   st->excBuf = PUSH(st->stack, st->bufSize, float);
+   st->excBuf = PUSH(st->stack, st->bufSize, spx_sig_t);
    st->exc = st->excBuf + st->bufSize - st->windowSize;
-   st->swBuf = PUSH(st->stack, st->bufSize, float);
+   st->swBuf = PUSH(st->stack, st->bufSize, spx_sig_t);
    st->sw = st->swBuf + st->bufSize - st->windowSize;
 
-   st->exc2Buf = PUSH(st->stack, st->bufSize, float);
+   st->exc2Buf = PUSH(st->stack, st->bufSize, spx_sig_t);
    st->exc2 = st->exc2Buf + st->bufSize - st->windowSize;
 
-   st->innov = PUSH(st->stack, st->frameSize, float);
+   st->innov = PUSH(st->stack, st->frameSize, spx_sig_t);
 
    /* Asymmetric "pseudo-Hamming" window */
    {
@@ -134,7 +134,7 @@ void *nb_encoder_init(SpeexMode *m)
 
    st->autocorr = PUSH(st->stack, st->lpcSize+1, spx_word16_t);
 
-   st->buf2 = PUSH(st->stack, st->windowSize, float);
+   st->buf2 = PUSH(st->stack, st->windowSize, spx_sig_t);
 
    st->lpc = PUSH(st->stack, st->lpcSize+1, spx_coef_t);
    st->interp_lpc = PUSH(st->stack, st->lpcSize+1, spx_coef_t);
@@ -198,12 +198,12 @@ int nb_encode(void *state, float *in, SpeexBits *bits)
    int ol_pitch;
    float ol_pitch_coef;
    float ol_gain;
-   float *res, *target;
+   spx_sig_t *res, *target;
    spx_mem_t *mem;
    char *stack;
-   float *syn_resp;
+   spx_sig_t *syn_resp;
    float lsp_dist=0;
-   float *orig;
+   spx_sig_t *orig;
 #ifdef EPIC_48K
    int pitch_half[2];
    int ol_pitch_id=0;
@@ -597,12 +597,12 @@ int nb_encode(void *state, float *in, SpeexBits *bits)
    }
 
    /* Filter response */
-   res = PUSH(stack, st->subframeSize, float);
+   res = PUSH(stack, st->subframeSize, spx_sig_t);
    /* Target signal */
-   target = PUSH(stack, st->subframeSize, float);
-   syn_resp = PUSH(stack, st->subframeSize, float);
+   target = PUSH(stack, st->subframeSize, spx_sig_t);
+   syn_resp = PUSH(stack, st->subframeSize, spx_sig_t);
    mem = PUSH(stack, st->lpcSize, spx_mem_t);
-   orig = PUSH(stack, st->frameSize, float);
+   orig = PUSH(stack, st->frameSize, spx_sig_t);
    for (i=0;i<st->frameSize;i++)
       orig[i]=st->frame[i];
 
@@ -611,7 +611,7 @@ int nb_encode(void *state, float *in, SpeexBits *bits)
    {
       float tmp;
       int   offset;
-      float *sp, *sw, *exc, *exc2;
+      spx_sig_t *sp, *sw, *exc, *exc2;
       int pitch;
 
 #ifdef EPIC_48K
@@ -773,7 +773,7 @@ int nb_encode(void *state, float *in, SpeexBits *bits)
 
       /* Quantization of innovation */
       {
-         float *innov;
+         spx_sig_t *innov;
          float ener=0, ener_1;
 
          innov = st->innov+sub*st->subframeSize;
@@ -820,9 +820,6 @@ int nb_encode(void *state, float *in, SpeexBits *bits)
          for (i=0;i<st->subframeSize;i++)
             target[i]*=ener_1;
          
-         for (i=0;i<st->subframeSize;i++)
-            syn_resp[i]/=SIG_SCALING;
-
          /* Quantize innovation */
          if (SUBMODE(innovation_quant))
          {
@@ -843,7 +840,7 @@ int nb_encode(void *state, float *in, SpeexBits *bits)
          /* In some (rare) modes, we do a second search (more bits) to reduce noise even more */
          if (SUBMODE(double_codebook)) {
             char *tmp_stack=stack;
-            float *innov2 = PUSH(tmp_stack, st->subframeSize, float);
+            spx_sig_t *innov2 = PUSH(tmp_stack, st->subframeSize, spx_sig_t);
             for (i=0;i<st->subframeSize;i++)
                innov2[i]=0;
             for (i=0;i<st->subframeSize;i++)
@@ -856,9 +853,6 @@ int nb_encode(void *state, float *in, SpeexBits *bits)
             for (i=0;i<st->subframeSize;i++)
                exc[i] += innov2[i];
          }
-
-         for (i=0;i<st->subframeSize;i++)
-            syn_resp[i]*=SIG_SCALING;
 
          for (i=0;i<st->subframeSize;i++)
             target[i]*=ener;
@@ -929,7 +923,7 @@ void *nb_decoder_init(SpeexMode *m)
    int i;
 
    mode=(SpeexNBMode*)m->mode;
-   st = (DecState *)speex_alloc(sizeof(DecState)+4000*sizeof(float));
+   st = (DecState *)speex_alloc(sizeof(DecState)+4000*sizeof(spx_sig_t));
    st->mode=m;
 
    st->stack = ((char*)st) + sizeof(DecState);
@@ -958,15 +952,15 @@ void *nb_decoder_init(SpeexMode *m)
    st->lpc_enh_enabled=0;
 
 
-   st->inBuf = PUSH(st->stack, st->bufSize, float);
+   st->inBuf = PUSH(st->stack, st->bufSize, spx_sig_t);
    st->frame = st->inBuf + st->bufSize - st->windowSize;
-   st->excBuf = PUSH(st->stack, st->bufSize, float);
+   st->excBuf = PUSH(st->stack, st->bufSize, spx_sig_t);
    st->exc = st->excBuf + st->bufSize - st->windowSize;
    for (i=0;i<st->bufSize;i++)
       st->inBuf[i]=0;
    for (i=0;i<st->bufSize;i++)
       st->excBuf[i]=0;
-   st->innov = PUSH(st->stack, st->frameSize, float);
+   st->innov = PUSH(st->stack, st->frameSize, spx_sig_t);
 
    st->interp_qlpc = PUSH(st->stack, st->lpcSize+1, spx_coef_t);
    st->qlsp = PUSH(st->stack, st->lpcSize, float);
@@ -1034,7 +1028,7 @@ static void nb_decode_lost(DecState *st, float *out, char *stack)
    for (sub=0;sub<st->nbSubframes;sub++)
    {
       int offset;
-      float *sp, *exc;
+      spx_sig_t *sp, *exc;
       /* Offset relative to start of frame */
       offset = st->subframeSize*sub;
       /* Original signal */
@@ -1356,7 +1350,8 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
    for (sub=0;sub<st->nbSubframes;sub++)
    {
       int offset;
-      float *sp, *exc, tmp;
+      spx_sig_t *sp, *exc;
+      float tmp;
 
 #ifdef EPIC_48K
       if (st->lbr_48k)
@@ -1512,7 +1507,7 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
       {
          int q_energy;
          float ener;
-         float *innov;
+         spx_sig_t *innov;
          
          innov = st->innov+sub*st->subframeSize;
          for (i=0;i<st->subframeSize;i++)
@@ -1581,7 +1576,7 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
          if (SUBMODE(double_codebook))
          {
             char *tmp_stack=stack;
-            float *innov2 = PUSH(tmp_stack, st->subframeSize, float);
+            spx_sig_t *innov2 = PUSH(tmp_stack, st->subframeSize, spx_sig_t);
             for (i=0;i<st->subframeSize;i++)
                innov2[i]=0;
             SUBMODE(innovation_unquant)(innov2, SUBMODE(innovation_params), st->subframeSize, bits, tmp_stack);
