@@ -363,7 +363,7 @@ int main(int argc, char **argv)
       op.packet = (unsigned char *)speex_header_to_packet(&header, (int*)&(op.bytes));
       op.b_o_s = 1;
       op.e_o_s = 0;
-      op.granulepos = -1;
+      op.granulepos = 0;
       op.packetno = 0;
       ogg_stream_packetin(&os, &op);
       free(op.packet);
@@ -372,7 +372,7 @@ int main(int argc, char **argv)
       op.bytes = strlen((char*)op.packet);
       op.b_o_s = 0;
       op.e_o_s = 0;
-      op.granulepos = -1;
+      op.granulepos = 0;
       op.packetno = 1;
       ogg_stream_packetin(&os, &op);
       
