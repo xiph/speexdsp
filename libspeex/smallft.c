@@ -11,7 +11,7 @@
  ********************************************************************
 
  function: *unnormalized* fft transform
- last mod: $Id: smallft.c,v 1.3 2003/09/18 03:58:58 jm Exp $
+ last mod: $Id: smallft.c,v 1.4 2003/10/08 04:42:59 jm Exp $
 
  ********************************************************************/
 
@@ -1239,8 +1239,8 @@ void drft_backward(struct drft_lookup *l,float *data){
 void drft_init(struct drft_lookup *l,int n)
 {
   l->n=n;
-  l->trigcache=speex_alloc(3*n*sizeof(*l->trigcache));
-  l->splitcache=speex_alloc(32*sizeof(*l->splitcache));
+  l->trigcache=(float*)speex_alloc(3*n*sizeof(*l->trigcache));
+  l->splitcache=(int*)speex_alloc(32*sizeof(*l->splitcache));
   fdrffti(n, l->trigcache, l->splitcache);
 }
 

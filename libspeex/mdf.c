@@ -55,7 +55,7 @@ SpeexEchoState *speex_echo_state_init(int frame_size, int filter_length)
    st->cancel_count=0;
    st->adapt_rate = .01;
 
-   st->fft_lookup = speex_alloc(sizeof(struct drft_lookup));
+   st->fft_lookup = (struct drft_lookup*)speex_alloc(sizeof(struct drft_lookup));
    drft_init(st->fft_lookup, N);
    
    st->x = (float*)speex_alloc(N*sizeof(float));

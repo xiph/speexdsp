@@ -41,15 +41,11 @@
 
 #ifdef FIXED_POINT
 
-extern int fixed_point_on;
-#define FIXED_SIGNAL fixed_point_on=1;
-#define FLOAT_SIGNAL fixed_point_on=0;
-
 typedef short        spx_word16_t;
 typedef int          spx_word32_t;
 typedef spx_word32_t spx_mem_t;
 typedef spx_word16_t spx_coef_t;
-typedef float   spx_sig_t;
+typedef long long   spx_sig_t;
 
 #define LPC_SCALING  8192.
 #define SIG_SCALING  16384.
@@ -73,9 +69,6 @@ typedef float   spx_sig_t;
 #define DIV32_16(a,b) (((signed int)(a))/(b))
 
 #else
-
-#define FIXED_SIGNAL
-#define FLOAT_SIGNAL
 
 typedef float spx_mem_t;
 typedef float spx_coef_t;

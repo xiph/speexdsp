@@ -183,9 +183,9 @@ void *sb_encoder_init(SpeexMode *m)
       part2 = st->subframeSize*5/2;
       st->window = PUSH(st->stack, st->windowSize, spx_word16_t);
       for (i=0;i<part1;i++)
-         st->window[i]=SIG_SCALING*(.54-.46*cos(M_PI*i/part1));
+         st->window[i]=(spx_word16_t)(SIG_SCALING*(.54-.46*cos(M_PI*i/part1)));
       for (i=0;i<part2;i++)
-         st->window[part1+i]=SIG_SCALING*(.54+.46*cos(M_PI*i/part2));
+         st->window[part1+i]=(spx_word16_t)(SIG_SCALING*(.54+.46*cos(M_PI*i/part2)));
    }
 
    st->lagWindow = PUSH(st->stack, st->lpcSize+1, float);
@@ -276,7 +276,7 @@ int sb_encode(void *state, float *in, SpeexBits *bits)
    for (i=0;i<st->frame_size;i++)
       st->high[st->windowSize-st->frame_size+i]=st->x1d[i];
 
-   speex_move(st->excBuf, st->excBuf+st->frame_size, (st->bufSize-st->frame_size)*sizeof(float));
+   speex_move(st->excBuf, st->excBuf+st->frame_size, (st->bufSize-st->frame_size)*sizeof(spx_sig_t));
 
 
    low_pi_gain = PUSH(stack, st->nbSubframes, float);
@@ -304,14 +304,14 @@ int sb_encode(void *state, float *in, SpeexBits *bits)
       _spx_autocorr(w_sig, st->autocorr, st->lpcSize+1, st->windowSize);
    }
 
-   st->autocorr[0] *= st->lpc_floor; /* Noise floor in auto-correlation domain */
+   st->autocorr[0] = (spx_word16_t)(st->autocorr[0]*st->lpc_floor); /* Noise floor in auto-correlation domain */
    /* Lag windowing: equivalent to filtering in the power-spectrum domain */
    for (i=0;i<st->lpcSize+1;i++)
-      st->autocorr[i] *= st->lagWindow[i];
+      st->autocorr[i] = (spx_word16_t)(st->autocorr[i]*st->lagWindow[i]);
 
    /* Levinson-Durbin */
    _spx_lpc(st->lpc+1, st->autocorr, st->lpcSize);
-   st->lpc[0]=LPC_SCALING;
+   st->lpc[0] = (spx_coef_t)LPC_SCALING;
 
    /* LPC to LSPs (x-domain) transform */
    roots=lpc_to_lsp (st->lpc, st->lpcSize, st->lsp, 15, 0.2, stack);
@@ -1274,7 +1274,7 @@ int sb_encoder_ctl(void *state, int request, void *ptr)
    case SPEEX_GET_EXC:
       {
          int i;
-         float *e = (float*)ptr;
+         spx_sig_t *e = (spx_sig_t*)ptr;
          for (i=0;i<st->full_frame_size;i++)
             e[i]=0;
          for (i=0;i<st->frame_size;i++)
@@ -1284,7 +1284,7 @@ int sb_encoder_ctl(void *state, int request, void *ptr)
    case SPEEX_GET_INNOV:
       {
          int i;
-         float *e = (float*)ptr;
+         spx_sig_t *e = (spx_sig_t*)ptr;
          for (i=0;i<st->full_frame_size;i++)
             e[i]=0;
          for (i=0;i<st->frame_size;i++)
@@ -1388,7 +1388,7 @@ int sb_decoder_ctl(void *state, int request, void *ptr)
    case SPEEX_GET_EXC:
       {
          int i;
-         float *e = (float*)ptr;
+         spx_sig_t *e = (spx_sig_t*)ptr;
          for (i=0;i<st->full_frame_size;i++)
             e[i]=0;
          for (i=0;i<st->frame_size;i++)
@@ -1398,7 +1398,7 @@ int sb_decoder_ctl(void *state, int request, void *ptr)
    case SPEEX_GET_INNOV:
       {
          int i;
-         float *e = (float*)ptr;
+         spx_sig_t *e = (spx_sig_t*)ptr;
          for (i=0;i<st->full_frame_size;i++)
             e[i]=0;
          for (i=0;i<st->frame_size;i++)

@@ -36,6 +36,8 @@
 #include "filters.h"
 #include "speex_bits.h"
 
+#include <stdio.h>
+
 #ifdef _USE_SSE
 #include "ltp_sse.h"
 #else
@@ -408,7 +410,6 @@ int cdbk_offset
    if (count_lost && pitch > subframe_offset)
    {
       float gain_sum;
-
       if (1) {
 	 float tmp = count_lost < 4 ? last_pitch_gain : 0.4 * last_pitch_gain;
          if (tmp>.95)
@@ -448,9 +449,9 @@ int cdbk_offset
    gain_val[2]=gain[2];
 
    {
-      float *e[3];
-      float *tmp2;
-      tmp2=PUSH(stack, 3*nsf, float);
+      spx_sig_t *e[3];
+      spx_sig_t *tmp2;
+      tmp2=PUSH(stack, 3*nsf, spx_sig_t);
       e[0]=tmp2;
       e[1]=tmp2+nsf;
       e[2]=tmp2+2*nsf;

@@ -216,7 +216,7 @@ SpeexPreprocessState *speex_preprocess_state_init(int frame_size, int sampling_r
    st->loudness2 = 6000;
    st->nb_loudness_adapt = 0;
 
-   st->fft_lookup = speex_alloc(sizeof(struct drft_lookup));
+   st->fft_lookup = (struct drft_lookup*)speex_alloc(sizeof(struct drft_lookup));
    drft_init(st->fft_lookup,2*N);
 
    st->nb_adapt=0;

@@ -44,6 +44,8 @@
 #include "misc.h"
 #include "speex_callbacks.h"
 
+#include <stdio.h>
+
 #ifdef SLOW_TRIG
 #include "math_approx.h"
 #define cos speex_cos
@@ -123,9 +125,9 @@ void *nb_encoder_init(SpeexMode *m)
       part2=(st->frameSize>>1) + (st->subframeSize>>1);
       st->window = PUSH(st->stack, st->windowSize, spx_word16_t);
       for (i=0;i<part1;i++)
-         st->window[i]=SIG_SCALING*(.54-.46*cos(M_PI*i/part1));
+         st->window[i]=(spx_word16_t)(SIG_SCALING*(.54-.46*cos(M_PI*i/part1)));
       for (i=0;i<part2;i++)
-         st->window[part1+i]=SIG_SCALING*(.54+.46*cos(M_PI*i/part2));
+         st->window[part1+i]=(spx_word16_t)(SIG_SCALING*(.54+.46*cos(M_PI*i/part2)));
    }
    /* Create the window for autocorrelation (lag-windowing) */
    st->lagWindow = PUSH(st->stack, st->lpcSize+1, float);
@@ -213,14 +215,14 @@ int nb_encode(void *state, float *in, SpeexBits *bits)
    stack=st->stack;
 
    /* Copy new data in input buffer */
-   speex_move(st->inBuf, st->inBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(float));
+   speex_move(st->inBuf, st->inBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(spx_sig_t));
    for (i=0;i<st->frameSize;i++)
       st->inBuf[st->bufSize-st->frameSize+i] = SIG_SCALING*in[i];
 
    /* Move signals 1 frame towards the past */
-   speex_move(st->exc2Buf, st->exc2Buf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(float));
-   speex_move(st->excBuf, st->excBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(float));
-   speex_move(st->swBuf, st->swBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(float));
+   speex_move(st->exc2Buf, st->exc2Buf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(spx_sig_t));
+   speex_move(st->excBuf, st->excBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(spx_sig_t));
+   speex_move(st->swBuf, st->swBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(spx_sig_t));
 
 
    {
@@ -233,15 +235,15 @@ int nb_encode(void *state, float *in, SpeexBits *bits)
       /* Compute auto-correlation */
       _spx_autocorr(w_sig, st->autocorr, st->lpcSize+1, st->windowSize);
    }
-   st->autocorr[0] *= st->lpc_floor; /* Noise floor in auto-correlation domain */
+   st->autocorr[0] = (spx_word16_t) (st->autocorr[0]*st->lpc_floor); /* Noise floor in auto-correlation domain */
 
    /* Lag windowing: equivalent to filtering in the power-spectrum domain */
    for (i=0;i<st->lpcSize+1;i++)
-      st->autocorr[i] *= st->lagWindow[i];
+      st->autocorr[i] = (spx_word16_t) (st->autocorr[i]*st->lagWindow[i]);
 
    /* Levinson-Durbin */
    _spx_lpc(st->lpc+1, st->autocorr, st->lpcSize);
-   st->lpc[0]=LPC_SCALING;
+   st->lpc[0]=(spx_coef_t)LPC_SCALING;
 
    /* LPC to LSPs (x-domain) transform */
    roots=lpc_to_lsp (st->lpc, st->lpcSize, st->lsp, 15, 0.2, stack);
@@ -1018,8 +1020,8 @@ static void nb_decode_lost(DecState *st, float *out, char *stack)
    pitch_gain *= fact;
 
    /* Shift all buffers by one frame */
-   speex_move(st->inBuf, st->inBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(float));
-   speex_move(st->excBuf, st->excBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(float));
+   speex_move(st->inBuf, st->inBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(spx_sig_t));
+   speex_move(st->excBuf, st->excBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(spx_sig_t));
 
    awk1=PUSH(stack, (st->lpcSize+1), spx_coef_t);
    awk2=PUSH(stack, (st->lpcSize+1), spx_coef_t);
@@ -1231,8 +1233,8 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
    }
 
    /* Shift all buffers by one frame */
-   speex_move(st->inBuf, st->inBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(float));
-   speex_move(st->excBuf, st->excBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(float));
+   speex_move(st->inBuf, st->inBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(spx_sig_t));
+   speex_move(st->excBuf, st->excBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(spx_sig_t));
 
    /* If null mode (no transmission), just set a couple things to zero*/
    if (st->submodes[st->submodeID] == NULL)
@@ -1278,7 +1280,7 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
          lsp_dist += fabs(st->old_qlsp[i] - st->qlsp[i]);
       fact = .6*exp(-.2*lsp_dist);
       for (i=0;i<2*st->lpcSize;i++)
-         st->mem_sp[i] *= fact;
+         st->mem_sp[i] = (spx_mem_t)(st->mem_sp[i]*fact);
    }
 
 
@@ -1465,6 +1467,7 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
              SUBMODE(ltp_unquant)(exc, pit_min, pit_max, ol_pitch_coef, SUBMODE(ltp_params), 
                                   st->subframeSize, &pitch, &pitch_gain[0], bits, stack, 
                                   st->count_lost, offset, st->last_pitch_gain, 0);
+
 #ifdef EPIC_48K
          }
 #endif
@@ -1571,6 +1574,7 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
          } else {
             for (i=0;i<st->subframeSize;i++)
                exc[i]+=innov[i];
+            /*print_vec(exc, 40, "innov");*/
          }
          /* Decode second codebook (only for some modes) */
          if (SUBMODE(double_codebook))
@@ -1777,7 +1781,7 @@ int nb_encoder_ctl(void *state, int request, void *ptr)
    case SPEEX_GET_EXC:
       {
          int i;
-         float *e = (float*)ptr;
+         spx_sig_t *e = (spx_sig_t*)ptr;
          for (i=0;i<st->frameSize;i++)
             e[i]=st->exc[i];
       }
@@ -1785,7 +1789,7 @@ int nb_encoder_ctl(void *state, int request, void *ptr)
    case SPEEX_GET_INNOV:
       {
          int i;
-         float *e = (float*)ptr;
+         spx_sig_t *e = (spx_sig_t*)ptr;
          for (i=0;i<st->frameSize;i++)
             e[i]=st->innov[i];
       }
@@ -1877,7 +1881,7 @@ int nb_decoder_ctl(void *state, int request, void *ptr)
    case SPEEX_GET_EXC:
       {
          int i;
-         float *e = (float*)ptr;
+         spx_sig_t *e = (spx_sig_t*)ptr;
          for (i=0;i<st->frameSize;i++)
             e[i]=st->exc[i];
       }
@@ -1885,7 +1889,7 @@ int nb_decoder_ctl(void *state, int request, void *ptr)
    case SPEEX_GET_INNOV:
       {
          int i;
-         float *e = (float*)ptr;
+         spx_sig_t *e = (spx_sig_t*)ptr;
          for (i=0;i<st->frameSize;i++)
             e[i]=st->innov[i];
       }

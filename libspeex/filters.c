@@ -50,8 +50,6 @@ void bw_lpc(float gamma, spx_coef_t *lpc_in, spx_coef_t *lpc_out, int order)
 #ifdef FIXED_POINT
 
 
-int fixed_point_on = 1;
-
 #define MUL_16_32_R15(a,bh,bl) ((a)*(bh) + ((a)*(bl)>>15))
 
 
@@ -60,14 +58,10 @@ void filter_mem2(spx_sig_t *x, spx_coef_t *num, spx_coef_t *den, spx_sig_t *y, i
    int i,j;
    int xi,yi;
 
-   float local_scale = 1;
-   if (!fixed_point_on)
-      local_scale = 16384.;
-
    for (i=0;i<N;i++)
    {
       int xh,xl,yh,yl;
-      xi=floor(.5+local_scale*x[i]);
+      xi=floor(.5+x[i]);
       yi = xi + (mem[0]<<2);
       xh = xi>>15; xl=xi&0x00007fff; yh = yi>>15; yl=yi&0x00007fff; 
       for (j=0;j<ord-1;j++)
@@ -75,7 +69,7 @@ void filter_mem2(spx_sig_t *x, spx_coef_t *num, spx_coef_t *den, spx_sig_t *y, i
          mem[j] = mem[j+1] +  MUL_16_32_R15(num[j+1],xh,xl) - MUL_16_32_R15(den[j+1],yh,yl);
       }
       mem[ord-1] = MUL_16_32_R15(num[ord],xh,xl) - MUL_16_32_R15(den[ord],yh,yl);
-      y[i] = yi*(1.f/local_scale);
+      y[i] = yi;
    }
 }
 
@@ -84,14 +78,10 @@ void iir_mem2(spx_sig_t *x, spx_coef_t *den, spx_sig_t *y, int N, int ord, spx_m
    int i,j;
    int xi,yi;
 
-   float local_scale = 1;
-   if (!fixed_point_on)
-      local_scale = 16384.;
-   
    for (i=0;i<N;i++)
    {
       int yh,yl;
-      xi=floor(.5+local_scale*x[i]);
+      xi=floor(.5+x[i]);
       yi = xi + (mem[0]<<2);
       yh = yi>>15; yl=yi&0x00007fff; 
       for (j=0;j<ord-1;j++)
@@ -99,7 +89,7 @@ void iir_mem2(spx_sig_t *x, spx_coef_t *den, spx_sig_t *y, int N, int ord, spx_m
          mem[j] = mem[j+1] - MUL_16_32_R15(den[j+1],yh,yl);
       }
       mem[ord-1] = - MUL_16_32_R15(den[ord],yh,yl);
-      y[i] = yi*(1.f/local_scale);
+      y[i] = yi;
    }
 }
 
@@ -109,14 +99,10 @@ void fir_mem2(spx_sig_t *x, spx_coef_t *num, spx_sig_t *y, int N, int ord, spx_m
    int i,j;
    int xi,yi;
 
-   float local_scale = 1;
-   if (!fixed_point_on)
-      local_scale = 16384.;
-
    for (i=0;i<N;i++)
    {
       int xh,xl;
-      xi=floor(.5+local_scale*x[i]);
+      xi=floor(.5+x[i]);
       yi = xi + (mem[0]<<2);
       xh = xi>>15; xl=xi&0x00007fff;
       for (j=0;j<ord-1;j++)
@@ -124,7 +110,7 @@ void fir_mem2(spx_sig_t *x, spx_coef_t *num, spx_sig_t *y, int N, int ord, spx_m
          mem[j] = mem[j+1] +  MUL_16_32_R15(num[j+1],xh,xl);
       }
       mem[ord-1] = MUL_16_32_R15(num[ord],xh,xl);
-      y[i] = yi*(1.f/local_scale);
+      y[i] = yi;
    }
 
 }
