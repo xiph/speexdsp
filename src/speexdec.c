@@ -477,10 +477,10 @@ int main(int argc, char **argv)
                   /*PCM saturation (just in case)*/
                   for (i=0;i<frame_size;i++)
                   {
-                     if (output[i]>32000)
-                        output[i]=32000;
-                     else if (output[i]<-32000)
-                        output[i]=-32000;
+                     if (output[i]>32000.0)
+                        output[i]=32000.0;
+                     else if (output[i]<-32000.0)
+                        output[i]=-32000.0;
                   }
                   /*Convert to short and save to output file*/
                   for (i=0;i<frame_size;i++)

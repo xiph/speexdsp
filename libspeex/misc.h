@@ -36,7 +36,7 @@
 #define MISC_H
 
 #ifndef VERSION
-#define VERSION "unknown version"
+#define VERSION "Speex-1.0beta2"
 #endif
 
 unsigned int be_int(unsigned int i);

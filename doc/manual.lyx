@@ -29,7 +29,7 @@
 
 The Speex Codec Manual
 \newline 
-(draft for Speex 1.0beta1)
+(draft for Speex 1.0beta2)
 \layout Author
 
 Jean-Marc Valin
@@ -1687,6 +1687,10 @@ So far, no MOS (mean opinion score) subjective evaluation has been performed
  another) when it comes to subjective evaluation.
  Last thing, it should be noted that for most codecs (including Speex) encoding
  quality sometimes varies depending on the input.
+ Note that the complexity is only approximate (withing 0.5 mflops and using
+ the lowers complexity setting).
+ Decoding requires approximately 0.5 mflops in most modes (1 mflops with
+ perceptual enhancement).
 \layout Standard
 
 
@@ -1699,8 +1703,9 @@ collapsed false
 
 
 \begin_inset  Tabular
-<lyxtabular version="3" rows="17" columns="3">
+<lyxtabular version="3" rows="17" columns="4">
 <features>
+<column alignment="center" valignment="top" leftline="true" width="0pt">
 <column alignment="center" valignment="top" leftline="true" width="0pt">
 <column alignment="center" valignment="top" leftline="true" width="0pt">
 <column alignment="center" valignment="top" leftline="true" rightline="true" width="0pt">
@@ -1719,6 +1724,14 @@ Mode
 \layout Standard
 
 Bitrate (bps)
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+mflops
 \end_inset 
 </cell>
 <cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
@@ -1747,6 +1760,14 @@ Quality/description
 250
 \end_inset 
 </cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+N/A
+\end_inset 
+</cell>
 <cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
 \begin_inset Text
 
@@ -1773,12 +1794,20 @@ No sound (VBR only)
 2,150
 \end_inset 
 </cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+6
+\end_inset 
+</cell>
 <cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
 \begin_inset Text
 
 \layout Standard
 
-Comfort noise only (VBR only)
+Vocoder (mostly for comfort noise)
 \end_inset 
 </cell>
 </row>
@@ -1797,6 +1826,14 @@ Comfort noise only (VBR only)
 \layout Standard
 
 5,950
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+9
 \end_inset 
 </cell>
 <cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
@@ -1825,6 +1862,14 @@ Very noticeable artifacts/noise, good intelligibility
 8,000
 \end_inset 
 </cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+10
+\end_inset 
+</cell>
 <cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
 \begin_inset Text
 
@@ -1849,6 +1894,14 @@ Artifacts/noise sometimes noticeable
 \layout Standard
 
 11,000
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+14
 \end_inset 
 </cell>
 <cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
@@ -1877,6 +1930,14 @@ Artifacts usually noticeable only with headphones
 15,000
 \end_inset 
 </cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+11
+\end_inset 
+</cell>
 <cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
 \begin_inset Text
 
@@ -1901,6 +1962,14 @@ Need good headphones to tell the difference
 \layout Standard
 
 18,200
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+17.5
 \end_inset 
 </cell>
 <cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
@@ -1929,6 +1998,14 @@ Hard to tell the difference even with good headphones
 24,600
 \end_inset 
 </cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+14.5
+\end_inset 
+</cell>
 <cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
 \begin_inset Text
 
@@ -1945,6 +2022,14 @@ Completely transparent for voice, good quality music
 \layout Standard
 
 8
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+N/A
 \end_inset 
 </cell>
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
@@ -1981,6 +2066,14 @@ N/A
 N/A
 \end_inset 
 </cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+N/A
+\end_inset 
+</cell>
 <cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
 \begin_inset Text
 
@@ -1997,6 +2090,14 @@ reserved
 \layout Standard
 
 10
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+N/A
 \end_inset 
 </cell>
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
@@ -2033,6 +2134,14 @@ reserved
 N/A
 \end_inset 
 </cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+N/A
+\end_inset 
+</cell>
 <cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
 \begin_inset Text
 
@@ -2049,6 +2158,14 @@ reserved
 \layout Standard
 
 12
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+N/A
 \end_inset 
 </cell>
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
@@ -2085,6 +2202,14 @@ reserved
 N/A
 \end_inset 
 </cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+N/A
+\end_inset 
+</cell>
 <cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
 \begin_inset Text
 
@@ -2111,6 +2236,14 @@ Application-defined, interpreted by callback or skipped
 N/A
 \end_inset 
 </cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+N/A
+\end_inset 
+</cell>
 <cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
 \begin_inset Text
 
@@ -2127,6 +2260,14 @@ Speex in-band signaling
 \layout Standard
 
 15
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+N/A
 \end_inset 
 </cell>
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
