@@ -209,8 +209,8 @@ void usage()
    printf (" -V                    Verbose mode (show bit-rate)\n"); 
    printf (" -h, --help            This help\n");
    printf (" -v, --version         Version information\n");
-   printf (" --pf                  Deprecated, use --pf instead\n");
-   printf (" --no-pf               Deprecated, use --no-pf instead\n");
+   printf (" --pf                  Deprecated, use --enh instead\n");
+   printf (" --no-pf               Deprecated, use --no-enh instead\n");
    printf ("\n");
    printf ("More information is available from the Speex site: http://www.speex.org\n");
    printf ("\n");
