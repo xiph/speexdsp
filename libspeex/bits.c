@@ -34,6 +34,7 @@ void speex_bits_init(SpeexBits *bits)
    bits->nbBits=0;
    bits->bytePtr=0;
    bits->bitPtr=0;
+   bits->owner=1;
 }
 
 void speex_bits_init_buffer(SpeexBits *bits, void *buff)
@@ -46,11 +47,13 @@ void speex_bits_init_buffer(SpeexBits *bits, void *buff)
    bits->nbBits=0;
    bits->bytePtr=0;
    bits->bitPtr=0;
+   bits->owner=0;
 }
 
 void speex_bits_destroy(SpeexBits *bits)
 {
-   speex_free(bits->bytes);
+   if (bits->owner)
+      speex_free(bits->bytes);
    /* Will do something once the allocation is dynamic */
 }
 

@@ -34,6 +34,7 @@ typedef struct SpeexBits {
    int  nbBits;
    int  bytePtr;
    int  bitPtr;
+   int  owner;
 } SpeexBits;
 
 /** Initializes and allocates resources for a SpeexBits struct */
