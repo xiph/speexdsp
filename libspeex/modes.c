@@ -490,7 +490,7 @@ SpeexMode speex_uwb_mode = {
    &sb_uwb_mode,
    wb_mode_query,
    "ultra-wideband (sub-band CELP)",
-   1,
+   2,
    4,
    &sb_encoder_init,
    &sb_encoder_destroy,

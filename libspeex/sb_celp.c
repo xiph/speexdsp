@@ -1056,6 +1056,12 @@ void sb_decoder_ctl(void *state, int request, void *ptr)
       else
          (*(int*)ptr) += 50*(SB_SUBMODE_BITS+1);
       break;
+   case SPEEX_SET_HANDLER:
+      speex_decoder_ctl(st->st_low, SPEEX_SET_HANDLER, ptr);
+      break;
+   case SPEEX_SET_USER_HANDLER:
+      speex_decoder_ctl(st->st_low, SPEEX_SET_USER_HANDLER, ptr);
+      break;
    case SPEEX_GET_PI_GAIN:
       {
          int i;
