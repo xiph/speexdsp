@@ -22,6 +22,10 @@
 #ifndef BITS_H
 #define BITS_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define MAX_BYTES_PER_FRAME 1000
 
 /** Bit-packing data structure representing (part of) a bit-stream. */
@@ -44,9 +48,8 @@ void speex_bits_reset(SpeexBits *bits);
 /** Rewind the bit-stream to beginning (ready for read) without erasing content*/
 void speex_bits_rewind(SpeexBits *bits);
 
-/** Initializes the bit-stream from the data in an area of memory (no need to
-    call speex_bits_init before) */
-void speex_bits_init_from(SpeexBits *bits, char *bytes, int len);
+/** Initializes the bit-stream from the data in an area of memory */
+void speex_bits_read_from(SpeexBits *bits, char *bytes, int len);
 
 void speex_bits_read_whole_bytes(SpeexBits *bits, char *bytes, int len);
 
@@ -61,5 +64,8 @@ int speex_bits_unpack_signed(SpeexBits *bits, int nbBits);
 
 unsigned int speex_bits_unpack_unsigned(SpeexBits *bits, int nbBits);
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif

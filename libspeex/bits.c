@@ -54,7 +54,7 @@ void speex_bits_rewind(SpeexBits *bits)
    bits->bitPtr=0;
 }
 
-void speex_bits_init_from(SpeexBits *bits, char *bytes, int len)
+void speex_bits_read_from(SpeexBits *bits, char *bytes, int len)
 {
    int i;
    if (len > MAX_BYTES_PER_FRAME)

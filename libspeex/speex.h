@@ -22,11 +22,11 @@
 #ifndef SPEEX_MODES_H
 #define SPEEX_MODES_H
 
+#include "speex_bits.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include "speex_bits.h"
 
 struct SpeexMode;
 

@@ -179,7 +179,7 @@ int main(int argc, char **argv)
                if (strncmp((char *)op.packet, "END OF STREAM", 13)==0)
                   break;
                /*Copy Ogg packet to Speex bitstream*/
-               speex_bits_init_from(&bits, (char*)op.packet, op.bytes);
+               speex_bits_read_from(&bits, (char*)op.packet, op.bytes);
                /*Decode a frame*/
                speex_decode(st, &bits, output, 0);
                
