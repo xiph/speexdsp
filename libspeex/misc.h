@@ -36,6 +36,10 @@
 #define MISC_H
 
 #ifndef SPEEX_VERSION
+#define SPEEX_MAJOR_VERSION 1
+#define SPEEX_MAJOR_VERSION 1
+#define SPEEX_MAJOR_VERSION 6
+#define SPEEX_EXTRA_VERSION ""
 #define SPEEX_VERSION "speex-1.1.6"
 #endif
 

@@ -301,11 +301,11 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
       {
          st->adapt_rate = .3f/(2+M);
       } else {
-         if (spectral_dist > .6 || cos_dist > .8)
+         if (spectral_dist > .5 && cos_dist > .7)
             st->adapt_rate = .4f/(2+M);
-         else if (spectral_dist > .4 || cos_dist > .6)
+         else if (spectral_dist > .3 && cos_dist > .5)
             st->adapt_rate = .2f/(2+M);
-         else if (spectral_dist > .2 || cos_dist > .4)
+         else if (spectral_dist > .15 && cos_dist > .3)
             st->adapt_rate = .1f/(2+M);
          else if (cos_dist > .01)
             st->adapt_rate = .05f/(2+M);
