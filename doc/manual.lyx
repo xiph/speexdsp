@@ -269,7 +269,7 @@ Quality
 \layout Standard
 
 Speex encoding is controlled most of the time by a quality parameter that
- range from 0 to 10.
+ ranges from 0 to 10.
  In constant bit-rate
 \begin_inset LatexCommand \index{constant bit-rate}
 
@@ -1200,7 +1200,7 @@ collapsed false
 
 \layout Standard
 
-code
+Code
 \end_inset 
 </cell>
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
