@@ -433,6 +433,7 @@ void encode(EncState *st, float *in, FrameBits *bits)
 void decoder_init(DecState *st, SpeexMode *mode)
 {
    int i;
+   st->first=1;
    /* Codec parameters, should eventually have several "modes"*/
    st->frameSize = mode->frameSize;
    st->windowSize = mode->windowSize;
@@ -521,10 +522,20 @@ void decode(DecState *st, FrameBits *bits, float *out)
       for (i=0;i<st->lpcSize;i++)
          st->interp_qlsp[i] = (1-tmp)*st->old_qlsp[i] + tmp*st->qlsp[i];
 
+      printf ("decode lsp:");
+      for (i=0;i<st->lpcSize;i++)
+         printf (" %f", st->interp_qlsp[i]);
+      printf ("\n");
+
       /* Compute interpolated LPCs (unquantized) */
       for (i=0;i<st->lpcSize;i++)
          st->interp_qlsp[i] = cos(st->interp_qlsp[i]);
       lsp_to_lpc(st->interp_qlsp, st->interp_qlpc, st->lpcSize, st->stack);
+
+      printf ("decode lpc:");
+      for (i=0;i<=st->lpcSize;i++)
+         printf (" %f", st->interp_qlpc[i]);
+      printf ("\n");
 
       tmp=1;
       st->pi_gain[sub]=0;

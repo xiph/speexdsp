@@ -352,12 +352,16 @@ float *stack
       gains[i]=scal_gains4[gain_id];
       gains[i] *= sign[i];
       gains[i] *= exc_energy;
-   }
 
+
+   }
    for (i=0;i<nb_subvect;i++)
       for (j=0;j<subvect_size;j++)
          exc[subvect_size*i+j]+=gains[i]*shape_cb[ind[i]*subvect_size+j];
-   
+   printf ("decode_exc:");
+   for (i=0;i<nsf;i++)
+      printf (" %f", exc[i]);
+   printf ("\n");
    POP(stack);
    POP(stack);
    POP(stack);

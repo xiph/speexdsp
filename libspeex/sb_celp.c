@@ -721,13 +721,15 @@ void sb_decode(SBDecState *st, FrameBits *bits, float *out)
       }
 
       {
-         int k,N=4;
-         float el=0,eh=0,g;
+         int k,N=4,el=0;
          int *index;
          float *gains;
-         int of=k*st->subframeSize/N;
+         int of;
          gains = PUSH(st->stack, N);
          index = (int*) PUSH(st->stack, N);
+
+         for (i=0;i<st->subframeSize;i++)
+           el+=sqr(st->st_low.exc[offset+i]);
          
          for (k=0;k<N;k++)
             index[k] = frame_bits_unpack_unsigned(bits,6);
@@ -737,13 +739,14 @@ void sb_decode(SBDecState *st, FrameBits *bits, float *out)
             int sign, gain_ind;
             sign = frame_bits_unpack_unsigned(bits,1);
             gain_ind = frame_bits_unpack_unsigned(bits,3);
-            gains[k] = quant_high_gain2[gain_ind];
+            gains[k]=exp(quant_high_gain2[gain_ind])*(1+sqrt(el/st->subframeSize))/filter_ratio;
             if (sign)
                gains[k] =- gains[k];
          }
 
          for (k=0;k<N;k++)
          {
+            of=k*st->subframeSize/N;
             for (i=0;i<st->subframeSize/N;i++)
                exc[of+i]=gains[k]*stoc[index[k]+i];
          }
@@ -751,6 +754,9 @@ void sb_decode(SBDecState *st, FrameBits *bits, float *out)
          POP(st->stack);
          POP(st->stack);
       }
+
+      syn_filt_mem(exc, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, st->mem_sp);
+
    }
 
    /* Up-sample coded low-band and high-band*/
