@@ -37,6 +37,45 @@
 #include "misc.h"
 #include <stdio.h>
 
+#ifdef _USE_SSE
+#include "cb_search_sse.h"
+#else
+
+static void compute_weighted_codebook(const signed char *shape_cb, const spx_sig_t *r, spx_word16_t *resp, spx_word32_t *E, int shape_cb_size, int subvect_size, char *stack)
+{
+   int i, j, k;
+   for (i=0;i<shape_cb_size;i++)
+   {
+      spx_word16_t *res;
+      const signed char *shape;
+
+      res = resp+i*subvect_size;
+      shape = shape_cb+i*subvect_size;
+
+      /* Compute codeword response using convolution with impulse response */
+      for(j=0;j<subvect_size;j++)
+      {
+         spx_word32_t resj=0;
+         for (k=0;k<=j;k++)
+            resj = MAC16_16_Q11(resj,shape[k],r[j-k]);
+#ifndef FIXED_POINT
+         resj *= 0.03125;
+#endif
+         res[j] = resj;
+         /*printf ("%d\n", (int)res[j]);*/
+      }
+      
+      /* Compute codeword energy */
+      E[i]=0;
+      for(j=0;j<subvect_size;j++)
+         E[i]=ADD32(E[i],MULT16_16(res[j],res[j]));
+   }
+
+}
+
+#endif
+
+
 void split_cb_search_shape_sign(
 spx_sig_t target[],			/* target vector */
 spx_coef_t ak[],			/* LPCs for this subframe */
@@ -101,7 +140,6 @@ int   complexity
       nt[i]=tmp;
       tmp += nsf;
    }
-
    best_index = PUSH(stack, N, int);
    best_dist = PUSH(stack, N, spx_word32_t);
    ndist = PUSH(stack, N, spx_word32_t);
@@ -130,32 +168,7 @@ int   complexity
      printf ("%d\n", (int)t[i]);*/
 
    /* Pre-compute codewords response and energy */
-   for (i=0;i<shape_cb_size;i++)
-   {
-      spx_word16_t *res;
-      const signed char *shape;
-
-      res = resp+i*subvect_size;
-      shape = shape_cb+i*subvect_size;
-
-      /* Compute codeword response using convolution with impulse response */
-      for(j=0;j<subvect_size;j++)
-      {
-         spx_word32_t resj=0;
-         for (k=0;k<=j;k++)
-            resj = MAC16_16_Q11(resj,shape[k],r[j-k]);
-#ifndef FIXED_POINT
-         resj *= 0.03125;
-#endif
-         res[j] = resj;
-         /*printf ("%d\n", (int)res[j]);*/
-      }
-      
-      /* Compute codeword energy */
-      E[i]=0;
-      for(j=0;j<subvect_size;j++)
-         E[i]=ADD32(E[i],MULT16_16(res[j],res[j]));
-   }
+   compute_weighted_codebook(shape_cb, r, resp, E, shape_cb_size, subvect_size, stack);
 
    for (j=0;j<N;j++)
       odist[j]=0;
