@@ -30,9 +30,11 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <sys/ioctl.h>
 #endif
 
 #include <string.h>
+#include "wav_io.h"
 
 #define MAX_FRAME_SIZE 2000
 
@@ -116,7 +118,7 @@ int main(int argc, char **argv)
    int c;
    int option_index = 0;
    char *inFile, *outFile;
-   FILE *fin, *fout;
+   FILE *fin, *fout=NULL;
    short out[MAX_FRAME_SIZE];
    float output[MAX_FRAME_SIZE];
    int frame_size=0;

@@ -16,8 +16,12 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
+#ifndef WAV_IO_H
+
 #include <stdio.h>
 
 int read_wav_header(FILE *file, int *rate, int *channels, int *format, int *size);
 
 void write_wav_header(FILE *file, int rate, int channels, int format, int size);
+
+#endif
