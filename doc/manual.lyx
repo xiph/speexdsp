@@ -29,7 +29,7 @@
 
 The Speex Codec Manual
 \newline 
-(draft for Speex 0.8.0)
+(draft for Speex 1.0)
 \layout Author
 
 Jean-Marc Valin
@@ -3280,8 +3280,9 @@ granulepos=0
 .
 \layout Standard
 
-The second packet contains a user-comment string, without terminating null.
- The content/format of the comment string is not defined.
+The second packet contains the Speex comment header.
+ The format used is the Vorbis comment format described here: http://www.xiph.org/
+ogg/vorbis/doc/v-comment.html .
  This packet has 
 \family typewriter 
 packetno=1
@@ -3303,19 +3304,8 @@ packetno
 \family typewriter 
 granulepos
 \family default 
- is the number of the first sample encoded in that packet.
-\layout Standard
-
-The stream is terminated by a packet containing the string 
-\begin_inset Quotes eld
-\end_inset 
-
-END OF STREAM
-\begin_inset Quotes erd
-\end_inset 
-
- (without terminating null).
- The 
+ is the number of the last sample encoded in that packet.
+ Le last of these packets has the 
 \emph on 
 end of stream
 \emph default 
@@ -3324,15 +3314,6 @@ end of stream
 e_o_s
 \family default 
 ) flag is set to 1.
- The decoder should rely on the 
-\family typewriter 
-e_o_s
-\family default 
- flag and 
-\emph on 
-not
-\emph default 
- on the content of the packet.
 \layout Standard
 
 
