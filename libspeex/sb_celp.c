@@ -489,10 +489,11 @@ int sb_encode(void *state, short *in, SpeexBits *bits)
    for (sub=0;sub<st->nbSubframes;sub++)
    {
       spx_sig_t *exc, *sp, *res, *target, *sw;
-      float tmp, filter_ratio;
+      float tmp;
+      spx_word16_t filter_ratio;
       int offset;
-      float rl, rh, eh=0, el=0;
-      int fold;
+      float rl, rh;
+      spx_word16_t eh=0;
 
       offset = st->subframeSize*sub;
       sp=st->high+offset;
@@ -532,12 +533,11 @@ int sb_encode(void *state, short *in, SpeexBits *bits)
       rl=1/(fabs(rl)+.01);
       rh=1/(fabs(rh)+.01);
       /* Compute ratio, will help predict the gain */
+#ifdef FIXED_POINT
+      filter_ratio=128*fabs(.01+rh)/(.01+fabs(rl));
+#else
       filter_ratio=fabs(.01+rh)/(.01+fabs(rl));
-
-      fold = filter_ratio<5;
-      /*printf ("filter_ratio %f\n", filter_ratio);*/
-      fold=0;
-
+#endif
       /* Compute "real excitation" */
       fir_mem2(sp, st->interp_qlpc, exc, st->subframeSize, st->lpcSize, st->mem_sp2);
       /* Compute energy of low-band and high-band excitation */
@@ -546,13 +546,13 @@ int sb_encode(void *state, short *in, SpeexBits *bits)
 
       if (!SUBMODE(innovation_quant)) {/* 1 for spectral folding excitation, 0 for stochastic */
          float g;
-
+         float el;
          el = compute_rms(low_innov+offset, st->subframeSize);
 
          /* Gain to use if we want to use the low-band excitation for high-band */
          g=eh/(.01+el);
 
-         g *= filter_ratio;
+         g *= filter_ratio/128.;
          /*print_vec(&g, 1, "gain factor");*/
          /* Gain quantization */
          {
@@ -566,25 +566,46 @@ int sb_encode(void *state, short *in, SpeexBits *bits)
          }
 
       } else {
-         float gc, scale, scale_1;
-
+         spx_word16_t gc;
+         spx_word32_t scale;
+         spx_word16_t el;
          el = compute_rms(low_exc+offset, st->subframeSize);
-         /*FIXME: cleanup the "historical" mess with sqrt(st->subframeSize) */
-         gc = (1+eh)*filter_ratio/(1+el)/sqrt(st->subframeSize);
 
+         gc = DIV32_16(MULT16_16((int)(filter_ratio),(1+eh)),1+el);
+
+         /* This is a kludge that cleans up a historical bug */
+         if (st->subframeSize==80)
+            gc *= 0.70711;
+         /*printf ("%f %f %f %f\n", el, eh, filter_ratio, gc);*/
+#ifdef FIXED_POINT
          {
-            int qgc = (int)floor(.5+3.7*(log(gc)+2));
+            int qgc = (int)floor(.5+3.7*(log(gc/128.)+0.15556));
             if (qgc<0)
                qgc=0;
             if (qgc>15)
                qgc=15;
             speex_bits_pack(bits, qgc, 4);
-            gc = exp((1/3.7)*qgc-2);
+            gc = 128*exp((1/3.7)*qgc-0.15556);
          }
+#else
+         {
+            int qgc = (int)floor(.5+3.7*(log(gc)+0.15556));
+            if (qgc<0)
+               qgc=0;
+            if (qgc>15)
+               qgc=15;
+            speex_bits_pack(bits, qgc, 4);
+            gc = exp((1/3.7)*qgc-0.15556);
+         }         
+#endif
+         if (st->subframeSize==80)
+            gc *= 1.4142;
 
-         scale = gc*(1+el*sqrt(st->subframeSize))/filter_ratio;
-         scale_1 = 1/scale;
-
+#ifdef FIXED_POINT
+         scale = SHL(DIV32_16(SHL(gc,SIG_SHIFT-4),filter_ratio),4)*(1+el);
+#else
+         scale = gc*(1.+el)/filter_ratio;
+#endif
          for (i=0;i<st->subframeSize;i++)
             exc[i]=VERY_SMALL;
          exc[0]=SIG_SCALING;
@@ -615,7 +636,7 @@ int sb_encode(void *state, short *in, SpeexBits *bits)
          for (i=0;i<st->subframeSize;i++)
            exc[i]=0;
 
-         signal_div(target, target, SIG_SCALING*scale, st->subframeSize);
+         signal_div(target, target, scale, st->subframeSize);
 
          /* Reset excitation */
          for (i=0;i<st->subframeSize;i++)
@@ -627,7 +648,7 @@ int sb_encode(void *state, short *in, SpeexBits *bits)
                                    innov, syn_resp, bits, stack, (st->complexity+1)>>1);
          /*print_vec(target, st->subframeSize, "after");*/
 
-         signal_mul(innov, innov, SIG_SCALING*scale, st->subframeSize);
+         signal_mul(innov, innov, scale, st->subframeSize);
 
          for (i=0;i<st->subframeSize;i++)
             exc[i] += innov[i];
@@ -643,7 +664,7 @@ int sb_encode(void *state, short *in, SpeexBits *bits)
                                       SUBMODE(innovation_params), st->lpcSize, st->subframeSize, 
                                       innov2, syn_resp, bits, tmp_stack, (st->complexity+1)>>1);
             for (i=0;i<st->subframeSize;i++)
-               innov2[i]*=scale*(1/2.5);
+               innov2[i]*=scale*(1/2.5)/SIG_SCALING;
             for (i=0;i<st->subframeSize;i++)
                exc[i] += innov2[i];
          }
