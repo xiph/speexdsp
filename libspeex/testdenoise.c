@@ -1,4 +1,4 @@
-#include "denoise.h"
+#include "speex_denoise.h"
 #include <stdio.h>
 
 #define NN 160

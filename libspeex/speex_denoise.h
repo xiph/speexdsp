@@ -1,7 +1,7 @@
 /* Copyright (C) 2003 Epic Games 
    Written by Jean-Marc Valin
 
-   File: denoise.h
+   File: speex_denoise.h
 
 
    Redistribution and use in source and binary forms, with or without

@@ -32,7 +32,7 @@
 */
 
 #include <math.h>
-#include "denoise.h"
+#include "speex_denoise.h"
 #include <stdio.h>
 #include "misc.h"
 
@@ -79,6 +79,7 @@ static void conj_window(float *w, int len)
 DenoiseState *denoise_state_init(int frame_size)
 {
    int i;
+   int N, N3, N4;
 
    DenoiseState *st = (DenoiseState *)speex_alloc(sizeof(DenoiseState));
    st->frame_size = frame_size;
@@ -97,9 +98,9 @@ DenoiseState *denoise_state_init(int frame_size)
       }
    }
 
-   int N = st->ps_size;
-   int N3 = 2*N - st->frame_size;
-   int N4 = st->frame_size - N3;
+   N = st->ps_size;
+   N3 = 2*N - st->frame_size;
+   N4 = st->frame_size - N3;
 
    st->frame = (float*)speex_alloc(2*N*sizeof(float));
    st->ps = (float*)speex_alloc(N*sizeof(float));
@@ -189,12 +190,9 @@ static void update_noise(DenoiseState *st, float *ps)
 
 int denoise(DenoiseState *st, float *x)
 {
-   //float frame[2*N];
    int i;
-   //float ps[N];
    float mean_post=0;
    float mean_prior=0;
-   //float gain2[N];
    float energy;
    int N = st->ps_size;
    int N3 = 2*N - st->frame_size;
