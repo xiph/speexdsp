@@ -918,11 +918,15 @@ void sb_encoder_ctl(void *state, int request, void *ptr)
       break;
    case SPEEX_SET_VBR_QUALITY:
       {
-         int qual = (*(int*)ptr)+1;
+         int q;
+         float qual = (*(float*)ptr)+1;
          if (qual>10)
             qual=10;
+         q=(int)floor(.5+*(float*)ptr);
+         if (q>10)
+            q=10;
          speex_encoder_ctl(st->st_low, SPEEX_SET_VBR_QUALITY, &qual);
-         speex_encoder_ctl(state, SPEEX_SET_QUALITY, ptr);
+         speex_encoder_ctl(state, SPEEX_SET_QUALITY, &q);
          break;
       }
    case SPEEX_SET_QUALITY:

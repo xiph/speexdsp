@@ -1241,10 +1241,10 @@ void nb_encoder_ctl(void *state, int request, void *ptr)
       (*(int*)ptr) = st->vbr_enabled;
       break;
    case SPEEX_SET_VBR_QUALITY:
-      st->vbr_quality = (*(int*)ptr);
+      st->vbr_quality = (*(float*)ptr);
       break;
    case SPEEX_GET_VBR_QUALITY:
-      (*(int*)ptr) = st->vbr_quality;
+      (*(float*)ptr) = st->vbr_quality;
       break;
    case SPEEX_SET_QUALITY:
       {

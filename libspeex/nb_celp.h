@@ -99,7 +99,7 @@ typedef struct EncState {
    float *pi_gain;        /**< Gain of LPC filter at theta=pi (fe/2) */
 
    VBRState *vbr;         /**< State of the VBR data */
-   int    vbr_quality;    /**< Quality setting for VBR encoding */
+   float    vbr_quality;    /**< Quality setting for VBR encoding */
    int    vbr_enabled;    /**< 1 for enabling VBR, 0 otherwise */
    int    complexity;     /**< Complexity setting (0-10 from least complex to most complex) */
 

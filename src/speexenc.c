@@ -204,6 +204,7 @@ int main(int argc, char **argv)
    int chan=1;
    int fmt=16;
    int quality=-1;
+   float vbr_quality=-1;
    int lbr=0;
    int lsb=1;
    ogg_stream_state os;
@@ -244,6 +245,7 @@ int main(int argc, char **argv)
          else if (strcmp(long_options[option_index].name,"quality")==0)
          {
             quality = atoi (optarg);
+            vbr_quality=atof(optarg);
          } else if (strcmp(long_options[option_index].name,"nframes")==0)
          {
             nframes = atoi (optarg);
@@ -479,14 +481,12 @@ int main(int argc, char **argv)
       tmp=1;
       speex_encoder_ctl(st, SPEEX_SET_VBR, &tmp);
    }
-   if (lbr || quality != -1)
+   if (quality >= 0)
    {
-      int tmp=quality;
-      if (quality==-1)
-         tmp = 3;
-      speex_encoder_ctl(st, SPEEX_SET_QUALITY, &tmp);
       if (vbr_enabled)
-         speex_encoder_ctl(st, SPEEX_SET_VBR_QUALITY, &tmp);
+         speex_encoder_ctl(st, SPEEX_SET_VBR_QUALITY, &vbr_quality);
+      else
+         speex_encoder_ctl(st, SPEEX_SET_QUALITY, &quality);
    }
 
    speex_bits_init(&bits);
