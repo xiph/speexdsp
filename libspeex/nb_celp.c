@@ -984,7 +984,11 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
    {
       int offset;
       float *sp, *exc, tmp;
+#if 0
       float *num, *den;
+#else
+      float *awk1, *awk2, *awk3;
+#endif
       /* Offset relative to start of frame */
       offset = st->subframeSize*sub;
       /* Original signal */
@@ -1006,6 +1010,7 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
          st->interp_qlsp[i] = cos(st->interp_qlsp[i]);
       lsp_to_lpc(st->interp_qlsp, st->interp_qlpc, st->lpcSize, st->stack);
 
+#if 0
       num=PUSH(st->stack, ((st->lpcSize<<1)+1));
       den=PUSH(st->stack, ((st->lpcSize<<1)+1));
       if (st->lpc_enh_enabled)
@@ -1016,6 +1021,28 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
          enh_lpc(st->interp_qlpc, st->lpcSize, num, den, 
                  SUBMODE(lpc_enh_k2), SUBMODE(lpc_enh_k2), st->stack);
       }
+#else
+      {
+         float r=.9;
+         
+         float k1,k2,k3;
+         k1=SUBMODE(lpc_enh_k1);
+         k2=SUBMODE(lpc_enh_k2);
+         k3=(1-(1-r*k1)/(1-r*k2))/r;
+         if (!st->lpc_enh_enabled)
+         {
+            k1=k2;
+            k3=0;
+         }
+         awk1=PUSH(st->stack, st->lpcSize+1);
+         awk2=PUSH(st->stack, st->lpcSize+1);
+         awk3=PUSH(st->stack, st->lpcSize+1);
+         bw_lpc(k1, st->interp_qlpc, awk1, st->lpcSize);
+         bw_lpc(k2, st->interp_qlpc, awk2, st->lpcSize);
+         bw_lpc(k3, st->interp_qlpc, awk3, st->lpcSize);
+         
+      }
+#endif
       /* Compute analysis filter at w=pi */
       tmp=1;
       st->pi_gain[sub]=0;
@@ -1132,13 +1159,20 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
       if (st->lpc_enh_enabled && SUBMODE(comb_gain>0))
          comb_filter(exc, sp, st->interp_qlpc, st->lpcSize, st->subframeSize,
                               pitch, pitch_gain, .5);
+#if 0
       /*pole_zero_mem(sp, num, den, sp, st->subframeSize, (st->lpcSize<<1), 
         st->mem_sp+st->lpcSize, st->stack);*/
       filter_mem2(sp, num, den, sp, st->subframeSize, (st->lpcSize<<1), 
         st->mem_sp+st->lpcSize);
       iir_mem2(sp, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, 
         st->mem_sp);
-      
+#else
+      filter_mem2(sp, awk3, awk1, sp, st->subframeSize, st->lpcSize, 
+        st->mem_sp);
+      filter_mem2(sp, awk2, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, 
+        st->mem_sp+st->lpcSize);
+      POP(st->stack);
+#endif 
       POP(st->stack);
       POP(st->stack);
    }
