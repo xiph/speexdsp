@@ -190,7 +190,7 @@ void *sb_encoder_init(SpeexMode *m)
    for (i=0;i<st->lpcSize+1;i++)
       st->lagWindow[i]=exp(-.5*sqr(2*M_PI*st->lag_factor*i));
 
-   st->autocorr = PUSH(st->stack, st->lpcSize+1, float);
+   st->autocorr = PUSH(st->stack, st->lpcSize+1, spx_word16_t);
    st->lpc = PUSH(st->stack, st->lpcSize+1, spx_coef_t);
    st->bw_lpc1 = PUSH(st->stack, st->lpcSize+1, spx_coef_t);
    st->bw_lpc2 = PUSH(st->stack, st->lpcSize+1, spx_coef_t);

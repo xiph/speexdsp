@@ -67,15 +67,15 @@
 #include <math.h>
 
 /* returns minimum mean square error    */
-float _spx_lpc(
+spx_word32_t _spx_lpc(
 spx_coef_t       *lpc, /* out: [0...p-1] LPC coefficients      */
-const float *ac,  /* in:  [0...p] autocorrelation values  */
+const spx_word16_t *ac,  /* in:  [0...p] autocorrelation values  */
 int          p
 )
 {
    int i, j;  
    spx_word16_t r;
-   spx_word16_t error = floor(ac[0]);
+   spx_word16_t error = ac[0];
    spx_word16_t lpcq[10];
 
    if (ac[0] == 0)
@@ -88,14 +88,14 @@ int          p
    for (i = 0; i < p; i++) {
 
       /* Sum up this iteration's reflection coefficient */
-      int rr = -8192.*floor(ac[i + 1]);
+      int rr = -ac[i + 1]<<13;
       for (j = 0; j < i; j++) 
-         rr -= lpcq[j] * floor(ac[i - j]);
+         rr -= lpcq[j] * ac[i - j];
       r = DIV32_16(rr,error+16);
 
       /*  Update LPC coefficients and total error */
       lpcq[i] = r;
-      for (j = 0; j < i/2; j++) 
+      for (j = 0; j < i>>1; j++) 
       {
          spx_word16_t tmp  = lpcq[j];
          lpcq[j]     += MULT16_16_Q13(r,lpcq[i-1-j]);
@@ -118,28 +118,48 @@ int          p
  *                      `--'
  * for lags between 0 and lag-1, and x == 0 outside 0...n-1
  */
+#include <stdio.h>
 void _spx_autocorr(
 const float *x,   /*  in: [0...n-1] samples x   */
-float       *ac,  /* out: [0...lag-1] ac values */
+spx_word16_t       *ac,  /* out: [0...lag-1] ac values */
 int          lag, 
 int          n
 )
 {
-   float d;
+   spx_word32_t d;
    int i, j;
+   spx_word32_t ac0=1;
+   int shift, ac_shift;
+   
+   for (j=0;j<n;j++)
+      ac0 += floor(x[j]*x[j])/256;
+   ac0 += n;
+   shift = 8;
+   while (shift && ac0<0x40000000)
+   {
+      shift--;
+      ac0 <<= 1;
+   }
+   ac_shift = 18;
+   while (ac_shift && ac0<0x40000000)
+   {
+      ac_shift--;
+      ac0 <<= 1;
+   }
+   
+   
    for (i=0;i<lag;i++)
    {
       d=0;
       for (j=i;j<n;j++)
       {
-         d += x[j] * x[j-i];
+         d += ((int)(floor(x[j]) * floor(x[j-i]))) >> shift;
       }
-      if (i==0)
-         ac[i] = d+.01;
-      else
-         ac[i] = 8192.*d/ac[0];
+      
+      ac[i] = d >> ac_shift;
    }
-   ac[0] = 8192.;
+   /*ac[0] = 8192.;*/
+   /*printf ("%d %d %d, %f\n", ac0, shift, ac_shift, ac[0]);*/
 }
 
 
@@ -148,7 +168,7 @@ int          n
 
 
 /* returns minimum mean square error    */
-float _spx_lpc(
+spx_word32_t _spx_lpc(
 spx_coef_t       *lpc, /* out: [0...p-1] LPC coefficients      */
 const float *ac,  /* in:  [0...p] autocorrelation values  */
 int          p

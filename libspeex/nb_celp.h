@@ -84,7 +84,7 @@ typedef struct EncState {
    float *innov;          /**< Innovation for the frame */
    float *window;         /**< Temporary (Hanning) window */
    float *buf2;           /**< 2nd temporary buffer */
-   float *autocorr;       /**< auto-correlation */
+   spx_word16_t *autocorr;       /**< auto-correlation */
    float *lagWindow;      /**< Window applied to auto-correlation */
    spx_coef_t *lpc;            /**< LPCs for current frame */
    float *lsp;            /**< LSPs for current frame */

@@ -71,7 +71,7 @@ typedef struct SBEncState {
    float *target;              /**< Weighted target signal (analysis by synthesis) */
    float *window;              /**< LPC analysis window */
    float *lagWindow;           /**< Auto-correlation window */
-   float *autocorr;            /**< Auto-correlation (for LPC analysis) */
+   spx_word16_t *autocorr;            /**< Auto-correlation (for LPC analysis) */
    spx_coef_t *lpc;                 /**< LPC coefficients */
    float *lsp;                 /**< LSP coefficients */
    float *qlsp;                /**< Quantized LSPs */
