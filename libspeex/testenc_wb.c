@@ -58,6 +58,10 @@ int main(int argc, char **argv)
          printf ("real SNR = %f\n", snr);
       }
 
+      frame_bits_rewind(&bits);
+      
+      decode(&dec, &bits, input);
+
       /* Save the bits here */
       frame_bits_reset(&bits);
       for (i=0;i<FRAME_SIZE;i++)
