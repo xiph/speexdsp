@@ -57,6 +57,7 @@ typedef long long   spx_sig_t;
 #define SHL(a,shift) ((a) << (shift))
 
 #define MULT16_16(a,b)     (((signed int)(a))*(b))
+#define MULT16_32_Q13(a,b) (((a)*((b)>>13)) + ((a)*((signed int)((b)&0x00001fff))>>13))
 #define MULT16_32_Q14(a,b) (((a)*((b)>>14)) + ((a)*((signed int)((b)&0x00003fff))>>14))
 #define MULT16_32_Q15(a,b) (((a)*((b)>>15)) + ((a)*((signed int)((b)&0x00007fff))>>15))
 
@@ -86,6 +87,14 @@ typedef float spx_word32_t;
 #define SHR(a,shift)       (a)
 #define SHL(a,shift)       (a)
 #define MULT16_16(a,b)     ((a)*(b))
+
+#define MULT16_32_Q13(a,b)     ((a)*(b))
+#define MULT16_32_Q14(a,b)     ((a)*(b))
+#define MULT16_32_Q15(a,b)     ((a)*(b))
+
+#define MULT16_16_Q13(a,b)     ((a)*(b))
+#define MULT16_16_Q14(a,b)     ((a)*(b))
+#define MULT16_16_Q15(a,b)     ((a)*(b))
 
 
 #endif

@@ -340,7 +340,12 @@ int cdbk_offset
             x[i][j+1]=x[i+1][j];
          x[i][0]=0;
          for (j=0;j<nsf;j++)
-            x[i][j]+=e[i][0]*r[j]/SIG_SCALING;
+         {
+            /* FIXME: Check for overflows */
+            /*x[i][j]+=e[i][0]*r[j]/SIG_SCALING;*/
+            x[i][j]+=MULT16_32_Q13(SHR(r[j],1), e[i][0]);
+            /*printf ("%d\n", (int)r[j]);*/
+         }
       }
    }
 

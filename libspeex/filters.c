@@ -88,7 +88,7 @@ spx_word16_t compute_rms(spx_sig_t *x, int len)
    }
    
    /*FIXME: remove division*/
-   return (1<<(sig_shift+3))*sqrt(1+sum/len)/SIG_SCALING;
+   return (1<<(sig_shift+3))*sqrt(1+sum/len)/(float)SIG_SCALING;
 }
 
 #define MUL_16_32_R15(a,bh,bl) ((a)*(bh) + ((a)*(bl)>>15))
