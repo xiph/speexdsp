@@ -28,7 +28,8 @@ typedef struct SpeexMode {
    int     lpcSize;
    float   gamma1;
    float   gamma2;
-   
 } SpeexMode;
+
+extern SpeexMode nb_mode;
 
 #endif

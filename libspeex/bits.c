@@ -24,6 +24,9 @@
 
 void frame_bits_init(FrameBits *bits)
 {
+   int i;
+   for (i=0;i<MAX_BYTES_PER_FRAME;i++)
+      bits->bytes[i]=0;
    bits->nbBits=0;
    bits->bytePtr=0;
    bits->bitPtr=0;
@@ -60,12 +63,52 @@ void frame_bits_write(FrameBits *bits, char *bytes, int max_len)
 
 void frame_bits_pack(FrameBits *bits, int data, int nbBits)
 {
+   int i;
+   unsigned int d=data;
+   while(nbBits)
+   {
+      int bit;
+      bit = (d>>(nbBits-1))&1;
+      bits->bytes[bits->bytePtr] |= bit<<(7-bits->bitPtr);
+      bits->bitPtr++;
+      fprintf(stderr, "%d %d\n", nbBits, bit);
+      if (bits->bitPtr==8)
+      {
+         bits->bitPtr=0;
+         bits->bytePtr++;
+      }
+      bits->nbBits++;
+      nbBits--;
+   }
 }
 
 int frame_bits_unpack_signed(FrameBits *bits, int nbBits)
 {
+   unsigned int d=frame_bits_unpack_unsigned(bits,nbBits);
+   /* If number is negative */
+   if (d>>(nbBits-1))
+   {
+      d |= (-1)<<nbBits;
+   }
+   return d;
 }
 
 unsigned int frame_bits_unpack_unsigned(FrameBits *bits, int nbBits)
 {
+   int i;
+   unsigned int d=0;
+   while(nbBits)
+   {
+      int bit;
+      d<<=1;
+      d |= (bits->bytes[bits->bytePtr]>>(7-bits->bitPtr))&1;
+      bits->bitPtr++;
+      if (bits->bitPtr==8)
+      {
+         bits->bitPtr=0;
+         bits->bytePtr++;
+      }
+      nbBits--;
+   }
+   return d;
 }

@@ -21,3 +21,10 @@
 
 #include "modes.h"
 
+SpeexMode nb_mode = {
+   160,    /*frameSize*/
+   40,     /*subframeSize*/
+   10,     /*lpcSize*/
+   0.9,    /*gamma1*/
+   0.5     /*gamma2*/
+};
