@@ -667,7 +667,8 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
          spx_word32_t pi_g=st->interp_qlpc[0];
          for (i=1;i<=st->lpcSize;i+=2)
          {
-            pi_g += -st->interp_qlpc[i] +  st->interp_qlpc[i+1];
+            /*pi_g += -st->interp_qlpc[i] +  st->interp_qlpc[i+1];*/
+            pi_g = ADD32(pi_g, SUB32(st->interp_qlpc[i+1],st->interp_qlpc[i]));
          }
          st->pi_gain[sub] = pi_g;
       }
@@ -851,7 +852,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
             signal_mul(innov, innov, ener, st->subframeSize);
 
             for (i=0;i<st->subframeSize;i++)
-               exc[i] += innov[i];
+               exc[i] = ADD32(exc[i],innov[i]);
          } else {
             speex_error("No fixed codebook");
          }
@@ -870,7 +871,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
                                       innov2, syn_resp, bits, stack, st->complexity, 0);
             signal_mul(innov2, innov2, (spx_word32_t) (ener*(1/2.2)), st->subframeSize);
             for (i=0;i<st->subframeSize;i++)
-               exc[i] += innov2[i];
+               exc[i] = ADD32(exc[i],innov2[i]);
             stack = tmp_stack;
          }
 
@@ -1415,7 +1416,8 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
          spx_word32_t pi_g=st->interp_qlpc[0];
          for (i=1;i<=st->lpcSize;i+=2)
          {
-            pi_g += -st->interp_qlpc[i] +  st->interp_qlpc[i+1];
+            /*pi_g += -st->interp_qlpc[i] +  st->interp_qlpc[i+1];*/
+            pi_g = ADD32(pi_g, SUB32(st->interp_qlpc[i+1],st->interp_qlpc[i]));
          }
          st->pi_gain[sub] = pi_g;
       }
@@ -1565,7 +1567,7 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
             }
          } else {
             for (i=0;i<st->subframeSize;i++)
-               exc[i]+=innov[i];
+               exc[i]=ADD32(exc[i],innov[i]);
             /*print_vec(exc, 40, "innov");*/
          }
          /* Decode second codebook (only for some modes) */
@@ -1579,7 +1581,7 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
             SUBMODE(innovation_unquant)(innov2, SUBMODE(innovation_params), st->subframeSize, bits, stack);
             signal_mul(innov2, innov2, (spx_word32_t) (ener*(1/2.2)), st->subframeSize);
             for (i=0;i<st->subframeSize;i++)
-               exc[i] += innov2[i];
+               exc[i] = ADD32(exc[i],innov2[i]);
             stack = tmp_stack;
          }
 

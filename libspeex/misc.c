@@ -55,9 +55,9 @@ long long spx_mips=0;
 #endif
 
 
-unsigned int be_int(unsigned int i)
+spx_uint32_t be_int(spx_uint32_t i)
 {
-   unsigned int ret=i;
+   spx_uint32_t ret=i;
 #ifndef WORDS_BIGENDIAN
    ret =  i>>24;
    ret += (i>>8)&0x0000ff00;
@@ -67,9 +67,9 @@ unsigned int be_int(unsigned int i)
    return ret;
 }
 
-unsigned int le_int(unsigned int i)
+spx_uint32_t le_int(spx_uint32_t i)
 {
-   unsigned int ret=i;
+   spx_uint32_t ret=i;
 #ifdef WORDS_BIGENDIAN
    ret =  i>>24;
    ret += (i>>8)&0x0000ff00;
@@ -98,6 +98,50 @@ unsigned short le_short(unsigned short s)
 #endif
    return ret;
 }
+
+#if BYTES_PER_CHAR == 2
+void speex_memcpy_bytes(char *dst, char *src, int nbytes)
+{
+  int i;
+  int nchars = nbytes/BYTES_PER_CHAR;
+  for (i=0;i<nchars;i++)
+    dst[i]=src[i];
+  if (nbytes & 1) {
+    /* copy in the last byte */
+    int last_i = nchars;
+    char last_dst_char = dst[last_i];
+    char last_src_char = src[last_i];
+    last_dst_char &= 0xff00;
+    last_dst_char |= (last_src_char & 0x00ff);
+    dst[last_i] = last_dst_char;
+  }
+}
+void speex_memset_bytes(char *dst, char c, int nbytes)
+{
+  int i;
+  short cc = ((c << 8) | c);
+  int nchars = nbytes/BYTES_PER_CHAR;
+  for (i=0;i<nchars;i++)
+    dst[i]=cc;
+  if (nbytes & 1) {
+    /* copy in the last byte */
+    int last_i = nchars;
+    char last_dst_char = dst[last_i];
+    last_dst_char &= 0xff00;
+    last_dst_char |= (c & 0x00ff);
+    dst[last_i] = last_dst_char;
+  }
+}
+#else
+void speex_memcpy_bytes(char *dst, char *src, int nbytes)
+{
+  memcpy(dst, src, nbytes);
+}
+void speex_memset_bytes(char *dst, char src, int nbytes)
+{
+  memset(dst, src, nbytes);
+}
+#endif
 
 void *speex_alloc (int size)
 {
@@ -150,5 +194,5 @@ float speex_rand(float std)
 void _speex_putc(int ch, void *file)
 {
    FILE *f = (FILE *)file;
-   fputc(ch, f);
+   fprintf(f, "%c", ch);
 }

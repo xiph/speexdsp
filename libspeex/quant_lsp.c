@@ -295,6 +295,16 @@ void lsp_unquant_lbr(spx_lsp_t *lsp, int order, SpeexBits *bits)
 }
 
 
+#ifdef DISABLE_WIDEBAND
+void lsp_quant_high(spx_lsp_t *lsp, spx_lsp_t *qlsp, int order, SpeexBits *bits)
+{
+   speex_error("Wideband and Ultra-wideband are disabled");
+}
+void lsp_unquant_high(spx_lsp_t *lsp, int order, SpeexBits *bits)
+{
+   speex_error("Wideband and Ultra-wideband are disabled");
+}
+#else
 extern const signed char high_lsp_cdbk[];
 extern const signed char high_lsp_cdbk2[];
 
@@ -363,6 +373,8 @@ void lsp_unquant_high(spx_lsp_t *lsp, int order, SpeexBits *bits)
    for (i=0;i<order;i++)
       lsp[i] += LSP_DIV_512(high_lsp_cdbk2[id*order+i]);
 }
+
+#endif
 
 
 #ifdef EPIC_48K

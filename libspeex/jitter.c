@@ -40,6 +40,7 @@
 #define NULL 0
 #endif
 
+#include "misc.h"
 #include <speex/speex.h>
 #include <speex/speex_bits.h>
 #include <speex/speex_jitter.h>
@@ -139,7 +140,7 @@ void speex_jitter_put(SpeexJitter *jitter, char *packet, int len, int timestamp)
    /* Copy packet in buffer */
    if (len>SPEEX_JITTER_MAX_PACKET_SIZE)
       len=SPEEX_JITTER_MAX_PACKET_SIZE;
-   for (j=0;j<len;j++)
+   for (j=0;j<len/BYTES_PER_CHAR;j++)
       jitter->buf[i][j]=packet[j];
    jitter->timestamp[i]=timestamp;
    jitter->len[i]=len;

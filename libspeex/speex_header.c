@@ -35,8 +35,8 @@
 #include "config.h"
 #endif
 
-#include <speex/speex_header.h>
 #include "misc.h"
+#include <speex/speex_header.h>
 #include <speex/speex.h>
 
 #ifndef NULL

@@ -37,6 +37,10 @@
 
 #define ABS(x) ((x) < 0 ? (-(x)) : (x))
 
+/* FIXME: Should provide better detection */
+/*typedef   signed long spx_int32_t;*/
+typedef unsigned long spx_uint32_t;
+
 #ifdef FIXED_POINT
 
 typedef signed short spx_word16_t;
@@ -109,8 +113,8 @@ typedef float spx_word64_t;
 #define SUB32(a,b) ((a)-(b))
 #define ADD64(a,b) ((a)+(b))
 #define MULT16_16_16(a,b)     ((a)*(b))
-#define MULT16_16(a,b)     ((a)*(b))
-#define MAC16_16(c,a,b)     ((c)+(a)*(b))
+#define MULT16_16(a,b)     ((spx_word32_t)(a)*(spx_word32_t)(b))
+#define MAC16_16(c,a,b)     ((c)+(spx_word32_t)(a)*(spx_word32_t)(b))
 
 #define MULT16_32_Q11(a,b)     ((a)*(b))
 #define MULT16_32_Q13(a,b)     ((a)*(b))
@@ -133,5 +137,19 @@ typedef float spx_word64_t;
 #endif
 
 
+#ifdef CONFIG_TI_C55X
+
+/* 2 on TI C5x DSP */
+#define BYTES_PER_CHAR 2 
+#define BITS_PER_CHAR 16
+#define LOG2_BITS_PER_CHAR 4
+
+#else 
+
+#define BYTES_PER_CHAR 1
+#define BITS_PER_CHAR 8
+#define LOG2_BITS_PER_CHAR 3
+
+#endif
 
 #endif

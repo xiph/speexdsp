@@ -49,8 +49,8 @@
 void print_vec(float *vec, int len, char *name);
 #endif
 
-unsigned int be_int(unsigned int i);
-unsigned int le_int(unsigned int i);
+spx_uint32_t be_int(spx_uint32_t i);
+spx_uint32_t le_int(spx_uint32_t i);
 
 
 unsigned short be_short(unsigned short s);
@@ -67,6 +67,9 @@ void speex_free (void *ptr);
 
 /** Speex wrapper for mem_move */
 void *speex_move (void *dest, void *src, int n);
+
+void speex_memcpy_bytes(char *dst, char *src, int nbytes);
+void speex_memset_bytes(char *dst, char src, int nbytes);
 
 void speex_error(char *str);
 

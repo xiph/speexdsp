@@ -55,7 +55,7 @@ int main(int argc, char **argv)
    speex_encoder_ctl(st, SPEEX_SET_VBR, &tmp);
    tmp=4;
    speex_encoder_ctl(st, SPEEX_SET_QUALITY, &tmp);
-   tmp=5;
+   tmp=1;
    speex_encoder_ctl(st, SPEEX_SET_COMPLEXITY, &tmp);
 
    speex_mode_query(&speex_nb_mode, SPEEX_MODE_FRAME_SIZE, &tmp);

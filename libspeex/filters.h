@@ -41,7 +41,7 @@ void signal_div(const spx_sig_t *x, spx_sig_t *y, spx_word32_t scale, int len);
 
 #ifdef FIXED_POINT
 
-int normalize16(const spx_sig_t *x, spx_word16_t *y, int max_scale, int len);
+int normalize16(const spx_sig_t *x, spx_word16_t *y, spx_sig_t max_scale, int len);
 
 #endif
 

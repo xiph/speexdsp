@@ -148,14 +148,14 @@ spx_word16_t compute_rms(const spx_sig_t *x, int len)
       spx_word32_t sum2=0;
       spx_word16_t tmp;
       tmp = SHR(x[i],sig_shift);
-      sum2 += MULT16_16(tmp,tmp);
+      sum2 = MAC16_16(sum2,tmp,tmp);
       tmp = SHR(x[i+1],sig_shift);
-      sum2 += MULT16_16(tmp,tmp);
+      sum2 = MAC16_16(sum2,tmp,tmp);
       tmp = SHR(x[i+2],sig_shift);
-      sum2 += MULT16_16(tmp,tmp);
+      sum2 = MAC16_16(sum2,tmp,tmp);
       tmp = SHR(x[i+3],sig_shift);
-      sum2 += MULT16_16(tmp,tmp);
-      sum += SHR(sum2,6);
+      sum2 = MAC16_16(sum2,tmp,tmp);
+      sum = ADD32(sum,SHR(sum2,6));
    }
    
    return SHR(SHL((spx_word32_t)spx_sqrt(1+DIV32(sum,len)),(sig_shift+3)),SIG_SHIFT);
@@ -166,7 +166,7 @@ spx_word16_t compute_rms(const spx_sig_t *x, int len)
 #else
 
 
-int normalize16(const spx_sig_t *x, spx_word16_t *y, int max_scale, int len)
+int normalize16(const spx_sig_t *x, spx_word16_t *y, spx_sig_t max_scale, int len)
 {
    int i;
    spx_sig_t max_val=1;
@@ -201,11 +201,9 @@ void filter_mem2(const spx_sig_t *x, const spx_coef_t *num, const spx_coef_t *de
 
    for (i=0;i<N;i++)
    {
-      int xh,xl,yh,yl;
       xi=SATURATE(x[i],805306368);
       yi = SATURATE(ADD32(xi, SHL(mem[0],2)),805306368);
       nyi = -yi;
-      xh = xi>>15; xl=xi&0x00007fff; yh = yi>>15; yl=yi&0x00007fff; 
       for (j=0;j<ord-1;j++)
       {
          mem[j] = MAC16_32_Q15(MAC16_32_Q15(mem[j+1], num[j+1],xi), den[j+1],nyi);
@@ -222,11 +220,9 @@ void iir_mem2(const spx_sig_t *x, const spx_coef_t *den, spx_sig_t *y, int N, in
 
    for (i=0;i<N;i++)
    {
-      int yh,yl;
       xi=SATURATE(x[i],805306368);
       yi = SATURATE(xi + (mem[0]<<2),805306368);
       nyi = -yi;
-      yh = yi>>15; yl=yi&0x00007fff; 
       for (j=0;j<ord-1;j++)
       {
          mem[j] = MAC16_32_Q15(mem[j+1],den[j+1],nyi);
@@ -247,10 +243,8 @@ void fir_mem2(const spx_sig_t *x, const spx_coef_t *num, spx_sig_t *y, int N, in
 
    for (i=0;i<N;i++)
    {
-      int xh,xl;
       xi=SATURATE(x[i],805306368);
       yi = xi + (mem[0]<<2);
-      xh = xi>>15; xl=xi&0x00007fff;
       for (j=0;j<ord-1;j++)
       {
          mem[j] = MAC16_32_Q15(mem[j+1], num[j+1],xi);
@@ -258,7 +252,6 @@ void fir_mem2(const spx_sig_t *x, const spx_coef_t *num, spx_sig_t *y, int N, in
       mem[ord-1] = MULT16_32_Q15(num[ord],xi);
       y[i] = SATURATE(yi,805306368);
    }
-
 }
 
 #else
@@ -384,11 +377,11 @@ void qmf_decomp(const spx_word16_t *xx, const spx_word16_t *aa, spx_sig_t *y1, s
       y2[k]=0;
       for (j=0;j<M2;j++)
       {
-         y1[k]+=SHR(MULT16_16(a[j],ADD16(x[i+j],x2[i-j])),1);
-         y2[k]-=SHR(MULT16_16(a[j],SUB16(x[i+j],x2[i-j])),1);
+         y1[k]=ADD32(y1[k],SHR(MULT16_16(a[j],ADD16(x[i+j],x2[i-j])),1));
+         y2[k]=SUB32(y2[k],SHR(MULT16_16(a[j],SUB16(x[i+j],x2[i-j])),1));
          j++;
-         y1[k]+=SHR(MULT16_16(a[j],ADD16(x[i+j],x2[i-j])),1);
-         y2[k]+=SHR(MULT16_16(a[j],SUB16(x[i+j],x2[i-j])),1);
+         y1[k]=ADD32(y1[k],SHR(MULT16_16(a[j],ADD16(x[i+j],x2[i-j])),1));
+         y2[k]=ADD32(y2[k],SHR(MULT16_16(a[j],SUB16(x[i+j],x2[i-j])),1));
       }
    }
    for (i=0;i<M-1;i++)
@@ -427,19 +420,19 @@ void fir_mem_up(const spx_sig_t *x, const spx_word16_t *a, spx_sig_t *y, int N, 
          a1 = a[j+1];
          x1 = xx[N-2+j-i];
 
-         y0 += SHR(MULT16_16(a0, x1),1);
-         y1 += SHR(MULT16_16(a1, x1),1);
-         y2 += SHR(MULT16_16(a0, x0),1);
-         y3 += SHR(MULT16_16(a1, x0),1);
+         y0 = ADD32(y0,SHR(MULT16_16(a0, x1),1));
+         y1 = ADD32(y1,SHR(MULT16_16(a1, x1),1));
+         y2 = ADD32(y2,SHR(MULT16_16(a0, x0),1));
+         y3 = ADD32(y3,SHR(MULT16_16(a1, x0),1));
 
          a0 = a[j+2];
          a1 = a[j+3];
          x0 = xx[N+j-i];
 
-         y0 += SHR(MULT16_16(a0, x0),1);
-         y1 += SHR(MULT16_16(a1, x0),1);
-         y2 += SHR(MULT16_16(a0, x1),1);
-         y3 += SHR(MULT16_16(a1, x1),1);
+         y0 = ADD32(y0,SHR(MULT16_16(a0, x0),1));
+         y1 = ADD32(y1,SHR(MULT16_16(a1, x0),1));
+         y2 = ADD32(y2,SHR(MULT16_16(a0, x1),1));
+         y3 = ADD32(y3,SHR(MULT16_16(a1, x1),1));
       }
       y[i] = y0;
       y[i+1] = y1;
@@ -516,7 +509,7 @@ CombFilterMem *mem
    {
       spx_word32_t exc1, exc2;
 
-      fact += step;
+      fact = ADD16(fact,step);
       
       exc1 = SHL(MULT16_32_Q15(SHL(pitch_gain[0],7),exc[i-pitch+1]) +
                  MULT16_32_Q15(SHL(pitch_gain[1],7),exc[i-pitch]) +

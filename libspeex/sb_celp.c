@@ -46,6 +46,48 @@
 #include "ltp.h"
 #include "misc.h"
 
+#ifdef DISABLE_WIDEBAND
+void *sb_encoder_init(const SpeexMode *m)
+{
+   speex_error("Wideband and Ultra-wideband are disabled");
+   return NULL;
+}
+void sb_encoder_destroy(void *state)
+{
+   speex_error("Wideband and Ultra-wideband are disabled");
+}
+int sb_encode(void *state, void *vin, SpeexBits *bits)
+{
+   speex_error("Wideband and Ultra-wideband are disabled");
+   return -2;
+}
+void *sb_decoder_init(const SpeexMode *m)
+{
+   speex_error("Wideband and Ultra-wideband are disabled");
+   return NULL;
+}
+void sb_decoder_destroy(void *state)
+{
+   speex_error("Wideband and Ultra-wideband are disabled");
+}
+int sb_decode(void *state, SpeexBits *bits, void *vout)
+{
+   speex_error("Wideband and Ultra-wideband are disabled");
+   return -2;
+}
+int sb_encoder_ctl(void *state, int request, void *ptr)
+{
+   speex_error("Wideband and Ultra-wideband are disabled");
+   return -2;
+}
+int sb_decoder_ctl(void *state, int request, void *ptr)
+{
+   speex_error("Wideband and Ultra-wideband are disabled");
+   return -2;
+}
+#else
+
+
 #ifndef M_PI
 #define M_PI           3.14159265358979323846  /* pi */
 #endif
@@ -307,7 +349,7 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
       qmf_decomp(in, h0, st->x0d, st->x1d, st->full_frame_size, QMF_ORDER, st->h0_mem, stack);
       
       for (i=0;i<st->frame_size;i++)
-         low[i] = PSHR(st->x0d[i],SIG_SHIFT);
+         low[i] = SATURATE(PSHR(st->x0d[i],SIG_SHIFT),32767);
       
       /* Encode the narrowband part*/
       speex_encode_native(st->st_low, low, bits);
@@ -679,7 +721,7 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
          signal_mul(innov, innov, scale, st->subframeSize);
 
          for (i=0;i<st->subframeSize;i++)
-            exc[i] += innov[i];
+            exc[i] = ADD32(exc[i], innov[i]);
 
          if (SUBMODE(double_codebook)) {
             char *tmp_stack=stack;
@@ -695,7 +737,7 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
             for (i=0;i<st->subframeSize;i++)
                innov2[i]*=scale*(1/2.5)/SIG_SCALING;
             for (i=0;i<st->subframeSize;i++)
-               exc[i] += innov2[i];
+               exc[i] = ADD32(exc[i],innov2[i]);
             stack = tmp_stack;
          }
 
@@ -1106,7 +1148,7 @@ int sb_decode(void *state, SpeexBits *bits, void *vout)
             for (i=0;i<st->subframeSize;i++)
                innov2[i]*=scale/(float)SIG_SCALING*(1/2.5);
             for (i=0;i<st->subframeSize;i++)
-               exc[i] += innov2[i];
+               exc[i] = ADD32(exc[i],innov2[i]);
             stack = tmp_stack;
          }
 
@@ -1462,3 +1504,6 @@ int sb_decoder_ctl(void *state, int request, void *ptr)
    }
    return 0;
 }
+
+#endif
+

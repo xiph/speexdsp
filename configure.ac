@@ -59,6 +59,11 @@ AC_DEFINE_UNQUOTED(SPEEX_MINOR_VERSION, ${SPEEX_MINOR_VERSION}, [Version minor])
 AC_DEFINE_UNQUOTED(SPEEX_MICRO_VERSION, ${SPEEX_MICRO_VERSION}, [Version micro])
 AC_DEFINE_UNQUOTED(SPEEX_EXTRA_VERSION, "${SPEEX_EXTRA_VERSION}", [Version extra])
 
+AC_ARG_ENABLE(wideband, [  --disable-wideband       disable wideband codec],
+[if test "$enableval" = no; then
+  AC_DEFINE([DISABLE_WIDEBAND], , [Disable wideband codec])
+fi])
+
 AC_ARG_ENABLE(valgrind, [  --enable-valgrind       enable valgrind extra checks],
 [if test "$enableval" = yes; then
   AC_DEFINE([ENABLE_VALGRIND], , [Enable valgrind extra checks])
@@ -93,6 +98,11 @@ fi])
 AC_ARG_ENABLE(epic-48k, [  --enable-epic-48k       enable support for Epic 4.8 kbps mode],
 [if test "$enableval" = yes; then
   AC_DEFINE([EPIC_48K], , [Enable support for Epic 4.8 kbps mode])
+fi])
+
+AC_ARG_ENABLE(ti-c55x, [  --enable-ti-c55x         enable support for TI C55X DSP],
+[if test "$enableval" = yes; then
+  AC_DEFINE([TI_C55X], , [Enable support for TI C55X DSP])
 fi])
 
 dnl Output the makefiles and version.h.

@@ -125,6 +125,7 @@ int speex_std_char_handler(SpeexBits *bits, void *state, void *data)
    unsigned char ch;
    ch = speex_bits_unpack_unsigned(bits, 8);
    _speex_putc(ch, data);
+   /*printf("speex_std_char_handler ch=%x\n", ch);*/
    return 0;
 }
 

@@ -42,11 +42,11 @@ extern "C" {
 
 /** Bit-packing data structure representing (part of) a bit-stream. */
 typedef struct SpeexBits {
-   char *bytes;   /**< "raw" data */
+   char *chars;   /**< "raw" data */
    int   nbBits;  /**< Total number of bits stored in the stream*/
-   int   bytePtr; /**< Position of the byte "cursor" */
-   int   bitPtr;  /**< Position of the bit "cursor" within the current byte */
-   int   owner;   /**< Does the struct "own" the "raw" buffer (member "bytes") */
+   int   charPtr; /**< Position of the byte "cursor" */
+   int   bitPtr;  /**< Position of the bit "cursor" within the current char */
+   int   owner;   /**< Does the struct "own" the "raw" buffer (member "chars") */
    int   overflow;/**< Set to one if we try to read past the valid data */
    int   buf_size;/**< Allocated size for buffer */
    int   reserved1; /**< Reserved for future use */

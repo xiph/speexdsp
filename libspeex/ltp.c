@@ -272,19 +272,19 @@ void open_loop_nbest_pitch(spx_sig_t *sw, int start, int end, int len, int *pitc
 
 /** Finds the best quantized 3-tap pitch predictor by analysis by synthesis */
 static spx_word64_t pitch_gain_search_3tap(
-spx_sig_t target[],                 /* Target vector */
-spx_coef_t ak[],                     /* LPCs for this subframe */
-spx_coef_t awk1[],                   /* Weighted LPCs #1 for this subframe */
-spx_coef_t awk2[],                   /* Weighted LPCs #2 for this subframe */
-spx_sig_t exc[],                    /* Excitation */
+const spx_sig_t target[],       /* Target vector */
+const spx_coef_t ak[],          /* LPCs for this subframe */
+const spx_coef_t awk1[],        /* Weighted LPCs #1 for this subframe */
+const spx_coef_t awk2[],        /* Weighted LPCs #2 for this subframe */
+spx_sig_t exc[],                /* Excitation */
 const void *par,
 int   pitch,                    /* Pitch value */
 int   p,                        /* Number of LPC coeffs */
 int   nsf,                      /* Number of samples in subframe */
 SpeexBits *bits,
 char *stack,
-spx_sig_t *exc2,
-spx_sig_t *r,
+const spx_sig_t *exc2,
+const spx_sig_t *r,
 spx_sig_t *new_target,
 int  *cdbk_index,
 int cdbk_offset
@@ -487,8 +487,8 @@ int cdbk_offset
    {
       spx_word16_t perr2;
       spx_sig_t tmp = SHL((MULT16_32_Q15(SHL(gain[0],7),x[2][i])+MULT16_32_Q15(SHL(gain[1],7),x[1][i])+MULT16_32_Q15(SHL(gain[2],7),x[0][i])),2);
-      spx_sig_t perr=target[i]-tmp;
-      new_target[i] = target[i] - tmp;
+      spx_sig_t perr=SUB32(target[i],tmp);
+      new_target[i] = SUB32(target[i], tmp);
       perr2 = PSHR(perr,15);
       err = ADD64(err,MULT16_16(perr2,perr2));
       

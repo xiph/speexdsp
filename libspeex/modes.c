@@ -150,6 +150,8 @@ static const split_cb_params split_cb_sb = {
    0,
 };
 
+#ifndef DISABLE_WIDEBAND
+
 /* Split-VQ innovation for high-band wideband */
 static const split_cb_params split_cb_high = {
    8,               /*subvect_size*/
@@ -168,6 +170,8 @@ static const split_cb_params split_cb_high_lbr = {
    5,               /*shape_bits*/
    0,
 };
+
+#endif
 
 /* 2150 bps "vocoder-like" mode for comfort noise */
 static const SpeexSubmode nb_submode1 = {
@@ -454,7 +458,11 @@ static const SpeexSubmode wb_submode2 = {
    /*Innovation quantization*/
    split_cb_search_shape_sign,
    split_cb_shape_sign_unquant,
+#ifdef DISABLE_WIDEBAND
+   NULL,
+#else
    &split_cb_high_lbr,
+#endif
 #ifdef FIXED_POINT
    27853, 19661, 8192, -1,
 #else
@@ -479,7 +487,11 @@ static const SpeexSubmode wb_submode3 = {
    /*Innovation quantization*/
    split_cb_search_shape_sign,
    split_cb_shape_sign_unquant,
+#ifdef DISABLE_WIDEBAND
+   NULL,
+#else
    &split_cb_high,
+#endif
 
 #ifdef FIXED_POINT
    24576, 22938, 1638, -1,
@@ -504,7 +516,11 @@ static const SpeexSubmode wb_submode4 = {
    /*Innovation quantization*/
    split_cb_search_shape_sign,
    split_cb_shape_sign_unquant,
+#ifdef DISABLE_WIDEBAND
+   NULL,
+#else
    &split_cb_high,
+#endif
 #ifdef FIXED_POINT
    24576, 24576, 0, -1,
 #else

@@ -168,10 +168,10 @@ int   update_target
          res = resp+rind*subvect_size;
          if (sign>0)
             for (m=0;m<subvect_size;m++)
-               t[subvect_size*i+m] -= res[m];
+               t[subvect_size*i+m] = SUB16(t[subvect_size*i+m], res[m]);
          else
             for (m=0;m<subvect_size;m++)
-               t[subvect_size*i+m] += res[m];
+               t[subvect_size*i+m] = ADD16(t[subvect_size*i+m], res[m]);
 
 #ifdef FIXED_POINT
          if (sign)
@@ -217,7 +217,7 @@ int   update_target
    /* Update excitation */
    /* FIXME: We could update the excitation directly above */
    for (j=0;j<nsf;j++)
-      exc[j]+=e[j];
+      exc[j]=ADD32(exc[j],e[j]);
    
    /* Update target: only update target if necessary */
    if (update_target)
@@ -226,7 +226,7 @@ int   update_target
       ALLOC(r2, nsf, spx_sig_t);
       syn_percep_zero(e, ak, awk1, awk2, r2, nsf,p, stack);
       for (j=0;j<nsf;j++)
-         target[j]-=r2[j];
+         target[j]=SUB32(target[j],r2[j]);
    }
 }
 
@@ -393,10 +393,10 @@ int   update_target
                res = resp+rind*subvect_size;
                if (sign>0)
                   for (m=0;m<subvect_size;m++)
-                     t[subvect_size*i+m] -= res[m];
+                     t[subvect_size*i+m] = SUB16(t[subvect_size*i+m], res[m]);
                else
                   for (m=0;m<subvect_size;m++)
-                     t[subvect_size*i+m] += res[m];
+                     t[subvect_size*i+m] = ADD16(t[subvect_size*i+m], res[m]);
             }
             
             /*compute error (distance)*/
@@ -512,14 +512,14 @@ int   update_target
    }   
    /* Update excitation */
    for (j=0;j<nsf;j++)
-      exc[j]+=e[j];
+      exc[j]=ADD32(exc[j],e[j]);
    
    /* Update target: only update target if necessary */
    if (update_target)
    {
       syn_percep_zero(e, ak, awk1, awk2, r2, nsf,p, stack);
       for (j=0;j<nsf;j++)
-         target[j]-=r2[j];
+         target[j]=SUB32(target[j],r2[j]);
    }
 }
 

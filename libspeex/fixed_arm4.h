@@ -92,6 +92,7 @@ static inline spx_word32_t MULT16_32_Q15(spx_word16_t x, spx_word32_t y) {
 
 
 #define MAC16_16_Q11(c,a,b)     (ADD32((c),SHR(MULT16_16((a),(b)),11)))
+#define MAC16_16_Q13(c,a,b)     (ADD32((c),SHR(MULT16_16((a),(b)),13)))
 
 #define MULT16_16_Q11(a,b) (SHR(MULT16_16((a),(b)),11))
 #define MULT16_16_Q13(a,b) (SHR(MULT16_16((a),(b)),13))

@@ -90,9 +90,9 @@ int          p
       /* Sum up this iteration's reflection coefficient */
       spx_word32_t rr = -SHL(ac[i + 1],13);
       for (j = 0; j < i; j++) 
-         rr -= MULT16_16(lpc[j],ac[i - j]);
+         rr = SUB32(rr,MULT16_16(lpc[j],ac[i - j]));
 #ifdef FIXED_POINT
-      r = DIV32_16(rr,error+16);
+      r = DIV32_16(rr,ADD16(error,16));
 #else
       r = rr/(error+.003*ac[0]);
 #endif
@@ -101,13 +101,13 @@ int          p
       for (j = 0; j < i>>1; j++) 
       {
          spx_word16_t tmp  = lpc[j];
-         lpc[j]     += MULT16_16_Q13(r,lpc[i-1-j]);
-         lpc[i-1-j] += MULT16_16_Q13(r,tmp);
+         lpc[j]     = MAC16_16_Q13(lpc[j],r,lpc[i-1-j]);
+         lpc[i-1-j] = MAC16_16_Q13(lpc[i-1-j],r,tmp);
       }
       if (i & 1) 
-         lpc[j] += MULT16_16_Q13(lpc[j],r);
+         lpc[j] = MAC16_16_Q13(lpc[j],lpc[j],r);
 
-      error -= MULT16_16_Q13(r,MULT16_16_Q13(error,r));
+      error = SUB16(error,MULT16_16_Q13(r,MULT16_16_Q13(error,r)));
    }
    return error;
 }
@@ -135,8 +135,8 @@ int          n
    int shift, ac_shift;
    
    for (j=0;j<n;j++)
-      ac0 += SHR(MULT16_16(x[j],x[j]),8);
-   ac0 += n;
+      ac0 = ADD32(ac0,SHR(MULT16_16(x[j],x[j]),8));
+   ac0 = ADD32(ac0,n);
    shift = 8;
    while (shift && ac0<0x40000000)
    {
@@ -156,10 +156,10 @@ int          n
       d=0;
       for (j=i;j<n;j++)
       {
-         d += MULT16_16(x[j],x[j-i]) >> shift;
+         d = ADD32(d,SHR(MULT16_16(x[j],x[j-i]), shift));
       }
       
-      ac[i] = d >> ac_shift;
+      ac[i] = SHR(d, ac_shift);
    }
 }
 

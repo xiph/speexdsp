@@ -103,7 +103,9 @@ int speex_encode(void *state, float *in, SpeexBits *bits)
 
 int speex_encode_int(void *state, short *in, SpeexBits *bits)
 {
-   return (*((SpeexMode**)state))->enc(state, in, bits);
+   SpeexMode *mode;
+   mode = *(SpeexMode**)state;
+   return (mode)->enc(state, in, bits);
 }
 
 int speex_decode(void *state, SpeexBits *bits, float *out)
@@ -120,7 +122,8 @@ int speex_decode(void *state, SpeexBits *bits, float *out)
 
 int speex_decode_int(void *state, SpeexBits *bits, short *out)
 {
-   return (*((SpeexMode**)state))->dec(state, bits, out);
+   SpeexMode *mode = *(SpeexMode**)state;
+   return (mode)->dec(state, bits, out);
 }
 
 #else
@@ -260,7 +263,6 @@ int speex_lib_ctl(int request, void *ptr)
       default:
          speex_warning_int("Unknown wb_mode_query request: ", request);
          return -1;
-         break;
    }
    return 0;
 }

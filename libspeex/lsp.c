@@ -6,7 +6,8 @@ Original copyright
 	AUTHOR......: David Rowe
 	DATE CREATED: 24/2/93
 
-Modified by Jean-Marc Valin
+Heavily modified by Jean-Marc Valin (fixed-point, optimizations, 
+                                     additional functions, ...)
 
    This file contains functions for converting Linear Prediction
    Coefficients (LPC) to Line Spectral Pair (LSP) and back. Note that the
@@ -98,10 +99,10 @@ static spx_word16_t spx_cos(spx_word16_t x)
 #define C2 -0.49558072
 #define C3 0.03679168*/
 
-#define C1 0.9999932946
-#define C2 -0.4999124376
-#define C3 0.0414877472
-#define C4 -0.0012712095
+#define C1 0.9999932946f
+#define C2 -0.4999124376f
+#define C3 0.0414877472f
+#define C4 -0.0012712095f
 
 
 #define SPX_PI_2 1.5707963268
@@ -465,10 +466,11 @@ void lsp_to_lpc(spx_lsp_t *freq,spx_coef_t *ak,int lpcrdr, char *stack)
 	xout1 = xin1 + *(n4+1);
 	xout2 = xin2 - *(n4+2);
         /* FIXME: perhaps apply bandwidth expansion in case of overflow? */
-        if (xout1 + xout2>256*32766)
+        /*FIXME: Is it OK to have a long constant? */
+        if (xout1 + xout2>SHL(32766,8))
            ak[j] = 32767;
-        else if (xout1 + xout2 < -256*32767)
-           ak[j] = -32768;
+        else if (xout1 + xout2 < -SHL(32766,8))
+           ak[j] = -32767;
         else
            ak[j] = PSHR(ADD32(xout1,xout2),8);
 	*(n4+1) = xin1;
