@@ -45,6 +45,7 @@
 #include "vbr.h"
 #include "misc.h"
 #include <math.h>
+#include <string.h>
 
 #ifndef NULL
 #define NULL 0
