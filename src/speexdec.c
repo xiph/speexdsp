@@ -121,6 +121,8 @@ void usage()
    fprintf (stderr, "options:\n");
    fprintf (stderr, "  --enh                 Enable perceptual enhancement\n");
    fprintf (stderr, "  --no-enh              Disable perceptual enhancement (default FOR NOW)\n");
+   fprintf (stderr, "  --force-nb            Force decoding in narrowband, even for wideband\n");
+   fprintf (stderr, "  --force-wb            Force decoding in wideband, even for narrowband\n");
    fprintf (stderr, "  -V                    Verbose mode (show bit-rate)\n"); 
    fprintf (stderr, "  --help       -h       This help\n");
    fprintf (stderr, "  --version    -v       Version information\n");
