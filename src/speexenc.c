@@ -107,45 +107,47 @@ int read_samples(FILE *fin,int frame_size, int bits, int channels, int lsb, floa
 
 void usage()
 {
-   fprintf (stderr, "Speex encoder version " VERSION " (compiled " __DATE__ ")\n");
-   fprintf (stderr, "\n");
-   fprintf (stderr, "usage: speexenc [options] input_file output_file\n");
-   fprintf (stderr, "\n");
-   fprintf (stderr, "input_file can be:\n");
-   fprintf (stderr, "  filename.wav          wav file\n");
-   fprintf (stderr, "  filename.*            raw PCM file (any extension other than .wav)\n");
-   fprintf (stderr, "  -                     stdin\n");
-   fprintf (stderr, "\n");  
-   fprintf (stderr, "output_file can be:\n");
-   fprintf (stderr, "  filename.spx          Speex file\n");
-   fprintf (stderr, "  -                     stdout\n");
-   fprintf (stderr, "\n");  
-   fprintf (stderr, "options:\n");
-   fprintf (stderr, "  --narrowband -n    Narrowband (8 kHz) input file\n"); 
-   fprintf (stderr, "  --wideband   -w    Wideband (16 kHz) input file\n"); 
-   fprintf (stderr, "  --quality n        Encoding quality (0-10), default 3\n"); 
-   fprintf (stderr, "  --lbr              Low bit-rate mode (equivalent to --quality 3)\n"); 
-   fprintf (stderr, "  --vbr              Enable variable bit-rate (VBR)\n"); 
-   fprintf (stderr, "  --comp n           Set encoding complexity (0-10), default 3\n"); 
-   fprintf (stderr, "  --nframes n        Number of frames per Ogg packet (1-10), default 1\n"); 
-   fprintf (stderr, "  --comment          Add the given string as an extra comment. This may be\n                     used multiple times.\n");
-   fprintf (stderr, "  --author           Author of this track.\n");
-   fprintf (stderr, "  --title            Title for this track.\n");
-   fprintf (stderr, "  --help       -h    This help\n"); 
-   fprintf (stderr, "  --version    -v    Version information\n"); 
-   fprintf (stderr, "  -V                 Verbose mode (show bit-rate)\n"); 
-   fprintf (stderr, "raw input options:\n");
-   fprintf (stderr, "  --le               Raw input is little-endian\n"); 
-   fprintf (stderr, "  --be               Raw input is big-endian\n"); 
-   fprintf (stderr, "  --8bit             Raw input is 8-bit unsigned\n"); 
-   fprintf (stderr, "  --16bit            Raw input is 16-bit signed\n"); 
-   fprintf (stderr, "\n");  
-   fprintf (stderr, "Default Raw PCM input is 16-bit, little-endian, mono\n"); 
+   /*printf ("Speex encoder version " VERSION " (compiled " __DATE__ ")\n");
+   printf ("\n");*/
+   printf ("Usage: speexenc [options] input_file output_file\n");
+   printf ("\n");
+   printf ("Encodes input_file using Speex. It can read the WAV or raw files.\n");
+   printf ("\n");
+   printf ("input_file can be:\n");
+   printf ("  filename.wav          wav file\n");
+   printf ("  filename.*            raw PCM file (any extension other than .wav)\n");
+   printf ("  -                     stdin\n");
+   printf ("\n");  
+   printf ("output_file can be:\n");
+   printf ("  filename.spx          Speex file\n");
+   printf ("  -                     stdout\n");
+   printf ("\n");  
+   printf ("Options:\n");
+   printf (" -n, --narrowband   Narrowband (8 kHz) input file\n"); 
+   printf (" -w, --wideband     Wideband (16 kHz) input file\n"); 
+   printf (" --quality n        Encoding quality (0-10), default 3\n"); 
+   printf (" --lbr              Low bit-rate mode (equivalent to --quality 3)\n"); 
+   printf (" --vbr              Enable variable bit-rate (VBR)\n"); 
+   printf (" --comp n           Set encoding complexity (0-10), default 3\n"); 
+   printf (" --nframes n        Number of frames per Ogg packet (1-10), default 1\n"); 
+   printf (" --comment          Add the given string as an extra comment. This may be\n                     used multiple times.\n");
+   printf (" --author           Author of this track.\n");
+   printf (" --title            Title for this track.\n");
+   printf (" -h, --help         This help\n"); 
+   printf (" -v, --version      Version information\n"); 
+   printf (" -V                 Verbose mode (show bit-rate)\n"); 
+   printf ("Raw input options:\n");
+   printf (" --le               Raw input is little-endian\n"); 
+   printf (" --be               Raw input is big-endian\n"); 
+   printf (" --8bit             Raw input is 8-bit unsigned\n"); 
+   printf (" --16bit            Raw input is 16-bit signed\n"); 
+   printf ("\n");  
+   printf ("Default Raw PCM input is 16-bit, little-endian, mono\n"); 
 }
 
 void version()
 {
-   fprintf (stderr, "Speex encoder version " VERSION " (compiled " __DATE__ ")\n");
+   printf ("Speex encoder version " VERSION " (compiled " __DATE__ ")\n");
 }
 
 int main(int argc, char **argv)

@@ -155,36 +155,38 @@ FILE *out_file_open(char *outFile, int rate)
 
 void usage()
 {
-   fprintf (stderr, "Speex decoder version " VERSION " (compiled " __DATE__ ")\n");
-   fprintf (stderr, "\n");
-   fprintf (stderr, "usage: speexdec [options] input_file.spx\n");
-   fprintf (stderr, "       speexdec [options] input_file.spx output_file.wav\n");
-   fprintf (stderr, "\n");
-   fprintf (stderr, "input_file can be:\n");
-   fprintf (stderr, "  filename.spx          regular Speex file\n");
-   fprintf (stderr, "  -                     stdin\n");
-   fprintf (stderr, "\n");  
-   fprintf (stderr, "output_file can be:\n");
-   fprintf (stderr, "  filename.wav          wav file\n");
-   fprintf (stderr, "  filename.*            raw PCM file (any extension other that .wav)\n");
-   fprintf (stderr, "  -                     stdout\n");
-   fprintf (stderr, "  (nothing)             will be played to soundcard\n");
-   fprintf (stderr, "\n");  
-   fprintf (stderr, "options:\n");
-   fprintf (stderr, "  --enh                 Enable perceptual enhancement\n");
-   fprintf (stderr, "  --no-enh              Disable perceptual enhancement (default FOR NOW)\n");
-   fprintf (stderr, "  --force-nb            Force decoding in narrowband, even for wideband\n");
-   fprintf (stderr, "  --force-wb            Force decoding in wideband, even for narrowband\n");
-   fprintf (stderr, "  -V                    Verbose mode (show bit-rate)\n"); 
-   fprintf (stderr, "  --help       -h       This help\n");
-   fprintf (stderr, "  --version    -v       Version information\n");
-   fprintf (stderr, "  --pf                  Deprecated, use --pf instead\n");
-   fprintf (stderr, "  --no-pf               Deprecated, use --no-pf instead\n");
+   /*printf ("Speex decoder version " VERSION " (compiled " __DATE__ ")\n");
+   printf ("\n");*/
+   printf ("Usage: speexdec [options] input_file.spx\n");
+   printf ("       speexdec [options] input_file.spx output_file.wav\n");
+   printf ("\n");
+   printf ("Decodes a Speex file and produce a WAV file or raw file\n");
+   printf ("\n");
+   printf ("input_file can be:\n");
+   printf ("  filename.spx          regular Speex file\n");
+   printf ("  -                     stdin\n");
+   printf ("\n");  
+   printf ("output_file can be:\n");
+   printf ("  filename.wav          wav file\n");
+   printf ("  filename.*            raw PCM file (any extension other that .wav)\n");
+   printf ("  -                     stdout\n");
+   printf ("  (nothing)             will be played to soundcard\n");
+   printf ("\n");  
+   printf ("Options:\n");
+   printf (" --enh                 Enable perceptual enhancement\n");
+   printf (" --no-enh              Disable perceptual enhancement (default FOR NOW)\n");
+   printf (" --force-nb            Force decoding in narrowband, even for wideband\n");
+   printf (" --force-wb            Force decoding in wideband, even for narrowband\n");
+   printf (" -V                    Verbose mode (show bit-rate)\n"); 
+   printf (" -h, --help            This help\n");
+   printf (" -v, --version         Version information\n");
+   printf (" --pf                  Deprecated, use --pf instead\n");
+   printf (" --no-pf               Deprecated, use --no-pf instead\n");
 }
 
 void version()
 {
-   fprintf (stderr, "Speex decoder version " VERSION " (compiled " __DATE__ ")\n");
+   printf ("Speex decoder version " VERSION " (compiled " __DATE__ ")\n");
 }
 
 static void *process_header(ogg_packet *op, int enh_enabled, int *frame_size, int *rate, int *nframes, int forceMode)
