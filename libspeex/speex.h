@@ -109,6 +109,9 @@ extern "C" {
 #define SPEEX_SET_VAD 30
 #define SPEEX_GET_VAD 31
 
+#define SPEEX_SET_ABR 32
+#define SPEEX_GET_ABR 33
+
 
    /* Used internally, not to be used in applications */
 #define SPEEX_GET_PI_GAIN 100

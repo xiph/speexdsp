@@ -1452,6 +1452,29 @@ void nb_encoder_ctl(void *state, int request, void *ptr)
    case SPEEX_GET_VAD:
       (*(int*)ptr) = st->vad_enabled;
       break;
+   case SPEEX_SET_ABR:
+      st->abr_enabled = (*(int*)ptr);
+      {
+         int i=10, rate, target, vbr_qual;
+         target = (*(int*)ptr);
+         while (i>=0)
+         {
+            speex_encoder_ctl(st, SPEEX_SET_QUALITY, &i);
+            speex_encoder_ctl(st, SPEEX_GET_BITRATE, &rate);
+            if (rate <= target)
+               break;
+            i--;
+         }
+         vbr_qual=i;
+         if (vbr_qual<0)
+            vbr_qual=0;
+         speex_encoder_ctl(st, SPEEX_SET_VBR_QUALITY, &vbr_qual);
+      }
+      
+      break;
+   case SPEEX_GET_ABR:
+      (*(int*)ptr) = st->abr_enabled;
+      break;
    case SPEEX_SET_VBR_QUALITY:
       st->vbr_quality = (*(float*)ptr);
       break;
