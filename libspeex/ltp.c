@@ -469,10 +469,11 @@ int cdbk_offset
    err=0;
    for (i=0;i<nsf;i++)
    {
+      spx_word16_t perr2;
       spx_sig_t tmp = SHL((MULT16_32_Q15(SHL(gain[0],7),x[2][i])+MULT16_32_Q15(SHL(gain[1],7),x[1][i])+MULT16_32_Q15(SHL(gain[2],7),x[0][i])),2);
       spx_sig_t perr=target[i]-tmp;
       new_target[i] = target[i] - tmp;
-      spx_word16_t perr2 = PSHR(perr,15);
+      perr2 = PSHR(perr,15);
       err = ADD64(err,MULT16_16(perr2,perr2));
       
    }
