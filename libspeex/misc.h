@@ -33,10 +33,10 @@ unsigned int le_int(unsigned int i);
 unsigned short be_short(unsigned short s);
 unsigned short le_short(unsigned short s);
 
-/**< Speex wrapper for calloc. To do your own dynamic allocation, all you need to do is replace this function and speex_free */
+/** Speex wrapper for calloc. To do your own dynamic allocation, all you need to do is replace this function and speex_free */
 void *speex_alloc (int size);
 
-/**< Speex wrapper for calloc. To do your own dynamic allocation, all you need to do is replace this function and speex_alloc */
+/** Speex wrapper for calloc. To do your own dynamic allocation, all you need to do is replace this function and speex_alloc */
 void speex_free (void *ptr);
 
 /** Speex wrapper for mem_move */

@@ -174,7 +174,7 @@ void speex_decoder_destroy(void *state);
  * bit-stream bits. The output speech is saved written to out.
  *
  * @param state Decoder state
- * @param bits Bit-stream from which to decode the frame
+ * @param bits Bit-stream from which to decode the frame (NULL if the packet was lost)
  * @param out Where to write the decoded frame
  * @return return status (0 for no error, -1 for end of stream, -2 other)
  */

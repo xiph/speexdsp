@@ -88,40 +88,40 @@ typedef struct SpeexSubmode {
 
 /** Struct defining the encoding/decoding mode*/
 typedef struct SpeexNBMode {
-   int     frameSize;
-   int     subframeSize;
-   int     lpcSize;
-   int     bufSize;
-   int     pitchStart;
-   int     pitchEnd;
+   int     frameSize; /**< Size of frames used for encoding */
+   int     subframeSize; /**< Size of sub-frames used for encoding */
+   int     lpcSize; /**< Order of LPC filter */
+   int     bufSize; /**< Size of signal buffer to use in encoder */
+   int     pitchStart; /**< Smallest pitch value allowed */
+   int     pitchEnd; /**< Largest pitch value allowed */
 
-   float   gamma1;
-   float   gamma2;
-   float   lag_factor;
-   float   lpc_floor;
-   float   preemph;
+   float   gamma1; /**< Perceptual filter parameter #1 */
+   float   gamma2; /**< Perceptual filter parameter #2 */
+   float   lag_factor; /**< Lag-windowing parameter */
+   float   lpc_floor; /**< Noise floor for LPC analysis */
+   float   preemph; /**< Pre-emphasis */
 
-   SpeexSubmode *submodes[NB_SUBMODES];
-   int     defaultSubmode;
+   SpeexSubmode *submodes[NB_SUBMODES]; /**< Sub-mode data for the mode */
+   int     defaultSubmode; /**< Default sub-mode to use when encoding */
 
 } SpeexNBMode;
 
 
-/** Struct defining the encoding/decoding mode*/
+/** Struct defining the encoding/decoding mode for SB-CELP (wideband) */
 typedef struct SpeexSBMode {
-   SpeexMode *nb_mode;
-   int     frameSize;
-   int     subframeSize;
-   int     lpcSize;
-   int     bufSize;
-   float   gamma1;
-   float   gamma2;
-   float   lag_factor;
-   float   lpc_floor;
-   float   preemph;
+   SpeexMode *nb_mode; /**< Embedded narrowband mode */
+   int     frameSize; /**< Size of frames used for encoding */
+   int     subframeSize; /**< Size of sub-frames used for encoding */
+   int     lpcSize; /**< Order of LPC filter */
+   int     bufSize; /**< Signal buffer size in encoder */
+   float   gamma1; /**< Perceptual filter parameter #1 */
+   float   gamma2; /**< Perceptual filter parameter #1 */
+   float   lag_factor; /**< Lag-windowing parameter */
+   float   lpc_floor; /**< Noise floor for LPC analysis */
+   float   preemph; /**< Pre-emphasis */
 
-   SpeexSubmode *submodes[SB_SUBMODES];
-   int     defaultSubmode;
+   SpeexSubmode *submodes[SB_SUBMODES]; /**< Sub-mode data for the mode */
+   int     defaultSubmode; /**< Default sub-mode to use when encoding */
 
 } SpeexSBMode;
 

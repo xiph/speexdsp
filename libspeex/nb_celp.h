@@ -29,7 +29,7 @@
 
 /**Structure representing the full state of the narrowband encoder*/
 typedef struct EncState {
-   SpeexMode *mode;
+   SpeexMode *mode;       /**< Mode curresponding to the state */
    int    first;          /**< Is this the first frame? */
    int    frameSize;      /**< Size of frames */
    int    subframeSize;   /**< Size of sub-frames */
@@ -55,7 +55,7 @@ typedef struct EncState {
    float *frame;          /**< Start of original frame */
    float *excBuf;         /**< Excitation buffer */
    float *exc;            /**< Start of excitation frame */
-   float *exc2Buf;           /**< "Pitch enhanced" excitation */
+   float *exc2Buf;        /**< "Pitch enhanced" excitation */
    float *exc2;           /**< "Pitch enhanced" excitation */
    float *swBuf;          /**< Weighted signal buffer */
    float *sw;             /**< Start of weighted signal frame */
@@ -76,20 +76,21 @@ typedef struct EncState {
    float *bw_lpc1;        /**< LPCs after bandwidth expansion by gamma1 for perceptual weighting*/
    float *bw_lpc2;        /**< LPCs after bandwidth expansion by gamma2 for perceptual weighting*/
    float *rc;             /**< Reflection coefficients */
-   float *mem_sp, *mem_sw;
-   float *pi_gain;
-   VBRState *vbr;
-   int    vbr_quality;
-   int    vbr_enabled;
-   int    complexity;
+   float *mem_sp;         /**< Filter memory for signal synthesis */
+   float *mem_sw;         /**< Filter memory for perceptually-weighted signal */
+   float *pi_gain;        /**< Gain of LPC filter at theta=pi (fe/2) */
+   VBRState *vbr;         /**< State of the VBR data */
+   int    vbr_quality;    /**< Quality setting for VBR encoding */
+   int    vbr_enabled;    /**< 1 for enabling VBR, 0 otherwise */
+   int    complexity;     /**< Complexity setting (0-10 from least complex to most complex) */
 
-   SpeexSubmode **submodes;
-   int    submodeID;
+   SpeexSubmode **submodes; /**< Sub-mode data */
+   int    submodeID;      /**< Activated sub-mode */
 } EncState;
 
 /**Structure representing the full state of the narrowband decoder*/
 typedef struct DecState {
-   SpeexMode *mode;
+   SpeexMode *mode;       /**< Mode curresponding to the state */
    int    first;          /**< Is this the first frame? */
    int    count_lost;     /**< Was the last frame lost? */
    int    frameSize;      /**< Size of frames */
@@ -105,7 +106,7 @@ typedef struct DecState {
    float  gamma2;         /**< Perceptual filter: A(z/gamma2) */
    float  preemph;        /**< Pre-emphasis: P(z) = 1 - a*z^-1*/
    float  pre_mem;        /**< 1-element memory for pre-emphasis */
-   float *stack;
+   float *stack;          /**< Pseudo-stack allocation for temporary memory */
    float *inBuf;          /**< Input buffer (original signal) */
    float *frame;          /**< Start of original frame */
    float *excBuf;         /**< Excitation buffer */
@@ -115,37 +116,39 @@ typedef struct DecState {
    float *old_qlsp;       /**< Quantized LSPs for previous frame */
    float *interp_qlsp;    /**< Interpolated quantized LSPs */
    float *interp_qlpc;    /**< Interpolated quantized LPCs */
-   float *mem_sp;
-   float *pi_gain;
-   int    last_pitch;
-   float  last_pitch_gain;
+   float *mem_sp;         /**< Filter memory for synthesis signal */
+   float *pi_gain;        /**< Gain of LPC filter at theta=pi (fe/2) */
+   int    last_pitch;     /**< Pitch of last correctly decoded frame */
+   float  last_pitch_gain; /**< Pitch gain of last correctly decoded frame */
 
-   SpeexSubmode **submodes;
-   int    submodeID;
-   int    lpc_enh_enabled;
+   SpeexSubmode **submodes; /**< Sub-mode data */
+   int    submodeID;      /**< Activated sub-mode */
+   int    lpc_enh_enabled; /**< 1 when LPC enhancer is on, 0 otherwise */
 } DecState;
 
-/**Initializes encoder state*/
+/** Initializes encoder state*/
 void *nb_encoder_init(SpeexMode *m);
 
-/**De-allocates encoder state resources*/
+/** De-allocates encoder state resources*/
 void nb_encoder_destroy(void *state);
 
-/**Encodes one frame*/
+/** Encodes one frame*/
 void nb_encode(void *state, float *in, SpeexBits *bits);
 
 
-/**Initializes decoder state*/
+/** Initializes decoder state*/
 void *nb_decoder_init(SpeexMode *m);
 
-/**De-allocates decoder state resources*/
+/** De-allocates decoder state resources*/
 void nb_decoder_destroy(void *state);
 
-/**Decodes one frame*/
+/** Decodes one frame*/
 int nb_decode(void *state, SpeexBits *bits, float *out);
 
+/** ioctl-like function for controlling a narrowband encoder */
 void nb_encoder_ctl(void *state, int request, void *ptr);
 
+/** ioctl-like function for controlling a narrowband decoder */
 void nb_decoder_ctl(void *state, int request, void *ptr);
 
 
