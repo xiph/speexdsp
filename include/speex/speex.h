@@ -294,7 +294,7 @@ void speex_encoder_destroy(void *state);
 /** Uses an existing encoder state to encode one frame of speech pointed to by
     "in". The encoded bit-stream is saved in "bits".
  @param state Encoder state
- @param in Frame that will be encoded with a +-2^16 range
+ @param in Frame that will be encoded with a +-2^15 range
  @param bits Bit-stream where the data will be written
  */
 int speex_encode(void *state, float *in, SpeexBits *bits);
@@ -302,7 +302,7 @@ int speex_encode(void *state, float *in, SpeexBits *bits);
 /** Uses an existing encoder state to encode one frame of speech pointed to by
     "in". The encoded bit-stream is saved in "bits".
  @param state Encoder state
- @param in Frame that will be encoded with a +-2^16 range
+ @param in Frame that will be encoded with a +-2^15 range
  @param bits Bit-stream where the data will be written
  */
 int speex_encode_int(void *state, short *in, SpeexBits *bits);
