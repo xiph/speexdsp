@@ -375,10 +375,17 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
       
       if (st->abr_enabled)
       {
-         if (st->abr_drift>0)
-            st->vbr_quality -= .02;
-         else
-            st->vbr_quality += .02;
+         float qual_change=0;
+         if (st->abr_drift2 * st->abr_drift > 0)
+         {
+            /* Only adapt if long-term and short-term drift are the same sign */
+            qual_change = -.00001*st->abr_drift/(1+st->abr_count);
+            if (qual_change>.1)
+               qual_change=.1;
+            if (qual_change<-.1)
+               qual_change=-.1;
+         }
+         st->vbr_quality += qual_change;
          if (st->vbr_quality>10)
             st->vbr_quality=10;
          if (st->vbr_quality<0)
@@ -417,6 +424,8 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
             int bitrate;
             speex_encoder_ctl(state, SPEEX_GET_BITRATE, &bitrate);
             st->abr_drift+=(bitrate-st->abr_enabled);
+            st->abr_drift2 = .95*st->abr_drift2 + .05*(bitrate-st->abr_enabled);
+            st->abr_count += 1.0;
          }
          /*fprintf(stderr, "encode: %d %d\n",st->submodeID, mode);*/
       } else {
@@ -1454,8 +1463,10 @@ void nb_encoder_ctl(void *state, int request, void *ptr)
       break;
    case SPEEX_SET_ABR:
       st->abr_enabled = (*(int*)ptr);
+      st->vbr_enabled = 1;
       {
-         int i=10, rate, target, vbr_qual;
+         int i=10, rate, target;
+         float vbr_qual;
          target = (*(int*)ptr);
          while (i>=0)
          {
@@ -1468,7 +1479,11 @@ void nb_encoder_ctl(void *state, int request, void *ptr)
          vbr_qual=i;
          if (vbr_qual<0)
             vbr_qual=0;
+         fprintf (stderr, "%f\n", vbr_qual);
          speex_encoder_ctl(st, SPEEX_SET_VBR_QUALITY, &vbr_qual);
+         st->abr_count=0;
+         st->abr_drift=0;
+         st->abr_drift2=0;
       }
       
       break;

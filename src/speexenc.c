@@ -144,6 +144,7 @@ void usage()
    printf (" --quality n        Encoding quality (0-10), default 3\n"); 
    printf (" --bitrate n        Encoding bit-rate (use bit-rate n or lower)\n"); 
    printf (" --vbr              Enable variable bit-rate (VBR)\n"); 
+   printf (" --abr rate         Enable average bit-rate (ABR) at rate bps\n"); 
    printf (" --vad              Enable voice activity detection (VAD)\n"); 
    printf (" --comp n           Set encoding complexity (0-10), default 3\n"); 
    printf (" --nframes n        Number of frames per Ogg packet (1-10), default 1\n"); 
@@ -178,6 +179,7 @@ int main(int argc, char **argv)
    float input[MAX_FRAME_SIZE];
    int frame_size;
    int vbr_enabled=0;
+   int abr_enabled=0;
    int vad_enabled=0;
    int nbBytes;
    SpeexMode *mode=NULL;
@@ -190,6 +192,7 @@ int main(int argc, char **argv)
       {"ultra-wideband", no_argument, NULL, 0},
       {"narrowband", no_argument, NULL, 0},
       {"vbr", no_argument, NULL, 0},
+      {"abr", required_argument, NULL, 0},
       {"vad", no_argument, NULL, 0},
       {"quality", required_argument, NULL, 0},
       {"bitrate", required_argument, NULL, 0},
@@ -230,7 +233,7 @@ int main(int argc, char **argv)
    int close_in=0, close_out=0;
    int eos=0;
    int bitrate=0;
-
+   int cumul_bits=0, enc_frames=0;
    comment_init(&comments, &comments_length, vendor_string);
 
    /*Process command-line options*/
@@ -256,6 +259,14 @@ int main(int argc, char **argv)
          } else if (strcmp(long_options[option_index].name,"vbr")==0)
          {
             vbr_enabled=1;
+         } else if (strcmp(long_options[option_index].name,"abr")==0)
+         {
+            abr_enabled=atoi(optarg);
+            if (!abr_enabled)
+            {
+               fprintf (stderr, "Invalid ABR value: %d\n", abr_enabled);
+               exit(1);
+            }
          } else if (strcmp(long_options[option_index].name,"vad")==0)
          {
             vad_enabled=1;
@@ -534,18 +545,6 @@ int main(int argc, char **argv)
    speex_encoder_ctl(st, SPEEX_SET_COMPLEXITY, &complexity);
    speex_encoder_ctl(st, SPEEX_SET_SAMPLING_RATE, &rate);
 
-   if (vbr_enabled)
-   {
-      int tmp;
-      tmp=1;
-      speex_encoder_ctl(st, SPEEX_SET_VBR, &tmp);
-   }
-   if (vad_enabled)
-   {
-      int tmp;
-      tmp=1;
-      speex_encoder_ctl(st, SPEEX_SET_VAD, &tmp);
-   }
    if (quality >= 0)
    {
       if (vbr_enabled)
@@ -558,6 +557,22 @@ int main(int argc, char **argv)
       if (quality >= 0 && vbr_enabled)
          fprintf (stderr, "--bitrate option is overriding --quality\n");
       speex_encoder_ctl(st, SPEEX_SET_BITRATE, &bitrate);
+   }
+   if (vbr_enabled)
+   {
+      int tmp;
+      tmp=1;
+      speex_encoder_ctl(st, SPEEX_SET_VBR, &tmp);
+   }
+   if (vad_enabled)
+   {
+      int tmp;
+      tmp=1;
+      speex_encoder_ctl(st, SPEEX_SET_VAD, &tmp);
+   }
+   if (abr_enabled)
+   {
+      speex_encoder_ctl(st, SPEEX_SET_ABR, &abr_enabled);
    }
 
    speex_bits_init(&bits);
@@ -579,7 +594,13 @@ int main(int argc, char **argv)
          char ch=13;
          speex_encoder_ctl(st, SPEEX_GET_BITRATE, &tmp);
          fputc (ch, stderr);
-         fprintf (stderr, "Bitrate is use: %d bps     ", tmp);
+         cumul_bits += tmp;
+         enc_frames++;
+         if (vad_enabled || vbr_enabled || abr_enabled)
+            fprintf (stderr, "Bitrate is use: %d bps  (average %d bps)   ", tmp, cumul_bits/enc_frames);
+         else
+            fprintf (stderr, "Bitrate is use: %d bps     ", tmp);
+         
       }
 
       if (read_samples(fin,frame_size,fmt,chan,lsb,input))

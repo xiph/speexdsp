@@ -105,6 +105,8 @@ typedef struct EncState {
    int    vad_enabled;    /**< 1 for enabling VAD, 0 otherwise */
    int    abr_enabled;    /**< 1 for enabling ABR, 0 otherwise */
    float  abr_drift;
+   float  abr_drift2;
+   float  abr_count;
    int    complexity;     /**< Complexity setting (0-10 from least complex to most complex) */
    int    sampling_rate;
 
