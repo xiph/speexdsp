@@ -30,7 +30,7 @@ codec.
 %setup
 
 %build
-export CFLAGS='-O3'
+export CFLAGS='-O3 -DRELEASE'
 ./configure --prefix=/usr --enable-shared --enable-static
 make
 

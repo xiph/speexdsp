@@ -94,7 +94,7 @@ int read_samples(FILE *fin,int frame_size, int bits, int channels, int lsb, floa
 
 void usage()
 {
-   fprintf (stderr, "Speex encoder version " VERSION "\n");
+   fprintf (stderr, "Speex encoder version " VERSION " (compiled " __DATE__ ")\n");
    fprintf (stderr, "\n");
    fprintf (stderr, "usage: speexenc [options] input_file output_file\n");
    fprintf (stderr, "\n");
@@ -129,7 +129,7 @@ void usage()
 
 void version()
 {
-   fprintf (stderr, "Speex encoder version " VERSION "\n");
+   fprintf (stderr, "Speex encoder version " VERSION " (compiled " __DATE__ ")\n");
 }
 
 int main(int argc, char **argv)

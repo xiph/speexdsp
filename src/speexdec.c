@@ -102,8 +102,7 @@ FILE *out_file_open(char *outFile, int rate)
 
 void usage()
 {
-
-   fprintf (stderr, "Speex decoder version " VERSION "\n");
+   fprintf (stderr, "Speex decoder version " VERSION " (compiled " __DATE__ ")\n");
    fprintf (stderr, "\n");
    fprintf (stderr, "usage: speexdec [options] input_file.spx\n");
    fprintf (stderr, "       speexdec [options] input_file.spx output_file.wav\n");
@@ -132,7 +131,7 @@ void usage()
 
 void version()
 {
-   fprintf (stderr, "Speex decoder version " VERSION "\n");
+   fprintf (stderr, "Speex decoder version " VERSION " (compiled " __DATE__ ")\n");
 }
 
 static void *process_header(ogg_packet *op, int enh_enabled, int *frame_size, int *rate, int *nframes, int forceMode)
