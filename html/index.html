@@ -73,6 +73,17 @@ You can listen to samples encoded with Speex <A href="/audio/samples/">here</A>
 <h2>News</h2>
 
 
+<h3>2002/06/07</h3>
+
+Speex 0.2.0 is out. This is a major release with lots of improvements and bugfixes. First, the 
+encoder and decoder can work directly from wav files (mono only for now) and 
+the decoder can play directly to soundcard. Also, most of the codebooks have 
+been re-trained in order to improve quality (but this also breaks format 
+compatibility with previous versions), while slightly decreasing complexity. 
+Speex is now able to encode both DTMF and music (not as good as Vorbis of 
+course) after bugs were fixed in the pitch prediction and LSP quantization. 
+Last but not the least, the perceptual post-filter has been improved.
+
 <h3>2002/06/04</h3>
 
 Speex 0.1.2 is out. This adds a perceptual post-filter at the decoder to 
@@ -88,64 +99,12 @@ from 15.7 kbps to 15.1 kbps and the wideband bit-rate has been reduced from 31.3
 The quality remains roughly the same for both narrowband and wideband.
 Once again, this breaks compatibility with previous versions.
 
-<h3>2002/05/07</h3>
-
-Speex 0.0.3 released.
-
-<h3>2002/04/15</h3>
-
-
-
-     Speex version 0.0.2 has been released. This release provides much improved 
-  wideband quality at an only slightly higher bit-rate of 31.3 kbps. This 
-means  that the wideband Speex files are not compatible with those of the 0.0.1
-release.  The narrowband codec (at 14.5 kbps) is however exactly the same
-as in 0.0.1.    <br>
-
-
-
-                     
-<h3>2002/03/27</h3>
-
-
-
-           Speex 0.0.1 has been released. This first version of Speex supports
-   fixed   bit-rate encoding at 14.5 kbps for speech sampled at 8 kHz (narrowband) 
-   and  at 28.5 kbps for 16 kHz (wideband) speech. Future releases will likely 
-   provide  a wider choice of bit-rates, better quality, as well as variable 
-   bit-rate  (VBR) and discontinuous transmission (DTX).<br>
-
-
-
-           <br>
-
-
-
-           Note that this is a preliminary release and that bit-rates, quality
-   and   bitstream definition will change in the future. This means that
-the    format   used in this release will not be compatible with future releases.
-   Also note   that this software has so far received only a minimum amount
-  of testing,  so it may break or do unexpected things.<br>
-
-
-                     
-<h3>2002/03/12</h3>
-
-
-
-           We now have a working encoder prototype that produces good quality 
-  narrowband    (8 kHz sampling rate) at a bit-rate of 14.5 kb/s. There is 
- still a lot to   do, but we're progressing fast.<br>
-
-
-
-                 
 <hr width="100%" size="2">          
 <div align="right"><img src="http://sourceforge.net/sflogo.php?group_id=46651&amp;amp;type=5" alt="SourceForge Logo">
 <br>
 <a href="mailto:valj01@gel.usherb.ca">Jean-Mrc Valin</a>       <br>
             <a href="mailto:david@voicetronix.com.au">David Rowe</a> <br>
-            $Date: 2002/06/05 02:56:13 $</div>
+            $Date: 2002/06/07 06:18:41 $</div>
 
 
 
