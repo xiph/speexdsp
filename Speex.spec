@@ -1,5 +1,5 @@
 %define name     Speex
-%define ver      0.1.1
+%define ver      0.1.2
 %define rel      1
 
 Summary: An open-source, patent-free speech codec

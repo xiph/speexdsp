@@ -39,7 +39,7 @@ void usage()
 
 void version()
 {
-   fprintf (stderr, "Speex encoder version " VERSION "\n");
+   fprintf (stderr, "Speex decoder version " VERSION "\n");
 }
 
 int main(int argc, char **argv)

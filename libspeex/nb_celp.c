@@ -497,8 +497,9 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
       for (i=0;i<st->subframeSize;i++)
          enoise += target[i]*target[i];
       snr = 10*log10((esig+1)/(enoise+1));
-
+#ifdef DEBUG
       printf ("seg SNR = %f\n", snr);
+#endif
 
       /*Keep the previous memory*/
       for (i=0;i<st->lpcSize;i++)
