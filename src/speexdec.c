@@ -76,18 +76,45 @@ static void print_comments(char *comments, int length)
 {
    char *c=comments;
    int len, i, nb_fields;
-
+   char *end;
+   
+   if (length<8)
+   {
+      fprintf (stderr, "Invalid/corrupted comments\n");
+      return;
+   }
+   end = c+length;
    len=readint(c, 0);
    c+=4;
+   if (c+len>=end)
+   {
+      fprintf (stderr, "Invalid/corrupted comments\n");
+      return;
+   }
    fwrite(c, 1, len, stderr);
    c+=len;
    fprintf (stderr, "\n");
+   if (c+4>=end)
+   {
+      fprintf (stderr, "Invalid/corrupted comments\n");
+      return;
+   }
    nb_fields=readint(c, 0);
    c+=4;
    for (i=0;i<nb_fields;i++)
    {
+      if (c+4>=end)
+      {
+         fprintf (stderr, "Invalid/corrupted comments\n");
+         return;
+      }
       len=readint(c, 0);
       c+=4;
+      if (c+len>=end)
+      {
+         fprintf (stderr, "Invalid/corrupted comments\n");
+         return;
+      }
       fwrite(c, 1, len, stderr);
       c+=len;
       fprintf (stderr, "\n");
@@ -593,12 +620,16 @@ int main(int argc, char **argv)
 
    if (st)
       speex_decoder_destroy(st);
+   else 
+   {
+      fprintf (stderr, "This doesn't look like a Speex file\n");
+   }
    speex_bits_destroy(&bits);
    ogg_sync_clear(&oy);
    ogg_stream_clear(&os);
 
 #if defined WIN32 || defined _WIN32
-   if (strlen(outFile)==0)
+   if (fout && strlen(outFile)==0)
       WIN_Audio_close ();
 #endif
 

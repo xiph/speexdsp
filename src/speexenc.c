@@ -141,7 +141,7 @@ void usage()
    printf (" -n, --narrowband   Narrowband (8 kHz) input file\n"); 
    printf (" -w, --wideband     Wideband (16 kHz) input file\n"); 
    printf (" -u, --ultra-wideband \"Ultra-wideband\" (32 kHz) input file\n"); 
-   printf (" --quality n        Encoding quality (0-10), default 3\n"); 
+   printf (" --quality n        Encoding quality (0-10), default 8\n"); 
    printf (" --bitrate n        Encoding bit-rate (use bit-rate n or lower)\n"); 
    printf (" --vbr              Enable variable bit-rate (VBR)\n"); 
    printf (" --abr rate         Enable average bit-rate (ABR) at rate bps\n"); 

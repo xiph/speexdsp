@@ -3239,6 +3239,10 @@ difficulty
 \layout Subsection*
 
 Average Bit-Rate (ABR)
+\layout Standard
+
+Average bit-rate solves one of the problems of VBR, as it dynamically adjusts
+ VBR quality in order to meet a specific target bit-rate.
 \layout Subsection*
 
 Voice Activity Detection (VAD)
@@ -3287,7 +3291,7 @@ sounds
 \emph default 
  better (subjective improvement).
 \layout Section
-
+\pagebreak_top 
 Command-line encoder/decoder
 \begin_inset LatexCommand \label{sec:Command-line-encoder/decoder}
 
@@ -3342,7 +3346,7 @@ ultra-wideband
 \layout Description
 
 --quality\SpecialChar ~
-n Set the encoding quality (0-10), default is 3
+n Set the encoding quality (0-10), default is 8
 \layout Description
 
 --bitrate\SpecialChar ~
