@@ -132,6 +132,7 @@ typedef struct SpeexSBMode {
    float   lag_factor;    /**< Lag-windowing parameter */
    float   lpc_floor;     /**< Noise floor for LPC analysis */
    float   preemph;       /**< Pre-emphasis */
+   float   folding_gain;
 
    SpeexSubmode *submodes[SB_SUBMODES]; /**< Sub-mode data for the mode */
    int     defaultSubmode; /**< Default sub-mode to use when encoding */

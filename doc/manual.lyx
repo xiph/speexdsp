@@ -3162,6 +3162,13 @@ Speex is mainly designed for 3 different sampling rates: 8 kHz, 16 kHz,
 \layout Subsection*
 
 Quality
+\layout Standard
+
+Speex encoding is controlled most of the time by a quality parameter that
+ range from 0 to 10.
+  In constant bit-rate (CBR) operation, the quality parameter is an integer,
+ while for variable bit-rate (VBR), the parameter is a float.
+ 
 \layout Subsection*
 
 Complexity (variable)

@@ -447,6 +447,7 @@ static SpeexSBMode sb_wb_mode = {
    .002,   /*lag_factor*/
    1.0001, /*lpc_floor*/
    0.0,    /*preemph*/
+   0.7,
    {NULL, &wb_submode1, &wb_submode2, &wb_submode3, &wb_submode4, NULL, NULL, NULL},
    3,
    {1, 1, 2, 3, 4, 5, 5, 6, 6, 7, 7},
@@ -490,6 +491,7 @@ static SpeexSBMode sb_uwb_mode = {
    .002,   /*lag_factor*/
    1.0001, /*lpc_floor*/
    0.0,    /*preemph*/
+   0.5,
    {NULL, &wb_submode1, NULL, NULL, NULL, NULL, NULL, NULL},
    1,
    {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10},

@@ -514,10 +514,11 @@ int sb_encode(void *state, float *in, SpeexBits *bits)
          g=sqrt(g);
 
          g *= filter_ratio;
-
+         /*print_vec(&g, 1, "gain factor");*/
          /* Gain quantization */
          {
-            int quant = (int) floor(.5 + 27 + 8.0 * log((g+.0001)));
+            int quant = (int) floor(.5 + 10 + 8.0 * log((g+.0001)));
+            /*speex_warning_int("tata", quant);*/
             if (quant<0)
                quant=0;
             if (quant>31)
@@ -808,9 +809,11 @@ int sb_decode(void *state, SpeexBits *bits, float *out)
    float *low_pi_gain, *low_exc, *low_innov;
    float *awk1, *awk2, *awk3;
    float dtx;
+   SpeexSBMode *mode;
 
    st = (SBDecState*)state;
    stack=st->stack;
+   mode = (SpeexSBMode*)(st->mode->mode);
 
    /* Decode the low-band */
    ret = speex_decode(st->st_low, bits, st->x0d);
@@ -972,14 +975,15 @@ int sb_decode(void *state, SpeexBits *bits, float *out)
          for (i=0;i<st->subframeSize;i++)
             el+=sqr(low_innov[offset+i]);
          quant = speex_bits_unpack_unsigned(bits, 5);
-         g= exp(((float)quant-27)/8.0);
+         g= exp(((float)quant-10)/8.0);
          
          /*printf ("unquant folding gain: %f\n", g);*/
          g /= filter_ratio;
          
          /* High-band excitation using the low-band excitation and a gain */
          for (i=0;i<st->subframeSize;i++)
-            exc[i]=.8*g*low_innov[offset+i];
+            exc[i]=mode->folding_gain*g*low_innov[offset+i];
+         /*speex_rand_vec(mode->folding_gain*g*sqrt(el/st->subframeSize), exc, st->subframeSize);*/
       } else {
          float gc, scale;
          int qgc = speex_bits_unpack_unsigned(bits, 4);
@@ -1091,7 +1095,7 @@ int sb_encoder_ctl(void *state, int request, void *ptr)
    case SPEEX_SET_VBR_QUALITY:
       {
          int q;
-         float qual = (*(float*)ptr)+.5;
+         float qual = (*(float*)ptr)+.6;
          st->vbr_quality = (*(float*)ptr);
          if (qual>10)
             qual=10;

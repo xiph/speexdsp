@@ -294,6 +294,11 @@ static void *process_header(ogg_packet *op, int enh_enabled, int *frame_size, in
    }
    
    st = speex_decoder_init(mode);
+   if (!st)
+   {
+      fprintf (stderr, "Decoder initialization failed.\n");
+      return NULL;
+   }
    speex_decoder_ctl(st, SPEEX_SET_ENH, &enh_enabled);
    speex_decoder_ctl(st, SPEEX_GET_FRAME_SIZE, frame_size);
 
