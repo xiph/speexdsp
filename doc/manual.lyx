@@ -90,7 +90,7 @@ As design goals, we wanted to have a codec that would allow both very good
 Designing for VoIP instead of cell phone use means that Speex must be robust
  to lost packets, but not to corrupted ones since packets either arrive
  unaltered or don't arrive at all.
- Also, the idea was to have a reasonnable complexity and memory requirement
+ Also, the idea was to have a reasonable complexity and memory requirement
  without compromising too much on the efficiency of the codec.
 \layout Standard
 
@@ -106,7 +106,7 @@ All this led us to the choice of CELP
  
 \layout Standard
 
-The main characteristics can be summerized as follows:
+The main characteristics can be summarized as follows:
 \layout Itemize
 
 Free software/open-source
@@ -297,7 +297,7 @@ gzip
 bzip2
 \emph default 
  compression utilities.
- For normal use, the noise level at complexity 1is between 1 and 2 dB higher
+ For normal use, the noise level at complexity 1 is between 1 and 2 dB higher
  than at complexity 10, but the CPU requirements for complexity 10 is about
  5 times higher than for complexity 1.
  In practice, the best trade-off is between complexity 2 and 4, though higher

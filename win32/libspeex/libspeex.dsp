@@ -40,8 +40,9 @@ RSC=rc.exe
 # PROP Output_Dir "Release"
 # PROP Intermediate_Dir "Release"
 # PROP Target_Dir ""
+F90=df.exe
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /YX /FD /c
-# ADD CPP /nologo /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /YX /FD /c
+# ADD CPP /nologo /GX /Ox /Ot /Og /Oi /Oy /Ob2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /YX /FD /c
 # ADD BASE RSC /l 0x809 /d "NDEBUG"
 # ADD RSC /l 0x809 /d "NDEBUG"
 BSC32=bscmake.exe
@@ -63,6 +64,7 @@ LIB32=xilink6.exe -lib
 # PROP Output_Dir "Debug"
 # PROP Intermediate_Dir "Debug"
 # PROP Target_Dir ""
+F90=df.exe
 # ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /YX /FD /GZ /c
 # ADD CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /YX /FD /GZ /c
 # ADD BASE RSC /l 0x809 /d "_DEBUG"
@@ -93,15 +95,15 @@ SOURCE=..\..\libspeex\cb_search.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\libspeex\exc_20_32_table.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\libspeex\exc_10_16_table.c
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\libspeex\exc_10_32_table.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\libspeex\exc_20_32_table.c
 # End Source File
 # Begin Source File
 
@@ -157,6 +159,10 @@ SOURCE=..\..\libspeex\ltp.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\libspeex\math_approx.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\libspeex\misc.c
 # End Source File
 # Begin Source File
@@ -173,11 +179,11 @@ SOURCE=..\..\libspeex\quant_lsp.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\libspeex\stereo.c
+SOURCE=..\..\libspeex\sb_celp.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\libspeex\sb_celp.c
+SOURCE=..\..\libspeex\speex_callbacks.c
 # End Source File
 # Begin Source File
 
@@ -185,7 +191,7 @@ SOURCE=..\..\libspeex\speex_header.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\libspeex\speex_callbacks.c
+SOURCE=..\..\libspeex\stereo.c
 # End Source File
 # Begin Source File
 
@@ -249,7 +255,7 @@ SOURCE=..\..\libspeex\speex_bits.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\libspeex\speex_stereo.h
+SOURCE=..\..\libspeex\speex_callbacks.h
 # End Source File
 # Begin Source File
 
@@ -257,7 +263,7 @@ SOURCE=..\..\libspeex\speex_header.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\libspeex\speex_callbacks.h
+SOURCE=..\..\libspeex\speex_stereo.h
 # End Source File
 # Begin Source File
 
