@@ -34,16 +34,15 @@ typedef struct EncState {
    int    bufSize;        /* Buffer size */
    float  gamma1;         /* Perceptual filter: A(z/gamma1) */
    float  gamma2;         /* Perceptual filter: A(z/gamma2) */
+   float *stack;          /* Pseudo-stack allocation */
+   int    os_fact;        /* Over-sampling factor for fractional pitch */
+   int    os_filt_ord;    /* Over-sampling filter size for fractional pitch */
+   float *os_exc;         /* Over-sampled excitation for fractional pitch */
+   float *os_filt;        /* Over-sampling filter for fractional pitch */
    float *inBuf;          /* Input buffer (original signal) */
    float *frame;          /* Start of original frame */
-   float *wBuf;           /* "Weighted" buffer */
-   float *wframe;         /* Start of "weighted" frame */
    float *excBuf;         /* Excitation buffer */
    float *exc;            /* Start of excitation frame */
-   float *resBuf;         /* Excitation buffer */
-   float *res;            /* Start of excitation frame */
-   float *tBuf;           /* "weighted target" buffer */
-   float *tframe;         /* Start of "weighted target" frame */
    float *window;         /* Temporary (Hanning) window */
    float *buf2;           /* 2nd temporary buffer */
    float *autocorr;       /* auto-correlation */
@@ -61,7 +60,7 @@ typedef struct EncState {
    float *bw_lpc2;        /* LPCs after bandwidth expansion by gamma2 for perceptual weighting*/
    float *bw_az;          /* Convolution of bw_lpc2 and interp_qlpc */
    float *rc;             /* Reflection coefficients */
-   float *mem1, *mem2, *mem3, *mem4, *mem5, *mem6, *mem7;
+   float *mem_sp, *mem_sw;
    float *dmem1, *dmem2;
 } EncState;
 

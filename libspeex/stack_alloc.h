@@ -22,32 +22,8 @@
 #define STACK_ALLOC_H
 
 
-#ifdef __GNUC__
-#define VAR_ARRAY
-#endif
-
-
-#if defined (VAR_ARRAY)  /* Prefered method is variable-size arrays is supported */
-
-#define DYN_VEC(type, num, var) type var[num];
-
-#elif defined (HAVE_ALLOCA_H)  /* Second best: alloca */
-
-#include <alloca.h>
-
-#define DYN_VEC(type, num, var) type *var=(type*)alloca((num)*sizeof(type));
-
-#elif defined WIN32  /* On Win32, it's _alloca */
-
-#include <malloc.h>
-#define DYN_VEC(type, num, var) type *var=(type*)_alloca((num)*sizeof(type));
-
-#else  /* When all else fails, allocate on the heap (but it's going to be slow) */
-
-#error Cannot allocate memory on stack
-
-#endif
-
+#define PUSH(stack, size) (((int*)stack)[size]=(size),stack+=(size)+1,stack-(size)-1)
+#define POP(stack) (stack-=((int*)stack)[-1]+1)
 
 
 #endif

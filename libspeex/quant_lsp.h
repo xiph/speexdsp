@@ -36,9 +36,9 @@ extern float cdbk_nb_high1[];
 extern float cdbk_nb_high2[];
 
 /* Quantizes narrowband LSPs with 30 bits */
-unsigned int lsp_quant_nb(float *lsp, int order);
+unsigned long long lsp_quant_nb(float *lsp, int order);
 
 /* Decodes quantized narrowband LSPs */
-void lsp_unquant_nb(float *lsp, int order, unsigned int id);
+void lsp_unquant_nb(float *lsp, int order, unsigned long long id);
 
 #endif

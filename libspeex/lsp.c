@@ -17,6 +17,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "lsp.h"
+#include "stack_alloc.h"
 
 /*---------------------------------------------------------------------------*\
 
@@ -31,7 +32,7 @@
 
 
 
-float cheb_poly_eva(float *coef,float x,int m)
+float cheb_poly_eva(float *coef,float x,int m,float *stack)
 /*  float coef[]  	coefficients of the polynomial to be evaluated 	*/
 /*  float x   		the point where polynomial is to be evaluated 	*/
 /*  int m 		order of the polynomial 			*/
@@ -43,10 +44,11 @@ float cheb_poly_eva(float *coef,float x,int m)
 
     /* Allocate memory for chebyshev series formulation */
 
-    if((T = (float *)malloc((m/2+1)*sizeof(float))) == NULL){
+    /*if((T = (float *)malloc((m/2+1)*sizeof(float))) == NULL){
 	printf("not enough memory to allocate buffer\n");
 	exit(1);
-    }
+        }*/
+    T=PUSH(stack, m/2+1);
 
     /* Initialise pointers */
 
@@ -69,7 +71,8 @@ float cheb_poly_eva(float *coef,float x,int m)
     for(i=0;i<=m/2;i++)
 	sum+=coef[(m/2)-i]**t++;
 
-    free(T);
+    /*free(T);*/
+    POP(stack);
     return sum;
 }
 
@@ -87,7 +90,7 @@ float cheb_poly_eva(float *coef,float x,int m)
 \*---------------------------------------------------------------------------*/
 
 
-int lpc_to_lsp (float *a,int lpcrdr,float *freq,int nb,float delta)
+int lpc_to_lsp (float *a,int lpcrdr,float *freq,int nb,float delta, float *stack)
 /*  float *a 		     	lpc coefficients			*/
 /*  int lpcrdr			order of LPC coefficients (10) 		*/
 /*  float *freq 	      	LSP frequencies in the x domain       	*/
@@ -116,7 +119,7 @@ int lpc_to_lsp (float *a,int lpcrdr,float *freq,int nb,float delta)
 
     /* Allocate memory space for polynomials */
 
-    if((Q = (float *) malloc((m+1)*sizeof(float))) == NULL){
+    /*if((Q = (float *) malloc((m+1)*sizeof(float))) == NULL){
 	printf("not enough memory to allocate buffer\n");
 	exit(1);
     }
@@ -124,7 +127,9 @@ int lpc_to_lsp (float *a,int lpcrdr,float *freq,int nb,float delta)
     if((P = (float *) malloc((m+1)*sizeof(float))) == NULL){
 	printf("not enough memory to allocate buffer\n");
 	exit(1);
-    }
+        }*/
+    Q = PUSH(stack, (m+1));
+    P = PUSH(stack, (m+1));
 
     /* determine P'(z)'s and Q'(z)'s coefficients where
       P'(z) = P(z)/(1 + z^(-1)) and Q'(z) = Q(z)/(1-z^(-1)) */
@@ -163,11 +168,11 @@ int lpc_to_lsp (float *a,int lpcrdr,float *freq,int nb,float delta)
 	else
 	    pt = px;
 
-	psuml = cheb_poly_eva(pt,xl,lpcrdr);	/* evals poly. at xl 	*/
+	psuml = cheb_poly_eva(pt,xl,lpcrdr,stack);	/* evals poly. at xl 	*/
 	flag = 1;
 	while(flag && (xr >= -1.0)){
 	    xr = xl - delta ;                  	/* interval spacing 	*/
-	    psumr = cheb_poly_eva(pt,xr,lpcrdr);/* poly(xl-delta_x) 	*/
+	    psumr = cheb_poly_eva(pt,xr,lpcrdr,stack);/* poly(xl-delta_x) 	*/
 	    temp_psumr = psumr;
 	    temp_xr = xr;
 
@@ -186,7 +191,7 @@ int lpc_to_lsp (float *a,int lpcrdr,float *freq,int nb,float delta)
 		psumm=psuml;
 		for(k=0;k<=nb;k++){
 		    xm = (xl+xr)/2;        	/* bisect the interval 	*/
-		    psumm=cheb_poly_eva(pt,xm,lpcrdr);
+		    psumm=cheb_poly_eva(pt,xm,lpcrdr,stack);
 		    if(psumm*psuml>0.){
 			psuml=psumm;
 			xl=xm;
@@ -208,9 +213,10 @@ int lpc_to_lsp (float *a,int lpcrdr,float *freq,int nb,float delta)
 	    }
 	}
     }
-    free(P);                  		/* free memory space 		*/
-    free(Q);
-
+    /*free(P);*/                  		/* free memory space 		*/
+    /*free(Q);*/
+    POP(stack);
+    POP(stack);
     return(roots);
 }
 
@@ -228,7 +234,7 @@ int lpc_to_lsp (float *a,int lpcrdr,float *freq,int nb,float delta)
 \*---------------------------------------------------------------------------*/
 
 
-void lsp_to_lpc(float *freq,float *ak,int lpcrdr)
+void lsp_to_lpc(float *freq,float *ak,int lpcrdr, float *stack)
 /*  float *freq 	array of LSP frequencies in the x domain	*/
 /*  float *ak 		array of LPC coefficients 			*/
 /*  int lpcrdr  	order of LPC coefficients 			*/
@@ -241,10 +247,11 @@ void lsp_to_lpc(float *freq,float *ak,int lpcrdr)
     float *pw,*n1,*n2,*n3,*n4=NULL;
     int m = lpcrdr/2;
 
-    if((Wp = (float *) malloc((4*m+2)*sizeof(float))) == NULL){
+    /*if((Wp = (float *) malloc((4*m+2)*sizeof(float))) == NULL){
 	printf("not enough memory to allocate buffer\n");
 	exit(1);
-    }
+        }*/
+    Wp = PUSH(stack, 4*m+2);
     pw = Wp;
 
     /* initialise contents of array */
@@ -287,5 +294,6 @@ void lsp_to_lpc(float *freq,float *ak,int lpcrdr)
 	xin1 = 0.0;
 	xin2 = 0.0;
     }
-    free(Wp);
+    /*free(Wp);*/
+    POP(stack);
 }

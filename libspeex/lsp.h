@@ -11,7 +11,7 @@
 #ifndef __AK2LSPD__
 #define __AK2LSPD__
 
-int lpc_to_lsp (float *a, int lpcrdr, float *freq, int nb, float delta);
-void lsp_to_lpc(float *freq, float *ak, int lpcrdr);
+int lpc_to_lsp (float *a, int lpcrdr, float *freq, int nb, float delta, float *stack);
+void lsp_to_lpc(float *freq, float *ak, int lpcrdr, float *stack);
 
 #endif	/* __AK2LSPD__ */

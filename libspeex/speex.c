@@ -27,6 +27,7 @@
 #include "quant_lsp.h"
 #include "cb_search.h"
 #include "filters.h"
+#include "stack_alloc.h"
 
 extern float stoc[];
 
@@ -53,24 +54,12 @@ void encoder_init(EncState *st, SpeexMode *mode)
 
    st->inBuf = malloc(st->bufSize*sizeof(float));
    st->frame = st->inBuf + st->bufSize - st->windowSize;
-   st->wBuf = malloc(st->bufSize*sizeof(float));
-   st->wframe = st->wBuf + st->bufSize - st->windowSize;
    st->excBuf = malloc(st->bufSize*sizeof(float));
    st->exc = st->excBuf + st->bufSize - st->windowSize;
-   st->resBuf = malloc(st->bufSize*sizeof(float));
-   st->res = st->resBuf + st->bufSize - st->windowSize;
-   st->tBuf = malloc(st->bufSize*sizeof(float));
-   st->tframe = st->tBuf + st->bufSize - st->windowSize;
    for (i=0;i<st->bufSize;i++)
       st->inBuf[i]=0;
    for (i=0;i<st->bufSize;i++)
-      st->wBuf[i]=0;
-   for (i=0;i<st->bufSize;i++)
-      st->resBuf[i]=0;
-   for (i=0;i<st->bufSize;i++)
       st->excBuf[i]=0;
-   for (i=0;i<st->bufSize;i++)
-      st->tBuf[i]=0;
 
    /* Hanning window */
    st->window = malloc(st->windowSize*sizeof(float));
@@ -83,6 +72,8 @@ void encoder_init(EncState *st, SpeexMode *mode)
       st->lagWindow[i]=exp(-.5*sqr(2*M_PI*.01*i));
 
    st->autocorr = malloc((st->lpcSize+1)*sizeof(float));
+
+   st->stack = calloc(2000, sizeof(float));
 
    st->buf2 = malloc(st->windowSize*sizeof(float));
 
@@ -102,23 +93,17 @@ void encoder_init(EncState *st, SpeexMode *mode)
    st->rc = malloc(st->lpcSize*sizeof(float));
    st->first = 1;
    
-   st->mem1 = calloc(st->lpcSize, sizeof(float));
-   st->mem2 = calloc(st->lpcSize, sizeof(float));
-   st->mem3 = calloc(st->lpcSize, sizeof(float));
-   st->mem4 = calloc(st->lpcSize, sizeof(float));
-   st->mem5 = calloc(st->lpcSize, sizeof(float));
-   st->mem6 = calloc(st->lpcSize, sizeof(float));
-   st->mem7 = calloc(st->lpcSize, sizeof(float));
+   st->mem_sp = calloc(st->lpcSize, sizeof(float));
+   st->mem_sw = calloc(st->lpcSize, sizeof(float));
 }
 
 void encoder_destroy(EncState *st)
 {
    /* Free all allocated memory */
    free(st->inBuf);
-   free(st->wBuf);
-   free(st->resBuf);
    free(st->excBuf);
-   free(st->tBuf);
+   
+   free(st->stack);
 
    free(st->window);
    free(st->buf2);
@@ -139,13 +124,8 @@ void encoder_destroy(EncState *st)
    free(st->interp_qlsp);
    free(st->rc);
 
-   free(st->mem1);
-   free(st->mem2);
-   free(st->mem3);
-   free(st->mem4);
-   free(st->mem5);
-   free(st->mem6);
-   free(st->mem7);
+   free(st->mem_sp);
+   free(st->mem_sw);
 }
 
 void encode(EncState *st, float *in, FrameBits *bits)
@@ -157,10 +137,7 @@ void encode(EncState *st, float *in, FrameBits *bits)
    memmove(st->inBuf, st->inBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(float));
    for (i=0;i<st->frameSize;i++)
       st->inBuf[st->bufSize-st->frameSize+i] = in[i];
-   memmove(st->wBuf, st->wBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(float));
-   memmove(st->resBuf, st->resBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(float));
    memmove(st->excBuf, st->excBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(float));
-   memmove(st->tBuf, st->tBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(float));
 
    /* Window for analysis */
    for (i=0;i<st->windowSize;i++)
@@ -180,7 +157,7 @@ void encode(EncState *st, float *in, FrameBits *bits)
    st->lpc[0]=1;
 
    /* LPC to LSPs (x-domain) transform */
-   roots=lpc_to_lsp (st->lpc, st->lpcSize, st->lsp, 6, 0.02);
+   roots=lpc_to_lsp (st->lpc, st->lpcSize, st->lsp, 6, 0.02, st->stack);
    if (roots!=st->lpcSize)
    {
       fprintf (stderr, "roots!=st->lpcSize\n");
@@ -195,8 +172,8 @@ void encode(EncState *st, float *in, FrameBits *bits)
    {
       unsigned int id;
       for (i=0;i<st->lpcSize;i++)
-         st->buf2[i]=st->lsp[i];
-      id=lsp_quant_nb(st->buf2,10 );
+         st->qlsp[i]=st->lsp[i];
+      id=lsp_quant_nb(st->qlsp,10 );
       lsp_unquant_nb(st->qlsp,10,id);
    }
 
@@ -206,15 +183,19 @@ void encode(EncState *st, float *in, FrameBits *bits)
       float tmp, tmp1,tmp2,gain[3];
       float esig=0, enoise=0, snr;
       int pitch, offset, pitch_gain_index;
-      float *sp, *sw, *res, *exc, *target;
+      float *sp, *sw, *res, *exc, *target, *mem;
       
       /* Offset relative to start of frame */
       offset = st->subframeSize*sub;
       sp=st->frame+offset;
-      sw=st->wframe+offset;
-      res=st->res+offset;
       exc=st->exc+offset;
-      target=st->tframe+offset;
+      /* Weighted signal */
+      sw = PUSH(st->stack, st->subframeSize);
+      /* Filter response */
+      res = PUSH(st->stack, st->subframeSize);
+      /* Target signal */
+      target = PUSH(st->stack, st->subframeSize);
+      mem = PUSH(st->stack, st->lpcSize);
 
       /* LSP interpolation (quantized and unquantized) */
       tmp = (.5 + sub)/st->nbSubframes;
@@ -226,11 +207,11 @@ void encode(EncState *st, float *in, FrameBits *bits)
       /* Compute interpolated LPCs (quantized and unquantized) */
       for (i=0;i<st->lpcSize;i++)
          st->interp_lsp[i] = cos(st->interp_lsp[i]);
-      lsp_to_lpc(st->interp_lsp, st->interp_lpc, st->lpcSize);
+      lsp_to_lpc(st->interp_lsp, st->interp_lpc, st->lpcSize,st->stack);
 
       for (i=0;i<st->lpcSize;i++)
          st->interp_qlsp[i] = cos(st->interp_qlsp[i]);
-      lsp_to_lpc(st->interp_qlsp, st->interp_qlpc, st->lpcSize);
+      lsp_to_lpc(st->interp_qlsp, st->interp_qlpc, st->lpcSize, st->stack);
 
       /* Compute bandwidth-expanded (unquantized) LPCs for perceptual weighting */
       tmp=1;
@@ -252,20 +233,22 @@ void encode(EncState *st, float *in, FrameBits *bits)
 
       /* Compute zero response of A(z/g1) / ( A(z/g2) * Aq(z) ) */
       for (i=0;i<st->lpcSize;i++)
-         st->mem4[i]=st->mem5[i];
-      syn_filt_mem(exc, st->interp_qlpc, exc, st->subframeSize, st->lpcSize, st->mem4);
+         mem[i]=st->mem_sp[i];
+      syn_filt_mem(exc, st->interp_qlpc, exc, st->subframeSize, st->lpcSize, mem);
       for (i=0;i<st->lpcSize;i++)
-         st->mem4[i]=st->mem5[i];
-      residue_mem(exc, st->bw_lpc1, res, st->subframeSize, st->lpcSize, st->mem4);
+         mem[i]=st->mem_sp[i];
+      residue_mem(exc, st->bw_lpc1, res, st->subframeSize, st->lpcSize, mem);
       for (i=0;i<st->lpcSize;i++)
-         st->mem4[i]=st->mem2[i];
-      syn_filt_mem(res, st->bw_lpc2, res, st->subframeSize, st->lpcSize, st->mem4);
+         mem[i]=st->mem_sw[i];
+      syn_filt_mem(res, st->bw_lpc2, res, st->subframeSize, st->lpcSize, mem);
 
       /* Compute weighted signal */
-      residue(sp, st->bw_lpc1, sw, st->subframeSize, st->lpcSize);
       for (i=0;i<st->lpcSize;i++)
-         st->mem4[i]=st->mem2[i];
-      syn_filt_mem(sw, st->bw_lpc2, sw, st->subframeSize, st->lpcSize, st->mem4);
+         mem[i]=st->mem_sp[i];
+      residue_mem(sp, st->bw_lpc1, sw, st->subframeSize, st->lpcSize, mem);
+      for (i=0;i<st->lpcSize;i++)
+         mem[i]=st->mem_sw[i];
+      syn_filt_mem(sw, st->bw_lpc2, sw, st->subframeSize, st->lpcSize, mem);
 
       for (i=0;i<st->subframeSize;i++)
          esig+=sw[i]*sw[i];
@@ -292,23 +275,33 @@ void encode(EncState *st, float *in, FrameBits *bits)
       syn_filt_zero(res, st->bw_lpc2, res, st->subframeSize, st->lpcSize);
       for (i=0;i<st->subframeSize;i++)
         target[i]-=res[i];
-
+      {
+         /*float stoc2[1080];*/
+         float *stoc2 = PUSH(st->stack,1080);
+         for (i=0;i<1080;i++)
+         {
+            stoc2[i]=stoc[i];
+            if (i-(pitch-1)>=0)
+               stoc2[i] += .8*stoc[i-(pitch-1)];
+         }
+         POP(st->stack);
       /* Perform stochastic codebook search */
       overlap_cb_search(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2,
-                        stoc, 1024, &gain[0], &pitch, st->lpcSize,
+                        stoc2, 1024, &gain[0], &pitch, st->lpcSize,
                         st->subframeSize);
-      printf ("gain = %f, index = %d\n",gain[0], pitch);
+      printf ("gain = %f index = %d energy = %f\n",gain[0], pitch, esig);
       for (i=0;i<st->subframeSize;i++)
-         exc[i]+=gain[0]*stoc[i+pitch];
+         exc[i]+=gain[0]*stoc2[i+pitch];
 
       /* Update target for adaptive codebook contribution (Useless for now)*/
-      residue_zero(stoc+pitch, st->bw_lpc1, res, st->subframeSize, st->lpcSize);
+      residue_zero(stoc2+pitch, st->bw_lpc1, res, st->subframeSize, st->lpcSize);
       syn_filt_zero(res, st->interp_qlpc, res, st->subframeSize, st->lpcSize);
       syn_filt_zero(res, st->bw_lpc2, res, st->subframeSize, st->lpcSize);
       for (i=0;i<st->subframeSize;i++)
          target[i]-=gain[0]*res[i];
+      }
 
-
+      /* Compute weighted noise energy, SNR */
       for (i=0;i<st->subframeSize;i++)
          enoise += target[i]*target[i];
       snr = 10*log10((esig+1)/(enoise+1));
@@ -319,6 +312,7 @@ void encode(EncState *st, float *in, FrameBits *bits)
 #if 0 /* Code to calculate the exact excitation after pitch prediction  */
       for (i=0;i<st->subframeSize;i++)
          st->buf2[i]=target[i];
+
       pitch_search_3tap(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2,
                         exc, 20, 147, &gain[0], &pitch, &pitch_gain_index, st->lpcSize,
                         st->subframeSize);
@@ -332,6 +326,7 @@ void encode(EncState *st, float *in, FrameBits *bits)
       syn_filt_zero(res, st->bw_lpc2, res, st->subframeSize, st->lpcSize);
       for (i=0;i<st->subframeSize;i++)
         target[i]-=res[i];
+
       syn_filt_zero(target, st->bw_lpc1, res, st->subframeSize, st->lpcSize);
       residue_zero(res, st->interp_qlpc, exc, st->subframeSize, st->lpcSize);
       residue_zero(exc, st->bw_lpc2, exc, st->subframeSize, st->lpcSize);
@@ -349,13 +344,20 @@ void encode(EncState *st, float *in, FrameBits *bits)
       residue_zero(exc, st->bw_lpc2, exc, st->subframeSize, st->lpcSize);
 #endif
 
+      /*Keep the previous memory*/
+      for (i=0;i<st->lpcSize;i++)
+         mem[i]=st->mem_sp[i];
       /* Final signal synthesis from excitation */
-      syn_filt_mem(exc, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, st->mem5);
+      syn_filt_mem(exc, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, st->mem_sp);
 
       /* Compute weighted signal again, from synthesized speech (not sure it's the right thing) */
-      residue_mem(sp, st->bw_lpc1, sw, st->subframeSize, st->lpcSize, st->mem1);
-      syn_filt_mem(sw, st->bw_lpc2, sw, st->subframeSize, st->lpcSize, st->mem2);
+      residue_mem(sp, st->bw_lpc1, sw, st->subframeSize, st->lpcSize, mem);
+      syn_filt_mem(sw, st->bw_lpc2, sw, st->subframeSize, st->lpcSize, st->mem_sw);
 
+      POP(st->stack);
+      POP(st->stack);
+      POP(st->stack);
+      POP(st->stack);
    }
 
    /* Store the LSPs for interpolation in the next frame */

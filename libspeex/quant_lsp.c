@@ -79,11 +79,11 @@ int lsp_weight_quant(float *x, float *weight, float *cdbk, int nbVec, int nbDim)
 }
 
 
-unsigned int lsp_quant_nb(float *lsp, int order)
+unsigned long long lsp_quant_nb(float *lsp, int order)
 {
    int i;
    float tmp1, tmp2;
-   unsigned int id;
+   unsigned long long id;
    quant_weight[0] = 1/(lsp[1]-lsp[0]);
    quant_weight[order-1] = 1/(lsp[order-1]-lsp[order-2]);
    for (i=1;i<order-1;i++)
@@ -109,7 +109,7 @@ unsigned int lsp_quant_nb(float *lsp, int order)
    return id;
 }
 
-void lsp_unquant_nb(float *lsp, int order, unsigned int id)
+void lsp_unquant_nb(float *lsp, int order, unsigned long long id)
 {
    int i, tmp;
    for (i=0;i<order;i++)

@@ -30,5 +30,5 @@ SpeexMode nb_mode = {
    20,     /*pitchStart*/
    140,    /*pitchEnd*/
    0.9,    /*gamma1*/
-   0.5     /*gamma2*/
+   0.6     /*gamma2*/
 };
