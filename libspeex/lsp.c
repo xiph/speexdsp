@@ -375,7 +375,13 @@ void lsp_to_lpc(float *freq,spx_coef_t *ak,int lpcrdr, char *stack)
 	}
 	xout1 = xin1 + *(n4+1);
 	xout2 = xin2 - *(n4+2);
-	ak[j] = ((128+xout1 + xout2)>>8);
+        /* FIXME: perhaps apply bandwidth expansion in case of overflow? */
+        if (xout1 + xout2>256*32766)
+           ak[j] = 32767;
+        else if (xout1 + xout2 < -256*32767)
+           ak[j] = -32768;
+        else
+           ak[j] = ((128+xout1 + xout2)>>8);
 	*(n4+1) = xin1;
 	*(n4+2) = xin2;
 

@@ -130,7 +130,7 @@ void *sb_encoder_init(SpeexMode *m)
    SBEncState *st;
    SpeexSBMode *mode;
 
-   st = (SBEncState*)speex_alloc(sizeof(SBEncState)+8000*sizeof(float));
+   st = (SBEncState*)speex_alloc(sizeof(SBEncState)+8000*sizeof(spx_sig_t));
    st->mode = m;
    mode = (SpeexSBMode*)m->mode;
 
@@ -686,7 +686,7 @@ void *sb_decoder_init(SpeexMode *m)
 {
    SBDecState *st;
    SpeexSBMode *mode;
-   st = (SBDecState*)speex_alloc(sizeof(SBDecState)+6000*sizeof(float));
+   st = (SBDecState*)speex_alloc(sizeof(SBDecState)+6000*sizeof(spx_sig_t));
    st->mode = m;
    mode=(SpeexSBMode*)m->mode;
 
