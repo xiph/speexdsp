@@ -59,7 +59,7 @@ make DESTDIR=$RPM_BUILD_ROOT install
 /usr/share/man/man1/speexenc.1*
 /usr/share/man/man1/speexdec.1*
 %attr(755,root,root) %{_bindir}/speex*
-%attr(755,root,root) %{_libdir}/libspeex*.so
+%attr(755,root,root) %{_libdir}/libspeex*.so*
 
 %files devel
 %defattr(644,root,root,755)

@@ -1748,12 +1748,12 @@ The RTP payload draft is included in appendix
 MIME Type
 \layout Standard
 
-Speex will use the MIME type 
+For now, you should use the MIME type audio/speex for Speex.
+ We will apply for type 
 \family typewriter 
 audio/speex
 \family default 
-.
- We will apply for that type in the near future.
+ in the near future.
 \layout Subsection
 
 Ogg
@@ -1844,7 +1844,7 @@ packetno
 granulepos
 \family default 
  is the number of the last sample encoded in that packet.
- Le last of these packets has the 
+ The last of these packets has the 
 \emph on 
 end of stream
 \emph default 
