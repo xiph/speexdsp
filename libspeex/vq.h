@@ -37,5 +37,6 @@ int vq_index(float *in, float *codebook, int len, int entries);
 
 void vq_nbest(float *in, float *codebook, int len, int entries, float *E, int N, int *nbest, float *best_dist);
 
+void vq_nbest_sign(float *in, float *codebook, int len, int entries, float *E, int N, int *nbest, float *best_dist);
 
 #endif

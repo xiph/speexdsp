@@ -86,3 +86,43 @@ void vq_nbest(float *in, float *codebook, int len, int entries, float *E, int N,
    }
 }
 
+/*Finds the indices of the n-best entries in a codebook with sign*/
+void vq_nbest_sign(float *in, float *codebook, int len, int entries, float *E, int N, int *nbest, float *best_dist)
+{
+   int i,j,k, sign;
+   for (i=0;i<entries;i++)
+   {
+      float dist=0;
+      for (j=0;j<len;j++)
+         dist -= in[j]**codebook++;
+      if (dist>0)
+      {
+         sign=1;
+         dist=-dist;
+      } else
+      {
+         sign=0;
+      }
+      dist += .5*E[i];
+      if (i<N || dist<best_dist[N-1])
+      {
+
+         for (j=0;j<N;j++)
+         {
+            if (j >= i || dist < best_dist[j])
+            {
+               for (k=N-1;k>j;k--)
+               {
+                  best_dist[k]=best_dist[k-1];
+                  nbest[k] = nbest[k-1];
+               }
+               best_dist[j]=dist;
+               nbest[j]=i;
+               if (sign)
+                  nbest[j]+=entries;
+               break;
+            }
+         }
+      }
+   }
+}
