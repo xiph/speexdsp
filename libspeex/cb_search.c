@@ -53,13 +53,14 @@ int   complexity
 )
 {
    int i,j,k,m,n,q;
-   spx_sig_t *resp;
-   spx_sig_t *t, *e, *r2;
+   spx_word16_t *resp;
+   spx_word16_t *t;
+   spx_sig_t *e, *r2;
    spx_word32_t *E;
-   spx_sig_t *tmp;
-   float *ndist, *odist;
+   spx_word16_t *tmp;
+   spx_word32_t *ndist, *odist;
    int *itmp;
-   spx_sig_t **ot, **nt;
+   spx_word16_t **ot, **nt;
    int **nind, **oind;
    int *ind;
    signed char *shape_cb;
@@ -67,15 +68,15 @@ int   complexity
    split_cb_params *params;
    int N=2;
    int *best_index;
-   float *best_dist;
+   spx_word32_t *best_dist;
    int have_sign;
 
    N=complexity;
    if (N>10)
       N=10;
 
-   ot=PUSH(stack, N, spx_sig_t*);
-   nt=PUSH(stack, N, spx_sig_t*);
+   ot=PUSH(stack, N, spx_word16_t*);
+   nt=PUSH(stack, N, spx_word16_t*);
    oind=PUSH(stack, N, int*);
    nind=PUSH(stack, N, int*);
 
@@ -85,14 +86,14 @@ int   complexity
    shape_cb_size = 1<<params->shape_bits;
    shape_cb = params->shape_cb;
    have_sign = params->have_sign;
-   resp = PUSH(stack, shape_cb_size*subvect_size, spx_sig_t);
-   t = PUSH(stack, nsf, spx_sig_t);
+   resp = PUSH(stack, shape_cb_size*subvect_size, spx_word16_t);
+   t = PUSH(stack, nsf, spx_word16_t);
    e = PUSH(stack, nsf, spx_sig_t);
    r2 = PUSH(stack, nsf, spx_sig_t);
    E = PUSH(stack, shape_cb_size, spx_word32_t);
    ind = PUSH(stack, nb_subvect, int);
 
-   tmp = PUSH(stack, 2*N*nsf, spx_sig_t);
+   tmp = PUSH(stack, 2*N*nsf, spx_word16_t);
    for (i=0;i<N;i++)
    {
       ot[i]=tmp;
@@ -102,9 +103,9 @@ int   complexity
    }
 
    best_index = PUSH(stack, N, int);
-   best_dist = PUSH(stack, N, float);
-   ndist = PUSH(stack, N, float);
-   odist = PUSH(stack, N, float);
+   best_dist = PUSH(stack, N, spx_word32_t);
+   ndist = PUSH(stack, N, spx_word32_t);
+   odist = PUSH(stack, N, spx_word32_t);
    
    itmp = PUSH(stack, 2*N*nb_subvect, int);
    for (i=0;i<N;i++)
@@ -130,7 +131,7 @@ int   complexity
    /* Pre-compute codewords response and energy */
    for (i=0;i<shape_cb_size;i++)
    {
-      spx_sig_t *res;
+      spx_word16_t *res;
       signed char *shape;
 
       res = resp+i*subvect_size;
@@ -139,19 +140,19 @@ int   complexity
       /* Compute codeword response using convolution with impulse response */
       for(j=0;j<subvect_size;j++)
       {
-         res[j]=0;
+         spx_word32_t resj=0;
          for (k=0;k<=j;k++)
-            res[j] += shape[k]*r[j-k];
-         res[j] *= 0.03125;
+            resj += shape[k]*r[j-k];
+         resj *= 0.03125;
          
-         res[j] = SHR(res[j],6);
+         res[j] = SHR(resj,6);
          /*printf ("%d\n", (int)res[j]);*/
       }
       
       /* Compute codeword energy */
       E[i]=0;
       for(j=0;j<subvect_size;j++)
-         E[i]+=res[j]*res[j];
+         E[i]+=MULT16_16(res[j],res[j]);
    }
 
    for (j=0;j<N;j++)
@@ -166,7 +167,7 @@ int   complexity
       /*For all n-bests of previous subvector*/
       for (j=0;j<N;j++)
       {
-         spx_sig_t *x=ot[j]+subvect_size*i;
+         spx_word16_t *x=ot[j]+subvect_size*i;
          /*Find new n-best based on previous n-best j*/
          if (have_sign)
             vq_nbest_sign(x, resp, subvect_size, shape_cb_size, E, N, best_index, best_dist);
@@ -176,7 +177,7 @@ int   complexity
          /*For all new n-bests*/
          for (k=0;k<N;k++)
          {
-            spx_sig_t *ct;
+            spx_word16_t *ct;
             float err=0;
             ct = ot[j];
             /*update target*/
@@ -188,7 +189,7 @@ int   complexity
             /* New code: update only enough of the target to calculate error*/
             {
                int rind;
-               spx_sig_t *res;
+               spx_word16_t *res;
                float sign=1;
                rind = best_index[k];
                if (rind>=shape_cb_size)
@@ -266,7 +267,7 @@ int   complexity
       /*update old-new data*/
       /* just swap pointers instead of a long copy */
       {
-         spx_sig_t **tmp2;
+         spx_word16_t **tmp2;
          tmp2=ot;
          ot=nt;
          nt=tmp2;

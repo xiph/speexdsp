@@ -57,15 +57,15 @@ int vq_index(float *in, float *codebook, int len, int entries)
 
 
 /*Finds the indices of the n-best entries in a codebook*/
-void vq_nbest(spx_sig_t *in, spx_sig_t *codebook, int len, int entries, spx_word32_t *E, int N, int *nbest, float *best_dist)
+void vq_nbest(spx_word16_t *in, spx_word16_t *codebook, int len, int entries, spx_word32_t *E, int N, int *nbest, spx_word32_t *best_dist)
 {
    int i,j,k,used;
    used = 0;
    for (i=0;i<entries;i++)
    {
-      float dist=.5*E[i];
+      spx_word32_t dist=.5*E[i];
       for (j=0;j<len;j++)
-         dist -= in[j]**codebook++;
+         dist -= MULT16_16(in[j],*codebook++);
       if (i<N || dist<best_dist[N-1])
       {
          for (k=N-1; (k >= 1) && (k > used || dist < best_dist[k-1]); k--)
@@ -81,15 +81,15 @@ void vq_nbest(spx_sig_t *in, spx_sig_t *codebook, int len, int entries, spx_word
 }
 
 /*Finds the indices of the n-best entries in a codebook with sign*/
-void vq_nbest_sign(spx_sig_t *in, spx_sig_t *codebook, int len, int entries, spx_word32_t *E, int N, int *nbest, float *best_dist)
+void vq_nbest_sign(spx_word16_t *in, spx_word16_t *codebook, int len, int entries, spx_word32_t *E, int N, int *nbest, spx_word32_t *best_dist)
 {
    int i,j,k, sign, used;
    used=0;
    for (i=0;i<entries;i++)
    {
-      float dist=0;
+      spx_word32_t dist=0;
       for (j=0;j<len;j++)
-         dist -= in[j]**codebook++;
+         dist -= MULT16_16(in[j],*codebook++);
       if (dist>0)
       {
          sign=1;
