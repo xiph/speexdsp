@@ -24,16 +24,16 @@
 
 /* Perceptual post-filter for narrowband */
 void nb_post_filter(
-float *exc, 
-float *new_exc, 
-float *ak, 
-int p, 
-int nsf,
-int pitch,
-float *pitch_gain,
-void *par,
-float *mem,
-float *mem2,
+float *exc,          /*decoded excitation*/
+float *new_exc,      /*enhanced excitation*/
+float *ak,           /*LPC filter coefs*/
+int p,               /*LPC order*/
+int nsf,             /*sub-frame size*/
+int pitch,           /*pitch period*/
+float *pitch_gain,   /*pitch gain (3-tap)*/
+void *par,           /*post-filter parameters*/
+float *mem,          /*filter memory #1*/
+float *mem2,         /*filter memory #2*/
 float *stack)
 {
    int i;
@@ -49,10 +49,11 @@ float *stack)
    awk = PUSH(stack, p);
    tmp_exc = PUSH(stack, nsf);
   
-
+   /*Compute excitation energy prior to enhancement*/
    for (i=0;i<nsf;i++)
       exc_energy+=exc[i]*exc[i];
 
+   /*Apply pitch comb-filter (filter out noise between pitch harmonics)*/
    for (i=0;i<nsf;i++)
    {
       new_exc[i] = exc[i] + params->pitch_enh*(
@@ -62,25 +63,30 @@ float *stack)
                                                );
    }
    
+   /*Compute "voicing coefficient" (0 for unvoiced, 1 for voiced)*/
    voiced_fact = pitch_gain[0]+pitch_gain[1]+pitch_gain[2];
    if (voiced_fact<0)
       voiced_fact=0;
    if (voiced_fact>1)
       voiced_fact=1;
+
+   /*Adapting post-filter to voicing*/
    formant_num = params->formant_enh_num;
    formant_den =   voiced_fact    * params->formant_enh_den 
                  + (1-voiced_fact)* params->formant_enh_num;
 
+   /*Short-term post-filter: A(z/g1)/A(z/.g1)*/
    bw_lpc (formant_num, ak, awk, p);
    residue_mem(new_exc, awk, tmp_exc, nsf, p, mem);
    bw_lpc (formant_den, ak, awk, p);
    syn_filt_mem(tmp_exc, awk, new_exc, nsf, p, mem2);
 
+   /*Gain after enhancement*/
    for (i=0;i<nsf;i++)
       new_exc_energy+=new_exc[i]*new_exc[i];
 
+   /*Compute scaling factor and normalize energy*/
    gain = sqrt(exc_energy)/sqrt(.1+new_exc_energy);
-   /*gain=1;*/
    for (i=0;i<nsf;i++)
       new_exc[i] *= gain;
    
