@@ -375,10 +375,32 @@ void encode(EncState *st, float *in, FrameBits *bits)
 
 void decoder_init(DecState *st, SpeexMode *mode)
 {
+   int i;
+   /* Codec parameters, should eventually have several "modes"*/
+   st->frameSize = mode->frameSize;
+   st->windowSize = mode->windowSize;
+   st->nbSubframes=mode->frameSize/mode->subframeSize;
+   st->subframeSize=mode->subframeSize;
+   st->lpcSize = mode->lpcSize;
+   st->bufSize = mode->bufSize;
+   st->gamma1=mode->gamma1;
+   st->gamma2=mode->gamma2;
+
+
+   st->inBuf = malloc(st->bufSize*sizeof(float));
+   st->frame = st->inBuf + st->bufSize - st->windowSize;
+   st->excBuf = malloc(st->bufSize*sizeof(float));
+   st->exc = st->excBuf + st->bufSize - st->windowSize;
+   for (i=0;i<st->bufSize;i++)
+      st->inBuf[i]=0;
+   for (i=0;i<st->bufSize;i++)
+      st->excBuf[i]=0;
 }
 
 void decoder_destroy(DecState *st)
 {
+   free(st->inBuf);
+   free(st->excBuf);
 }
 
 void decode(DecState *st, FrameBits *bits, float *out)

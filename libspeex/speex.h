@@ -73,6 +73,8 @@ typedef struct DecState {
    int    windowSize;     /* Analysis (LPC) window length */
    int    lpcSize;        /* LPC order */
    int    bufSize;        /* Buffer size */
+   float  gamma1;         /* Perceptual filter: A(z/gamma1) */
+   float  gamma2;         /* Perceptual filter: A(z/gamma2) */
    float *inBuf;          /* Input buffer (original signal) */
    float *frame;          /* Start of original frame */
    float *excBuf;         /* Excitation buffer */
@@ -86,13 +88,21 @@ typedef struct DecState {
 
 /**Initializes encoder state*/
 void encoder_init(EncState *st, SpeexMode *mode);
+
 /**De-allocates encoder state resources*/
 void encoder_destroy(EncState *st);
+
 /**Encodes one frame*/
 void encode(EncState *st, float *in, FrameBits *bits);
 
+
+/**Initializes decoder state*/
 void decoder_init(DecState *st, SpeexMode *mode);
+
+/**De-allocates decoder state resources*/
 void decoder_destroy(DecState *st);
+
+/**Decodes one frame*/
 void decode(DecState *st, FrameBits *bits, float *out);
 
 
