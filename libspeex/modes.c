@@ -144,7 +144,7 @@ static SpeexSubmode nb_submode1 = {
    NULL,
 
    0, 0, -1,
-   2100
+   43
 };
 
 static SpeexSubmode nb_submode2 = {
@@ -163,7 +163,7 @@ static SpeexSubmode nb_submode2 = {
    &split_cb_nb_vlbr,
 
    0.75, 0.6, .6,
-   5900
+   119
 };
 
 
@@ -183,7 +183,7 @@ static SpeexSubmode nb_submode3 = {
    &split_cb_nb_lbr,
 
    0.75, 0.6, .5,
-   7950
+   160
 };
 
 static SpeexSubmode nb_submode4 = {
@@ -202,7 +202,7 @@ static SpeexSubmode nb_submode4 = {
    &split_cb_nb_med,
 
    0.72, 0.65, .3,
-   10950
+   220
 };
 
 static SpeexSubmode nb_submode5 = {
@@ -221,7 +221,7 @@ static SpeexSubmode nb_submode5 = {
    &split_cb_nb,
 
    0.7, 0.65, .2,
-   14950
+   300
 };
 
 static SpeexSubmode nb_submode6 = {
@@ -240,7 +240,7 @@ static SpeexSubmode nb_submode6 = {
    &split_cb_sb,
 
    0.68, 0.65, .1,
-   18150
+   364
 };
 
 
@@ -297,7 +297,7 @@ static SpeexSubmode wb_submode1 = {
    NULL,
 
    0, 0, -1,
-   1750
+   36
 };
 
 
@@ -317,7 +317,7 @@ static SpeexSubmode wb_submode2 = {
    &split_cb_high_lbr,
 
    0, 0, -1,
-   5550
+   112
 };
 
 
@@ -337,12 +337,12 @@ static SpeexSubmode wb_submode3 = {
    &split_cb_high,
 
    0, 0, -1,
-   9550
+   192
 };
 
 
 /* Split-band wideband CELP mode*/
-static SpeexSBMode sb_wb_mode = {
+SpeexSBMode sb_wb_mode = {
    &speex_nb_mode,
    160,    /*frameSize*/
    40,     /*subframeSize*/

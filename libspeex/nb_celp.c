@@ -273,6 +273,7 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
                                nol_pitch, nol_pitch_coef, 4, st->stack);
          ol_pitch=nol_pitch[0];
          ol_pitch_coef = nol_pitch_coef[0];
+         /*Try to remove pitch multiples*/
          for (i=1;i<4;i++)
          {
             if ((nol_pitch_coef[i] > .85*ol_pitch_coef) && 
@@ -283,7 +284,7 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
                ol_pitch = nol_pitch[i];
             }
          }
-         printf ("ol_pitch: %d %f\n", ol_pitch, ol_pitch_coef);
+         /*printf ("ol_pitch: %d %f\n", ol_pitch, ol_pitch_coef);*/
       }
       /*Compute "real" excitation*/
       residue(st->frame, st->interp_lpc, st->exc, st->frameSize, st->lpcSize);
@@ -314,7 +315,10 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
    }
    /*printf ("VBR quality = %f\n", vbr_qual);*/
 
-   /* First, transmit the sub-mode we use for this frame */
+   /* First, transmit a zero for narrowband */
+   speex_bits_pack(bits, 0, 1);
+
+   /* Transmit the sub-mode we use for this frame */
    speex_bits_pack(bits, st->submodeID, NB_SUBMODE_BITS);
 
 
@@ -748,7 +752,24 @@ void nb_decode(void *state, SpeexBits *bits, float *out, int lost)
    float ol_pitch_coef=0;
    int best_pitch=40;
    float best_pitch_gain=-1;
+   int wideband;
+
    st=state;
+
+   wideband = speex_bits_unpack_unsigned(bits, 1);
+   if (wideband)
+   {
+      int submode;
+      int advance;
+      submode = speex_bits_unpack_unsigned(bits, SB_SUBMODE_BITS);
+      advance = sb_wb_mode.submodes[submode]->bits_per_frame - (SB_SUBMODE_BITS+1);
+      speex_bits_advance(bits, advance);
+      wideband = speex_bits_unpack_unsigned(bits, 1);
+      if (wideband)
+      {
+         fprintf (stderr, "Corrupted stream\n");
+      }
+   }
 
    /* Get the sub-mode that was used */
    st->submodeID = speex_bits_unpack_unsigned(bits, NB_SUBMODE_BITS);
@@ -1067,9 +1088,9 @@ void nb_encoder_ctl(void *state, int request, void *ptr)
       break;
    case SPEEX_GET_BITRATE:
       if (st->submodes[st->submodeID])
-         (*(int*)ptr) = SUBMODE(bitrate);
+         (*(int*)ptr) = 50*SUBMODE(bits_per_frame);
       else
-         (*(int*)ptr) = 200;
+         (*(int*)ptr) = 50*(NB_SUBMODE_BITS+1);
       break;
    default:
       fprintf(stderr, "Unknown nb_ctl request: %d\n", request);
@@ -1093,9 +1114,9 @@ void nb_decoder_ctl(void *state, int request, void *ptr)
       break;
    case SPEEX_GET_BITRATE:
       if (st->submodes[st->submodeID])
-         (*(int*)ptr) = SUBMODE(bitrate);
+         (*(int*)ptr) = 50*SUBMODE(bits_per_frame);
       else
-         (*(int*)ptr) = 200;
+         (*(int*)ptr) = 50*(NB_SUBMODE_BITS+1);
       break;
    default:
       fprintf(stderr, "Unknown nb_ctl request: %d\n", request);

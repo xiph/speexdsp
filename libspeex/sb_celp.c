@@ -272,6 +272,7 @@ void sb_encode(void *state, float *in, SpeexBits *bits)
    /* Encode the narrowband part*/
    nb_encode(st->st_low, st->x0d, bits);
 
+   speex_bits_pack(bits, 1, 1);
    speex_bits_pack(bits, st->submodeID, SB_SUBMODE_BITS);
 
    /* High-band buffering / sync with low band */
@@ -723,12 +724,24 @@ void sb_decode(void *state, SpeexBits *bits, float *out, int lost)
 {
    int i, sub;
    SBDecState *st;
-   
+   int wideband;
+
    st = state;
    /* Decode the low-band */
    nb_decode(st->st_low, bits, st->x0d, lost);
 
-   st->submodeID = speex_bits_unpack_unsigned(bits, SB_SUBMODE_BITS);
+   /*Check "wideband bit"*/
+   wideband = speex_bits_peek(bits);
+   if (wideband)
+   {
+      /*Regular wideband frame, read the submode*/
+      wideband = speex_bits_unpack_unsigned(bits, 1);
+      st->submodeID = speex_bits_unpack_unsigned(bits, SB_SUBMODE_BITS);
+   } else
+   {
+      /*Was a narrowband frame, set "null submode"*/
+      st->submodeID = 0;
+   }
 
    for (i=0;i<st->frame_size;i++)
       st->exc[i]=0;
@@ -952,9 +965,9 @@ void sb_encoder_ctl(void *state, int request, void *ptr)
    case SPEEX_GET_BITRATE:
       speex_encoder_ctl(st->st_low, request, ptr);
       if (st->submodes[st->submodeID])
-         (*(int*)ptr) += SUBMODE(bitrate);
+         (*(int*)ptr) += 50*SUBMODE(bits_per_frame);
       else
-         (*(int*)ptr) += 150;
+         (*(int*)ptr) += 50*(SB_SUBMODE_BITS+1);
       break;
    default:
       fprintf(stderr, "Unknown nb_ctl request: %d\n", request);
@@ -977,9 +990,9 @@ void sb_decoder_ctl(void *state, int request, void *ptr)
    case SPEEX_GET_BITRATE:
       speex_decoder_ctl(st->st_low, request, ptr);
       if (st->submodes[st->submodeID])
-         (*(int*)ptr) += SUBMODE(bitrate);
+         (*(int*)ptr) += 50*SUBMODE(bits_per_frame);
       else
-         (*(int*)ptr) += 150;
+         (*(int*)ptr) += 50*(SB_SUBMODE_BITS+1);
       break;
    default:
       fprintf(stderr, "Unknown sb_ctl request: %d\n", request);

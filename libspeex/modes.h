@@ -74,7 +74,7 @@ typedef struct SpeexSubmode {
    /*Synthesis filter enhancement*/
    float lpc_enh_k1, lpc_enh_k2, comb_gain;
 
-   int               bitrate;
+   int               bits_per_frame;
 } SpeexSubmode;
 
 /*Struct defining the encoding/decoding mode*/
@@ -117,6 +117,6 @@ typedef struct SpeexSBMode {
 } SpeexSBMode;
 
 
-
+extern SpeexSBMode sb_wb_mode;
 
 #endif

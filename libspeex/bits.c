@@ -189,6 +189,27 @@ unsigned int speex_bits_unpack_unsigned(SpeexBits *bits, int nbBits)
    return d;
 }
 
+int speex_bits_peek(SpeexBits *bits)
+{
+   return (bits->bytes[bits->bytePtr]>>(7-bits->bitPtr))&1;
+}
+
+void speex_bits_advance(SpeexBits *bits, int n)
+{
+   int nbytes, nbits;
+   nbytes = n >> 3;
+   nbits = n & 7;
+   
+   bits->bytePtr += nbytes;
+   bits->bitPtr += nbits;
+   
+   if (bits->bitPtr>7)
+   {
+      bits->bitPtr-=8;
+      bits->bytePtr++;
+   }
+}
+
 int speex_bits_nbytes(SpeexBits *bits)
 {
    return ((bits->nbBits+7)>>3);
