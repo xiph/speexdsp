@@ -92,9 +92,9 @@ void speex_init_header(SpeexHeader *header, int rate, int nb_channels, SpeexMode
    header->vbr = 0;
    
    header->frames_per_packet = 0;
+   header->extra_headers = 0;
    header->reserved1 = 0;
    header->reserved2 = 0;
-   header->reserved3 = 0;
 }
 
 char *speex_header_to_packet(SpeexHeader *header, int *size)
