@@ -1,7 +1,14 @@
-/* Copyright (C) 2002 Jean-Marc Valin 
+/* Copyright (C) 2004 CSIRO Australia
    File: modes_noglobals.c
 
-   Describes the different modes of the codec
+   Hacked by Conrad Parker, based on modes.c:
+   Copyright (C) 2002 Jean-Marc Valin 
+
+   Describes the different modes of the codec. This file differs from
+   modes.c in that SpeexMode structures are dynamically allocated,
+   rather than being statically defined. This introduces some minor
+   API changes which are described in the file README.symbian in the
+   top level of the Speex source distribution.
 
    Redistribution and use in source and binary forms, with or without
    modification, are permitted provided that the following conditions

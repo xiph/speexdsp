@@ -1,7 +1,8 @@
+/* Copyright (C) 2004 CSIRO Australia */
 /* Copyright (C) 2002 Jean-Marc Valin*/
 /**
   @file speex_noglobals.h
-  @brief Describes the different modes of the codec
+  @brief Dynamically allocates the different modes of the codec
 */
 /*
    Redistribution and use in source and binary forms, with or without
