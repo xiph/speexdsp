@@ -67,8 +67,6 @@ Modified by Jean-Marc Valin
 
 \*---------------------------------------------------------------------------*/
 
-#undef FIXED_POINT
-
 #ifdef FIXED_POINT
 
 static float cheb_poly_eva(float *coef,float x,int m,char *stack)
@@ -199,8 +197,8 @@ int lpc_to_lsp (spx_coef_t *a,int lpcrdr,float *freq,int nb,float delta, char *s
     *px++ = 1.0;
     *qx++ = 1.0;
     for(i=1;i<=m;i++){
-	*px++ = a[i]+a[lpcrdr+1-i]-*p++;
-	*qx++ = a[i]-a[lpcrdr+1-i]+*q++;
+	*px++ = (a[i]+a[lpcrdr+1-i])/8192.-*p++;
+	*qx++ = (a[i]-a[lpcrdr+1-i])/8192.+*q++;
     }
     px = P;
     qx = Q;
@@ -342,23 +340,22 @@ void lsp_to_lpc(float *freq,spx_coef_t *ak,int lpcrdr, char *stack)
 	    n4 = n3 + 1;
 	    xout1 = xin1 - MULT16_32_Q14(freqn[i2],*n1) + *n2;
             xout2 = xin2 - MULT16_32_Q14(freqn[i2+1],*n3) + *n4;
-	    *n2 = floor(.5+*n1);
-	    *n4 = floor(.5+*n3);
-	    *n1 = floor(.5+xin1);
-	    *n3 = floor(.5+xin2);
+	    *n2 = *n1;
+	    *n4 = *n3;
+	    *n1 = xin1;
+	    *n3 = xin2;
 	    xin1 = xout1;
 	    xin2 = xout2;
 	}
 	xout1 = xin1 + *(n4+1);
 	xout2 = xin2 - *(n4+2);
-	ak[j] = ((128+xout1 + xout2)>>8)/8192.;
+	ak[j] = ((128+xout1 + xout2)>>8);
 	*(n4+1) = xin1;
 	*(n4+2) = xin2;
 
 	xin1 = 0.0;
 	xin2 = 0.0;
     }
-
 }
 #else
 

@@ -61,8 +61,8 @@ void filter_mem2(float *x, spx_coef_t *num, spx_coef_t *den, float *y, int N, in
    
    for (i=0;i<ord+1;i++)
    {
-      nums[i] = (int)floor(.5+8192*num[i]);
-      dens[i] = (int)floor(.5+8192*den[i]);
+      nums[i] = (int)floor(.5+num[i]);
+      dens[i] = (int)floor(.5+den[i]);
    }
 
    for (i=0;i<N;i++)
@@ -88,12 +88,12 @@ void iir_mem2(float *x, spx_coef_t *den, float *y, int N, int ord, spx_mem_t *me
    
    for (i=0;i<11;i++)
    {
-      if (fabs(den[i])>3.999)
+      if (fabs(den[i])>3.999*8192)
       {
          speex_warning_int("tata", den[i]*100);
-         den[i]=3.999;
+         den[i]=3.999*8192;
       }
-      dens[i] = (int)floor(.5+8192*den[i]);
+      dens[i] = (int)floor(.5+den[i]);
    }
 
    for (i=0;i<N;i++)
@@ -120,7 +120,7 @@ void fir_mem2(float *x, spx_coef_t *num, float *y, int N, int ord, spx_mem_t *me
    
    for (i=0;i<11;i++)
    {
-      nums[i] = (int)floor(.5+8192*num[i]);
+      nums[i] = (int)floor(.5+num[i]);
    }
 
    for (i=0;i<N;i++)

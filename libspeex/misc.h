@@ -48,11 +48,11 @@
 
 #ifdef FIXED_POINT
 
-typedef int spx_mem_t;
-typedef float spx_coef_t;
-typedef float spx_sig_t;
-typedef short spx_word16_t;
-typedef int spx_word32_t;
+typedef short        spx_word16_t;
+typedef int          spx_word32_t;
+typedef spx_word32_t spx_mem_t;
+typedef spx_word16_t spx_coef_t;
+typedef float   spx_sig_t;
 
 #define MULT16_32_Q14(a,b) (((a)*((b)>>14)) + ((a)*((signed int)((b)&0x00003fff))>>14))
 #define MULT16_32_Q15(a,b) (((a)*((b)>>15)) + ((a)*((signed int)((b)&0x00007fff))>>15))

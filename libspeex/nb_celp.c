@@ -243,7 +243,7 @@ int nb_encode(void *state, float *in, SpeexBits *bits)
 
    /* Levinson-Durbin */
    _spx_lpc(st->lpc+1, st->autocorr, st->lpcSize);
-   st->lpc[0]=1;
+   st->lpc[0]=8192.;
 
    /* LPC to LSPs (x-domain) transform */
    roots=lpc_to_lsp (st->lpc, st->lpcSize, st->lsp, 15, 0.2, stack);

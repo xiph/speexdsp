@@ -107,7 +107,7 @@ int          p
       error -= MULT16_16_Q13(r,MULT16_16_Q13(error,r));
    }
    for (i = 0; i < p; i++)
-      lpc[i] = lpcq[i]/8192.;
+      lpc[i] = lpcq[i];
    return error;
 }
 
