@@ -618,9 +618,11 @@ int sb_encode(void *state, short *in, SpeexBits *bits)
          for (i=0;i<st->subframeSize;i++)
            exc[i]=0;
 
-
+#ifdef FIXED_POINT
+         signal_div(target, target, .5+scale, st->subframeSize);
+#else
          signal_div(target, target, scale, st->subframeSize);
-
+#endif
          /* Reset excitation */
          for (i=0;i<st->subframeSize;i++)
             innov[i]=0;
@@ -631,8 +633,11 @@ int sb_encode(void *state, short *in, SpeexBits *bits)
                                    innov, syn_resp, bits, stack, (st->complexity+1)>>1);
          /*print_vec(target, st->subframeSize, "after");*/
 
+#ifdef FIXED_POINT
+         signal_mul(innov, innov, .5+scale, st->subframeSize);
+#else
          signal_mul(innov, innov, scale, st->subframeSize);
-
+#endif
          for (i=0;i<st->subframeSize;i++)
             exc[i] += innov[i];
 
@@ -1043,7 +1048,11 @@ int sb_decode(void *state, SpeexBits *bits, short *out)
          SUBMODE(innovation_unquant)(exc, SUBMODE(innovation_params), st->subframeSize, 
                                 bits, stack);
 
+#ifdef FIXED_POINT
+         signal_mul(exc,exc,.5+scale,st->subframeSize);
+#else
          signal_mul(exc,exc,scale,st->subframeSize);
+#endif
 
          if (SUBMODE(double_codebook)) {
             char *tmp_stack=stack;

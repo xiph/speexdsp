@@ -788,8 +788,11 @@ int nb_encode(void *state, short *in, SpeexBits *bits)
          /*printf ("%f %f\n", ener, ol_gain);*/
 
          /* Normalize innovation */
+#ifdef FIXED_POINT
          signal_div(target, target, .5+ener, st->subframeSize);
-         
+#else
+         signal_div(target, target, ener, st->subframeSize);
+#endif
          /* Quantize innovation */
          if (SUBMODE(innovation_quant))
          {
@@ -799,7 +802,11 @@ int nb_encode(void *state, short *in, SpeexBits *bits)
                                       innov, syn_resp, bits, stack, st->complexity);
             
             /* De-normalize innovation and update excitation */
+#ifdef FIXED_POINT
             signal_mul(innov, innov, .5+ener, st->subframeSize);
+#else
+            signal_mul(innov, innov, ener, st->subframeSize);
+#endif
 
             for (i=0;i<st->subframeSize;i++)
                exc[i] += innov[i];
@@ -824,7 +831,11 @@ int nb_encode(void *state, short *in, SpeexBits *bits)
                exc[i] += innov2[i];
          }
 
+#ifdef FIXED_POINT
          signal_mul(target, target, .5+ener, st->subframeSize);
+#else
+         signal_mul(target, target, ener, st->subframeSize);
+#endif
       }
 
       /*Keep the previous memory*/
@@ -1523,8 +1534,11 @@ int nb_decode(void *state, SpeexBits *bits, short *out)
          }
 
          /* De-normalize innovation and update excitation */
+#ifdef FIXED_POINT
          signal_mul(innov, innov, .5+ener, st->subframeSize);
-
+#else
+         signal_mul(innov, innov, ener, st->subframeSize);
+#endif
          /*Vocoder mode*/
          if (st->submodeID==1) 
          {

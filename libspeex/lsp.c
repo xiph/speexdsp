@@ -58,26 +58,31 @@ Modified by Jean-Marc Valin
 
 #ifdef FIXED_POINT
 
-#define C1 8187
-#define C2 -4058
-#define C3 301
-static spx_word16_t cos_32(spx_word16_t x)
+#define C1 8192
+#define C2 -4096
+#define C3 340
+#define C4 -10
+
+static spx_word16_t spx_cos(spx_word16_t x)
 {
    spx_word16_t x2;
 
    if (x<12868)
    {
-      x2 = MULT16_16_Q13(x,x);
-      return ADD32(C1, MULT16_16_Q13(x2, ADD32(C2, MULT16_16_Q13(C3, x2))));
+      x2 = MULT16_16_P13(x,x);
+      return ADD32(C1, MULT16_16_P13(x2, ADD32(C2, MULT16_16_P13(x2, ADD32(C3, MULT16_16_P13(C4, x2))))));
    } else {
       x = 25736-x;
-      x2 = MULT16_16_Q13(x,x);
-      return SUB32(-C1, MULT16_16_Q13(x2, ADD32(C2, MULT16_16_Q13(C3, x2))));
+      x2 = MULT16_16_P13(x,x);
+      return SUB32(-C1, MULT16_16_P13(x2, ADD32(C2, MULT16_16_P13(x2, ADD32(C3, MULT16_16_P13(C4, x2))))));
+      //return SUB32(-C1, MULT16_16_Q13(x2, ADD32(C2, MULT16_16_Q13(C3, x2))));
    }
 }
 
+
 #define FREQ_SCALE 16384
-#define ANGLE2X(a) (SHL(cos_32(a),2))
+//#define ANGLE2X(a) (32768*cos(((a)/8192.)))
+#define ANGLE2X(a) (SHL(spx_cos(a),2))
 //#define X2ANGLE(x) (acos(.00006103515625*(x))*LSP_SCALING)
 #define X2ANGLE(x) (spx_acos(x))
 /* maybe we could approximate acos as 
