@@ -32,7 +32,19 @@ AM_PROG_LIBTOOL
 AC_C_BIGENDIAN
 AC_CHECK_HEADERS(sys/soundcard.h)
 
+AC_ARG_ENABLE(ogg,
+      [  --enable-ogg=[yes/no]    Turn on or off the use of ogg
+libraries [default=yes]],
+      [case "${enableval}" in
+        yes) useogg=true ;;
+        no)  useogg=false ;;
+        *) AC_MSG_ERROR(bad value ${enableval} for --enable-ogg) ;;
+      esac],[useogg=true])
+
+if test x$useogg = xtrue; then
 AC_PATH_LIBOGG
+fi
+
 if test "$have_libogg" = yes; then
    src=src
 else
