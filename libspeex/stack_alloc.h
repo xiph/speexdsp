@@ -34,13 +34,15 @@
 #ifndef STACK_ALLOC_H
 #define STACK_ALLOC_H
 
-/*
-#define PUSH(stack, size) (((int*)stack)[size]=(size),stack+=(size)+1,stack-(size)-1)
+
+/*#define PUSH(stack, size) (((int*)stack)[size]=(size),stack+=(size)+1,stack-(size)-1)
 #define POP(stack) (stack-=((int*)stack)[-1]+1)
 */
 
-/*#define PUSH(stack, size) (stack+=(size),stack-(size))*/
+#define PUSH(stack, size) (stack+=(size),stack-(size))
 
-#define PUSH(stack, size) (stack=(float*)(((int)stack)+(size*sizeof(float))),(float*)(((int)stack)-(size*sizeof(float))))
+
+/*#define PUSH(stack, size) (stack=(float*)(((int)stack)+(size*sizeof(float))),(float*)(((int)stack)-(size*sizeof(float))))
+ */
 
 #endif
