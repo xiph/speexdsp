@@ -84,7 +84,7 @@ int   nsf                       /* number of samples in subframe */
   bscore = 0.0;
   impulse[0] = 1.0;
 
-  /* Calculate impulse response of  A(z/g2) / ( A(z)*(z/g1) ) */
+  /* Calculate impulse response of  A(z/g1) / ( A(z)*(z/g2) ) */
   residue_zero(impulse, awk1, h, nsf, p);
   syn_filt_zero(h, ak, h, nsf, p);
   syn_filt_zero(h, awk2, h, nsf,p);

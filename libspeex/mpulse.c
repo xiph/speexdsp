@@ -214,7 +214,7 @@ float *stack
 )
 {
    int i,j, nb_pulse;
-   float *resp, *t, *e, *pulses;
+   float *resp, *resp2, *energy, *t, *e, *pulses;
    float te=0,ee=0;
    float g;
    int nb_tracks, track_ind_bits;
@@ -234,10 +234,13 @@ float *stack
    nb = (int*)PUSH(stack,nb_tracks);
 
    resp=PUSH(stack, nsf);
+   resp2=PUSH(stack, nsf);
+   energy=PUSH(stack, nsf);
    t=PUSH(stack, nsf);
    e=PUSH(stack, nsf);
    pulses=PUSH(stack, nsf);
    
+   /*Compute optimal (real) excitation from target*/
    syn_filt_zero(target, awk1, e, nsf, p);
    residue_zero(e, ak, e, nsf, p);
    residue_zero(e, awk2, e, nsf, p);
@@ -247,16 +250,22 @@ float *stack
       te+=target[i]*target[i];
       ee+=e[i]*e[i];
    }
+   /*Compute global gain (coef found from linear regression and tweaking)*/
    g=2.2/sqrt(nb_pulse)*exp(0.18163*log(te+1)+0.17293*log(ee+1));
    
    e[0]=1;
    for (i=1;i<nsf;i++)
       e[i]=0;
 
+   /*Impulse response of W(z)/A(z)*/
    residue_zero(e, awk1, resp, nsf, p);
    syn_filt_zero(resp, ak, resp, nsf, p);
    syn_filt_zero(resp, awk2, resp, nsf, p);
    
+   /*Impulse response * gain*/
+   for (i=0;i<nsf;i++)
+      resp2[i]=g*resp[i];
+
    for (i=0;i<nsf;i++)
       e[i]=0;
 
@@ -272,21 +281,29 @@ float *stack
       float best_score=1e30, best_gain=0;
       int best_ind=0;
       /*For all positions*/
+      energy[0]=0;
+      for (j=1;j<nsf;j++)
+         energy[j]=energy[j-1]+t[j-1]*t[j-1];
+      /*For each position*/
       for (j=0;j<nsf;j++)
       {
          int k;
-         float dist=0;
+         float dist;
+         float *base=t+j;
          /*Fill any track until it's full*/
          /*if (nb[j%nb_tracks]==pulses_per_track)
               continue;*/
          /*Constrain search in alternating tracks*/
+         /*FIXME: Should get rid of this, it's *really* slow*/
          if ((i%nb_tracks) != (j%nb_tracks))
            continue;
          /*Try for positive sign*/
-         for (k=0;k<j;k++)
-            dist+=t[k]*t[k];
+         dist=energy[j];
          for (k=0;k<nsf-j;k++)
-            dist+=(t[k+j]-g*resp[k])*(t[k+j]-g*resp[k]);
+         {
+            float tmp=(base[k]-resp2[k]);
+            dist+=tmp*tmp;
+         }
          if (dist<best_score || j==0)
          {
             best_score=dist;
@@ -294,12 +311,13 @@ float *stack
             best_ind=j;
          }
          /*Try again for negative sign*/
-         dist=0;
-         for (k=0;k<j;k++)
-            dist+=t[k]*t[k];
+         dist=energy[j];
          for (k=0;k<nsf-j;k++)
-            dist+=(t[k+j]+g*resp[k])*(t[k+j]+g*resp[k]);
-         if (dist<best_score || j==0)
+         {
+            float tmp=(base[k]+resp2[k]);
+            dist+=tmp*tmp;
+         }
+            if (dist<best_score || j==0)
          {
             best_score=dist;
             best_gain=-g;
@@ -324,7 +342,7 @@ float *stack
          nb[t]++;
       }
    }
-   
+
    /*Global gain re-estimation*/
    if (1) {
       float f;
@@ -386,6 +404,8 @@ float *stack
         printf ("%d ", tr[j]);
         printf ("\n");*/
    }
+   POP(stack);
+   POP(stack);
    POP(stack);
    POP(stack);
    POP(stack);
