@@ -397,7 +397,7 @@ void sb_encode(void *state, float *in, SpeexBits *bits)
 
       offset = st->subframeSize*sub;
       sp=st->high+offset;
-      exc=st->excBuf+offset;
+      exc=st->exc+offset;
       res=st->res+offset;
       target=st->target+offset;
       sw=st->sw+offset;
@@ -428,13 +428,14 @@ void sb_encode(void *state, float *in, SpeexBits *bits)
          filters */
       rl=rh=0;
       tmp=1;
+      st->pi_gain[sub]=0;
       for (i=0;i<=st->lpcSize;i++)
       {
          rh += tmp*st->interp_qlpc[i];
          tmp = -tmp;
+         st->pi_gain[sub]+=st->interp_qlpc[i];
       }
       rl = low_pi_gain[sub];
-      st->pi_gain[sub]=rh;
       rl=1/(fabs(rl)+.01);
       rh=1/(fabs(rh)+.01);
       /* Compute ratio, will help predict the gain */
@@ -461,6 +462,11 @@ void sb_encode(void *state, float *in, SpeexBits *bits)
          g=sqrt(g);
 
          g *= filter_ratio;
+
+         if (st->full_frame_size==640)
+         {
+            printf ("encode: %f %f %f %f %f\n", g, rl, rh, el, eh);
+         }
          /* Gain quantization */
          {
             int quant = (int) floor(.5 + 27 + 8.0 * log((g+.0001)));
@@ -627,8 +633,8 @@ void *sb_decoder_init(SpeexMode *m)
    st->st_low = speex_decoder_init(mode->nb_mode);
    st->full_frame_size = 2*mode->frameSize;
    st->frame_size = mode->frameSize;
-   st->subframeSize = 40;
-   st->nbSubframes = 4;
+   st->subframeSize = mode->subframeSize;
+   st->nbSubframes = mode->frameSize/mode->subframeSize;
    st->lpcSize=8;
 
    st->submodes=mode->submodes;
@@ -781,7 +787,6 @@ int sb_decode(void *state, SpeexBits *bits, float *out)
    speex_decoder_ctl(st->st_low, SPEEX_GET_EXC, low_exc);
    speex_decoder_ctl(st->st_low, SPEEX_GET_INNOV, low_innov);
 
-
    SUBMODE(lsp_unquant)(st->qlsp, st->lpcSize, bits);
    
    if (st->first)
@@ -794,6 +799,7 @@ int sb_decode(void *state, SpeexBits *bits, float *out)
    {
       float *exc, *sp, tmp, filter_ratio, el=0;
       int offset;
+      float rl=0,rh=0;
       
       offset = st->subframeSize*sub;
       sp=st->high+offset;
@@ -815,20 +821,20 @@ int sb_decode(void *state, SpeexBits *bits, float *out)
 
       /* Calculate reponse ratio between the low and high filter in the middle
          of the band (4000 Hz) */
-      {
-         float rl=0, rh=0;
+      
          tmp=1;
+         st->pi_gain[sub]=0;
          for (i=0;i<=st->lpcSize;i++)
          {
             rh += tmp*st->interp_qlpc[i];
             tmp = -tmp;
+            st->pi_gain[sub]+=st->interp_qlpc[i];
          }
          rl = low_pi_gain[sub];
-         st->pi_gain[sub]=rh;
          rl=1/(fabs(rl)+.01);
          rh=1/(fabs(rh)+.01);
          filter_ratio=fabs(.01+rh)/(.01+fabs(rl));
-      }
+      
       
       for (i=0;i<st->subframeSize;i++)
          exc[i]=0;
@@ -836,11 +842,15 @@ int sb_decode(void *state, SpeexBits *bits, float *out)
       {
          float g;
          int quant;
-
+         printf ("subframes: %d\n", st->subframeSize);
          for (i=0;i<st->subframeSize;i++)
             el+=sqr(low_innov[offset+i]);
          quant = speex_bits_unpack_unsigned(bits, 5);
          g= exp(((float)quant-27)/8.0);
+         if (st->full_frame_size==640)
+         {
+            printf ("decode: %f %f %f %f\n", g, rl, rh, el);
+         }
          
          /*printf ("unquant folding gain: %f\n", g);*/
          g /= filter_ratio;
@@ -1016,7 +1026,7 @@ void sb_encoder_ctl(void *state, int request, void *ptr)
          for (i=0;i<st->full_frame_size;i++)
             e[i]=0;
          for (i=0;i<st->frame_size;i++)
-            e[2*i]=st->exc[i];
+            e[2*i]=2*st->exc[i];
       }
       break;
    case SPEEX_GET_INNOV:
@@ -1026,7 +1036,7 @@ void sb_encoder_ctl(void *state, int request, void *ptr)
          for (i=0;i<st->full_frame_size;i++)
             e[i]=0;
          for (i=0;i<st->frame_size;i++)
-            e[2*i]=st->exc[i];
+            e[2*i]=2*st->exc[i];
       }
       break;
    default:
@@ -1069,7 +1079,7 @@ void sb_decoder_ctl(void *state, int request, void *ptr)
          for (i=0;i<st->full_frame_size;i++)
             e[i]=0;
          for (i=0;i<st->frame_size;i++)
-            e[2*i]=st->exc[i];
+            e[2*i]=2*st->exc[i];
       }
       break;
    case SPEEX_GET_INNOV:
@@ -1079,7 +1089,7 @@ void sb_decoder_ctl(void *state, int request, void *ptr)
          for (i=0;i<st->full_frame_size;i++)
             e[i]=0;
          for (i=0;i<st->frame_size;i++)
-            e[2*i]=st->exc[i];
+            e[2*i]=2*st->exc[i];
       }
       break;
    default:
