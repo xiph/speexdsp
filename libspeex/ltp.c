@@ -505,13 +505,11 @@ int cdbk_offset
    int i;
    int pitch;
    int gain_index;
-   float gain[3];
+   spx_word16_t gain[3];
    signed char *gain_cdbk;
    int gain_cdbk_size;
    ltp_params *params;
-#ifdef FIXED_POINT
-   spx_word16_t sgain[3];
-#endif
+
    params = (ltp_params*) par;
    gain_cdbk_size = 1<<params->gain_bits;
    gain_cdbk = params->gain_cdbk + 3*gain_cdbk_size*cdbk_offset;
@@ -521,9 +519,9 @@ int cdbk_offset
    gain_index = speex_bits_unpack_unsigned(bits, params->gain_bits);
    /*printf ("decode pitch: %d %d\n", pitch, gain_index);*/
 #ifdef FIXED_POINT
-   sgain[0] = 32+(spx_word16_t)gain_cdbk[gain_index*3];
-   sgain[1] = 32+(spx_word16_t)gain_cdbk[gain_index*3+1];
-   sgain[2] = 32+(spx_word16_t)gain_cdbk[gain_index*3+2];
+   gain[0] = 32+(spx_word16_t)gain_cdbk[gain_index*3];
+   gain[1] = 32+(spx_word16_t)gain_cdbk[gain_index*3+1];
+   gain[2] = 32+(spx_word16_t)gain_cdbk[gain_index*3+2];
 #else
    gain[0] = 0.015625*gain_cdbk[gain_index*3]+.5;
    gain[1] = 0.015625*gain_cdbk[gain_index*3+1]+.5;
@@ -533,24 +531,12 @@ int cdbk_offset
    if (count_lost && pitch > subframe_offset)
    {
       float gain_sum;
-#ifdef FIXED_POINT
-      gain[0] = 0.015625*sgain[0];
-      gain[1] = 0.015625*sgain[1];
-      gain[2] = 0.015625*sgain[2];
-#endif
       if (1) {
 	 float tmp = count_lost < 4 ? GAIN_SCALING_1*last_pitch_gain : 0.4 * GAIN_SCALING_1 * last_pitch_gain;
          if (tmp>.95)
             tmp=.95;
-         gain_sum = fabs(gain[1]);
-         if (gain[0]>0)
-            gain_sum += gain[0];
-         else
-            gain_sum -= .5*gain[0];
-         if (gain[2]>0)
-            gain_sum += gain[2];
-         else
-            gain_sum -= .5*gain[2];
+         gain_sum = GAIN_SCALING_1*gain_3tap_to_1tap(gain);
+
 	 if (gain_sum > tmp) {
 	    float fact = tmp/gain_sum;
 	    for (i=0;i<3;i++)
@@ -560,20 +546,12 @@ int cdbk_offset
 
       }
 
-      if (0) {
-      gain_sum = fabs(gain[0])+fabs(gain[1])+fabs(gain[2]);
-	 if (gain_sum>.95) {
-         float fact = .95/gain_sum;
-         for (i=0;i<3;i++)
-            gain[i]*=fact;
-      }
-   }
    }
 
    *pitch_val = pitch;
-   gain_val[0]=sgain[0];
-   gain_val[1]=sgain[1];
-   gain_val[2]=sgain[2];
+   gain_val[0]=gain[0];
+   gain_val[1]=gain[1];
+   gain_val[2]=gain[2];
 
    {
       spx_sig_t *e[3];
@@ -619,7 +597,7 @@ int cdbk_offset
 #ifdef FIXED_POINT
       {
          for (i=0;i<nsf;i++)
-            exc[i]=SHL(MULT16_32_Q15(SHL(sgain[0],7),e[2][i])+MULT16_32_Q15(SHL(sgain[1],7),e[1][i])+MULT16_32_Q15(SHL(sgain[2],7),e[0][i]),2);
+            exc[i]=SHL(MULT16_32_Q15(SHL(gain[0],7),e[2][i])+MULT16_32_Q15(SHL(gain[1],7),e[1][i])+MULT16_32_Q15(SHL(gain[2],7),e[0][i]),2);
       }
 #else
       for (i=0;i<nsf;i++)
