@@ -351,6 +351,8 @@ int sb_encode(void *state, float *in, SpeexBits *bits)
          int modeid;
          modeid = mode->nb_modes-1;
          st->relative_quality+=1.0*(ratio+2);
+	 if (st->relative_quality<-1)
+            st->relative_quality=-1;
          while (modeid)
          {
             int v1;
@@ -361,7 +363,7 @@ int sb_encode(void *state, float *in, SpeexBits *bits)
             else
                thresh = (st->vbr_quality-v1)   * mode->vbr_thresh[modeid][v1+1] + 
                         (1+v1-st->vbr_quality) * mode->vbr_thresh[modeid][v1];
-            if (st->relative_quality > thresh)
+            if (st->relative_quality >= thresh)
                break;
             modeid--;
          }
@@ -1250,7 +1252,7 @@ int sb_decoder_ctl(void *state, int request, void *ptr)
    switch(request)
    {
    case SPEEX_GET_LOW_MODE:
-      speex_encoder_ctl(st->st_low, SPEEX_GET_LOW_MODE, ptr);
+      speex_decoder_ctl(st->st_low, SPEEX_GET_LOW_MODE, ptr);
       break;
    case SPEEX_GET_FRAME_SIZE:
       (*(int*)ptr) = st->full_frame_size;

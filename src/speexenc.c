@@ -611,10 +611,10 @@ int main(int argc, char **argv)
       speex_encoder_ctl(st, SPEEX_SET_DTX, &tmp);
    if (dtx_enabled && !(vbr_enabled || abr_enabled || vad_enabled))
    {
-      fprintf (stderr, "Warning: --dtx is useless without --vad\n");
-   } else if ((vbr_enabled || abr_enabled) && (vad_enabled || dtx_enabled))
+      fprintf (stderr, "Warning: --dtx is useless without --vad, --vbr or --abr\n");
+   } else if ((vbr_enabled || abr_enabled) && (vad_enabled))
    {
-      fprintf (stderr, "Warning: --vad and --dtx are already implied by --vbr or --abr\n");
+      fprintf (stderr, "Warning: --vad is already implied by --vbr or --abr\n");
    }
 
    if (abr_enabled)
