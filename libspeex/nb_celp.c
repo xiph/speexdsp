@@ -872,7 +872,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
             SUBMODE(innovation_quant)(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2, 
                                       SUBMODE(innovation_params), st->lpcSize, st->subframeSize, 
                                       innov2, syn_resp, bits, tmp_stack, st->complexity);
-            signal_mul(innov2, innov2, ener*(1/2.2), st->subframeSize);
+            signal_mul(innov2, innov2, (spx_word32_t) (ener*(1/2.2)), st->subframeSize);
             for (i=0;i<st->subframeSize;i++)
                exc[i] += innov2[i];
          }
@@ -1596,7 +1596,7 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
             for (i=0;i<st->subframeSize;i++)
                innov2[i]=0;
             SUBMODE(innovation_unquant)(innov2, SUBMODE(innovation_params), st->subframeSize, bits, tmp_stack);
-            signal_mul(innov2, innov2, ener*(1/2.2), st->subframeSize);
+            signal_mul(innov2, innov2, (spx_word32_t) (ener*(1/2.2)), st->subframeSize);
             for (i=0;i<st->subframeSize;i++)
                exc[i] += innov2[i];
          }

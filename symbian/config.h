@@ -48,12 +48,10 @@
 #pragma warning(disable: 4244) /* conversion from '...' to '...', possible loss of data */
 #pragma warning(disable: 4701) /* local variable may be be used without having been initialized */
 
-#else /* ! __WINS__ */
+#endif /* ! __WINS__ */
 
-/* Use only fixed point arithmetic when decoding on a device */
+/* Use only fixed point arithmetic */
 
 #define FIXED_POINT 1
-
-#endif /* ! __WINS__ */
 
 #endif /* ! CONFIG_H */
