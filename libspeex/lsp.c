@@ -56,6 +56,15 @@ Modified by Jean-Marc Valin
 #define NULL 0
 #endif
 
+#ifdef FIXED_POINT
+#define ANGLE2X(a) (cos(a))
+#define X2ANGLE(x) (acos(x))
+#else
+#define ANGLE2X(a) (cos(a))
+#define X2ANGLE(x) (acos(x))
+#endif
+
+
 /*---------------------------------------------------------------------------*\
 
 	FUNCTION....: cheb_poly_eva()
@@ -291,7 +300,7 @@ int lpc_to_lsp (spx_coef_t *a,int lpcrdr,float *freq,int nb,float delta, char *s
 		}
 
 	       /* once zero is found, reset initial interval to xr 	*/
-	       freq[j] = acos(xm);
+	       freq[j] = X2ANGLE(xm);
 	       xl = xm;
 	       flag = 0;       		/* reset flag for next search 	*/
 	    }
@@ -335,7 +344,7 @@ void lsp_to_lpc(float *freq,spx_coef_t *ak,int lpcrdr, char *stack)
     
     freqn = PUSH(stack, lpcrdr, spx_word16_t);
     for (i=0;i<lpcrdr;i++)
-       freqn[i] = cos(freq[i])*32768.;
+       freqn[i] = ANGLE2X(freq[i])*32768.;
 
     Wp = PUSH(stack, 4*m+2, spx_word32_t);
     pw = Wp;
@@ -430,8 +439,8 @@ void lsp_to_lpc(float *freq,spx_coef_t *ak,int lpcrdr, char *stack)
 	    n2 = n1 + 1;
 	    n3 = n2 + 1;
 	    n4 = n3 + 1;
-	    xout1 = xin1 - 2*(cos(freq[i2])) * *n1 + *n2;
-	    xout2 = xin2 - 2*(cos(freq[i2+1])) * *n3 + *n4;
+	    xout1 = xin1 - 2*(ANGLE2X(freq[i2])) * *n1 + *n2;
+	    xout2 = xin2 - 2*(ANGLE2X(freq[i2+1])) * *n3 + *n4;
 	    *n2 = *n1;
 	    *n4 = *n3;
 	    *n1 = xin1;

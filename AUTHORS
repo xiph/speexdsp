@@ -8,6 +8,9 @@ David Rowe <david@voicetronix.com.au> via VoiceTronix
 John Francis Edwards:
    wave_out.[ch], some #ifdefs for windows port and MSVC project files
 
+Segher Boessenkool
+   Misc. optimizations (for QMF in particular)
+
 Atsuhiko Yamanaka <ymnk@jcraft.com>:
    Patch to speexenc.c to add Vorbis comment format
 

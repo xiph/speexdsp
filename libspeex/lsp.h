@@ -55,5 +55,4 @@ void lsp_to_lpc(float *freq, spx_coef_t *ak, int lpcrdr, char *stack);
 /*Added by JMV*/
 void lsp_enforce_margin(float *lsp, int len, float margin);
 
-
 #endif	/* __AK2LSPD__ */

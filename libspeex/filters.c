@@ -282,7 +282,7 @@ void residue_percep_zero(spx_sig_t *xx, spx_coef_t *ak, spx_coef_t *awk1, spx_co
    fir_mem2(y, awk2, y, N, ord, mem);
 }
 
-void qmf_decomp(short *xx, float *aa, spx_sig_t *y1, spx_sig_t *y2, int N, int M, float *mem, char *stack)
+void qmf_decomp(short *xx, spx_word16_t *aa, spx_sig_t *y1, spx_sig_t *y2, int N, int M, spx_word16_t *mem, char *stack)
 {
    int i,j,k,M2;
    spx_word16_t *a;
@@ -293,13 +293,9 @@ void qmf_decomp(short *xx, float *aa, spx_sig_t *y1, spx_sig_t *y2, int N, int M
    x = PUSH(stack, N+M-1, spx_word16_t);
    x2=x+M-1;
    M2=M>>1;
-#ifdef FIXED_POINT
-   for (i=0;i<M;i++)
-      a[M-i-1]=floor(.5+65536*aa[i]);
-#else
    for (i=0;i<M;i++)
       a[M-i-1]= aa[i];
-#endif
+
    for (i=0;i<M-1;i++)
       x[i]=mem[M-i-2];
    for (i=0;i<N;i++)
@@ -323,13 +319,12 @@ void qmf_decomp(short *xx, float *aa, spx_sig_t *y1, spx_sig_t *y2, int N, int M
 
 
 /* By segher */
-void fir_mem_up(spx_sig_t *x, float *aa, spx_sig_t *y, int N, int M, float *mem, char *stack)
+void fir_mem_up(spx_sig_t *x, spx_word16_t *a, spx_sig_t *y, int N, int M, spx_word32_t *mem, char *stack)
    /* assumptions:
       all odd x[i] are zero -- well, actually they are left out of the array now
       N and M are multiples of 4 */
 {
    int i, j;
-   spx_word16_t *a;
    spx_word16_t *xx;
    
    xx= PUSH(stack, M+N-1, spx_word16_t);
@@ -338,14 +333,6 @@ void fir_mem_up(spx_sig_t *x, float *aa, spx_sig_t *y, int N, int M, float *mem,
       xx[2*i] = SHR(x[N/2-1-i],SIG_SHIFT+1);
    for (i = 0; i < M - 1; i += 2)
       xx[N+i] = mem[i+1];
-
-#ifdef FIXED_POINT
-   a = PUSH(stack, M, spx_word16_t);
-   for (i=0;i<M;i++)
-      a[i] = floor(.5+65536*aa[i]);
-#else
-   a = aa;
-#endif
 
    for (i = 0; i < N; i += 4) {
       spx_sig_t y0, y1, y2, y3;

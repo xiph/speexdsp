@@ -154,7 +154,7 @@ void *nb_encoder_init(SpeexMode *m)
    st->first = 1;
    for (i=0;i<st->lpcSize;i++)
    {
-      st->lsp[i]=(M_PI*((float)(i+1)))/(st->lpcSize+1);
+      st->lsp[i]=8192*(M_PI*((float)(i+1)))/(st->lpcSize+1);
    }
 
    st->mem_sp = PUSH(st->stack, st->lpcSize, spx_mem_t);

@@ -61,7 +61,8 @@ typedef struct SBEncState {
    spx_sig_t *x0d, *x1d; /**< QMF filter signals*/
    spx_sig_t *high;                /**< High-band signal (buffer) */
    spx_sig_t *y0, *y1;             /**< QMF synthesis signals */
-   float *h0_mem, *h1_mem, *g0_mem, *g1_mem; /**< QMF memories */
+   spx_word16_t *h0_mem, *h1_mem;
+   spx_word32_t *g0_mem, *g1_mem; /**< QMF memories */
 
    spx_sig_t *excBuf;              /**< High-band excitation */
    spx_sig_t *exc;                 /**< High-band excitation (for QMF only)*/
@@ -125,7 +126,7 @@ typedef struct SBDecState {
    spx_sig_t *x0d, *x1d;
    spx_sig_t *high;
    spx_sig_t *y0, *y1;
-   float *h0_mem, *h1_mem, *g0_mem, *g1_mem;
+   spx_word32_t *g0_mem, *g1_mem;
 
    spx_sig_t *exc;
    float *qlsp;

@@ -54,6 +54,14 @@
 #define SUBMODE(x) st->submodes[st->submodeID]->x
 
 #define QMF_ORDER 64
+
+#ifdef FIXED_POINT
+static spx_word16_t h0[64] = {2, -7, -7, 18, 15, -39, -25, 75, 35, -130, -41, 212, 38, -327, -17, 483, -32, -689, 124, 956, -283, -1307, 543, 1780, -973, -2467, 1733, 3633, -3339, -6409, 9059, 30153, 30153, 9059, -6409, -3339, 3633, 1733, -2467, -973, 1780, 543, -1307, -283, 956, 124, -689, -32, 483, -17, -327, 38, 212, -41, -130, 35, 75, -25, -39, 15, 18, -7, -7, 2};
+
+static spx_word16_t h1[64] = {2, 7, -7, -18, 15, 39, -25, -75, 35, 130, -41, -212, 38, 327, -17, -483, -32, 689, 124, -956, -283, 1307, 543, -1780, -973, 2467, 1733, -3633, -3339, 6409, 9059, -30153, 30153, -9059, -6409, 3339, 3633, -1733, -2467, 973, 1780, -543, -1307, 283, 956, -124, -689, 32, 483, 17, -327, -38, 212, 41, -130, -35, 75, 25, -39, -15, 18, 7, -7, -2};
+
+
+#else
 static float h0[64] = {
    3.596189e-05, -0.0001123515,
    -0.0001104587, 0.0002790277,
@@ -123,6 +131,7 @@ static float h1[64] = {
    0.0002790277, 0.0001104587,
    -0.0001123515, -3.596189e-05
 };
+#endif
 
 void *sb_encoder_init(SpeexMode *m)
 {
@@ -164,10 +173,10 @@ void *sb_encoder_init(SpeexMode *m)
    st->y0=PUSH(st->stack, st->full_frame_size, spx_sig_t);
    st->y1=PUSH(st->stack, st->full_frame_size, spx_sig_t);
 
-   st->h0_mem=PUSH(st->stack, QMF_ORDER, float);
-   st->h1_mem=PUSH(st->stack, QMF_ORDER, float);
-   st->g0_mem=PUSH(st->stack, QMF_ORDER, float);
-   st->g1_mem=PUSH(st->stack, QMF_ORDER, float);
+   st->h0_mem=PUSH(st->stack, QMF_ORDER, spx_word16_t);
+   st->h1_mem=PUSH(st->stack, QMF_ORDER, spx_word16_t);
+   st->g0_mem=PUSH(st->stack, QMF_ORDER, spx_word32_t);
+   st->g1_mem=PUSH(st->stack, QMF_ORDER, spx_word32_t);
 
    st->buf=PUSH(st->stack, st->windowSize, spx_sig_t);
    st->excBuf=PUSH(st->stack, st->bufSize, spx_sig_t);
@@ -696,10 +705,8 @@ void *sb_decoder_init(SpeexMode *m)
    st->y0=PUSH(st->stack, st->full_frame_size, spx_sig_t);
    st->y1=PUSH(st->stack, st->full_frame_size, spx_sig_t);
 
-   st->h0_mem=PUSH(st->stack, QMF_ORDER, float);
-   st->h1_mem=PUSH(st->stack, QMF_ORDER, float);
-   st->g0_mem=PUSH(st->stack, QMF_ORDER, float);
-   st->g1_mem=PUSH(st->stack, QMF_ORDER, float);
+   st->g0_mem=PUSH(st->stack, QMF_ORDER, spx_word32_t);
+   st->g1_mem=PUSH(st->stack, QMF_ORDER, spx_word32_t);
 
    st->exc=PUSH(st->stack, st->frame_size, spx_sig_t);
 
@@ -1354,7 +1361,7 @@ int sb_decoder_ctl(void *state, int request, void *ptr)
          for (i=0;i<2*st->lpcSize;i++)
             st->mem_sp[i]=0;
          for (i=0;i<QMF_ORDER;i++)
-            st->h0_mem[i]=st->h1_mem[i]=st->g0_mem[i]=st->g1_mem[i]=0;
+            st->g0_mem[i]=st->g1_mem[i]=0;
       }
       break;
    case SPEEX_SET_SUBMODE_ENCODING:
