@@ -68,40 +68,54 @@ static float inner_prod(float *x, float *y, int len)
 void open_loop_nbest_pitch(float *sw, int start, int end, int len, int *pitch, float *gain, int N, float *stack)
 {
    int i,j,k;
-   float corr=0;
-   float energy;
-   float score=0, *best_score;
+   /*float corr=0;*/
+   /*float energy;*/
+   float *best_score;
    float e0;
+   float *corr, *energy, *score;
 
    best_score = PUSH(stack,N);
+   corr = PUSH(stack,end-start+1);
+   energy = PUSH(stack,end-start+2);
+   score = PUSH(stack,end-start+1);
    for (i=0;i<N;i++)
    {
         best_score[i]=-1;
         gain[i]=0;
    }
-   energy=inner_prod(sw-start, sw-start, len);
+   energy[0]=inner_prod(sw-start, sw-start, len);
    e0=inner_prod(sw, sw, len);
    for (i=start;i<=end;i++)
    {
-      if (0&&score < .3*best_score[N-1])
-         score = .9*best_score[N-1];
-      else
-      {
-         corr=inner_prod(sw, sw-i, len);
-         score=corr*corr/(energy+1);
-      }
-      if (score>best_score[N-1])
+      /* Update energy for next pitch*/
+      energy[i-start+1] = energy[i-start] + sw[-i-1]*sw[-i-1] - sw[-i+len-1]*sw[-i+len-1];
+   }
+   for (i=start;i<=end;i++)
+   {
+      corr[i-start]=0;
+      score[i-start]=0;
+   }
+
+   for (i=start;i<=end;i++)
+   {
+      /* Compute correlation*/
+      corr[i-start]=inner_prod(sw, sw-i, len);
+      score[i-start]=corr[i-start]*corr[i-start]/(energy[i-start]+1);
+   }
+   for (i=start;i<=end;i++)
+   {
+      if (score[i-start]>best_score[N-1])
       {
          float g1, g;
-         g1 = corr/(energy+10);
-         g = sqrt(g1*corr/(e0+10));
+         g1 = corr[i-start]/(energy[i-start]+10);
+         g = sqrt(g1*corr[i-start]/(e0+10));
          if (g>g1)
             g=g1;
          if (g<0)
             g=0;
          for (j=0;j<N;j++)
          {
-            if (score > best_score[j])
+            if (score[i-start] > best_score[j])
             {
                for (k=N-1;k>j;k--)
                {
@@ -109,18 +123,15 @@ void open_loop_nbest_pitch(float *sw, int start, int end, int len, int *pitch, f
                   pitch[k]=pitch[k-1];
                   gain[k] = gain[k-1];
                }
-               best_score[j]=score;
+               best_score[j]=score[i-start];
                pitch[j]=i;
                gain[j]=g;
                break;
             }
          }
       }
-      /* Update energy for next pitch*/
-      energy+=sw[-i-1]*sw[-i-1] - sw[-i+len-1]*sw[-i+len-1];
    }
 
-   POP(stack);
 }
 
 
@@ -181,14 +192,7 @@ int  *cdbk_index
             e[i][j]=0;
       }
 
-      if (p==10)
-      {
-         syn_percep_zero(e[i], ak, awk1, awk2, x[i], nsf, p);
-      } else {
-         residue_zero(e[i],awk1,x[i],nsf,p);
-         syn_filt_zero(x[i],ak,x[i],nsf,p);
-         syn_filt_zero(x[i],awk2,x[i],nsf,p);
-      }
+      syn_percep_zero(e[i], ak, awk1, awk2, x[i], nsf, p, stack);
    }
 
    for (i=0;i<3;i++)
@@ -302,8 +306,6 @@ int  *cdbk_index
    printf ("prediction gain = %f\n",err1/(err2+1));
 #endif
 
-   POP(stack);
-   POP(stack);
    return err2;
 }
 
@@ -344,6 +346,7 @@ int complexity
    if (N>10)
       N=10;
 
+   /*FIXME: This breaks if sizeof(int) != sizeof(float) */
    nbest=(int*)PUSH(stack, N);
    gains = PUSH(stack, N);
    params = (ltp_params*) par;
@@ -377,9 +380,6 @@ int complexity
    for (i=0;i<nsf;i++)
       exc[i]=best_exc[i];
 
-   POP(stack);
-   POP(stack);
-   POP(stack);
    return pitch;
 }
 
@@ -460,7 +460,6 @@ int lost)
       for (i=0;i<nsf;i++)
          exc[i]=gain[0]*e[2][i]+gain[1]*e[1][i]+gain[2]*e[0][i];
       
-      POP(stack);
    }
 }
 

@@ -95,6 +95,7 @@ int   complexity
    r = PUSH(stack, nsf);
    e = PUSH(stack, nsf);
    E = PUSH(stack, shape_cb_size);
+   /*FIXME: This breaks if sizeof(int) != sizeof(float) */
    ind = (int*)PUSH(stack, nb_subvect);
 
    tmp = PUSH(stack, 2*N*nsf);
@@ -106,11 +107,13 @@ int   complexity
       tmp += nsf;
    }
 
+   /*FIXME: This breaks if sizeof(int) != sizeof(float) */
    best_index = (int*)PUSH(stack, N);
    best_dist = PUSH(stack, N);
    ndist = PUSH(stack, N);
    odist = PUSH(stack, N);
    
+   /*FIXME: This breaks if sizeof(int) != sizeof(float) */
    itmp = (int*)PUSH(stack, 2*N*nb_subvect);
    for (i=0;i<N;i++)
    {
@@ -132,10 +135,12 @@ int   complexity
    e[0]=1;
    for (i=1;i<nsf;i++)
       e[i]=0;
-   residue_zero(e, awk1, r, nsf, p);
+   /*residue_zero(e, awk1, r, nsf, p);
    syn_filt_zero(r, ak, r, nsf, p);
    syn_filt_zero(r, awk2, r, nsf,p);
-   
+   */
+   syn_percep_zero(e, ak, awk1, awk2, r, nsf,p, stack);
+
    /* Pre-compute codewords response and energy */
    for (i=0;i<shape_cb_size;i++)
    {
@@ -248,24 +253,13 @@ int   complexity
       exc[j]+=e[j];
    
    /* Update target */
-   residue_zero(e, awk1, r, nsf, p);
+   /*residue_zero(e, awk1, r, nsf, p);
    syn_filt_zero(r, ak, r, nsf, p);
-   syn_filt_zero(r, awk2, r, nsf,p);
+   syn_filt_zero(r, awk2, r, nsf,p);*/
+   syn_percep_zero(e, ak, awk1, awk2, r, nsf,p, stack);
    for (j=0;j<nsf;j++)
       target[j]-=r[j];
 
-   POP(stack);
-   POP(stack);
-   POP(stack);
-   POP(stack);
-   POP(stack);
-   POP(stack);
-   POP(stack);
-   POP(stack);
-   POP(stack);
-   POP(stack);
-   POP(stack);
-   POP(stack);
 }
 
 
@@ -288,7 +282,7 @@ int   complexity
 {
    int i,j;
    float *resp;
-   float *t, *r, *e, *E;
+   float *t, *tt, *r, *e, *E;
    int *ind, *signs;
    float *shape_cb;
    int shape_cb_size, subvect_size, nb_subvect;
@@ -301,9 +295,11 @@ int   complexity
    shape_cb = params->shape_cb;
    resp = PUSH(stack, shape_cb_size*subvect_size);
    t = PUSH(stack, nsf);
+   tt= PUSH(stack, nsf);
    r = PUSH(stack, nsf);
    e = PUSH(stack, nsf);
    E = PUSH(stack, shape_cb_size);
+   /*FIXME: This breaks if sizeof(int) != sizeof(float) */
    ind = (int*)PUSH(stack, nb_subvect);
    signs = (int*)PUSH(stack, nb_subvect);
 
@@ -313,10 +309,11 @@ int   complexity
    e[0]=1;
    for (i=1;i<nsf;i++)
       e[i]=0;
-   residue_zero(e, awk1, r, nsf, p);
+   /*residue_zero(e, awk1, r, nsf, p);
    syn_filt_zero(r, ak, r, nsf, p);
-   syn_filt_zero(r, awk2, r, nsf,p);
-   
+   syn_filt_zero(r, awk2, r, nsf,p);*/
+   syn_percep_zero(e, ak, awk1, awk2, r, nsf,p, stack);
+
    /* Pre-compute codewords response and energy */
    for (i=0;i<shape_cb_size;i++)
    {
@@ -380,9 +377,8 @@ int   complexity
       if (i<nb_subvect-1)
       {
          int nbest;
-         float *tt, err[2];
+         float err[2];
          float best_score[2];
-         tt=PUSH(stack,nsf);
          for (nbest=0;nbest<2;nbest++)
          {
             float s=1;
@@ -447,8 +443,6 @@ int   complexity
             best_index[0]=best_index[1];
             best_score[0]=best_score[1];
          }
-         POP(stack);
-
       }
 
       ind[i]=best_index[0];
@@ -483,20 +477,15 @@ int   complexity
       exc[j]+=e[j];
    
    /* Update target */
-   residue_zero(e, awk1, r, nsf, p);
+   /*residue_zero(e, awk1, r, nsf, p);
    syn_filt_zero(r, ak, r, nsf, p);
-   syn_filt_zero(r, awk2, r, nsf,p);
+   syn_filt_zero(r, awk2, r, nsf,p);*/
+   syn_percep_zero(e, ak, awk1, awk2, r, nsf,p, stack);
+
    for (j=0;j<nsf;j++)
       target[j]-=r[j];
 
    
-   POP(stack);
-   POP(stack);
-   POP(stack);
-   POP(stack);
-   POP(stack);
-   POP(stack);
-   POP(stack);
 }
 
 
@@ -520,6 +509,7 @@ float *stack
    shape_cb_size = 1<<params->shape_bits;
    shape_cb = params->shape_cb;
    
+   /*FIXME: This breaks if sizeof(int) != sizeof(float) */
    ind = (int*)PUSH(stack, nb_subvect);
 
    /* Decode codewords and gains */
@@ -532,7 +522,6 @@ float *stack
       for (j=0;j<subvect_size;j++)
          exc[subvect_size*i+j]+=shape_cb[ind[i]*subvect_size+j];
 
-   POP(stack);
 }
 
 void split_cb_shape_sign_unquant(
@@ -555,6 +544,7 @@ float *stack
    shape_cb_size = 1<<params->shape_bits;
    shape_cb = params->shape_cb;
    
+   /*FIXME: This breaks if sizeof(int) != sizeof(float) */
    ind = (int*)PUSH(stack, nb_subvect);
    signs = (int*)PUSH(stack, nb_subvect);
 
@@ -573,8 +563,6 @@ float *stack
       for (j=0;j<subvect_size;j++)
          exc[subvect_size*i+j]+=s*shape_cb[ind[i]*subvect_size+j];
    }
-   POP(stack);
-   POP(stack);
 }
 
 void noise_codebook_quant(
@@ -602,7 +590,6 @@ int   complexity
    for (i=0;i<nsf;i++)
       target[i]=0;
 
-   POP(stack);
 }
 
 

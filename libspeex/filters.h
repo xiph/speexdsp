@@ -62,7 +62,9 @@ void residue_zero(float *x, float *a, float *y, int N, int ord);
 /* FIR filter */
 void fir_mem(float *x, float *a, float *y, int N, int M, float *mem);
 
-void syn_percep_zero(float *x, float *ak, float *awk1, float *awk2, float *y, int N, int ord);
+void syn_percep_zero(float *x, float *ak, float *awk1, float *awk2, float *y, int N, int ord, float *stack);
+
+void residue_percep_zero(float *xx, float *ak, float *awk1, float *awk2, float *y, int N, int ord, float *stack);
 
 void comb_filter(
 float *exc,          /*decoded excitation*/

@@ -42,7 +42,7 @@ int main(int argc, char **argv)
    speex_encoder_ctl(st, SPEEX_SET_VBR, &tmp);
    tmp=8;
    speex_encoder_ctl(st, SPEEX_SET_QUALITY, &tmp);
-   tmp=4;
+   tmp=1;
    speex_encoder_ctl(st, SPEEX_SET_COMPLEXITY, &tmp);
 
    speex_mode_query(&speex_nb_mode, SPEEX_MODE_FRAME_SIZE, &tmp);
@@ -71,7 +71,7 @@ int main(int argc, char **argv)
       for (i=0;i<FRAME_SIZE;i++)
          bak[i]=input[i]=in[i];
       speex_bits_reset(&bits);
-
+      /*
       speex_bits_pack(&bits, 14, 5);
       speex_bits_pack(&bits, SPEEX_INBAND_CHAR, 4);
       speex_bits_pack(&bits, 'A', 8);
@@ -83,7 +83,7 @@ int main(int argc, char **argv)
       speex_bits_pack(&bits, 15, 5);
       speex_bits_pack(&bits, 2, 4);
       speex_bits_pack(&bits, 0, 16);
-
+      */
       speex_encode(st, input, &bits);
       nbBits = speex_bits_write(&bits, cbits, 200);
       bitCount+=bits.nbBits;

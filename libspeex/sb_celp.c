@@ -269,8 +269,11 @@ void sb_encode(void *state, float *in, SpeexBits *bits)
 {
    SBEncState *st;
    int i, roots, sub;
+   float *stack;
+   float *mem, *innov;
 
    st = state;
+   stack=st->stack;
 
    /* Compute the two sub-bands by filtering with h0 and h1*/
    fir_mem(in, h0, st->x0, st->full_frame_size, QMF_ORDER, st->h0_mem);
@@ -316,10 +319,10 @@ void sb_encode(void *state, float *in, SpeexBits *bits)
    st->lpc[0]=1;
 
    /* LPC to LSPs (x-domain) transform */
-   roots=lpc_to_lsp (st->lpc, st->lpcSize, st->lsp, 15, 0.2, st->stack);
+   roots=lpc_to_lsp (st->lpc, st->lpcSize, st->lsp, 15, 0.2, stack);
    if (roots!=st->lpcSize)
    {
-      roots = lpc_to_lsp (st->lpc, st->lpcSize, st->lsp, 11, 0.02, st->stack);
+      roots = lpc_to_lsp (st->lpc, st->lpcSize, st->lsp, 11, 0.02, stack);
       if (roots!=st->lpcSize) {
          /*fprintf (stderr, "roots!=st->lpcSize (found only %d roots)\n", roots);*/
 
@@ -388,9 +391,12 @@ void sb_encode(void *state, float *in, SpeexBits *bits)
          st->old_qlsp[i] = st->qlsp[i];
    }
    
+   mem=PUSH(stack, st->lpcSize);
+   innov = PUSH(stack, st->subframeSize);
+
    for (sub=0;sub<st->nbSubframes;sub++)
    {
-      float *exc, *sp, *mem, *res, *target, *sw, tmp, filter_ratio;
+      float *exc, *sp, *res, *target, *sw, tmp, filter_ratio;
       int offset;
       float rl, rh, eh=0, el=0;
       int fold;
@@ -401,8 +407,6 @@ void sb_encode(void *state, float *in, SpeexBits *bits)
       res=st->res+offset;
       target=st->target+offset;
       sw=st->sw+offset;
-
-      mem=PUSH(st->stack, st->lpcSize);
       
       /* LSP interpolation (quantized and unquantized) */
       tmp = (1.0 + sub)/st->nbSubframes;
@@ -420,8 +424,8 @@ void sb_encode(void *state, float *in, SpeexBits *bits)
       lsp_enforce_margin(st->interp_lsp, st->lpcSize, .002);
       lsp_enforce_margin(st->interp_qlsp, st->lpcSize, .002);
 
-      lsp_to_lpc(st->interp_lsp, st->interp_lpc, st->lpcSize,st->stack);
-      lsp_to_lpc(st->interp_qlsp, st->interp_qlpc, st->lpcSize, st->stack);
+      lsp_to_lpc(st->interp_lsp, st->interp_lpc, st->lpcSize,stack);
+      lsp_to_lpc(st->interp_qlsp, st->interp_qlpc, st->lpcSize, stack);
 
       bw_lpc(st->gamma1, st->interp_lpc, st->bw_lpc1, st->lpcSize);
       bw_lpc(st->gamma2, st->interp_lpc, st->bw_lpc2, st->lpcSize);
@@ -477,13 +481,10 @@ void sb_encode(void *state, float *in, SpeexBits *bits)
 
       } else {
          float gc, scale, scale_1;
-         float *innov;
 
          for (i=0;i<st->subframeSize;i++)
             el+=sqr(((EncState*)st->st_low)->exc[offset+i]);
          /*speex_bits_pack(bits, 0, 1);*/
-         innov = PUSH(st->stack, st->subframeSize);
-
 
          gc = sqrt(1+eh)*filter_ratio/sqrt((1+el)*st->subframeSize);
          {
@@ -565,26 +566,26 @@ void sb_encode(void *state, float *in, SpeexBits *bits)
          /*print_vec(target, st->subframeSize, "\ntarget");*/
          SUBMODE(innovation_quant)(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2, 
                                 SUBMODE(innovation_params), st->lpcSize, st->subframeSize, 
-                                innov, bits, st->stack, st->complexity);
+                                innov, bits, stack, st->complexity);
          /*print_vec(target, st->subframeSize, "after");*/
 
          for (i=0;i<st->subframeSize;i++)
             exc[i] += innov[i]*scale;
 
          if (SUBMODE(double_codebook)) {
-            float *innov2 = PUSH(st->stack, st->subframeSize);
+            float *tmp_stack=stack;
+            float *innov2 = PUSH(tmp_stack, st->subframeSize);
             for (i=0;i<st->subframeSize;i++)
                innov2[i]=0;
             for (i=0;i<st->subframeSize;i++)
                target[i]*=2.5;
             SUBMODE(innovation_quant)(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2, 
                                       SUBMODE(innovation_params), st->lpcSize, st->subframeSize, 
-                                      innov2, bits, st->stack, st->complexity);
+                                      innov2, bits, tmp_stack, st->complexity);
             for (i=0;i<st->subframeSize;i++)
                innov2[i]*=scale*(1/2.5);
             for (i=0;i<st->subframeSize;i++)
                exc[i] += innov2[i];
-            POP(st->stack);
          }
 
 
@@ -598,7 +599,6 @@ void sb_encode(void *state, float *in, SpeexBits *bits)
             printf ("correction high: %f\n", en);
          }
 
-         POP(st->stack);
       }
 #if 1
          /*Keep the previous memory*/
@@ -614,8 +614,6 @@ void sb_encode(void *state, float *in, SpeexBits *bits)
          filter_mem2(sp, st->bw_lpc1, st->bw_lpc2, sw, st->subframeSize, st->lpcSize, st->mem_sw);
 #endif
       
-      
-      POP(st->stack);
    }
 
 
@@ -721,7 +719,7 @@ void sb_decoder_destroy(void *state)
    speex_free(state);
 }
 
-static void sb_decode_lost(SBDecState *st, float *out)
+static void sb_decode_lost(SBDecState *st, float *out, float *stack)
 {
    int i;
    for (i=0;i<st->frame_size;i++)
@@ -755,8 +753,11 @@ int sb_decode(void *state, SpeexBits *bits, float *out)
    SBDecState *st;
    int wideband;
    int ret;
+   float *stack;
 
    st = state;
+   stack=st->stack;
+
    /* Decode the low-band */
    ret = nb_decode(st->st_low, bits, st->x0d);
 
@@ -768,7 +769,7 @@ int sb_decode(void *state, SpeexBits *bits, float *out)
 
    if (!bits)
    {
-      sb_decode_lost(st, out);
+      sb_decode_lost(st, out, stack);
       return 0;
    }
 
@@ -847,7 +848,7 @@ int sb_decode(void *state, SpeexBits *bits, float *out)
       lsp_enforce_margin(st->interp_qlsp, st->lpcSize, .002);
 
       /* LSP to LPC */
-      lsp_to_lpc(st->interp_qlsp, st->interp_qlpc, st->lpcSize, st->stack);
+      lsp_to_lpc(st->interp_qlsp, st->interp_qlpc, st->lpcSize, stack);
 
       /* Calculate reponse ratio between the low and high filter in the middle
          of the band (4000 Hz) */
@@ -896,21 +897,21 @@ int sb_decode(void *state, SpeexBits *bits, float *out)
 
 
          SUBMODE(innovation_unquant)(exc, SUBMODE(innovation_params), st->subframeSize, 
-                                bits, st->stack);
+                                bits, stack);
          for (i=0;i<st->subframeSize;i++)
             exc[i]*=scale;
 
          if (SUBMODE(double_codebook)) {
-            float *innov2 = PUSH(st->stack, st->subframeSize);
+            float *tmp_stack=stack;
+            float *innov2 = PUSH(tmp_stack, st->subframeSize);
             for (i=0;i<st->subframeSize;i++)
                innov2[i]=0;
             SUBMODE(innovation_unquant)(innov2, SUBMODE(innovation_params), st->subframeSize, 
-                                bits, st->stack);
+                                bits, tmp_stack);
             for (i=0;i<st->subframeSize;i++)
                innov2[i]*=scale*(1/2.5);
             for (i=0;i<st->subframeSize;i++)
                exc[i] += innov2[i];
-            POP(st->stack);
          }
 
       }

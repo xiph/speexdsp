@@ -83,13 +83,18 @@ void enh_lpc(float *ak, int order, float *num, float *den, float k1, float k2, f
    bw_lpc(k3, ak, n2, order);
    residue_zero(num,n2,num,1+(order<<1),order);
    residue_zero(den,d2,den,1+(order<<1),order);
-   POP(stack);
-   POP(stack);
 }
 
 
 void syn_filt_zero(float *x, float *a, float *y, int N, int ord)
 {
+#if 0
+   int i;
+   float mem[10];
+   for (i=0;i<10;i++)
+      mem[i]=0;
+   iir_mem2(x,a,y,N,ord,mem);
+#else
    int i,j;
    for (i=0;i<N;i++)
    {
@@ -97,22 +102,31 @@ void syn_filt_zero(float *x, float *a, float *y, int N, int ord)
       for (j=1;j<=min(ord,i);j++)
          y[i] -= a[j]*y[i-j];
    }
+#endif
 }
 
 
 void residue_zero(float *x, float *a, float *y, int N, int ord)
 {
+#if 0
+   int i;
+   float mem[10];
+   for (i=0;i<10;i++)
+      mem[i]=0;
+   fir_mem2(x,a,y,N,ord,mem);
+#else
    int i,j;
    for (i=N-1;i>=0;i--)
    {
       y[i]=x[i];
       for (j=1;j<=min(ord,i);j++)
          y[i] += a[j]*x[i-j];
-   }
+         }
+#endif
 }
 
 
-void filter_mem2(float *x, float *num, float *den, float *y, int N, int ord, float *mem)
+void _filter_mem2(float *x, float *num, float *den, float *y, int N, int ord, float *mem)
 {
    int i,j;
    float xi;
@@ -125,6 +139,23 @@ void filter_mem2(float *x, float *num, float *den, float *y, int N, int ord, flo
          mem[j] = mem[j+1] + num[j+1]*xi - den[j+1]*y[i];
       }
       mem[ord-1] = num[ord]*xi - den[ord]*y[i];
+   }
+}
+
+void filter_mem2(float *x, float *num, float *den, float *y, int N, int ord, float *mem)
+{
+   int i,j;
+   float xi,yi;
+   for (i=0;i<N;i++)
+   {
+      xi=x[i];
+      y[i] = num[0]*xi + mem[0];
+      yi=y[i];
+      for (j=0;j<ord-1;j++)
+      {
+         mem[j] = mem[j+1] + num[j+1]*xi - den[j+1]*yi;
+      }
+      mem[ord-1] = num[ord]*xi - den[ord]*yi;
    }
 }
 
@@ -160,19 +191,30 @@ void iir_mem2(float *x, float *den, float *y, int N, int ord, float *mem)
 
 
 
-void syn_percep_zero(float *xx, float *ak, float *awk1, float *awk2, float *y, int N, int ord)
+void syn_percep_zero(float *xx, float *ak, float *awk1, float *awk2, float *y, int N, int ord, float *stack)
 {
    int i;
-   /*FIXME: Should make that dynamic*/
-   float mem[10];
+   float *mem = PUSH(stack,ord);
    for (i=0;i<ord;i++)
       mem[i]=0;
    filter_mem2(xx, awk1, ak, y, N, ord, mem);
    for (i=0;i<ord;i++)
      mem[i]=0;
    iir_mem2(y, awk2, y, N, ord, mem);
-  
 }
+
+void residue_percep_zero(float *xx, float *ak, float *awk1, float *awk2, float *y, int N, int ord, float *stack)
+{
+   int i;
+   float *mem = PUSH(stack,ord);
+   for (i=0;i<ord;i++)
+      mem[i]=0;
+   filter_mem2(xx, ak, awk1, y, N, ord, mem);
+   for (i=0;i<ord;i++)
+     mem[i]=0;
+   fir_mem2(y, awk2, y, N, ord, mem);
+}
+
 
 
 #if 1

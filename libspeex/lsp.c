@@ -103,7 +103,6 @@ float cheb_poly_eva(float *coef,float x,int m,float *stack)
     for(i=0;i<=m/2;i++)
 	sum+=coef[(m/2)-i]**t++;
 
-    POP(stack);
     return sum;
 }
 
@@ -240,8 +239,6 @@ int lpc_to_lsp (float *a,int lpcrdr,float *freq,int nb,float delta, float *stack
 	    }
 	}
     }
-    POP(stack);
-    POP(stack);
     return(roots);
 }
 
@@ -315,7 +312,7 @@ void lsp_to_lpc(float *freq,float *ak,int lpcrdr, float *stack)
 	xin1 = 0.0;
 	xin2 = 0.0;
     }
-    POP(stack);
+
 }
 
 /*Added by JMV
