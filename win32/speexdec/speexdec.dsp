@@ -110,7 +110,7 @@ SOURCE=..\..\src\wave_out.c
 # PROP Default_Filter "h;hpp;hxx;hm;inl"
 # Begin Source File
 
-SOURCE=..\..\src\getopt.h
+SOURCE=..\..\src\getopt_win.h
 # End Source File
 # Begin Source File
 

@@ -2988,7 +2988,7 @@ Again, once the decoder initialization is done, for every input frame:
 speex_bits_read_from(&bits, input_bytes, nbBytes);
 \layout LyX-Code
 
-speex_decode(st, &bits, output_frame, 0);
+speex_decode(st, &bits, output_frame);
 \layout Standard
 
 where input_bytes is a 
@@ -3008,12 +3008,8 @@ output_frame
 (float *)
 \emph default 
  and points to the area where the decoded speech frame will be written.
- The last argument indicates whether the frame we'd like to decode was lost.
- A value of 0 indicates the normal case where bits points to the bit of
- the current frame.
- A value of 1 indicates that we don't have the bits for the current frame,
- in which case the bits argument should be the same as the bits for the
- last correctly received frame.
+ A NULL value as the first argument indicates that we don't have the bits
+ for the current frame.
  When a frame is lost, the Speex decoder will do its best to "guess" the
  correct signal.
 \layout Standard
@@ -3057,10 +3053,10 @@ The different values of request allowed are (note that some only apply to
  the encoder or the decoder):
 \layout Description
 
-SPEEX_SET_ENH** Set post-filter to on (1) or off (0) (integer)
+SPEEX_SET_ENH** Set perceptual enhancer to on (1) or off (0) (integer)
 \layout Description
 
-SPEEX_GET_ENH** Get post-filter status (integer)
+SPEEX_GET_ENH** Get perceptual enhancer status (integer)
 \layout Description
 
 SPEEX_GET_FRAME_SIZE Get the frame size used for the current mode (integer)
@@ -3135,7 +3131,7 @@ SPEEX_SET_COMPLEXITY* Set the CPU resources allowed for the encoder
 SPEEX_GET_COMPLEXITY* Get the CPU resources allowed for the encoder
 \layout Description
 
-SPEEX_GET_BITRATE Get the current bit-rate in use (in bps)
+SPEEX_GET_BITRATE Get the current bit-rate in use (integer in bps)
 \layout Description
 
 * applies only to the encoder
