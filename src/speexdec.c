@@ -282,7 +282,7 @@ static void *process_header(ogg_packet *op, int enh_enabled, int *frame_size, in
       modeID = forceMode;
    mode = speex_mode_list[modeID];
    
-   if (header->speex_version_id != 1)
+   if (header->speex_version_id > 1)
    {
       fprintf (stderr, "This file was encoded with Speex bit-stream version %d, which I don't know how to decode\n", header->speex_version_id);
       return NULL;
