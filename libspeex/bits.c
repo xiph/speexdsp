@@ -166,7 +166,7 @@ void speex_bits_read_whole_bytes(SpeexBits *bits, char *bytes, int len)
 int speex_bits_write(SpeexBits *bits, char *bytes, int max_len)
 {
    int i;
-   char bytePtr, bitPtr, nbBits;
+   int bytePtr, bitPtr, nbBits;
 
    /* Insert terminator, but save the data so we can put it back after */
    bitPtr=bits->bitPtr;
