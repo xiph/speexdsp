@@ -37,20 +37,12 @@ static float inner_prod(const float *a, const float *b, int len)
    int i;
    float ret;
    __m128 sum = _mm_setzero_ps();
-   for (i=0;i<(len>>2);i+=10)
+   for (i=0;i<(len>>2);i+=2)
    {
       sum = _mm_add_ps(sum, _mm_mul_ps(_mm_loadu_ps(a+0), _mm_loadu_ps(b+0)));
       sum = _mm_add_ps(sum, _mm_mul_ps(_mm_loadu_ps(a+4), _mm_loadu_ps(b+4)));
-      sum = _mm_add_ps(sum, _mm_mul_ps(_mm_loadu_ps(a+8), _mm_loadu_ps(b+8)));
-      sum = _mm_add_ps(sum, _mm_mul_ps(_mm_loadu_ps(a+12), _mm_loadu_ps(b+12)));
-      sum = _mm_add_ps(sum, _mm_mul_ps(_mm_loadu_ps(a+16), _mm_loadu_ps(b+16)));
-      sum = _mm_add_ps(sum, _mm_mul_ps(_mm_loadu_ps(a+20), _mm_loadu_ps(b+20)));
-      sum = _mm_add_ps(sum, _mm_mul_ps(_mm_loadu_ps(a+24), _mm_loadu_ps(b+24)));
-      sum = _mm_add_ps(sum, _mm_mul_ps(_mm_loadu_ps(a+28), _mm_loadu_ps(b+28)));
-      sum = _mm_add_ps(sum, _mm_mul_ps(_mm_loadu_ps(a+32), _mm_loadu_ps(b+32)));
-      sum = _mm_add_ps(sum, _mm_mul_ps(_mm_loadu_ps(a+36), _mm_loadu_ps(b+36)));
-      a += 40;
-      b += 40;
+      a += 8;
+      b += 8;
    }
    sum = _mm_add_ps(sum, _mm_movehl_ps(sum, sum));
    sum = _mm_add_ss(sum, _mm_shuffle_ps(sum, sum, 0x55));
@@ -80,20 +72,12 @@ static void pitch_xcorr(const float *_x, const float *_y, float *corr, int len, 
          sum = _mm_setzero_ps();
          yy = y+i;
          xx = x;
-         for (j=0;j<N;j+=10)
+         for (j=0;j<N;j+=2)
          {
             sum = _mm_add_ps(sum, _mm_mul_ps(xx[0], yy[0]));
             sum = _mm_add_ps(sum, _mm_mul_ps(xx[1], yy[1]));
-            sum = _mm_add_ps(sum, _mm_mul_ps(xx[2], yy[2]));
-            sum = _mm_add_ps(sum, _mm_mul_ps(xx[3], yy[3]));
-            sum = _mm_add_ps(sum, _mm_mul_ps(xx[4], yy[4]));
-            sum = _mm_add_ps(sum, _mm_mul_ps(xx[5], yy[5]));
-            sum = _mm_add_ps(sum, _mm_mul_ps(xx[6], yy[6]));
-            sum = _mm_add_ps(sum, _mm_mul_ps(xx[7], yy[7]));
-            sum = _mm_add_ps(sum, _mm_mul_ps(xx[8], yy[8]));
-            sum = _mm_add_ps(sum, _mm_mul_ps(xx[9], yy[9]));
-            xx += 10;
-            yy += 10;
+            xx += 2;
+            yy += 2;
          }
          sum = _mm_add_ps(sum, _mm_movehl_ps(sum, sum));
          sum = _mm_add_ss(sum, _mm_shuffle_ps(sum, sum, 0x55));
