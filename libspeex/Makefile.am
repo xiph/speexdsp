@@ -8,12 +8,6 @@ INCLUDES = -I$(top_srcdir)/include
 
 lib_LTLIBRARIES = libspeex.la
 
-if DISABLE_GLOBAL_POINTERS
-modes = modes_noglobals.c
-else
-modes = modes.c
-endif
-
 # Sources for compilation in the library
 libspeex_la_SOURCES = nb_celp.c \
 	sb_celp.c \
@@ -27,7 +21,7 @@ libspeex_la_SOURCES = nb_celp.c \
 	cb_search.c \
 	filters.c \
 	bits.c \
-	$(modes) \
+	modes.c \
 	speex.c \
 	vq.c \
 	high_lsp_tables.c \
