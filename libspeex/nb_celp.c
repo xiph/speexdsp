@@ -231,6 +231,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
    char *stack;
    spx_sig_t *syn_resp;
    spx_sig_t *orig;
+   spx_sig_t *real_exc;
 #ifdef EPIC_48K
    int pitch_half[2];
    int ol_pitch_id=0;
@@ -629,6 +630,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
    /* Target signal */
    target = PUSH(stack, st->subframeSize, spx_sig_t);
    syn_resp = PUSH(stack, st->subframeSize, spx_sig_t);
+   real_exc = PUSH(stack, st->subframeSize, spx_sig_t);
    mem = PUSH(stack, st->lpcSize, spx_mem_t);
    orig = PUSH(stack, st->frameSize, spx_sig_t);
    for (i=0;i<st->frameSize;i++)
@@ -698,12 +700,21 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
             st->bw_lpc2[i]=0;
       }
 
+      for (i=0;i<st->subframeSize;i++)
+         real_exc[i] = exc[i];
+      
       /* Compute impulse response of A(z/g1) / ( A(z)*A(z/g2) )*/
       for (i=0;i<st->subframeSize;i++)
          exc[i]=VERY_SMALL;
       exc[0]=SIG_SCALING;
-      syn_percep_zero(exc, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2, syn_resp, st->subframeSize, st->lpcSize, stack);
-
+      if (st->complexity==0)
+      {
+         syn_percep_zero(exc, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2, syn_resp, st->subframeSize>>1, st->lpcSize, stack);
+         for (i=st->subframeSize>>1;i<st->subframeSize;i++)
+            syn_resp[i]=0;
+      } else {
+         syn_percep_zero(exc, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2, syn_resp, st->subframeSize, st->lpcSize, stack);
+      }
       /* Reset excitation */
       for (i=0;i<st->subframeSize;i++)
          exc[i]=VERY_SMALL;
@@ -713,12 +724,25 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
       /* Compute zero response of A(z/g1) / ( A(z/g2) * A(z) ) */
       for (i=0;i<st->lpcSize;i++)
          mem[i]=st->mem_sp[i];
-      iir_mem2(exc, st->interp_qlpc, exc, st->subframeSize, st->lpcSize, mem);
+      if (st->complexity==0)
+      {
+         iir_mem2(exc, st->interp_qlpc, exc, st->subframeSize>>1, st->lpcSize, mem);
+         for (i=st->subframeSize>>1;i<st->subframeSize;i++)
+            exc[i]=0;
+      } else {
+         iir_mem2(exc, st->interp_qlpc, exc, st->subframeSize, st->lpcSize, mem);
+      }
       
       for (i=0;i<st->lpcSize;i++)
          mem[i]=st->mem_sw[i];
-      filter_mem2(exc, st->bw_lpc1, st->bw_lpc2, res, st->subframeSize, st->lpcSize, mem);
-      
+      if (st->complexity==0)
+      {
+         filter_mem2(exc, st->bw_lpc1, st->bw_lpc2, res, st->subframeSize>>1, st->lpcSize, mem);
+         for (i=st->subframeSize>>1;i<st->subframeSize;i++)
+            res[i]=0;
+      } else {
+         filter_mem2(exc, st->bw_lpc1, st->bw_lpc2, res, st->subframeSize, st->lpcSize, mem);
+      }
       /* Compute weighted signal */
       for (i=0;i<st->lpcSize;i++)
          mem[i]=st->mem_sw[i];
@@ -786,11 +810,11 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
       }
 
       /* Update target for adaptive codebook contribution */
-      syn_percep_zero(exc, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2, res, st->subframeSize, st->lpcSize, stack);
+      /* FIXME: We shouldn't have to apply the filter again (compute directly in the pitch quantizer) */
+      /*syn_percep_zero(exc, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2, res, st->subframeSize, st->lpcSize, stack);
       for (i=0;i<st->subframeSize;i++)
          target[i]=SATURATE(SUB32(target[i],res[i]),805306368);
-
-
+      */
       /* Quantization of innovation */
       {
          spx_sig_t *innov;
@@ -801,7 +825,10 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
          for (i=0;i<st->subframeSize;i++)
             innov[i]=0;
          
-         residue_percep_zero(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2, st->buf2, st->subframeSize, st->lpcSize, stack);
+         /*FIXME: Check that I'm really allowed to replace the residue_percep_zero */
+         for (i=0;i<st->subframeSize;i++)
+            st->buf2[i] = real_exc[i] - exc[i];
+         /*residue_percep_zero(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2, st->buf2, st->subframeSize, st->lpcSize, stack);*/
 
          ener = SHL((spx_word32_t)compute_rms(st->buf2, st->subframeSize),SIG_SHIFT);
 
@@ -850,7 +877,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
             /* Codebook search */
             SUBMODE(innovation_quant)(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2, 
                                       SUBMODE(innovation_params), st->lpcSize, st->subframeSize, 
-                                      innov, syn_resp, bits, stack, st->complexity);
+                                      innov, syn_resp, bits, stack, st->complexity, SUBMODE(double_codebook));
             
             /* De-normalize innovation and update excitation */
             signal_mul(innov, innov, ener, st->subframeSize);
@@ -871,22 +898,22 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
                target[i]*=2.2;
             SUBMODE(innovation_quant)(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2, 
                                       SUBMODE(innovation_params), st->lpcSize, st->subframeSize, 
-                                      innov2, syn_resp, bits, tmp_stack, st->complexity);
+                                      innov2, syn_resp, bits, tmp_stack, st->complexity, 0);
             signal_mul(innov2, innov2, (spx_word32_t) (ener*(1/2.2)), st->subframeSize);
             for (i=0;i<st->subframeSize;i++)
                exc[i] += innov2[i];
          }
 
-         signal_mul(target, target, ener, st->subframeSize);
+         /* FIXME: I can remove that, right? */
+         /*signal_mul(target, target, ener, st->subframeSize);*/
       }
 
-      /*Keep the previous memory*/
-      for (i=0;i<st->lpcSize;i++)
-         mem[i]=st->mem_sp[i];
+      /* FIXME: Should simplify that, at least for complexity==0 */
       /* Final signal synthesis from excitation */
       iir_mem2(exc, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, st->mem_sp);
 
       /* Compute weighted signal again, from synthesized speech (not sure it's the right thing) */
+      /* FIXME: Should simplify that, at least for complexity==0 */
       filter_mem2(sp, st->bw_lpc1, st->bw_lpc2, sw, st->subframeSize, st->lpcSize, st->mem_sw);
       for (i=0;i<st->subframeSize;i++)
          exc2[i]=exc[i];
@@ -1744,8 +1771,8 @@ int nb_encoder_ctl(void *state, int request, void *ptr)
       break;
    case SPEEX_SET_COMPLEXITY:
       st->complexity = (*(int*)ptr);
-      if (st->complexity<1)
-         st->complexity=1;
+      if (st->complexity<0)
+         st->complexity=0;
       break;
    case SPEEX_GET_COMPLEXITY:
       (*(int*)ptr) = st->complexity;

@@ -207,6 +207,7 @@ SpeexBits *bits,
 char *stack,
 spx_sig_t *exc2,
 spx_sig_t *r,
+spx_sig_t *new_target,
 int  *cdbk_index,
 int cdbk_offset
 )
@@ -397,7 +398,9 @@ int cdbk_offset
    err=0;
    for (i=0;i<nsf;i++)
    {
-      spx_sig_t perr=target[i]-SHL((MULT16_32_Q15(SHL(gain[0],7),x[2][i])+MULT16_32_Q15(SHL(gain[1],7),x[1][i])+MULT16_32_Q15(SHL(gain[2],7),x[0][i])),2);
+      spx_sig_t tmp = SHL((MULT16_32_Q15(SHL(gain[0],7),x[2][i])+MULT16_32_Q15(SHL(gain[1],7),x[1][i])+MULT16_32_Q15(SHL(gain[2],7),x[0][i])),2);
+      spx_sig_t perr=target[i]-tmp;
+      new_target[i] = target[i] - tmp;
       spx_word16_t perr2 = PSHR(perr,15);
       err = ADD64(err,MULT16_16(perr2,perr2));
       
@@ -440,7 +443,7 @@ int cdbk_offset
 {
    int i,j;
    int cdbk_index, pitch=0, best_gain_index=0;
-   spx_sig_t *best_exc;
+   spx_sig_t *best_exc, *new_target, *best_target;
    int best_pitch=0;
    spx_word64_t err, best_err=-1;
    int N;
@@ -451,12 +454,14 @@ int cdbk_offset
    N=complexity;
    if (N>10)
       N=10;
+   if (N<1)
+      N=1;
 
    nbest=PUSH(stack, N, int);
    gains = PUSH(stack, N, spx_word16_t);
    params = (ltp_params*) par;
 
-   if (N==0 || end<start)
+   if (end<start)
    {
       speex_bits_pack(bits, 0, params->pitch_bits);
       speex_bits_pack(bits, 0, params->gain_bits);
@@ -466,6 +471,8 @@ int cdbk_offset
    }
    
    best_exc=PUSH(stack,nsf, spx_sig_t);
+   new_target=PUSH(stack,nsf, spx_sig_t);
+   best_target=PUSH(stack,nsf, spx_sig_t);
    
    if (N>end-start+1)
       N=end-start+1;
@@ -476,11 +483,13 @@ int cdbk_offset
       for (j=0;j<nsf;j++)
          exc[j]=0;
       err=pitch_gain_search_3tap(target, ak, awk1, awk2, exc, par, pitch, p, nsf,
-                                 bits, stack, exc2, r, &cdbk_index, cdbk_offset);
+                                 bits, stack, exc2, r, new_target, &cdbk_index, cdbk_offset);
       if (err<best_err || best_err<0)
       {
          for (j=0;j<nsf;j++)
             best_exc[j]=exc[j];
+         for (j=0;j<nsf;j++)
+            best_target[j]=new_target[j];
          best_err=err;
          best_pitch=pitch;
          best_gain_index=cdbk_index;
@@ -493,6 +502,8 @@ int cdbk_offset
    /*printf ("encode pitch: %d %d\n", best_pitch, best_gain_index);*/
    for (i=0;i<nsf;i++)
       exc[i]=best_exc[i];
+   for (i=0;i<nsf;i++)
+      target[i]=best_target[i];
 
    return pitch;
 }

@@ -671,7 +671,7 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
          /*print_vec(target, st->subframeSize, "\ntarget");*/
          SUBMODE(innovation_quant)(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2, 
                                    SUBMODE(innovation_params), st->lpcSize, st->subframeSize, 
-                                   innov, syn_resp, bits, stack, (st->complexity+1)>>1);
+                                   innov, syn_resp, bits, stack, (st->complexity+1)>>1, SUBMODE(double_codebook));
          /*print_vec(target, st->subframeSize, "after");*/
 
          signal_mul(innov, innov, scale, st->subframeSize);
@@ -688,7 +688,7 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
                target[i]*=2.5;
             SUBMODE(innovation_quant)(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2, 
                                       SUBMODE(innovation_params), st->lpcSize, st->subframeSize, 
-                                      innov2, syn_resp, bits, tmp_stack, (st->complexity+1)>>1);
+                                      innov2, syn_resp, bits, tmp_stack, (st->complexity+1)>>1, 0);
             for (i=0;i<st->subframeSize;i++)
                innov2[i]*=scale*(1/2.5)/SIG_SCALING;
             for (i=0;i<st->subframeSize;i++)

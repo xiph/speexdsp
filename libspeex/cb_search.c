@@ -91,7 +91,8 @@ spx_sig_t *exc,
 spx_sig_t *r,
 SpeexBits *bits,
 char *stack,
-int   complexity
+int   complexity,
+int   update_target
 )
 {
    int i,j,k,m,n,q;
@@ -121,7 +122,9 @@ int   complexity
    N=complexity;
    if (N>10)
       N=10;
-
+   if (N<1)
+      N=1;
+   
    ot=PUSH(stack, N, spx_word16_t*);
    nt=PUSH(stack, N, spx_word16_t*);
    oind=PUSH(stack, N, int*);
@@ -350,11 +353,13 @@ int   complexity
    for (j=0;j<nsf;j++)
       exc[j]+=e[j];
    
-   /* Update target */
-   syn_percep_zero(e, ak, awk1, awk2, r2, nsf,p, stack);
-   for (j=0;j<nsf;j++)
-      target[j]-=r2[j];
-
+   /* Update target: only update target if necessary */
+   if (update_target)
+   {
+      syn_percep_zero(e, ak, awk1, awk2, r2, nsf,p, stack);
+      for (j=0;j<nsf;j++)
+         target[j]-=r2[j];
+   }
 }
 
 
@@ -426,7 +431,8 @@ spx_sig_t *exc,
 spx_sig_t *r,
 SpeexBits *bits,
 char *stack,
-int   complexity
+int   complexity,
+int   update_target
 )
 {
    int i;

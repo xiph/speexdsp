@@ -66,7 +66,7 @@ typedef void (*ltp_unquant_func)(spx_sig_t *, int, int, spx_word16_t, const void
 
 /** Innovation quantization function */
 typedef void (*innovation_quant_func)(spx_sig_t *, spx_coef_t *, spx_coef_t *, spx_coef_t *, const void *, int, int, 
-                                      spx_sig_t *, spx_sig_t *, SpeexBits *, char *, int);
+                                      spx_sig_t *, spx_sig_t *, SpeexBits *, char *, int, int);
 
 /** Innovation unquantization function */
 typedef void (*innovation_unquant_func)(spx_sig_t *, const void *, int, SpeexBits*, char *);

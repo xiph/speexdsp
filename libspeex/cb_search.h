@@ -57,7 +57,8 @@ spx_sig_t *exc,
 spx_sig_t *r,
 SpeexBits *bits,
 char *stack,
-int   complexity
+int   complexity,
+int   update_target
 );
 
 void split_cb_shape_sign_unquant(
@@ -81,7 +82,8 @@ spx_sig_t *exc,
 spx_sig_t *r,
 SpeexBits *bits,
 char *stack,
-int   complexity
+int   complexity,
+int   update_target
 );
 
 
