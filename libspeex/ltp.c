@@ -3,7 +3,14 @@
    Lont-Term Prediction functions
 */
 
+/* Computes the open-loop pitch prediction. Returns pitch period and pitch gain */
 int open_loop_ltp(float *x, int len, int start, int end, float *gain)
+   /*  x:     time-domain signal (note, x[-end] must be valid)
+       len:   length of the x signal
+       start: smallest pitch period possible
+       end:   largest pitch period possible
+       gain:  return value for the pitch predictor gain
+    */
 {
    int i, period, best_period=0;
    float score, best_score=-1, corr, energy;
