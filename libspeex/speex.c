@@ -348,7 +348,7 @@ void encode(EncState *st, float *in, FrameBits *bits)
 
       /* Long-term prediction */
 #if 1
-      pitch = st->ltp_quant(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2,
+      pitch = st->ltp_quant(target, sw, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2,
                     exc, st->ltp_params, st->min_pitch, st->max_pitch, 
                     st->lpcSize, st->subframeSize, bits, st->stack, exc2);
 #else
@@ -358,6 +358,7 @@ void encode(EncState *st, float *in, FrameBits *bits)
          closed_loop_fractional_pitch(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2,                                      exc, st->os_filt, st->os_filt_ord2, st->os_fact, 35, 290,                                      &gain[0], &pitch, st->lpcSize,                                      st->subframeSize, st->stack);
       }
 #endif
+
       /* Update target for adaptive codebook contribution */
       residue_zero(exc, st->bw_lpc1, res, st->subframeSize, st->lpcSize);
       syn_filt_zero(res, st->interp_qlpc, res, st->subframeSize, st->lpcSize);
@@ -373,6 +374,7 @@ void encode(EncState *st, float *in, FrameBits *bits)
 #ifdef DEBUG
       printf ("pitch SNR = %f\n", snr);
 #endif
+
 
 #if 0 /*If set to 1, compute "real innovation" i.e. cheat to get perfect reconstruction*/
       syn_filt_zero(target, st->bw_lpc1, res, st->subframeSize, st->lpcSize);

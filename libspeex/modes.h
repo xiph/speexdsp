@@ -32,7 +32,7 @@ typedef void (*lsp_unquant_func)(float *, int, FrameBits *);
 
 
 /*Long-term predictor quantization*/
-typedef int (*ltp_quant_func)(float *, float *, float *, 
+typedef int (*ltp_quant_func)(float *, float *, float *, float *, 
                                 float *, float *, void *, int, int, 
                                 int, int, FrameBits*, float *, float *);
 

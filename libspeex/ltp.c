@@ -27,7 +27,7 @@
 
 #define abs(x) ((x)<0 ? -(x) : (x))
 
-void open_loop_pitch(float *sw, int start, int end, int len, int *pitch, int *vuv)
+void open_loop_pitch(float *sw, int start, int end, int len, int *pitch)
 {
    int i;
    float e0, corr, energy, best_gain=0, pred_gain, best_corr=0, best_energy=0;
@@ -40,7 +40,7 @@ void open_loop_pitch(float *sw, int start, int end, int len, int *pitch, int *vu
       score=corr*corr/(energy+1);
       if (score>best_score)
       {
-         if ((abs(i-2**pitch)>4 && abs(i-3**pitch)>6) || score>1.2*best_score)
+         /*if ((abs(i-2**pitch)>4 && abs(i-3**pitch)>6) || score>0.9*best_score)*/
          {
          best_score=score;
          best_gain=corr/(energy+1);
@@ -57,7 +57,6 @@ void open_loop_pitch(float *sw, int start, int end, int len, int *pitch, int *vu
 #ifdef DEBUG
    printf ("pred = %f\n", pred_gain);
 #endif
-   *vuv=1;
 }
 
 void closed_loop_fractional_pitch(
@@ -329,6 +328,7 @@ float *stack
 /** Finds the best quantized 3-tap pitch predictor by analysis by synthesis */
 int pitch_search_3tap(
 float target[],                 /* Target vector */
+float *sw,
 float ak[],                     /* LPCs for this subframe */
 float awk1[],                   /* Weighted LPCs #1 for this subframe */
 float awk2[],                   /* Weighted LPCs #2 for this subframe */
@@ -374,6 +374,9 @@ float *exc2
                      nsf, stack);
    /* Real pitch value */
    pitch=end-pitch;
+
+   open_loop_pitch(sw, start, end, nsf, &pitch);
+
    
    
    for (i=0;i<3;i++)

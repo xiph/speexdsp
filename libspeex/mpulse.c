@@ -219,6 +219,7 @@ float *stack
    float g, gain_coef;
    int nb_tracks, track_ind_bits;
    int *tracks, *signs, *tr, *nb;
+   int full_div=0, full_mod=0;
    mpulse_params *params;
    int pulses_per_track;
    params = (mpulse_params *) par;
@@ -281,6 +282,7 @@ float *stack
    {
       float best_score=1e30, best_gain=0;
       int best_ind=0;
+      int mod_track=nb_tracks-1;
       /*For all positions*/
       energy[0]=0;
       for (j=1;j<nsf;j++)
@@ -291,13 +293,13 @@ float *stack
          int k;
          float dist;
          float *base=t+j;
+         mod_track++;
+         if (mod_track==nb_tracks)
+            mod_track=0;
          /*Fill any track until it's full*/
-         if (nb[j%nb_tracks]==pulses_per_track || nb[j%nb_tracks] > (i)/nb_tracks)
+         if (nb[mod_track]==pulses_per_track || nb[mod_track] > full_div)
               continue;
-         /*Constrain search in alternating tracks*/
-         /*FIXME: Should get rid of this, it's *really* slow*/
-         /*if ((i%nb_tracks) != (j%nb_tracks))
-           continue;*/
+
          /*Try for positive sign*/
          if (pulses[j]>=0)
          {
@@ -348,6 +350,12 @@ float *stack
          signs[t*pulses_per_track+nb[t]]  = best_gain >= 0 ? 0 : 1;
          nb[t]++;
       }
+         full_mod++;
+         if (full_mod==nb_tracks)
+         {
+            full_mod=0;
+            full_div++;
+         }
    }
 
    /*Global gain re-estimation*/

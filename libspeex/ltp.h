@@ -28,7 +28,7 @@ typedef struct ltp_params {
 
 
 /* Finds open-loop pitch */
-void open_loop_pitch(float *sw, int start, int end, int len, int *pitch, int *vuv);
+void open_loop_pitch(float *sw, int start, int end, int len, int *pitch);
 
 void closed_loop_fractional_pitch(
 float target[],                 /* Target vector */
@@ -52,6 +52,7 @@ float *stack
 /** Finds the best quantized 3-tap pitch predictor by analysis by synthesis */
 int pitch_search_3tap(
 float target[],                 /* Target vector */
+float *sw,
 float ak[],                     /* LPCs for this subframe */
 float awk1[],                   /* Weighted LPCs #1 for this subframe */
 float awk2[],                   /* Weighted LPCs #2 for this subframe */
