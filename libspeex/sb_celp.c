@@ -552,7 +552,11 @@ int sb_encode(void *state, short *in, SpeexBits *bits)
          /* Gain to use if we want to use the low-band excitation for high-band */
          g=eh/(.01+el);
 
+#ifdef FIXED_POINT
          g *= filter_ratio/128.;
+#else
+         g *= filter_ratio;
+#endif
          /*print_vec(&g, 1, "gain factor");*/
          /* Gain quantization */
          {
@@ -571,7 +575,7 @@ int sb_encode(void *state, short *in, SpeexBits *bits)
          spx_word16_t el;
          el = compute_rms(low_exc+offset, st->subframeSize);
 
-         gc = DIV32_16(MULT16_16((int)(filter_ratio),(1+eh)),1+el);
+         gc = DIV32_16(MULT16_16(filter_ratio,1+eh),1+el);
 
          /* This is a kludge that cleans up a historical bug */
          if (st->subframeSize==80)

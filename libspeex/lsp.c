@@ -81,13 +81,13 @@ static spx_word16_t spx_cos(spx_word16_t x)
 
 
 #define FREQ_SCALE 16384
-//#define ANGLE2X(a) (32768*cos(((a)/8192.)))
+
+/*#define ANGLE2X(a) (32768*cos(((a)/8192.)))*/
 #define ANGLE2X(a) (SHL(spx_cos(a),2))
-//#define X2ANGLE(x) (acos(.00006103515625*(x))*LSP_SCALING)
+
+/*#define X2ANGLE(x) (acos(.00006103515625*(x))*LSP_SCALING)*/
 #define X2ANGLE(x) (spx_acos(x))
-/* maybe we could approximate acos as 
-   sqrt(6.7349563814-5.213449731*sqrt(0.6688572663+x))
-*/
+
 #else
 
 #define C1 0.99940307
