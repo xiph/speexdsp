@@ -485,7 +485,7 @@ int nb_encode(void *state, float *in, SpeexBits *bits)
       int quant;
       quant = (int)floor(.5+15*ol_pitch_coef);
       if (quant>15)
-         quant=0;
+         quant=15;
       if (quant<0)
          quant=0;
       speex_bits_pack(bits, quant, 4);
