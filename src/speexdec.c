@@ -86,6 +86,10 @@
 #include <speex/speex_callbacks.h>
 #include "misc.h"
 
+#ifdef DISABLE_GLOBAL_POINTERS
+#include <speex/speex_noglobals.h>
+#endif
+
 #define MAX_FRAME_SIZE 2000
 
 #define readint(buf, base) (((buf[base+3]<<24)&0xff000000)| \
@@ -323,7 +327,12 @@ static void *process_header(ogg_packet *op, int enh_enabled, int *frame_size, in
    modeID = header->mode;
    if (forceMode!=-1)
       modeID = forceMode;
+
+#ifdef DISABLE_GLOBAL_POINTERS
+   mode = speex_mode_new (modeID);
+#else
    mode = speex_mode_list[modeID];
+#endif
    
    if (header->speex_version_id > 1)
    {
