@@ -194,6 +194,11 @@ extern "C" {
 /** modeID for the defined ultra-wideband mode */
 #define SPEEX_MODEID_UWB 2
 
+#ifdef EPIC_48K
+/** modeID for the Epic 48K mode */
+#define SPEEX_MODEID_NB_48K 1000
+#endif
+
 struct SpeexMode;
 
 
@@ -388,6 +393,9 @@ extern const SpeexMode speex_nb_48k_mode;
 
 /** List of all modes available */
 extern const SpeexMode * const speex_mode_list[SPEEX_NB_MODES];
+
+/** Obtain one of the modes available */
+const SpeexMode * const speex_lib_get_mode (int mode);
 
 #ifdef __cplusplus
 }
