@@ -105,9 +105,7 @@ typedef struct DecState {
    float *inBuf;          /* Input buffer (original signal) */
    float *frame;          /* Start of original frame */
    float *excBuf;         /* Excitation buffer */
-   float *exc2Buf;        /* Excitation (after post-filter) buffer */
    float *exc;            /* Start of excitation frame */
-   float *exc2;           /* Start of excitation frame after post-filter*/
    float *qlsp;           /* Quantized LSPs for current frame */
    float *old_qlsp;       /* Quantized LSPs for previous frame */
    float *interp_qlsp;    /* Interpolated quantized LSPs */

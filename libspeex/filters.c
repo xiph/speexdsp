@@ -20,7 +20,6 @@
 #include "filters.h"
 #include "stack_alloc.h"
 #include <stdio.h>
-#include "roots.h"
 #include <math.h>
 
 #define min(a,b) ((a) < (b) ? (a) : (b))

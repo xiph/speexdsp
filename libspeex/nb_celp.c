@@ -29,7 +29,6 @@
 #include "stack_alloc.h"
 #include "vq.h"
 #include "speex_bits.h"
-#include "post_filter.h"
 #include "vbr.h"
 #include "misc.h"
 
@@ -695,14 +694,10 @@ void *nb_decoder_init(SpeexMode *m)
    st->frame = st->inBuf + st->bufSize - st->windowSize;
    st->excBuf = speex_alloc(st->bufSize*sizeof(float));
    st->exc = st->excBuf + st->bufSize - st->windowSize;
-   st->exc2Buf = speex_alloc(st->bufSize*sizeof(float));
-   st->exc2 = st->exc2Buf + st->bufSize - st->windowSize;
    for (i=0;i<st->bufSize;i++)
       st->inBuf[i]=0;
    for (i=0;i<st->bufSize;i++)
       st->excBuf[i]=0;
-   for (i=0;i<st->bufSize;i++)
-      st->exc2Buf[i]=0;
 
    st->interp_qlpc = speex_alloc((st->lpcSize+1)*sizeof(float));
    st->qlsp = speex_alloc(st->lpcSize*sizeof(float));
@@ -722,7 +717,6 @@ void nb_decoder_destroy(void *state)
    st=state;
    speex_free(st->inBuf);
    speex_free(st->excBuf);
-   speex_free(st->exc2Buf);
    speex_free(st->interp_qlpc);
    speex_free(st->qlsp);
    speex_free(st->old_qlsp);
@@ -753,7 +747,6 @@ void nb_decode(void *state, SpeexBits *bits, float *out, int lost)
    /* Shift all buffers by one frame */
    speex_move(st->inBuf, st->inBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(float));
    speex_move(st->excBuf, st->excBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(float));
-   speex_move(st->exc2Buf, st->exc2Buf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(float));
 
    /* Unquantize LSPs */
    SUBMODE(lsp_unquant)(st->qlsp, st->lpcSize, bits);
@@ -789,7 +782,7 @@ void nb_decode(void *state, SpeexBits *bits, float *out, int lost)
    for (sub=0;sub<st->nbSubframes;sub++)
    {
       int offset;
-      float *sp, *exc, *exc2, tmp;
+      float *sp, *exc, tmp;
       float *num, *den;
       /* Offset relative to start of frame */
       offset = st->subframeSize*sub;
@@ -798,7 +791,6 @@ void nb_decode(void *state, SpeexBits *bits, float *out, int lost)
       /* Excitation */
       exc=st->exc+offset;
       /* Excitation after post-filter*/
-      exc2=st->exc2+offset;
 
       /* LSP interpolation (quantized and unquantized) */
       tmp = (1.0 + sub)/st->nbSubframes;
@@ -932,16 +924,13 @@ void nb_decode(void *state, SpeexBits *bits, float *out, int lost)
          POP(st->stack);
       }
 
-      for (i=0;i<st->subframeSize;i++)
-         exc2[i]=exc[i];
-
       if (st->lpc_enh_enabled && SUBMODE(comb_gain>0))
-         comb_filter(exc, exc2, st->interp_qlpc, st->lpcSize, st->subframeSize,
+         comb_filter(exc, sp, st->interp_qlpc, st->lpcSize, st->subframeSize,
                               pitch, pitch_gain, .5);
-      /*syn_filt_mem(exc2, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, 
+      /*syn_filt_mem(sp, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, 
         st->mem_sp);*/
       
-      pole_zero_mem(exc2, num, den, sp, st->subframeSize, (st->lpcSize<<1), 
+      pole_zero_mem(sp, num, den, sp, st->subframeSize, (st->lpcSize<<1), 
                     st->mem_sp, st->stack);
       
       POP(st->stack);
