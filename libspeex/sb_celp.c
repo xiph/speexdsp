@@ -912,29 +912,32 @@ int sb_decode(void *state, SpeexBits *bits, float *out)
       return ret;
    }
 
-   if (!bits)
+   if (bits || st->submodes[st->submodeID] != NULL)
    {
-      sb_decode_lost(st, out, 0, stack);
-      return 0;
-   }
-
-   /*Check "wideband bit"*/
-   wideband = speex_bits_peek(bits);
-   if (wideband)
-   {
-      /*Regular wideband frame, read the submode*/
-      wideband = speex_bits_unpack_unsigned(bits, 1);
-      st->submodeID = speex_bits_unpack_unsigned(bits, SB_SUBMODE_BITS);
-   } else
-   {
-      /*Was a narrowband frame, set "null submode"*/
-      st->submodeID = 0;
-   }
-
-   if (dtx)
-   {
-      sb_decode_lost(st, out, 1, stack);
-      return 0;      
+      if (!bits)
+      {
+         sb_decode_lost(st, out, 0, stack);
+         return 0;
+      }
+      
+      /*Check "wideband bit"*/
+      wideband = speex_bits_peek(bits);
+      if (wideband)
+      {
+         /*Regular wideband frame, read the submode*/
+         wideband = speex_bits_unpack_unsigned(bits, 1);
+         st->submodeID = speex_bits_unpack_unsigned(bits, SB_SUBMODE_BITS);
+      } else
+      {
+         /*Was a narrowband frame, set "null submode"*/
+         st->submodeID = 0;
+      }
+      
+      if (dtx)
+      {
+         sb_decode_lost(st, out, 1, stack);
+         return 0;      
+      }
    }
 
    for (i=0;i<st->frame_size;i++)
