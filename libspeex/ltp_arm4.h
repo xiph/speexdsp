@@ -37,7 +37,7 @@ static spx_word32_t inner_prod(const spx_word16_t *x, const spx_word16_t *y, int
    __asm__ __volatile__ (
          "\tldrsh %5, [%0], #2 \n"
          "\tldrsh %6, [%1], #2 \n"
-         ".inner_prod_loop:\n"
+         ".inner_prod_loop%=:\n"
          "\tsub %7, %7, %7\n"
          "\tsub %10, %10, %10\n"
 
@@ -70,7 +70,7 @@ static spx_word32_t inner_prod(const spx_word16_t *x, const spx_word16_t *y, int
          "\tsubs %4, %4, #1\n"
          "\tadd %2, %2, %7, asr #5\n"
          "\tadd %3, %3, %10, asr #5\n"
-         "\tbne .inner_prod_loop\n"
+         "\tbne .inner_prod_loop%=\n"
    : "=r" (deadx), "=r" (deady), "=r" (sum1),  "=r" (sum2), "=r" (deadlen),
    "=r" (dead1), "=r" (dead2), "=r" (dead3), "=r" (dead4), "=r" (dead5), "=r" (dead6)
    : "0" (x), "1" (y), "2" (sum1), "3" (sum2), "4" (len>>3)

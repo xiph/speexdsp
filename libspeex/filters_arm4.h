@@ -41,7 +41,7 @@ int normalize16(const spx_sig_t *x, spx_word16_t *y, int max_scale, int len)
          "\tmov %1, #1 \n"
          "\tmov %3, #0 \n"
 
-         ".normalize16loop1: \n"
+         ".normalize16loop1%=: \n"
 
          "\tldr %4, [%0], #4 \n"
          "\tcmps %4, %1 \n"
@@ -50,7 +50,7 @@ int normalize16(const spx_sig_t *x, spx_word16_t *y, int max_scale, int len)
          "\tmovlt %3, %4 \n"
 
          "\tsubs %2, %2, #1 \n"
-         "\tbne .normalize16loop1\n"
+         "\tbne .normalize16loop1%=\n"
 
          "\trsb %3, %3, #0 \n"
          "\tcmp %1, %3 \n"
@@ -68,7 +68,7 @@ int normalize16(const spx_sig_t *x, spx_word16_t *y, int max_scale, int len)
    }
    
    __asm__ __volatile__ (
-         ".normalize16loop: \n"
+         ".normalize16loop%=: \n"
 
          "\tldr %4, [%0], #4 \n"
          "\tldr %5, [%0], #4 \n"
@@ -84,7 +84,7 @@ int normalize16(const spx_sig_t *x, spx_word16_t *y, int max_scale, int len)
          "\tmov %5, %5, asr %3 \n"
          "\tstrh %5, [%1], #2 \n"
 
-         "\tbge .normalize16loop\n"
+         "\tbge .normalize16loop%=\n"
    : "=r" (dead1), "=r" (dead2), "=r" (dead3), "=r" (dead4),
    "=r" (dead5), "=r" (dead6)
    : "0" (x), "1" (y), "2" (len>>2), "3" (sig_shift)
@@ -108,7 +108,7 @@ void filter_mem2(const spx_sig_t *x, const spx_coef_t *num, const spx_coef_t *de
       __asm__ __volatile__ (
             "\tldrsh %6, [%1], #2\n"
             "\tsmull %8, %9, %4, %6\n"
-            ".filterloop: \n"
+            ".filterloop%=: \n"
             "\tldrsh %6, [%2], #2\n"
             "\tldr %10, [%0, #4]\n"
             "\tmov %8, %8, lsr #15\n"
@@ -121,7 +121,7 @@ void filter_mem2(const spx_sig_t *x, const spx_coef_t *num, const spx_coef_t *de
             "\tsubs %3, %3, #1\n"
             "\tadd %10, %10, %11, lsl #17\n"
             "\tstr %10, [%0], #4 \n"
-            "\t bne .filterloop\n"
+            "\t bne .filterloop%=\n"
 
             "\tmov %8, %8, lsr #15\n"
             "\tadd %10, %8, %9, lsl #17\n"
@@ -156,7 +156,7 @@ void iir_mem2(const spx_sig_t *x, const spx_coef_t *den, spx_sig_t *y, int N, in
             "\tldrsh %4, [%1], #2\n"
             "\tsmull %5, %6, %3, %4\n"
 
-            ".iirloop: \n"
+            ".iirloop%=: \n"
             "\tldr %7, [%0, #4]\n"
 
             "\tldrsh %4, [%1], #2\n"
@@ -166,7 +166,7 @@ void iir_mem2(const spx_sig_t *x, const spx_coef_t *den, spx_sig_t *y, int N, in
             "\tadd %7, %7, %8\n"
             "\tstr %7, [%0], #4 \n"
             "\tsubs %2, %2, #1\n"
-            "\t bne .iirloop\n"
+            "\t bne .iirloop%=\n"
 
             "\tmov %5, %5, lsr #15\n"
             "\tadd %7, %5, %6, lsl #17\n"
