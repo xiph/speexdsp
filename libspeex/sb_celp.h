@@ -73,9 +73,8 @@ typedef struct SBEncState {
    float *mem_sp2;
    float *mem_sw;              /* Perceptual signal memory */
 
-   lsp_quant_func    lsp_quant;
-   innovation_quant_func innovation_quant;
-   void             *innovation_params;
+   SpeexSubmode **submodes;
+   int    submodeID;
 } SBEncState;
 
 
@@ -114,9 +113,8 @@ typedef struct SBDecState {
    float *mem_pf_exc2;
    float *mem_pf_sp;
 
-   lsp_unquant_func  lsp_unquant;
-   innovation_unquant_func innovation_unquant;
-   void             *innovation_params;
+   SpeexSubmode **submodes;
+   int    submodeID;
 } SBDecState;
 
 

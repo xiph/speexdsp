@@ -127,6 +127,13 @@ static void *process_header(ogg_packet *op, int pf_enabled, int *frame_size, int
       fprintf (stderr, "Cannot read header\n");
       return NULL;
    }
+   if (header->mode >= SPEEX_NB_MODES)
+   {
+      fprintf (stderr, "Mode number %d does not (any longer) exist in this version\n", 
+               header->mode);
+      return NULL;
+   }
+      
    mode = speex_mode_list[header->mode];
    
    if (mode->bitstream_version < header->mode_bitstream_version)

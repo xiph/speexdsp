@@ -28,9 +28,23 @@
 extern "C" {
 #endif
 
+/*values for *ctl() requests*/
 #define SPEEX_SET_PF 0
 #define SPEEX_GET_PF 1
+/*Would be SPEEX_SET_FRAME_SIZE, but it's (currently) invalid*/
 #define SPEEX_GET_FRAME_SIZE 3
+#define SPEEX_SET_QUALITY 4
+#define SPEEX_GET_QUALITY 5
+#define SPEEX_SET_MODE 6
+#define SPEEX_GET_MODE 7
+#define SPEEX_SET_LOW_MODE 8
+#define SPEEX_GET_LOW_MODE 9
+#define SPEEX_SET_HIGH_MODE 10
+#define SPEEX_GET_HIGH_MODE 11
+
+
+#define SPEEX_NB_MODES 2
+
 
 struct SpeexMode;
 
@@ -129,16 +143,10 @@ void speex_decoder_ctl(void *state, int request, void *ptr);
 /** Default narrowband mode */
 extern SpeexMode speex_nb_mode;
 
-/** Low bit-rate narrowband mode */
-extern SpeexMode speex_nb_lbr_mode;
-
 /** Default wideband mode */
 extern SpeexMode speex_wb_mode;
 
-/** Low bit-rate wideband mode */
-extern SpeexMode speex_wb_mode_lbr;
-
-extern SpeexMode *speex_mode_list[];
+extern SpeexMode *speex_mode_list[SPEEX_NB_MODES];
 
 #ifdef __cplusplus
 }

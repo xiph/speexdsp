@@ -25,6 +25,14 @@
 #include "speex.h"
 #include "speex_bits.h"
 
+
+#define NB_SUBMODES 16
+#define NB_SUBMODE_BITS 4
+
+#define SB_SUBMODES 8
+#define SB_SUBMODE_BITS 3
+
+
 /* Quantizes LSPs */
 typedef void (*lsp_quant_func)(float *, float *, int, SpeexBits *);
 
@@ -49,21 +57,8 @@ typedef void (*innovation_unquant_func)(float *, void *, int, SpeexBits*, float 
 typedef void (*nb_post_filter_func)(float *, float *, float *, int, int, int, 
                                float *, void *, float *, float *, float *);
 
-/*Struct defining the encoding/decoding mode*/
-typedef struct SpeexNBMode {
-   int     frameSize;
-   int     subframeSize;
-   int     lpcSize;
-   int     bufSize;
-   int     pitchStart;
-   int     pitchEnd;
+typedef struct SpeexSubmode {
    int     lbr_pitch;
-   float   gamma1;
-   float   gamma2;
-   float   lag_factor;
-   float   lpc_floor;
-   float   preemph;
-
    /*LSP functions*/
    lsp_quant_func    lsp_quant;
    lsp_unquant_func  lsp_unquant;
@@ -81,6 +76,27 @@ typedef struct SpeexNBMode {
    /*Post-filter*/
    nb_post_filter_func post_filter_func;
    void             *post_filter_params;
+
+} SpeexSubmode;
+
+/*Struct defining the encoding/decoding mode*/
+typedef struct SpeexNBMode {
+   int     frameSize;
+   int     subframeSize;
+   int     lpcSize;
+   int     bufSize;
+   int     pitchStart;
+   int     pitchEnd;
+
+   float   gamma1;
+   float   gamma2;
+   float   lag_factor;
+   float   lpc_floor;
+   float   preemph;
+
+   SpeexSubmode *submodes[NB_SUBMODES];
+   int     defaultSubmode;
+
 } SpeexNBMode;
 
 
@@ -96,14 +112,9 @@ typedef struct SpeexSBMode {
    float   lag_factor;
    float   lpc_floor;
    float   preemph;
-   /*LSP functions*/
-   lsp_quant_func    lsp_quant;
-   lsp_unquant_func  lsp_unquant;
 
-   /*Quantization of innovation */
-   innovation_quant_func innovation_quant;
-   innovation_unquant_func innovation_unquant;
-   void             *innovation_params;
+   SpeexSubmode *submodes[SB_SUBMODES];
+   int     defaultSubmode;
 
 } SpeexSBMode;
 

@@ -196,19 +196,13 @@ int main(int argc, char **argv)
    {
       if (!rate)
          rate = 8000;
-      if (lbr)
-         mode=&speex_nb_lbr_mode;
-      else
-         mode=&speex_nb_mode;
+      mode=&speex_nb_mode;
    }
    if (wideband)
    {
       if (!rate)
          rate = 16000;
-      if (lbr)
-         mode=&speex_wb_mode_lbr;
-      else
-         mode=&speex_wb_mode;
+      mode=&speex_wb_mode;
    }
 
    speex_init_header(&header, rate, 1, mode);
@@ -273,7 +267,11 @@ int main(int argc, char **argv)
    }
 
    speex_encoder_ctl(st, SPEEX_GET_FRAME_SIZE, &frame_size);
-
+   if (lbr)
+   {
+      int tmp=3;
+      speex_encoder_ctl(st, SPEEX_SET_QUALITY, &tmp);
+   }
    /*Main encoding loop (one frame per iteration)*/
    while (1)
    {

@@ -35,7 +35,7 @@ typedef struct EncState {
    int    bufSize;        /* Buffer size */
    int    min_pitch;      /* Minimum pitch value allowed */
    int    max_pitch;      /* Maximum pitch value allowed */
-   int    lbr_pitch;      /* Forces pitch to be within +-7 samples of open-loop pitch*/
+
    int    ol_pitch;       /* Open-loop pitch */
    int    ol_voiced;      /* Open-loop voiced/non-voiced decision */
    int   *pitch;
@@ -75,11 +75,8 @@ typedef struct EncState {
    float *dmem1, *dmem2;
    float *pi_gain;
 
-   lsp_quant_func    lsp_quant;
-   ltp_quant_func    ltp_quant;
-   void             *ltp_params;
-   innovation_quant_func innovation_quant;
-   void             *innovation_params;
+   SpeexSubmode **submodes;
+   int    submodeID;
 } EncState;
 
 /**Structure representing the full state of the narrowband decoder*/
@@ -95,7 +92,7 @@ typedef struct DecState {
    int    bufSize;        /* Buffer size */
    int    min_pitch;      /* Minimum pitch value allowed */
    int    max_pitch;      /* Maximum pitch value allowed */
-   int    lbr_pitch;      /* Forces pitch to be within +-7 samples of open-loop pitch*/
+
    float  gamma1;         /* Perceptual filter: A(z/gamma1) */
    float  gamma2;         /* Perceptual filter: A(z/gamma2) */
    float  preemph;        /* Pre-emphasis: P(z) = 1 - a*z^-1*/
@@ -118,14 +115,9 @@ typedef struct DecState {
    int    last_pitch;
    float  last_pitch_gain;
 
-   lsp_unquant_func  lsp_unquant;
-   ltp_unquant_func  ltp_unquant;
-   void             *ltp_params;
-   innovation_unquant_func innovation_unquant;
-   void             *innovation_params;
-   nb_post_filter_func post_filter_func;
-   void             *post_filter_params;
-   int               pf_enabled;
+   SpeexSubmode **submodes;
+   int    submodeID;
+   int    pf_enabled;
 } DecState;
 
 /**Initializes encoder state*/

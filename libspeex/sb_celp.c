@@ -39,6 +39,8 @@
 
 #define sqr(x) ((x)*(x))
 
+#define SUBMODE(x) st->submodes[st->submodeID]->x
+
 
 #if 0
 #define QMF_ORDER 32
@@ -171,6 +173,13 @@ void *sb_encoder_init(SpeexMode *m)
    st->lpcSize=mode->lpcSize;
    st->bufSize=mode->bufSize;
 
+   st->submodes=mode->submodes;
+   st->submodeID=mode->defaultSubmode;
+   {
+      int mod=3;
+      speex_encoder_ctl(st->st_low, SPEEX_SET_MODE, &mod);
+   }
+
    st->lag_factor = mode->lag_factor;
    st->lpc_floor = mode->lpc_floor;
    st->gamma1=mode->gamma1;
@@ -233,9 +242,7 @@ void *sb_encoder_init(SpeexMode *m)
    st->mem_sp2 = calloc(st->lpcSize, sizeof(float));
    st->mem_sw = calloc(st->lpcSize, sizeof(float));
 
-   st->lsp_quant = mode->lsp_quant;
-   st->innovation_quant = mode->innovation_quant;
-   st->innovation_params = mode->innovation_params;
+
    return st;
 }
 
@@ -306,6 +313,8 @@ void sb_encode(void *state, float *in, SpeexBits *bits)
    /* Encode the narrowband part*/
    nb_encode(st->st_low, st->x0d, bits);
 
+   speex_bits_pack(bits, st->submodeID, SB_SUBMODE_BITS);
+
    /* High-band buffering / sync with low band */
 #if 0
    for (i=0;i<st->frame_size;i++)
@@ -354,7 +363,7 @@ void sb_encode(void *state, float *in, SpeexBits *bits)
       st->lsp[i] = acos(st->lsp[i]);
 
    /* LSP quantization */
-   st->lsp_quant(st->lsp, st->qlsp, st->lpcSize, bits);
+   SUBMODE(lsp_quant)(st->lsp, st->qlsp, st->lpcSize, bits);
    
    /*printf ("high_lsp:");
    for (i=0;i<st->lpcSize;i++)
@@ -574,8 +583,8 @@ void sb_encode(void *state, float *in, SpeexBits *bits)
             innov[i]=0;
 
          /*print_vec(target, st->subframeSize, "\ntarget");*/
-         st->innovation_quant(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2, 
-                                st->innovation_params, st->lpcSize, st->subframeSize, 
+         SUBMODE(innovation_quant)(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2, 
+                                SUBMODE(innovation_params), st->lpcSize, st->subframeSize, 
                                 innov, bits, st->stack);
          /*print_vec(target, st->subframeSize, "after");*/
 
@@ -656,6 +665,9 @@ void *sb_decoder_init(SpeexMode *m)
    st->pf_order=15;
    st->pf_gamma=.05;
 
+   st->submodes=mode->submodes;
+   st->submodeID=mode->defaultSubmode;
+
    st->first=1;
    st->stack = calloc(10000, sizeof(float));
 
@@ -691,9 +703,6 @@ void *sb_decoder_init(SpeexMode *m)
    st->mem_pf_exc2 = calloc(st->pf_order, sizeof(float));
    st->mem_pf_sp = calloc(st->pf_order, sizeof(float));
 
-   st->lsp_unquant = mode->lsp_unquant;
-   st->innovation_unquant = mode->innovation_unquant;
-   st->innovation_params = mode->innovation_params;
    return st;
 }
 
@@ -745,10 +754,12 @@ void sb_decode(void *state, SpeexBits *bits, float *out, int lost)
    /* Decode the low-band */
    nb_decode(st->st_low, bits, st->x0d, lost);
 
+   st->submodeID = speex_bits_unpack_unsigned(bits, SB_SUBMODE_BITS);
+
    for (i=0;i<st->frame_size;i++)
       st->exc[i]=0;
 
-   st->lsp_unquant(st->qlsp, st->lpcSize, bits);
+   SUBMODE(lsp_unquant)(st->qlsp, st->lpcSize, bits);
    
    if (st->first)
    {
@@ -821,7 +832,7 @@ void sb_decode(void *state, SpeexBits *bits, float *out, int lost)
          scale = gc*sqrt(1+el)/filter_ratio;
 
 
-         st->innovation_unquant(exc, st->innovation_params, st->subframeSize, 
+         SUBMODE(innovation_unquant)(exc, SUBMODE(innovation_params), st->subframeSize, 
                                 bits, st->stack);
          for (i=0;i<st->subframeSize;i++)
             exc[i]*=scale;
@@ -904,6 +915,30 @@ void sb_encoder_ctl(void *state, int request, void *ptr)
    case SPEEX_GET_FRAME_SIZE:
       (*(int*)ptr) = st->full_frame_size;
       break;
+   case SPEEX_SET_HIGH_MODE:
+      st->submodeID = (*(int*)ptr);
+      break;
+   case SPEEX_SET_LOW_MODE:
+      speex_encoder_ctl(st->st_low, SPEEX_SET_MODE, ptr);
+      break;
+   case SPEEX_SET_QUALITY:
+      {
+         int tmp;
+         int quality = (*(int*)ptr);
+         if (quality<5)
+         {
+            st->submodeID = 1;
+            tmp=2;
+            speex_encoder_ctl(st->st_low, SPEEX_SET_MODE, &tmp);
+         } else if (quality<=10)
+         {
+            st->submodeID = 2;
+            tmp=3;
+            speex_encoder_ctl(st->st_low, SPEEX_SET_MODE, &tmp);
+         } else
+            fprintf(stderr, "Unknown sb_ctl quality: %d\n", quality);
+      }
+      break;
    default:
       fprintf(stderr, "Unknown nb_ctl request: %d\n", request);
    }
@@ -923,7 +958,7 @@ void sb_decoder_ctl(void *state, int request, void *ptr)
       speex_decoder_ctl(st->st_low, request, ptr);
       break;
    default:
-      fprintf(stderr, "Unknown nb_ctl request: %d\n", request);
+      fprintf(stderr, "Unknown sb_ctl request: %d\n", request);
    }
 
 }
