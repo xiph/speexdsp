@@ -197,8 +197,8 @@ void *sb_encoder_init(const SpeexMode *m)
 
    st->lag_factor = mode->lag_factor;
    st->lpc_floor = mode->lpc_floor;
-   st->gamma1=GAMMA_SCALING*mode->gamma1;
-   st->gamma2=GAMMA_SCALING*mode->gamma2;
+   st->gamma1=mode->gamma1;
+   st->gamma2=mode->gamma2;
    st->first=1;
 
    st->x0d=PUSH(st->stack, st->frame_size, spx_sig_t);
@@ -793,26 +793,19 @@ static void sb_decode_lost(SBDecState *st, short *out, int dtx, char *stack)
    
    if (st->lpc_enh_enabled)
    {
-      float r=.9;
-      
-      float k1,k2,k3;
+      spx_word16_t k1,k2,k3;
       if (st->submodes[st->submodeID] != NULL)
       {
          k1=SUBMODE(lpc_enh_k1);
          k2=SUBMODE(lpc_enh_k2);
+         k3=SUBMODE(lpc_enh_k3);
       } else {
-         k1=k2=.7;
+         k1=k2=.7*GAMMA_SCALING;
+         k3 = 0;
       }
-      k3=(1-(1-r*k1)/(1-r*k2))/r;
-      k3=k1-k2;
-      if (!st->lpc_enh_enabled)
-      {
-         k1=k2;
-         k3=0;
-      }
-      bw_lpc(GAMMA_SCALING*k1, st->interp_qlpc, awk1, st->lpcSize);
-      bw_lpc(GAMMA_SCALING*k2, st->interp_qlpc, awk2, st->lpcSize);
-      bw_lpc(GAMMA_SCALING*k3, st->interp_qlpc, awk3, st->lpcSize);
+      bw_lpc(k1, st->interp_qlpc, awk1, st->lpcSize);
+      bw_lpc(k2, st->interp_qlpc, awk2, st->lpcSize);
+      bw_lpc(k3, st->interp_qlpc, awk3, st->lpcSize);
       /*fprintf (stderr, "%f %f %f\n", k1, k2, k3);*/
    }
    
@@ -996,21 +989,13 @@ int sb_decode(void *state, SpeexBits *bits, short *out)
 
       if (st->lpc_enh_enabled)
       {
-         float r=.9;
-         
-         float k1,k2,k3;
+         spx_word16_t k1,k2,k3;
          k1=SUBMODE(lpc_enh_k1);
          k2=SUBMODE(lpc_enh_k2);
-         k3=(1-(1-r*k1)/(1-r*k2))/r;
-         k3=k1-k2;
-         if (!st->lpc_enh_enabled)
-         {
-            k1=k2;
-            k3=0;
-         }
-         bw_lpc(GAMMA_SCALING*k1, st->interp_qlpc, awk1, st->lpcSize);
-         bw_lpc(GAMMA_SCALING*k2, st->interp_qlpc, awk2, st->lpcSize);
-         bw_lpc(GAMMA_SCALING*k3, st->interp_qlpc, awk3, st->lpcSize);
+         k3=SUBMODE(lpc_enh_k3);
+         bw_lpc(k1, st->interp_qlpc, awk1, st->lpcSize);
+         bw_lpc(k2, st->interp_qlpc, awk2, st->lpcSize);
+         bw_lpc(k3, st->interp_qlpc, awk3, st->lpcSize);
          /*fprintf (stderr, "%f %f %f\n", k1, k2, k3);*/
       }
 

@@ -92,8 +92,9 @@ typedef struct SpeexSubmode {
    const void             *innovation_params; /**< Innovation quantization parameters*/
 
    /*Synthesis filter enhancement*/
-   float             lpc_enh_k1; /**< Enhancer constant */
-   float             lpc_enh_k2; /**< Enhancer constant */
+   spx_word16_t      lpc_enh_k1; /**< Enhancer constant */
+   spx_word16_t      lpc_enh_k2; /**< Enhancer constant */
+   spx_word16_t      lpc_enh_k3; /**< Enhancer constant */
    float             comb_gain;  /**< Gain of enhancer comb filter */
 
    int               bits_per_frame; /**< Number of bits per frame after encoding*/
@@ -108,8 +109,8 @@ typedef struct SpeexNBMode {
    int     pitchStart;     /**< Smallest pitch value allowed */
    int     pitchEnd;       /**< Largest pitch value allowed */
 
-   float   gamma1;         /**< Perceptual filter parameter #1 */
-   float   gamma2;         /**< Perceptual filter parameter #2 */
+   spx_word16_t gamma1;    /**< Perceptual filter parameter #1 */
+   spx_word16_t gamma2;    /**< Perceptual filter parameter #2 */
    float   lag_factor;     /**< Lag-windowing parameter */
    float   lpc_floor;      /**< Noise floor for LPC analysis */
 
@@ -130,8 +131,8 @@ typedef struct SpeexSBMode {
    int     subframeSize;  /**< Size of sub-frames used for encoding */
    int     lpcSize;       /**< Order of LPC filter */
    int     bufSize;       /**< Signal buffer size in encoder */
-   float   gamma1;        /**< Perceptual filter parameter #1 */
-   float   gamma2;        /**< Perceptual filter parameter #1 */
+   spx_word16_t gamma1;   /**< Perceptual filter parameter #1 */
+   spx_word16_t gamma2;   /**< Perceptual filter parameter #1 */
    float   lag_factor;    /**< Lag-windowing parameter */
    float   lpc_floor;     /**< Noise floor for LPC analysis */
    float   folding_gain;

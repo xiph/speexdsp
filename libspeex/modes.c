@@ -181,7 +181,11 @@ static const SpeexSubmode nb_submode1 = {
    noise_codebook_quant,
    noise_codebook_unquant,
    NULL,
-   .7, .7, -1,
+#ifdef FIXED_POINT
+   22938, 22938, 0, -1,
+#else
+   .7, .7, 0, -1,
+#endif
    43
 };
 
@@ -202,8 +206,11 @@ static const SpeexSubmode nb_submode8 = {
    split_cb_search_shape_sign,
    split_cb_shape_sign_unquant,
    &split_cb_nb_ulbr,
-
-   0.7, 0.5, .65,
+#ifdef FIXED_POINT
+   22938, 16384, 11796, .65,
+#else
+   0.7, 0.5, .36, .65,
+#endif
    79
 };
 
@@ -224,8 +231,11 @@ static const SpeexSubmode nb_submode2 = {
    split_cb_search_shape_sign,
    split_cb_shape_sign_unquant,
    &split_cb_nb_vlbr,
-
-   0.7, 0.5, .55,
+#ifdef FIXED_POINT
+   22938, 16384, 11796, .55,
+#else
+   0.7, 0.5, .36, .55,
+#endif
    119
 };
 
@@ -246,8 +256,11 @@ static const SpeexSubmode nb_submode3 = {
    split_cb_search_shape_sign,
    split_cb_shape_sign_unquant,
    &split_cb_nb_lbr,
-
-   0.7, 0.55, .45,
+#ifdef FIXED_POINT
+   22938, 18022, 9830, .45,
+#else
+   0.7, 0.55, .30, .45,
+#endif
    160
 };
 
@@ -268,8 +281,11 @@ static const SpeexSubmode nb_submode4 = {
    split_cb_search_shape_sign,
    split_cb_shape_sign_unquant,
    &split_cb_nb_med,
-
-   0.7, 0.63, .35,
+#ifdef FIXED_POINT
+   22938, 20644, 5243, .35,
+#else
+   0.7, 0.63, .16, .35,
+#endif
    220
 };
 
@@ -290,8 +306,11 @@ static const SpeexSubmode nb_submode5 = {
    split_cb_search_shape_sign,
    split_cb_shape_sign_unquant,
    &split_cb_nb,
-
-   0.7, 0.65, .25,
+#ifdef FIXED_POINT
+   22938, 21299, 3932, .25,
+#else
+   0.7, 0.65, .12, .25,
+#endif
    300
 };
 
@@ -312,8 +331,11 @@ static const SpeexSubmode nb_submode6 = {
    split_cb_search_shape_sign,
    split_cb_shape_sign_unquant,
    &split_cb_sb,
-
-   0.68, 0.65, .1,
+#ifdef FIXED_POINT
+   22282, 21299, 2294, .1,
+#else
+   0.68, 0.65, .07, .1,
+#endif
    364
 };
 
@@ -334,8 +356,11 @@ static const SpeexSubmode nb_submode7 = {
    split_cb_search_shape_sign,
    split_cb_shape_sign_unquant,
    &split_cb_nb,
-
-   0.65, 0.65, -1,
+#ifdef FIXED_POINT
+   21299, 21299, 0, -1,
+#else
+   0.65, 0.65, .0, -1,
+#endif
    492
 };
 
@@ -348,8 +373,11 @@ static const SpeexNBMode nb_mode = {
    640,    /*bufSize*/
    17,     /*pitchStart*/
    144,    /*pitchEnd*/
-   0.9,    /*gamma1*/
-   0.6,    /*gamma2*/
+#ifdef FIXED_POINT
+   29491, 19661, /* gamma1, gamma2 */
+#else
+   0.9, 0.6, /* gamma1, gamma2 */
+#endif
    .012,   /*lag_factor*/
    1.0002, /*lpc_floor*/
 #ifdef EPIC_48K
@@ -398,8 +426,11 @@ static const SpeexSubmode wb_submode1 = {
    NULL,
    NULL,
    NULL,
-
-   .75, .75, -1,
+#ifdef FIXED_POINT
+   24576, 24576, 0, -1,
+#else
+   .75, .75, .0, -1,
+#endif
    36
 };
 
@@ -420,8 +451,11 @@ static const SpeexSubmode wb_submode2 = {
    split_cb_search_shape_sign,
    split_cb_shape_sign_unquant,
    &split_cb_high_lbr,
-
-   .85, .6, -1,
+#ifdef FIXED_POINT
+   27853, 19661, 8192, -1,
+#else
+   .85, .6, .25, -1,
+#endif
    112
 };
 
@@ -443,7 +477,11 @@ static const SpeexSubmode wb_submode3 = {
    split_cb_shape_sign_unquant,
    &split_cb_high,
 
-   .75, .7, -1,
+#ifdef FIXED_POINT
+   24576, 22938, 1638, -1,
+#else
+   .75, .7, .05, -1,
+#endif
    192
 };
 
@@ -463,8 +501,11 @@ static const SpeexSubmode wb_submode4 = {
    split_cb_search_shape_sign,
    split_cb_shape_sign_unquant,
    &split_cb_high,
-
-   .75, .75, -1,
+#ifdef FIXED_POINT
+   24576, 24576, 0, -1,
+#else
+   .75, .75, .0, -1,
+#endif
    352
 };
 
@@ -476,8 +517,11 @@ static const SpeexSBMode sb_wb_mode = {
    40,     /*subframeSize*/
    8,     /*lpcSize*/
    640,    /*bufSize*/
-   .9,    /*gamma1*/
-   0.6,    /*gamma2*/
+#ifdef FIXED_POINT
+   29491, 19661, /* gamma1, gamma2 */
+#else
+   0.9, 0.6, /* gamma1, gamma2 */
+#endif
    .001,   /*lag_factor*/
    1.0001, /*lpc_floor*/
    0.9,
@@ -519,8 +563,11 @@ static const SpeexSBMode sb_uwb_mode = {
    80,     /*subframeSize*/
    8,     /*lpcSize*/
    1280,    /*bufSize*/
-   .9,    /*gamma1*/
-   0.6,    /*gamma2*/
+#ifdef FIXED_POINT
+   29491, 19661, /* gamma1, gamma2 */
+#else
+   0.9, 0.6, /* gamma1, gamma2 */
+#endif
    .002,   /*lag_factor*/
    1.0001, /*lpc_floor*/
    0.7,
@@ -590,8 +637,11 @@ static const SpeexSubmode nb_48k_submode = {
    split_cb_search_shape_sign,
    split_cb_shape_sign_unquant,
    &split_cb_nb_48k,
-
-   0.7, 0.5, .55,
+#ifdef FIXED_POINT
+   22938, 16384, 11796, .55,
+#else
+   0.7, 0.5, .36, .55,
+#endif
    144
 };
 

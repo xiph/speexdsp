@@ -141,8 +141,6 @@ typedef struct DecState {
 
    spx_word16_t  last_ol_gain;   /**< Open-loop gain for previous frame */
 
-   float  gamma1;         /**< Perceptual filter: A(z/gamma1) */
-   float  gamma2;         /**< Perceptual filter: A(z/gamma2) */
    char  *stack;          /**< Pseudo-stack allocation for temporary memory */
    spx_sig_t *inBuf;          /**< Input buffer (original signal) */
    spx_sig_t *frame;          /**< Start of original frame */

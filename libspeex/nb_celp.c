@@ -107,8 +107,8 @@ void *nb_encoder_init(const SpeexMode *m)
    st->subframeSize=mode->subframeSize;
    st->lpcSize = mode->lpcSize;
    st->bufSize = mode->bufSize;
-   st->gamma1=GAMMA_SCALING*mode->gamma1;
-   st->gamma2=GAMMA_SCALING*mode->gamma2;
+   st->gamma1=mode->gamma1;
+   st->gamma2=mode->gamma2;
    st->min_pitch=mode->pitchStart;
    st->max_pitch=mode->pitchEnd;
    st->lag_factor=mode->lag_factor;
@@ -961,8 +961,6 @@ void *nb_decoder_init(const SpeexMode *m)
    st->subframeSize=mode->subframeSize;
    st->lpcSize = mode->lpcSize;
    st->bufSize = mode->bufSize;
-   st->gamma1=mode->gamma1;
-   st->gamma2=mode->gamma2;
    st->min_pitch=mode->pitchStart;
    st->max_pitch=mode->pitchEnd;
 
@@ -1061,29 +1059,23 @@ static void nb_decode_lost(DecState *st, short *out, char *stack)
       /* Calculate perceptually enhanced LPC filter */
       if (st->lpc_enh_enabled)
       {
-         float r=.9;
-         
-         float k1,k2,k3;
+         spx_word16_t k1,k2,k3;
          if (st->submodes[st->submodeID] != NULL)
          {
             k1=SUBMODE(lpc_enh_k1);
             k2=SUBMODE(lpc_enh_k2);
+            k3=SUBMODE(lpc_enh_k3);
          } else {
-            k1=k2=.7;
+            k1=k2=.7*GAMMA_SCALING;
+            k3=.0;
          }
-         k3=(1-(1-r*k1)/(1-r*k2))/r;
-         if (!st->lpc_enh_enabled)
-         {
-            k1=k2;
-            k3=0;
-         }
-         bw_lpc(GAMMA_SCALING*k1, st->interp_qlpc, awk1, st->lpcSize);
-         bw_lpc(GAMMA_SCALING*k2, st->interp_qlpc, awk2, st->lpcSize);
-         bw_lpc(GAMMA_SCALING*k3, st->interp_qlpc, awk3, st->lpcSize);
+         bw_lpc(k1, st->interp_qlpc, awk1, st->lpcSize);
+         bw_lpc(k2, st->interp_qlpc, awk2, st->lpcSize);
+         bw_lpc(k3, st->interp_qlpc, awk3, st->lpcSize);
       }
         
       /* Make up a plausible excitation */
-      /* THIS CAN BE IMPROVED */
+      /* FIXME: THIS CAN BE IMPROVED */
       /*if (pitch_gain>.95)
         pitch_gain=.95;*/
       {
@@ -1425,21 +1417,9 @@ int nb_decode(void *state, SpeexBits *bits, short *out)
       /* Compute enhanced synthesis filter */
       if (st->lpc_enh_enabled)
       {
-         float r=.9;
-         
-         float k1,k2,k3;
-         k1=SUBMODE(lpc_enh_k1);
-         k2=SUBMODE(lpc_enh_k2);
-         k3=(1-(1-r*k1)/(1-r*k2))/r;
-         if (!st->lpc_enh_enabled)
-         {
-            k1=k2;
-            k3=0;
-         }
-         bw_lpc(GAMMA_SCALING*k1, st->interp_qlpc, awk1, st->lpcSize);
-         bw_lpc(GAMMA_SCALING*k2, st->interp_qlpc, awk2, st->lpcSize);
-         bw_lpc(GAMMA_SCALING*k3, st->interp_qlpc, awk3, st->lpcSize);
-         
+         bw_lpc(SUBMODE(lpc_enh_k1), st->interp_qlpc, awk1, st->lpcSize);
+         bw_lpc(SUBMODE(lpc_enh_k2), st->interp_qlpc, awk2, st->lpcSize);
+         bw_lpc(SUBMODE(lpc_enh_k3), st->interp_qlpc, awk3, st->lpcSize);
       }
 
       /* Compute analysis filter at w=pi */
