@@ -109,9 +109,9 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
    int i,j,m;
    int N,M;
    float scale;
-   float powE=0, powY=0, powD=0;
    float spectral_dist=0;
-
+   float cos_dist=0;
+   
    N = st->window_size;
    M = st->M;
    scale = 1.0f/N;
@@ -137,7 +137,6 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
    /* Convert x (echo input) to frequency domain */
    drft_forward(st->fft_lookup, &st->X[(M-1)*N]);
 
-
    /* Compute filter response Y */
    for (i=1;i<N-1;i+=2)
    {
@@ -160,18 +159,6 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
    for (i=0;i<N;i++)
       st->D[i]=st->d[i];
    drft_forward(st->fft_lookup, st->D);
-
-   /* Evaluate "spectral distance" between Y and D t odetect crosstalk */
-   for (i=1;i<N-1;i+=2)
-   {
-      float Sdd, Syy, Sdy;
-      Sdd = 1e4 + st->D[i]*st->D[i] + st->D[i+1]*st->D[i+1];
-      Syy = 1e4 + st->Y[i]*st->Y[i] + st->Y[i+1]*st->Y[i+1];
-      Sdy = st->Y[i]*st->D[i] + st->Y[i+1]*st->D[i+1];
-      spectral_dist += Sdy/sqrt(Sdd*Syy);
-   }
-   spectral_dist *= 2*scale;
-   /*printf ("%f\n", spectral_dist);*/
 
    /* Copy spectrum of Y to Yout for use in an echo post-filter */
    if (Yout)
@@ -196,43 +183,34 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
    /* Compute error signal (echo canceller output) */
    for (i=0;i<st->frame_size;i++)
    {
-      out[i] = ref[i] - st->y[i+st->frame_size];
+      float tmp_out;
+      tmp_out = (float)ref[i] - st->y[i+st->frame_size];
+      if (tmp_out>32767)
+         tmp_out = 32767;
+      else if (tmp_out<-32768)
+         tmp_out = -32768;
+      out[i] = tmp_out;
       st->E[i] = 0;
       st->E[i+st->frame_size] = out[i];
    }
 
+   {
+      float Sry=0, Srr=0,Syy=0;
+      /*float cos_dist;*/
+      for (i=0;i<st->frame_size;i++)
+      {
+         Sry += st->y[i+st->frame_size] * ref[i];
+         Srr += (float)ref[i] * (float)ref[i];
+         Syy += st->y[i+st->frame_size]*st->y[i+st->frame_size];
+      }
+      cos_dist = Sry/(sqrt(1e8+Srr)*sqrt(1e8+Syy));
+      /*printf (" %f ", cos_dist);*/
+      spectral_dist = Sry/(1e8+Srr);
+      /*printf (" %f ", spectral_dist);*/
+   }
+   
    /* Convert error to frequency domain */
    drft_forward(st->fft_lookup, st->E);
-
-   for (i=0;i<st->frame_size;i++)
-   {
-      powD += N*((float)ref[i])*ref[i];
-   }
-#if 0
-   for (i=1;i<N-1;i+=2)
-   {
-      float tmp;
-      tmp = st->Y[i]*st->Y[i] + st->Y[i+1]*st->Y[i+1];
-      powY += 1*tmp + 0*(st->E[i]*st->E[i] + st->E[i+1]*st->E[i+1]);
-      tmp = st->E[i]*st->E[i] + st->E[i+1]*st->E[i+1] - 4*tmp;
-      if (tmp<0)
-         tmp=0;
-      powE += tmp; 
-   }
-#else
-   for (i=3;i<N-3;i+=2)
-   {
-      float tmp;
-      tmp = .5*(st->Y[i]*st->Y[i] + st->Y[i+1]*st->Y[i+1]) + .25*
-      (st->Y[i-2]*st->Y[i-2] + st->Y[i-1]*st->Y[i-1] 
-       + st->Y[i+2]*st->Y[i+2] + st->Y[i+3]*st->Y[i+3]);
-      powY += 1*tmp + 0*(st->E[i]*st->E[i] + st->E[i+1]*st->E[i+1]);
-      tmp = st->E[i]*st->E[i] + st->E[i+1]*st->E[i+1] - .5*tmp;
-      if (tmp<0)
-         tmp=0;
-      powE += tmp; 
-   }
-#endif
 
    /* Compute input power in each frequency bin */
    {
@@ -280,7 +258,7 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
       }
       
       for (i=0;i<=st->frame_size;i++)
-         st->power_1[i] = 1.0f/(1e6f+st->power[i]);
+         st->power_1[i] = 1.0f/(1e8f+st->power[i]);
    }
 
    /* Compute weight gradient */
@@ -321,13 +299,18 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
    {
       if (st->cancel_count<8*M)
       {
-         st->adapt_rate = .15f/(2+M);
+         st->adapt_rate = .3f/(2+M);
       } else {
-         st->adapt_rate = spectral_dist*(1.0f/(2+M));
-         if (st->adapt_rate>.15f/(2+M))
-            st->adapt_rate=.15f/(2+M);
-         if (st->adapt_rate<0)
-            st->adapt_rate=0;
+         if (spectral_dist > .6 || cos_dist > .8)
+            st->adapt_rate = .4f/(2+M);
+         else if (spectral_dist > .4 || cos_dist > .6)
+            st->adapt_rate = .2f/(2+M);
+         else if (spectral_dist > .2 || cos_dist > .4)
+            st->adapt_rate = .1f/(2+M);
+         else if (cos_dist > .01)
+            st->adapt_rate = .05f/(2+M);
+         else
+            st->adapt_rate = .01f/(2+M);
       }
    } else
       st->adapt_rate = .0f;
@@ -353,6 +336,5 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
 
    }
 
-   /*fprintf (stderr, "%f %f %f %f\n", st->adapt_rate, powE, powY, powD);*/
 }
 
