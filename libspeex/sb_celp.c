@@ -1,5 +1,5 @@
 /* Copyright (C) 2002 Jean-Marc Valin 
-   File: speex.c
+   File: sb_celp.c
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Lesser General Public
