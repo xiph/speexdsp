@@ -179,8 +179,13 @@ int lpc_to_lsp (float *a,int lpcrdr,float *freq,int nb,float delta, float *stack
 	psuml = cheb_poly_eva(pt,xl,lpcrdr,stack);	/* evals poly. at xl 	*/
 	flag = 1;
 	while(flag && (xr >= -1.0)){
+           float dd;
            /* Modified by JMV to provide smaller steps around x=+-1 */
-	    xr = xl - (delta*(1-.9*xl*xl)) ;                  	/* interval spacing 	*/
+           dd=(delta*(1-.9*xl*xl));
+           if (fabs(psuml)<.2)
+              dd *= .5;
+
+           xr = xl - dd;                        	/* interval spacing 	*/
 	    psumr = cheb_poly_eva(pt,xr,lpcrdr,stack);/* poly(xl-delta_x) 	*/
 	    temp_psumr = psumr;
 	    temp_xr = xr;

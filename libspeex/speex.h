@@ -79,6 +79,14 @@ extern "C" {
 /** Get current bit-rate used by the encoder or decoder */
 #define SPEEX_GET_BITRATE 19
 
+/**Define a handler function for in-band Speex request*/
+#define SPEEX_SET_HANDLER 20
+
+
+/**Define a handler function for in-band user-defined request*/
+#define SPEEX_SET_USER_HANDLER 22
+
+
 
 /* Preserving compatibility:*/
 /** Equivalent to SPEEX_SET_ENH */

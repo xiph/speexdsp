@@ -236,12 +236,21 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
    st->lpc[0]=1;
 
    /* LPC to LSPs (x-domain) transform */
-   roots=lpc_to_lsp (st->lpc, st->lpcSize, st->lsp, 10, 0.01, st->stack);
+   roots=lpc_to_lsp (st->lpc, st->lpcSize, st->lsp, 15, 0.2, st->stack);
    if (roots!=st->lpcSize)
    {
-      fprintf (stderr, "roots!=st->lpcSize (found only %d roots)\n", roots);
-      exit(1);
+      roots = lpc_to_lsp (st->lpc, st->lpcSize, st->lsp, 11, 0.02, st->stack);
+      if (roots!=st->lpcSize) {
+         /*fprintf (stderr, "roots!=st->lpcSize (found only %d roots)\n", roots);*/
+
+         /*If we can't find all LSP's, do some damage control and use a flat filter*/
+         for (i=0;i<st->lpcSize;i++)
+         {
+            st->lsp[i]=cos(M_PI*((float)(i+1))/(st->lpcSize+1));
+         }
+      }
    }
+
 
    /* LSP x-domain to angle domain*/
    for (i=0;i<st->lpcSize;i++)
