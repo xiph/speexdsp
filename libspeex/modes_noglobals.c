@@ -80,7 +80,7 @@ speex_ltp_params_new (const signed char * gain_cdbk, int gain_bits,
 }
 
 static void
-speex_ltp_params_free (ltp_params * params)
+speex_ltp_params_free (const ltp_params * params)
 {
   speex_free (params);
 }
@@ -105,7 +105,7 @@ speex_split_cb_params_new (int subvect_size, int nb_subvect,
 }
 
 static void
-speex_split_cb_params_free (split_cb_params * params)
+speex_split_cb_params_free (const split_cb_params * params)
 {
   speex_free (params);
 }
