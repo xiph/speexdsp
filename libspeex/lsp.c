@@ -97,7 +97,7 @@ int lpc_to_lsp (float *a,int lpcrdr,float *freq,int nb,float delta)
 
 {
 
-    float psuml,psumr,psumm,temp_xr,xl,xr,xm;
+    float psuml,psumr,psumm,temp_xr,xl,xr,xm=0;
     float temp_psumr/*,temp_qsumr*/;
     int i,j,m,flag,k;
     float *Q;                 	/* ptrs for memory allocation 		*/
@@ -238,7 +238,7 @@ void lsp_to_lpc(float *freq,float *ak,int lpcrdr)
     int i,j;
     float xout1,xout2,xin1,xin2;
     float *Wp;
-    float *pw,*n1,*n2,*n3,*n4;
+    float *pw,*n1,*n2,*n3,*n4=NULL;
     int m = lpcrdr/2;
 
     if((Wp = (float *) malloc((4*m+2)*sizeof(float))) == NULL){

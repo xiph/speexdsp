@@ -5,6 +5,7 @@
 #include "speex.h"
 #include "lpc.h"
 #include "lsp.h"
+#include "ltp.h"
 
 #ifndef M_PI
 #define M_PI           3.14159265358979323846  /* pi */
@@ -115,7 +116,10 @@ void encode(EncState *st, float *in, int *outSize, void *bits)
 
    for (sub=0;sub<st->nbSubframes;sub++)
    {
-      float tmp;
+      float tmp, gain;
+      int pitch, offset;
+
+      offset = st->subframeSize*sub;
       /* LSP interpolation */
       tmp = (.5 + sub)/st->nbSubframes;
       for (i=0;i<st->lpcSize;i++)
@@ -141,14 +145,16 @@ void encode(EncState *st, float *in, int *outSize, void *bits)
          printf ("\n");*/
 
       /* Compute perceptualy weighted residue */      
-      for (i=0;i<st->frameSize;i++)
+      for (i=0;i<st->subframeSize;i++)
       {
-         st->wframe[i]=st->frame[i];
+         st->wframe[offset+i]=st->frame[offset+i];
          for (j=1;j<st->lpcSize+1;j++)
-            st->wframe[i] += st->frame[i-j]*st->bw_lpc[j];
+           st->wframe[offset+i] += st->frame[offset+i-j]*st->bw_lpc[j];
       }
 
       /* Find pitch gain and delay */
+      pitch = open_loop_ltp(st->wframe+offset, st->subframeSize, 20, 120, &gain);
+      printf ("pitch = %d, gain = %f\n",pitch,gain);
    }
 
    printf ("\n");
