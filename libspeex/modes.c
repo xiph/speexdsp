@@ -74,7 +74,7 @@ static split_cb_params split_cb_high = {
    8,               /*subvect_size*/
    5,               /*nb_subvect*/
    hexc_table,       /*shape_cb*/
-   8,               /*shape_bits*/
+   7,               /*shape_bits*/
 };
 
 /* Default mode for narrowband */
@@ -176,8 +176,8 @@ static SpeexSBMode sb_wb_mode = {
    lsp_quant_high,
    lsp_unquant_high,
    /*Innovation quantization*/
-   split_cb_search_nogain2,
-   split_cb_nogain_unquant,
+   split_cb_search_shape_sign,
+   split_cb_shape_sign_unquant,
    &split_cb_high
 };
 
