@@ -31,7 +31,9 @@ AC_DISABLE_SHARED
 dnl AC_DISABLE_STATIC
 AM_PROG_LIBTOOL
 
+AC_CHECK_HEADER(ogg/ogg.h)
 AC_CHECK_LIB(m, sin)
+AC_CHECK_LIB(ogg, ogg_stream_init, , [ echo; echo "error: libogg is now required by speex"; echo "Get it from: http://www.ogg.org/ogg/index.html"; exit 1 ])
 AC_FUNC_ALLOCA
 dnl AC_DEFINE(VERSION, "$VERSION")
 AC_DEFINE_UNQUOTED(VERSION, "${VERSION}")

@@ -468,7 +468,7 @@ void nb_encode(void *state, float *in, FrameBits *bits)
                qe=63;
             ener = exp(qe/7.0);
             speex_bits_pack(bits, qe, 6);
-            printf ("quant_energy: %d %f\n", qe, ener);
+            /*printf ("quant_energy: %d %f\n", qe, ener);*/
          }
          ener_1 = 1/ener;
          
@@ -687,7 +687,7 @@ void nb_decode(void *state, FrameBits *bits, float *out)
 
          q_energy = speex_bits_unpack_unsigned(bits, 6);
          ener = exp(q_energy/7.0);
-         printf ("unquant_energy: %d %f\n", q_energy, ener);
+         /*printf ("unquant_energy: %d %f\n", q_energy, ener);*/
          
          /*Fixed codebook contribution*/
          st->innovation_unquant(innov, st->innovation_params, st->subframeSize, bits, st->stack);

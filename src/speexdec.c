@@ -23,6 +23,7 @@
 #include <string.h>
 
 #include "speex.h"
+#include "ogg/ogg.h"
 
 #define MAX_FRAME_SIZE 2000
 #define MAX_FRAME_BYTES 1000
@@ -52,20 +53,21 @@ int main(int argc, char **argv)
    SpeexMode *mode=NULL;
    void *st;
    FrameBits bits;
-   char cbits[MAX_FRAME_BYTES];
-
-   int at_end=0;
-   int narrowband=0, wideband=0;
+   int first = 1;
    struct option long_options[] =
    {
       {"help", no_argument, NULL, 0},
       {"version", no_argument, NULL, 0},
       {0, 0, 0, 0}
    };
-   
+   ogg_sync_state oy;
+   ogg_page       og;
+   ogg_packet     op;
+   ogg_stream_state os;
+
    while(1)
    {
-      c = getopt_long (argc, argv, "nwhv",
+      c = getopt_long (argc, argv, "hv",
                        long_options, &option_index);
       if (c==-1)
          break;
@@ -127,64 +129,66 @@ int main(int argc, char **argv)
       }
    }
 
-   /*This is only the temporary header*/
-   {
-      char header[6];
-      if(fread(header, sizeof(char), 5, fin)!=5)
-      {
-         perror("cannot read header");
-         exit(1);
-      }
-      header[5]=0;
-      if (strcmp(header,"spexn")==0)
-      {
-         mode=&speex_nb_mode;
-         narrowband=1;
-      } else if (strcmp(header,"spexw")==0)
-      {
-         mode=&speex_wb_mode;
-         wideband=1;
-      } else 
-      {
-         fprintf (stderr, "This does not look like a Speex " VERSION " file\n");
-         exit(1);
-      }
+   ogg_sync_init(&oy);
+   ogg_stream_init(&os, 0);
+   
+   /* FIXME: Read header here...*/
+   /*st = decoder_init(mode);*/
 
-   }
-
-   st = decoder_init(mode);
-
-   frame_size=mode->frameSize;
+   /*frame_size=mode->frameSize;*/
 
    speex_bits_init(&bits);
-   while (1)
+   while (1/*||feof(fin)*/)
    {
+      char *data;
       int i, nb_read;
-      nb_read=200-((bits.nbBits>>3)-bits.bytePtr);
-      if (nb_read>0&&!at_end)
+      data = ogg_sync_buffer(&oy, 200);
+      nb_read = fread(data, sizeof(char), 200, fin);      
+      ogg_sync_wrote(&oy, nb_read);
+      while (ogg_sync_pageout(&oy, &og)==1)
       {
-         nb_read=fread(cbits, sizeof(char), nb_read, fin);
-         if (feof(fin))
-            at_end=1;
-         if (nb_read>0 && !at_end)
-            speex_bits_read_whole_bytes(&bits, cbits, nb_read);
+         ogg_stream_pagein(&os, &og);
+         while (ogg_stream_packetout(&os, &op)==1)
+         {
+            if (first)
+            {
+               if (strncmp((char *)op.packet, "speex wideband**", 12)==0)
+               {
+                  fprintf (stderr, "Wideband!!\n");
+                  mode = &speex_wb_mode;
+               } else if (strncmp((char *)op.packet, "speex narrowband", 12)==0)
+               {
+                  fprintf (stderr, "Narrowband!!\n");
+                  mode = &speex_nb_mode;
+               } else {
+                  fprintf (stderr, "This Ogg file is not a Speex bitstream\n");
+                  exit(1);
+               }
+               st = decoder_init(mode);
+               frame_size=mode->frameSize;
+               first=0;
+            } else {
+               if (strncmp((char *)op.packet, "END OF STREAM", 13)==0)
+                  break;
+               speex_bits_init_from(&bits, (char*)op.packet, op.bytes);
+               decode(st, &bits, output);
+               
+               for (i=0;i<frame_size;i++)
+               {
+                  if (output[i]>32000)
+                     output[i]=32000;
+                  else if (output[i]<-32000)
+                     output[i]=-32000;
+               }
+               for (i=0;i<frame_size;i++)
+                  out[i]=output[i];
+               fwrite(out, sizeof(short), frame_size, fout);
+            }
+         }
       }
-      
-      if (((bits.nbBits>>3)-bits.bytePtr)<2)
+      if (feof(fin))
          break;
-      
-      decode(st, &bits, output);
 
-      for (i=0;i<frame_size;i++)
-      {
-         if (output[i]>32000)
-            output[i]=32000;
-         else if (output[i]<-32000)
-            output[i]=-32000;
-      }
-      for (i=0;i<frame_size;i++)
-         out[i]=output[i];
-      fwrite(out, sizeof(short), frame_size, fout);
    }
 
    decoder_destroy(st);
