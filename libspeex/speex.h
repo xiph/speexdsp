@@ -171,7 +171,7 @@ extern "C" {
 #define SPEEX_LIB_GET_EXTRA_VERSION 7
 #define SPEEX_LIB_GET_VERSION_STRING 9
 
-#define SPEEX_LIB_SET_ALLOC_FUNC 10
+/*#define SPEEX_LIB_SET_ALLOC_FUNC 10
 #define SPEEX_LIB_GET_ALLOC_FUNC 11
 #define SPEEX_LIB_SET_FREE_FUNC 12
 #define SPEEX_LIB_GET_FREE_FUNC 13
@@ -180,7 +180,7 @@ extern "C" {
 #define SPEEX_LIB_GET_WARNING_FUNC 15
 #define SPEEX_LIB_SET_ERROR_FUNC 16
 #define SPEEX_LIB_GET_ERROR_FUNC 17
-
+*/
 
 /** Number of defined modes in Speex */
 #define SPEEX_NB_MODES 3

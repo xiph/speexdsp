@@ -35,8 +35,8 @@
 #ifndef MISC_H
 #define MISC_H
 
-#ifndef VERSION
-#define VERSION "speex-1.1.6"
+#ifndef SPEEX_VERSION
+#define SPEEX_VERSION "speex-1.1.6"
 #endif
 
 #include "arch.h"
