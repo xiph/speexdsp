@@ -22,6 +22,7 @@
 
 #include "modes.h"
 #include "speex_bits.h"
+#include "vbr.h"
 
 /**Structure representing the full state of the narrowband encoder*/
 typedef struct EncState {
@@ -74,6 +75,7 @@ typedef struct EncState {
    float *mem_sp, *mem_sw;
    float *dmem1, *dmem2;
    float *pi_gain;
+   VBRState *vbr;
 
    SpeexSubmode **submodes;
    int    submodeID;

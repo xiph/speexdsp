@@ -21,6 +21,15 @@
 
 #include "vbr.h"
 
+void vbr_init(VBRState *vbr)
+{
+   vbr->average_energy=0;
+   vbr->last_energy=1;
+   vbr->accum_sum=0;
+   vbr->energy_alpha=.1;
+}
+
+
 /*
   This function should analyse the signal and decide how critical the
   coding error will be perceptually. The following factors should be
@@ -45,7 +54,57 @@
   non-stationary (harder to notice high-frequency noise)???
 
 */
-void vbr_analysis(float *sig, int len)
+float vbr_analysis(VBRState *vbr, float *sig, int len)
 {
+   int i;
+   float ener=0, ener1=0, ener2=0;
+   float qual=0;
+
+   for (i=0;i<len>>1;i++)
+      ener1 += sig[i]*sig[i];
+
+   for (i=len>>1;i<len;i++)
+      ener2 += sig[i]*sig[i];
+   ener=ener1+ener2;
+
+   vbr->average_energy = (1-vbr->energy_alpha)*vbr->average_energy + vbr->energy_alpha*ener;
    
+   /* Checking for "pseudo temporal masking" */
+   if (ener < .1*vbr->average_energy)
+      qual -= .7;
+   if (ener < .01*vbr->average_energy)
+      qual -= .7;
+   if (ener < .001*vbr->average_energy)
+      qual -= .7;
+   /* Checking for very low absolute energy */
+   if (ener < 30000)
+   {
+      qual -= .7;
+      if (ener < 10000)
+         qual-=.7;
+      if (ener < 3000)
+         qual-=.7;
+   } else {
+      /* Checking for energy increases */
+      if (ener > vbr->last_energy*4.0)
+         qual += 1;
+      if (ener > vbr->last_energy*1.8)
+         qual += 1;
+      if (ener > 3*vbr->average_energy)
+         qual += 1;
+      if (ener2 > 1.6*ener1)
+         qual += .7;
+      if (ener2 < .6*ener1)
+         qual -= .5;
+
+      if (ener < .3*vbr->last_energy)
+         qual -= .6;
+   }
+   vbr->last_energy = ener;
+
+   return qual;
+}
+
+void vbr_destroy(VBRState *vbr)
+{
 }

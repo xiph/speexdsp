@@ -25,15 +25,16 @@
 
 
 typedef struct VBRState {
-   float speech_alpha;
-   float noise_alpha;
-   float noise_threshold;
-   float speech_energy;
+   float energy_alpha;
+   float average_energy;
    float last_energy;
    float accum_sum;
 } VBRState;
 
+void vbr_init(VBRState *vbr);
 
-void vbr_analysis(float *sig, int len);
+float vbr_analysis(VBRState *vbr, float *sig, int len);
+
+void vbr_destroy(VBRState *vbr);
 
 #endif

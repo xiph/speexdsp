@@ -31,6 +31,7 @@
 #include "vq.h"
 #include "speex_bits.h"
 #include "post_filter.h"
+#include "vbr.h"
 
 #ifndef M_PI
 #define M_PI           3.14159265358979323846  /* pi */
@@ -127,6 +128,14 @@ void *nb_encoder_init(SpeexMode *m)
    st->pi_gain = calloc(st->nbSubframes, sizeof(float));
 
    st->pitch = calloc(st->nbSubframes, sizeof(int));
+
+   if (1) {
+      st->vbr = malloc(sizeof(VBRState));
+      vbr_init(st->vbr);
+   } else {
+      st->vbr = 0;
+   }
+
    return st;
 }
 
@@ -162,7 +171,11 @@ void nb_encoder_destroy(void *state)
    free(st->mem_sw);
    free(st->pi_gain);
    free(st->pitch);
-   
+
+   vbr_destroy(st->vbr);
+   free(st->vbr);
+
+   /*Free state memory... should be last*/
    free(st);
 }
 
@@ -173,8 +186,21 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
    float error;
    int ol_pitch;
    float ol_gain;
+   float vbr_qual=0;
 
    st=state;
+   
+   if (st->vbr)
+      vbr_qual = vbr_analysis(st->vbr, in, st->frameSize);
+   if (0) {
+      int qual = (int)floor(8+1*vbr_qual+.5);
+      if (qual<0)
+         qual=0;
+      if (qual>10)
+         qual=10;
+      speex_encoder_ctl(state, SPEEX_SET_QUALITY, &qual);
+   }
+   printf ("VBR quality = %f\n", vbr_qual);
 
    /* First, transmit the sub-mode we use for this frame */
    speex_bits_pack(bits, st->submodeID, NB_SUBMODE_BITS);
