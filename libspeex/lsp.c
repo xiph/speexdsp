@@ -76,8 +76,9 @@ static spx_word16_t cos_32(spx_word16_t x)
    }
 }
 
+#define FREQ_SCALE 16384
 #define ANGLE2X(a) (SHL(cos_32(a),2))
-#define X2ANGLE(x) (acos(x)*LSP_SCALING)
+#define X2ANGLE(x) (acos(.00006103515625*(x))*LSP_SCALING)
 
 /* maybe we could approximate acos as 
    sqrt(6.7349563814-5.213449731*sqrt(0.6688572663+x))
@@ -88,6 +89,7 @@ static spx_word16_t cos_32(spx_word16_t x)
 #define C2 -0.49558072
 #define C3 0.03679168
 
+#define FREQ_SCALE 1.
 #define ANGLE2X(a) (cos(a))
 #define X2ANGLE(x) (acos(x))
 
@@ -107,7 +109,7 @@ static spx_word16_t cos_32(spx_word16_t x)
 
 #ifdef FIXED_POINT
 
-static spx_word32_t cheb_poly_eva(spx_word32_t *coef,float x,int m,char *stack)
+static spx_word32_t cheb_poly_eva(spx_word32_t *coef,spx_word16_t x,int m,char *stack)
 /*  float coef[]  	coefficients of the polynomial to be evaluated 	*/
 /*  float x   		the point where polynomial is to be evaluated 	*/
 /*  int m 		order of the polynomial 			*/
@@ -116,15 +118,12 @@ static spx_word32_t cheb_poly_eva(spx_word32_t *coef,float x,int m,char *stack)
     spx_word16_t *T;
     spx_word32_t sum;
     int m2=m>>1;
-    spx_word16_t xn;
     spx_word16_t *coefn;
 
     /* Allocate memory for Chebyshev series formulation */
     T=PUSH(stack, m2+1, spx_word16_t);
     coefn=PUSH(stack, m2+1, spx_word16_t);
 
-    xn = floor(.5+x*16384);
-    
     for (i=0;i<m2+1;i++)
     {
        coefn[i] = coef[i];
@@ -134,15 +133,15 @@ static spx_word32_t cheb_poly_eva(spx_word32_t *coef,float x,int m,char *stack)
 
     /* Initialise values */
     T[0]=16384;
-    T[1]=xn;
+    T[1]=x;
 
     /* Evaluate Chebyshev series formulation using iterative approach  */
     /* Evaluate polynomial and return value also free memory space */
-    sum = coefn[m2] + MULT16_16_P14(coefn[m2-1],xn);
+    sum = coefn[m2] + MULT16_16_P14(coefn[m2-1],x);
     /*x *= 2;*/
     for(i=2;i<=m2;i++)
     {
-       T[i] = MULT16_16_Q13(xn,T[i-1]) - T[i-2];
+       T[i] = MULT16_16_Q13(x,T[i-1]) - T[i-2];
        sum += MULT16_16_P14(coefn[m2-i],T[i]);
        /*printf ("%f ", sum);*/
     }
@@ -199,6 +198,7 @@ static float cheb_poly_eva(spx_word32_t *coef,float x,int m,char *stack)
 #define SIGN_CHANGE(a,b) (((a)*(b))<0.0)
 #endif
 
+
 int lpc_to_lsp (spx_coef_t *a,int lpcrdr,spx_lsp_t *freq,int nb,float delta, char *stack)
 /*  float *a 		     	lpc coefficients			*/
 /*  int lpcrdr			order of LPC coefficients (10) 		*/
@@ -209,7 +209,7 @@ int lpc_to_lsp (spx_coef_t *a,int lpcrdr,spx_lsp_t *freq,int nb,float delta, cha
 
 {
 
-    float temp_xr,xl,xr,xm=0;
+    spx_word16_t temp_xr,xl,xr,xm=0;
     spx_word32_t psuml,psumr,psumm,temp_psumr/*,temp_qsumr*/;
     int i,j,m,flag,k;
     spx_word32_t *Q;                 	/* ptrs for memory allocation 		*/
@@ -258,8 +258,8 @@ int lpc_to_lsp (spx_coef_t *a,int lpcrdr,spx_lsp_t *freq,int nb,float delta, cha
        px++;
        qx++;
     }
-    P[m] = (4+P[m])>>3;
-    Q[m] = (4+Q[m])>>3;
+    P[m] = PSHR(P[m],3);
+    Q[m] = PSHR(Q[m],3);
 #else
     *px++ = LPC_SCALING;
     *qx++ = LPC_SCALING;
@@ -284,24 +284,29 @@ int lpc_to_lsp (spx_coef_t *a,int lpcrdr,spx_lsp_t *freq,int nb,float delta, cha
     Keep alternating between the two polynomials as each zero is found 	*/
 
     xr = 0;             	/* initialise xr to zero 		*/
-    xl = 1.0;               	/* start at point xl = 1 		*/
+    xl = FREQ_SCALE;               	/* start at point xl = 1 		*/
 
 
     for(j=0;j<lpcrdr;j++){
-	if(j%2)            	/* determines whether P' or Q' is eval. */
+	if(j&1)            	/* determines whether P' or Q' is eval. */
 	    pt = qx;
 	else
 	    pt = px;
 
 	psuml = cheb_poly_eva(pt,xl,lpcrdr,stack);	/* evals poly. at xl 	*/
 	flag = 1;
-	while(flag && (xr >= -1.0)){
-           float dd;
+	while(flag && (xr >= -FREQ_SCALE)){
+           spx_word16_t dd;
            /* Modified by JMV to provide smaller steps around x=+-1 */
-           dd=(delta*(1-.9*xl*xl));
+#ifdef FIXED_POINT
+           dd = delta*(FREQ_SCALE - MULT16_16_Q14(MULT16_16_Q14(xl,xl),14000));
+           if (psuml<512 && psuml>-512)
+              dd = PSHR(dd,1);
+#else
+           dd=delta*(1-.9*xl*xl);
            if (fabs(psuml)<.2)
               dd *= .5;
-
+#endif
            xr = xl - dd;                        	/* interval spacing 	*/
 	    psumr = cheb_poly_eva(pt,xr,lpcrdr,stack);/* poly(xl-delta_x) 	*/
 	    temp_psumr = psumr;
@@ -322,7 +327,11 @@ int lpc_to_lsp (spx_coef_t *a,int lpcrdr,spx_lsp_t *freq,int nb,float delta, cha
 
 		psumm=psuml;
 		for(k=0;k<=nb;k++){
-		    xm = (xl+xr)/2;        	/* bisect the interval 	*/
+#ifdef FIXED_POINT
+		    xm = PSHR(ADD16(xl,xr),1);        	/* bisect the interval 	*/
+#else
+                    xm = .5*(xl+xr);        	/* bisect the interval 	*/
+#endif
 		    psumm=cheb_poly_eva(pt,xm,lpcrdr,stack);
 		    /*if(psumm*psuml>0.)*/
 		    if(!SIGN_CHANGE(psumm,psuml))
