@@ -87,16 +87,6 @@ void enh_lpc(float *ak, int order, float *num, float *den, float k1, float k2, f
    POP(stack);
 }
 
-void syn_filt(float *x, float *a, float *y, int N, int ord)
-{
-   int i,j;
-   for (i=0;i<N;i++)
-   {
-      y[i]=x[i];
-      for (j=1;j<=ord;j++)
-         y[i] -= a[j]*y[i-j];
-   }
-}
 
 void syn_filt_zero(float *x, float *a, float *y, int N, int ord)
 {
@@ -109,32 +99,6 @@ void syn_filt_zero(float *x, float *a, float *y, int N, int ord)
    }
 }
 
-void syn_filt_mem(float *x, float *a, float *y, int N, int ord, float *mem)
-{
-   int i,j;
-   for (i=0;i<N;i++)
-   {
-      y[i]=x[i];
-      for (j=1;j<=min(ord,i);j++)
-         y[i] -= a[j]*y[i-j];
-      for (j=i+1;j<=ord;j++)
-         y[i] -= a[j]*mem[j-i-1];
-   }
-   for (i=0;i<ord;i++)
-      mem[i]=y[N-i-1];
-}
-
-
-void residue(float *x, float *a, float *y, int N, int ord)
-{
-   int i,j;
-   for (i=N-1;i>=0;i--)
-   {
-      y[i]=x[i];
-      for (j=1;j<=ord;j++)
-         y[i] += a[j]*x[i-j];
-   }
-}
 
 void residue_zero(float *x, float *a, float *y, int N, int ord)
 {
@@ -145,21 +109,6 @@ void residue_zero(float *x, float *a, float *y, int N, int ord)
       for (j=1;j<=min(ord,i);j++)
          y[i] += a[j]*x[i-j];
    }
-}
-
-void residue_mem(float *x, float *a, float *y, int N, int ord, float *mem)
-{
-   int i,j;
-   for (i=N-1;i>=0;i--)
-   {
-      y[i]=x[i];
-      for (j=1;j<=min(ord,i);j++)
-         y[i] += a[j]*x[i-j];
-      for (j=i+1;j<=ord;j++)
-         y[i] += a[j]*mem[j-i-1];
-   }
-   for (i=0;i<ord;i++)
-      mem[i]=x[N-i-1];
 }
 
 
@@ -210,99 +159,21 @@ void iir_mem2(float *x, float *den, float *y, int N, int ord, float *mem)
 }
 
 
-void pole_zero_mem(float *x, float *num, float *den, float *y, int N, int ord, float *mem, float *stack)
-{
-   float *tmp=PUSH(stack, N);
-   syn_filt_mem(x, den, tmp, N, ord, mem);
-   residue_mem(tmp, num, y, N, ord, mem+ord);
-   POP(stack);
-}
-
-
-/*
-void fir_mem(float *x, float *a, float *y, int N, int M, float *mem)
-{
-   int i,j;
-   for (i=0;i<N;i++)
-   {
-      y[i]=0;
-      for (j=0;j<=min(M-1,i);j++)
-         y[i] += a[j]*x[i-j];
-      for (j=i+1;j<=M-1;j++)
-         y[i] += a[j]*mem[j-i-1];
-   }
-   for (i=0;i<M-1;i++)
-      mem[i]=x[N-i-1];
-}
-*/
 
 void syn_percep_zero(float *xx, float *ak, float *awk1, float *awk2, float *y, int N, int ord)
 {
-   int i,j;
-   float long_filt[21];
-   float iir[20];
-   float fir[10];
-   float x[40];
-   int ord2=ord<<1;
-   for (i=0;i<=ord;i++)
-      long_filt[i]=ak[i];
-   for (i=ord+1;i<=ord2;i++)
-      long_filt[i]=0;
-   residue_zero(long_filt,awk2,long_filt,1+(ord<<1),ord);
-
-   for (i=0;i<N;i++)
-      x[i]=xx[i];
-   for (i=0;i<ord2;i++)
-      iir[i]=long_filt[ord2-i];
+   int i;
+   /*FIXME: Should make that dynamic*/
+   float mem[10];
    for (i=0;i<ord;i++)
-      fir[i]=awk1[ord-i];
-
-   for (i=0;i<ord2;i++)
-   {
-      y[i]=x[i];
-      for (j=1;j<=min(ord2,i);j++)
-         y[i] -= long_filt[j]*y[i-j];
-      for (j=1;j<=min(ord,i);j++)
-         y[i] += awk1[j]*x[i-j];
-   }
-#if 0
-   for (i=ord2;i<N;i++)
-   {
-      float *yptr=y+i-ord2;
-      float *xptr=x+i-ord;
-      y[i]=x[i];
-      for (j=0;j<ord2;j++)
-         y[i]-= iir[j]*yptr[j];
-      for (j=0;j<ord;j++)
-         y[i]+= fir[j]*xptr[j];
-   }
-#else
-   for (i=ord2;i<N;i++)
-   {
-      float *f, *ptr;
-      float sum1=x[i], sum2=0;
-      f=iir;
-      ptr=y+i-ord2;
-      for (j=0;j<ord2;j+=2)
-      {
-         sum1-= f[0]*ptr[0];
-         sum2-= f[1]*ptr[1];
-         f+=2;
-         ptr+=2;
-      }
-      f=fir;
-      ptr=x+i-ord;
-      for (j=0;j<ord;j+=2)
-      {
-         sum1+= f[0]*ptr[0];
-         sum2+= f[1]*ptr[1];
-         f+=2;
-         ptr+=2;
-      }
-      y[i]=sum1+sum2;
-   }
-#endif
+      mem[i]=0;
+   filter_mem2(xx, awk1, ak, y, N, ord, mem);
+   for (i=0;i<ord;i++)
+     mem[i]=0;
+   iir_mem2(y, awk2, y, N, ord, mem);
+  
 }
+
 
 #if 1
 #define MAX_FILTER 100
