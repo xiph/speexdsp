@@ -1,6 +1,6 @@
 /* Copyright (C) 2002 Jean-Marc Valin 
    File: ltp.c
-   Lont-Term Prediction functions
+   Lont-Term Prediction functions (SSE version)
 
    Redistribution and use in source and binary forms, with or without
    modification, are permitted provided that the following conditions
@@ -34,67 +34,29 @@
 
 static float inner_prod(const float *a, const float *b, int len)
 {
-  float sum;
-  __asm__ __volatile__ (
-  "\tpush %%eax\n"
-  "\tpush %%edi\n"
-  "\tpush %%ecx\n"
-  "\txorps %%xmm3, %%xmm3\n"
-  "\txorps %%xmm4, %%xmm4\n"
-
-  "\tsub $20, %%ecx\n"
-
-".mul20_loop%=:\n"
-
-  "\tmovups (%%eax), %%xmm0\n"
-  "\tmovups (%%edi), %%xmm1\n"
-  "\tmulps %%xmm0, %%xmm1\n"
-
-  "\tmovups 16(%%eax), %%xmm5\n"
-  "\tmovups 16(%%edi), %%xmm6\n"
-  "\tmulps %%xmm5, %%xmm6\n"
-  "\taddps %%xmm1, %%xmm3\n"
-
-  "\tmovups 32(%%eax), %%xmm0\n"
-  "\tmovups 32(%%edi), %%xmm1\n"
-  "\tmulps %%xmm0, %%xmm1\n"
-  "\taddps %%xmm6, %%xmm4\n"
-
-  "\tmovups 48(%%eax), %%xmm5\n"
-  "\tmovups 48(%%edi), %%xmm6\n"
-  "\tmulps %%xmm5, %%xmm6\n"
-  "\taddps %%xmm1, %%xmm3\n"
-
-  "\tmovups 64(%%eax), %%xmm0\n"
-  "\tmovups 64(%%edi), %%xmm1\n"
-  "\tmulps %%xmm0, %%xmm1\n"
-  "\taddps %%xmm6, %%xmm4\n"
-  "\taddps %%xmm1, %%xmm3\n"
-
-
-  "\tadd $80, %%eax\n"
-  "\tadd $80, %%edi\n"
-
-  "\tsub $20,  %%ecx\n"
-
-  "\tjae .mul20_loop%=\n"
-
-  "\taddps %%xmm4, %%xmm3\n"
-
-  "\tmovhlps %%xmm3, %%xmm4\n"
-  "\taddps %%xmm4, %%xmm3\n"
-  "\tmovaps %%xmm3, %%xmm4\n"
-  "\tshufps $0x55, %%xmm4, %%xmm4\n"
-  "\taddss %%xmm4, %%xmm3\n"
-  "\tmovss %%xmm3, (%%edx)\n"
-  
-  "\tpop %%ecx\n"
-  "\tpop %%edi\n"
-  "\tpop %%eax\n"
-  : : "a" (a), "D" (b), "c" (len), "d" (&sum) : "memory");
-  return sum;
+   int i;
+   float ret;
+   __m128 sum = _mm_setzero_ps();
+   for (i=0;i<(len>>2);i+=10)
+   {
+      sum = _mm_add_ps(sum, _mm_mul_ps(_mm_loadu_ps(a+0), _mm_loadu_ps(b+0)));
+      sum = _mm_add_ps(sum, _mm_mul_ps(_mm_loadu_ps(a+4), _mm_loadu_ps(b+4)));
+      sum = _mm_add_ps(sum, _mm_mul_ps(_mm_loadu_ps(a+8), _mm_loadu_ps(b+8)));
+      sum = _mm_add_ps(sum, _mm_mul_ps(_mm_loadu_ps(a+12), _mm_loadu_ps(b+12)));
+      sum = _mm_add_ps(sum, _mm_mul_ps(_mm_loadu_ps(a+16), _mm_loadu_ps(b+16)));
+      sum = _mm_add_ps(sum, _mm_mul_ps(_mm_loadu_ps(a+20), _mm_loadu_ps(b+20)));
+      sum = _mm_add_ps(sum, _mm_mul_ps(_mm_loadu_ps(a+24), _mm_loadu_ps(b+24)));
+      sum = _mm_add_ps(sum, _mm_mul_ps(_mm_loadu_ps(a+28), _mm_loadu_ps(b+28)));
+      sum = _mm_add_ps(sum, _mm_mul_ps(_mm_loadu_ps(a+32), _mm_loadu_ps(b+32)));
+      sum = _mm_add_ps(sum, _mm_mul_ps(_mm_loadu_ps(a+36), _mm_loadu_ps(b+36)));
+      a += 40;
+      b += 40;
+   }
+   sum = _mm_add_ps(sum, _mm_movehl_ps(sum, sum));
+   sum = _mm_add_ss(sum, _mm_shuffle_ps(sum, sum, 0x55));
+   _mm_store_ss(&ret, sum);
+   return ret;
 }
-
 
 static void pitch_xcorr(const float *_x, const float *_y, float *corr, int len, int nb_pitch, char *stack)
 {
