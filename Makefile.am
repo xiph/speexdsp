@@ -1,7 +1,8 @@
 ## Process this file with automake to produce Makefile.in. -*-Makefile-*-
 
-# Disable automatic dependency tracking if using other tools than gcc and gmake
-#AUTOMAKE_OPTIONS = no-dependencies
+# To disable automatic dependency tracking if using other tools than
+# gcc and gmake, add the option 'no-dependencies'
+AUTOMAKE_OPTIONS = foreign 1.6 dist-zip
 
 m4datadir = $(datadir)/aclocal
 m4data_DATA = speex.m4
