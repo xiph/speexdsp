@@ -631,8 +631,8 @@ int main(int argc, char **argv)
             {
                /* Ignore extra headers */
             } else {
-               packet_no++;
                int lost=0;
+               packet_no++;
                if (loss_percent>0 && 100*((float)rand())/RAND_MAX<loss_percent)
                   lost=1;
 
