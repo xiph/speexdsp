@@ -35,6 +35,7 @@
 #include "speex_preprocess.h"
 #include <stdio.h>
 #include "misc.h"
+#include "smallft.h"
 
 #define STABILITY_TIME 20
 #define NB_LAST_PS 10
@@ -181,7 +182,8 @@ SpeexPreprocessState *speex_preprocess_state_init(int frame_size)
    st->loudness2 = 6000;
    st->nb_loudness_adapt = 0;
 
-   drft_init(&st->fft_lookup,2*N);
+   st->fft_lookup = speex_alloc(sizeof(struct drft_lookup));
+   drft_init(st->fft_lookup,2*N);
 
    st->nb_adapt=0;
    st->consec_noise=0;
@@ -217,8 +219,9 @@ void speex_preprocess_state_destroy(SpeexPreprocessState *st)
    speex_free(st->inbuf);
    speex_free(st->outbuf);
 
-   drft_clear(&st->fft_lookup);
-   
+   drft_clear(st->fft_lookup);
+   speex_free(st->fft_lookup);
+
    speex_free(st);
 }
 
@@ -512,7 +515,7 @@ int speex_preprocess(SpeexPreprocessState *st, float *x, float *echo)
       st->frame[i] *= st->window[i];
 
    /* Perform FFT */
-   drft_forward(&st->fft_lookup, st->frame);
+   drft_forward(st->fft_lookup, st->frame);
 
    /************************************************************** 
     *  Denoise in spectral domain using Ephraim-Malah algorithm  *
@@ -756,7 +759,7 @@ int speex_preprocess(SpeexPreprocessState *st, float *x, float *echo)
    st->frame[2*N-1]=0;
 
    /* Inverse FFT with 1/N scaling */
-   drft_backward(&st->fft_lookup, st->frame);
+   drft_backward(st->fft_lookup, st->frame);
 
    for (i=0;i<2*N;i++)
       st->frame[i] *= scale;

@@ -30,7 +30,7 @@
    POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "smallft.h"
+struct drft_lookup;
 
 typedef struct SpeexEchoState {
    int frame_size;           /**< Number of samples processed each time */
@@ -53,7 +53,7 @@ typedef struct SpeexEchoState {
    float *grad;
    float *old_grad;
 
-   drft_lookup fft_lookup;
+   struct drft_lookup *fft_lookup;
 
 
 } SpeexEchoState;

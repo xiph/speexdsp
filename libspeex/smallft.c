@@ -11,7 +11,7 @@
  ********************************************************************
 
  function: *unnormalized* fft transform
- last mod: $Id: smallft.c,v 1.1 2003/05/08 04:04:49 jm Exp $
+ last mod: $Id: smallft.c,v 1.2 2003/09/16 18:35:45 jm Exp $
 
  ********************************************************************/
 
@@ -1228,24 +1228,24 @@ static void drftb1(int n, float *c, float *ch, float *wa, int *ifac){
   for(i=0;i<n;i++)c[i]=ch[i];
 }
 
-void drft_forward(drft_lookup *l,float *data){
+void drft_forward(struct drft_lookup *l,float *data){
   if(l->n==1)return;
   drftf1(l->n,data,l->trigcache,l->trigcache+l->n,l->splitcache);
 }
 
-void drft_backward(drft_lookup *l,float *data){
+void drft_backward(struct drft_lookup *l,float *data){
   if (l->n==1)return;
   drftb1(l->n,data,l->trigcache,l->trigcache+l->n,l->splitcache);
 }
 
-void drft_init(drft_lookup *l,int n){
+void drft_init(struct drft_lookup *l,int n){
   l->n=n;
   l->trigcache=calloc(3*n,sizeof(*l->trigcache));
   l->splitcache=calloc(32,sizeof(*l->splitcache));
   fdrffti(n, l->trigcache, l->splitcache);
 }
 
-void drft_clear(drft_lookup *l){
+void drft_clear(struct drft_lookup *l){
   if(l){
     if(l->trigcache)free(l->trigcache);
     if(l->splitcache)free(l->splitcache);

@@ -55,7 +55,8 @@ SpeexEchoState *speex_echo_state_init(int frame_size, int filter_length)
    st->cancel_count=0;
    st->adapt_rate = .01;
 
-   drft_init(&st->fft_lookup, N);
+   st->fft_lookup = speex_alloc(sizeof(struct drft_lookup));
+   drft_init(st->fft_lookup, N);
    
    st->x = (float*)speex_alloc(N*sizeof(float));
    st->d = (float*)speex_alloc(N*sizeof(float));
@@ -82,7 +83,8 @@ SpeexEchoState *speex_echo_state_init(int frame_size, int filter_length)
 /** Destroys an echo canceller state */
 void speex_echo_state_destroy(SpeexEchoState *st)
 {
-   drft_clear(&st->fft_lookup);
+   drft_clear(st->fft_lookup);
+   speex_free(st->fft_lookup);
    speex_free(st->x);
    speex_free(st->d);
    speex_free(st->y);
@@ -133,7 +135,7 @@ void speex_echo_cancel(SpeexEchoState *st, float *ref, float *echo, float *out, 
       st->X[(M-1)*N+i]=st->x[i];
 
    /* Convert x (echo input) to frequency domain */
-   drft_forward(&st->fft_lookup, &st->X[(M-1)*N]);
+   drft_forward(st->fft_lookup, &st->X[(M-1)*N]);
 
 
    /* Compute filter response Y */
@@ -157,7 +159,7 @@ void speex_echo_cancel(SpeexEchoState *st, float *ref, float *echo, float *out, 
    /* Transform d (reference signal) to frequency domain */
    for (i=0;i<N;i++)
       st->D[i]=st->d[i];
-   drft_forward(&st->fft_lookup, st->D);
+   drft_forward(st->fft_lookup, st->D);
 
    /* Evaluate "spectral distance" between Y and D t odetect crosstalk */
    for (i=1;i<N-1;i+=2)
@@ -187,7 +189,7 @@ void speex_echo_cancel(SpeexEchoState *st, float *ref, float *echo, float *out, 
       st->y[i] = st->Y[i];
    
    /* Convery Y (filter response) to time domain */
-   drft_backward(&st->fft_lookup, st->y);
+   drft_backward(st->fft_lookup, st->y);
    for (i=0;i<N;i++)
       st->y[i] *= scale;
 
@@ -200,7 +202,7 @@ void speex_echo_cancel(SpeexEchoState *st, float *ref, float *echo, float *out, 
    }
 
    /* Convert error to frequency domain */
-   drft_forward(&st->fft_lookup, st->E);
+   drft_forward(st->fft_lookup, st->E);
 
    for (i=0;i<st->frame_size;i++)
    {
@@ -296,12 +298,12 @@ void speex_echo_cancel(SpeexEchoState *st, float *ref, float *echo, float *out, 
       
 
 #if 0 /* Set to 1 to enable MDF instead of AUMDF (and comment out weight constraint below) */
-      drft_backward(&st->fft_lookup, st->PHI);
+      drft_backward(st->fft_lookup, st->PHI);
       for (i=0;i<N;i++)
          st->PHI[i]*=scale;
       for (i=st->frame_size;i<N;i++)
         st->PHI[i]=0;
-      drft_forward(&st->fft_lookup, st->PHI);
+      drft_forward(st->fft_lookup, st->PHI);
 #endif
      
 
@@ -339,14 +341,14 @@ void speex_echo_cancel(SpeexEchoState *st, float *ref, float *echo, float *out, 
    {
       if (st->cancel_count%M == j)
       {
-         drft_backward(&st->fft_lookup, &st->W[j*N]);
+         drft_backward(st->fft_lookup, &st->W[j*N]);
          for (i=0;i<N;i++)
             st->W[j*N+i]*=scale;
          for (i=st->frame_size;i<N;i++)
          {
             st->W[j*N+i]=0;
          }
-         drft_forward(&st->fft_lookup, &st->W[j*N]);
+         drft_forward(st->fft_lookup, &st->W[j*N]);
       }
 
    }

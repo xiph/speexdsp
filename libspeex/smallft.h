@@ -11,7 +11,7 @@
  ********************************************************************
 
  function: fft transform
- last mod: $Id: smallft.h,v 1.2 2003/05/12 01:23:51 jm Exp $
+ last mod: $Id: smallft.h,v 1.3 2003/09/16 18:35:45 jm Exp $
 
  ********************************************************************/
 
@@ -24,16 +24,16 @@
 extern "C" {
 #endif
 
-typedef struct {
+struct drft_lookup{
   int n;
   float *trigcache;
   int *splitcache;
-} drft_lookup;
+};
 
-extern void drft_forward(drft_lookup *l,float *data);
-extern void drft_backward(drft_lookup *l,float *data);
-extern void drft_init(drft_lookup *l,int n);
-extern void drft_clear(drft_lookup *l);
+extern void drft_forward(struct drft_lookup *l,float *data);
+extern void drft_backward(struct drft_lookup *l,float *data);
+extern void drft_init(struct drft_lookup *l,int n);
+extern void drft_clear(struct drft_lookup *l);
 
 #ifdef __cplusplus
 }

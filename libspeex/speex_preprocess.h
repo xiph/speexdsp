@@ -32,11 +32,11 @@
 */
 
 
-#include "smallft.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+struct drft_lookup;
 
 typedef struct SpeexPreprocessState {
    int    frame_size;        /**< Number of samples processed each time */
@@ -87,7 +87,7 @@ typedef struct SpeexPreprocessState {
    int    nb_min_estimate;   /**< */
    int    last_update;       /**< */
    float  min_ener;          /**< */
-   drft_lookup fft_lookup;   /**< Lookup table for the FFT */
+   struct drft_lookup *fft_lookup;   /**< Lookup table for the FFT */
 
 } SpeexPreprocessState;
 
