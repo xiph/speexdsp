@@ -142,17 +142,11 @@ void open_loop_nbest_pitch(spx_sig_t *sw, int start, int end, int len, int *pitc
    }
 #endif
 
+   /* Extract best scores */
    for (i=start;i<=end;i++)
    {
       if (score[i-start]>best_score[N-1])
       {
-         float g1, g;
-         g1 = corr[i-start]/(energy[i-start]+10.);
-         g = sqrt(g1*corr[i-start]/(e0+10.));
-         if (g>g1)
-            g=g1;
-         if (g<0)
-            g=0;
          for (j=0;j<N;j++)
          {
             if (score[i-start] > best_score[j])
@@ -161,15 +155,27 @@ void open_loop_nbest_pitch(spx_sig_t *sw, int start, int end, int len, int *pitc
                {
                   best_score[k]=best_score[k-1];
                   pitch[k]=pitch[k-1];
-                  gain[k] = gain[k-1];
                }
                best_score[j]=score[i-start];
                pitch[j]=i;
-               gain[j]=g;
                break;
             }
          }
       }
+   }
+   
+   /* Compute open-loop gain */
+   for (j=0;j<N;j++)
+   {
+      float g1, g;
+      i=pitch[j];
+      g1 = corr[i-start]/(energy[i-start]+10.);
+      g = sqrt(g1*corr[i-start]/(e0+10.));
+      if (g>g1)
+         g=g1;
+      if (g<0)
+         g=0;
+      gain[j]=g;
    }
 
 }
