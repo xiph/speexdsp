@@ -29,13 +29,16 @@ typedef struct EncState {
    int    windowSize;     /* Analysis (LPC) window length */
    int    lpcSize;        /* LPC order */
    int    bufSize;        /* Buffer size */
-   float  gamma;          /* Perceptual filter: A(z/gamma) */
+   float  gamma1;         /* Perceptual filter: A(z/gamma1) */
+   float  gamma2;         /* Perceptual filter: A(z/gamma2) */
    float *inBuf;          /* Input buffer (original signal) */
    float *frame;          /* Start of original frame */
    float *wBuf;           /* "Weighted" buffer */
    float *wframe;         /* Start of "weighted" frame */
    float *excBuf;         /* Excitation buffer */
-   float *exc_frame;      /* Start of excitation frame */
+   float *exc;            /* Start of excitation frame */
+   float *resBuf;         /* Excitation buffer */
+   float *res;            /* Start of excitation frame */
    float *tBuf;           /* "weighted target" buffer */
    float *tframe;         /* Start of "weighted target" frame */
    float *window;         /* Temporary (Hanning) window */
@@ -44,10 +47,15 @@ typedef struct EncState {
    float *lagWindow;      /* Window applied to auto-correlation */
    float *lpc;            /* LPCs for current frame */
    float *lsp;            /* LSPs for current frame */
+   float *qlsp;           /* Quantized LSPs for current frame */
    float *old_lsp;        /* LSPs for previous frame */
+   float *old_qlsp;       /* Quantized LSPs for previous frame */
    float *interp_lsp;     /* Interpolated LSPs */
+   float *interp_qlsp;    /* Interpolated quantized LSPs */
    float *interp_lpc;     /* Interpolated LPCs */
-   float *bw_lpc;         /* LPCs after bandwidth expansion for perceptual weighting*/
+   float *interp_qlpc;    /* Interpolated quantized LPCs */
+   float *bw_lpc1;        /* LPCs after bandwidth expansion by gamma1 for perceptual weighting*/
+   float *bw_lpc2;        /* LPCs after bandwidth expansion by gamma2 for perceptual weighting*/
    float *rc;             /* Reflection coefficients */
 } EncState;
 
