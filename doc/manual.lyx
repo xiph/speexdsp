@@ -5449,7 +5449,7 @@ Vorbis is a great project but its goals are not the same as Speex.
 Isn't there a GPL implementation of the GSM-FR codec? Why is Speex necessary?
 \layout Standard
 
-First of all, it's not clear whether GSM-FR is covered by a Phillips patent
+First of all, it's not clear whether GSM-FR is covered by a Philips patent
  (see http://kbs.cs.tu-berlin.de/~jutta/toast.html).
  Also, GSM-FR offers mediocre quality at a relatively high bit-rate, while
  Speex can offer equivalent quality at almost half the bit-rate.
