@@ -280,13 +280,14 @@ void lsp_to_lpc(float *freq,float *ak,int lpcrdr, float *stack)
       LSP coefficient */
 
     for(j=0;j<=lpcrdr;j++){
-	for(i=0;i<m;i++){
+       int i2=0;
+	for(i=0;i<m;i++,i2+=2){
 	    n1 = pw+(i*4);
 	    n2 = n1 + 1;
 	    n3 = n2 + 1;
 	    n4 = n3 + 1;
-	    xout1 = xin1 - 2*(freq[2*i]) * *n1 + *n2;
-	    xout2 = xin2 - 2*(freq[2*i+1]) * *n3 + *n4;
+	    xout1 = xin1 - 2*(freq[i2]) * *n1 + *n2;
+	    xout2 = xin2 - 2*(freq[i2+1]) * *n3 + *n4;
 	    *n2 = *n1;
 	    *n4 = *n3;
 	    *n1 = xin1;

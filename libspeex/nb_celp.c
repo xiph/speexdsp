@@ -822,6 +822,7 @@ static void nb_decode_lost(DecState *st, float *out, float *stack)
       exc=st->exc+offset;
       /* Excitation after post-filter*/
 
+      if (st->lpc_enh_enabled)
       {
          float r=.9;
          
@@ -849,10 +850,18 @@ static void nb_decode_lost(DecState *st, float *out, float *stack)
       for (i=0;i<st->subframeSize;i++)
          sp[i]=exc[i];
       
-      filter_mem2(sp, awk3, awk1, sp, st->subframeSize, st->lpcSize, 
-        st->mem_sp+st->lpcSize);
-      filter_mem2(sp, awk2, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, 
-        st->mem_sp);
+      if (st->lpc_enh_enabled)
+      {
+         filter_mem2(sp, awk2, awk1, sp, st->subframeSize, st->lpcSize, 
+                     st->mem_sp+st->lpcSize);
+         filter_mem2(sp, awk3, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, 
+                     st->mem_sp);
+      } else {
+         for (i=0;i<st->lpcSize;i++)
+            st->mem_sp[st->lpcSize+i] = 0;
+         iir_mem2(sp, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, 
+                     st->mem_sp);
+      }
   
    }
 
@@ -1018,6 +1027,7 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
       lsp_to_lpc(st->interp_qlsp, st->interp_qlpc, st->lpcSize, stack);
 
       /* Compute enhanced synthesis filter */
+      if (st->lpc_enh_enabled)
       {
          float r=.9;
          
@@ -1148,10 +1158,18 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
       if (st->lpc_enh_enabled && SUBMODE(comb_gain>0))
          comb_filter(exc, sp, st->interp_qlpc, st->lpcSize, st->subframeSize,
                               pitch, pitch_gain, .5);
-      filter_mem2(sp, awk3, awk1, sp, st->subframeSize, st->lpcSize, 
-        st->mem_sp+st->lpcSize);
-      filter_mem2(sp, awk2, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, 
-        st->mem_sp);
+      if (st->lpc_enh_enabled)
+      {
+         filter_mem2(sp, awk2, awk1, sp, st->subframeSize, st->lpcSize, 
+                     st->mem_sp+st->lpcSize);
+         filter_mem2(sp, awk3, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, 
+                     st->mem_sp);
+      } else {
+         for (i=0;i<st->lpcSize;i++)
+            st->mem_sp[st->lpcSize+i] = 0;
+         iir_mem2(sp, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, 
+                     st->mem_sp);
+      }
    }
    
    /*Copy output signal*/

@@ -466,6 +466,7 @@ int lost)
       {
          int j;
          int pp=pitch+1-i;
+#if 0
          for (j=0;j<nsf;j++)
          {
             if (j-pp<0)
@@ -474,15 +475,27 @@ int lost)
                e[i][j]=exc[j-pp-pitch];
             else
                e[i][j]=0;
-         /*if (j-pp<0)
-               e[i][j]=exc[j-pp];
-            else
-            e[i][j]=exc[j-pp-pitch];*/
          }
+#else
+         {
+            int tmp1, tmp2;
+            tmp1=nsf;
+            if (tmp1>pp)
+               tmp1=pp;
+            for (j=0;j<tmp1;j++)
+               e[i][j]=exc[j-pp];
+            tmp2=nsf;
+            if (tmp2>pp+pitch)
+               tmp2=pp+pitch;
+            for (j=tmp1;j<tmp2;j++)
+               e[i][j]=exc[j-pp-pitch];
+            for (j=tmp2;j<nsf;j++)
+               e[i][j]=0;
+         }
+#endif
       }
       for (i=0;i<nsf;i++)
-         exc[i]=gain[0]*e[2][i]+gain[1]*e[1][i]+gain[2]*e[0][i];
-      
+           exc[i]=gain[0]*e[2][i]+gain[1]*e[1][i]+gain[2]*e[0][i];
    }
 }
 
