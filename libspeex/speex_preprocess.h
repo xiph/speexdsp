@@ -1,7 +1,7 @@
 /* Copyright (C) 2003 Epic Games 
    Written by Jean-Marc Valin
 
-   File: speex_denoise.h
+   File: speex_preprocess.h
 
 
    Redistribution and use in source and binary forms, with or without
@@ -38,9 +38,15 @@
 extern "C" {
 #endif
 
-typedef struct SpeexDenoiseState {
-   int frame_size;           /**< Number of samples processed each time */
-   int ps_size;              /**< Number of points in the power spectrum */
+typedef struct SpeexPreprocessState {
+   int    frame_size;        /**< Number of samples processed each time */
+   int    ps_size;           /**< Number of points in the power spectrum */
+   
+   /* parameters */
+   int    denoise_enabled;
+   int    agc_enabled;
+   float  agc_level;
+   int    vad_enabled;
 
    float *frame;             /**< Processing frame (2*ps_size) */
    float *ps;                /**< Current power spectrum */
@@ -73,26 +79,43 @@ typedef struct SpeexDenoiseState {
    float  speech_prob;
    int    last_speech;
    float  loudness;          /**< loudness estimate */
-   float  loudness2;          /**< loudness estimate */
+   float  loudness2;         /**< loudness estimate */
    int    nb_adapt;          /**< Number of frames used for adaptation so far */
    int    nb_loudness_adapt; /**< Number of frames used for loudness adaptation so far */
    int    consec_noise;      /**< Number of consecutive noise frames */
-   int    nb_denoise;        /**< Number of frames processed so far */
+   int    nb_preprocess;     /**< Number of frames processed so far */
    int    nb_min_estimate;   /**< */
    int    last_update;       /**< */
    float  min_ener;          /**< */
-   drft_lookup fft_lookup;   /**< */
+   drft_lookup fft_lookup;   /**< Lookup table for the FFT */
 
-} SpeexDenoiseState;
+} SpeexPreprocessState;
 
-/** Creates a new denoising state */
-SpeexDenoiseState *speex_denoise_state_init(int frame_size);
+/** Creates a new preprocessing state */
+SpeexPreprocessState *speex_preprocess_state_init(int frame_size);
 
 /** Destroys a denoising state */
-void speex_denoise_state_destroy(SpeexDenoiseState *st);
+void speex_preprocess_state_destroy(SpeexPreprocessState *st);
 
-/** Denoise a frame */
-int speex_denoise(SpeexDenoiseState *st, float *x, float *noise);
+/** Preprocess a frame */
+int speex_preprocess(SpeexPreprocessState *st, float *x, float *noise);
+
+/** Used like the ioctl function to control the preprocessor parameters */
+int speex_preprocess_ctl(SpeexPreprocessState *st, int request, void *ptr);
+
+
+
+#define SPEEX_PREPROCESS_SET_DENOISE 0
+#define SPEEX_PREPROCESS_GET_DENOISE 1
+
+#define SPEEX_PREPROCESS_SET_AGC 2
+#define SPEEX_PREPROCESS_GET_AGC 3
+
+#define SPEEX_PREPROCESS_SET_VAD 4
+#define SPEEX_PREPROCESS_GET_VAD 5
+
+#define SPEEX_PREPROCESS_SET_AGC_LEVEL 6
+#define SPEEX_PREPROCESS_GET_AGC_LEVEL 7
 
 #ifdef __cplusplus
 }

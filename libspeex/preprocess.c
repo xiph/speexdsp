@@ -1,8 +1,8 @@
 /* Copyright (C) 2003 Epic Games 
    Written by Jean-Marc Valin
 
-   File: denoise.c
-   Denoiser based on the algorithm by Ephraim and Malah
+   File: preprocess.c
+   Preprocessor with denoising based on the algorithm by Ephraim and Malah
 
    Redistribution and use in source and binary forms, with or without
    modification, are permitted provided that the following conditions are
@@ -32,7 +32,7 @@
 */
 
 #include <math.h>
-#include "speex_denoise.h"
+#include "speex_preprocess.h"
 #include <stdio.h>
 #include "misc.h"
 
@@ -79,12 +79,12 @@ static void conj_window(float *w, int len)
    }
 }
 
-SpeexDenoiseState *speex_denoise_state_init(int frame_size)
+SpeexPreprocessState *speex_preprocess_state_init(int frame_size)
 {
    int i;
    int N, N3, N4;
 
-   SpeexDenoiseState *st = (SpeexDenoiseState *)speex_alloc(sizeof(SpeexDenoiseState));
+   SpeexPreprocessState *st = (SpeexPreprocessState *)speex_alloc(sizeof(SpeexPreprocessState));
    st->frame_size = frame_size;
 
    /* Round ps_size down to the nearest power of two */
@@ -112,6 +112,11 @@ SpeexDenoiseState *speex_denoise_state_init(int frame_size)
    N = st->ps_size;
    N3 = 2*N - st->frame_size;
    N4 = st->frame_size - N3;
+
+   st->denoise_enabled = 1;
+   st->agc_enabled = 0;
+   st->agc_level = 8000;
+   st->vad_enabled = 0;
 
    st->frame = (float*)speex_alloc(2*N*sizeof(float));
    st->ps = (float*)speex_alloc(N*sizeof(float));
@@ -180,14 +185,14 @@ SpeexDenoiseState *speex_denoise_state_init(int frame_size)
 
    st->nb_adapt=0;
    st->consec_noise=0;
-   st->nb_denoise=0;
+   st->nb_preprocess=0;
    st->nb_min_estimate=0;
    st->last_update=0;
    st->last_id=0;
    return st;
 }
 
-void speex_denoise_state_destroy(SpeexDenoiseState *st)
+void speex_preprocess_state_destroy(SpeexPreprocessState *st)
 {
    speex_free(st->frame);
    speex_free(st->ps);
@@ -217,7 +222,7 @@ void speex_denoise_state_destroy(SpeexDenoiseState *st)
    speex_free(st);
 }
 
-static void update_noise(SpeexDenoiseState *st, float *ps, float *echo)
+static void update_noise(SpeexPreprocessState *st, float *ps, float *echo)
 {
    int i;
    float beta;
@@ -240,7 +245,7 @@ static void update_noise(SpeexDenoiseState *st, float *ps, float *echo)
    }
 }
 
-static int speex_compute_vad(SpeexDenoiseState *st, float *ps, float mean_prior, float mean_post)
+static int speex_compute_vad(SpeexPreprocessState *st, float *ps, float mean_prior, float mean_post)
 {
    int i, is_speech=0;
    int N = st->ps_size;
@@ -436,14 +441,13 @@ static int speex_compute_vad(SpeexDenoiseState *st, float *ps, float mean_prior,
    return is_speech;
 }
 
-static void speex_compute_agc(SpeexDenoiseState *st, float mean_prior)
+static void speex_compute_agc(SpeexPreprocessState *st, float mean_prior)
 {
    int i;
    int N = st->ps_size;
    float scale=.5/N;
    float agc_gain;
 
-   /** BEGIN AGC */
    if ((mean_prior>3&&mean_prior>3))
    {
       float loudness=0;
@@ -473,20 +477,17 @@ static void speex_compute_agc(SpeexDenoiseState *st, float mean_prior)
       /*fprintf (stderr, "%f %f %f\n", loudness, st->loudness2, rate);*/
    }
    
-   agc_gain = 6000.0/st->loudness2;
+   agc_gain = st->agc_level/st->loudness2;
 
    for (i=0;i<N;i++)
       st->gain2[i] *= agc_gain;
    
-
-   /** END AGC */
-
 }
 
-int speex_denoise(SpeexDenoiseState *st, float *x, float *echo)
+int speex_preprocess(SpeexPreprocessState *st, float *x, float *echo)
 {
    int i;
-   int is_speech=0;
+   int is_speech=1;
    float mean_post=0;
    float mean_prior=0;
    float energy;
@@ -526,9 +527,9 @@ int speex_denoise(SpeexDenoiseState *st, float *x, float *echo)
    for (i=1;i<N;i++)
       energy += log(100+ps[i]);
    energy /= 160;
-   st->last_energy[st->nb_denoise%STABILITY_TIME]=energy;
+   st->last_energy[st->nb_preprocess%STABILITY_TIME]=energy;
 
-   if (st->nb_denoise>=STABILITY_TIME)
+   if (st->nb_preprocess>=STABILITY_TIME)
    {
       float E=0, E2=0;
       float std;
@@ -547,7 +548,7 @@ int speex_denoise(SpeexDenoiseState *st, float *x, float *echo)
       /*fprintf (stderr, "%f\n", std);*/
    }
 
-   st->nb_denoise++;
+   st->nb_preprocess++;
 
    /* Noise estimation always updated for the 20 first times */
    if (st->nb_adapt<15)
@@ -586,7 +587,7 @@ int speex_denoise(SpeexDenoiseState *st, float *x, float *echo)
       /* A priori update rate */
       float gamma;
       float min_gamma=0.12;
-      gamma = 1.0/st->nb_denoise;
+      gamma = 1.0/st->nb_preprocess;
 
       /*Make update rate smaller when there's no speech*/
 #if 0
@@ -630,7 +631,7 @@ int speex_denoise(SpeexDenoiseState *st, float *x, float *echo)
 #endif
    /*fprintf (stderr, "%f %f\n", mean_prior,mean_post);*/
 
-   if (st->nb_denoise>=20)
+   if (st->nb_preprocess>=20)
    {
       int do_update = 0;
       float noise_ener=0, sig_ener=0;
@@ -654,8 +655,8 @@ int speex_denoise(SpeexDenoiseState *st, float *x, float *echo)
       }
    }
 
-
-   is_speech = speex_compute_vad(st, ps, mean_prior, mean_post);
+   if (st->vad_enabled)
+      is_speech = speex_compute_vad(st, ps, mean_prior, mean_post);
 
 
    if (st->consec_noise>=3)
@@ -708,18 +709,23 @@ int speex_denoise(SpeexDenoiseState *st, float *x, float *echo)
    st->gain[0]=0;
    st->gain[N-1]=0;
 
-   for (i=1;i<N-1;i++)
+   if (st->denoise_enabled)
    {
-      st->gain2[i]=st->gain[i];
-      /* Limits noise reduction to -26 dB, put prevents some musical noise */
-      if (st->gain2[i]<.05)
-        st->gain2[i]=.05;
+      for (i=1;i<N-1;i++)
+      {
+         st->gain2[i]=st->gain[i];
+         /* Limits noise reduction to -26 dB, put prevents some musical noise */
+         if (st->gain2[i]<.05)
+            st->gain2[i]=.05;
+      }
+      st->gain2[N-1]=0;
+   } else {
+      for (i=0;i<N;i++)
+         st->gain2[i] = 1;
    }
-   st->gain2[N-1]=0;
 
-
-   /* FIXME: Add an option to enable/disable AGC */
-   speex_compute_agc(st, mean_prior);
+   if (st->agc_enabled)
+      speex_compute_agc(st, mean_prior);
 
 #if 0
    if (!is_speech)
@@ -760,9 +766,9 @@ int speex_denoise(SpeexDenoiseState *st, float *x, float *echo)
       for (i=0;i<2*N;i++)
          if (fabs(st->frame[i])>max_sample)
             max_sample = fabs(st->frame[i]);
-      if (max_sample>30000)
+      if (max_sample>28000)
       {
-         float damp = 30000./max_sample;
+         float damp = 28000./max_sample;
          for (i=0;i<2*N;i++)
             st->frame[i] *= damp;
       }
@@ -792,4 +798,49 @@ int speex_denoise(SpeexDenoiseState *st, float *x, float *echo)
       st->last_id=0;
 
    return is_speech;
+}
+
+
+int speex_preprocess_ctl(SpeexPreprocessState *state, int request, void *ptr)
+{
+   SpeexPreprocessState *st;
+   st=(SpeexPreprocessState*)state;
+   switch(request)
+   {
+   case SPEEX_PREPROCESS_SET_DENOISE:
+      st->denoise_enabled = (*(int*)ptr);
+      break;
+   case SPEEX_PREPROCESS_GET_DENOISE:
+      (*(int*)ptr) = st->denoise_enabled;
+      break;
+
+   case SPEEX_PREPROCESS_SET_AGC:
+      st->agc_enabled = (*(int*)ptr);
+      break;
+   case SPEEX_PREPROCESS_GET_AGC:
+      (*(int*)ptr) = st->agc_enabled;
+      break;
+
+   case SPEEX_PREPROCESS_SET_AGC_LEVEL:
+      st->agc_level = (*(float*)ptr);
+      if (st->agc_level<1)
+         st->agc_level=1;
+      if (st->agc_level>32768)
+         st->agc_level=32768;
+      break;
+   case SPEEX_PREPROCESS_GET_AGC_LEVEL:
+      (*(float*)ptr) = st->agc_level;
+      break;
+
+   case SPEEX_PREPROCESS_SET_VAD:
+      st->vad_enabled = (*(int*)ptr);
+      break;
+   case SPEEX_PREPROCESS_GET_VAD:
+      (*(int*)ptr) = st->vad_enabled;
+      break;
+   default:
+      speex_warning_int("Unknown speex_preprocess_ctl request: ", request);
+      return -1;
+   }
+   return 0;
 }
