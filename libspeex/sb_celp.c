@@ -502,12 +502,9 @@ int sb_encode(void *state, short *in, SpeexBits *bits)
       sw=st->sw+offset;
       
       /* LSP interpolation (quantized and unquantized) */
-      tmp = (1.0 + sub)/st->nbSubframes;
-      for (i=0;i<st->lpcSize;i++)
-         st->interp_lsp[i] = (1-tmp)*st->old_lsp[i] + tmp*st->lsp[i];
-      for (i=0;i<st->lpcSize;i++)
-         st->interp_qlsp[i] = (1-tmp)*st->old_qlsp[i] + tmp*st->qlsp[i];
-      
+      lsp_interpolate(st->old_lsp, st->lsp, st->interp_lsp, st->lpcSize, sub, st->nbSubframes);
+      lsp_interpolate(st->old_qlsp, st->qlsp, st->interp_qlsp, st->lpcSize, sub, st->nbSubframes);
+
       lsp_enforce_margin(st->interp_lsp, st->lpcSize, .05);
       lsp_enforce_margin(st->interp_qlsp, st->lpcSize, .05);
 
@@ -622,8 +619,7 @@ int sb_encode(void *state, short *in, SpeexBits *bits)
            exc[i]=0;
 
 
-         for (i=0;i<st->subframeSize;i++)
-            target[i]*=scale_1;
+         signal_div(target, target, scale, st->subframeSize);
 
          /* Reset excitation */
          for (i=0;i<st->subframeSize;i++)
@@ -635,8 +631,10 @@ int sb_encode(void *state, short *in, SpeexBits *bits)
                                    innov, syn_resp, bits, stack, (st->complexity+1)>>1);
          /*print_vec(target, st->subframeSize, "after");*/
 
+         signal_mul(innov, innov, scale, st->subframeSize);
+
          for (i=0;i<st->subframeSize;i++)
-            exc[i] += innov[i]*scale;
+            exc[i] += innov[i];
 
          if (SUBMODE(double_codebook)) {
             char *tmp_stack=stack;
@@ -966,9 +964,7 @@ int sb_decode(void *state, SpeexBits *bits, short *out)
       exc=st->exc+offset;
       
       /* LSP interpolation */
-      tmp = (1.0 + sub)/st->nbSubframes;
-      for (i=0;i<st->lpcSize;i++)
-         st->interp_qlsp[i] = (1-tmp)*st->old_qlsp[i] + tmp*st->qlsp[i];
+      lsp_interpolate(st->old_qlsp, st->qlsp, st->interp_qlsp, st->lpcSize, sub, st->nbSubframes);
 
       lsp_enforce_margin(st->interp_qlsp, st->lpcSize, .05);
 
@@ -1046,8 +1042,8 @@ int sb_decode(void *state, SpeexBits *bits, short *out)
 
          SUBMODE(innovation_unquant)(exc, SUBMODE(innovation_params), st->subframeSize, 
                                 bits, stack);
-         for (i=0;i<st->subframeSize;i++)
-            exc[i]*=scale;
+
+         signal_mul(exc,exc,scale,st->subframeSize);
 
          if (SUBMODE(double_codebook)) {
             char *tmp_stack=stack;
