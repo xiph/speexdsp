@@ -54,9 +54,11 @@ SpeexEchoState *speex_echo_state_init(int frame_size, int filter_length)
    drft_init(&st->fft_lookup, N);
    
    st->x = (float*)speex_alloc(N*sizeof(float));
+   st->d = (float*)speex_alloc(N*sizeof(float));
    st->y = (float*)speex_alloc(N*sizeof(float));
 
    st->X = (float*)speex_alloc(M*N*sizeof(float));
+   st->D = (float*)speex_alloc(N*sizeof(float));
    st->Y = (float*)speex_alloc(N*sizeof(float));
    st->E = (float*)speex_alloc(N*sizeof(float));
    st->W = (float*)speex_alloc(M*N*sizeof(float));
@@ -78,9 +80,11 @@ void speex_echo_state_destroy(SpeexEchoState *st)
 {
    drft_clear(&st->fft_lookup);
    speex_free(st->x);
+   speex_free(st->d);
    speex_free(st->y);
 
    speex_free(st->X);
+   speex_free(st->D);
    speex_free(st->Y);
    speex_free(st->E);
    speex_free(st->W);
@@ -100,6 +104,7 @@ void speex_echo_cancel(SpeexEchoState *st, float *ref, float *echo, float *out, 
    int N,M;
    float scale;
    float powE=0, powY=0, powD=0;
+   float spectral_dist=0;
 
    N = st->window_size;
    M = st->M;
@@ -110,6 +115,9 @@ void speex_echo_cancel(SpeexEchoState *st, float *ref, float *echo, float *out, 
    {
       st->x[i] = st->x[i+st->frame_size];
       st->x[i+st->frame_size] = echo[i];
+
+      st->d[i] = st->d[i+st->frame_size];
+      st->d[i+st->frame_size] = ref[i];
    }
 
    /* Shift memory: this could be optimized eventually*/
@@ -138,18 +146,20 @@ void speex_echo_cancel(SpeexEchoState *st, float *ref, float *echo, float *out, 
       st->Y[N-1] += st->X[(j+1)*N-1]*st->W[(j+1)*N-1];
    }
 
-#if 1
-   if (Yout)
+   for (i=0;i<N;i++)
+      st->D[i]=st->d[i];
+   drft_forward(&st->fft_lookup, st->D);
+   for (i=1;i<N-1;i+=2)
    {
-      for (i=1,j=1;i<N-1;i+=2,j++)
-      {
-         Yout[j] =  st->X[(M-1)*N+i]*st->X[(M-1)*N+i] + st->X[(M-1)*N+i+1]*st->X[(M-1)*N+i+1];
-         Yout[j] *= .01;
-      }
-      Yout[0] = Yout[st->frame_size] = 0;
+      float Sdd, Syy, Sdy;
+      Sdd = 1e4 + st->D[i]*st->D[i] + st->D[i+1]*st->D[i+1];
+      Syy = 1e4 + st->Y[i]*st->Y[i] + st->Y[i+1]*st->Y[i+1];
+      Sdy = st->Y[i]*st->D[i] + st->Y[i+1]*st->D[i+1];
+      spectral_dist += Sdy/sqrt(Sdd*Syy);
    }
+   spectral_dist *= 2*scale;
+   /*printf ("%f\n", spectral_dist);*/
 
-#else
    if (Yout)
    {
       for (i=1,j=1;i<N-1;i+=2,j++)
@@ -158,7 +168,6 @@ void speex_echo_cancel(SpeexEchoState *st, float *ref, float *echo, float *out, 
       }
       Yout[0] = Yout[st->frame_size] = 0;
    }
-#endif
 
    for (i=0;i<N;i++)
       st->y[i] = st->Y[i];
@@ -273,7 +282,6 @@ void speex_echo_cancel(SpeexEchoState *st, float *ref, float *echo, float *out, 
       
 
 #if 0
-      /*st->PHI[0] = st->PHI[N-1] = 0;*/
       drft_backward(&st->fft_lookup, st->PHI);
       for (i=0;i<N;i++)
          st->PHI[i]*=scale;
@@ -293,8 +301,18 @@ void speex_echo_cancel(SpeexEchoState *st, float *ref, float *echo, float *out, 
    }
 
    if (st->cancel_count>2*M)
-      st->adapt_rate = .005;
-   else
+   {
+      if (st->cancel_count<8*M)
+      {
+         st->adapt_rate = .03;
+      } else {
+         st->adapt_rate = spectral_dist*.05;
+         if (st->adapt_rate>.03)
+            st->adapt_rate=.03;
+         if (st->adapt_rate<0)
+            st->adapt_rate=0;
+      }
+   } else
       st->adapt_rate = .0;
 
    /* Update weights */
