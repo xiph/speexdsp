@@ -58,14 +58,13 @@ typedef struct SpeexPreprocessState {
    float *gain;              /**< Ephraim Malah gain */
    float *prior;             /**< A-priori SNR */
    float *post;              /**< A-posteriori SNR */
-   float *min_ps;            /**< */
 
    float *S;                 /**< Smoothed power spectrum */
    float *Smin;              /**< See Cohen paper */
    float *Stmp;              /**< See Cohen paper */
    float *update_prob;       /**< Propability of speech presence for noise update */
 
-   float *loudness_weight;   /**< */
+   float *loudness_weight;   /**< Perceptual loudness curve */
 
    float *echo_noise;
 
@@ -87,9 +86,6 @@ typedef struct SpeexPreprocessState {
    int    nb_loudness_adapt; /**< Number of frames used for loudness adaptation so far */
    int    consec_noise;      /**< Number of consecutive noise frames */
    int    nb_preprocess;     /**< Number of frames processed so far */
-   int    nb_min_estimate;   /**< */
-   int    last_update;       /**< */
-   float  min_ener;          /**< */
    struct drft_lookup *fft_lookup;   /**< Lookup table for the FFT */
 
 } SpeexPreprocessState;

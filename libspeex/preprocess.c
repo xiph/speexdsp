@@ -214,8 +214,6 @@ SpeexPreprocessState *speex_preprocess_state_init(int frame_size, int sampling_r
    st->nb_adapt=0;
    st->consec_noise=0;
    st->nb_preprocess=0;
-   st->nb_min_estimate=0;
-   st->last_update=0;
    return st;
 }
 
@@ -621,10 +619,8 @@ int speex_preprocess(SpeexPreprocessState *st, float *x, float *echo)
 
    /* Noise estimation always updated for the 20 first times */
    if (st->nb_adapt<10)
-      /*if (st->nb_adapt<25 && st->nb_adapt>15)*/
    {
       update_noise(st, ps, echo);
-      st->last_update=0;
    }
 
    /* Deal with residual echo if provided */
@@ -730,9 +726,7 @@ int speex_preprocess(SpeexPreprocessState *st, float *x, float *echo)
    if (st->consec_noise>=3)
    {
       update_noise(st, st->old_ps, echo);
-      st->last_update=0;
    } else {
-      st->last_update++;
       for (i=1;i<N-1;i++)
       {
          if (st->update_prob[i]<.5)
