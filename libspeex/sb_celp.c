@@ -270,7 +270,7 @@ void sb_encoder_destroy(void *state)
 }
 
 
-void sb_encode(void *state, float *in, SpeexBits *bits)
+int sb_encode(void *state, float *in, SpeexBits *bits)
 {
    SBEncState *st;
    int i, roots, sub;
@@ -462,8 +462,10 @@ void sb_encode(void *state, float *in, SpeexBits *bits)
          in[i]=2*(st->y0[i]-st->y1[i]);
 #endif
 
-      return;
-
+      if (dtx)
+         return 0;
+      else
+         return 1;
    }
 
 
@@ -714,6 +716,8 @@ void sb_encode(void *state, float *in, SpeexBits *bits)
       st->old_qlsp[i] = st->qlsp[i];
 
    st->first=0;
+
+   return 1;
 }
 
 

@@ -197,8 +197,8 @@ void usage()
    printf ("  (nothing)            Will be played to soundcard\n");
    printf ("\n");  
    printf ("Options:\n");
-   printf (" --enh                 Enable perceptual enhancement\n");
-   printf (" --no-enh              Disable perceptual enhancement (default FOR NOW)\n");
+   printf (" --enh                 Enable perceptual enhancement (default)\n");
+   printf (" --no-enh              Disable perceptual enhancement\n");
    printf (" --force-nb            Force decoding in narrowband\n");
    printf (" --force-wb            Force decoding in wideband\n");
    printf (" --force-uwb           Force decoding in ultra-wideband\n");
@@ -354,7 +354,7 @@ int main(int argc, char **argv)
    int channels=-1;
    int rate=0;
 
-   enh_enabled = 0;
+   enh_enabled = 1;
 
    /*Process options*/
    while(1)

@@ -530,9 +530,9 @@ void speex_encoder_destroy(void *state)
    (*((SpeexMode**)state))->enc_destroy(state);
 }
 
-void speex_encode(void *state, float *in, SpeexBits *bits)
+int speex_encode(void *state, float *in, SpeexBits *bits)
 {
-   (*((SpeexMode**)state))->enc(state, in, bits);
+   return (*((SpeexMode**)state))->enc(state, in, bits);
 }
 
 void speex_decoder_destroy(void *state)

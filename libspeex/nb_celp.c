@@ -173,6 +173,7 @@ void *nb_encoder_init(SpeexMode *m)
 
    st->complexity=2;
    st->sampling_rate=8000;
+   st->dtx_count=0;
 
    return st;
 }
@@ -220,7 +221,7 @@ void nb_encoder_destroy(void *state)
    speex_free((float*)st);
 }
 
-void nb_encode(void *state, float *in, SpeexBits *bits)
+int nb_encode(void *state, float *in, SpeexBits *bits)
 {
    EncState *st;
    int i, sub, roots;
@@ -428,14 +429,15 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
       } else {
          /*VAD only case*/
          int mode;
-         if (st->relative_quality<4)
+         if (st->relative_quality<2)
          {
-            if (st->submodeID>1 || lsp_dist>.05 || !st->dtx_enabled)
-               mode=1;
-            else
+            if (st->submodeID>1 || lsp_dist>.05 || !st->dtx_enabled || st->dtx_count>20)
             {
+               st->dtx_count=0;
+               mode=1;
+            } else {
                mode=0;
-               fprintf (stderr, "tata\n");
+               st->dtx_count++;
             }
          } else
             mode=st->submodeSelect;
@@ -473,7 +475,7 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
          in[i]=st->frame[i] + st->preemph*in[i-1];
       st->pre_mem2=in[st->frameSize-1];
 
-      return;
+      return 0;
 
    }
 
@@ -823,6 +825,8 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
       st->bounded_pitch = 1;
    else
       st->bounded_pitch = 0;
+
+   return 1;
 }
 
 
@@ -1050,54 +1054,62 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
    st=(DecState*)state;
    stack=st->stack;
 
-   /* If bits is NULL, consider the packet to be lost (what could we do anyway) */
-   if (!bits)
+   /* Check if we're in DTX mode*/
+   if (!bits && st->submodeID<2)
    {
-      nb_decode_lost(st, out, stack);
-      return 0;
-   }
-
-   /* Search for next narrwoband block (handle requests, skip wideband blocks) */
-   do {
-      wideband = speex_bits_unpack_unsigned(bits, 1);
-      if (wideband) /* Skip wideband block (for compatibility) */
+      st->submodeID=0;
+   } else 
+   {
+      /* If bits is NULL, consider the packet to be lost (what could we do anyway) */
+      if (!bits)
       {
-         int submode;
-         int advance;
-         advance = submode = speex_bits_unpack_unsigned(bits, SB_SUBMODE_BITS);
-         speex_mode_query(&speex_wb_mode, SPEEX_SUBMODE_BITS_PER_FRAME, &advance);
-         advance -= (SB_SUBMODE_BITS+1);
-         speex_bits_advance(bits, advance);
+         nb_decode_lost(st, out, stack);
+         return 0;
+      }
+
+      /* Search for next narrwoband block (handle requests, skip wideband blocks) */
+      do {
          wideband = speex_bits_unpack_unsigned(bits, 1);
-         if (wideband)
+         if (wideband) /* Skip wideband block (for compatibility) */
          {
-            fprintf (stderr, "Corrupted stream?\n");
+            int submode;
+            int advance;
+            advance = submode = speex_bits_unpack_unsigned(bits, SB_SUBMODE_BITS);
+            speex_mode_query(&speex_wb_mode, SPEEX_SUBMODE_BITS_PER_FRAME, &advance);
+            advance -= (SB_SUBMODE_BITS+1);
+            speex_bits_advance(bits, advance);
+            wideband = speex_bits_unpack_unsigned(bits, 1);
+            if (wideband)
+            {
+               fprintf (stderr, "Corrupted stream?\n");
+            }
          }
-      }
 
-      m = speex_bits_unpack_unsigned(bits, 4);
-      if (m==15) /* We found a terminator */
-      {
-         return -1;
-      } else if (m==14) /* Speex in-band request */
-      {
-         int ret = speex_inband_handler(bits, st->speex_callbacks, state);
-         if (ret)
-            return ret;
-      } else if (m==13) /* User in-band request */
-      {
-         int ret = st->user_callback.func(bits, state, st->user_callback.data);
-         if (ret)
-            return ret;
-      } else if (m>7) /* Invalid mode */
-      {
-         return -2;
-      }
+         m = speex_bits_unpack_unsigned(bits, 4);
+         if (m==15) /* We found a terminator */
+         {
+            return -1;
+         } else if (m==14) /* Speex in-band request */
+         {
+            int ret = speex_inband_handler(bits, st->speex_callbacks, state);
+            if (ret)
+               return ret;
+         } else if (m==13) /* User in-band request */
+         {
+            int ret = st->user_callback.func(bits, state, st->user_callback.data);
+            if (ret)
+               return ret;
+         } else if (m>7) /* Invalid mode */
+         {
+            return -2;
+         }
       
-   } while (m>7);
+      } while (m>7);
 
-   /* Get the sub-mode that was used */
-   st->submodeID = m;
+      /* Get the sub-mode that was used */
+      st->submodeID = m;
+
+   }
 
    /* Shift all buffers by one frame */
    speex_move(st->inBuf, st->inBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(float));

@@ -3239,6 +3239,16 @@ n Encoding bit-rate (use bit-rate n or lower)
 --vbr Enable VBR (Variable Bit-Rate), disabled by default
 \layout Description
 
+--abr\SpecialChar ~
+n Enable ABR (Average Bit-Rate) at n kbps, disabled by default
+\layout Description
+
+--vad Enable VAD (Voice Activity Detection), disabled by default
+\layout Description
+
+--dtx Enable DTX (Discontinuous Transmission), disabled by default
+\layout Description
+
 --nframes\SpecialChar ~
 n Pack n frames in each Ogg packet (this saves space at low bit-rates)
 \layout Description
@@ -3310,10 +3320,10 @@ speexdec
 The decoder takes the following options:
 \layout Description
 
---enh enable post-filter
+--enh enable post-filter (default)
 \layout Description
 
---no-enh disable post-filter (default)
+--no-enh disable post-filter
 \layout Description
 
 --force-nb Force decoding in narrowband 
@@ -3897,7 +3907,7 @@ Asks decoder to set perceptual enhancement off (0) or on(1)
 
 \layout Standard
 
-Notify decoder of discontinuous transmission (DTX)
+reserved
 \end_inset 
 </cell>
 </row>
@@ -4053,7 +4063,7 @@ Request acknowloedge (0=no, 1=all, 2=only for in-band data)
 
 \layout Standard
 
-Asks encoder to set VBR off (0), on(1), VAD-only (2)
+Asks encoder to set VBR off (0), on(1), VAD(2), DTX(3)
 \end_inset 
 </cell>
 </row>
@@ -5103,6 +5113,7 @@ Can Speex pass DTMF
 I guess it all depends on the bit-rate used.
  Though no formal testing has yet been performed, I'd say don't go below
  the 15 kbps mode if you want DTMF to be transmitted correctly.
+ DTMF at 8 kbps may work but your mileage may vary.
  Also, make sure you don't use the lowest complexity (see SPEEX_SET_COMPLEXITY
  or --comp option), as it causes important noise.
 \layout Subsection*

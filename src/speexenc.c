@@ -569,8 +569,7 @@ int main(int argc, char **argv)
       int tmp;
       tmp=1;
       speex_encoder_ctl(st, SPEEX_SET_VBR, &tmp);
-   }
-   if (vad_enabled)
+   } else if (vad_enabled)
    {
       int tmp;
       tmp=1;

@@ -152,7 +152,7 @@ typedef void *(*encoder_init_func)(struct SpeexMode *mode);
 typedef void (*encoder_destroy_func)(void *st);
 
 /** Main encoding function */
-typedef void (*encode_func)(void *state, float *in, SpeexBits *bits);
+typedef int (*encode_func)(void *state, float *in, SpeexBits *bits);
 
 /** Function for controlling the encoder options */
 typedef void (*encoder_ctl_func)(void *state, int request, void *ptr);
@@ -238,7 +238,7 @@ void speex_encoder_destroy(void *state);
  @param in Frame that will be encoded with a +-2^16 range
  @param bits Bit-stream where the data will be written
  */
-void speex_encode(void *state, float *in, SpeexBits *bits);
+int speex_encode(void *state, float *in, SpeexBits *bits);
 
 /** Used like the ioctl function to control the encoder parameters
  *

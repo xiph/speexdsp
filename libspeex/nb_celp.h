@@ -105,6 +105,7 @@ typedef struct EncState {
    int    vbr_enabled;    /**< 1 for enabling VBR, 0 otherwise */
    int    vad_enabled;    /**< 1 for enabling VAD, 0 otherwise */
    int    dtx_enabled;    /**< 1 for enabling DTX, 0 otherwise */
+   int    dtx_count;      /**< Number of consecutive DTX frames */
    int    abr_enabled;    /**< ABR setting (in bps), 0 if off */
    float  abr_drift;
    float  abr_drift2;
@@ -177,7 +178,7 @@ void *nb_encoder_init(SpeexMode *m);
 void nb_encoder_destroy(void *state);
 
 /** Encodes one frame*/
-void nb_encode(void *state, float *in, SpeexBits *bits);
+int nb_encode(void *state, float *in, SpeexBits *bits);
 
 
 /** Initializes decoder state*/
