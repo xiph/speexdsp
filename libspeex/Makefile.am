@@ -59,10 +59,13 @@ noinst_HEADERS = lsp.h \
 	vbr.h \
 	misc.h \
 	ltp_sse.h \
+	ltp_arm4.h \
 	filters_sse.h \
+	filters_arm4.h \
 	math_approx.h \
 	smallft.h \
 	arch.h \
+	fixed_arm4.h \
 	fixed_arm5e.h \
 	fixed_debug.h \
 	fixed_generic.h \

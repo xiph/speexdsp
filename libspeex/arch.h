@@ -66,6 +66,8 @@ typedef spx_word32_t spx_sig_t;
 
 #ifdef ARM5E_ASM
 #include "fixed_arm5e.h"
+#elif defined (ARM4_ASM)
+#include "fixed_arm4.h"
 #elif defined (FIXED_DEBUG)
 #include "fixed_debug.h"
 #else

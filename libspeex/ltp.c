@@ -45,61 +45,10 @@
 
 #ifdef _USE_SSE
 #include "ltp_sse.h"
+#elif defined (ARM4_ASM) || defined(ARM5E_ASM)
+#include "ltp_arm4.h"
 #else
 
-#if defined(ARM4_ASM) || defined(ARM5E_ASM)
-static spx_word32_t inner_prod(const spx_word16_t *x, const spx_word16_t *y, int len)
-{
-   spx_word32_t sum1=0,sum2=0;
-   spx_word16_t *deadx, *deady;
-   int deadlen, dead1, dead2, dead3, dead4, dead5, dead6;
-   __asm__ __volatile__ (
-         "\tldrsh %5, [%0], #2 \n"
-         "\tldrsh %6, [%1], #2 \n"
-         ".inner_prod_loop:\n"
-         "\tsub %7, %7, %7\n"
-         "\tsub %10, %10, %10\n"
-
-         "\tldrsh %8, [%0], #2 \n"
-         "\tldrsh %9, [%1], #2 \n"
-         "\tmla %7, %5, %6, %7\n"
-         "\tldrsh %5, [%0], #2 \n"
-         "\tldrsh %6, [%1], #2 \n"
-         "\tmla %10, %8, %9, %10\n"
-         "\tldrsh %8, [%0], #2 \n"
-         "\tldrsh %9, [%1], #2 \n"
-         "\tmla %7, %5, %6, %7\n"
-         "\tldrsh %5, [%0], #2 \n"
-         "\tldrsh %6, [%1], #2 \n"
-         "\tmla %10, %8, %9, %10\n"
-
-         "\tldrsh %8, [%0], #2 \n"
-         "\tldrsh %9, [%1], #2 \n"
-         "\tmla %7, %5, %6, %7\n"
-         "\tldrsh %5, [%0], #2 \n"
-         "\tldrsh %6, [%1], #2 \n"
-         "\tmla %10, %8, %9, %10\n"
-         "\tldrsh %8, [%0], #2 \n"
-         "\tldrsh %9, [%1], #2 \n"
-         "\tmla %7, %5, %6, %7\n"
-         "\tldrsh %5, [%0], #2 \n"
-         "\tldrsh %6, [%1], #2 \n"
-         "\tmla %10, %8, %9, %10\n"
-
-         "\tsubs %4, %4, #1\n"
-         "\tadd %2, %2, %7, asr #5\n"
-         "\tadd %3, %3, %10, asr #5\n"
-         "\tbne .inner_prod_loop\n"
-   : "=r" (deadx), "=r" (deady), "=r" (sum1),  "=r" (sum2), "=r" (deadlen),
-   "=r" (dead1), "=r" (dead2), "=r" (dead3), "=r" (dead4), "=r" (dead5), "=r"
-   : "0" (x), "1" (y), "2" (sum1), "3" (sum2), "4" (len>>3)
-   : "cc", "memory"
-                        );
-   return (sum1+sum2)>>1;
-}
-
-
-#else
 static spx_word32_t inner_prod(const spx_word16_t *x, const spx_word16_t *y, int len)
 {
    int i;
@@ -115,9 +64,8 @@ static spx_word32_t inner_prod(const spx_word16_t *x, const spx_word16_t *y, int
    }
    return sum;
 }
-#endif
 
-#if 0
+#if 0 /* Enable this for machines with enough registers (i.e. not x86) */
 static void pitch_xcorr(const spx_word16_t *_x, const spx_word16_t *_y, spx_word32_t *corr, int len, int nb_pitch, char *stack)
 {
    int i,j;
@@ -181,8 +129,7 @@ static void pitch_xcorr(const spx_word16_t *_x, const spx_word16_t *_y, spx_word
 
 }
 #else
-static void pitch_xcorr(const spx_word16_t *_x, const spx_word16_t *_y, spx_word
-32_t *corr, int len, int nb_pitch, char *stack)
+static void pitch_xcorr(const spx_word16_t *_x, const spx_word16_t *_y, spx_word32_t *corr, int len, int nb_pitch, char *stack)
 {
    int i;
    for (i=0;i<nb_pitch;i++)
