@@ -35,6 +35,7 @@
 
 #ifdef FIXED_POINT
 
+/* sqrt(x) ~= 0.22178 + 1.29227*x - 0.77070*x^2 + 0.25723*x^3 (for .25 < x < 1) */
 #define C0 3634
 #define C1 21173
 #define C2 -12627
@@ -83,5 +84,7 @@ spx_word16_t sqroot(spx_word32_t x)
    rt >>=7;
    return rt;
 }
+
+/* log(x) ~= -2.18151 + 4.20592*x - 2.88938*x^2 + 0.86535*x^3 (for .5 < x < 1) */
 
 #endif
