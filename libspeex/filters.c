@@ -118,7 +118,7 @@ spx_word16_t compute_rms(spx_sig_t *x, int len)
    }
    
    /*FIXME: remove division*/
-   return SHR(SHL((spx_word32_t)sqroot(1+sum/len),(sig_shift+3)),SIG_SHIFT);
+   return SHR(SHL((spx_word32_t)spx_sqrt(1+sum/len),(sig_shift+3)),SIG_SHIFT);
 }
 
 

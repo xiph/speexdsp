@@ -46,7 +46,7 @@ Modified by Jean-Marc Valin
 #include <math.h>
 #include "lsp.h"
 #include "stack_alloc.h"
-
+#include "math_approx.h"
 
 #ifndef M_PI
 #define M_PI           3.14159265358979323846  /* pi */
@@ -78,8 +78,8 @@ static spx_word16_t cos_32(spx_word16_t x)
 
 #define FREQ_SCALE 16384
 #define ANGLE2X(a) (SHL(cos_32(a),2))
-#define X2ANGLE(x) (acos(.00006103515625*(x))*LSP_SCALING)
-
+//#define X2ANGLE(x) (acos(.00006103515625*(x))*LSP_SCALING)
+#define X2ANGLE(x) (spx_acos(x))
 /* maybe we could approximate acos as 
    sqrt(6.7349563814-5.213449731*sqrt(0.6688572663+x))
 */

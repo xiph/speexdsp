@@ -877,7 +877,7 @@ int nb_encode(void *state, short *in, SpeexBits *bits)
    /* The next frame will not be the first (Duh!) */
    st->first = 0;
 
-   {
+   if (0) {
       float ener=0, err=0;
       float snr;
       for (i=0;i<st->frameSize;i++)

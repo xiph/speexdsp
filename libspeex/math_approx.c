@@ -41,7 +41,7 @@
 #define C2 -12627
 #define C3 4215
 
-spx_word16_t sqroot(spx_word32_t x)
+spx_word16_t spx_sqrt(spx_word32_t x)
 {
    int k=0;
    spx_word32_t rt;
@@ -79,12 +79,47 @@ spx_word16_t sqroot(spx_word32_t x)
       k++;
       }
 #endif
+   while (x<4096)
+   {
+      x<<=2;
+      k--;
+   }
    rt = ADD16(C0, MULT16_16_Q14(x, ADD16(C1, MULT16_16_Q14(x, ADD16(C2, MULT16_16_Q14(x, (C3)))))));
-   rt <<= k;
+   if (k>0)
+      rt <<= k;
+   else
+      rt >>= -k;
    rt >>=7;
    return rt;
 }
 
 /* log(x) ~= -2.18151 + 4.20592*x - 2.88938*x^2 + 0.86535*x^3 (for .5 < x < 1) */
+
+
+#define A1 16469
+#define A2 2242
+#define A3 1486
+
+spx_word16_t spx_acos(spx_word16_t x)
+{
+   int s=0;
+   spx_word16_t ret;
+   spx_word32_t sq;
+   if (x<0)
+   {
+      s=1;
+      x = -x;
+   }
+   x = 16384-x;
+   
+   x = x >> 1;
+   sq = MULT16_16_Q13(x, ADD16(A1, MULT16_16_Q13(x, ADD16(A2, MULT16_16_Q13(x, (A3))))));
+   ret = spx_sqrt(SHL(sq,13));
+   
+   /*ret = spx_sqrt(67108864*(-1.6129e-04 + 2.0104e+00*f + 2.7373e-01*f*f + 1.8136e-01*f*f*f));*/
+   if (s)
+      ret = 25736-ret;
+   return ret;
+}
 
 #endif
