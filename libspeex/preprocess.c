@@ -77,6 +77,30 @@ static void conj_window(float *w, int len)
    }
 }
 
+/* This function approximates the gain function 
+   y = gamma(1.25)^2 * M(-.25;1;-x) / sqrt(x)  
+   which multiplied by xi/(1+xi) is the optimal gain
+   in the loudness domain ( sqrt[amplitude] )
+*/
+static float hypergeom_gain(float x)
+{
+   int ind;
+   float integer, frac;
+   static float table[21] = {
+      0.82157, 1.02017, 1.20461, 1.37534, 1.53363, 1.68092, 1.81865, 
+      1.94811, 2.07038, 2.18638, 2.29688, 2.40255, 2.50391, 2.60144, 
+      2.69551, 2.78647, 2.87458, 2.96015, 3.04333, 3.12431, 3.20326};
+   
+   if (x>9.5)
+      return 1+.12/x;
+
+   integer = floor(x);
+   frac = x-integer;
+   ind = (int)integer;
+   
+   return ((1-frac)*table[ind] + frac*table[ind+1])/sqrt(x+.0001);
+}
+
 SpeexPreprocessState *speex_preprocess_state_init(int frame_size, int sampling_rate)
 {
    int i;
@@ -728,32 +752,22 @@ int speex_preprocess(SpeexPreprocessState *st, float *x, float *echo)
       theta = (1+st->post[i])*prior_ratio;
 
 #if 0
-      /* Spectral magnitude estimator */
-      /* Approximation of:
-         exp(-theta/2)*((1+theta)*I0(theta/2) + theta.*I1(theta/2))
-         because I don't feel like computing Bessel functions
-      */
-      /*MM = -.22+1.155*sqrt(theta+1.1);*/
-      MM=-.22+1.163*sqrt(theta+1.1)-.0015*theta;
-      st->gain[i] = SQRT_M_PI_2*sqrt(prior_ratio/(1.0001+st->post[i]))*MM;
-      if (st->gain[i]>1)
-      {
-         st->gain[i]=1;
-      }
-#else
       /* log-spectral magnitude estimator */
       if (theta<6)
          MM = 0.74082*pow(theta+1,.61)/sqrt(.0001+theta);
       else
          MM=1;
+#else
+      /* Optimal estimator for loudness domain */
+      MM = hypergeom_gain(theta);
+#endif
+
       st->gain[i] = prior_ratio * MM;
       /*Put some (very arbitraty) limit on the gain*/
       if (st->gain[i]>2)
       {
          st->gain[i]=2;
       }
-#endif
-      /*st->gain[i] = prior_ratio;*/
    }
    st->gain[0]=0;
    st->gain[N-1]=0;
@@ -764,8 +778,8 @@ int speex_preprocess(SpeexPreprocessState *st, float *x, float *echo)
       {
          st->gain2[i]=st->gain[i];
          /* Limits noise reduction to -26 dB, put prevents some musical noise */
-         if (st->gain2[i]<.05)
-            st->gain2[i]=.05;
+         /*if (st->gain2[i]<.05)
+           st->gain2[i]=.05;*/
       }
       st->gain2[N-1]=0;
    } else {
