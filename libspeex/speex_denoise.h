@@ -34,6 +34,10 @@
 
 #include "smallft.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct DenoiseState {
    int frame_size;           /**< Number of samples processed each time */
    int ps_size;              /**< Number of points in the power spectrum */
@@ -50,6 +54,7 @@ typedef struct DenoiseState {
    float *min_ps;            /**< */
    float *last_energy;       /**< Energy of the previous frames */
    float *last_ps;           /**< Power spectrum of the past frames */
+   float *loudness_weight;   /**< */
    int   last_id;            /**< */
 
    float *inbuf;             /**< Input buffer (overlapped analysis) */
@@ -73,3 +78,7 @@ void denoise_state_destroy(DenoiseState *st);
 
 /** Denoise a frame */
 int denoise(DenoiseState *st, float *x);
+
+#ifdef __cplusplus
+}
+#endif

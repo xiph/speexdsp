@@ -114,7 +114,7 @@ DenoiseState *denoise_state_init(int frame_size)
    st->min_ps = (float*)speex_alloc(N*sizeof(float));
    st->last_energy = (float*)speex_alloc(STABILITY_TIME*sizeof(float));
    st->last_ps = (float*)speex_alloc(NB_LAST_PS*N*sizeof(float));
-
+   st->loudness_weight = (float*)speex_alloc(N*sizeof(float));
    st->inbuf = (float*)speex_alloc(N3*sizeof(float));
    st->outbuf = (float*)speex_alloc(N3*sizeof(float));
 
@@ -138,6 +138,13 @@ DenoiseState *denoise_state_init(int frame_size)
    {
       st->inbuf[i]=0;
       st->outbuf[i]=0;
+   }
+
+   for (i=0;i<N;i++)
+   {
+      float ff=((float)i)*128.0/4000.0;
+      st->loudness_weight[i] = .35-.35*ff/16000+.73*exp(-.5*(ff-3800)*(ff-3800)/9e5);
+      st->loudness_weight[i] *= st->loudness_weight[i];
    }
 
    drft_init(&st->fft_lookup,2*N);
@@ -166,6 +173,7 @@ void denoise_state_destroy(DenoiseState *st)
    speex_free(st->min_ps);
    speex_free(st->last_energy);
    speex_free(st->last_ps);
+   speex_free(st->loudness_weight);
 
    speex_free(st->inbuf);
    speex_free(st->outbuf);
@@ -403,6 +411,17 @@ int denoise(DenoiseState *st, float *x)
          st->gain2[i]=.1;
    }
    st->gain2[N-1]=0;
+
+   {
+      float loudness=0;
+      for (i=2;i<N;i++)
+      {
+         loudness += scale*st->ps[i] * st->gain2[i] * st->gain2[i] * st->loudness_weight[i];
+      }
+      loudness=sqrt(loudness);
+      //if (st->consec_noise==0)
+      fprintf (stderr, "%f\n", loudness);
+   }
 
    /* Apply computed gain */
    for (i=1;i<N;i++)

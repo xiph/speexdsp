@@ -11,7 +11,7 @@
  ********************************************************************
 
  function: fft transform
- last mod: $Id: smallft.h,v 1.1 2003/05/08 04:04:49 jm Exp $
+ last mod: $Id: smallft.h,v 1.2 2003/05/12 01:23:51 jm Exp $
 
  ********************************************************************/
 
@@ -19,6 +19,10 @@
 #define _V_SMFT_H_
 
 /*#include "vorbis/codec.h"*/
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef struct {
   int n;
@@ -30,5 +34,9 @@ extern void drft_forward(drft_lookup *l,float *data);
 extern void drft_backward(drft_lookup *l,float *data);
 extern void drft_init(drft_lookup *l,int n);
 extern void drft_clear(drft_lookup *l);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
