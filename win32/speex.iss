@@ -3,7 +3,7 @@
 
 [Setup]
 AppName=Speex
-AppVerName=Speex V1.1.4
+AppVerName=Speex V1.1.6
 AppPublisherURL=http://www.speex.org
 AppSupportURL=http://www.speex.org
 AppUpdatesURL=http://www.speex.org
@@ -13,8 +13,7 @@ AllowNoIcons=yes
 LicenseFile=..\COPYING
 InfoAfterFile=..\README
 OutputDir=.
-OutputBaseFilename=speex_win32_1.1.4_setup
-WizardImageFile=speexlogo.bmp
+OutputBaseFilename=speex_win32_1.1.6_setup
 ; uncomment the following line if you want your installation to run on NT 3.51 too.
 ; MinVersion=4,3.51
 
@@ -24,17 +23,37 @@ WizardImageFile=speexlogo.bmp
 [Dirs]
 Name: "{app}"
 Name: "{app}\doc"
+Name: "{app}\html"
+Name: "{app}\libspeex"
+Name: "{app}\libspeex\include"
 
 [Files]
 Source: "speexdec\Release\speexdec.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "speexenc\Release\speexenc.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\doc\draft-herlein-speex-rtp-profile-00.txt"; DestDir: "{app}\doc"; Flags: ignoreversion
+Source: "libspeex\Release\libspeex.lib"; DestDir: "{app}\libspeex"; Flags: ignoreversion
+Source: "libspeex\Release\libspeex.exp"; DestDir: "{app}\libspeex"; Flags: ignoreversion
+Source: "libspeex\Release\libspeex.dll"; DestDir: "{app}\libspeex"; Flags: ignoreversion
+Source: "..\include\speex\speex.h"; DestDir: "{app}\libspeex\include"; Flags: ignoreversion
+Source: "..\include\speex\speex_bits.h"; DestDir: "{app}\libspeex\include"; Flags: ignoreversion
+Source: "..\include\speex\speex_callbacks.h"; DestDir: "{app}\libspeex\include"; Flags: ignoreversion
+Source: "..\include\speex\speex_echo.h"; DestDir: "{app}\libspeex\include"; Flags: ignoreversion
+Source: "..\include\speex\speex_header.h"; DestDir: "{app}\libspeex\include"; Flags: ignoreversion
+Source: "..\include\speex\speex_jitter.h"; DestDir: "{app}\libspeex\include"; Flags: ignoreversion
+Source: "..\include\speex\speex_noglobals.h"; DestDir: "{app}\libspeex\include"; Flags: ignoreversion
+Source: "..\include\speex\speex_preprocess.h"; DestDir: "{app}\libspeex\include"; Flags: ignoreversion
+Source: "..\include\speex\speex_stereo.h"; DestDir: "{app}\libspeex\include"; Flags: ignoreversion
+Source: "..\doc\draft-herlein-avt-rtp-speex-00.txt"; DestDir: "{app}\doc"; Flags: ignoreversion
 Source: "..\doc\manual.lyx"; DestDir: "{app}\doc"; Flags: ignoreversion
 Source: "..\doc\manual.pdf"; DestDir: "{app}\doc"; Flags: ignoreversion
 Source: "..\doc\programming.html"; DestDir: "{app}\doc"; Flags: ignoreversion
 Source: "..\doc\rtp.txt"; DestDir: "{app}\doc"; Flags: ignoreversion
 Source: "..\doc\sampledec.c"; DestDir: "{app}\doc"; Flags: ignoreversion
 Source: "..\doc\sampleenc.c"; DestDir: "{app}\doc"; Flags: ignoreversion
+Source: "..\html\index.html"; DestDir: "{app}\html"; Flags: ignoreversion
+Source: "..\html\patents.html"; DestDir: "{app}\html"; Flags: ignoreversion
+Source: "..\html\speex.png"; DestDir: "{app}\html"; Flags: ignoreversion
+Source: "..\html\speex.webprj"; DestDir: "{app}\html"; Flags: ignoreversion
+Source: "..\html\speex.xcf"; DestDir: "{app}\html"; Flags: ignoreversion
 
 [Run]
 
