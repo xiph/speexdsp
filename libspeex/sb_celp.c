@@ -149,8 +149,13 @@ void *sb_encoder_init(SpeexMode *m)
    
    {
       /* FIXME: Should do this without explicit reference to a mode */
+#if 0
       int mod=6;
       speex_encoder_ctl(st->st_low, SPEEX_SET_MODE, &mod);
+#else
+      int mod=9;
+      speex_encoder_ctl(st->st_low, SPEEX_SET_QUALITY, &mod);
+#endif
    }
 
    st->lag_factor = mode->lag_factor;
@@ -933,58 +938,61 @@ void sb_encoder_ctl(void *state, int request, void *ptr)
       }
    case SPEEX_SET_QUALITY:
       {
-         int nb_mode;
+         int nb_qual;
          int quality = (*(int*)ptr);
          switch (quality)
          {
          case 0:
-            nb_mode=0;
+            nb_qual=0;
             st->submodeID = 0;
             break;
          case 1:
-            nb_mode=1;
+            nb_qual=1;
             st->submodeID = 1;
             break;
          case 2:
-            nb_mode=2;
+            nb_qual=2;
             st->submodeID = 1;
             break;
          case 3:
-            nb_mode=3;
+            nb_qual=4;
             st->submodeID = 1;
             break;
          case 4:
-            nb_mode=4;
+            nb_qual=6;
             st->submodeID = 1;
             break;
          case 5:
-            nb_mode=5;
+            nb_qual=8;
             st->submodeID = 1;
             break;
          case 6:
-            nb_mode=5;
+            nb_qual=8;
             st->submodeID = 2;
             break;
          case 7:
-            nb_mode=6;
+            nb_qual=9;
             st->submodeID = 2;
             break;
          case 8:
-            nb_mode=6;
+            nb_qual=9;
             st->submodeID = 3;
             break;
          case 9:
-            nb_mode=7;
+            nb_qual=10;
             st->submodeID = 3;
             break;
          case 10:
-            nb_mode=7;
+            nb_qual=10;
             st->submodeID = 4;
             break;
          default:
             fprintf(stderr, "Unknown sb_ctl quality: %d\n", quality);
          }
-         speex_encoder_ctl(st->st_low, SPEEX_SET_MODE, &nb_mode);
+         /*FIXME: This is a kludge*/
+         if (st->full_frame_size == 640)
+            st->submodeID = 1;
+         speex_encoder_ctl(st->st_low, SPEEX_SET_QUALITY, &nb_qual);
       }
       break;
    case SPEEX_SET_COMPLEXITY:

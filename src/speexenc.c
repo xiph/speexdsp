@@ -418,7 +418,7 @@ int main(int argc, char **argv)
          fprintf (stderr,"Warning: encoding a narrowband file in wideband\n");
    }
 
-   if (!wideband)
+   if (!wideband && !ultrawide)
       narrowband=1;
    if (narrowband)
    {
