@@ -30,25 +30,11 @@
 */
 
 
-
 #include <stdlib.h>
 #include "cb_search.h"
 #include "filters.h"
-#include <math.h>
-#ifdef DEBUG
-#include <stdio.h>
-#endif
 #include "stack_alloc.h"
 #include "vq.h"
-
-#ifndef min
-# define min(a,b) ((a) < (b) ? (a) : (b))
-#endif
-#ifndef max
-# define max(a,b) ((a) > (b) ? (a) : (b))
-#endif
-
-
 
 
 void split_cb_search_shape_sign(

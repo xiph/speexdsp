@@ -34,8 +34,12 @@
 #ifndef STACK_ALLOC_H
 #define STACK_ALLOC_H
 
+/*Aligns the stack to a 'size' boundary */
 #define ALIGN(stack, size) (stack=(float*)((((int)stack)+((size)-1)) & (-(size))))
+/*Aligns the stack to a 'size' boundary minus k */
+#define ALIGN_1(stack, size, k) (stack=(float*)(((((int)stack)+((size)-1+(k))) & (-(size)))-(k)))
 
+/* Allocates 'size' elements of type 'type' on the stack */
 #define PUSH(stack, size, type) (ALIGN(stack,sizeof(type)),stack=(float*)(((int)stack)+((size)*sizeof(type))),(type*)(((int)stack)-((size)*sizeof(type))))
 
 
