@@ -517,8 +517,8 @@ void lsp_to_lpc(spx_lsp_t *freq,spx_coef_t *ak,int lpcrdr, char *stack)
 	    n2 = n1 + 1;
 	    n3 = n2 + 1;
 	    n4 = n3 + 1;
-	    xout1 = xin1 - 2*x_freq[i2] * *n1 + *n2;
-	    xout2 = xin2 - 2*x_freq[i2+1] * *n3 + *n4;
+	    xout1 = xin1 - 2.f*x_freq[i2] * *n1 + *n2;
+	    xout2 = xin2 - 2.f*x_freq[i2+1] * *n3 + *n4;
 	    *n2 = *n1;
 	    *n4 = *n3;
 	    *n1 = xin1;
@@ -528,7 +528,7 @@ void lsp_to_lpc(spx_lsp_t *freq,spx_coef_t *ak,int lpcrdr, char *stack)
 	}
 	xout1 = xin1 + *(n4+1);
 	xout2 = xin2 - *(n4+2);
-	ak[j] = (xout1 + xout2)*0.5;
+	ak[j] = (xout1 + xout2)*0.5f;
 	*(n4+1) = xin1;
 	*(n4+2) = xin2;
 
@@ -591,7 +591,7 @@ void lsp_enforce_margin(spx_lsp_t *lsp, int len, spx_word16_t margin)
          lsp[i]=lsp[i-1]+LSP_SCALING*margin;
 
       if (lsp[i]>lsp[i+1]-LSP_SCALING*margin)
-         lsp[i]= .5* (lsp[i] + lsp[i+1]-LSP_SCALING*margin);
+         lsp[i]= .5f* (lsp[i] + lsp[i+1]-LSP_SCALING*margin);
    }
 }
 
@@ -599,7 +599,7 @@ void lsp_enforce_margin(spx_lsp_t *lsp, int len, spx_word16_t margin)
 void lsp_interpolate(spx_lsp_t *old_lsp, spx_lsp_t *new_lsp, spx_lsp_t *interp_lsp, int len, int subframe, int nb_subframes)
 {
    int i;
-   float tmp = (1.0 + subframe)/nb_subframes;
+   float tmp = (1.0f + subframe)/nb_subframes;
    for (i=0;i<len;i++)
    {
       interp_lsp[i] = (1-tmp)*old_lsp[i] + tmp*new_lsp[i];

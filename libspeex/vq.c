@@ -89,7 +89,7 @@ void vq_nbest(spx_word16_t *_in, const __m128 *codebook, int len, int entries, _
    __m128 half;
    used = 0;
    dist = PUSH(stack, entries, float);
-   half = _mm_set_ps1(.5);
+   half = _mm_set_ps1(.5f);
    in = PUSH(stack, len, __m128);
    for (i=0;i<len;i++)
       in[i] = _mm_set_ps1(_in[i]);
@@ -132,7 +132,7 @@ void vq_nbest(spx_word16_t *in, const spx_word16_t *codebook, int len, int entri
 #ifdef FIXED_POINT
       dist=SUB32(SHR(E[i],1),dist);
 #else
-      dist=.5*E[i]-dist;
+      dist=.5f*E[i]-dist;
 #endif
       if (i<N || dist<best_dist[N-1])
       {
@@ -162,7 +162,7 @@ void vq_nbest_sign(spx_word16_t *_in, const __m128 *codebook, int len, int entri
    __m128 half;
    used = 0;
    dist = PUSH(stack, entries, float);
-   half = _mm_set_ps1(.5);
+   half = _mm_set_ps1(.5f);
    in = PUSH(stack, len, __m128);
    for (i=0;i<len;i++)
       in[i] = _mm_set_ps1(_in[i]);
@@ -184,7 +184,7 @@ void vq_nbest_sign(spx_word16_t *_in, const __m128 *codebook, int len, int entri
       {
          sign=1;
       }
-      dist[i] += .5*((float*)E)[i];
+      dist[i] += .5f*((float*)E)[i];
       if (i<N || dist[i]<best_dist[N-1])
       {
          for (k=N-1; (k >= 1) && (k > used || dist[i] < best_dist[k-1]); k--)
@@ -224,7 +224,7 @@ void vq_nbest_sign(spx_word16_t *in, const spx_word16_t *codebook, int len, int 
 #ifdef FIXED_POINT
       dist = ADD32(dist,SHR(E[i],1));
 #else
-      dist = ADD32(dist,.5*E[i]);
+      dist = ADD32(dist,.5f*E[i]);
 #endif
       if (i<N || dist<best_dist[N-1])
       {
