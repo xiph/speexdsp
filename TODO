@@ -1,8 +1,10 @@
+Version 1.0
+Allocator override
+better error handling
+
 Version 1.2:
-implement speex_lib_ctl
-put includes in /usr/include/speex
-support alloca
-support gapless (play with granulepos)
+Allocator override (speex_lib_ctl)
+support alloca?
 better error handling
 
 

@@ -56,7 +56,7 @@ extern "C" {
 /** Set quality value */
 #define SPEEX_SET_QUALITY 4
 /** Get current quality setting */
-#define SPEEX_GET_QUALITY 5
+/* #define SPEEX_GET_QUALITY 5 -- Doesn't make much sense, does it? */
 
 /** Set sub-mode to use */
 #define SPEEX_SET_MODE 6
