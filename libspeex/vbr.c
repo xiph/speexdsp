@@ -21,7 +21,10 @@
 
 #include "vbr.h"
 #include <math.h>
+
+#ifdef DEBUG
 #include <stdio.h>
+#endif
 
 #define sqr(x) ((x)*(x))
 

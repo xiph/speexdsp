@@ -38,7 +38,7 @@ float *stack)
 {
    int i;
    float exc_energy=0, new_exc_energy=0;
-   float *awk;
+   float *awk1, *awk2;
    float gain;
    pf_params *params;
    float *tmp_exc;
@@ -46,7 +46,8 @@ float *stack)
 
    params = (pf_params*) par;
 
-   awk = PUSH(stack, p);
+   awk1 = PUSH(stack, p);
+   awk2 = PUSH(stack, p);
    tmp_exc = PUSH(stack, nsf);
   
    /*Compute excitation energy prior to enhancement*/
@@ -76,10 +77,9 @@ float *stack)
                  + (1-voiced_fact)* params->formant_enh_num;
 
    /*Short-term post-filter using "flatified" versions of ak*/
-   lpc_flat (formant_num, ak, awk, p);
-   residue_mem(new_exc, awk, tmp_exc, nsf, p, mem);
-   lpc_flat (formant_den, ak, awk, p);
-   syn_filt_mem(tmp_exc, awk, new_exc, nsf, p, mem2);
+   lpc_flat (formant_num, formant_den, ak, awk1, awk2, p);
+   residue_mem(new_exc, awk1, tmp_exc, nsf, p, mem);
+   syn_filt_mem(tmp_exc, awk2, new_exc, nsf, p, mem2);
 
    /*Gain after enhancement*/
    for (i=0;i<nsf;i++)
@@ -90,6 +90,7 @@ float *stack)
    for (i=0;i<nsf;i++)
       new_exc[i] *= gain;
    
+   POP(stack);
    POP(stack);
    POP(stack);
 }

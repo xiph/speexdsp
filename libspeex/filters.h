@@ -28,7 +28,7 @@ void bw_lpc(float gamma, float *lpc_in, float *lpc_out, int order);
 void poly(float *re, float *im, float *p, int ord);
 
 /*LPC polynomial "flatifier"*/
-void lpc_flat(float gamma, float *lpc_in, float *lpc_out, int order);
+void lpc_flat(float g1, float g2, float *lpc_in, float *lpc_out1, float *lpc_out2, int order);
 
 /* Synthesis filter using the past of y[n] (negative indices) as memory */
 void syn_filt(float *x, float *a, float *y, int N, int ord);

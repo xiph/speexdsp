@@ -19,10 +19,12 @@
 
 
 #include <stdlib.h>
-#include <cb_search.h>
+#include "cb_search.h"
 #include "filters.h"
 #include <math.h>
+#ifdef DEBUG
 #include <stdio.h>
+#endif
 #include "stack_alloc.h"
 #include "vq.h"
 

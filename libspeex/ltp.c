@@ -18,7 +18,9 @@
 */
 
 #include <math.h>
+#ifdef DEBUG
 #include <stdio.h>
+#endif
 #include "ltp.h"
 #include "stack_alloc.h"
 #include "filters.h"
