@@ -41,7 +41,10 @@
 #include <speex/speex_bits.h>
 #include "math_approx.h"
 
-#include <stdio.h>
+#ifndef NULL
+#define NULL 0
+#endif
+
 
 #ifdef _USE_SSE
 #include "ltp_sse.h"

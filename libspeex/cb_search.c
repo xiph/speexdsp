@@ -38,7 +38,6 @@
 #include "stack_alloc.h"
 #include "vq.h"
 #include "misc.h"
-#include <stdio.h>
 
 #ifdef _USE_SSE
 #include "cb_search_sse.h"

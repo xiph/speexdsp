@@ -73,8 +73,6 @@ typedef struct EncState {
    spx_sig_t *frame;          /**< Start of original frame */
    spx_sig_t *excBuf;         /**< Excitation buffer */
    spx_sig_t *exc;            /**< Start of excitation frame */
-   spx_sig_t *exc2Buf;        /**< "Pitch enhanced" excitation */
-   spx_sig_t *exc2;           /**< "Pitch enhanced" excitation */
    spx_sig_t *swBuf;          /**< Weighted signal buffer */
    spx_sig_t *sw;             /**< Start of weighted signal frame */
    spx_sig_t *innov;          /**< Innovation for the frame */

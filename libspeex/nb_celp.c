@@ -48,8 +48,6 @@
 #include "misc.h"
 #include <speex/speex_callbacks.h>
 
-#include <stdio.h>
-
 #ifndef M_PI
 #define M_PI           3.14159265358979323846  /* pi */
 #endif
@@ -134,9 +132,6 @@ void *nb_encoder_init(const SpeexMode *m)
    st->exc = st->excBuf + mode->pitchEnd + 1;
    st->swBuf = PUSH(st->stack, mode->frameSize+mode->pitchEnd+1, spx_sig_t);
    st->sw = st->swBuf + mode->pitchEnd + 1;
-
-   /*st->exc2Buf = PUSH(st->stack, st->bufSize, spx_sig_t);
-   st->exc2 = st->exc2Buf + st->bufSize - st->windowSize;*/
 
    st->innov = PUSH(st->stack, st->frameSize, spx_sig_t);
 
@@ -243,11 +238,8 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
       st->inBuf[st->windowSize-st->frameSize+i] = SHL((int)in[i], SIG_SHIFT);
 
    /* Move signals 1 frame towards the past */
-   /*speex_move(st->exc2Buf, st->exc2Buf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(spx_sig_t));*/
-   //mode->frameSize+mode->pitchEnd+1;
    speex_move(st->excBuf, st->excBuf+st->frameSize, (st->max_pitch+1)*sizeof(spx_sig_t));
    speex_move(st->swBuf, st->swBuf+st->frameSize, (st->max_pitch+1)*sizeof(spx_sig_t));
-
 
    {
       spx_word16_t *w_sig;
@@ -508,7 +500,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
    if (st->submodes[st->submodeID] == NULL)
    {
       for (i=0;i<st->frameSize;i++)
-         st->exc[i]/*=st->exc2[i]*/=st->sw[i]=VERY_SMALL;
+         st->exc[i]=st->sw[i]=VERY_SMALL;
 
       for (i=0;i<st->lpcSize;i++)
          st->mem_sw[i]=0;
@@ -634,7 +626,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
    for (sub=0;sub<st->nbSubframes;sub++)
    {
       int   offset;
-      spx_sig_t *sp, *sw, *exc/*, *exc2*/;
+      spx_sig_t *sp, *sw, *exc;
       int pitch;
       int response_bound = st->subframeSize;
 #ifdef EPIC_48K
@@ -655,9 +647,6 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
       exc=st->exc+offset;
       /* Weighted signal */
       sw=st->sw+offset;
-
-      /*exc2=st->exc2+offset;*/
-
 
       /* LSP interpolation (quantized and unquantized) */
       lsp_interpolate(st->old_lsp, st->lsp, st->interp_lsp, st->lpcSize, sub, st->nbSubframes);
@@ -711,8 +700,6 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
       /* Reset excitation */
       for (i=0;i<st->subframeSize;i++)
          exc[i]=VERY_SMALL;
-      /*for (i=0;i<st->subframeSize;i++)
-      exc2[i]=VERY_SMALL;*/
 
       /* Compute zero response of A(z/g1) / ( A(z/g2) * A(z) ) */
       for (i=0;i<st->lpcSize;i++)
@@ -745,7 +732,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
          target[i]=sw[i]-res[i];
 
       for (i=0;i<st->subframeSize;i++)
-         exc[i]=/*exc2[i]=*/0;
+         exc[i]=0;
 
       /* If we have a long-term predictor (otherwise, something's wrong) */
       if (SUBMODE(ltp_quant))
@@ -801,12 +788,6 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
          speex_error ("No pitch prediction, what's wrong");
       }
 
-      /* Update target for adaptive codebook contribution */
-      /* FIXME: We shouldn't have to apply the filter again (compute directly in the pitch quantizer) */
-      /*syn_percep_zero(exc, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2, res, st->subframeSize, st->lpcSize, stack);
-      for (i=0;i<st->subframeSize;i++)
-         target[i]=SATURATE(SUB32(target[i],res[i]),805306368);
-      */
       /* Quantization of innovation */
       {
          spx_sig_t *innov;
@@ -817,16 +798,10 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
          for (i=0;i<st->subframeSize;i++)
             innov[i]=0;
          
-         /*FIXME: Check that I'm really allowed to replace the residue_percep_zero */
          for (i=0;i<st->subframeSize;i++)
             real_exc[i] = SUB32(real_exc[i], exc[i]);
-         /*residue_percep_zero(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2, st->buf2, st->subframeSize, st->lpcSize, stack);*/
 
          ener = SHL((spx_word32_t)compute_rms(real_exc, st->subframeSize),SIG_SHIFT);
-
-         /*for (i=0;i<st->subframeSize;i++)
-            printf ("%f\n", st->buf2[i]/ener);
-         */
          
          /*FIXME: Should use DIV32_16 and make sure result fits in 16 bits */
 #ifdef FIXED_POINT
@@ -896,8 +871,6 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
                exc[i] += innov2[i];
          }
 
-         /* FIXME: I can remove that, right? */
-         /*signal_mul(target, target, ener, st->subframeSize);*/
       }
 
       /* Final signal synthesis from excitation */
@@ -907,8 +880,6 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
       if (st->complexity!=0)
          filter_mem2(sp, st->bw_lpc1, st->bw_lpc2, sw, st->subframeSize, st->lpcSize, st->mem_sw);
       
-      /*for (i=0;i<st->subframeSize;i++)
-      exc2[i]=exc[i];*/
    }
 
    /* Store the LSPs for interpolation in the next frame */
@@ -1266,7 +1237,6 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
    }
 
    /* Shift all buffers by one frame */
-   /*speex_move(st->inBuf, st->inBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(spx_sig_t));*/
    speex_move(st->excBuf, st->excBuf+st->frameSize, (st->max_pitch + 1)*sizeof(spx_sig_t));
 
    /* If null mode (no transmission), just set a couple things to zero*/
@@ -1275,8 +1245,6 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
       spx_coef_t *lpc;
       lpc = PUSH(stack,11, spx_coef_t);
       bw_lpc(GAMMA_SCALING*.93, st->interp_qlpc, lpc, 10);
-      /*for (i=0;i<st->frameSize;i++)
-        st->exc[i]=0;*/
       {
          float innov_gain=0;
          float pgain=GAIN_SCALING_1*st->last_pitch_gain;
