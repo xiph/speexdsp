@@ -506,14 +506,16 @@ int speex_denoise(SpeexDenoiseState *st, float *x)
          p1 *= (1-pr);
       }
 
-      p0 = pow(p0,.3);
-      p1 = pow(p1,.3);      
+      p0 = pow(p0,.2);
+      p1 = pow(p1,.2);      
       
 #if 1
+      p0 *= 2;
       p0=p0/(p1+p0);
+      if (st->last_speech>20) 
       {
          float tmp = sqrt(tot_loudness)/st->loudness2;
-         tmp = 1-exp(-8*tmp);
+         tmp = 1-exp(-10*tmp);
          if (p0>tmp)
             p0=tmp;
       }
@@ -536,13 +538,13 @@ int speex_denoise(SpeexDenoiseState *st, float *x)
       st->speech_prob = p0/(1e-25+p1+p0);
       /*fprintf (stderr, "%f %f %f ", tot_loudness, st->loudness2, st->speech_prob);*/
 
-      if (st->speech_prob>.5 || (st->last_speech < 15 && st->speech_prob>.25))
+      if (st->speech_prob>.35 || (st->last_speech < 20 && st->speech_prob>.1))
       {
          is_speech = 1;
          st->last_speech = 0;
       } else {
          st->last_speech++;
-         if (st->last_speech<15)
+         if (st->last_speech<20)
            is_speech = 1;
       }
 
