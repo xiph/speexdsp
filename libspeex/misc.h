@@ -39,6 +39,12 @@
 #define VERSION "speex-1.0rc2"
 #endif
 
+/*Disable some warnings on VC++*/
+#if _MSC_VER
+#pragma warning(disable : 4244)
+#pragma warning(disable : 4305)
+#endif
+
 #ifndef RELEASE
 void print_vec(float *vec, int len, char *name);
 #endif

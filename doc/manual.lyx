@@ -4024,11 +4024,10 @@ SPEEX_GET_VBR* Get variable bit-rate
  (VBR) status (integer)
 \layout Description
 
-SPEEX_SET_VBR_QUALITY* Set the encoder VBR speech quality (integer 0 to
- 10)
+SPEEX_SET_VBR_QUALITY* Set the encoder VBR speech quality (float 0 to 10)
 \layout Description
 
-SPEEX_GET_VBR_QUALITY* Get the current encoder VBR speech quality (integer
+SPEEX_GET_VBR_QUALITY* Get the current encoder VBR speech quality (float
  0 to 10)
 \layout Description
 
