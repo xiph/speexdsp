@@ -386,7 +386,7 @@ int cdbk_offset
 {
    int i,j;
    int cdbk_index, pitch=0, best_gain_index=0;
-   float *best_exc;
+   spx_sig_t *best_exc;
    int best_pitch=0;
    float err, best_err=-1;
    int N;
@@ -411,7 +411,7 @@ int cdbk_offset
       return start;
    }
    
-   best_exc=PUSH(stack,nsf, float);
+   best_exc=PUSH(stack,nsf, spx_sig_t);
    
    if (N>end-start+1)
       N=end-start+1;
