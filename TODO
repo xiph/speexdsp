@@ -1,14 +1,19 @@
-Standards
--Complete Speex RTP profile
-
 Features
-*Add maximum/minimum/average bit-rate control for VBR
-*Add "VAD-only" VBR (constant bit-rate or comfort noise)
-*Add encoder/decoder reset function
+-Add maximum/minimum/average bit-rate control for VBR
+-Add "VAD-only" VBR (constant bit-rate or comfort noise)
+-Add encoder/decoder reset function
+-Get the encoder to use the rate of packet loss (more conservative pitch gains)
+-No transmission when constant noise/silence
 
 Codec
+-Ultra-wideband VBR
 -Improve VBR 
 -Improve perceptual enhancement
--Ultra-wideband VBR
+-Packet loss concealment
 -Improve VAD
 -Improve narrowband vocoder
+
+Standards
+-Complete Speex RTP profile
+-MIME type registration
+-MS ACM wrapper
