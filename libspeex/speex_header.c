@@ -72,9 +72,9 @@ void speex_init_header(SpeexHeader *header, int rate, int nb_channels, SpeexMode
    if (m->modeID<0)
       fprintf (stderr, "This mode is meant to be used alone\n");
    header->nb_channels = nb_channels;
-   header->bitrate = nb_channels * m->bitrate;
-   header->frame_size = m->frame_size;
-   header->vbr = m->vbr;
+   header->bitrate = -1;
+   speex_mode_query(m, SPEEX_MODE_FRAME_SIZE, &header->frame_size);
+   header->vbr = 0;
    
    header->frames_per_packet = 0;
    header->reserved1 = 0;

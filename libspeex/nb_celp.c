@@ -823,7 +823,7 @@ static void nb_decode_lost(DecState *st, float *out)
 }
 
 
-void nb_decode(void *state, SpeexBits *bits, float *out, int lost)
+void nb_decode(void *state, SpeexBits *bits, float *out)
 {
    DecState *st;
    int i, sub;
@@ -838,7 +838,7 @@ void nb_decode(void *state, SpeexBits *bits, float *out, int lost)
 
    st=state;
 
-   if (lost)
+   if (!bits)
    {
       nb_decode_lost(st, out);
       return;
@@ -850,7 +850,9 @@ void nb_decode(void *state, SpeexBits *bits, float *out, int lost)
       int submode;
       int advance;
       submode = speex_bits_unpack_unsigned(bits, SB_SUBMODE_BITS);
-      advance = sb_wb_mode.submodes[submode]->bits_per_frame - (SB_SUBMODE_BITS+1);
+      advance = submode;
+      speex_mode_query(&speex_wb_mode, SPEEX_SUBMODE_BITS_PER_FRAME, &advance);
+      advance -= (SB_SUBMODE_BITS+1);
       speex_bits_advance(bits, advance);
       wideband = speex_bits_unpack_unsigned(bits, 1);
       if (wideband)

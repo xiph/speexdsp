@@ -317,9 +317,6 @@ SpeexMode speex_nb_mode = {
    &nb_decode,
    &nb_encoder_ctl,
    &nb_decoder_ctl,
-   160,
-   -1,
-   0
 };
 
 static SpeexSubmode wb_submode1 = {
@@ -410,7 +407,7 @@ static SpeexSubmode wb_submode4 = {
 
 
 /* Split-band wideband CELP mode*/
-SpeexSBMode sb_wb_mode = {
+static SpeexSBMode sb_wb_mode = {
    &speex_nb_mode,
    160,    /*frameSize*/
    40,     /*subframeSize*/
@@ -440,9 +437,6 @@ SpeexMode speex_wb_mode = {
    &sb_decode,
    &sb_encoder_ctl,
    &sb_decoder_ctl,
-   320,
-   -1,
-   0
 };
 
 
@@ -472,7 +466,7 @@ void speex_decoder_destroy(void *state)
    (*((SpeexMode**)state))->dec_destroy(state);
 }
 
-int speex_decode(void *state, SpeexBits *bits, float *out, int lost)
+int speex_decode(void *state, SpeexBits *bits, float *out)
 {
    int m = speex_bits_peek_unsigned(bits, 5);
    if (m==15)
@@ -486,7 +480,7 @@ int speex_decode(void *state, SpeexBits *bits, float *out, int lost)
    {
       return -2;
    }
-   (*((SpeexMode**)state))->dec(state, bits, out, lost);
+   (*((SpeexMode**)state))->dec(state, bits, out);
    return 0;
 }
 

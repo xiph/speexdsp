@@ -72,7 +72,7 @@ typedef void (*encoder_destroy_func)(void *st);
 typedef void (*encode_func)(void *state, float *in, SpeexBits *bits);
 typedef void *(*decoder_init_func)(struct SpeexMode *mode);
 typedef void (*decoder_destroy_func)(void *st);
-typedef void (*decode_func)(void *state, SpeexBits *bits, float *out, int lost);
+typedef void (*decode_func)(void *state, SpeexBits *bits, float *out);
 typedef void (*encoder_ctl_func)(void *state, int request, void *ptr);
 typedef void (*decoder_ctl_func)(void *state, int request, void *ptr);
 
@@ -120,15 +120,6 @@ typedef struct SpeexMode {
    /** ioctl-like requests for decoder */
    decoder_ctl_func dec_ctl;
 
-   /** Frame size used for the mode*/
-   int frame_size;
-   
-   /** Bit-rate for the mode (highest in case of VBR) */
-   int bitrate;
-
-   /** VBR info (currently 0 for constant bit-rate and 1 for VBR) */
-   int vbr;
-
 } SpeexMode;
 
 /**Returns a handle to a newly created Speex encoder state structure. For now, the 
@@ -159,7 +150,7 @@ void speex_decoder_destroy(void *state);
 
 /** Uses an existing decoder state to decode one frame of speech from bit-stream 
     bits. The output speech is saved written to out. */
-int speex_decode(void *state, SpeexBits *bits, float *out, int lost);
+int speex_decode(void *state, SpeexBits *bits, float *out);
 
 /** Used like the ioctl function to control the encoder parameters */
 void speex_decoder_ctl(void *state, int request, void *ptr);

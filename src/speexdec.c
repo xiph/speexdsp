@@ -406,7 +406,7 @@ int main(int argc, char **argv)
                for (j=0;j<nframes;j++)
                {
                   /*Decode frame*/
-                  speex_decode(st, &bits, output, 0);
+                  speex_decode(st, &bits, output);
                
                   if (print_bitrate) {
                      int tmp;

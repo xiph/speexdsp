@@ -714,7 +714,7 @@ static void sb_decode_lost(SBDecState *st, float *out)
    return;
 }
 
-void sb_decode(void *state, SpeexBits *bits, float *out, int lost)
+void sb_decode(void *state, SpeexBits *bits, float *out)
 {
    int i, sub;
    SBDecState *st;
@@ -722,9 +722,9 @@ void sb_decode(void *state, SpeexBits *bits, float *out, int lost)
 
    st = state;
    /* Decode the low-band */
-   nb_decode(st->st_low, bits, st->x0d, lost);
+   nb_decode(st->st_low, bits, st->x0d);
 
-   if (lost)
+   if (!bits)
    {
       sb_decode_lost(st, out);
       return;

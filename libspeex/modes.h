@@ -120,6 +120,4 @@ typedef struct SpeexSBMode {
 } SpeexSBMode;
 
 
-extern SpeexSBMode sb_wb_mode;
-
 #endif

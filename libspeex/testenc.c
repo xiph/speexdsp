@@ -74,7 +74,7 @@ int main(int argc, char **argv)
       }
       speex_bits_rewind(&bits);
       
-      speex_decode(dec, &bits, input, 0);
+      speex_decode(dec, &bits, input);
       
       /* Save the bits here */
       for (i=0;i<FRAME_SIZE;i++)
