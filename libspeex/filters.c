@@ -365,22 +365,22 @@ void qmf_decomp(short *xx, spx_word16_t *aa, spx_sig_t *y1, spx_sig_t *y2, int N
    for (i=0;i<M-1;i++)
       x[i]=mem[M-i-2];
    for (i=0;i<N;i++)
-      x[i+M-1]=PSHR(xx[i],1);
+      x[i+M-1]=SATURATE(PSHR(xx[i],1),16383);
    for (i=0,k=0;i<N;i+=2,k++)
    {
       y1[k]=0;
       y2[k]=0;
       for (j=0;j<M2;j++)
       {
-         y1[k]+=SHR(MULT16_16(a[j],(x[i+j]+x2[i-j])),1);
-         y2[k]-=SHR(MULT16_16(a[j],(x[i+j]-x2[i-j])),1);
+         y1[k]+=SHR(MULT16_16(a[j],ADD16(x[i+j],x2[i-j])),1);
+         y2[k]-=SHR(MULT16_16(a[j],SUB16(x[i+j],x2[i-j])),1);
          j++;
-         y1[k]+=SHR(MULT16_16(a[j],(x[i+j]+x2[i-j])),1);
-         y2[k]+=SHR(MULT16_16(a[j],(x[i+j]-x2[i-j])),1);
+         y1[k]+=SHR(MULT16_16(a[j],ADD16(x[i+j],x2[i-j])),1);
+         y2[k]+=SHR(MULT16_16(a[j],SUB16(x[i+j],x2[i-j])),1);
       }
    }
    for (i=0;i<M-1;i++)
-     mem[i]=PSHR(xx[N-i-1],1);
+     mem[i]=SATURATE(PSHR(xx[N-i-1],1),16383);
 }
 
 

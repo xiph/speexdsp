@@ -307,12 +307,11 @@ int sb_encode(void *state, short *in, SpeexBits *bits)
       for (i=0;i<st->frame_size;i++)
          st->x0d[i] = SHL(low[i],SIG_SHIFT);
    }
-
    /* High-band buffering / sync with low band */
    for (i=0;i<st->windowSize-st->frame_size;i++)
       st->high[i] = st->high[st->frame_size+i];
    for (i=0;i<st->frame_size;i++)
-      st->high[st->windowSize-st->frame_size+i]=st->x1d[i];
+      st->high[st->windowSize-st->frame_size+i]=SATURATE(st->x1d[i],536854528);
 
    speex_move(st->excBuf, st->excBuf+st->frame_size, (st->bufSize-st->frame_size)*sizeof(spx_sig_t));
 
@@ -343,6 +342,7 @@ int sb_encode(void *state, short *in, SpeexBits *bits)
    }
 
    st->autocorr[0] = (spx_word16_t)(st->autocorr[0]*st->lpc_floor); /* Noise floor in auto-correlation domain */
+
    /* Lag windowing: equivalent to filtering in the power-spectrum domain */
    for (i=0;i<st->lpcSize+1;i++)
       st->autocorr[i] = MULT16_16_Q14(st->autocorr[i],st->lagWindow[i]);
