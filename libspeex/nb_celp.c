@@ -45,7 +45,6 @@ void *nb_encoder_init(SpeexMode *m)
    EncState *st;
    SpeexNBMode *mode;
    int i;
-   float tmp;
 
    mode=m->mode;
    st = malloc(sizeof(EncState));
@@ -74,28 +73,6 @@ void *nb_encoder_init(SpeexMode *m)
 
    st->pre_mem=0;
    st->pre_mem2=0;
-
-   /* Over-sampling filter (fractional pitch)*/
-   st->os_fact=4;
-   st->os_filt_ord2=4*st->os_fact;
-   st->os_filt = malloc((1+2*st->os_filt_ord2)*sizeof(float));
-   st->os_filt[st->os_filt_ord2] = 1;
-   for (i=1;i<=st->os_filt_ord2;i++)
-   {
-      float x=M_PI*i/st->os_fact;
-      st->os_filt[st->os_filt_ord2-i] = st->os_filt[st->os_filt_ord2+i]=sin(x)/x*(.5+.5*cos(M_PI*i/st->os_filt_ord2));
-   }
-   /* Normalizing the over-sampling filter */
-   tmp=0;
-   for (i=0;i<2*st->os_filt_ord2+1;i++)
-      tmp += st->os_filt[i];
-   tmp=1/tmp;
-   for (i=0;i<2*st->os_filt_ord2+1;i++)
-      st->os_filt[i] *= tmp;
-
-   /*for (i=0;i<2*st->os_filt_ord2+1;i++)
-      printf ("%f ", st->os_filt[i]);
-      printf ("\n");*/
 
    /* Allocating input buffer */
    st->inBuf = calloc(st->bufSize,sizeof(float));
@@ -156,7 +133,6 @@ void nb_encoder_destroy(void *state)
    free(st->inBuf);
    free(st->excBuf);
    free(st->swBuf);
-   free(st->os_filt);
    free(st->exc2Buf);
    free(st->stack);
 
@@ -554,6 +530,7 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
    for (i=1;i<st->frameSize;i++)
      in[i]=st->frame[i] + st->preemph*in[i-1];
    st->pre_mem2=in[st->frameSize-1];
+
 }
 
 

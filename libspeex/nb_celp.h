@@ -46,10 +46,6 @@ typedef struct EncState {
    float  pre_mem;        /* 1-element memory for pre-emphasis */
    float  pre_mem2;       /* 1-element memory for pre-emphasis */
    float *stack;          /* Pseudo-stack allocation for temporary memory */
-   int    os_fact;        /* Over-sampling factor for fractional pitch */
-   int    os_filt_ord2;   /* Over-sampling filter size for fractional pitch */
-   float *os_exc;         /* Over-sampled excitation for fractional pitch */
-   float *os_filt;        /* Over-sampling filter for fractional pitch */
    float *inBuf;          /* Input buffer (original signal) */
    float *frame;          /* Start of original frame */
    float *excBuf;         /* Excitation buffer */

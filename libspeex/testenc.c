@@ -23,7 +23,7 @@ int main(int argc, char **argv)
    st = speex_encoder_init(&speex_nb_mode);
    dec = speex_decoder_init(&speex_nb_mode);
 
-   pf=1;
+   pf=0;
    speex_decoder_ctl(dec, SPEEX_SET_PF, &pf);
 
    if (argc != 4 && argc != 3)

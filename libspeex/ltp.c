@@ -27,208 +27,47 @@
 
 #define abs(x) ((x)<0 ? -(x) : (x))
 
-void open_loop_pitch(float *sw, int start, int end, int len, int *pitch)
+
+static void open_loop_nbest_pitch(float *sw, int start, int end, int len, int *pitch, int N, float *stack)
 {
-   int i;
-   float e0, corr, energy, best_gain=0, pred_gain, best_corr=0, best_energy=0;
-   float score, best_score=-1;
-   e0=xcorr(sw, sw, len);
+   int i,j,k;
+   float corr;
+   float energy;
+   float score, *best_score;
+
+   best_score = PUSH(stack,N);
+   for (i=0;i<N;i++)
+        best_score[i]=-1;
    energy=xcorr(sw-start, sw-start, len);
    for (i=start;i<=end;i++)
    {
       corr=xcorr(sw, sw-i, len);
       score=corr*corr/(energy+1);
-      if (score>best_score)
+      if (score>best_score[N-1])
       {
-         /*if ((abs(i-2**pitch)>4 && abs(i-3**pitch)>6) || score>0.9*best_score)*/
+         for (j=0;j<N;j++)
          {
-         best_score=score;
-         best_gain=corr/(energy+1);
-         best_corr=corr;
-         best_energy=energy;
-         *pitch=i;
+            if (score > best_score[j])
+            {
+               for (k=N-1;k>j;k--)
+               {
+                  best_score[k]=best_score[k-1];
+                  pitch[k]=pitch[k-1];
+               }
+               best_score[j]=score;
+               pitch[j]=i;
+               break;
+            }
          }
       }
-
       /* Update energy for next pitch*/
-      energy+=sw[-i-1]*sw[-i-1] - sw[-i+len]*sw[-i+len];
+      energy+=sw[-i-1]*sw[-i-1] - sw[-i+len-1]*sw[-i+len-1];
    }
-   pred_gain=e0/(1+fabs(e0+best_gain*best_gain*best_energy-2*best_gain*best_corr));
-#ifdef DEBUG
-   printf ("pred = %f\n", pred_gain);
-#endif
+
+   POP(stack);
 }
 
-void closed_loop_fractional_pitch(
-float target[],                 /* Target vector */
-float ak[],                     /* LPCs for this subframe */
-float awk1[],                   /* Weighted LPCs #1 for this subframe */
-float awk2[],                   /* Weighted LPCs #2 for this subframe */
-float exc[],                    /* Overlapping codebook */
-float *filt,                    /* Over-sampling filter */
-int   filt_side,                /* Over-sampling factor */
-int   fact,                     /* Over-sampling factor */
-int   start,                    /* Smallest pitch value allowed */
-int   end,                      /* Largest pitch value allowed */
-float *gain,                    /* 3-tab gains of optimum entry */
-int   *pitch,                   /* Index of optimum entry */
-int   p,                        /* Number of LPC coeffs */
-int   nsf,                      /* Number of samples in subframe */
-float *stack
-)
-{
-   int i, j, size, filt_size, base, frac=0, best_cor=0;
-   float *oexc_mem, *oexc, *exc_ptr, *fexc, *f, frac_pitch=0, best_score=-1, best_gain=0;
-   float sc;
-   float corr[3];
-   float A[3][3];
-#if 1
-   sc = overlap_cb_search(target, ak, awk1, awk2,
-                     &exc[-end], end-start+1, gain, pitch, p,
-                     nsf, stack);
-                     *pitch=end-*pitch;
-#ifdef DEBUG
-   printf ("ol score: %d %f\n", *pitch, sc);
-#endif
-#endif
-   base=*pitch;
-   exc_ptr=exc-*pitch;
-   size = fact*nsf + filt_side*2 + 16*fact;
-   filt_size = 2*filt_side+1;
-   oexc_mem = PUSH(stack, size);
-   oexc=oexc_mem+filt_side;
-   fexc = PUSH(stack, size/fact);
-   f=filt+filt_side;
 
-   for(i=0;i<size;i++)
-      oexc_mem[i]=0;
-   for (i=-8;i<nsf+8;i++)
-   {
-      for (j=-filt_side;j<=filt_side;j++)
-         oexc[fact*(i+8)+j] += fact*exc_ptr[i]*f[j];
-   }
-
-   /*for (i=0;i<size;i++)
-     printf ("%f ", oexc_mem[i]);
-   printf ("eee\n");
-   */
-   for (j=0;j<fact;j++)
-   {
-      int correction;
-      float score;
-      for (i=0;i<size/fact;i++)
-         fexc[i]=oexc[fact*i+j];
-      score=overlap_cb_search(target, ak, awk1, awk2,
-                        fexc, 16, gain, &correction, p,
-                        nsf, stack);
-      if (score>best_score)
-      {
-         best_cor = correction;
-         *pitch = base+8-correction;
-         frac = j;
-         best_gain=*gain;
-         frac_pitch = *pitch-(j/(float)fact);
-         best_score=score;
-      }
-#ifdef DEBUG
-      printf ("corr: %d %d %f\n", correction, *pitch, score);
-#endif
-   }
-   /*for (i=0;i<nsf;i++)
-     printf ("%f ", oexc[4*(i+8)]);
-   printf ("aaa\n");
-   for (i=0;i<nsf;i++)
-     printf ("%f ", exc[i-base]);
-     printf ("bbb\n");*/
-
-   /*if (best_gain>1.2)
-      best_gain=1.2;
-   if (best_gain<-.2)
-   best_gain=-.2;*/
-   for (i=0;i<nsf;i++)
-     exc[i]=best_gain*oexc[fact*(best_cor+i)+frac];
-   
-   {
-      float *x[3];
-      x[0] = PUSH(stack, nsf);
-      x[1] = PUSH(stack, nsf);
-      x[2] = PUSH(stack, nsf);
-      
-      for (j=0;j<3;j++)
-         for (i=0;i<nsf;i++)
-            x[j][i]=oexc[fact*(best_cor+i)+frac+fact*(j-1)];
-
-
-   for (i=0;i<3;i++)
-   {
-      residue_zero(x[i],awk1,x[i],nsf,p);
-      syn_filt_zero(x[i],ak,x[i],nsf,p);
-      syn_filt_zero(x[i],awk2,x[i],nsf,p);
-   }
-
-   for (i=0;i<3;i++)
-      corr[i]=xcorr(x[i],target,nsf);
-   
-   for (i=0;i<3;i++)
-      for (j=0;j<=i;j++)
-         A[i][j]=A[j][i]=xcorr(x[i],x[j],nsf);
-   /*for (i=0;i<3;i++)
-   {
-      for (j=0;j<3;j++)
-         printf ("%f ", A[i][j]);
-      printf ("\n");
-      }*/
-   A[0][0]+=1;
-   A[1][1]+=1;
-   A[2][2]+=1;
-   {
-      float tmp=A[1][0]/A[0][0];
-      for (i=0;i<3;i++)
-         A[1][i] -= tmp*A[0][i];
-      corr[1] -= tmp*corr[0];
-
-      tmp=A[2][0]/A[0][0];
-      for (i=0;i<3;i++)
-         A[2][i] -= tmp*A[0][i];
-      corr[2] -= tmp*corr[0];
-      
-      tmp=A[2][1]/A[1][1];
-      A[2][2] -= tmp*A[1][2];
-      corr[2] -= tmp*corr[1];
-
-      corr[2] /= A[2][2];
-      corr[1] = (corr[1] - A[1][2]*corr[2])/A[1][1];
-      corr[0] = (corr[0] - A[0][2]*corr[2] - A[0][1]*corr[1])/A[0][0];
-      /*printf ("\n%f %f %f\n", best_corr[0], best_corr[1], best_corr[2]);*/
-
-   }
-   /* Put gains in right order */
-   /*gain[0]=corr[2];gain[1]=corr[1];gain[2]=corr[0];*/
-   gain[0]=corr[0];gain[1]=corr[1];gain[2]=corr[2];
-
-   for (i=0;i<nsf;i++)
-      exc[i]=gain[0]*oexc[fact*(best_cor+i)+frac-fact] + 
-             gain[1]*oexc[fact*(best_cor+i)+frac] + 
-             gain[2]*oexc[fact*(best_cor+i)+frac+fact];
-   
-   /*for (i=0;i<nsf;i++)
-     exc[i]=best_gain*x[1][i];*/
-   /*for (i=0;i<nsf;i++)
-     exc[i]=best_gain*oexc[fact*(best_cor+i)+frac];*/
-#ifdef DEBUG
-   printf ("frac gains: %f %f %f\n", gain[0], gain[1], gain[2]);
-#endif
-      POP(stack);
-      POP(stack);
-      POP(stack);
-   }
-#ifdef DEBUG
-   printf ("frac pitch = %f %f\n", frac_pitch, best_score);
-#endif
-   POP(stack);
-   POP(stack);
-
-}
 
 int pitch_search_3tap_unquant(
 float target[],                 /* Target vector */
@@ -354,6 +193,7 @@ int  *cdbk_index
    float gain[3];
    int   gain_cdbk_size;
    float *gain_cdbk;
+   float err1,err2;
    ltp_params *params;
    params = (ltp_params*) par;
    gain_cdbk=params->gain_cdbk;
@@ -381,9 +221,15 @@ int  *cdbk_index
          else
             e[i][j]=0;
       }
-      residue_zero(e[i],awk1,x[i],nsf,p);
-      syn_filt_zero(x[i],ak,x[i],nsf,p);
-      syn_filt_zero(x[i],awk2,x[i],nsf,p);
+
+      if (p==10)
+      {
+         syn_percep_zero(e[i], ak, awk1, awk2, x[i], nsf, p);
+      } else {
+         residue_zero(e[i],awk1,x[i],nsf,p);
+         syn_filt_zero(x[i],ak,x[i],nsf,p);
+         syn_filt_zero(x[i],awk2,x[i],nsf,p);
+      }
    }
 
    for (i=0;i<3;i++)
@@ -438,18 +284,21 @@ int  *cdbk_index
 #ifdef DEBUG
    printf ("3-tap pitch = %d, gains = [%f %f %f]\n",pitch, gain[0], gain[1], gain[2]);
 #endif
-   {
-      float tmp1=0,tmp2=0;
-      for (i=0;i<nsf;i++)
-         tmp1+=target[i]*target[i];
-      for (i=0;i<nsf;i++)
-         tmp2+=(target[i]-gain[2]*x[0][i]-gain[1]*x[1][i]-gain[0]*x[2][i])
-         * (target[i]-gain[2]*x[0][i]-gain[1]*x[1][i]-gain[0]*x[2][i]);
+   
+   err1=0;
+   err2=0;
+   for (i=0;i<nsf;i++)
+      err1+=target[i]*target[i];
+   for (i=0;i<nsf;i++)
+      err2+=(target[i]-gain[2]*x[0][i]-gain[1]*x[1][i]-gain[0]*x[2][i])
+      * (target[i]-gain[2]*x[0][i]-gain[1]*x[1][i]-gain[0]*x[2][i]);
 #ifdef DEBUG
-      printf ("prediction gain = %f\n",tmp1/(tmp2+1));
+   printf ("prediction gain = %f\n",err1/(err2+1));
 #endif
-      return tmp2;
-   }
+   
+   POP(stack);
+   POP(stack);
+   return err2;
 }
 
 
@@ -472,29 +321,26 @@ float *exc2
 )
 {
    int i,j;
-   int cdbk_index, pitch, ol_pitch, best_gain_index=0;
+   int cdbk_index, pitch, best_gain_index=0;
    float *best_exc;
    int best_pitch=0;
    float err, best_err=-1;
-   int N=1;
+   int N=3;
    ltp_params *params;
+   int *nbest=(int*)PUSH(stack, N);
    params = (ltp_params*) par;
-
+   
    best_exc=PUSH(stack,nsf);
-
-   open_loop_pitch(sw, start, nsf, nsf, &ol_pitch);
-
-   if (ol_pitch-N<start)
-      ol_pitch=start+N;
-   if (ol_pitch+N>end)
-      ol_pitch=end-N;
-
-   for (pitch=ol_pitch-N; pitch<=ol_pitch+N; pitch++)
+   
+   
+   open_loop_nbest_pitch(sw, start, end, nsf, nbest, N, stack);
+   for (i=0;i<N;i++)
    {
+      pitch=nbest[i];
       for (j=0;j<nsf;j++)
          exc[j]=0;
       err=pitch_gain_search_3tap(target, ak, awk1, awk2, exc, par, pitch, p, nsf,
-                             bits, stack, exc2, &cdbk_index);
+                                 bits, stack, exc2, &cdbk_index);
       if (err<best_err || best_err<0)
       {
          for (j=0;j<nsf;j++)
@@ -504,31 +350,7 @@ float *exc2
          best_gain_index=cdbk_index;
       }
    }
-
-
-   open_loop_pitch(sw, nsf, end, nsf, &ol_pitch);
-
-   if (ol_pitch-N<start)
-      ol_pitch=start+N;
-   if (ol_pitch+N>end)
-      ol_pitch=end-N;
-
-   for (pitch=ol_pitch-N; pitch<=ol_pitch+N; pitch++)
-   {
-      for (j=0;j<nsf;j++)
-         exc[j]=0;
-      err=pitch_gain_search_3tap(target, ak, awk1, awk2, exc, par, pitch, p, nsf,
-                             bits, stack, exc2, &cdbk_index);
-      if (err<best_err || best_err<0)
-      {
-         for (j=0;j<nsf;j++)
-            best_exc[j]=exc[j];
-         best_err=err;
-         best_pitch=pitch;
-         best_gain_index=cdbk_index;
-      }
-   }
-
+   
    /*printf ("pitch: %d %d\n", best_pitch, best_gain_index);*/
    speex_bits_pack(bits, best_pitch-start, params->pitch_bits);
    speex_bits_pack(bits, best_gain_index, params->gain_bits);
@@ -537,6 +359,8 @@ float *exc2
       exc[i]=best_exc[i];
 
    POP(stack);
+   POP(stack);
+
    return pitch;
 }
 

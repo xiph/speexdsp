@@ -89,10 +89,6 @@ float *stack
 
   /* Initialise */
   
-  /*resp = (float*)malloc(sizeof(float)*nsf);
-  h = (float*)malloc(sizeof(float)*nsf);
-  impulse = (float*)malloc(sizeof(float)*nsf);
-  */
   resp=PUSH(stack, nsf);
   h=PUSH(stack, nsf);
   impulse=PUSH(stack, nsf);
@@ -142,9 +138,6 @@ float *stack
     }
   }
 
-  /*free(resp);
-  free(h);
-  free(impulse);*/
   POP(stack);
   POP(stack);
   POP(stack);
@@ -316,6 +309,7 @@ float *stack
    POP(stack);
    POP(stack);
    POP(stack);
+   POP(stack);
 }
 
 void split_cb_search_nogain(
@@ -428,7 +422,7 @@ float *stack
 
    
 
-
+   POP(stack);
    POP(stack);
    POP(stack);
    POP(stack);
@@ -602,7 +596,7 @@ float *stack
       target[j]-=r[j];
 
    
-
+   POP(stack);
    POP(stack);
    POP(stack);
    POP(stack);
@@ -827,7 +821,7 @@ float *stack
       target[j]-=r[j];
 
    
-
+   POP(stack);
    POP(stack);
    POP(stack);
    POP(stack);
@@ -1085,7 +1079,7 @@ float *stack
 
    
 
-
+   POP(stack);
    POP(stack);
    POP(stack);
    POP(stack);

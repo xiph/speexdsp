@@ -143,6 +143,75 @@ void fir_mem(float *x, float *a, float *y, int N, int M, float *mem)
 }
 */
 
+void syn_percep_zero(float *xx, float *ak, float *awk1, float *awk2, float *y, int N, int ord)
+{
+   int i,j;
+   float long_filt[21];
+   float iir[20];
+   float fir[10];
+   float x[40];
+   int ord2=ord<<1;
+   for (i=0;i<=ord;i++)
+      long_filt[i]=ak[i];
+   for (i=ord+1;i<=ord2;i++)
+      long_filt[i]=0;
+   residue_zero(long_filt,awk2,long_filt,1+(ord<<1),ord);
+
+   for (i=0;i<N;i++)
+      x[i]=xx[i];
+   for (i=0;i<ord2;i++)
+      iir[i]=long_filt[ord2-i];
+   for (i=0;i<ord;i++)
+      fir[i]=awk1[ord-i];
+
+   for (i=0;i<ord2;i++)
+   {
+      y[i]=x[i];
+      for (j=1;j<=min(ord2,i);j++)
+         y[i] -= long_filt[j]*y[i-j];
+      for (j=1;j<=min(ord,i);j++)
+         y[i] += awk1[j]*x[i-j];
+   }
+#if 0
+   for (i=ord2;i<N;i++)
+   {
+      float *yptr=y+i-ord2;
+      float *xptr=x+i-ord;
+      y[i]=x[i];
+      for (j=0;j<ord2;j++)
+         y[i]-= iir[j]*yptr[j];
+      for (j=0;j<ord;j++)
+         y[i]+= fir[j]*xptr[j];
+   }
+#else
+   for (i=ord2;i<N;i++)
+   {
+      float *f, *ptr;
+      float sum1=x[i], sum2=0;
+      f=iir;
+      ptr=y+i-ord2;
+      for (j=0;j<ord2;j+=2)
+      {
+         sum1-= f[0]*ptr[0];
+         sum2-= f[1]*ptr[1];
+         f+=2;
+         ptr+=2;
+      }
+      f=fir;
+      ptr=x+i-ord;
+      for (j=0;j<ord;j+=2)
+      {
+         sum1+= f[0]*ptr[0];
+         sum2+= f[1]*ptr[1];
+         f+=2;
+         ptr+=2;
+      }
+      y[i]=sum1+sum2;
+   }
+#endif
+}
+
+
 #define MAX_FILTER 100
 #define MAX_SIGNAL 1000
 void fir_mem(float *xx, float *aa, float *y, int N, int M, float *mem)
