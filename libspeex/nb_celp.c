@@ -439,7 +439,7 @@ int nb_encode(void *state, float *in, SpeexBits *bits)
    if (st->submodes[st->submodeID] == NULL)
    {
       for (i=0;i<st->frameSize;i++)
-         st->exc[i]=st->exc2[i]=st->sw[i]=0;
+         st->exc[i]=st->exc2[i]=st->sw[i]=VERY_SMALL;
 
       for (i=0;i<st->lpcSize;i++)
          st->mem_sw[i]=0;

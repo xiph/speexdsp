@@ -401,7 +401,7 @@ int sb_encode(void *state, float *in, SpeexBits *bits)
    if (dtx || st->submodes[st->submodeID] == NULL)
    {
       for (i=0;i<st->frame_size;i++)
-         st->exc[i]=st->sw[i]=0;
+         st->exc[i]=st->sw[i]=VERY_SMALL;
 
       for (i=0;i<st->lpcSize;i++)
          st->mem_sw[i]=0;
@@ -865,7 +865,7 @@ int sb_decode(void *state, SpeexBits *bits, float *out)
       }
 
       for (i=0;i<st->frame_size;i++)
-         st->exc[i]=0;
+         st->exc[i]=VERY_SMALL;
 
       st->first=1;
 

@@ -33,9 +33,6 @@
 #include "quant_lsp.h"
 #include <math.h>
 
-extern int lsp_nb_vqid[64];
-static float quant_weight[MAX_LSP_SIZE];
-
 /* Note: x is modified*/
 static int lsp_quant(float *x, signed char *cdbk, int nbVec, int nbDim)
 {
@@ -99,6 +96,7 @@ void lsp_quant_nb(float *lsp, float *qlsp, int order, SpeexBits *bits)
    int i;
    float tmp1, tmp2;
    int id;
+   float quant_weight[MAX_LSP_SIZE];
 
    for (i=0;i<order;i++)
       qlsp[i]=lsp[i];
@@ -186,6 +184,7 @@ void lsp_quant_lbr(float *lsp, float *qlsp, int order, SpeexBits *bits)
    int i;
    float tmp1, tmp2;
    int id;
+   float quant_weight[MAX_LSP_SIZE];
 
    for (i=0;i<order;i++)
       qlsp[i]=lsp[i];
@@ -259,6 +258,8 @@ void lsp_quant_high(float *lsp, float *qlsp, int order, SpeexBits *bits)
    int i;
    float tmp1, tmp2;
    int id;
+   float quant_weight[MAX_LSP_SIZE];
+
    for (i=0;i<order;i++)
       qlsp[i]=lsp[i];
 
