@@ -623,8 +623,6 @@ void *sb_decoder_init(SpeexMode *m)
    st->subframeSize = 40;
    st->nbSubframes = 4;
    st->lpcSize=8;
-   st->pf_order=15;
-   st->pf_gamma=.05;
 
    st->submodes=mode->submodes;
    st->submodeID=mode->defaultSubmode;
@@ -645,14 +643,7 @@ void *sb_decoder_init(SpeexMode *m)
    st->g0_mem=speex_alloc(QMF_ORDER*sizeof(float));
    st->g1_mem=speex_alloc(QMF_ORDER*sizeof(float));
 
-   st->pf_exc=speex_alloc(st->full_frame_size*sizeof(float));
    st->exc=speex_alloc(st->frame_size*sizeof(float));
-   st->pf_window=speex_alloc(st->full_frame_size*sizeof(float));
-   st->pf_autocorr=speex_alloc(st->pf_order+1*sizeof(float));
-   st->pf_lpc=speex_alloc(st->pf_order+1*sizeof(float));
-   st->pf_bwlpc=speex_alloc(st->pf_order+1*sizeof(float));
-   for (i=0;i<st->full_frame_size;i++)
-      st->pf_window[i]=.5*(1-cos(2*M_PI*i/st->full_frame_size));
 
    st->qlsp = speex_alloc(st->lpcSize*sizeof(float));
    st->old_qlsp = speex_alloc(st->lpcSize*sizeof(float));
@@ -660,9 +651,6 @@ void *sb_decoder_init(SpeexMode *m)
    st->interp_qlpc = speex_alloc((st->lpcSize+1)*sizeof(float));
 
    st->mem_sp = speex_alloc(st->lpcSize*sizeof(float));
-   st->mem_pf_exc1 = speex_alloc(st->pf_order*sizeof(float));
-   st->mem_pf_exc2 = speex_alloc(st->pf_order*sizeof(float));
-   st->mem_pf_sp = speex_alloc(st->pf_order*sizeof(float));
 
    return st;
 }
@@ -685,20 +673,12 @@ void sb_decoder_destroy(void *state)
    speex_free(st->g1_mem);
    
    speex_free(st->exc);
-   speex_free(st->pf_exc);
-   speex_free(st->pf_window);
-   speex_free(st->pf_autocorr);
-   speex_free(st->pf_lpc);
-   speex_free(st->pf_bwlpc);
    speex_free(st->qlsp);
    speex_free(st->old_qlsp);
    speex_free(st->interp_qlsp);
    speex_free(st->interp_qlpc);
 
    speex_free(st->mem_sp);
-   speex_free(st->mem_pf_exc1);
-   speex_free(st->mem_pf_exc2);
-   speex_free(st->mem_pf_sp);
 
    speex_free(st->stack);
 
@@ -817,48 +797,6 @@ void sb_decode(void *state, SpeexBits *bits, float *out, int lost)
       out[i]=2*(st->y0[i]-st->y1[i]);
 
 
-   if (0)
-   {
-      float tmp=1, e1=0, e2=0, g;
-      for (i=0;i<st->full_frame_size;i++)
-         st->pf_exc[i] = out[i] * st->pf_window[i];
-      
-      /* Compute auto-correlation */
-      autocorr(st->pf_exc, st->pf_autocorr, st->pf_order+1, st->full_frame_size);
-      
-      st->pf_autocorr[0] += 1;        /* prevents NANs */
-      st->pf_autocorr[0] *= 1.0001;    /* Noise floor in auto-correlation domain */
-      
-      /* Levinson-Durbin */
-      wld(st->pf_lpc+1, st->pf_autocorr, st->pf_exc, st->pf_order);
-      st->pf_lpc[0]=1;
-      
-      for (i=1;i<st->pf_order;i++)
-      {
-         tmp*=st->pf_gamma;
-         st->pf_bwlpc[i] = st->pf_lpc[i]*tmp;
-      }
-      st->pf_bwlpc[0]=1;
-      
-      /*print_vec(st->pf_lpc, st->pf_order, "post-filter LPC");*/
-      residue_mem(out, st->pf_lpc, st->pf_exc, st->full_frame_size, 
-                  st->pf_order, st->mem_pf_exc1);
-      for (i=0;i<st->full_frame_size;i++)
-         e1 += st->pf_exc[i]*st->pf_exc[i];
-      syn_filt_mem(st->pf_exc, st->pf_bwlpc, st->pf_exc, st->full_frame_size, 
-                  st->pf_order, st->mem_pf_exc2);
-      for (i=0;i<st->full_frame_size;i++)
-         e2 += st->pf_exc[i]*st->pf_exc[i];
-      g=sqrt(e1/(e2+.1));
-      /*printf ("post-filter gain: %f\n", g);*/
-      for (i=0;i<st->full_frame_size;i++)
-         st->pf_exc[i]=g*st->pf_exc[i];
-
-      syn_filt_mem(st->pf_exc, st->pf_lpc, out, st->full_frame_size, 
-                  st->pf_order, st->mem_pf_sp);
-   }
-
-
    for (i=0;i<st->lpcSize;i++)
       st->old_qlsp[i] = st->qlsp[i];
 
@@ -967,7 +905,7 @@ void sb_decoder_ctl(void *state, int request, void *ptr)
    case SPEEX_GET_FRAME_SIZE:
       (*(int*)ptr) = st->full_frame_size;
       break;
-   case SPEEX_SET_PF:
+   case SPEEX_SET_ENH:
       speex_decoder_ctl(st->st_low, request, ptr);
       break;
    case SPEEX_GET_BITRATE:

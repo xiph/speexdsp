@@ -27,6 +27,8 @@ void bw_lpc(float gamma, float *lpc_in, float *lpc_out, int order);
 
 void poly(float *re, float *im, float *p, int ord);
 
+void enh_lpc(float *ak, int order, float *num, float *den, float k1, float k2, float *stack);
+
 /*LPC polynomial "flatifier"*/
 void lpc_flat(float g1, float g2, float *lpc_in, float *lpc_out1, float *lpc_out2, int order);
 
@@ -55,5 +57,18 @@ float xcorr(float *x, float *y, int len);
 void fir_mem(float *x, float *a, float *y, int N, int M, float *mem);
 
 void syn_percep_zero(float *x, float *ak, float *awk1, float *awk2, float *y, int N, int ord);
+
+void comb_filter(
+float *exc,          /*decoded excitation*/
+float *new_exc,      /*enhanced excitation*/
+float *ak,           /*LPC filter coefs*/
+int p,               /*LPC order*/
+int nsf,             /*sub-frame size*/
+int pitch,           /*pitch period*/
+float *pitch_gain,   /*pitch gain (3-tap)*/
+float  comb_gain     /*gain of comb filter*/
+);
+
+void pole_zero_mem(float *x, float *num, float *den, float *y, int N, int ord, float *mem, float *stack);
 
 #endif

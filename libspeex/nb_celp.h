@@ -113,15 +113,13 @@ typedef struct DecState {
    float *interp_qlsp;    /* Interpolated quantized LSPs */
    float *interp_qlpc;    /* Interpolated quantized LPCs */
    float *mem_sp;
-   float *mem_pf;
-   float *mem_pf2;
    float *pi_gain;
    int    last_pitch;
    float  last_pitch_gain;
 
    SpeexSubmode **submodes;
    int    submodeID;
-   int    pf_enabled;
+   int    lpc_enh_enabled;
 } DecState;
 
 /**Initializes encoder state*/

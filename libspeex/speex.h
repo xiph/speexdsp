@@ -29,8 +29,8 @@ extern "C" {
 #endif
 
 /* Values allowed for *ctl() requests */
-#define SPEEX_SET_PF 0
-#define SPEEX_GET_PF 1
+#define SPEEX_SET_ENH 0
+#define SPEEX_GET_ENH 1
 /*Would be SPEEX_SET_FRAME_SIZE, but it's (currently) invalid*/
 #define SPEEX_GET_FRAME_SIZE 3
 #define SPEEX_SET_QUALITY 4
@@ -49,6 +49,12 @@ extern "C" {
 #define SPEEX_GET_COMPLEXITY 17
 /*Would be SPEEX_SET_FRAME_SIZE, but it's (currently) invalid*/
 #define SPEEX_GET_BITRATE 19
+
+
+/* Preserving compatibility:*/
+#define SPEEX_SET_PF 0
+#define SPEEX_GET_PF 1
+
 
 #define SPEEX_NB_MODES 2
 

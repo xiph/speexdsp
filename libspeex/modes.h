@@ -54,9 +54,6 @@ typedef void (*innovation_quant_func)(float *, float *, float *, float *, void *
 
 typedef void (*innovation_unquant_func)(float *, void *, int, SpeexBits*, float *);
 
-typedef void (*nb_post_filter_func)(float *, float *, float *, int, int, int, 
-                               float *, void *, float *, float *, float *);
-
 typedef struct SpeexSubmode {
    int     lbr_pitch;
    int     have_subframe_gain;
@@ -74,9 +71,9 @@ typedef struct SpeexSubmode {
    innovation_unquant_func innovation_unquant;
    void             *innovation_params;
 
-   /*Post-filter*/
-   nb_post_filter_func post_filter_func;
-   void             *post_filter_params;
+   /*Synthesis filter enhancement*/
+   float lpc_enh_k1, lpc_enh_k2, comb_gain;
+
    int               bitrate;
 } SpeexSubmode;
 

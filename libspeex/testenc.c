@@ -25,10 +25,10 @@ int main(int argc, char **argv)
    dec = speex_decoder_init(&speex_nb_mode);
 
    tmp=1;
-   speex_decoder_ctl(dec, SPEEX_SET_PF, &tmp);
+   speex_decoder_ctl(dec, SPEEX_SET_ENH, &tmp);
    tmp=0;
    speex_encoder_ctl(st, SPEEX_SET_VBR, &tmp);
-   tmp=6;
+   tmp=4;
    speex_encoder_ctl(st, SPEEX_SET_QUALITY, &tmp);
    tmp=2;
    speex_encoder_ctl(st, SPEEX_SET_COMPLEXITY, &tmp);

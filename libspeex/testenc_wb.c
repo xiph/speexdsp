@@ -16,7 +16,7 @@ int main(int argc, char **argv)
    void *st;
    void *dec;
    SpeexBits bits;
-   int pf;
+   int tmp;
    int bitCount=0;
 
    for (i=0;i<FRAME_SIZE;i++)
@@ -24,12 +24,12 @@ int main(int argc, char **argv)
    st = speex_encoder_init(&speex_wb_mode);
    dec = speex_decoder_init(&speex_wb_mode);
 
-   pf=0;
-   speex_decoder_ctl(dec, SPEEX_SET_PF, &pf);
-   pf=1;
-   speex_encoder_ctl(st, SPEEX_SET_VBR, &pf);
-   pf=10;
-   speex_encoder_ctl(st, SPEEX_SET_VBR_QUALITY, &pf);
+   tmp=0;
+   speex_decoder_ctl(dec, SPEEX_SET_ENH, &tmp);
+   tmp=1;
+   speex_encoder_ctl(st, SPEEX_SET_VBR, &tmp);
+   tmp=10;
+   speex_encoder_ctl(st, SPEEX_SET_VBR_QUALITY, &tmp);
 
    if (argc != 4 && argc != 3)
    {

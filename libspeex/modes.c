@@ -26,8 +26,6 @@
 #include "cb_search.h"
 #include "sb_celp.h"
 #include "nb_celp.h"
-#include "post_filter.h"
-
 
 SpeexMode *speex_mode_list[SPEEX_NB_MODES] = {&speex_nb_mode, &speex_wb_mode};
 
@@ -42,34 +40,6 @@ extern float exc_8_32_table[];
 extern float exc_10_32_table[];
 extern float exc_10_16_table[];
 extern float hexc_10_32_table[];
-
-/* Post-filter parameters for narrowband */
-static pf_params pf_params_nb = {
-   0.65,      /* formant enhancement numerator */
-   0.7,      /* formant enhancement denominator */
-   0.2       /* pitch enhancement factor */
-};
-
-/* Post-filter parameters for narrowband */
-static pf_params pf_params_med = {
-   0.65,      /* formant enhancement numerator */
-   0.72,      /* formant enhancement denominator */
-   0.4       /* pitch enhancement factor */
-};
-
-/* Post-filter parameters for low bit-rate narrowband */
-static pf_params pf_params_lbr = {
-   0.65,      /* formant enhancement numerator */
-   0.75,      /* formant enhancement denominator */
-   0.6       /* pitch enhancement factor */
-};
-
-/* Post-filter parameters for wideband */
-static pf_params pf_params_sb = {
-   0.65,      /* formant enhancement numerator */
-   0.68,      /* formant enhancement denominator */
-   0.2       /* pitch enhancement factor */
-};
 
 /* Parameters for Long-Term Prediction (LTP)*/
 static ltp_params ltp_params_nb = {
@@ -172,9 +142,8 @@ static SpeexSubmode nb_submode1 = {
    NULL,
    NULL,
    NULL,
-   /* No Post-filter */
-   NULL,
-   NULL,
+
+   0, 0, -1,
    2500
 };
 
@@ -192,8 +161,8 @@ static SpeexSubmode nb_submode2 = {
    split_cb_search_nogain,
    split_cb_nogain_unquant,
    &split_cb_nb_vlbr,
-   nb_post_filter,
-   &pf_params_lbr,
+
+   0.75, 0.65, .6,
    5900
 };
 
@@ -212,8 +181,8 @@ static SpeexSubmode nb_submode3 = {
    split_cb_search_nogain,
    split_cb_nogain_unquant,
    &split_cb_nb_lbr,
-   nb_post_filter,
-   &pf_params_lbr,
+
+   0.75, 0.65, .5,
    8350
 };
 
@@ -231,8 +200,8 @@ static SpeexSubmode nb_submode4 = {
    split_cb_search_nogain,
    split_cb_nogain_unquant,
    &split_cb_nb_med,
-   nb_post_filter,
-   &pf_params_med,
+
+   0.72, 0.65, .4,
    11350
 };
 
@@ -250,8 +219,8 @@ static SpeexSubmode nb_submode5 = {
    split_cb_search_nogain,
    split_cb_nogain_unquant,
    &split_cb_nb,
-   nb_post_filter,
-   &pf_params_nb,
+
+   0.7, 0.65, .3,
    14950
 };
 
@@ -269,8 +238,8 @@ static SpeexSubmode nb_submode6 = {
    split_cb_search_nogain,
    split_cb_nogain_unquant,
    &split_cb_sb,
-   nb_post_filter,
-   &pf_params_sb,
+
+   0.68, 0.65, .2,
    18150
 };
 
@@ -326,9 +295,8 @@ static SpeexSubmode wb_submode1 = {
    NULL,
    NULL,
    NULL,
-   /*No post-filter*/
-   NULL,
-   NULL,
+
+   0, 0, -1,
    1750
 };
 
@@ -347,8 +315,8 @@ static SpeexSubmode wb_submode2 = {
    split_cb_search_nogain,
    split_cb_nogain_unquant,
    &split_cb_high_lbr,
-   NULL,
-   NULL,
+
+   0, 0, -1,
    5550
 };
 
@@ -367,8 +335,8 @@ static SpeexSubmode wb_submode3 = {
    split_cb_search_shape_sign,
    split_cb_shape_sign_unquant,
    &split_cb_high,
-   NULL,
-   NULL,
+
+   0, 0, -1,
    9550
 };
 

@@ -687,9 +687,9 @@ void *nb_decoder_init(SpeexMode *m)
    st->submodeID=mode->defaultSubmode;
 
    st->pre_mem=0;
-   st->pf_enabled=0;
+   st->lpc_enh_enabled=0;
 
-   st->stack = speex_alloc(10000*sizeof(float));
+   st->stack = speex_alloc(20000*sizeof(float));
 
    st->inBuf = speex_alloc(st->bufSize*sizeof(float));
    st->frame = st->inBuf + st->bufSize - st->windowSize;
@@ -708,9 +708,7 @@ void *nb_decoder_init(SpeexMode *m)
    st->qlsp = speex_alloc(st->lpcSize*sizeof(float));
    st->old_qlsp = speex_alloc(st->lpcSize*sizeof(float));
    st->interp_qlsp = speex_alloc(st->lpcSize*sizeof(float));
-   st->mem_sp = speex_alloc(st->lpcSize*sizeof(float));
-   st->mem_pf = speex_alloc(st->lpcSize*sizeof(float));
-   st->mem_pf2 = speex_alloc(st->lpcSize*sizeof(float));
+   st->mem_sp = speex_alloc(4*st->lpcSize*sizeof(float));
 
    st->pi_gain = speex_alloc(st->nbSubframes*sizeof(float));
    st->last_pitch = 40;
@@ -731,8 +729,6 @@ void nb_decoder_destroy(void *state)
    speex_free(st->interp_qlsp);
    speex_free(st->stack);
    speex_free(st->mem_sp);
-   speex_free(st->mem_pf);
-   speex_free(st->mem_pf2);
    speex_free(st->pi_gain);
    
    speex_free(state);
@@ -794,7 +790,7 @@ void nb_decode(void *state, SpeexBits *bits, float *out, int lost)
    {
       int offset;
       float *sp, *exc, *exc2, tmp;
-      
+      float *num, *den;
       /* Offset relative to start of frame */
       offset = st->subframeSize*sub;
       /* Original signal */
@@ -817,7 +813,16 @@ void nb_decode(void *state, SpeexBits *bits, float *out, int lost)
          st->interp_qlsp[i] = cos(st->interp_qlsp[i]);
       lsp_to_lpc(st->interp_qlsp, st->interp_qlpc, st->lpcSize, st->stack);
 
-
+      num=PUSH(st->stack, ((st->lpcSize<<1)+1));
+      den=PUSH(st->stack, ((st->lpcSize<<1)+1));
+      if (st->lpc_enh_enabled)
+      {
+         enh_lpc(st->interp_qlpc, st->lpcSize, num, den, 
+                 SUBMODE(lpc_enh_k1), SUBMODE(lpc_enh_k2), st->stack);
+      } else {
+         enh_lpc(st->interp_qlpc, st->lpcSize, num, den, 
+                 SUBMODE(lpc_enh_k2), SUBMODE(lpc_enh_k2), st->stack);
+      }
       /* Compute analysis filter at w=pi */
       tmp=1;
       st->pi_gain[sub]=0;
@@ -930,15 +935,17 @@ void nb_decode(void *state, SpeexBits *bits, float *out, int lost)
       for (i=0;i<st->subframeSize;i++)
          exc2[i]=exc[i];
 
-      /* Apply post-filter */
-      if (st->pf_enabled && SUBMODE(post_filter_func))
-         SUBMODE(post_filter_func)(exc, exc2, st->interp_qlpc, st->lpcSize, st->subframeSize,
-                              pitch, pitch_gain, SUBMODE(post_filter_params), st->mem_pf, 
-                              st->mem_pf2, st->stack);
+      if (st->lpc_enh_enabled && SUBMODE(comb_gain>0))
+         comb_filter(exc, exc2, st->interp_qlpc, st->lpcSize, st->subframeSize,
+                              pitch, pitch_gain, .5);
+      /*syn_filt_mem(exc2, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, 
+        st->mem_sp);*/
       
-      /* Apply synthesis filter */
-      syn_filt_mem(exc2, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, st->mem_sp);
-
+      pole_zero_mem(exc2, num, den, sp, st->subframeSize, (st->lpcSize<<1), 
+                    st->mem_sp, st->stack);
+      
+      POP(st->stack);
+      POP(st->stack);
    }
    
    /*Copy output signal*/
@@ -1036,8 +1043,11 @@ void nb_decoder_ctl(void *state, int request, void *ptr)
    st=state;
    switch(request)
    {
-   case SPEEX_SET_PF:
-      st->pf_enabled = *((int*)ptr);
+   case SPEEX_SET_ENH:
+      st->lpc_enh_enabled = *((int*)ptr);
+      break;
+   case SPEEX_GET_ENH:
+      *((int*)ptr) = st->lpc_enh_enabled;
       break;
    case SPEEX_GET_FRAME_SIZE:
       (*(int*)ptr) = st->frameSize;
