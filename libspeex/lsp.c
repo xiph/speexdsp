@@ -524,3 +524,31 @@ void lsp_enforce_margin(spx_lsp_t *lsp, int len, float margin)
          lsp[i]= .5* (lsp[i] + lsp[i+1]-LSP_SCALING*margin);
    }
 }
+
+#ifdef FIXED_POINT
+
+
+void lsp_interpolate(spx_lsp_t *old_lsp, spx_lsp_t *new_lsp, spx_lsp_t *interp_lsp, int len, int subframe, int nb_subframes)
+{
+   int i;
+   spx_word16_t tmp = DIV32_16(SHL(1 + subframe,14),nb_subframes);
+   spx_word16_t tmp2 = 16384-tmp;
+   for (i=0;i<len;i++)
+   {
+      interp_lsp[i] = MULT16_16_P14(tmp2,old_lsp[i]) + MULT16_16_P14(tmp,new_lsp[i]);
+   }
+}
+
+#else
+
+void lsp_interpolate(spx_lsp_t *old_lsp, spx_lsp_t *new_lsp, spx_lsp_t *interp_lsp, int len, int subframe, int nb_subframes)
+{
+   int i;
+   float tmp = (1.0 + subframe)/nb_subframes;
+   for (i=0;i<len;i++)
+   {
+      interp_lsp[i] = (1-tmp)*old_lsp[i] + tmp*new_lsp[i];
+   }
+}
+
+#endif

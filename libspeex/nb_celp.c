@@ -622,11 +622,8 @@ int nb_encode(void *state, short *in, SpeexBits *bits)
 
 
       /* LSP interpolation (quantized and unquantized) */
-      tmp = (1.0 + sub)/st->nbSubframes;
-      for (i=0;i<st->lpcSize;i++)
-         st->interp_lsp[i] = (1-tmp)*st->old_lsp[i] + tmp*st->lsp[i];
-      for (i=0;i<st->lpcSize;i++)
-         st->interp_qlsp[i] = (1-tmp)*st->old_qlsp[i] + tmp*st->qlsp[i];
+      lsp_interpolate(st->old_lsp, st->lsp, st->interp_lsp, st->lpcSize, sub, st->nbSubframes);
+      lsp_interpolate(st->old_qlsp, st->qlsp, st->interp_qlsp, st->lpcSize, sub, st->nbSubframes);
 
       /* Make sure the filters are stable */
       lsp_enforce_margin(st->interp_lsp, st->lpcSize, .002);
@@ -1369,9 +1366,7 @@ int nb_decode(void *state, SpeexBits *bits, short *out)
       /* Excitation after post-filter*/
 
       /* LSP interpolation (quantized and unquantized) */
-      tmp = (1.0 + sub)/st->nbSubframes;
-      for (i=0;i<st->lpcSize;i++)
-         st->interp_qlsp[i] = (1-tmp)*st->old_qlsp[i] + tmp*st->qlsp[i];
+      lsp_interpolate(st->old_qlsp, st->qlsp, st->interp_qlsp, st->lpcSize, sub, st->nbSubframes);
 
       /* Make sure the LSP's are stable */
       lsp_enforce_margin(st->interp_qlsp, st->lpcSize, .002);
