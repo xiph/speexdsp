@@ -7,6 +7,7 @@
 
 
 #define abs(x) ((x)<0 ? -(x) : (x))
+
 /** Computes the open-loop pitch prediction. Returns pitch period and pitch gain */
 int open_loop_ltp(float *x, int len, int start, int end, float *gain)
    /*  x:     time-domain signal (note, x[-end] must be valid)
@@ -39,7 +40,7 @@ int open_loop_ltp(float *x, int len, int start, int end, float *gain)
    return best_period;
 }
 
-/** Computes a three-tap pitch predictor */
+/** Computes a 3-tap pitch predictor */
 int three_tap_ltp(float *x, int len, int start, int end, float *gain)
 
    /*  x:     time-domain signal (note, x[-end] must be valid)

@@ -193,7 +193,8 @@ void encode(EncState *st, float *in, int *outSize, void *bits)
    for (i=0;i<st->lpcSize;i++)
       st->old_lsp[i] = st->lsp[i];
    st->first = 0;
-
+   for (i=0;i<st->frameSize;i++)
+      in[i]=st->frame[i];
 }
 
 

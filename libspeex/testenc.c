@@ -29,7 +29,11 @@ int main(int argc, char **argv)
       for (i=0;i<FRAME_SIZE;i++)
          input[i]=in[i];
       encode(&st, input, NULL, NULL);
+      for (i=0;i<FRAME_SIZE;i++)
+         in[i]=input[i];
+      fwrite(in, sizeof(short), FRAME_SIZE, fout);
    }
+   
    encoder_destroy(&st);
    return 1;
 }
