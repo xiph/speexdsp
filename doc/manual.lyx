@@ -28,13 +28,13 @@
 
 The Speex Codec Manual
 \newline 
-(version 1.0.2)
+(version 1.0.4)
 \layout Author
 
 Jean-Marc Valin
 \layout Standard
 \pagebreak_top 
-Copyright (c) 2002-2003 Jean-Marc Valin.
+Copyright (c) 2002-2004 Jean-Marc Valin.
 \layout Standard
 
 Permission is granted to copy, distribute and/or modify this document under
@@ -685,7 +685,7 @@ Encoding
 In order to encode speech using Speex, you first need to:
 \layout LyX-Code
 
-#include <speex.h>
+#include <speex/speex.h>
 \layout Standard
 
 You then need to declare a Speex bit-packing struct
@@ -803,7 +803,7 @@ Decoding
 In order to encode speech using Speex, you first need to:
 \layout LyX-Code
 
-#include <speex.h>
+#include <speex/speex.h>
 \layout Standard
 
 You also need to declare a Speex bit-packing struct
@@ -5781,7 +5781,7 @@ IETF RTP Profile
 \layout Standard
 
 
-\begin_inset Include \verbatiminput{draft-herlein-speex-rtp-profile-01.txt}
+\begin_inset Include \verbatiminput{draft-herlein-avt-rtp-speex-00.txt}
 preview false
 
 \end_inset 

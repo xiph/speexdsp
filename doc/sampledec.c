@@ -1,4 +1,4 @@
-#include <speex.h>
+#include <speex/speex.h>
 #include <stdio.h>
 
 /*The frame size in hardcoded for this sample code but it doesn't have to be*/
