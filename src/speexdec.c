@@ -93,7 +93,7 @@ static void print_comments(char *comments, int length)
 
 FILE *out_file_open(char *outFile, int rate)
 {
-   FILE *fout;
+   FILE *fout=NULL;
    /*Open output file*/
    if (strlen(outFile)==0)
    {
@@ -382,7 +382,7 @@ int main(int argc, char **argv)
    if (strcmp(inFile, "-")==0)
    {
 #if defined WIN32 || defined _WIN32
-      _setmode(_fileno(stdout), _O_BINARY);
+      _setmode(_fileno(stdin), _O_BINARY);
 #endif
       fin=stdin;
    }
@@ -528,8 +528,15 @@ int main(int argc, char **argv)
    ogg_sync_clear(&oy);
    ogg_stream_clear(&os);
 
+#if defined WIN32 || defined _WIN32
+   if (strlen(outFile)==0)
+      WIN_Audio_close ();
+#endif
+
    if (close_in)
       fclose(fin);
-   fclose(fout);
+   if (fout != NULL)
+      fclose(fout);   
+
    return 1;
 }
