@@ -1795,6 +1795,9 @@ int nb_encoder_ctl(void *state, int request, void *ptr)
    case SPEEX_GET_SUBMODE_ENCODING:
       (*(int*)ptr) = st->encode_submode;
       break;
+   case SPEEX_GET_LOOKAHEAD:
+      (*(int*)ptr)=(st->windowSize-st->frameSize);
+      break;
    case SPEEX_GET_PI_GAIN:
       {
          int i;

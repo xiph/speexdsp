@@ -103,7 +103,7 @@ static int read_samples(FILE *fin,int frame_size, int bits, int channels, int ls
 
    /*fprintf (stderr, "%d\n", nb_read);*/
    if (nb_read==0)
-      return 1;
+      return 0;
 
    s=(short*)in;
    if(bits==8)
@@ -138,7 +138,7 @@ static int read_samples(FILE *fin,int frame_size, int bits, int channels, int ls
    }
 
 
-   return 0;
+   return nb_read;
 }
 
 void version()
@@ -206,6 +206,7 @@ void usage()
 
 int main(int argc, char **argv)
 {
+   int nb_samples, total_samples=0, nb_encoded;
    int c;
    int option_index = 0;
    char *inFile, *outFile;
@@ -279,7 +280,8 @@ int main(int argc, char **argv)
    int tmp;
    SpeexPreprocessState *preprocess = NULL;
    int denoise_enabled=0, agc_enabled=0;
-
+   int lookahead = 0;
+   
    comment_init(&comments, &comments_length, vendor_string);
 
    /*Process command-line options*/
@@ -561,42 +563,6 @@ int main(int argc, char **argv)
       close_out=1;
    }
 
-
-   /*Write header*/
-   {
-
-      op.packet = (unsigned char *)speex_header_to_packet(&header, (int*)&(op.bytes));
-      op.b_o_s = 1;
-      op.e_o_s = 0;
-      op.granulepos = 0;
-      op.packetno = 0;
-      ogg_stream_packetin(&os, &op);
-      free(op.packet);
-
-      op.packet = (unsigned char *)comments;
-      op.bytes = comments_length;
-      op.b_o_s = 0;
-      op.e_o_s = 0;
-      op.granulepos = 0;
-      op.packetno = 1;
-      ogg_stream_packetin(&os, &op);
-      
-      while((result = ogg_stream_flush(&os, &og)))
-      {
-         if(!result) break;
-         ret = oe_write_page(&og, fout);
-         if(ret != og.header_len + og.body_len)
-         {
-            fprintf (stderr,"Error: failed writing header to output stream\n");
-            exit(1);
-         }
-         else
-            bytes_written += ret;
-      }
-   }
-
-   free(comments);
-
    speex_encoder_ctl(st, SPEEX_GET_FRAME_SIZE, &frame_size);
    speex_encoder_ctl(st, SPEEX_SET_COMPLEXITY, &complexity);
    speex_encoder_ctl(st, SPEEX_SET_SAMPLING_RATE, &rate);
@@ -638,25 +604,65 @@ int main(int argc, char **argv)
       speex_encoder_ctl(st, SPEEX_SET_ABR, &abr_enabled);
    }
 
+   speex_encoder_ctl(st, SPEEX_GET_LOOKAHEAD, &lookahead);
+   
    if (denoise_enabled || agc_enabled)
    {
       preprocess = speex_preprocess_state_init(frame_size, rate);
       speex_preprocess_ctl(preprocess, SPEEX_PREPROCESS_SET_DENOISE, &denoise_enabled);
       speex_preprocess_ctl(preprocess, SPEEX_PREPROCESS_SET_AGC, &agc_enabled);
+      lookahead += frame_size;
    }
+
+   /*Write header*/
+   {
+
+      op.packet = (unsigned char *)speex_header_to_packet(&header, (int*)&(op.bytes));
+      op.b_o_s = 1;
+      op.e_o_s = 0;
+      op.granulepos = 0;
+      op.packetno = 0;
+      ogg_stream_packetin(&os, &op);
+      free(op.packet);
+
+      op.packet = (unsigned char *)comments;
+      op.bytes = comments_length;
+      op.b_o_s = 0;
+      op.e_o_s = 0;
+      op.granulepos = 0;
+      op.packetno = 1;
+      ogg_stream_packetin(&os, &op);
+      
+      while((result = ogg_stream_flush(&os, &og)))
+      {
+         if(!result) break;
+         ret = oe_write_page(&og, fout);
+         if(ret != og.header_len + og.body_len)
+         {
+            fprintf (stderr,"Error: failed writing header to output stream\n");
+            exit(1);
+         }
+         else
+            bytes_written += ret;
+      }
+   }
+
+   free(comments);
 
    speex_bits_init(&bits);
 
    if (!wave_input)
    {
-      if (read_samples(fin,frame_size,fmt,chan,lsb,input, first_bytes, NULL))
-         eos=1;
+      nb_samples = read_samples(fin,frame_size,fmt,chan,lsb,input, first_bytes, NULL);
    } else {
-      if (read_samples(fin,frame_size,fmt,chan,lsb,input, NULL, &size))
-         eos=1;
+      nb_samples = read_samples(fin,frame_size,fmt,chan,lsb,input, NULL, &size);
    }
+   if (nb_samples==0)
+      eos=1;
+   total_samples += nb_samples;
+   nb_encoded = -lookahead;
    /*Main encoding loop (one frame per iteration)*/
-   while (!eos)
+   while (!eos || total_samples>nb_encoded)
    {
       id++;
       /*Encode current frame*/
@@ -668,6 +674,7 @@ int main(int argc, char **argv)
 
       speex_encode_int(st, input, &bits);
       
+      nb_encoded += frame_size;
       if (print_bitrate) {
          int tmp;
          char ch=13;
@@ -687,18 +694,19 @@ int main(int argc, char **argv)
 
       if (wave_input)
       {
-         if (read_samples(fin,frame_size,fmt,chan,lsb,input, NULL, &size))
-         {
-            eos=1;
-            op.e_o_s = 1;
-         }
+         nb_samples = read_samples(fin,frame_size,fmt,chan,lsb,input, NULL, &size);
       } else {
-         if (read_samples(fin,frame_size,fmt,chan,lsb,input, NULL, NULL))
-         {
-            eos=1;
-            op.e_o_s = 1;
-         }
+         nb_samples = read_samples(fin,frame_size,fmt,chan,lsb,input, NULL, NULL);
       }
+      if (nb_samples==0)
+      {
+         eos=1;
+      }
+      if (eos && total_samples<=nb_encoded)
+         op.e_o_s = 1;
+      else
+         op.e_o_s = 0;
+      total_samples += nb_samples;
 
       if ((id+1)%nframes!=0)
          continue;
@@ -708,11 +716,15 @@ int main(int argc, char **argv)
       op.packet = (unsigned char *)cbits;
       op.bytes = nbBytes;
       op.b_o_s = 0;
-      if (eos)
+      /*Is this redundent?*/
+      if (eos && total_samples<=nb_encoded)
          op.e_o_s = 1;
       else
          op.e_o_s = 0;
-      op.granulepos = (id+nframes)*frame_size;
+      op.granulepos = (id+1)*frame_size-lookahead;
+      if (op.granulepos>total_samples)
+         op.granulepos = total_samples;
+      /*printf ("granulepos: %d %d %d %d %d %d\n", (int)op.granulepos, id, nframes, lookahead, 5, 6);*/
       op.packetno = 2+id/nframes;
       ogg_stream_packetin(&os, &op);
 
@@ -741,7 +753,10 @@ int main(int argc, char **argv)
       op.bytes = nbBytes;
       op.b_o_s = 0;
       op.e_o_s = 1;
-      op.granulepos = (id+nframes)*frame_size;
+      op.granulepos = (id+1)*frame_size-lookahead;
+      if (op.granulepos>total_samples)
+         op.granulepos = total_samples;
+
       op.packetno = 2+id/nframes;
       ogg_stream_packetin(&os, &op);
    }

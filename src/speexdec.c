@@ -410,6 +410,8 @@ int main(int argc, char **argv)
    int packet_count=0;
    int stream_init = 0;
    int quiet = 0;
+   ogg_int64_t page_granule=0, last_granule=0;
+   int skip_samples=0, page_nb_packets;
    struct option long_options[] =
    {
       {"help", no_argument, NULL, 0},
@@ -581,13 +583,30 @@ int main(int argc, char **argv)
       /*Loop for all complete pages we got (most likely only one)*/
       while (ogg_sync_pageout(&oy, &og)==1)
       {
+         int packet_no;
          if (stream_init == 0) {
             ogg_stream_init(&os, ogg_page_serialno(&og));
             stream_init = 1;
          }
          /*Add page to the bitstream*/
          ogg_stream_pagein(&os, &og);
+         page_granule = ogg_page_granulepos(&og);
+         page_nb_packets = ogg_page_packets(&og);
+         if (page_granule>0 && frame_size)
+         {
+            skip_samples = page_nb_packets*frame_size*nframes - (page_granule-last_granule);
+            if (ogg_page_eos(&og))
+               skip_samples = -skip_samples;
+            /*else if (!ogg_page_bos(&og))
+               skip_samples = 0;*/
+         } else
+         {
+            skip_samples = 0;
+         }
+         /*printf ("page granulepos: %d %d %d\n", skip_samples, page_nb_packets, (int)page_granule);*/
+         last_granule = page_granule;
          /*Extract all available packets*/
+         packet_no=0;
          while (!eos && ogg_stream_packetout(&os, &op)==1)
          {
             /*If first packet, process as Speex header*/
@@ -608,7 +627,7 @@ int main(int argc, char **argv)
             {
                /* Ignore extra headers */
             } else {
-               
+               packet_no++;
                int lost=0;
                if (loss_percent>0 && 100*((float)rand())/RAND_MAX<loss_percent)
                   lost=1;
@@ -662,14 +681,38 @@ int main(int argc, char **argv)
                      for (i=0;i<frame_size*channels;i++)
                         out[i]=output[i];
 		  }
+                  {
+                     int frame_offset = 0;
+                     int new_frame_size = frame_size;
+                     /*printf ("packet %d %d\n", packet_no, skip_samples);*/
+                     if (packet_no == 1 && j==0 && skip_samples > 0)
+                     {
+                        /*printf ("chopping first packet\n");*/
+                        new_frame_size -= skip_samples;
+                        frame_offset = skip_samples;
+                     }
+                     if (packet_no == page_nb_packets && skip_samples < 0)
+                     {
+                        int packet_length = nframes*frame_size+skip_samples;
+                        new_frame_size = packet_length - j*frame_size;
+                        if (new_frame_size<0)
+                           new_frame_size = 0;
+                        if (new_frame_size>frame_size)
+                           new_frame_size = frame_size;
+                        /*printf ("chopping end: %d %d %d\n", new_frame_size, packet_length, packet_no);*/
+                     }
+                     if (new_frame_size)
+                     {  
 #if defined WIN32 || defined _WIN32
-                  if (strlen(outFile)==0)
-                      WIN_Play_Samples (out, sizeof(short) * frame_size*channels);
-                  else
+                        if (strlen(outFile)==0)
+                           WIN_Play_Samples (out+frame_offset*channels, sizeof(short) * new_frame_size*channels);
+                        else
 #endif
-                  fwrite(out, sizeof(short), frame_size*channels, fout);
+                           fwrite(out+frame_offset*channels, sizeof(short), new_frame_size*channels, fout);
                   
-                  audio_size+=sizeof(short)*frame_size*channels;
+                        audio_size+=sizeof(short)*new_frame_size*channels;
+                     }
+                  }
                }
             }
             packet_count++;

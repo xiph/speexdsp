@@ -877,3 +877,29 @@ int speex_mode_query(const SpeexMode *mode, int request, void *ptr)
 {
    return mode->query(mode->mode, request, ptr);
 }
+
+int speex_lib_ctl(int request, void *ptr)
+{
+   switch (request)
+   {
+      case SPEEX_LIB_GET_MAJOR_VERSION:
+         break;
+      case SPEEX_LIB_GET_MINOR_VERSION:
+         break;
+      case SPEEX_LIB_GET_MICRO_VERSION:
+         break;
+      case SPEEX_LIB_GET_EXTRA_VERSION:
+         break;
+      case SPEEX_LIB_GET_VERSION_STRING:
+         break;
+      case SPEEX_LIB_SET_ALLOC_FUNC:
+         break;
+      case SPEEX_LIB_GET_ALLOC_FUNC:
+         break;
+      case SPEEX_LIB_SET_FREE_FUNC:
+         break;
+      case SPEEX_LIB_GET_FREE_FUNC:
+         break;
+   }
+   return -1;
+}

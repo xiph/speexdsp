@@ -131,6 +131,10 @@ extern "C" {
 /** */
 #define SPEEX_GET_SUBMODE_ENCODING 37
 
+/*#define SPEEX_SET_SUBMODE_ENCODING 38*/
+/** */
+#define SPEEX_GET_LOOKAHEAD 39
+
 
 /* Used internally, not to be used in applications */
 /** Used internally*/
@@ -150,12 +154,32 @@ extern "C" {
 #define SPEEX_GET_PF 1
 
 
+
+
 /* Values allowed for mode queries */
 /** Query the frame size of a mode */
 #define SPEEX_MODE_FRAME_SIZE 0
 
 /** Query the size of an encoded frame for a particular sub-mode */
 #define SPEEX_SUBMODE_BITS_PER_FRAME 1
+
+
+
+#define SPEEX_LIB_GET_MAJOR_VERSION 1
+#define SPEEX_LIB_GET_MINOR_VERSION 3
+#define SPEEX_LIB_GET_MICRO_VERSION 5
+#define SPEEX_LIB_GET_EXTRA_VERSION 7
+#define SPEEX_LIB_GET_VERSION_STRING 9
+
+#define SPEEX_LIB_SET_ALLOC_FUNC 10
+#define SPEEX_LIB_GET_ALLOC_FUNC 11
+#define SPEEX_LIB_SET_FREE_FUNC 12
+#define SPEEX_LIB_GET_FREE_FUNC 13
+
+#define SPEEX_LIB_SET_WARNING_FUNC 14
+#define SPEEX_LIB_GET_WARNING_FUNC 15
+#define SPEEX_LIB_SET_ERROR_FUNC 16
+#define SPEEX_LIB_GET_ERROR_FUNC 17
 
 
 /** Number of defined modes in Speex */
@@ -333,6 +357,11 @@ int speex_decoder_ctl(void *state, int request, void *ptr);
  */
 int speex_mode_query(const SpeexMode *mode, int request, void *ptr);
 
+/** Functions for controlling the behavior of libspeex
+ * @param request ioctl-type request (one of the SPEEX_LIB_* macros)
+ * @param ptr Data exchanged to-from function
+ */
+int speex_lib_ctl(int request, void *ptr);
 
 /** Default narrowband mode */
 extern const SpeexMode speex_nb_mode;
