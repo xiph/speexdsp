@@ -5,7 +5,7 @@ requests to the remote encoder and all encoded speech frames.
 | Header | Requests | Speech data... |
 +--------+----------+----------------+
 
-The header contains only the number of frames present 
+The header contains only the number of frames sent 
 encoded in 6 bits
 
  0 1 2 3 4 5 
@@ -25,15 +25,20 @@ request. Each request (if R=1) is composed of a 4-bit request ID (ReqID) and
 a 5-bit value (ReqVal)
 
 Possible values for ReqID are:
- 0: REQ_PERSIST   1 for persistent requests/mode selection
- 1: MODE          Choose the encoder mode directly
- 2: QUALITY       Choose the encoder quality
- 3: VBR           Set VBR on (ReqVal=1) or off (ReqVal=2)
- 4: VBR_QUALITY   Set the encoder quality for VBR mode
- 5: LOW_MODE      Set the encoder mode for low-band (wideband only)
- 6: HIGH_MODE     Set the encoder mode for high-band (wideband only)
- 7: MAX_MODE
- 8: MIN_MODE
+ 0: REQ_PERSIST   ReqVal=1 for persistent requests/mode selection, 
+                  0 otherwise
+ 1: PERSIST_ACK   Acknowledge a REQ_PERSIST from the other end, 
+                  ReqVal equals the value received
+ 2: MODE          Choose the encoder mode directly
+ 3: QUALITY       Choose the encoder quality
+ 4: VBR           Set VBR on (ReqVal=1) or off (ReqVal=2)
+ 5: VBR_QUALITY   Set the encoder quality for VBR mode
+ 6: LOW_MODE      Set the encoder mode for low-band (wideband only)
+ 7: HIGH_MODE     Set the encoder mode for high-band (wideband only)
+
+All requests should be considered at the receiver as a suggestion and
+compliance is not mandatory. The PERSIST_ACK should be sent upon receiving a
+REQ_PERSIST request to indicate that the request has been received.
 
 The speech data part contains speech frames one after the other. The size of
 the encoded frames can be found since the mode is directly encoded into each

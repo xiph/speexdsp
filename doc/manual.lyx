@@ -27,6 +27,8 @@
 \layout Title
 
 The Speex Codec Manual
+\newline 
+(draft)
 \layout Author
 
 Jean-Marc Valin
@@ -47,8 +49,9 @@ on License".
 Disclaimer
 \layout Standard
 
-This document is meant to ease the understanding of the Speex code but makes
- no warranty of being exact.
+This document is meant to provide useful information on the Speex codec
+ but there is absolutely no warranty regarding usefulness or correctness
+ of the information provided.
  Also, some techniques used in Speex are said to be 
 \begin_inset Quotes eld
 \end_inset 
@@ -133,7 +136,7 @@ G.728-like fixed codebooks (without backward-adaptive grains) because of
  patent issues
 \layout Section
 
-Introduction to CELP coding
+Introduction to CELP Coding
 \layout Standard
 
 Speex is based on the CELP, which stands for Code Excited Linear Prediction.
@@ -165,7 +168,7 @@ perceptually weighted domain
 
 \layout Subsection
 
-Linear prediction
+Linear Prediction
 \layout Standard
 
 The linear prediction model represents each speech sample as linear combination
@@ -316,10 +319,10 @@ The filter coefficients
  by a number slightly above one (such as 1.0001), which is equivalent to
  adding noise to the signal.
  Also, we can apply a window the the auto-correlation, which is equivalent
- to filtering in the frequency domain, reducing sharp resonnances.
+ to filtering in the frequency domain, reducing sharp resonances.
 \layout Subsection
 
-Pitch prediction
+Pitch Prediction
 \layout Standard
 
 During voiced segments, the speech signal is very periodic, so it is possible
@@ -352,7 +355,7 @@ innovation codebook
 .
 \layout Subsection
 
-Innovation codebook
+Innovation Codebook
 \layout Standard
 
 This is where most of the bits in a CELP codec are allocated.
@@ -360,7 +363,7 @@ This is where most of the bits in a CELP codec are allocated.
  prediction or pitch prediction.
 \layout Subsection
 
-Analysis-by-synthesis and error weighting
+Analysis-by-Synthesis and Error Weighting
 \layout Standard
 
 Most (if not all) modern audio codecs attempt to 
@@ -407,7 +410,7 @@ This section looks at how Speex works for narrowband (
  Each frame is also subdivided into 4 sub-frames of 40 samples each.
 \layout Subsection
 
-LPC analysis
+LPC Analysis
 \layout Standard
 
 An LPC analysis is first performed on a (Hamming) window that spans all
@@ -450,7 +453,7 @@ The perceptual weighting filter
  filter since the weighting filter is only used in the encoder.
 \layout Subsection
 
-Pitch prediction (adaptive codebook)
+Pitch Prediction (adaptive codebook)
 \layout Standard
 
 Speex uses a 3-tap prediction for pitch.
@@ -478,7 +481,7 @@ where
  The period and quantized gains are determined in closed loop.
 \layout Subsection
 
-Innovation codebook
+Innovation Codebook
 \layout Standard
 
 In Speex, the innovation signal is quantized using shape-only vector quantizatio
@@ -505,7 +508,7 @@ Perceptual post-filter
 \layout Standard
 
 This part of the codec only applies to the decoder and can even be changed
- without affecting inter-operatability.
+ without affecting inter-operability.
  
 \layout Section
 
@@ -546,7 +549,7 @@ embedded narrowband bit-stream
  encoding is described in this section.
 \layout Subsection
 
-Linear prediction
+Linear Prediction
 \layout Standard
 
 The linear prediction part used for the high-band is very similar to what
@@ -555,7 +558,7 @@ The linear prediction part used for the high-band is very similar to what
  LSP's.
 \layout Subsection
 
-Pitch prediction
+Pitch Prediction
 \layout Standard
 
 That part is easy: there's no pitch prediction for the high-band.
@@ -568,7 +571,7 @@ That part is easy: there's no pitch prediction for the high-band.
  (pitch).
 \layout Subsection
 
-Excitation quantization
+Excitation Quantization
 \layout Standard
 
 The high-band excitation is coded in the same way as for narrowband.
@@ -901,19 +904,35 @@ SPEEX_GET_VBR_QUALITY* Get the current encoder VBR speech quality (integer
  normally only used internally
 \layout Section
 
+Formats and standards
+\layout Standard
+
+Speex can encode speech in both narrowband and wideband and provides different
+ bit-rates.
+ All modes of operation MUST be supported at the decoder and at least one
+ MUST be supported by the encoder.
+ The main reason is that not all platforms may be able to handle the complexity
+ of encoding for all modes.
+\layout Subsection
+
 RTP Payload Format
 \layout Standard
 
-(Note that this is a work in progress and should not even be considered
- as a draft...)
+Since Speex encoded frames already contain mode information, they can be
+ sent without any other information in an RTP packet.
+ If more than one frame is transmitted, no byte padding is performed at
+ the end of frames, except the last one.
+\layout Subsection
+
+Ogg file format
 \layout Standard
 
-
-\begin_inset Include \verbatiminput{rtp.txt}
-
-\end_inset 
-
-
+Speex bit-streams can be stored in Ogg files.
+ In this case, the first packet of the Ogg file contains the Speex header
+ (see speex_header.h for now) and the second packet contains comments.
+ The next frames contain one or more (number found in header) Speex frames.
+ (Note: packing more that one Speex frame in an Ogg frame is not supported
+ yet)
 \layout LyX-Code
 
 \layout Section
