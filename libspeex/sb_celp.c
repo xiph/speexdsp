@@ -497,7 +497,7 @@ void sb_encode(void *state, float *in, SpeexBits *bits)
          }
 #else
          /* High-band excitation using the low-band excitation and a gain */
-         //FIXME: Should we replace the excitation in the encoder of just in the decoder?
+         /*FIXME: Should we replace the excitation in the encoder of just in the decoder?*/
          /*                  for (i=0;i<st->subframeSize;i++)
             exc[i]=g*((EncState*)st->st_low)->exc[offset+i];
          */

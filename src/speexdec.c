@@ -154,7 +154,7 @@ static void *process_header(ogg_packet *op, int pf_enabled, int *frame_size, int
    *rate = header->rate;
 
    fprintf (stderr, "Decoding %d Hz audio using %s mode\n", 
-            *rate, mode->bitrate, mode->modeName);
+            *rate, mode->modeName);
 
    /*fprintf (stderr, "Decoding %d Hz audio at %d bps using %s mode\n", 
     *rate, mode->bitrate, mode->modeName);*/
