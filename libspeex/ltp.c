@@ -515,6 +515,9 @@ int cdbk_offset
    signed char *gain_cdbk;
    int gain_cdbk_size;
    ltp_params *params;
+#ifdef FIXED_POINT
+   spx_word16_t sgain[3];
+#endif
    params = (ltp_params*) par;
    gain_cdbk_size = 1<<params->gain_bits;
    gain_cdbk = params->gain_cdbk + 3*gain_cdbk_size*cdbk_offset;
@@ -523,9 +526,18 @@ int cdbk_offset
    pitch += start;
    gain_index = speex_bits_unpack_unsigned(bits, params->gain_bits);
    /*printf ("decode pitch: %d %d\n", pitch, gain_index);*/
+#ifdef FIXED_POINT
+   sgain[0] = 32+(spx_word16_t)gain_cdbk[gain_index*3];
+   sgain[1] = 32+(spx_word16_t)gain_cdbk[gain_index*3+1];
+   sgain[2] = 32+(spx_word16_t)gain_cdbk[gain_index*3+2];
+   gain[0] = 0.015625*sgain[0];
+   gain[1] = 0.015625*sgain[1];
+   gain[2] = 0.015625*sgain[2];
+#else
    gain[0] = 0.015625*gain_cdbk[gain_index*3]+.5;
    gain[1] = 0.015625*gain_cdbk[gain_index*3+1]+.5;
    gain[2] = 0.015625*gain_cdbk[gain_index*3+2]+.5;
+#endif
 
    if (count_lost && pitch > subframe_offset)
    {
@@ -611,10 +623,6 @@ int cdbk_offset
 
 #ifdef FIXED_POINT
       {
-         spx_word16_t sgain[3];
-         sgain[0] = 64*gain[0];
-         sgain[1] = 64*gain[1];
-         sgain[2] = 64*gain[2];
          for (i=0;i<nsf;i++)
             exc[i]=MULT16_32_Q13(SHL(sgain[0],7),e[2][i])+MULT16_32_Q13(SHL(sgain[1],7),e[1][i])+MULT16_32_Q13(SHL(sgain[2],7),e[0][i]);
       }
