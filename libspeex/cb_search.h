@@ -56,6 +56,19 @@ SpeexBits *bits,
 float *stack
 );
 
+void split_cb_search_nogain3(
+float target[],			/* target vector */
+float ak[],			/* LPCs for this subframe */
+float awk1[],			/* Weighted LPCs for this subframe */
+float awk2[],			/* Weighted LPCs for this subframe */
+void *par,                      /* Codebook/search parameters*/
+int   p,                        /* number of LPC coeffs */
+int   nsf,                      /* number of samples in subframe */
+float *exc,
+SpeexBits *bits,
+float *stack
+);
+
 void split_cb_search_shape_sign(
 float target[],			/* target vector */
 float ak[],			/* LPCs for this subframe */

@@ -314,6 +314,213 @@ float *stack
    POP(stack);
 }
 
+
+
+
+void split_cb_search_nogain3(
+float target[],			/* target vector */
+float ak[],			/* LPCs for this subframe */
+float awk1[],			/* Weighted LPCs for this subframe */
+float awk2[],			/* Weighted LPCs for this subframe */
+void *par,                      /* Codebook/search parameters*/
+int   p,                        /* number of LPC coeffs */
+int   nsf,                      /* number of samples in subframe */
+float *exc,
+SpeexBits *bits,
+float *stack
+)
+{
+   int i,j,k,m,n,q;
+   float *resp;
+   float *t, *r, *e, *E;
+   /*FIXME: Should make this dynamic*/
+   float *tmp, *ot[20], *nt[20];
+   float *ndist;
+   int *itmp, *nind[20], *oind[20];
+
+   int *ind;
+   float *shape_cb;
+   int shape_cb_size, subvect_size, nb_subvect;
+   split_cb_params *params;
+   int N=4;
+   int *best_index;
+   float *best_dist;
+
+   params = (split_cb_params *) par;
+   subvect_size = params->subvect_size;
+   nb_subvect = params->nb_subvect;
+   shape_cb_size = 1<<params->shape_bits;
+   shape_cb = params->shape_cb;
+   resp = PUSH(stack, shape_cb_size*subvect_size);
+   t = PUSH(stack, nsf);
+   r = PUSH(stack, nsf);
+   e = PUSH(stack, nsf);
+   E = PUSH(stack, shape_cb_size);
+   ind = (int*)PUSH(stack, nb_subvect);
+
+   tmp = PUSH(stack, 2*N*nsf);
+   for (i=0;i<N;i++)
+   {
+      ot[i]=tmp;
+      tmp += nsf;
+      nt[i]=tmp;
+      tmp += nsf;
+   }
+
+   best_index = (int*)PUSH(stack, N);
+   best_dist = PUSH(stack, N);
+   ndist = PUSH(stack, N);
+   
+   itmp = (int*)PUSH(stack, 2*N*nb_subvect);
+   for (i=0;i<N;i++)
+   {
+      nind[i]=itmp;
+      itmp+=nb_subvect;
+      oind[i]=itmp;
+      itmp+=nb_subvect;
+      for (j=0;j<nb_subvect;j++)
+         nind[i][j]=oind[i][j]=-1;
+   }
+
+   for (j=0;j<N;j++)
+      for (i=0;i<nsf;i++)
+         ot[j][i]=target[i];
+
+   for (i=0;i<nsf;i++)
+      t[i]=target[i];
+
+   e[0]=1;
+   for (i=1;i<nsf;i++)
+      e[i]=0;
+   residue_zero(e, awk1, r, nsf, p);
+   syn_filt_zero(r, ak, r, nsf, p);
+   syn_filt_zero(r, awk2, r, nsf,p);
+   
+   /* Pre-compute codewords response and energy */
+   for (i=0;i<shape_cb_size;i++)
+   {
+      float *res = resp+i*subvect_size;
+
+      /* Compute codeword response */
+      int k;
+      for(j=0;j<subvect_size;j++)
+         res[j]=0;
+      for(j=0;j<subvect_size;j++)
+      {
+         for (k=j;k<subvect_size;k++)
+            res[k]+=shape_cb[i*subvect_size+j]*r[k-j];
+      }
+      E[i]=0;
+      for(j=0;j<subvect_size;j++)
+         E[i]+=res[j]*res[j];
+   }
+
+   /*For all subvectors*/
+   for (i=0;i<nb_subvect;i++)
+   {
+      /*"erase" nbest list*/
+      for (j=0;j<N;j++)
+         ndist[j]=-1;
+
+      /*For all n-bests of previous subvector*/
+      for (j=0;j<N;j++)
+      {
+         float *x=ot[j]+subvect_size*i;
+         /*Find new n-best based on previous n-best j*/
+         vq_nbest(x, resp, subvect_size, shape_cb_size, E, N, best_index, best_dist);
+
+         /*For all new n-bests*/
+         for (k=0;k<N;k++)
+         {
+            float err=0;
+            for (m=0;m<nsf;m++)
+               t[m]=ot[j][m];
+            for (m=0;m<subvect_size;m++)
+            {
+               float g=shape_cb[best_index[k]*subvect_size+m];
+               for (n=subvect_size*i+m,q=0;n<nsf;n++,q++)
+                  t[n] -= g*r[q];
+            }
+            
+            for (m=0;m<(i+1)*subvect_size;m++)
+               err += t[m]*t[m];
+            if (err<ndist[N-1] || ndist[N-1]<-.5)
+            {
+               for (m=0;m<N;m++)
+               {
+                  if (err < ndist[m] || ndist[m]<-.5)
+                  {
+                     for (n=N-1;n>m;n--)
+                     {
+                        for (q=0;q<nsf;q++)
+                           nt[n][q]=nt[n-1][q];
+                        for (q=0;q<nb_subvect;q++)
+                           nind[n][q]=nind[n-1][q];
+                        ndist[n]=ndist[n-1];
+                     }
+                     for (q=0;q<nsf;q++)
+                        nt[m][q]=t[q];
+                     for (q=0;q<nb_subvect;q++)
+                        nind[m][q]=oind[j][q];
+                     nind[m][i]=best_index[k];
+                     ndist[m]=err;
+                     break;
+                  }
+               }
+            }
+         }
+         if (i==0)
+           break;
+      }
+
+      for (j=0;j<N;j++)
+         for (m=0;m<nsf;m++)
+            ot[j][m]=nt[j][m];
+      for (j=0;j<N;j++)
+         for (m=0;m<nb_subvect;m++)
+            oind[j][m]=nind[j][m];
+
+   }
+
+   for (i=0;i<nb_subvect;i++)
+   {
+      ind[i]=nind[0][i];
+      speex_bits_pack(bits,ind[i],params->shape_bits);
+   }
+   
+   /* Put everything back together */
+   for (i=0;i<nb_subvect;i++)
+      for (j=0;j<subvect_size;j++)
+         e[subvect_size*i+j]=shape_cb[ind[i]*subvect_size+j];
+
+   /* Update excitation */
+   for (j=0;j<nsf;j++)
+      exc[j]+=e[j];
+   
+   /* Update target */
+   residue_zero(e, awk1, r, nsf, p);
+   syn_filt_zero(r, ak, r, nsf, p);
+   syn_filt_zero(r, awk2, r, nsf,p);
+   for (j=0;j<nsf;j++)
+      target[j]-=r[j];
+
+   POP(stack);
+   POP(stack);
+   POP(stack);
+   POP(stack);
+   POP(stack);
+   POP(stack);
+   POP(stack);
+   POP(stack);
+   POP(stack);
+   POP(stack);
+   POP(stack);
+}
+
+
+
+
+
 void split_cb_search_shape_sign(
 float target[],			/* target vector */
 float ak[],			/* LPCs for this subframe */
