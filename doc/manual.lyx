@@ -2139,12 +2139,62 @@ speexdec
 speexenc
 \layout Standard
 
-The encoder
+The encoder takes the following options:
+\layout Description
+
+--narrowband\SpecialChar ~
+(-n) Tells Speex to treat the input as narrowband (8 kHz).
+ This is the default
+\layout Description
+
+--wideband\SpecialChar ~
+(-w) Tells Speex to treat the input as wideband (16 kHz)
+\layout Description
+
+--quality\SpecialChar ~
+n Set the encoding quality (0-10)
+\layout Description
+
+--vbr Enable VBR (Variable Bit-Rate), disabled by default
+\layout Description
+
+--nframes\SpecialChar ~
+n Pack n frames in each Ogg packet (this saves space at low bit-rates)
+\layout Description
+
+--comp\SpecialChar ~
+n Set encoding speed/quality tradeoff.
+ The higher the value of n, the slower the encoding (default is 3)
+\layout Description
+
+--help\SpecialChar ~
+(-h) Print the help
+\layout Description
+
+--version\SpecialChar ~
+(-v) Pring version information
 \layout Subsection
 
 
 \emph on 
 speexdec
+\layout Standard
+
+The decoder takes the following options:
+\layout Description
+
+--pf enable post-filter (default)
+\layout Description
+
+--nopf disable post-filter
+\layout Description
+
+--help\SpecialChar ~
+(-h) Print the help
+\layout Description
+
+--version\SpecialChar ~
+(-v) Pring version information
 \layout Section
 
 Programming with Speex (the libspeex API)
@@ -2519,6 +2569,7 @@ Speex bit-streams can be stored in Ogg files.
 \end_inset 
 
 .
+ All integer fields are stored as little-endian.
 \layout Standard
 
 
