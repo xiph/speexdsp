@@ -28,7 +28,7 @@
 
 The Speex Codec Manual
 \newline 
-(version 1.1.5)
+(version 1.1.6)
 \layout Author
 
 Jean-Marc Valin
@@ -743,7 +743,7 @@ Encoding
 In order to encode speech using Speex, you first need to:
 \layout LyX-Code
 
-#include <speex.h>
+#include <speex/speex.h>
 \layout Standard
 
 You then need to declare a Speex bit-packing struct
@@ -880,7 +880,7 @@ Decoding
 In order to encode speech using Speex, you first need to:
 \layout LyX-Code
 
-#include <speex.h>
+#include <speex/speex.h>
 \layout Standard
 
 You also need to declare a Speex bit-packing struct
@@ -998,7 +998,7 @@ Preprocessor
 In order to use the Speex preprocessor, you first need to:
 \layout LyX-Code
 
-#include <speex_preprocess.h>
+#include <speex/speex_preprocess.h>
 \layout Standard
 
 Then, a preprocessor state can be created as:
@@ -5899,7 +5899,7 @@ IETF RTP Profile
 \layout Standard
 
 
-\begin_inset Include \verbatiminput{draft-herlein-speex-rtp-profile-01.txt}
+\begin_inset Include \verbatiminput{draft-herlein-avt-rtp-speex-00.txt}
 preview false
 
 \end_inset 
