@@ -56,25 +56,30 @@
 
 #define SUBMODE(x) st->submodes[st->submodeID]->x
 
+
 #ifdef FIXED_POINT
 spx_word32_t ol_gain_table[32]={18900, 25150, 33468, 44536, 59265, 78865, 104946, 139653, 185838, 247297, 329081, 437913, 582736, 775454, 1031906, 1373169, 1827293, 2431601, 3235761, 4305867, 5729870, 7624808, 10146425, 13501971, 17967238, 23909222, 31816294, 42338330, 56340132, 74972501, 99766822, 132760927};
-#endif
-
-#ifdef FIXED_POINT
 spx_word16_t exc_gain_quant_scal3_bound[7]={1841, 3883, 6051, 8062, 10444, 13580, 18560};
 spx_word16_t exc_gain_quant_scal3[8]={1002, 2680, 5086, 7016, 9108, 11781, 15380, 21740};
-#else
-float exc_gain_quant_scal3_bound[7]={0.112338, 0.236980, 0.369316, 0.492054, 0.637471, 0.828874, 1.132784};
-float exc_gain_quant_scal3[8]={0.061130, 0.163546, 0.310413, 0.428220, 0.555887, 0.719055, 0.938694, 1.326874};
-#endif
-
-#ifdef FIXED_POINT
 spx_word16_t exc_gain_quant_scal1_bound[1]={14385};
 spx_word16_t exc_gain_quant_scal1[2]={11546, 17224};
+
+#define LSP_MARGIN 16
+#define LSP_DELTA 
+
 #else
+
+float exc_gain_quant_scal3_bound[7]={0.112338, 0.236980, 0.369316, 0.492054, 0.637471, 0.828874, 1.132784};
+float exc_gain_quant_scal3[8]={0.061130, 0.163546, 0.310413, 0.428220, 0.555887, 0.719055, 0.938694, 1.326874};
 float exc_gain_quant_scal1_bound[1]={0.87798};
 float exc_gain_quant_scal1[2]={0.70469, 1.05127};
+
+#define LSP_MARGIN .002
+#define LSP_DELTA 
+
 #endif
+
+
 
 
 #define sqr(x) ((x)*(x))
@@ -284,7 +289,7 @@ int nb_encode(void *state, short *in, SpeexBits *bits)
       else
          lsp_interpolate(st->old_lsp, st->lsp, st->interp_lsp, st->lpcSize, st->nbSubframes, st->nbSubframes<<1);
 
-      lsp_enforce_margin(st->interp_lsp, st->lpcSize, .002);
+      lsp_enforce_margin(st->interp_lsp, st->lpcSize, LSP_MARGIN);
 
       /* Compute interpolated LPCs (unquantized) for whole frame*/
       lsp_to_lpc(st->interp_lsp, st->interp_lpc, st->lpcSize,stack);
@@ -657,8 +662,8 @@ int nb_encode(void *state, short *in, SpeexBits *bits)
       lsp_interpolate(st->old_qlsp, st->qlsp, st->interp_qlsp, st->lpcSize, sub, st->nbSubframes);
 
       /* Make sure the filters are stable */
-      lsp_enforce_margin(st->interp_lsp, st->lpcSize, .002);
-      lsp_enforce_margin(st->interp_qlsp, st->lpcSize, .002);
+      lsp_enforce_margin(st->interp_lsp, st->lpcSize, LSP_MARGIN);
+      lsp_enforce_margin(st->interp_qlsp, st->lpcSize, LSP_MARGIN);
 
       /* Compute interpolated LPCs (quantized and unquantized) */
       lsp_to_lpc(st->interp_lsp, st->interp_lpc, st->lpcSize,stack);
@@ -1402,7 +1407,7 @@ int nb_decode(void *state, SpeexBits *bits, short *out)
       lsp_interpolate(st->old_qlsp, st->qlsp, st->interp_qlsp, st->lpcSize, sub, st->nbSubframes);
 
       /* Make sure the LSP's are stable */
-      lsp_enforce_margin(st->interp_qlsp, st->lpcSize, .002);
+      lsp_enforce_margin(st->interp_qlsp, st->lpcSize, LSP_MARGIN);
 
 
       /* Compute interpolated LPCs (unquantized) */

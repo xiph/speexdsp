@@ -55,6 +55,12 @@
 
 #ifdef FIXED_POINT
 spx_word16_t gc_quant_bound[16] = {125, 164, 215, 282, 370, 484, 635, 832, 1090, 1428, 1871, 2452, 3213, 4210, 5516, 7228};
+#define LSP_MARGIN 410
+
+#else
+
+#define LSP_MARGIN .05
+
 #endif
 
 #define QMF_ORDER 64
@@ -509,8 +515,8 @@ int sb_encode(void *state, short *in, SpeexBits *bits)
       lsp_interpolate(st->old_lsp, st->lsp, st->interp_lsp, st->lpcSize, sub, st->nbSubframes);
       lsp_interpolate(st->old_qlsp, st->qlsp, st->interp_qlsp, st->lpcSize, sub, st->nbSubframes);
 
-      lsp_enforce_margin(st->interp_lsp, st->lpcSize, .05);
-      lsp_enforce_margin(st->interp_qlsp, st->lpcSize, .05);
+      lsp_enforce_margin(st->interp_lsp, st->lpcSize, LSP_MARGIN);
+      lsp_enforce_margin(st->interp_qlsp, st->lpcSize, LSP_MARGIN);
 
       lsp_to_lpc(st->interp_lsp, st->interp_lpc, st->lpcSize,stack);
       lsp_to_lpc(st->interp_qlsp, st->interp_qlpc, st->lpcSize, stack);
@@ -978,7 +984,7 @@ int sb_decode(void *state, SpeexBits *bits, short *out)
       /* LSP interpolation */
       lsp_interpolate(st->old_qlsp, st->qlsp, st->interp_qlsp, st->lpcSize, sub, st->nbSubframes);
 
-      lsp_enforce_margin(st->interp_qlsp, st->lpcSize, .05);
+      lsp_enforce_margin(st->interp_qlsp, st->lpcSize, LSP_MARGIN);
 
       /* LSP to LPC */
       lsp_to_lpc(st->interp_qlsp, st->interp_qlpc, st->lpcSize, stack);

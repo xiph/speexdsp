@@ -515,11 +515,11 @@ void lsp_to_lpc(spx_lsp_t *freq,spx_coef_t *ak,int lpcrdr, char *stack)
 #ifdef FIXED_POINT
 
 /*Makes sure the LSPs are stable*/
-void lsp_enforce_margin(spx_lsp_t *lsp, int len, float margin)
+void lsp_enforce_margin(spx_lsp_t *lsp, int len, spx_word16_t margin)
 {
    int i;
-   spx_word16_t m = LSP_SCALING*margin;
-   spx_word16_t m2 = (LSP_SCALING*M_PI)-LSP_SCALING*margin;
+   spx_word16_t m = margin;
+   spx_word16_t m2 = 25736-margin;
   
    if (lsp[0]<m)
       lsp[0]=m;
@@ -550,7 +550,7 @@ void lsp_interpolate(spx_lsp_t *old_lsp, spx_lsp_t *new_lsp, spx_lsp_t *interp_l
 #else
 
 /*Makes sure the LSPs are stable*/
-void lsp_enforce_margin(spx_lsp_t *lsp, int len, float margin)
+void lsp_enforce_margin(spx_lsp_t *lsp, int len, spx_word16_t margin)
 {
    int i;
    if (lsp[0]<LSP_SCALING*margin)
