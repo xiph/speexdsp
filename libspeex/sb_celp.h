@@ -88,6 +88,7 @@ typedef struct SBEncState {
    float *mem_sp;              /**< Synthesis signal memory */
    float *mem_sp2;
    float *mem_sw;              /**< Perceptual signal memory */
+   float *pi_gain;
 
    SpeexSubmode **submodes;
    int    submodeID;
@@ -120,6 +121,7 @@ typedef struct SBDecState {
    float *interp_qlpc;
 
    float *mem_sp;
+   float *pi_gain;
 
    SpeexSubmode **submodes;
    int    submodeID;

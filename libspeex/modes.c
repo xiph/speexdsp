@@ -323,6 +323,7 @@ static SpeexNBMode nb_mode = {
 };
 
 
+/* Default mode for narrowband */
 SpeexMode speex_nb_mode = {
    &nb_mode,
    nb_mode_query,
@@ -338,6 +339,9 @@ SpeexMode speex_nb_mode = {
    &nb_encoder_ctl,
    &nb_decoder_ctl,
 };
+
+
+/* Wideband part */
 
 static SpeexSubmode wb_submode1 = {
    0,
@@ -446,7 +450,7 @@ static SpeexSBMode sb_wb_mode = {
 SpeexMode speex_wb_mode = {
    &sb_wb_mode,
    wb_mode_query,
-   "full-rate wideband (sub-band CELP)",
+   "wideband (sub-band CELP)",
    1,
    4,
    &sb_encoder_init,
@@ -458,6 +462,46 @@ SpeexMode speex_wb_mode = {
    &sb_encoder_ctl,
    &sb_decoder_ctl,
 };
+
+
+
+/* "Ultra-wideband" mode stuff */
+
+
+
+/* Split-band "ultra-wideband" (32 kbps) CELP mode*/
+static SpeexSBMode sb_uwb_mode = {
+   &speex_wb_mode,
+   320,    /*frameSize*/
+   80,     /*subframeSize*/
+   8,     /*lpcSize*/
+   1280,    /*bufSize*/
+   .9,    /*gamma1*/
+   0.6,    /*gamma2*/
+   .002,   /*lag_factor*/
+   1.0001, /*lpc_floor*/
+   0.0,    /*preemph*/
+   {NULL, &wb_submode1, NULL, NULL, NULL, NULL, NULL, NULL},
+   1
+};
+
+
+SpeexMode speex_uwb_mode = {
+   &sb_uwb_mode,
+   wb_mode_query,
+   "ultra-wideband (sub-band CELP)",
+   1,
+   4,
+   &sb_encoder_init,
+   &sb_encoder_destroy,
+   &sb_encode,
+   &sb_decoder_init,
+   &sb_decoder_destroy,
+   &sb_decode,
+   &sb_encoder_ctl,
+   &sb_decoder_ctl,
+};
+
 
 
 

@@ -1283,6 +1283,30 @@ void nb_encoder_ctl(void *state, int request, void *ptr)
       else
          (*(int*)ptr) = 50*(NB_SUBMODE_BITS+1);
       break;
+   case SPEEX_GET_PI_GAIN:
+      {
+         int i;
+         float *g = (float*)ptr;
+         for (i=0;i<st->nbSubframes;i++)
+            g[i]=st->pi_gain[i];
+      }
+      break;
+   case SPEEX_GET_EXC:
+      {
+         int i;
+         float *e = (float*)ptr;
+         for (i=0;i<st->frameSize;i++)
+            e[i]=st->exc[i];
+      }
+      break;
+   case SPEEX_GET_INNOV:
+      {
+         int i;
+         float *e = (float*)ptr;
+         for (i=0;i<st->frameSize;i++)
+            e[i]=st->innov[i];
+      }
+      break;
    default:
       fprintf(stderr, "Unknown nb_ctl request: %d\n", request);
    }
@@ -1323,6 +1347,30 @@ void nb_decoder_ctl(void *state, int request, void *ptr)
          st->user_callback.func=c->func;
          st->user_callback.data=c->data;
          st->user_callback.callback_id=c->callback_id;
+      }
+      break;
+   case SPEEX_GET_PI_GAIN:
+      {
+         int i;
+         float *g = (float*)ptr;
+         for (i=0;i<st->nbSubframes;i++)
+            g[i]=st->pi_gain[i];
+      }
+      break;
+   case SPEEX_GET_EXC:
+      {
+         int i;
+         float *e = (float*)ptr;
+         for (i=0;i<st->frameSize;i++)
+            e[i]=st->exc[i];
+      }
+      break;
+   case SPEEX_GET_INNOV:
+      {
+         int i;
+         float *e = (float*)ptr;
+         for (i=0;i<st->frameSize;i++)
+            e[i]=st->innov[i];
       }
       break;
    default:

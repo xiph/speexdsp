@@ -100,6 +100,11 @@ extern "C" {
 #define SPEEX_SET_USER_HANDLER 22
 
 
+   /* Used internally, not to be used in applications */
+#define SPEEX_GET_PI_GAIN 100
+#define SPEEX_GET_EXC     101
+#define SPEEX_GET_INNOV   102
+
 
 /* Preserving compatibility:*/
 /** Equivalent to SPEEX_SET_ENH */
@@ -277,6 +282,9 @@ extern SpeexMode speex_nb_mode;
 
 /** Default wideband mode */
 extern SpeexMode speex_wb_mode;
+
+/** Default "ultra-wideband" mode */
+extern SpeexMode speex_uwb_mode;
 
 /** List of all modes availavle */
 extern SpeexMode *speex_mode_list[SPEEX_NB_MODES];
