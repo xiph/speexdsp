@@ -6,7 +6,3 @@ Codec
 
 Bit-stream
 - support for TTY/DTMF
-
-API
-- Add bit-stream request handling and encoder/decoder pairing
-- Add callbacks for user-defined inf

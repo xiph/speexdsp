@@ -6,7 +6,7 @@ Summary: An open-source, patent-free speech codec
 Name: %name
 Version: %ver
 Release: %rel
-Copyright: LGPL
+Copyright: BSD
 Group: Application/Devel
 Source: http://prdownloads.sourceforge.net/speex/%{name}-%{ver}.tar.gz
 URL: http://speex.sourceforge.net/
