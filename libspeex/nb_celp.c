@@ -72,9 +72,12 @@ void *nb_encoder_init(SpeexMode *m)
    int i;
 
    mode=(SpeexNBMode *)m->mode;
-   st = (EncState*)speex_alloc(sizeof(EncState));
+   st = (EncState*)speex_alloc(sizeof(EncState)+8000*sizeof(float));
    if (!st)
       return NULL;
+
+   st->stack = ((char*)st) + sizeof(EncState);
+   
    st->mode=m;
 
    st->frameSize = mode->frameSize;
@@ -98,70 +101,68 @@ void *nb_encoder_init(SpeexMode *m)
    st->bounded_pitch = 1;
 
    /* Allocating input buffer */
-   st->inBuf = (float*)speex_alloc(st->bufSize*sizeof(float));
+   st->inBuf = PUSH(st->stack, st->bufSize, float);
    st->frame = st->inBuf + st->bufSize - st->windowSize;
    /* Allocating excitation buffer */
-   st->excBuf = (float*)speex_alloc(st->bufSize*sizeof(float));
+   st->excBuf = PUSH(st->stack, st->bufSize, float);
    st->exc = st->excBuf + st->bufSize - st->windowSize;
-   st->swBuf = (float*)speex_alloc(st->bufSize*sizeof(float));
+   st->swBuf = PUSH(st->stack, st->bufSize, float);
    st->sw = st->swBuf + st->bufSize - st->windowSize;
 
-   st->exc2Buf = (float*)speex_alloc(st->bufSize*sizeof(float));
+   st->exc2Buf = PUSH(st->stack, st->bufSize, float);
    st->exc2 = st->exc2Buf + st->bufSize - st->windowSize;
 
-   st->innov = (float*)speex_alloc(st->frameSize*sizeof(float));
+   st->innov = PUSH(st->stack, st->frameSize, float);
 
    /* Asymetric "pseudo-Hamming" window */
    {
       int part1, part2;
       part1 = st->subframeSize*7/2;
       part2 = st->subframeSize*5/2;
-      st->window = (float*)speex_alloc(st->windowSize*sizeof(float));
+      st->window = PUSH(st->stack, st->windowSize, float);
       for (i=0;i<part1;i++)
          st->window[i]=.54-.46*cos(M_PI*i/part1);
       for (i=0;i<part2;i++)
          st->window[part1+i]=.54+.46*cos(M_PI*i/part2);
    }
    /* Create the window for autocorrelation (lag-windowing) */
-   st->lagWindow = (float*)speex_alloc((st->lpcSize+1)*sizeof(float));
+   st->lagWindow = PUSH(st->stack, st->lpcSize+1, float);
    for (i=0;i<st->lpcSize+1;i++)
       st->lagWindow[i]=exp(-.5*sqr(2*M_PI*st->lag_factor*i));
 
-   st->autocorr = (float*)speex_alloc((st->lpcSize+1)*sizeof(float));
+   st->autocorr = PUSH(st->stack, st->lpcSize+1, float);
 
-   st->stack = (char*)speex_alloc(4000*sizeof(float));
+   st->buf2 = PUSH(st->stack, st->windowSize, float);
 
-   st->buf2 = (float*)speex_alloc(st->windowSize*sizeof(float));
+   st->lpc = PUSH(st->stack, st->lpcSize+1, float);
+   st->interp_lpc = PUSH(st->stack, st->lpcSize+1, float);
+   st->interp_qlpc = PUSH(st->stack, st->lpcSize+1, float);
+   st->bw_lpc1 = PUSH(st->stack, st->lpcSize+1, float);
+   st->bw_lpc2 = PUSH(st->stack, st->lpcSize+1, float);
 
-   st->lpc = (float*)speex_alloc((st->lpcSize+1)*sizeof(float));
-   st->interp_lpc = (float*)speex_alloc((st->lpcSize+1)*sizeof(float));
-   st->interp_qlpc = (float*)speex_alloc((st->lpcSize+1)*sizeof(float));
-   st->bw_lpc1 = (float*)speex_alloc((st->lpcSize+1)*sizeof(float));
-   st->bw_lpc2 = (float*)speex_alloc((st->lpcSize+1)*sizeof(float));
-
-   st->lsp = (float*)speex_alloc(st->lpcSize*sizeof(float));
-   st->qlsp = (float*)speex_alloc(st->lpcSize*sizeof(float));
-   st->old_lsp = (float*)speex_alloc(st->lpcSize*sizeof(float));
-   st->old_qlsp = (float*)speex_alloc(st->lpcSize*sizeof(float));
-   st->interp_lsp = (float*)speex_alloc(st->lpcSize*sizeof(float));
-   st->interp_qlsp = (float*)speex_alloc(st->lpcSize*sizeof(float));
-   st->rc = (float*)speex_alloc(st->lpcSize*sizeof(float));
+   st->lsp = PUSH(st->stack, st->lpcSize, float);
+   st->qlsp = PUSH(st->stack, st->lpcSize, float);
+   st->old_lsp = PUSH(st->stack, st->lpcSize, float);
+   st->old_qlsp = PUSH(st->stack, st->lpcSize, float);
+   st->interp_lsp = PUSH(st->stack, st->lpcSize, float);
+   st->interp_qlsp = PUSH(st->stack, st->lpcSize, float);
+   st->rc = PUSH(st->stack, st->lpcSize, float);
    st->first = 1;
    for (i=0;i<st->lpcSize;i++)
    {
       st->lsp[i]=(M_PI*((float)(i+1)))/(st->lpcSize+1);
    }
 
-   st->mem_sp = (float*)speex_alloc(st->lpcSize*sizeof(float));
-   st->mem_sw = (float*)speex_alloc(st->lpcSize*sizeof(float));
-   st->mem_sw_whole = (float*)speex_alloc(st->lpcSize*sizeof(float));
-   st->mem_exc = (float*)speex_alloc(st->lpcSize*sizeof(float));
+   st->mem_sp = PUSH(st->stack, st->lpcSize, float);
+   st->mem_sw = PUSH(st->stack, st->lpcSize, float);
+   st->mem_sw_whole = PUSH(st->stack, st->lpcSize, float);
+   st->mem_exc = PUSH(st->stack, st->lpcSize, float);
 
-   st->pi_gain = (float*)speex_alloc(st->nbSubframes*sizeof(float));
+   st->pi_gain = PUSH(st->stack, st->nbSubframes, float);
 
-   st->pitch = (int*)speex_alloc(st->nbSubframes*sizeof(int));
+   st->pitch = PUSH(st->stack, st->nbSubframes, int);
 
-   st->vbr = (VBRState*)speex_alloc(sizeof(VBRState));
+   st->vbr = PUSHS(st->stack, VBRState);
    vbr_init(st->vbr);
    st->vbr_quality = 8;
    st->vbr_enabled = 0;
@@ -181,40 +182,8 @@ void nb_encoder_destroy(void *state)
 {
    EncState *st=(EncState *)state;
    /* Free all allocated memory */
-   speex_free(st->inBuf);
-   speex_free(st->excBuf);
-   speex_free(st->swBuf);
-   speex_free(st->exc2Buf);
-   speex_free(st->innov);
-   speex_free(st->stack);
-
-   speex_free(st->window);
-   speex_free(st->buf2);
-   speex_free(st->lpc);
-   speex_free(st->interp_lpc);
-   speex_free(st->interp_qlpc);
-   
-   speex_free(st->bw_lpc1);
-   speex_free(st->bw_lpc2);
-   speex_free(st->autocorr);
-   speex_free(st->lagWindow);
-   speex_free(st->lsp);
-   speex_free(st->qlsp);
-   speex_free(st->old_lsp);
-   speex_free(st->interp_lsp);
-   speex_free(st->old_qlsp);
-   speex_free(st->interp_qlsp);
-   speex_free(st->rc);
-
-   speex_free(st->mem_sp);
-   speex_free(st->mem_sw);
-   speex_free(st->mem_sw_whole);
-   speex_free(st->mem_exc);
-   speex_free(st->pi_gain);
-   speex_free(st->pitch);
 
    vbr_destroy(st->vbr);
-   speex_free(st->vbr);
 
    /*Free state memory... should be last*/
    speex_free((float*)st);
@@ -853,8 +822,10 @@ void *nb_decoder_init(SpeexMode *m)
    int i;
 
    mode=(SpeexNBMode*)m->mode;
-   st = (DecState *)speex_alloc(sizeof(DecState));
+   st = (DecState *)speex_alloc(sizeof(DecState)+4000*sizeof(float));
    st->mode=m;
+
+   st->stack = ((char*)st) + sizeof(DecState);
 
    st->first=1;
    /* Codec parameters, should eventually have several "modes"*/
@@ -876,27 +847,26 @@ void *nb_decoder_init(SpeexMode *m)
    st->pre_mem=0;
    st->lpc_enh_enabled=0;
 
-   st->stack = (char*)speex_alloc(2000*sizeof(float));
 
-   st->inBuf = (float*)speex_alloc(st->bufSize*sizeof(float));
+   st->inBuf = PUSH(st->stack, st->bufSize, float);
    st->frame = st->inBuf + st->bufSize - st->windowSize;
-   st->excBuf = (float*)speex_alloc(st->bufSize*sizeof(float));
+   st->excBuf = PUSH(st->stack, st->bufSize, float);
    st->exc = st->excBuf + st->bufSize - st->windowSize;
    for (i=0;i<st->bufSize;i++)
       st->inBuf[i]=0;
    for (i=0;i<st->bufSize;i++)
       st->excBuf[i]=0;
-   st->innov = (float*)speex_alloc(st->frameSize*sizeof(float));
+   st->innov = PUSH(st->stack, st->frameSize, float);
 
-   st->interp_qlpc = (float*)speex_alloc((st->lpcSize+1)*sizeof(float));
-   st->qlsp = (float*)speex_alloc(st->lpcSize*sizeof(float));
-   st->old_qlsp = (float*)speex_alloc(st->lpcSize*sizeof(float));
-   st->interp_qlsp = (float*)speex_alloc(st->lpcSize*sizeof(float));
-   st->mem_sp = (float*)speex_alloc(5*st->lpcSize*sizeof(float));
-   st->comb_mem = (CombFilterMem *) speex_alloc(sizeof(CombFilterMem));
+   st->interp_qlpc = PUSH(st->stack, st->lpcSize+1, float);
+   st->qlsp = PUSH(st->stack, st->lpcSize, float);
+   st->old_qlsp = PUSH(st->stack, st->lpcSize, float);
+   st->interp_qlsp = PUSH(st->stack, st->lpcSize, float);
+   st->mem_sp = PUSH(st->stack, 5*st->lpcSize, float);
+   st->comb_mem = PUSHS(st->stack, CombFilterMem);
    comp_filter_mem_init (st->comb_mem);
 
-   st->pi_gain = (float*)speex_alloc(st->nbSubframes*sizeof(float));
+   st->pi_gain = PUSH(st->stack, st->nbSubframes, float);
    st->last_pitch = 40;
    st->count_lost=0;
    st->pitch_gain_buf[0] = st->pitch_gain_buf[1] = st->pitch_gain_buf[2] = 0;
@@ -920,17 +890,6 @@ void nb_decoder_destroy(void *state)
 {
    DecState *st;
    st=(DecState*)state;
-   speex_free(st->inBuf);
-   speex_free(st->excBuf);
-   speex_free(st->innov);
-   speex_free(st->interp_qlpc);
-   speex_free(st->qlsp);
-   speex_free(st->old_qlsp);
-   speex_free(st->interp_qlsp);
-   speex_free(st->stack);
-   speex_free(st->mem_sp);
-   speex_free(st->pi_gain);
-   speex_free(st->comb_mem);
    
    speex_free(state);
 }
