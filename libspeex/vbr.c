@@ -47,8 +47,8 @@
 
 float vbr_nb_thresh[8][11]={
    {-1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0}, /* silence */
-   { 3.9,  2.5,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0, -1.0}, /*  2 kbps */
-   { 8.0,  5.6,  4.7,  4.2,  3.9,  3.5,  3.0,  2.5,  2.0,  1.0,  0.0}, /*  6 kbps */
+   {-.01, -0.2, -0.3, -0.4, -0.5, -0.6, -0.7, -0.8, -0.9, -0.9, -1.0}, /*  2 kbps */
+   { 8.5,  5.6,  4.7,  4.2,  3.9,  3.5,  3.0,  2.5,  2.0,  1.0,  0.0}, /*  6 kbps */
    {11.0,  8.5,  7.5,  6.5,  5.0,  3.9,  3.9,  3.9,  3.5,  3.0,  1.0}, /*  8 kbps */
    {11.0, 11.0,  9.9,  9.0,  8.0,  7.0,  6.5,  6.0,  5.0,  4.0,  2.0}, /* 11 kbps */
    {11.0, 11.0, 11.0, 11.0,  9.5,  9.0,  8.0,  7.0,  6.5,  5.0,  3.0}, /* 15 kbps */
@@ -211,13 +211,32 @@ float vbr_analysis(VBRState *vbr, float *sig, int len, int pitch, float pitch_co
    if (qual>10)
       qual=10;
    
+   /*
    if (vbr->consec_noise>=2)
       qual-=1.3;
    if (vbr->consec_noise>=5)
       qual-=1.3;
    if (vbr->consec_noise>=12)
       qual-=1.3;
+   */
+   if (vbr->consec_noise)
+      qual-=.8*log(2.0 + vbr->consec_noise);
+   if (qual<0)
+      qual=0;
    
+   if (ener<60000)
+   {
+      if (vbr->consec_noise)
+         qual-=0.8*log(2.0 + vbr->consec_noise);
+      if (ener<10000&&vbr->consec_noise)
+         qual-=0.8*log(2.0 + vbr->consec_noise);
+      if (qual<0)
+         qual=0;
+      qual += .3*log(ener/60000.0);
+   }
+   if (qual<-1)
+      qual=-1;
+
    vbr->last_pitch_coef = pitch_coef;
    vbr->last_quality = qual;
 

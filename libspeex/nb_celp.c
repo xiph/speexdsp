@@ -335,7 +335,7 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
                                nol_pitch, nol_pitch_coef, 6, stack);
          ol_pitch=nol_pitch[0];
          ol_pitch_coef = nol_pitch_coef[0];
-         printf ("%f %d %d %d %d %d %d ", ol_pitch_coef, nol_pitch[0], nol_pitch[1], nol_pitch[2], nol_pitch[3], nol_pitch[4], nol_pitch[5]);
+         /*printf ("%f %d %d %d %d %d %d ", ol_pitch_coef, nol_pitch[0], nol_pitch[1], nol_pitch[2], nol_pitch[3], nol_pitch[4], nol_pitch[5]);*/
          /*Try to remove pitch multiples*/
          for (i=1;i<6;i++)
          {
@@ -347,7 +347,7 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
                ol_pitch = nol_pitch[i];
             }
          }
-         printf ("%d\n", ol_pitch);
+         /*printf ("%d\n", ol_pitch);*/
          /*if (ol_pitch>50)
            ol_pitch/=2;*/
          /*ol_pitch_coef = sqrt(ol_pitch_coef);*/
