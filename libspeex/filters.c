@@ -72,7 +72,7 @@ void signal_mul(spx_sig_t *x, spx_sig_t *y, spx_word32_t scale, int len)
    int i;
    for (i=0;i<len;i++)
    {
-      y[i] = MULT16_32_Q14((x[i]>>4),scale)<<4;
+      y[i] = SHL(MULT16_32_Q14(SHR(x[i],7),scale),7);
    }
 }
 
