@@ -40,6 +40,11 @@ void filter_mem2(float *x, float *_num, float *_den, float *y, int N, int ord, f
    num = (float*)(((int)(__num+4))&0xfffffff0)-1;
    den = (float*)(((int)(__den+4))&0xfffffff0)-1;
    mem = (float*)(((int)(__mem+4))&0xfffffff0)-1;
+   for (i=0;i<=10;i++)
+      num[i]=den[i]=0;
+   for (i=0;i<10;i++)
+      mem[i]=0;
+
    for (i=0;i<ord+1;i++)
    {
       num[i]=_num[i];
@@ -221,6 +226,10 @@ void iir_mem2(float *x, float *_den, float *y, int N, int ord, float *_mem)
 
    den = (float*)(((int)(__den+4))&0xfffffff0)-1;
    mem = (float*)(((int)(__mem+4))&0xfffffff0)-1;
+   for (i=0;i<=10;i++)
+      den[i]=0;
+   for (i=0;i<10;i++)
+      mem[i]=0;
    for (i=0;i<ord+1;i++)
    {
       den[i]=_den[i];

@@ -401,7 +401,7 @@ int main(int argc, char **argv)
    srand(time(NULL));
    if (ogg_stream_init(&os, rand())==-1)
    {
-      fprintf(stderr,"Stream init failed\n");
+      fprintf(stderr,"Error: stream init failed\n");
       exit(1);
    }
 
@@ -447,35 +447,35 @@ int main(int argc, char **argv)
    {
       if (rate>48000)
       {
-         fprintf (stderr, "Sampling rate too high: %d Hz, try down-sampling\n", rate);
+         fprintf (stderr, "Error: sampling rate too high: %d Hz, try down-sampling\n", rate);
          exit(1);
       } else if (rate>25000)
       {
          if (mode!=&speex_uwb_mode)
          {
-            fprintf (stderr, "WARNING: Trying to encode in %s at %d Hz. I'll do it but I suggest you try ultra-wideband instead\n", mode->modeName , rate);
+            fprintf (stderr, "Warning: Trying to encode in %s at %d Hz. I'll do it but I suggest you try ultra-wideband instead\n", mode->modeName , rate);
          }
       } else if (rate>12500)
       {
          if (mode!=&speex_wb_mode)
          {
-            fprintf (stderr, "WARNING: Trying to encode in %s at %d Hz. I'll do it but I suggest you try wideband instead\n", mode->modeName , rate);
+            fprintf (stderr, "Warning: Trying to encode in %s at %d Hz. I'll do it but I suggest you try wideband instead\n", mode->modeName , rate);
          }
-      } else if (rate>6000)
+      } else if (rate>=6000)
       {
          if (mode!=&speex_nb_mode)
          {
-            fprintf (stderr, "WARNING: Trying to encode in %s at %d Hz. I'll do it but I suggest you try narrowband instead\n", mode->modeName , rate);
+            fprintf (stderr, "Warning: Trying to encode in %s at %d Hz. I'll do it but I suggest you try narrowband instead\n", mode->modeName , rate);
          }
       } else {
-         fprintf (stderr, "Sampling rate too low: %d Hz\n", rate);
+         fprintf (stderr, "Error: sampling rate too low: %d Hz\n", rate);
          exit(1);
       }
    } else if (!mode)
    {
       if (rate>48000)
       {
-         fprintf (stderr, "Bit-rate too high: %d Hz, try down-sampling\n", rate);
+         fprintf (stderr, "Error: sampling rate too high: %d Hz, try down-sampling\n", rate);
          exit(1);
       } else if (rate>25000)
       {
@@ -483,11 +483,11 @@ int main(int argc, char **argv)
       } else if (rate>12500)
       {
          mode=&speex_wb_mode;
-      } else if (rate>6000)
+      } else if (rate>=6000)
       {
          mode=&speex_nb_mode;
       } else {
-         fprintf (stderr, "Bit-rate too low: %d Hz\n", rate);
+         fprintf (stderr, "Error: Sampling rate too low: %d Hz\n", rate);
          exit(1);
       }
    } else if (!rate)
@@ -569,7 +569,7 @@ int main(int argc, char **argv)
          ret = oe_write_page(&og, fout);
          if(ret != og.header_len + og.body_len)
          {
-            fprintf (stderr,"Failed writing header to output stream\n");
+            fprintf (stderr,"Error: failed writing header to output stream\n");
             exit(1);
          }
          else
@@ -593,7 +593,7 @@ int main(int argc, char **argv)
    if (bitrate)
    {
       if (quality >= 0 && vbr_enabled)
-         fprintf (stderr, "--bitrate option is overriding --quality\n");
+         fprintf (stderr, "Warning: --bitrate option is overriding --quality\n");
       speex_encoder_ctl(st, SPEEX_SET_BITRATE, &bitrate);
    }
    if (vbr_enabled)
@@ -609,6 +609,14 @@ int main(int argc, char **argv)
       if (dtx_enabled)
          speex_encoder_ctl(st, SPEEX_SET_DTX, &tmp);
    }
+   if (dtx_enabled && !(vbr_enabled || abr_enabled || vad_enabled))
+   {
+      fprintf (stderr, "Warning: --dtx is useless without --vad\n");
+   } else if ((vbr_enabled || abr_enabled) && (vad_enabled || dtx_enabled))
+   {
+      fprintf (stderr, "Warning: --vad and --dtx are already implied by --vbr or --abr\n");
+   }
+
    if (abr_enabled)
    {
       speex_encoder_ctl(st, SPEEX_SET_ABR, &abr_enabled);
@@ -683,7 +691,7 @@ int main(int argc, char **argv)
          ret = oe_write_page(&og, fout);
          if(ret != og.header_len + og.body_len)
          {
-            fprintf (stderr,"Failed writing header to output stream\n");
+            fprintf (stderr,"Error: failed writing header to output stream\n");
             exit(1);
          }
          else
@@ -712,7 +720,7 @@ int main(int argc, char **argv)
       ret = oe_write_page(&og, fout);
       if(ret != og.header_len + og.body_len)
       {
-         fprintf (stderr,"Failed writing header to output stream\n");
+         fprintf (stderr,"Error: failed writing header to output stream\n");
          exit(1);
       }
       else
