@@ -495,7 +495,7 @@ int nb_encode(void *state, float *in, SpeexBits *bits)
    
    /*Quantize and transmit open-loop excitation gain*/
    {
-      int qe = (int)(floor(3.5*log(ol_gain)));
+      int qe = (int)(floor(.5+3.5*log(ol_gain)));
       if (qe<0)
          qe=0;
       if (qe>31)
