@@ -39,21 +39,9 @@ Source: "..\include\speex\speex_callbacks.h"; DestDir: "{app}\libspeex\include";
 Source: "..\include\speex\speex_echo.h"; DestDir: "{app}\libspeex\include"; Flags: ignoreversion
 Source: "..\include\speex\speex_header.h"; DestDir: "{app}\libspeex\include"; Flags: ignoreversion
 Source: "..\include\speex\speex_jitter.h"; DestDir: "{app}\libspeex\include"; Flags: ignoreversion
-Source: "..\include\speex\speex_noglobals.h"; DestDir: "{app}\libspeex\include"; Flags: ignoreversion
 Source: "..\include\speex\speex_preprocess.h"; DestDir: "{app}\libspeex\include"; Flags: ignoreversion
 Source: "..\include\speex\speex_stereo.h"; DestDir: "{app}\libspeex\include"; Flags: ignoreversion
-Source: "..\doc\draft-herlein-avt-rtp-speex-00.txt"; DestDir: "{app}\doc"; Flags: ignoreversion
-Source: "..\doc\manual.lyx"; DestDir: "{app}\doc"; Flags: ignoreversion
 Source: "..\doc\manual.pdf"; DestDir: "{app}\doc"; Flags: ignoreversion
-Source: "..\doc\programming.html"; DestDir: "{app}\doc"; Flags: ignoreversion
-Source: "..\doc\rtp.txt"; DestDir: "{app}\doc"; Flags: ignoreversion
-Source: "..\doc\sampledec.c"; DestDir: "{app}\doc"; Flags: ignoreversion
-Source: "..\doc\sampleenc.c"; DestDir: "{app}\doc"; Flags: ignoreversion
-Source: "..\html\index.html"; DestDir: "{app}\html"; Flags: ignoreversion
-Source: "..\html\patents.html"; DestDir: "{app}\html"; Flags: ignoreversion
-Source: "..\html\speex.png"; DestDir: "{app}\html"; Flags: ignoreversion
-Source: "..\html\speex.webprj"; DestDir: "{app}\html"; Flags: ignoreversion
-Source: "..\html\speex.xcf"; DestDir: "{app}\html"; Flags: ignoreversion
 
 [Run]
 
