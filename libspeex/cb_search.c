@@ -54,24 +54,24 @@ static void compute_weighted_codebook(const signed char *shape_cb, const spx_sig
 
       res = resp+i*subvect_size;
       shape = shape_cb+i*subvect_size;
+      E[i]=0;
 
       /* Compute codeword response using convolution with impulse response */
       for(j=0;j<subvect_size;j++)
       {
          spx_word32_t resj=0;
          for (k=0;k<=j;k++)
-            resj = MAC16_16_Q11(resj,shape[k],r[j-k]);
-#ifndef FIXED_POINT
+            resj = MAC16_16(resj,shape[k],r[j-k]);
+#ifdef FIXED_POINT
+         resj = SHR(resj, 11);
+#else
          resj *= 0.03125;
 #endif
+         /* Compute codeword energy */
+         E[i]=ADD32(E[i],MULT16_16(resj,resj));
          res[j] = resj;
          /*printf ("%d\n", (int)res[j]);*/
       }
-      
-      /* Compute codeword energy */
-      E[i]=0;
-      for(j=0;j<subvect_size;j++)
-         E[i]=ADD32(E[i],MULT16_16(res[j],res[j]));
    }
 
 }

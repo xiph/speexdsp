@@ -199,14 +199,20 @@ void open_loop_nbest_pitch(spx_sig_t *sw, int start, int end, int len, int *pitc
          spx_word16_t g;
          spx_word32_t tmp;
          tmp = corr16[i-start];
-         if (SHR(corr16[i-start],4)>ener16[i-start])
-            tmp = SHL((spx_word32_t)ener16[i-start],14);
-         else if (-SHR(corr16[i-start],4)>ener16[i-start])
-            tmp = -SHL((spx_word32_t)ener16[i-start],14);
-         else
-            tmp = SHL(tmp,10);
-         g = DIV32_16(tmp, 8+ener16[i-start]);
-         score[i-start] = MULT16_16(corr16[i-start],g);
+         if (tmp>0)
+         {
+            if (SHR(corr16[i-start],4)>ener16[i-start])
+               tmp = SHL((spx_word32_t)ener16[i-start],14);
+            else if (-SHR(corr16[i-start],4)>ener16[i-start])
+               tmp = -SHL((spx_word32_t)ener16[i-start],14);
+            else
+               tmp = SHL(tmp,10);
+            g = DIV32_16(tmp, 8+ener16[i-start]);
+            score[i-start] = MULT16_16(corr16[i-start],g);
+         } else
+         {
+            score[i-start] = 1;
+         }
       }
    }
 #else

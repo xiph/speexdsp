@@ -444,14 +444,16 @@ void lsp_to_lpc(spx_lsp_t *freq,spx_coef_t *ak,int lpcrdr, char *stack)
       LSP coefficient */
 
     for(j=0;j<=lpcrdr;j++){
-       int i2=0;
-	for(i=0;i<m;i++,i2+=2){
-	    n1 = pw+(i*4);
+       spx_word16_t *fr=freqn;
+	for(i=0;i<m;i++){
+	    n1 = pw+(i<<2);
 	    n2 = n1 + 1;
 	    n3 = n2 + 1;
 	    n4 = n3 + 1;
-	    xout1 = ADD32(SUB32(xin1, MULT16_32_Q14(freqn[i2],*n1)), *n2);
-            xout2 = ADD32(SUB32(xin2, MULT16_32_Q14(freqn[i2+1],*n3)), *n4);
+	    xout1 = ADD32(SUB32(xin1, MULT16_32_Q14(*fr,*n1)), *n2);
+            fr++;
+            xout2 = ADD32(SUB32(xin2, MULT16_32_Q14(*fr,*n3)), *n4);
+            fr++;
 	    *n2 = *n1;
 	    *n4 = *n3;
 	    *n1 = xin1;
