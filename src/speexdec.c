@@ -179,7 +179,7 @@ FILE *out_file_open(char *outFile, int rate, int *channels)
       fout = fdopen(audio_fd, "w");
 #elif defined HAVE_SYS_AUDIOIO_H
       audio_info_t info;
-      int audio_df;
+      int audio_fd;
       
       audio_fd = open("/dev/audio", O_WRONLY);
       if (audio_fd<0)
