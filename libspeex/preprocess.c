@@ -969,9 +969,9 @@ void speex_preprocess_estimate_update(SpeexPreprocessState *st, short *x, int *e
 
 int speex_preprocess_ctl(SpeexPreprocessState *state, int request, void *ptr)
 {
+   int i;
    SpeexPreprocessState *st;
    st=(SpeexPreprocessState*)state;
-   int i;
    switch(request)
    {
    case SPEEX_PREPROCESS_SET_DENOISE:
