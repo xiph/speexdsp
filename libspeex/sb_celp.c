@@ -602,7 +602,7 @@ int sb_encode(void *state, short *in, SpeexBits *bits)
             gc *= 1.4142;
 
 #ifdef FIXED_POINT
-         scale = SHL(DIV32_16(SHL(gc,SIG_SHIFT-4),filter_ratio),4)*(1+el);
+         scale = SHL(MULT16_16(DIV32_16(SHL(gc,SIG_SHIFT-4),filter_ratio),(1+el)),4);
 #else
          scale = gc*(1.+el)/filter_ratio;
 #endif
