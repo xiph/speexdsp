@@ -2791,8 +2791,8 @@ If a filter
 \begin_inset Formula $A(z/\gamma)$
 \end_inset 
 
- filter will have its poles at 
-\begin_inset Formula $p_{i}^{'}=\gamma p_{i}$
+ will have its poles at 
+\begin_inset Formula $p'_{i}=\gamma p_{i}$
 \end_inset 
 
 , making it a flatter version of 
@@ -2875,7 +2875,7 @@ LPC Analysis
 \layout Standard
 
 An LPC analysis is first performed on a (asymetric Hamming) window that
- spans all the current frame and half a frame in advance.
+ spans all of the current frame and half a frame in advance.
  The LPC coefficients are then converted to Line Spectral Pair
 \begin_inset LatexCommand \index{line spectral pair}
 
@@ -2998,7 +2998,7 @@ In Speex, the innovation signal is quantized using sub-vector shape-only
  That means that the innovation signal is divided in sub-vectors (of size
  5 to 20) and quantized using a codebook that represents both the shape
  and the gain at the same time.
- This save many bits that would otherwise be allocated for a separate gain
+ This saves many bits that would otherwise be allocated for a separate gain
  at the price of a slight increase in complexity.
  
 \layout Subsection
@@ -4173,7 +4173,7 @@ So far, no MOS (Mean Opinion Score
  Last thing, it should be noted that for most codecs (including Speex) encoding
  quality sometimes varies depending on the input.
  Note that the complexity is only approximate (within 0.5 mflops and using
- the lowers complexity setting).
+ the lowest complexity setting).
  Decoding requires approximately 0.5 mflops
 \begin_inset LatexCommand \index{complexity}
 
@@ -4816,7 +4816,7 @@ This part of the codec only applies to the decoder and can even be changed
  without affecting inter-operability.
  For that reason, the implementation provided and described here should
  only be considered as a reference implementation.
- The enhancement system is devided in two parts.
+ The enhancement system is divided into two parts.
  First, the synthesis filter 
 \begin_inset Formula $S(z)=1/A(z)$
 \end_inset 
@@ -4896,7 +4896,7 @@ embedded narrowband bit-stream
 \end_inset 
 
  can also be decoded with the narrowband decoder.
- Since the low band encoding has already been described only the high band
+ Since the low band encoding has already been described, only the high band
  encoding is described in this section.
 \layout Subsection
 
@@ -4908,7 +4908,7 @@ The linear prediction part used for the high-band is very similar to what
  The only difference is that we use only 12 bits to encode the high-band
  LSP's using a multi-stage vector quantizer (MSVQ).
  The first level quantizes the 10 coefficients with 6 bits and the error
- is then quantized using 6 bits too.
+ is then quantized using 6 bits, too.
 \layout Subsection
 
 Pitch Prediction
@@ -4920,7 +4920,7 @@ That part is easy: there's no pitch prediction for the high-band.
  kHz).
  Second, it would be very hard to implement since the QMF folds the 4-8
  kHz band into 4-0 kHz (reversing the frequency axis), which means that
- the location of the harmonics are no longer at multiples of the fundamental
+ the location of the harmonics is no longer at multiples of the fundamental
  (pitch).
 \layout Subsection
 
@@ -4934,8 +4934,8 @@ The high-band excitation is coded in the same way as for narrowband.
 Bit allocation
 \layout Standard
 
-For the wideband mode, all the narrowband frame is packed before the high-band
- is encoded.
+For the wideband mode, the entire narrowband frame is packed before the
+ high-band is encoded.
  The narrowband part of the bit-stream is as defined in table 
 \begin_inset LatexCommand \ref{cap:bits-narrowband}
 
@@ -5449,7 +5449,7 @@ Vorbis is a great project but its goals are not the same as Speex.
 Isn't there a GPL implementation of the GSM-FR codec? Why is Speex necessary?
 \layout Standard
 
-First of all, it's not clear whether or not GSM-FR is covered by a phillips
+First of all, it's not clear whether or not GSM-FR is covered by a Phillips
  patent (see http://kbs.cs.tu-berlin.de/~jutta/toast.html).
  Also, GSM-FR offers mediocre quality at a relatively high bit-rate, while
  Speex can offer equivalent quality at almost half the bit-rate.
@@ -5460,7 +5460,7 @@ First of all, it's not clear whether or not GSM-FR is covered by a phillips
 Under what license is Speex released?
 \layout Standard
 
-As of version 1.0 beta 1, Speex in released under Xiph's BSD-like license.
+As of version 1.0 beta 1, Speex is released under Xiph's BSD-like license.
  This license is the most permissive of the open-source licenses.
 \layout Subsection*
 
@@ -5477,15 +5477,7 @@ Ogg
 , what's the difference?
 \layout Standard
 
-Ogg is a 
-\begin_inset Quotes eld
-\end_inset 
-
-container format
-\begin_inset Quotes erd
-\end_inset 
-
- for holding multimedia data.
+Ogg is a container format for holding multimedia data.
  Vorbis is an audio codec that uses Ogg to store its bit-streams as files,
  hence the name Ogg Vorbis.
  Speex also uses the Ogg format to store its bit-streams as files, so technicall
@@ -5506,8 +5498,8 @@ What's the extension for Speex?
 \layout Standard
 
 Speex files have the .spx extension.
- Note, however that all the Speex tools (speexenc, speexdec) do not rely
- on the extension at all so any extension will work.
+ Note, however that the Speex tools (speexenc, speexdec) do not rely on
+ the extension at all, so any extension will work.
 \layout Subsection*
 
 Can I use Speex for compressing music
@@ -5549,7 +5541,7 @@ For most kinds of compression, encoding is inherently slower than decoding.
  In the case of Speex, encoding consists of finding, for each vector of
  5 to 10 samples, the entry that matches the best within a codebook consisting
  of 16 to 256 entries.
- On the other hand, at decoding all that needs to be done is lookup the
+ On the other hand, at decoding all that needs to be done is look up the
  right entry in the codebook using the encoded index.
  Since a lookup is much faster than a search, the decoder works much faster
  than the encoder.
@@ -5558,7 +5550,7 @@ For most kinds of compression, encoding is inherently slower than decoding.
 Why is Speex so slow on my iPaq (or insert any platform without an FPU)?
 \layout Standard
 
-Well the parenthesis provides the answer: no FPU (floating-point unit).
+Well, the parenthesis provides the answer: no FPU (floating-point unit).
  The Speex code makes heavy use of floating-point operations.
  On devices with no FPU, all floating-point instructions need to be emulated.
  This is a very time consuming operation.
@@ -5569,7 +5561,7 @@ n.
  How do I fix that?
 \layout Standard
 
-One of the cause could be scaling of the input speech.
+One of the causes could be scaling of the input speech.
  Speex expects signals to have a 
 \begin_inset Formula $\pm2^{15}$
 \end_inset 
@@ -5612,7 +5604,8 @@ How does Speex compare to other proprietary codecs?
 It's hard to give precise figures since no formal listening tests have been
  performed yet.
  All I can say is that in terms of quality, Speex competes on the same ground
- as other proprietary (not necessarily the best, but not the worst either).
+ as other proprietary codecs (not necessarily the best, but not the worst
+ either).
  Speex also has many features that are not present in most other codecs.
  These include variable bit-rate (VBR), integration of narrowband and wideband,
  as well as stereo support.
@@ -5635,7 +5628,7 @@ I guess it all depends on the bit-rate used.
  the 15 kbps mode if you want DTMF to be transmitted correctly.
  DTMF at 8 kbps may work but your mileage may vary.
  Also, make sure you don't use the lowest complexity (see SPEEX_SET_COMPLEXITY
- or --comp option), as it causes important noise.
+ or --comp option), as it causes significant noise.
 \layout Subsection*
 
 Can Speex pass V.9x modem signals correctly?
