@@ -35,6 +35,7 @@
 #include "stack_alloc.h"
 #include "vq.h"
 #include "misc.h"
+#include <stdio.h>
 
 void split_cb_search_shape_sign(
 spx_sig_t target[],			/* target vector */
@@ -54,7 +55,7 @@ int   complexity
    int i,j,k,m,n,q;
    spx_sig_t *resp;
    spx_sig_t *t, *e, *r2;
-   float *E;
+   spx_word32_t *E;
    spx_sig_t *tmp;
    float *ndist, *odist;
    int *itmp;
@@ -88,7 +89,7 @@ int   complexity
    t = PUSH(stack, nsf, spx_sig_t);
    e = PUSH(stack, nsf, spx_sig_t);
    r2 = PUSH(stack, nsf, spx_sig_t);
-   E = PUSH(stack, shape_cb_size, float);
+   E = PUSH(stack, shape_cb_size, spx_word32_t);
    ind = PUSH(stack, nb_subvect, int);
 
    tmp = PUSH(stack, 2*N*nsf, spx_sig_t);
@@ -116,12 +117,15 @@ int   complexity
          nind[i][j]=oind[i][j]=-1;
    }
 
+   for (i=0;i<nsf;i++)
+      t[i]=SHR(target[i],6);
+
    for (j=0;j<N;j++)
       for (i=0;i<nsf;i++)
-         ot[j][i]=target[i];
+         ot[j][i]=t[i];
 
-   for (i=0;i<nsf;i++)
-      t[i]=target[i];
+   /*for (i=0;i<nsf;i++)
+     printf ("%d\n", (int)t[i]);*/
 
    /* Pre-compute codewords response and energy */
    for (i=0;i<shape_cb_size;i++)
@@ -139,6 +143,9 @@ int   complexity
          for (k=0;k<=j;k++)
             res[j] += shape[k]*r[j-k];
          res[j] *= 0.03125;
+         
+         res[j] = SHR(res[j],6);
+         /*printf ("%d\n", (int)res[j]);*/
       }
       
       /* Compute codeword energy */
@@ -225,7 +232,7 @@ int   complexity
                   g=sign*0.03125*shape_cb[rind*subvect_size+m];
                   q=subvect_size-m;
                   for (n=subvect_size*(i+1);n<nsf;n++,q++)
-                     t[n] -= g*r[q];
+                     t[n] -= SHR((long long)(g*r[q]),6);
                }
 
 
