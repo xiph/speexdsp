@@ -62,16 +62,16 @@ typedef spx_word32_t spx_sig_t;
 /* result fits in 16 bits */
 #define MULT16_16_16(a,b)     (((short)(a))*(b))
 
-#define MULT16_16(a,b)     (((signed int)(a))*(b))
-#define MULT16_32_Q13(a,b) (((a)*((b)>>13)) + ((a)*((signed int)((b)&0x00001fff))>>13))
-#define MULT16_32_Q14(a,b) (((a)*((b)>>14)) + ((a)*((signed int)((b)&0x00003fff))>>14))
-#define MULT16_32_Q15(a,b) (((a)*((b)>>15)) + ((a)*((signed int)((b)&0x00007fff))>>15))
+#define MULT16_16(a,b)     (((a))*(b))
+#define MULT16_32_Q13(a,b) (((a)*((b)>>13)) + ((a)*((short)((b)&0x00001fff))>>13))
+#define MULT16_32_Q14(a,b) (((a)*((b)>>14)) + ((a)*((short)((b)&0x00003fff))>>14))
+#define MULT16_32_Q15(a,b) (((a)*((b)>>15)) + ((a)*((short)((b)&0x00007fff))>>15))
 
-#define MULT16_16_Q13(a,b) (((signed int)(a))*(b)>>13)
-#define MULT16_16_Q14(a,b) (((signed int)(a))*(b)>>14)
-#define MULT16_16_Q15(a,b) (((signed int)(a))*(b)>>15)
+#define MULT16_16_Q13(a,b) (((short)(a))*(b)>>13)
+#define MULT16_16_Q14(a,b) (((short)(a))*(b)>>14)
+#define MULT16_16_Q15(a,b) (((short)(a))*(b)>>15)
 
-#define MULT16_16_P14(a,b) ((8192+((signed int)(a))*(b))>>14)
+#define MULT16_16_P14(a,b) ((8192+((short)(a))*(b))>>14)
 
 
 #define DIV32_16(a,b) (((signed int)(a))/(b))
