@@ -31,7 +31,7 @@
 */
 
 #include "speex_bits.h"
-
+#include "misc.h"
 
 typedef struct ltp_params {
    signed char *gain_cdbk;
@@ -47,9 +47,9 @@ void open_loop_nbest_pitch(float *sw, int start, int end, int len, int *pitch, f
 int pitch_search_3tap(
 float target[],                 /* Target vector */
 float *sw,
-float ak[],                     /* LPCs for this subframe */
-float awk1[],                   /* Weighted LPCs #1 for this subframe */
-float awk2[],                   /* Weighted LPCs #2 for this subframe */
+spx_coef_t ak[],                     /* LPCs for this subframe */
+spx_coef_t awk1[],                   /* Weighted LPCs #1 for this subframe */
+spx_coef_t awk2[],                   /* Weighted LPCs #2 for this subframe */
 float exc[],                    /* Overlapping codebook */
 void *par,
 int   start,                    /* Smallest pitch value allowed */
@@ -87,9 +87,9 @@ int cdbk_offset
 int forced_pitch_quant(
 float target[],                 /* Target vector */
 float *sw,
-float ak[],                     /* LPCs for this subframe */
-float awk1[],                   /* Weighted LPCs #1 for this subframe */
-float awk2[],                   /* Weighted LPCs #2 for this subframe */
+spx_coef_t ak[],                     /* LPCs for this subframe */
+spx_coef_t awk1[],                   /* Weighted LPCs #1 for this subframe */
+spx_coef_t awk2[],                   /* Weighted LPCs #2 for this subframe */
 float exc[],                    /* Excitation */
 void *par,
 int   start,                    /* Smallest pitch value allowed */

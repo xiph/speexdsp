@@ -86,21 +86,21 @@ typedef struct EncState {
    float *buf2;           /**< 2nd temporary buffer */
    float *autocorr;       /**< auto-correlation */
    float *lagWindow;      /**< Window applied to auto-correlation */
-   float *lpc;            /**< LPCs for current frame */
+   spx_coef_t *lpc;            /**< LPCs for current frame */
    float *lsp;            /**< LSPs for current frame */
    float *qlsp;           /**< Quantized LSPs for current frame */
    float *old_lsp;        /**< LSPs for previous frame */
    float *old_qlsp;       /**< Quantized LSPs for previous frame */
    float *interp_lsp;     /**< Interpolated LSPs */
    float *interp_qlsp;    /**< Interpolated quantized LSPs */
-   float *interp_lpc;     /**< Interpolated LPCs */
-   float *interp_qlpc;    /**< Interpolated quantized LPCs */
-   float *bw_lpc1;        /**< LPCs after bandwidth expansion by gamma1 for perceptual weighting*/
-   float *bw_lpc2;        /**< LPCs after bandwidth expansion by gamma2 for perceptual weighting*/
-   float *mem_sp;         /**< Filter memory for signal synthesis */
-   float *mem_sw;         /**< Filter memory for perceptually-weighted signal */
-   float *mem_sw_whole;   /**< Filter memory for perceptually-weighted signal (whole frame)*/
-   float *mem_exc;        /**< Filter memory for excitation (whole frame) */
+   spx_coef_t *interp_lpc;     /**< Interpolated LPCs */
+   spx_coef_t *interp_qlpc;    /**< Interpolated quantized LPCs */
+   spx_coef_t *bw_lpc1;        /**< LPCs after bandwidth expansion by gamma1 for perceptual weighting*/
+   spx_coef_t *bw_lpc2;        /**< LPCs after bandwidth expansion by gamma2 for perceptual weighting*/
+   spx_mem_t *mem_sp;         /**< Filter memory for signal synthesis */
+   spx_mem_t *mem_sw;         /**< Filter memory for perceptually-weighted signal */
+   spx_mem_t *mem_sw_whole;   /**< Filter memory for perceptually-weighted signal (whole frame)*/
+   spx_mem_t *mem_exc;        /**< Filter memory for excitation (whole frame) */
    float *pi_gain;        /**< Gain of LPC filter at theta=pi (fe/2) */
 
    VBRState *vbr;         /**< State of the VBR data */
@@ -157,8 +157,8 @@ typedef struct DecState {
    float *qlsp;           /**< Quantized LSPs for current frame */
    float *old_qlsp;       /**< Quantized LSPs for previous frame */
    float *interp_qlsp;    /**< Interpolated quantized LSPs */
-   float *interp_qlpc;    /**< Interpolated quantized LPCs */
-   float *mem_sp;         /**< Filter memory for synthesis signal */
+   spx_coef_t *interp_qlpc;    /**< Interpolated quantized LPCs */
+   spx_mem_t *mem_sp;         /**< Filter memory for synthesis signal */
    float *pi_gain;        /**< Gain of LPC filter at theta=pi (fe/2) */
    int    last_pitch;     /**< Pitch of last correctly decoded frame */
    float  last_pitch_gain; /**< Pitch gain of last correctly decoded frame */

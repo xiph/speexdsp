@@ -112,7 +112,7 @@ static float cheb_poly_eva(float *coef,float x,int m,char *stack)
 \*---------------------------------------------------------------------------*/
 
 
-int lpc_to_lsp (float *a,int lpcrdr,float *freq,int nb,float delta, char *stack)
+int lpc_to_lsp (spx_coef_t *a,int lpcrdr,float *freq,int nb,float delta, char *stack)
 /*  float *a 		     	lpc coefficients			*/
 /*  int lpcrdr			order of LPC coefficients (10) 		*/
 /*  float *freq 	      	LSP frequencies in the x domain       	*/
@@ -247,8 +247,8 @@ int lpc_to_lsp (float *a,int lpcrdr,float *freq,int nb,float delta, char *stack)
 
 \*---------------------------------------------------------------------------*/
 
-
-void lsp_to_lpc(float *freq,float *ak,int lpcrdr, char *stack)
+#if 0
+void lsp_to_lpc(float *freq,spx_coef_t *ak,int lpcrdr, char *stack)
 /*  float *freq 	array of LSP frequencies in the x domain	*/
 /*  float *ak 		array of LPC coefficients 			*/
 /*  int lpcrdr  	order of LPC coefficients 			*/
@@ -307,6 +307,77 @@ void lsp_to_lpc(float *freq,float *ak,int lpcrdr, char *stack)
     }
 
 }
+#else
+
+#define MULT16_32_Q14(a,b) (((a)*((b)>>14)) + ((a)*((signed int)((b)&0x00003fff))>>14))
+#define MULT16_32_Q15(a,b) (((a)*((b)>>15)) + ((a)*((signed int)((b)&0x00007fff))>>15))
+
+void lsp_to_lpc(float *freq,spx_coef_t *ak,int lpcrdr, char *stack)
+/*  float *freq 	array of LSP frequencies in the x domain	*/
+/*  float *ak 		array of LPC coefficients 			*/
+/*  int lpcrdr  	order of LPC coefficients 			*/
+
+
+{
+    int i,j;
+    spx_word32_t xout1,xout2,xin1,xin2;
+    spx_word32_t *Wp;
+    spx_word32_t *pw,*n1,*n2,*n3,*n4=NULL;
+    spx_word16_t *freqn;
+    int m = lpcrdr/2;
+    
+    freqn = PUSH(stack, lpcrdr, spx_word16_t);
+    for (i=0;i<lpcrdr;i++)
+       freqn[i] = freq[i]*32768.;
+
+    Wp = PUSH(stack, 4*m+2, spx_word32_t);
+    pw = Wp;
+
+
+    /* initialise contents of array */
+
+    for(i=0;i<=4*m+1;i++){       	/* set contents of buffer to 0 */
+	*pw++ = 0.0;
+    }
+
+    /* Set pointers up */
+
+    pw = Wp;
+    xin1 = 1048576;
+    xin2 = 1048576;
+
+    /* reconstruct P(z) and Q(z) by  cascading second order
+      polynomials in form 1 - 2xz(-1) +z(-2), where x is the
+      LSP coefficient */
+
+    for(j=0;j<=lpcrdr;j++){
+       int i2=0;
+	for(i=0;i<m;i++,i2+=2){
+	    n1 = pw+(i*4);
+	    n2 = n1 + 1;
+	    n3 = n2 + 1;
+	    n4 = n3 + 1;
+	    xout1 = xin1 - MULT16_32_Q14(freqn[i2],*n1) + *n2;
+            xout2 = xin2 - MULT16_32_Q14(freqn[i2+1],*n3) + *n4;
+	    *n2 = floor(.5+*n1);
+	    *n4 = floor(.5+*n3);
+	    *n1 = floor(.5+xin1);
+	    *n3 = floor(.5+xin2);
+	    xin1 = xout1;
+	    xin2 = xout2;
+	}
+	xout1 = xin1 + *(n4+1);
+	xout2 = xin2 - *(n4+2);
+	ak[j] = ((128+xout1 + xout2)>>8)/8192.;
+	*(n4+1) = xin1;
+	*(n4+2) = xin2;
+
+	xin1 = 0.0;
+	xin2 = 0.0;
+    }
+
+}
+#endif
 
 /*Added by JMV
   Makes sure the LSPs are stable*/

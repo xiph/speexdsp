@@ -45,6 +45,28 @@
 #pragma warning(disable : 4305)
 #endif
 
+
+#ifdef FIXED_POINT
+
+typedef int spx_mem_t;
+typedef float spx_coef_t;
+typedef float spx_sig_t;
+typedef short spx_word16_t;
+typedef int spx_word32_t;
+
+#define MULT16_32_Q14(a,b) (((a)*((b)>>14)) + ((a)*((signed int)((b)&0x00003fff))>>14))
+#define MULT16_32_Q15(a,b) (((a)*((b)>>15)) + ((a)*((signed int)((b)&0x00007fff))>>15))
+
+#else
+
+typedef float spx_mem_t;
+typedef float spx_coef_t;
+typedef float spx_sig_t;
+typedef float spx_word16_t;
+typedef float spx_word32_t;
+
+#endif
+
 #ifndef RELEASE
 void print_vec(float *vec, int len, char *name);
 #endif

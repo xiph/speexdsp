@@ -38,7 +38,7 @@
 
 #include "speex.h"
 #include "speex_bits.h"
-
+#include "misc.h"
 
 #define NB_SUBMODES 16
 #define NB_SUBMODE_BITS 4
@@ -55,8 +55,8 @@ typedef void (*lsp_unquant_func)(float *, int, SpeexBits *);
 
 
 /** Long-term predictor quantization */
-typedef int (*ltp_quant_func)(float *, float *, float *, float *, 
-                              float *, float *, void *, int, int, float, 
+typedef int (*ltp_quant_func)(float *, float *, spx_coef_t *, spx_coef_t *, 
+                              spx_coef_t *, float *, void *, int, int, float, 
                               int, int, SpeexBits*, char *, float *, float *, int, int);
 
 /** Long-term un-quantize */
@@ -65,7 +65,7 @@ typedef void (*ltp_unquant_func)(float *, int, int, float, void *, int, int *,
 
 
 /** Innovation quantization function */
-typedef void (*innovation_quant_func)(float *, float *, float *, float *, void *, int, int, 
+typedef void (*innovation_quant_func)(float *, spx_coef_t *, spx_coef_t *, spx_coef_t *, void *, int, int, 
                                       float *, float *, SpeexBits *, char *, int);
 
 /** Innovation unquantization function */

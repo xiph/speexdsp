@@ -33,6 +33,8 @@
 #ifndef LPC_H
 #define LPC_H
 
+#include "misc.h"
+
 void _spx_autocorr(
               const float * x,   /*  in: [0...n-1] samples x   */
               float *ac,   /* out: [0...lag-1] ac values */
@@ -40,7 +42,7 @@ void _spx_autocorr(
 
 float                      /* returns minimum mean square error    */
 _spx_lpc(
-    float       * lpc, /*      [0...p-1] LPC coefficients      */
+    spx_coef_t       * lpc, /*      [0...p-1] LPC coefficients      */
     const float * ac,  /*  in: [0...p] autocorrelation values  */
     int p
     );

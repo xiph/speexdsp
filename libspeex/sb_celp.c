@@ -191,22 +191,22 @@ void *sb_encoder_init(SpeexMode *m)
       st->lagWindow[i]=exp(-.5*sqr(2*M_PI*st->lag_factor*i));
 
    st->autocorr = PUSH(st->stack, st->lpcSize+1, float);
-   st->lpc = PUSH(st->stack, st->lpcSize+1, float);
-   st->bw_lpc1 = PUSH(st->stack, st->lpcSize+1, float);
-   st->bw_lpc2 = PUSH(st->stack, st->lpcSize+1, float);
+   st->lpc = PUSH(st->stack, st->lpcSize+1, spx_coef_t);
+   st->bw_lpc1 = PUSH(st->stack, st->lpcSize+1, spx_coef_t);
+   st->bw_lpc2 = PUSH(st->stack, st->lpcSize+1, spx_coef_t);
    st->lsp = PUSH(st->stack, st->lpcSize, float);
    st->qlsp = PUSH(st->stack, st->lpcSize, float);
    st->old_lsp = PUSH(st->stack, st->lpcSize, float);
    st->old_qlsp = PUSH(st->stack, st->lpcSize, float);
    st->interp_lsp = PUSH(st->stack, st->lpcSize, float);
    st->interp_qlsp = PUSH(st->stack, st->lpcSize, float);
-   st->interp_lpc = PUSH(st->stack, st->lpcSize+1, float);
-   st->interp_qlpc = PUSH(st->stack, st->lpcSize+1, float);
+   st->interp_lpc = PUSH(st->stack, st->lpcSize+1, spx_coef_t);
+   st->interp_qlpc = PUSH(st->stack, st->lpcSize+1, spx_coef_t);
    st->pi_gain = PUSH(st->stack, st->nbSubframes, float);
 
-   st->mem_sp = PUSH(st->stack, st->lpcSize, float);
-   st->mem_sp2 = PUSH(st->stack, st->lpcSize, float);
-   st->mem_sw = PUSH(st->stack, st->lpcSize, float);
+   st->mem_sp = PUSH(st->stack, st->lpcSize, spx_mem_t);
+   st->mem_sp2 = PUSH(st->stack, st->lpcSize, spx_mem_t);
+   st->mem_sw = PUSH(st->stack, st->lpcSize, spx_mem_t);
 
    st->vbr_quality = 8;
    st->vbr_enabled = 0;
@@ -236,7 +236,8 @@ int sb_encode(void *state, float *in, SpeexBits *bits)
    SBEncState *st;
    int i, roots, sub;
    char *stack;
-   float *mem, *innov, *syn_resp;
+   spx_mem_t *mem;
+   float *innov, *syn_resp;
    float *low_pi_gain, *low_exc, *low_innov;
    SpeexSBMode *mode;
    int dtx;
@@ -441,7 +442,7 @@ int sb_encode(void *state, float *in, SpeexBits *bits)
          st->old_qlsp[i] = st->qlsp[i];
    }
    
-   mem=PUSH(stack, st->lpcSize, float);
+   mem=PUSH(stack, st->lpcSize, spx_mem_t);
    syn_resp=PUSH(stack, st->subframeSize, float);
    innov = PUSH(stack, st->subframeSize, float);
 
@@ -700,10 +701,10 @@ void *sb_decoder_init(SpeexMode *m)
    st->qlsp = PUSH(st->stack, st->lpcSize, float);
    st->old_qlsp = PUSH(st->stack, st->lpcSize, float);
    st->interp_qlsp = PUSH(st->stack, st->lpcSize, float);
-   st->interp_qlpc = PUSH(st->stack, st->lpcSize+1, float);
+   st->interp_qlpc = PUSH(st->stack, st->lpcSize+1, spx_coef_t);
 
    st->pi_gain = PUSH(st->stack, st->nbSubframes, float);
-   st->mem_sp = PUSH(st->stack, 2*st->lpcSize, float);
+   st->mem_sp = PUSH(st->stack, 2*st->lpcSize, spx_mem_t);
    
    st->lpc_enh_enabled=0;
 
@@ -722,7 +723,7 @@ void sb_decoder_destroy(void *state)
 static void sb_decode_lost(SBDecState *st, float *out, int dtx, char *stack)
 {
    int i;
-   float *awk1, *awk2, *awk3;
+   spx_coef_t *awk1, *awk2, *awk3;
    int saved_modeid=0;
 
    if (dtx)
@@ -735,9 +736,9 @@ static void sb_decode_lost(SBDecState *st, float *out, int dtx, char *stack)
 
    st->first=1;
    
-   awk1=PUSH(stack, st->lpcSize+1, float);
-   awk2=PUSH(stack, st->lpcSize+1, float);
-   awk3=PUSH(stack, st->lpcSize+1, float);
+   awk1=PUSH(stack, st->lpcSize+1, spx_coef_t);
+   awk2=PUSH(stack, st->lpcSize+1, spx_coef_t);
+   awk3=PUSH(stack, st->lpcSize+1, spx_coef_t);
    
    if (st->lpc_enh_enabled)
    {
@@ -815,7 +816,7 @@ int sb_decode(void *state, SpeexBits *bits, float *out)
    int ret;
    char *stack;
    float *low_pi_gain, *low_exc, *low_innov;
-   float *awk1, *awk2, *awk3;
+   spx_coef_t *awk1, *awk2, *awk3;
    int dtx;
    SpeexSBMode *mode;
 
@@ -910,9 +911,9 @@ int sb_decode(void *state, SpeexBits *bits, float *out)
          st->old_qlsp[i] = st->qlsp[i];
    }
    
-   awk1=PUSH(stack, st->lpcSize+1, float);
-   awk2=PUSH(stack, st->lpcSize+1, float);
-   awk3=PUSH(stack, st->lpcSize+1, float);
+   awk1=PUSH(stack, st->lpcSize+1, spx_coef_t);
+   awk2=PUSH(stack, st->lpcSize+1, spx_coef_t);
+   awk3=PUSH(stack, st->lpcSize+1, spx_coef_t);
 
    for (sub=0;sub<st->nbSubframes;sub++)
    {

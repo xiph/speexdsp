@@ -142,9 +142,9 @@ void open_loop_nbest_pitch(float *sw, int start, int end, int len, int *pitch, f
 /** Finds the best quantized 3-tap pitch predictor by analysis by synthesis */
 static float pitch_gain_search_3tap(
 float target[],                 /* Target vector */
-float ak[],                     /* LPCs for this subframe */
-float awk1[],                   /* Weighted LPCs #1 for this subframe */
-float awk2[],                   /* Weighted LPCs #2 for this subframe */
+spx_coef_t ak[],                     /* LPCs for this subframe */
+spx_coef_t awk1[],                   /* Weighted LPCs #1 for this subframe */
+spx_coef_t awk2[],                   /* Weighted LPCs #2 for this subframe */
 float exc[],                    /* Excitation */
 void *par,
 int   pitch,                    /* Pitch value */
@@ -292,9 +292,9 @@ int cdbk_offset
 int pitch_search_3tap(
 float target[],                 /* Target vector */
 float *sw,
-float ak[],                     /* LPCs for this subframe */
-float awk1[],                   /* Weighted LPCs #1 for this subframe */
-float awk2[],                   /* Weighted LPCs #2 for this subframe */
+spx_coef_t ak[],                     /* LPCs for this subframe */
+spx_coef_t awk1[],                   /* Weighted LPCs #1 for this subframe */
+spx_coef_t awk2[],                   /* Weighted LPCs #2 for this subframe */
 float exc[],                    /* Excitation */
 void *par,
 int   start,                    /* Smallest pitch value allowed */
@@ -497,9 +497,9 @@ int cdbk_offset
 int forced_pitch_quant(
 float target[],                 /* Target vector */
 float *sw,
-float ak[],                     /* LPCs for this subframe */
-float awk1[],                   /* Weighted LPCs #1 for this subframe */
-float awk2[],                   /* Weighted LPCs #2 for this subframe */
+spx_coef_t ak[],                     /* LPCs for this subframe */
+spx_coef_t awk1[],                   /* Weighted LPCs #1 for this subframe */
+spx_coef_t awk2[],                   /* Weighted LPCs #2 for this subframe */
 float exc[],                    /* Excitation */
 void *par,
 int   start,                    /* Smallest pitch value allowed */

@@ -65,7 +65,7 @@
 
 /* returns minimum mean square error    */
 float _spx_lpc(
-float       *lpc, /* out: [0...p-1] LPC coefficients      */
+spx_coef_t       *lpc, /* out: [0...p-1] LPC coefficients      */
 const float *ac,  /* in:  [0...p] autocorrelation values  */
 int          p
 )
@@ -85,7 +85,7 @@ int          p
       r = -ac[i + 1];
       for (j = 0; j < i; j++) 
          r -= lpc[j] * ac[i - j];
-      r /= error+.004*ac[0];
+      r /= error;
 
       /*  Update LPC coefficients and total error */
       lpc[i] = r;

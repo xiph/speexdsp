@@ -72,21 +72,21 @@ typedef struct SBEncState {
    float *window;              /**< LPC analysis window */
    float *lagWindow;           /**< Auto-correlation window */
    float *autocorr;            /**< Auto-correlation (for LPC analysis) */
-   float *lpc;                 /**< LPC coefficients */
+   spx_coef_t *lpc;                 /**< LPC coefficients */
    float *lsp;                 /**< LSP coefficients */
    float *qlsp;                /**< Quantized LSPs */
    float *old_lsp;             /**< LSPs of previous frame */
    float *old_qlsp;            /**< Quantized LSPs of previous frame */
    float *interp_lsp;          /**< Interpolated LSPs for current sub-frame */
    float *interp_qlsp;         /**< Interpolated quantized LSPs for current sub-frame */
-   float *interp_lpc;          /**< Interpolated LPCs for current sub-frame */
-   float *interp_qlpc;         /**< Interpolated quantized LPCs for current sub-frame */
-   float *bw_lpc1;             /**< Bandwidth-expanded version of LPCs (#1) */
-   float *bw_lpc2;             /**< Bandwidth-expanded version of LPCs (#2) */
+   spx_coef_t *interp_lpc;          /**< Interpolated LPCs for current sub-frame */
+   spx_coef_t *interp_qlpc;         /**< Interpolated quantized LPCs for current sub-frame */
+   spx_coef_t *bw_lpc1;             /**< Bandwidth-expanded version of LPCs (#1) */
+   spx_coef_t *bw_lpc2;             /**< Bandwidth-expanded version of LPCs (#2) */
 
-   float *mem_sp;              /**< Synthesis signal memory */
-   float *mem_sp2;
-   float *mem_sw;              /**< Perceptual signal memory */
+   spx_mem_t *mem_sp;              /**< Synthesis signal memory */
+   spx_mem_t *mem_sp2;
+   spx_mem_t *mem_sw;              /**< Perceptual signal memory */
    float *pi_gain;
 
    float  vbr_quality;         /**< Quality setting for VBR encoding */
@@ -131,9 +131,9 @@ typedef struct SBDecState {
    float *qlsp;
    float *old_qlsp;
    float *interp_qlsp;
-   float *interp_qlpc;
+   spx_coef_t *interp_qlpc;
 
-   float *mem_sp;
+   spx_mem_t *mem_sp;
    float *pi_gain;
 
    int    encode_submode;

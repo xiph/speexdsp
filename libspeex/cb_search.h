@@ -34,6 +34,7 @@
 #define CB_SEARCH_H
 
 #include "speex_bits.h"
+#include "misc.h"
 
 typedef struct split_cb_params {
    int     subvect_size;
@@ -46,9 +47,9 @@ typedef struct split_cb_params {
 
 void split_cb_search_shape_sign(
 float target[],			/* target vector */
-float ak[],			/* LPCs for this subframe */
-float awk1[],			/* Weighted LPCs for this subframe */
-float awk2[],			/* Weighted LPCs for this subframe */
+spx_coef_t ak[],			/* LPCs for this subframe */
+spx_coef_t awk1[],			/* Weighted LPCs for this subframe */
+spx_coef_t awk2[],			/* Weighted LPCs for this subframe */
 void *par,                      /* Codebook/search parameters*/
 int   p,                        /* number of LPC coeffs */
 int   nsf,                      /* number of samples in subframe */
@@ -70,9 +71,9 @@ char *stack
 
 void noise_codebook_quant(
 float target[],			/* target vector */
-float ak[],			/* LPCs for this subframe */
-float awk1[],			/* Weighted LPCs for this subframe */
-float awk2[],			/* Weighted LPCs for this subframe */
+spx_coef_t ak[],			/* LPCs for this subframe */
+spx_coef_t awk1[],			/* Weighted LPCs for this subframe */
+spx_coef_t awk2[],			/* Weighted LPCs for this subframe */
 void *par,                      /* Codebook/search parameters*/
 int   p,                        /* number of LPC coeffs */
 int   nsf,                      /* number of samples in subframe */

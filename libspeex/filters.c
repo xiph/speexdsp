@@ -33,9 +33,9 @@
 #include "filters.h"
 #include "stack_alloc.h"
 #include <math.h>
+#include "misc.h"
 
-
-void bw_lpc(float gamma, float *lpc_in, float *lpc_out, int order)
+void bw_lpc(float gamma, spx_coef_t *lpc_in, spx_coef_t *lpc_out, int order)
 {
    int i;
    float tmp=1;
@@ -46,10 +46,104 @@ void bw_lpc(float gamma, float *lpc_in, float *lpc_out, int order)
    }
 }
 
+
+#ifdef FIXED_POINT
+
+
+#define MUL_16_32_R15(a,bh,bl) ((a)*(bh) + ((a)*(bl)>>15))
+
+
+void filter_mem2(float *x, spx_coef_t *num, spx_coef_t *den, float *y, int N, int ord, spx_mem_t *mem)
+{
+   int i,j;
+   int xi,yi;
+   short nums[11], dens[11];
+   
+   for (i=0;i<ord+1;i++)
+   {
+      nums[i] = (int)floor(.5+8192*num[i]);
+      dens[i] = (int)floor(.5+8192*den[i]);
+   }
+
+   for (i=0;i<N;i++)
+   {
+      int xh,xl,yh,yl;
+      xi=floor(.5+16384*x[i]);
+      yi = xi + (mem[0]<<2);
+      xh = xi>>15; xl=xi&0x00007fff; yh = yi>>15; yl=yi&0x00007fff; 
+      for (j=0;j<ord-1;j++)
+      {
+         mem[j] = mem[j+1] +  MUL_16_32_R15(nums[j+1],xh,xl) - MUL_16_32_R15(dens[j+1],yh,yl);
+      }
+      mem[ord-1] = MUL_16_32_R15(nums[ord],xh,xl) - MUL_16_32_R15(dens[ord],yh,yl);
+      y[i] = yi*(1.f/16384.f);
+   }
+}
+
+void iir_mem2(float *x, spx_coef_t *den, float *y, int N, int ord, spx_mem_t *mem)
+{
+   int i,j;
+   int xi,yi;
+   short dens[11];
+   
+   for (i=0;i<11;i++)
+   {
+      dens[i] = (int)floor(.5+8192*den[i]);
+   }
+
+   for (i=0;i<N;i++)
+   {
+      int yh,yl;
+      xi=floor(.5+16384*x[i]);
+      yi = xi + (mem[0]<<2);
+      yh = yi>>15; yl=yi&0x00007fff; 
+      for (j=0;j<ord-1;j++)
+      {
+         mem[j] = mem[j+1] - MUL_16_32_R15(dens[j+1],yh,yl);
+      }
+      mem[ord-1] = - MUL_16_32_R15(dens[ord],yh,yl);
+      y[i] = yi*(1.f/16384.f);
+   }
+}
+
+
+void fir_mem2(float *x, spx_coef_t *num, float *y, int N, int ord, spx_mem_t *mem)
+{
+   int i,j;
+   int xi,yi;
+   short nums[11];
+   
+   for (i=0;i<11;i++)
+   {
+      nums[i] = (int)floor(.5+8192*num[i]);
+   }
+
+   for (i=0;i<N;i++)
+   {
+      int xh,xl;
+      xi=floor(.5+16384*x[i]);
+      yi = xi + (mem[0]<<2);
+      xh = xi>>15; xl=xi&0x00007fff;
+      for (j=0;j<ord-1;j++)
+      {
+         mem[j] = mem[j+1] +  MUL_16_32_R15(nums[j+1],xh,xl);
+      }
+      mem[ord-1] = MUL_16_32_R15(nums[ord],xh,xl);
+      y[i] = yi*(1.f/16384.f);
+   }
+
+}
+
+#else
+
+
+
 #ifdef _USE_SSE
 #include "filters_sse.h"
 #else
-void filter_mem2(float *x, float *num, float *den, float *y, int N, int ord, float *mem)
+
+
+void filter_mem2(float *x, spx_coef_t *num, spx_coef_t *den, float *y, int N, int ord,  spx_mem_t *mem)
 {
    int i,j;
    float xi,yi;
@@ -67,7 +161,7 @@ void filter_mem2(float *x, float *num, float *den, float *y, int N, int ord, flo
 }
 
 
-void iir_mem2(float *x, float *den, float *y, int N, int ord, float *mem)
+void iir_mem2(float *x, spx_coef_t *den, float *y, int N, int ord, spx_mem_t *mem)
 {
    int i,j;
    for (i=0;i<N;i++)
@@ -80,9 +174,11 @@ void iir_mem2(float *x, float *den, float *y, int N, int ord, float *mem)
       mem[ord-1] = - den[ord]*y[i];
    }
 }
+
+
 #endif
 
-void fir_mem2(float *x, float *num, float *y, int N, int ord, float *mem)
+void fir_mem2(float *x, spx_coef_t *num, float *y, int N, int ord, spx_mem_t *mem)
 {
    int i,j;
    float xi;
@@ -98,22 +194,26 @@ void fir_mem2(float *x, float *num, float *y, int N, int ord, float *mem)
    }
 }
 
-void syn_percep_zero(float *xx, float *ak, float *awk1, float *awk2, float *y, int N, int ord, char *stack)
+
+#endif
+
+
+void syn_percep_zero(float *xx, spx_coef_t *ak, spx_coef_t *awk1, spx_coef_t *awk2, float *y, int N, int ord, char *stack)
 {
    int i;
-   float *mem = PUSH(stack,ord, float);
-   for (i=0;i<ord;i++)
-      mem[i]=0;
-   filter_mem2(xx, awk1, ak, y, N, ord, mem);
+   spx_mem_t *mem = PUSH(stack,ord, spx_mem_t);
    for (i=0;i<ord;i++)
      mem[i]=0;
-   iir_mem2(y, awk2, y, N, ord, mem);
+   iir_mem2(xx, ak, y, N, ord, mem);
+   for (i=0;i<ord;i++)
+      mem[i]=0;
+   filter_mem2(y, awk1, awk2, y, N, ord, mem);
 }
 
-void residue_percep_zero(float *xx, float *ak, float *awk1, float *awk2, float *y, int N, int ord, char *stack)
+void residue_percep_zero(float *xx, spx_coef_t *ak, spx_coef_t *awk1, spx_coef_t *awk2, float *y, int N, int ord, char *stack)
 {
    int i;
-   float *mem = PUSH(stack,ord, float);
+   spx_mem_t *mem = PUSH(stack,ord, spx_mem_t);
    for (i=0;i<ord;i++)
       mem[i]=0;
    filter_mem2(xx, ak, awk1, y, N, ord, mem);
@@ -221,7 +321,7 @@ void comp_filter_mem_init (CombFilterMem *mem)
 void comb_filter(
 float *exc,          /*decoded excitation*/
 float *new_exc,      /*enhanced excitation*/
-float *ak,           /*LPC filter coefs*/
+spx_coef_t *ak,           /*LPC filter coefs*/
 int p,               /*LPC order*/
 int nsf,             /*sub-frame size*/
 int pitch,           /*pitch period*/

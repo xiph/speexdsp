@@ -139,11 +139,11 @@ void *nb_encoder_init(SpeexMode *m)
 
    st->buf2 = PUSH(st->stack, st->windowSize, float);
 
-   st->lpc = PUSH(st->stack, st->lpcSize+1, float);
-   st->interp_lpc = PUSH(st->stack, st->lpcSize+1, float);
-   st->interp_qlpc = PUSH(st->stack, st->lpcSize+1, float);
-   st->bw_lpc1 = PUSH(st->stack, st->lpcSize+1, float);
-   st->bw_lpc2 = PUSH(st->stack, st->lpcSize+1, float);
+   st->lpc = PUSH(st->stack, st->lpcSize+1, spx_coef_t);
+   st->interp_lpc = PUSH(st->stack, st->lpcSize+1, spx_coef_t);
+   st->interp_qlpc = PUSH(st->stack, st->lpcSize+1, spx_coef_t);
+   st->bw_lpc1 = PUSH(st->stack, st->lpcSize+1, spx_coef_t);
+   st->bw_lpc2 = PUSH(st->stack, st->lpcSize+1, spx_coef_t);
 
    st->lsp = PUSH(st->stack, st->lpcSize, float);
    st->qlsp = PUSH(st->stack, st->lpcSize, float);
@@ -158,10 +158,10 @@ void *nb_encoder_init(SpeexMode *m)
       st->lsp[i]=(M_PI*((float)(i+1)))/(st->lpcSize+1);
    }
 
-   st->mem_sp = PUSH(st->stack, st->lpcSize, float);
-   st->mem_sw = PUSH(st->stack, st->lpcSize, float);
-   st->mem_sw_whole = PUSH(st->stack, st->lpcSize, float);
-   st->mem_exc = PUSH(st->stack, st->lpcSize, float);
+   st->mem_sp = PUSH(st->stack, st->lpcSize, spx_mem_t);
+   st->mem_sw = PUSH(st->stack, st->lpcSize, spx_mem_t);
+   st->mem_sw_whole = PUSH(st->stack, st->lpcSize, spx_mem_t);
+   st->mem_exc = PUSH(st->stack, st->lpcSize, spx_mem_t);
 
    st->pi_gain = PUSH(st->stack, st->nbSubframes, float);
 
@@ -201,7 +201,8 @@ int nb_encode(void *state, float *in, SpeexBits *bits)
    int ol_pitch;
    float ol_pitch_coef;
    float ol_gain;
-   float *res, *target, *mem;
+   float *res, *target;
+   spx_mem_t *mem;
    char *stack;
    float *syn_resp;
    float lsp_dist=0;
@@ -605,7 +606,7 @@ int nb_encode(void *state, float *in, SpeexBits *bits)
    /* Target signal */
    target = PUSH(stack, st->subframeSize, float);
    syn_resp = PUSH(stack, st->subframeSize, float);
-   mem = PUSH(stack, st->lpcSize, float);
+   mem = PUSH(stack, st->lpcSize, spx_mem_t);
    orig = PUSH(stack, st->frameSize, float);
    for (i=0;i<st->frameSize;i++)
       orig[i]=st->frame[i];
@@ -969,11 +970,11 @@ void *nb_decoder_init(SpeexMode *m)
       st->excBuf[i]=0;
    st->innov = PUSH(st->stack, st->frameSize, float);
 
-   st->interp_qlpc = PUSH(st->stack, st->lpcSize+1, float);
+   st->interp_qlpc = PUSH(st->stack, st->lpcSize+1, spx_coef_t);
    st->qlsp = PUSH(st->stack, st->lpcSize, float);
    st->old_qlsp = PUSH(st->stack, st->lpcSize, float);
    st->interp_qlsp = PUSH(st->stack, st->lpcSize, float);
-   st->mem_sp = PUSH(st->stack, 5*st->lpcSize, float);
+   st->mem_sp = PUSH(st->stack, 5*st->lpcSize, spx_mem_t);
    st->comb_mem = PUSHS(st->stack, CombFilterMem);
    comp_filter_mem_init (st->comb_mem);
 
@@ -1010,7 +1011,7 @@ void nb_decoder_destroy(void *state)
 static void nb_decode_lost(DecState *st, float *out, char *stack)
 {
    int i, sub;
-   float *awk1, *awk2, *awk3;
+   spx_coef_t *awk1, *awk2, *awk3;
    float pitch_gain, fact, gain_med;
 
    fact = exp(-.04*st->count_lost*st->count_lost);
@@ -1028,9 +1029,9 @@ static void nb_decode_lost(DecState *st, float *out, char *stack)
    speex_move(st->inBuf, st->inBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(float));
    speex_move(st->excBuf, st->excBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(float));
 
-   awk1=PUSH(stack, (st->lpcSize+1), float);
-   awk2=PUSH(stack, (st->lpcSize+1), float);
-   awk3=PUSH(stack, (st->lpcSize+1), float);
+   awk1=PUSH(stack, (st->lpcSize+1), spx_coef_t);
+   awk2=PUSH(stack, (st->lpcSize+1), spx_coef_t);
+   awk3=PUSH(stack, (st->lpcSize+1), spx_coef_t);
 
    for (sub=0;sub<st->nbSubframes;sub++)
    {
@@ -1134,7 +1135,7 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
    int wideband;
    int m;
    char *stack;
-   float *awk1, *awk2, *awk3;
+   spx_coef_t *awk1, *awk2, *awk3;
    float pitch_average=0;
 #ifdef EPIC_48K
    int pitch_half[2];
@@ -1246,8 +1247,8 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
    /* If null mode (no transmission), just set a couple things to zero*/
    if (st->submodes[st->submodeID] == NULL)
    {
-      float *lpc;
-      lpc = PUSH(stack,11, float);
+      spx_coef_t *lpc;
+      lpc = PUSH(stack,11, spx_coef_t);
       bw_lpc(.93, st->interp_qlpc, lpc, 10);
       /*for (i=0;i<st->frameSize;i++)
         st->exc[i]=0;*/
@@ -1340,9 +1341,9 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
    }
 #endif
 
-   awk1=PUSH(stack, st->lpcSize+1, float);
-   awk2=PUSH(stack, st->lpcSize+1, float);
-   awk3=PUSH(stack, st->lpcSize+1, float);
+   awk1=PUSH(stack, st->lpcSize+1, spx_coef_t);
+   awk2=PUSH(stack, st->lpcSize+1, spx_coef_t);
+   awk3=PUSH(stack, st->lpcSize+1, spx_coef_t);
 
    if (st->submodeID==1)
    {
