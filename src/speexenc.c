@@ -205,7 +205,10 @@ int main(int argc, char **argv)
    {
       if (!rate)
          rate = 16000;
-      mode=&speex_wb_mode;
+      if (lbr)
+         mode=&speex_wb_mode_lbr;
+      else
+         mode=&speex_wb_mode;
    }
 
    speex_init_header(&header, rate, 1, mode);

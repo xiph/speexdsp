@@ -29,7 +29,7 @@
 #include "post_filter.h"
 
 
-SpeexMode *speex_mode_list[] = {&speex_nb_mode, &speex_nb_lbr_mode, &speex_wb_mode};
+SpeexMode *speex_mode_list[] = {&speex_nb_mode, &speex_nb_lbr_mode, &speex_wb_mode, &speex_wb_mode_lbr};
 
 /* Extern declarations for all codebooks we use here */
 extern float gain_cdbk_nb[];
@@ -38,6 +38,7 @@ extern float hexc_table[];
 extern float exc_5_256_table[];
 extern float exc_5_64_table[];
 extern float exc_10_32_table[];
+extern float hexc_10_32_table[];
 
 /* Post-filter parameters for narrowband */
 pf_params pf_params_nb = {
@@ -58,6 +59,13 @@ pf_params pf_params_sb = {
    0.65,      /* formant enhancement numerator */
    0.68,      /* formant enhancement denominator */
    0.3       /* pitch enhancement factor */
+};
+
+/* Post-filter parameters for wideband */
+pf_params pf_params_sb_lbr = {
+   0.65,      /* formant enhancement numerator */
+   0.7,      /* formant enhancement denominator */
+   0.4       /* pitch enhancement factor */
 };
 
 /* Parameters for Long-Term Prediction (LTP)*/
@@ -106,6 +114,16 @@ static split_cb_params split_cb_high = {
    hexc_table,       /*shape_cb*/
    7,               /*shape_bits*/
 };
+
+
+/* Split-VQ innovation for high-band wideband */
+static split_cb_params split_cb_high_lbr = {
+   10,               /*subvect_size*/
+   4,               /*nb_subvect*/
+   hexc_10_32_table,       /*shape_cb*/
+   5,               /*shape_bits*/
+};
+
 
 /* Default mode for narrowband */
 SpeexNBMode nb_mode = {
@@ -296,6 +314,49 @@ SpeexMode speex_wb_mode = {
 };
 
 
+
+
+
+/* Split-band wideband CELP mode*/
+static SpeexSBMode sb_wb_mode_lbr = {
+   &speex_nb_mode,
+   160,    /*frameSize*/
+   40,     /*subframeSize*/
+   320,    /*windowSize*/
+   8,     /*lpcSize*/
+   640,    /*bufSize*/
+   .9,    /*gamma1*/
+   0.6,    /*gamma2*/
+   .002,   /*lag_factor*/
+   1.0001, /*lpc_floor*/
+   0.0,    /*preemph*/
+   /*LSP quantization*/
+   lsp_quant_high,
+   lsp_unquant_high,
+   /*Innovation quantization*/
+   split_cb_search_nogain2,
+   split_cb_nogain_unquant,
+   &split_cb_high_lbr
+};
+
+
+SpeexMode speex_wb_mode_lbr = {
+   &sb_wb_mode_lbr,
+   "low bit-rate wideband (sub-band CELP)",
+   3,
+   0,
+   &sb_encoder_init,
+   &sb_encoder_destroy,
+   &sb_encode,
+   &sb_decoder_init,
+   &sb_decoder_destroy,
+   &sb_decode,
+   &sb_encoder_ctl,
+   &sb_decoder_ctl,
+   320,
+   20150,
+   0
+};
 
 
 

@@ -135,6 +135,9 @@ extern SpeexMode speex_nb_lbr_mode;
 /** Default wideband mode */
 extern SpeexMode speex_wb_mode;
 
+/** Low bit-rate wideband mode */
+extern SpeexMode speex_wb_mode_lbr;
+
 extern SpeexMode *speex_mode_list[];
 
 #ifdef __cplusplus
