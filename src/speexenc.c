@@ -675,7 +675,7 @@ int main(int argc, char **argv)
       fclose(fin);
    if (close_out)
       fclose(fout);
-   return 1;
+   return 0;
 }
 
 /*                 

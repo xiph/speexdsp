@@ -1,14 +1,11 @@
 Features
 *Average bit-rate VBR
 -Add maximum/minimum bit-rate control for VBR
-*Add "VAD-only" VBR (constant bit-rate or comfort noise)
 -Get the encoder to use the rate of packet loss (more conservative pitch gains)
 -No transmission when constant noise/silence
 
 Long-term quality improvements
 -Improve perceptual enhancement (including wideband)
--Improve VAD and VBR
--Packet-loss concealment
 
 Standards
 *Complete Speex RTP profile

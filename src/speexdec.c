@@ -606,5 +606,5 @@ int main(int argc, char **argv)
    if (fout != NULL)
       fclose(fout);   
 
-   return 1;
+   return 0;
 }
