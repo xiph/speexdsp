@@ -358,7 +358,9 @@ int nb_encode(void *state, float *in, SpeexBits *bits)
       if (st->vbr_enabled) 
       {
          int mode;
-         mode = 7;
+         int choice=0;
+         float min_diff=100;
+         mode = 8;
          while (mode)
          {
             int v1;
@@ -368,11 +370,15 @@ int nb_encode(void *state, float *in, SpeexBits *bits)
                thresh = vbr_nb_thresh[mode][v1];
             else
                thresh = (st->vbr_quality-v1)*vbr_nb_thresh[mode][v1+1] + (1+v1-st->vbr_quality)*vbr_nb_thresh[mode][v1];
-            if (st->relative_quality > thresh)
-               break;
+            if (st->relative_quality > thresh && 
+                st->relative_quality-thresh<min_diff)
+            {
+               choice = mode;
+               min_diff = st->relative_quality-thresh;
+            }
             mode--;
          }
-         
+         mode=choice;
          if (mode==0)
          {
             if (st->dtx_count==0 || lsp_dist>.05 || st->dtx_count>20)

@@ -482,8 +482,8 @@ static SpeexSBMode sb_wb_mode = {
    0.7,
    {NULL, &wb_submode1, &wb_submode2, &wb_submode3, &wb_submode4, NULL, NULL, NULL},
    3,
-   {1, 1, 2, 3, 4, 5, 5, 6, 6, 7, 7},
-   {0, 1, 1, 1, 1, 1, 2, 2, 3, 3, 4},
+   {1, 8, 2, 3, 4, 5, 5, 6, 6, 7, 7},
+   {1, 1, 1, 1, 1, 1, 2, 2, 3, 3, 4},
    vbr_hb_thresh,
    5
 };
