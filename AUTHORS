@@ -1,2 +1,6 @@
-Jean-Marc Valin  <valj01@gel.usherb.ca>
-David Rowe       <david@voicetronix.com.au>
+Jean-Marc Valin <jean-marc.valin@hermes.usherb.ca>
+   All the code except:
+
+David Rowe <david@voicetronix.com.au> via VoiceTronix
+   lsp.c lsp.h 
+   Also ideas and feedback
