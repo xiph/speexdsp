@@ -122,7 +122,7 @@ extern "C" {
 
 
 /** Number of defined modes in Speex */
-#define SPEEX_NB_MODES 2
+#define SPEEX_NB_MODES 3
 
 struct SpeexMode;
 

@@ -139,8 +139,8 @@ void usage()
    printf ("Options:\n");
    printf (" -n, --narrowband   Narrowband (8 kHz) input file\n"); 
    printf (" -w, --wideband     Wideband (16 kHz) input file\n"); 
+   printf (" -u, --ultra-wideband \"Ultra-Wideband\" (32 kHz) input file\n"); 
    printf (" --quality n        Encoding quality (0-10), default 3\n"); 
-   printf (" --lbr              Low bit-rate mode (equivalent to --quality 3)\n"); 
    printf (" --vbr              Enable variable bit-rate (VBR)\n"); 
    printf (" --comp n           Set encoding complexity (0-10), default 3\n"); 
    printf (" --nframes n        Number of frames per Ogg packet (1-10), default 1\n"); 
@@ -168,7 +168,7 @@ int main(int argc, char **argv)
 {
    int c;
    int option_index = 0;
-   int narrowband=0, wideband=0;
+   int narrowband=0, wideband=0, ultrawide=0;
    char *inFile, *outFile;
    FILE *fin, *fout;
    float input[MAX_FRAME_SIZE];
@@ -182,8 +182,8 @@ int main(int argc, char **argv)
    struct option long_options[] =
    {
       {"wideband", no_argument, NULL, 0},
+      {"ultra-wideband", no_argument, NULL, 0},
       {"narrowband", no_argument, NULL, 0},
-      {"lbr", no_argument, NULL, 0},
       {"vbr", no_argument, NULL, 0},
       {"quality", required_argument, NULL, 0},
       {"nframes", required_argument, NULL, 0},
@@ -205,7 +205,6 @@ int main(int argc, char **argv)
    int fmt=16;
    int quality=-1;
    float vbr_quality=-1;
-   int lbr=0;
    int lsb=1;
    ogg_stream_state os;
    ogg_page 		 og;
@@ -238,8 +237,8 @@ int main(int argc, char **argv)
             narrowband=1;
          else if (strcmp(long_options[option_index].name,"wideband")==0)
                wideband=1;
-         else if (strcmp(long_options[option_index].name,"lbr")==0)
-               lbr=1;
+         else if (strcmp(long_options[option_index].name,"ultra-wideband")==0)
+               ultrawide=1;
          else if (strcmp(long_options[option_index].name,"vbr")==0)
                vbr_enabled=1;
          else if (strcmp(long_options[option_index].name,"quality")==0)
@@ -305,6 +304,9 @@ int main(int argc, char **argv)
       case 'w':
          wideband=1;
          break;
+      case 'u':
+         ultrawide=1;
+         break;
       case '?':
          usage();
          exit(1);
@@ -319,9 +321,9 @@ int main(int argc, char **argv)
    inFile=argv[optind];
    outFile=argv[optind+1];
 
-   if (wideband && narrowband)
+   if ((wideband && narrowband) || (wideband && ultrawide) || (ultrawide && narrowband))
    {
-      fprintf (stderr,"Cannot specify both wideband and narrowband at the same time\n");
+      fprintf (stderr,"Cannot specify two modes at the same time\n");
       exit(1);
    };
 
@@ -380,6 +382,23 @@ int main(int argc, char **argv)
       fprintf (stderr,"Warning: Speex is not optimized for 22.05 kHz sampling rate. Your mileage may vary\n");
       if (narrowband)
          fprintf (stderr,"Warning: encoding a wideband file in narrowband\n");
+   } else if (rate==32000)
+   {
+      ultrawide=1;
+      if (wideband)
+         fprintf (stderr,"Warning: encoding a narrowband file in wideband\n");
+   } else if (rate==44100)
+   {
+      fprintf (stderr,"Warning: Speex is not optimized for 44.1 kHz sampling rate. Your mileage may vary\n");
+      ultrawide=1;
+      if (wideband)
+         fprintf (stderr,"Warning: encoding a narrowband file in wideband\n");
+   } else if (rate==48000)
+   {
+      fprintf (stderr,"Warning: Speex is not optimized for 48 kHz sampling rate. Your mileage may vary\n");
+      ultrawide=1;
+      if (wideband)
+         fprintf (stderr,"Warning: encoding a narrowband file in wideband\n");
    } else if (rate==11025)
    {
       fprintf (stderr,"Warning: Speex is not optimized for 11.025 kHz sampling rate. Your mileage may vary\n");
@@ -401,6 +420,12 @@ int main(int argc, char **argv)
       if (!rate)
          rate = 16000;
       mode=&speex_wb_mode;
+   }
+   if (ultrawide)
+   {
+      if (!rate)
+         rate = 32000;
+      mode=&speex_uwb_mode;
    }
 
    speex_init_header(&header, rate, 1, mode);

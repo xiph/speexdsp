@@ -24,8 +24,8 @@ int main(int argc, char **argv)
    st = speex_encoder_init(&speex_uwb_mode);
    dec = speex_decoder_init(&speex_uwb_mode);
    
-   /*tmp=0;
-   speex_decoder_ctl(dec, SPEEX_SET_ENH, &tmp);
+   tmp=0;
+   /*speex_decoder_ctl(dec, SPEEX_SET_ENH, &tmp);
    tmp=0;
    speex_encoder_ctl(st, SPEEX_SET_VBR, &tmp);
    tmp=10;

@@ -463,10 +463,6 @@ void sb_encode(void *state, float *in, SpeexBits *bits)
 
          g *= filter_ratio;
 
-         if (st->full_frame_size==640)
-         {
-            printf ("encode: %f %f %f %f %f\n", g, rl, rh, el, eh);
-         }
          /* Gain quantization */
          {
             int quant = (int) floor(.5 + 27 + 8.0 * log((g+.0001)));
@@ -842,15 +838,11 @@ int sb_decode(void *state, SpeexBits *bits, float *out)
       {
          float g;
          int quant;
-         printf ("subframes: %d\n", st->subframeSize);
+
          for (i=0;i<st->subframeSize;i++)
             el+=sqr(low_innov[offset+i]);
          quant = speex_bits_unpack_unsigned(bits, 5);
          g= exp(((float)quant-27)/8.0);
-         if (st->full_frame_size==640)
-         {
-            printf ("decode: %f %f %f %f\n", g, rl, rh, el);
-         }
          
          /*printf ("unquant folding gain: %f\n", g);*/
          g /= filter_ratio;

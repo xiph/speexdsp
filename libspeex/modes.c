@@ -41,7 +41,7 @@
 #include "sb_celp.h"
 #include "nb_celp.h"
 
-SpeexMode *speex_mode_list[SPEEX_NB_MODES] = {&speex_nb_mode, &speex_wb_mode};
+SpeexMode *speex_mode_list[SPEEX_NB_MODES] = {&speex_nb_mode, &speex_wb_mode, &speex_uwb_mode};
 
 /* Extern declarations for all codebooks we use here */
 extern float gain_cdbk_nb[];
