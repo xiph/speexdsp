@@ -323,8 +323,8 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
       if (!st->submodes[st->submodeID] || st->vbr_enabled || SUBMODE(forced_pitch_gain) ||
           SUBMODE(lbr_pitch) != -1)
       {
-         int nol_pitch[4];
-         float nol_pitch_coef[4];
+         int nol_pitch[6];
+         float nol_pitch_coef[6];
          
          bw_lpc(st->gamma1, st->interp_lpc, st->bw_lpc1, st->lpcSize);
          bw_lpc(st->gamma2, st->interp_lpc, st->bw_lpc2, st->lpcSize);
@@ -332,20 +332,24 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
          filter_mem2(st->frame, st->bw_lpc1, st->bw_lpc2, st->sw, st->frameSize, st->lpcSize, st->mem_sw_whole);
 
          open_loop_nbest_pitch(st->sw, st->min_pitch, st->max_pitch, st->frameSize, 
-                               nol_pitch, nol_pitch_coef, 4, stack);
+                               nol_pitch, nol_pitch_coef, 6, stack);
          ol_pitch=nol_pitch[0];
          ol_pitch_coef = nol_pitch_coef[0];
+         printf ("%f %d %d %d %d %d %d ", ol_pitch_coef, nol_pitch[0], nol_pitch[1], nol_pitch[2], nol_pitch[3], nol_pitch[4], nol_pitch[5]);
          /*Try to remove pitch multiples*/
-         for (i=1;i<4;i++)
+         for (i=1;i<6;i++)
          {
-            if ((nol_pitch_coef[i] > .85*ol_pitch_coef) && 
-                (fabs(2*nol_pitch[i]-ol_pitch)<=2 || fabs(3*nol_pitch[i]-ol_pitch)<=4 || 
-                 fabs(4*nol_pitch[i]-ol_pitch)<=6 || fabs(5*nol_pitch[i]-ol_pitch)<=8))
+            if ((nol_pitch_coef[i]>.85*ol_pitch_coef) && 
+                (fabs(nol_pitch[i]-ol_pitch/2.0)<=1 || fabs(nol_pitch[i]-ol_pitch/3.0)<=1 || 
+                 fabs(nol_pitch[i]-ol_pitch/4.0)<=1 || fabs(nol_pitch[i]-ol_pitch/5.0)<=1))
             {
                /*ol_pitch_coef=nol_pitch_coef[i];*/
                ol_pitch = nol_pitch[i];
             }
          }
+         printf ("%d\n", ol_pitch);
+         /*if (ol_pitch>50)
+           ol_pitch/=2;*/
          /*ol_pitch_coef = sqrt(ol_pitch_coef);*/
          /*printf ("ol_pitch: %d %f\n", ol_pitch, ol_pitch_coef);*/
       } else {
@@ -1310,7 +1314,7 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
             for (i=0;i<st->subframeSize;i++)
             {
                int tmp=exc[i];
-               exc[i]=.7*g*exc[i]*ol_gain + .6*g*st->voc_m1*ol_gain + .4*g*innov[i] - .4*g*st->voc_m2 + (1-g)*innov[i];
+               exc[i]=.8*g*exc[i]*ol_gain + .6*g*st->voc_m1*ol_gain + .5*g*innov[i] - .5*g*st->voc_m2 + (1-g)*innov[i];
                st->voc_m1 = tmp;
                st->voc_m2=innov[i];
                st->voc_mean = .95*st->voc_mean + .05*exc[i];
