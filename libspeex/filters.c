@@ -149,6 +149,54 @@ void residue_mem(float *x, float *a, float *y, int N, int ord, float *mem)
       mem[i]=x[N-i-1];
 }
 
+
+void filter_mem2(float *x, float *num, float *den, float *y, int N, int ord, float *mem)
+{
+   int i,j;
+   float xi;
+   for (i=0;i<N;i++)
+   {
+      xi=x[i];
+      y[i] = num[0]*xi + mem[0];
+      for (j=0;j<ord-1;j++)
+      {
+         mem[j] = mem[j+1] + num[j+1]*xi - den[j+1]*y[i];
+      }
+      mem[ord-1] = num[ord]*xi - den[ord]*y[i];
+   }
+}
+
+void fir_mem2(float *x, float *num, float *y, int N, int ord, float *mem)
+{
+   int i,j;
+   float xi;
+   for (i=0;i<N;i++)
+   {
+      xi=x[i];
+      y[i] = num[0]*xi + mem[0];
+      for (j=0;j<ord-1;j++)
+      {
+         mem[j] = mem[j+1] + num[j+1]*xi;
+      }
+      mem[ord-1] = num[ord]*xi;
+   }
+}
+
+void iir_mem2(float *x, float *den, float *y, int N, int ord, float *mem)
+{
+   int i,j;
+   for (i=0;i<N;i++)
+   {
+      y[i] = x[i] + mem[0];
+      for (j=0;j<ord-1;j++)
+      {
+         mem[j] = mem[j+1] - den[j+1]*y[i];
+      }
+      mem[ord-1] = - den[ord]*y[i];
+   }
+}
+
+
 void pole_zero_mem(float *x, float *num, float *den, float *y, int N, int ord, float *mem, float *stack)
 {
    float *tmp=PUSH(stack, N);
@@ -243,7 +291,7 @@ void syn_percep_zero(float *xx, float *ak, float *awk1, float *awk2, float *y, i
 #endif
 }
 
-
+#if 1
 #define MAX_FILTER 100
 #define MAX_SIGNAL 1000
 void fir_mem(float *xx, float *aa, float *y, int N, int M, float *mem)
@@ -266,7 +314,12 @@ void fir_mem(float *xx, float *aa, float *y, int N, int M, float *mem)
    for (i=0;i<M-1;i++)
      mem[i]=xx[N-i-1];
 }
-
+#else
+void fir_mem(float *xx, float *aa, float *y, int N, int M, float *mem)
+{
+   fir_mem2(xx, aa, y, N, M-1, mem);
+}
+#endif
 
 void comb_filter(
 float *exc,          /*decoded excitation*/

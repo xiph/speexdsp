@@ -22,6 +22,10 @@
 
 void print_vec(float *vec, int len, char *name);
 
+void filter_mem2(float *x, float *num, float *den, float *y, int N, int ord, float *mem);
+void fir_mem2(float *x, float *num, float *y, int N, int ord, float *mem);
+void iir_mem2(float *x, float *den, float *y, int N, int ord, float *mem);
+
 /* Apply bandwidth expansion on LPC coef */
 void bw_lpc(float gamma, float *lpc_in, float *lpc_out, int order);
 
@@ -32,23 +36,32 @@ void enh_lpc(float *ak, int order, float *num, float *den, float k1, float k2, f
 /*LPC polynomial "flatifier"*/
 void lpc_flat(float g1, float g2, float *lpc_in, float *lpc_out1, float *lpc_out2, int order);
 
+
+#if 0
 /* Synthesis filter using the past of y[n] (negative indices) as memory */
 void syn_filt(float *x, float *a, float *y, int N, int ord);
+#endif
 
 /* Synthesis filter using zero memory */
 void syn_filt_zero(float *x, float *a, float *y, int N, int ord);
 
+#if 0
 /* Synthesis filter using memory */
 void syn_filt_mem(float *x, float *a, float *y, int N, int ord, float *mem);
 
 /* Analysis (FIR) filter using the past of x[n] (negative indices) as memory */
 void residue(float *x, float *a, float *y, int N, int ord);
+#endif
 
 /* Analysis (FIR) filter using zero memory */
 void residue_zero(float *x, float *a, float *y, int N, int ord);
 
+#if 0
 /* Analysis (FIR) filter using memory */
 void residue_mem(float *x, float *a, float *y, int N, int ord, float *mem);
+#endif
+
+
 
 /* FIR filter */
 void fir_mem(float *x, float *a, float *y, int N, int M, float *mem);

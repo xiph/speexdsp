@@ -325,7 +325,7 @@ void sb_encode(void *state, float *in, SpeexBits *bits)
       st->first=1;
 
       /* Final signal synthesis from excitation */
-      syn_filt_mem(st->exc, st->interp_qlpc, st->high, st->subframeSize, st->lpcSize, st->mem_sp);
+      iir_mem2(st->exc, st->interp_qlpc, st->high, st->subframeSize, st->lpcSize, st->mem_sp);
 
 #ifndef RELEASE
       /* Up-sample coded low-band and high-band*/
@@ -425,7 +425,7 @@ void sb_encode(void *state, float *in, SpeexBits *bits)
       fold=0;
 
       /* Compute "real excitation" */
-      residue_mem(sp, st->interp_qlpc, exc, st->subframeSize, st->lpcSize, st->mem_sp2);
+      fir_mem2(sp, st->interp_qlpc, exc, st->subframeSize, st->lpcSize, st->mem_sp2);
       /* Compute energy of low-band and high-band excitation */
       for (i=0;i<st->subframeSize;i++)
          eh+=sqr(exc[i]);
@@ -498,13 +498,24 @@ void sb_encode(void *state, float *in, SpeexBits *bits)
          /* Compute zero response (ringing) of A(z/g1) / ( A(z/g2) * Aq(z) ) */
          for (i=0;i<st->lpcSize;i++)
             mem[i]=st->mem_sp[i];
-         syn_filt_mem(exc, st->interp_qlpc, exc, st->subframeSize, st->lpcSize, mem);
+         iir_mem2(exc, st->interp_qlpc, exc, st->subframeSize, st->lpcSize, mem);
+
          for (i=0;i<st->lpcSize;i++)
+            mem[i]=st->mem_sw[i];
+         filter_mem2(exc, st->bw_lpc1, st->bw_lpc2, res, st->subframeSize, st->lpcSize, mem);
+
+         /* Compute weighted signal */
+         for (i=0;i<st->lpcSize;i++)
+            mem[i]=st->mem_sw[i];
+         filter_mem2(sp, st->bw_lpc1, st->bw_lpc2, sw, st->subframeSize, st->lpcSize, mem);
+
+#if 0
+         /*for (i=0;i<st->lpcSize;i++)
             mem[i]=st->mem_sp[i];
          residue_mem(exc, st->bw_lpc1, res, st->subframeSize, st->lpcSize, mem);
          for (i=0;i<st->lpcSize;i++)
             mem[i]=st->mem_sw[i];
-         syn_filt_mem(res, st->bw_lpc2, res, st->subframeSize, st->lpcSize, mem);
+            syn_filt_mem(res, st->bw_lpc2, res, st->subframeSize, st->lpcSize, mem);*/
          
          /* Compute weighted signal */
          for (i=0;i<st->lpcSize;i++)
@@ -513,7 +524,8 @@ void sb_encode(void *state, float *in, SpeexBits *bits)
          for (i=0;i<st->lpcSize;i++)
             mem[i]=st->mem_sw[i];
          syn_filt_mem(sw, st->bw_lpc2, sw, st->subframeSize, st->lpcSize, mem);
-         
+#endif
+
          /* Compute target signal */
          for (i=0;i<st->subframeSize;i++)
             target[i]=sw[i]-res[i];
@@ -572,11 +584,13 @@ void sb_encode(void *state, float *in, SpeexBits *bits)
          for (i=0;i<st->lpcSize;i++)
             mem[i]=st->mem_sp[i];
          /* Final signal synthesis from excitation */
-         syn_filt_mem(exc, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, st->mem_sp);
+         iir_mem2(exc, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, st->mem_sp);
          
          /* Compute weighted signal again, from synthesized speech (not sure it's the right thing) */
-         residue_mem(sp, st->bw_lpc1, sw, st->subframeSize, st->lpcSize, mem);
+         /*residue_mem(sp, st->bw_lpc1, sw, st->subframeSize, st->lpcSize, mem);
          syn_filt_mem(sw, st->bw_lpc2, sw, st->subframeSize, st->lpcSize, st->mem_sw);
+         */
+         filter_mem2(sp, st->bw_lpc1, st->bw_lpc2, sw, st->subframeSize, st->lpcSize, st->mem_sw);
 #endif
       
       
@@ -695,7 +709,7 @@ static void sb_decode_lost(SBDecState *st, float *out)
    st->first=1;
    
    /* Final signal synthesis from excitation */
-   syn_filt_mem(st->exc, st->interp_qlpc, st->high, st->subframeSize, st->lpcSize, st->mem_sp);
+   iir_mem2(st->exc, st->interp_qlpc, st->high, st->subframeSize, st->lpcSize, st->mem_sp);
    
    /* Up-sample coded low-band and high-band*/
    for (i=0;i<st->frame_size;i++)
@@ -762,7 +776,7 @@ int sb_decode(void *state, SpeexBits *bits, float *out)
       st->first=1;
 
       /* Final signal synthesis from excitation */
-      syn_filt_mem(st->exc, st->interp_qlpc, st->high, st->subframeSize, st->lpcSize, st->mem_sp);
+      iir_mem2(st->exc, st->interp_qlpc, st->high, st->subframeSize, st->lpcSize, st->mem_sp);
 
       /* Up-sample coded low-band and high-band*/
       for (i=0;i<st->frame_size;i++)
@@ -879,7 +893,7 @@ int sb_decode(void *state, SpeexBits *bits, float *out)
          }
 
       }
-      syn_filt_mem(exc, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, st->mem_sp);
+      iir_mem2(exc, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, st->mem_sp);
 
    }
 

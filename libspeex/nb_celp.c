@@ -42,7 +42,7 @@ extern int training_weight;
 float exc_gain_quant_scal3[8]={-2.794750, -1.810660, -1.169850, -0.848119, -0.587190, -0.329818, -0.063266, 0.282826};
 
 float exc_gain_quant_scal1[2]={-0.35, 0.05};
- 
+/*float exc_gain_quant_scal1[2]={-0.35, 0.05};*/
 
 #define sqr(x) ((x)*(x))
 #define min(a,b) ((a) < (b) ? (a) : (b))
@@ -129,6 +129,7 @@ void *nb_encoder_init(SpeexMode *m)
 
    st->mem_sp = speex_alloc(st->lpcSize*sizeof(float));
    st->mem_sw = speex_alloc(st->lpcSize*sizeof(float));
+   st->mem_exc = speex_alloc(st->lpcSize*sizeof(float));
 
    st->pi_gain = speex_alloc(st->nbSubframes*sizeof(float));
 
@@ -178,6 +179,7 @@ void nb_encoder_destroy(void *state)
 
    speex_free(st->mem_sp);
    speex_free(st->mem_sw);
+   speex_free(st->mem_exc);
    speex_free(st->pi_gain);
    speex_free(st->pitch);
 
@@ -253,6 +255,8 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
 
    /* Whole frame analysis (open-loop estimation of pitch and excitation gain) */
    {
+      /*FIXME: stack alloc*/
+      static float mem[10];
       for (i=0;i<st->lpcSize;i++)
          st->interp_lsp[i] = .5*st->old_lsp[i] + .5*st->lsp[i];
 
@@ -266,9 +270,10 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
       bw_lpc(st->gamma1, st->interp_lpc, st->bw_lpc1, st->lpcSize);
       bw_lpc(st->gamma2, st->interp_lpc, st->bw_lpc2, st->lpcSize);
 
-      residue(st->frame, st->bw_lpc1, st->exc, st->frameSize, st->lpcSize);
-      syn_filt(st->exc, st->bw_lpc2, st->sw, st->frameSize, st->lpcSize);
-      
+      for (i=0;i<st->lpcSize;i++)
+         mem[i]=st->mem_sw[i];
+      filter_mem2(st->frame, st->bw_lpc1, st->bw_lpc2, st->sw, st->frameSize, st->lpcSize, mem);
+
       /*Open-loop pitch*/
       {
          int nol_pitch[4];
@@ -292,7 +297,7 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
          /*printf ("ol_pitch: %d %f\n", ol_pitch, ol_pitch_coef);*/
       }
       /*Compute "real" excitation*/
-      residue(st->frame, st->interp_lpc, st->exc, st->frameSize, st->lpcSize);
+      fir_mem2(st->frame, st->interp_lpc, st->exc, st->frameSize, st->lpcSize, st->mem_exc);
 
       /* Compute open-loop excitation gain */
       ol_gain=0;
@@ -342,7 +347,7 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
       st->first=1;
 
       /* Final signal synthesis from excitation */
-      syn_filt_mem(st->exc, st->interp_qlpc, st->frame, st->subframeSize, st->lpcSize, st->mem_sp);
+      iir_mem2(st->exc, st->interp_qlpc, st->frame, st->subframeSize, st->lpcSize, st->mem_sp);
 
       in[0] = st->frame[0] + st->preemph*st->pre_mem2;
       for (i=1;i<st->frameSize;i++)
@@ -474,22 +479,18 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
       /* Compute zero response of A(z/g1) / ( A(z/g2) * A(z) ) */
       for (i=0;i<st->lpcSize;i++)
          mem[i]=st->mem_sp[i];
-      syn_filt_mem(exc, st->interp_qlpc, exc, st->subframeSize, st->lpcSize, mem);
-      for (i=0;i<st->lpcSize;i++)
-         mem[i]=st->mem_sp[i];
-      residue_mem(exc, st->bw_lpc1, res, st->subframeSize, st->lpcSize, mem);
+      iir_mem2(exc, st->interp_qlpc, exc, st->subframeSize, st->lpcSize, mem);
+      
+
       for (i=0;i<st->lpcSize;i++)
          mem[i]=st->mem_sw[i];
-      syn_filt_mem(res, st->bw_lpc2, res, st->subframeSize, st->lpcSize, mem);
+      filter_mem2(exc, st->bw_lpc1, st->bw_lpc2, res, st->subframeSize, st->lpcSize, mem);
 
       /* Compute weighted signal */
       for (i=0;i<st->lpcSize;i++)
-         mem[i]=st->mem_sp[i];
-      residue_mem(sp, st->bw_lpc1, sw, st->subframeSize, st->lpcSize, mem);
-      for (i=0;i<st->lpcSize;i++)
          mem[i]=st->mem_sw[i];
-      syn_filt_mem(sw, st->bw_lpc2, sw, st->subframeSize, st->lpcSize, mem);
-      
+      filter_mem2(sp, st->bw_lpc1, st->bw_lpc2, sw, st->subframeSize, st->lpcSize, mem);
+
       esig=0;
       for (i=0;i<st->subframeSize;i++)
          esig+=sw[i]*sw[i];
@@ -661,12 +662,10 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
       for (i=0;i<st->lpcSize;i++)
          mem[i]=st->mem_sp[i];
       /* Final signal synthesis from excitation */
-      syn_filt_mem(exc, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, st->mem_sp);
+      iir_mem2(exc, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, st->mem_sp);
 
       /* Compute weighted signal again, from synthesized speech (not sure it's the right thing) */
-      residue_mem(sp, st->bw_lpc1, sw, st->subframeSize, st->lpcSize, mem);
-      syn_filt_mem(sw, st->bw_lpc2, sw, st->subframeSize, st->lpcSize, st->mem_sw);
-
+      filter_mem2(sp, st->bw_lpc1, st->bw_lpc2, sw, st->subframeSize, st->lpcSize, st->mem_sw);
       for (i=0;i<st->subframeSize;i++)
          exc2[i]=exc[i];
 
@@ -806,9 +805,11 @@ static void nb_decode_lost(DecState *st, float *out)
       for (i=0;i<st->subframeSize;i++)
          sp[i]=exc[i];
       
-      pole_zero_mem(sp, num, den, sp, st->subframeSize, (st->lpcSize<<1), 
-                    st->mem_sp+st->lpcSize, st->stack);
-      syn_filt_mem(sp, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, 
+      /*pole_zero_mem(sp, num, den, sp, st->subframeSize, (st->lpcSize<<1), 
+                    st->mem_sp+st->lpcSize, st->stack);*/
+      filter_mem2(sp, num, den, sp, st->subframeSize, (st->lpcSize<<1), 
+        st->mem_sp+st->lpcSize);
+      iir_mem2(sp, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, 
         st->mem_sp);
       
       POP(st->stack);
@@ -893,7 +894,7 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
       st->first=1;
       
       /* Final signal synthesis from excitation */
-      syn_filt_mem(st->exc, st->interp_qlpc, st->frame, st->subframeSize, st->lpcSize, st->mem_sp);
+      iir_mem2(st->exc, st->interp_qlpc, st->frame, st->subframeSize, st->lpcSize, st->mem_sp);
 
       out[0] = st->frame[0] + st->preemph*st->pre_mem;
       for (i=1;i<st->frameSize;i++)
@@ -1088,9 +1089,11 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
       if (st->lpc_enh_enabled && SUBMODE(comb_gain>0))
          comb_filter(exc, sp, st->interp_qlpc, st->lpcSize, st->subframeSize,
                               pitch, pitch_gain, .5);
-      pole_zero_mem(sp, num, den, sp, st->subframeSize, (st->lpcSize<<1), 
-                    st->mem_sp+st->lpcSize, st->stack);
-      syn_filt_mem(sp, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, 
+      /*pole_zero_mem(sp, num, den, sp, st->subframeSize, (st->lpcSize<<1), 
+        st->mem_sp+st->lpcSize, st->stack);*/
+      filter_mem2(sp, num, den, sp, st->subframeSize, (st->lpcSize<<1), 
+        st->mem_sp+st->lpcSize);
+      iir_mem2(sp, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, 
         st->mem_sp);
       
       POP(st->stack);
