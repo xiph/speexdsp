@@ -3,9 +3,11 @@
    Lont-Term Prediction functions
 */
 
+#include "ltp.h"
+
 
 #define abs(x) ((x)<0 ? -(x) : (x))
-/* Computes the open-loop pitch prediction. Returns pitch period and pitch gain */
+/** Computes the open-loop pitch prediction. Returns pitch period and pitch gain */
 int open_loop_ltp(float *x, int len, int start, int end, float *gain)
    /*  x:     time-domain signal (note, x[-end] must be valid)
        len:   length of the x signal
@@ -37,8 +39,8 @@ int open_loop_ltp(float *x, int len, int start, int end, float *gain)
    return best_period;
 }
 
-/* Computes a three-tap pitch predictor */
-int three_tap_ltp(float *x, int len, int start, int end, float gain[3])
+/** Computes a three-tap pitch predictor */
+int three_tap_ltp(float *x, int len, int start, int end, float *gain)
 
    /*  x:     time-domain signal (note, x[-end] must be valid)
        len:   length of the x signal
@@ -51,6 +53,7 @@ int three_tap_ltp(float *x, int len, int start, int end, float gain[3])
    float total, score[3]={0,0,0}, best_score=-1, corr[3]={0,0,0}, energy[3]={0,0,0};
    float best_energy[3], best_corr[3], best_gain=0;
    float A[3][3];
+   /*Check all periods */
    for (period = start; period <= end; period++)
    {
       corr[0]=energy[0]=0;
@@ -60,6 +63,7 @@ int three_tap_ltp(float *x, int len, int start, int end, float gain[3])
          energy[0] += x[i-period]*x[i-period];
       }
       score[0] = corr[0]*corr[0]/(energy[0]+1);
+      /* Smooth the "correlation score" */
       total = score[0]+2*score[1]+score[2];
       if (total > best_score && period >= start+3 && period <= end-3)
       {
@@ -79,6 +83,7 @@ int three_tap_ltp(float *x, int len, int start, int end, float gain[3])
       energy[2]=energy[1];
       energy[1]=energy[0];
    }
+   /* build the correlation matrix */
    A[0][0]=best_energy[0]+1;
    A[1][1]=best_energy[1]+1;
    A[2][2]=best_energy[2]+1;
@@ -97,6 +102,7 @@ int three_tap_ltp(float *x, int len, int start, int end, float gain[3])
    /*for (i=0;i<3;i++)
       printf ("%f %f %f\n", A[i][0], A[i][1], A[i][2]);
       printf ("\n%f %f %f\n", best_corr[0], best_corr[1], best_corr[2]);*/
+   /*Solve the linear system to find gains*/
    {
       float tmp=A[1][0]/A[0][0];
       for (i=0;i<3;i++)
@@ -118,8 +124,10 @@ int three_tap_ltp(float *x, int len, int start, int end, float gain[3])
       /*printf ("\n%f %f %f\n", best_corr[0], best_corr[1], best_corr[2]);*/
 
    }
+   /* Put gains in right order */
    gain[0]=best_corr[2];gain[1]=best_corr[1];gain[2]=best_corr[0];
    
+   /* Check that 3-tap predictor "makes sense" */
    if (!((abs(gain[0]) + abs(gain[1]) + abs(gain[2])<2) 
          && abs(gain[0]+gain[1]+gain[2]) < 1.2 
          && abs(gain[0]+gain[1]+gain[2]) > -.2 ))
@@ -135,12 +143,22 @@ int three_tap_ltp(float *x, int len, int start, int end, float gain[3])
    return best_period-2;
 }
 
-
+/** In place 3-tap pitch predictor (FIR)*/
 void predictor_three_tap(float *x, int len, int period, float *gain)
+{
+   int i;
+   for (i=len-1;i>=0;i--)
+   {
+      x[i] -= gain[0]*x[i-period] + gain[1]*x[i-period-1] + gain[2]*x[i-period-2];
+   }
+}
+
+/** In place 3-tap inverse pitch predictor (IIR)*/
+void inverse_three_tap(float *x, int len, int period, float *gain)
 {
    int i;
    for (i=0;i<len;i++)
    {
-      x[i] -= gain[0]*x[i-period] + gain[1]*x[i-period-1] + gain[2]*x[i-period-2];
+      x[i] += gain[0]*x[i-period] + gain[1]*x[i-period-1] + gain[2]*x[i-period-2];
    }
 }

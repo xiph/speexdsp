@@ -132,10 +132,10 @@ void encode(EncState *st, float *in, int *outSize, void *bits)
          st->interp_lsp[i] = cos(st->interp_lsp[i]);
       lsp_to_lpc(st->interp_lsp, st->interp_lpc, st->lpcSize);
 
-      for (i=0;i<st->lpcSize+1;i++)
+      /*for (i=0;i<st->lpcSize+1;i++)
          printf("%f ", st->interp_lpc[i]);
       printf ("\n");
-      
+      */
 
       /* Compute bandwidth-expanded LPCs for perceptual weighting*/
       tmp=1;
@@ -160,8 +160,33 @@ void encode(EncState *st, float *in, int *outSize, void *bits)
       pitch = three_tap_ltp(st->wframe+offset, st->subframeSize, 20, 120, gain);
       /*pitch = open_loop_ltp(st->wframe+offset, st->subframeSize, 20, 120, gain);*/
       
+      /* Quantization of pitch period and gains */
+
       /*printf ("pitch = %d, gain = %f\n",pitch,gain);*/
       printf ("pitch = %d, gain = %f %f %f\n",pitch,gain[0], gain[1], gain[2]);
+
+      tmp=0;
+      for (i=0;i<st->subframeSize;i++)
+         tmp+=st->wframe[offset+i]*st->wframe[offset+i];
+      printf ("before: %f ", tmp);
+      predictor_three_tap(st->wframe+offset, st->subframeSize, pitch, gain);
+      tmp=0;
+      for (i=0;i<st->subframeSize;i++)
+         tmp+=st->wframe[offset+i]*st->wframe[offset+i];
+      printf ("after: %f\n", tmp);
+
+      /*Analysis by synthesis and quantization here*/
+
+      inverse_three_tap(st->wframe+offset, st->subframeSize, pitch, gain);
+
+      /*Inverse short-term predictor (1/W(z/gamma))*/
+      for (i=0;i<st->subframeSize;i++)
+      {
+         st->frame[offset+i]=st->wframe[offset+i];
+         for (j=1;j<st->lpcSize+1;j++)
+            st->frame[offset+i] -= st->frame[offset+i-j]*st->bw_lpc[j];
+      }
+
    }
 
    printf ("\n");
