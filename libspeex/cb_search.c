@@ -143,17 +143,18 @@ int   complexity
       {
          spx_word32_t resj=0;
          for (k=0;k<=j;k++)
-            resj += shape[k]*r[j-k];
+            resj = ADD32(resj,MULT16_32_Q11(shape[k],r[j-k]));
+#ifndef FIXED_POINT
          resj *= 0.03125;
-         
-         res[j] = SHR(resj,6);
+#endif
+         res[j] = resj;
          /*printf ("%d\n", (int)res[j]);*/
       }
       
       /* Compute codeword energy */
       E[i]=0;
       for(j=0;j<subvect_size;j++)
-         E[i]+=MULT16_16(res[j],res[j]);
+         E[i]=ADD32(E[i],MULT16_16(res[j],res[j]));
    }
 
    for (j=0;j<N;j++)

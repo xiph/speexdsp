@@ -107,7 +107,7 @@ static spx_word16_t cos_32(spx_word16_t x)
 
 #ifdef FIXED_POINT
 
-static float cheb_poly_eva(spx_word32_t *coef,float x,int m,char *stack)
+static spx_word32_t cheb_poly_eva(spx_word32_t *coef,float x,int m,char *stack)
 /*  float coef[]  	coefficients of the polynomial to be evaluated 	*/
 /*  float x   		the point where polynomial is to be evaluated 	*/
 /*  int m 		order of the polynomial 			*/
@@ -193,6 +193,11 @@ static float cheb_poly_eva(spx_word32_t *coef,float x,int m,char *stack)
 
 \*---------------------------------------------------------------------------*/
 
+#ifdef FIXED_POINT
+#define SIGN_CHANGE(a,b) (((a)&0x70000000)^((b)&0x70000000)||(b==0))
+#else
+#define SIGN_CHANGE(a,b) (((a)*(b))<0.0)
+#endif
 
 int lpc_to_lsp (spx_coef_t *a,int lpcrdr,spx_lsp_t *freq,int nb,float delta, char *stack)
 /*  float *a 		     	lpc coefficients			*/
@@ -204,8 +209,8 @@ int lpc_to_lsp (spx_coef_t *a,int lpcrdr,spx_lsp_t *freq,int nb,float delta, cha
 
 {
 
-    float psuml,psumr,psumm,temp_xr,xl,xr,xm=0;
-    float temp_psumr/*,temp_qsumr*/;
+    float temp_xr,xl,xr,xm=0;
+    spx_word32_t psuml,psumr,psumm,temp_psumr/*,temp_qsumr*/;
     int i,j,m,flag,k;
     spx_word32_t *Q;                 	/* ptrs for memory allocation 		*/
     spx_word32_t *P;
@@ -311,18 +316,20 @@ int lpc_to_lsp (spx_coef_t *a,int lpcrdr,spx_lsp_t *freq,int nb,float delta, cha
     between xm and xr else set interval between xl and xr and repeat till
     root is located within the specified limits 			*/
 
-	    if((psumr*psuml)<0.0){
+	    if(SIGN_CHANGE(psumr,psuml))
+            {
 		roots++;
 
 		psumm=psuml;
 		for(k=0;k<=nb;k++){
 		    xm = (xl+xr)/2;        	/* bisect the interval 	*/
 		    psumm=cheb_poly_eva(pt,xm,lpcrdr,stack);
-		    if(psumm*psuml>0.){
+		    /*if(psumm*psuml>0.)*/
+		    if(!SIGN_CHANGE(psumm,psuml))
+                    {
 			psuml=psumm;
 			xl=xm;
-		    }
-		    else{
+		    } else {
 			psumr=psumm;
 			xr=xm;
 		    }

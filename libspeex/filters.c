@@ -338,7 +338,7 @@ void fir_mem_up(spx_sig_t *x, spx_word16_t *a, spx_sig_t *y, int N, int M, spx_w
       spx_sig_t y0, y1, y2, y3;
       spx_word16_t x0;
 
-      y0 = y1 = y2 = y3 = 0.f;
+      y0 = y1 = y2 = y3 = 0;
       x0 = xx[N-4-i];
 
       for (j = 0; j < M; j += 4) {

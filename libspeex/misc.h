@@ -60,7 +60,9 @@ typedef spx_word32_t spx_sig_t;
 #define SHL(a,shift) ((a) << (shift))
 
 #define ADD16(a,b) ((a)+(b))
+#define SUB16(a,b) ((a)-(b))
 #define ADD32(a,b) ((a)+(b))
+#define SUB32(a,b) ((a)-(b))
 
 /* result fits in 16 bits */
 #define MULT16_16_16(a,b)     (((short)(a))*((short)(b)))
@@ -80,7 +82,7 @@ typedef spx_word32_t spx_sig_t;
 #define MULT16_16_P14(a,b) (SHR(ADD16(8192,MULT16_16((a),(b))),14))
 
 
-#define DIV32_16(a,b) (((signed int)(a))/(b))
+#define DIV32_16(a,b) (((signed int)(a))/((short)(b)))
 
 #else
 
@@ -101,9 +103,14 @@ typedef float spx_word32_t;
 #define PSHR(a,shift)       (a)
 #define SHR(a,shift)       (a)
 #define SHL(a,shift)       (a)
+#define ADD16(a,b) ((a)+(b))
+#define SUB16(a,b) ((a)-(b))
+#define ADD32(a,b) ((a)+(b))
+#define SUB32(a,b) ((a)-(b))
 #define MULT16_16_16(a,b)     ((a)*(b))
 #define MULT16_16(a,b)     ((a)*(b))
 
+#define MULT16_32_Q11(a,b)     ((a)*(b))
 #define MULT16_32_Q13(a,b)     ((a)*(b))
 #define MULT16_32_Q14(a,b)     ((a)*(b))
 #define MULT16_32_Q15(a,b)     ((a)*(b))
