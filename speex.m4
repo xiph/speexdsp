@@ -7,7 +7,7 @@
 dnl XIPH_PATH_SPEEX([ACTION-IF-FOUND [, ACTION-IF-NOT-FOUND]])
 dnl Test for libspeex, and define SPEEX_CFLAGS and SPEEX_LIBS
 dnl
-AC_DEFUN(XIPH_PATH_SPEEX,
+AC_DEFUN([XIPH_PATH_SPEEX],
 [dnl 
 dnl Get the cflags and libraries
 dnl
