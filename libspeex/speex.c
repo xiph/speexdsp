@@ -316,9 +316,6 @@ void encode(EncState *st, float *in, FrameBits *bits)
       pitch_search_3tap(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2,
                         exc, 20, 147, &gain[0], &pitch, &pitch_gain_index, st->lpcSize,
                         st->subframeSize, bits, st->stack);
-      for (i=0;i<st->subframeSize;i++)
-        exc[i]=gain[0]*exc[i-pitch]+gain[1]*exc[i-pitch-1]+gain[2]*exc[i-pitch-2];
-      printf ("3-tap pitch = %d, gains = [%f %f %f]\n",pitch, gain[0], gain[1], gain[2]);
 #endif
       /* Update target for adaptive codebook contribution */
       residue_zero(exc, st->bw_lpc1, res, st->subframeSize, st->lpcSize);
@@ -548,7 +545,7 @@ void decode(DecState *st, FrameBits *bits, float *out)
       pitch_unquant_3tap(exc, st->min_pitch, st->max_pitch, st->subframeSize, bits, st->stack);
 
       /*Fixed codebook contribution*/
-      frame_bits_unpack_unsigned(bits, 51);
+      split_cb_unquant(exc, exc_table, st->subframeSize, bits);
 
       /*Compute decoded signal*/
       syn_filt_mem(exc, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, st->mem_sp);

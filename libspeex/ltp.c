@@ -401,8 +401,12 @@ float *stack
       frame_bits_pack(bits,best_cdbk,7);
 
    }
-   --*pitch;
-
+   
+   /*FIXME: backward or forward? (ie recursive or not?)*/
+   /*for (i=0;i<nsf;i++)*/
+   for (i=nsf-1;i>=0;i--)
+      exc[i]=gain[0]*exc[i-*pitch+1]+gain[1]*exc[i-*pitch]+gain[2]*exc[i-*pitch-1];
+   printf ("3-tap pitch = %d, gains = [%f %f %f]\n",*pitch, gain[0], gain[1], gain[2]);
 
    {
       float tmp1=0,tmp2=0;
@@ -437,8 +441,9 @@ float *stack
    gain[2] = gain_cdbk_nb[gain_index*12+2];
    printf ("unquantized pitch: %d %f %f %f\n", pitch, gain[0], gain[1], gain[2]);
 
-   /*Go backward in case pitch < nsf*/
-   for(i=nsf-1;i>=0;i--)
+   /*FIXME: backward or forward? (ie recursive or not?)*/
+   /*for(i=0;i<nsf;i++)*/
+   for (i=nsf-1;i>=0;i--)
    {
       exc[i]=gain[0]*exc[i-pitch+1] + gain[1]*exc[i-pitch] + gain[2]*exc[i-pitch-1];
    }

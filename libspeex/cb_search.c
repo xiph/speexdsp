@@ -136,7 +136,7 @@ float target[],			/* target vector */
 float ak[],			/* LPCs for this subframe */
 float awk1[],			/* Weighted LPCs for this subframe */
 float awk2[],			/* Weighted LPCs for this subframe */
-float codebook[][8],		/* overlapping codebook */
+float codebook[][8],		/* non-overlapping codebook */
 int   entries,			/* number of entries to search */
 float *gain,			/* gain of optimum entries */
 int   *index,			/* index of optimum entries */
@@ -182,7 +182,11 @@ FrameBits *bits
             best_gain=corr/(.001+E[j]);
          }
       }
-      frame_bits_pack(bits,best_index,8);
+      frame_bits_pack(bits,best_index,7);
+      if (best_gain>0)
+         frame_bits_pack(bits,0,1);
+      else
+          frame_bits_pack(bits,1,1);        
       ind[i]=best_index;
       gains[i]=best_gain*Ee[ind[i]];
       if (0) { /* Simulating scalar quantization of the gain*/
@@ -290,3 +294,24 @@ FrameBits *bits
       target[i]=t[i];
 }
 
+void split_cb_unquant(
+float *exc,
+float codebook[][8],		/* non-overlapping codebook */
+int   nsf,                      /* number of samples in subframe */
+FrameBits *bits
+)
+{
+   int i;
+   int ind[5];
+   float gains[5];
+   float sign[5];
+   for (i=0;i<5;i++)
+   {
+      ind[i] = frame_bits_unpack_unsigned(bits, 7);
+      if (frame_bits_unpack_unsigned(bits, 1))
+         sign[i]=-1;
+      else
+         sign[i]=1;
+   }
+   frame_bits_unpack_unsigned(bits, 11);
+}

@@ -51,4 +51,11 @@ float *exc,
 FrameBits *bits
 );
 
+void split_cb_unquant(
+float *exc,
+float codebook[][8],		/* non-overlapping codebook */
+int   nsf,                      /* number of samples in subframe */
+FrameBits *bits
+);
+
 #endif
