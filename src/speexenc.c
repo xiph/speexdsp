@@ -371,6 +371,18 @@ int main(int argc, char **argv)
       narrowband=1;
       if (wideband)
          fprintf (stderr,"Warning: encoding a narrowband file in wideband\n");
+   } else if (rate==22050)
+   {
+      wideband=1;
+      fprintf (stderr,"Warning: Speex is not optimized for 22.05 kHz sampling rate. Your mileage may vary\n");
+      if (narrowband)
+         fprintf (stderr,"Warning: encoding a wideband file in narrowband\n");
+   } else if (rate==11025)
+   {
+      fprintf (stderr,"Warning: Speex is not optimized for 11.025 kHz sampling rate. Your mileage may vary\n");
+      narrowband=1;
+      if (wideband)
+         fprintf (stderr,"Warning: encoding a narrowband file in wideband\n");
    }
 
    if (!wideband)
