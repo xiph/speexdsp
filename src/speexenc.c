@@ -26,6 +26,7 @@
 #include <ogg/ogg.h>
 #include "wav_io.h"
 #include "speex_header.h"
+#include "misc.h"
 
 /*Write an Ogg page to a file pointer*/
 int oe_write_page(ogg_page *page, FILE *fp)
@@ -207,6 +208,9 @@ int main(int argc, char **argv)
 
    speex_init_header(&header, rate, 1, mode);
 
+   fprintf (stderr, "Encoding %d Hz audio at %d bps using %s mode\n", 
+            header.rate, mode->bitrate, mode->modeName);
+
    /*Initialize Speex encoder*/
    st = speex_encoder_init(mode);
 
@@ -274,7 +278,7 @@ int main(int argc, char **argv)
       if (feof(fin))
          break;
       for (i=0;i<frame_size;i++)
-         input[i]=in[i];
+         input[i]=(short)le_short(in[i]);
       /*Encode current frame*/
       speex_encode(st, input, &bits);
 

@@ -1,5 +1,6 @@
 /* Copyright (C) 2002 Jean-Marc Valin 
    File: wav_io.c
+   Routines to handle wav (RIFF) headers
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Lesser General Public
@@ -18,6 +19,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include "misc.h"
 
 int read_wav_header(FILE *file, int *rate, int *channels, int *format, int *size)
 {
@@ -34,8 +36,7 @@ int read_wav_header(FILE *file, int *rate, int *channels, int *format, int *size
    }
 
    fread(&itmp, 4, 1, file);
-   /*FIXME: swap bytes*/
-   *size = itmp-36;
+   *size = le_int(itmp-36);
 
    fread(ch, 1, 4, file);
    if (strcmp(ch, "WAVE")!=0)
@@ -52,7 +53,7 @@ int read_wav_header(FILE *file, int *rate, int *channels, int *format, int *size
    }
    
    fread(&itmp, 4, 1, file);
-   /*FIXME: swap bytes*/
+   itmp = le_int(itmp);
    if (itmp!=16)
    {
       fprintf (stderr, "Only 16-bit PCM supported\n");
@@ -60,7 +61,7 @@ int read_wav_header(FILE *file, int *rate, int *channels, int *format, int *size
    }
 
    fread(&stmp, 2, 1, file);
-   /*FIXME: swap bytes*/
+   stmp = le_short(stmp);
    if (stmp!=1)
    {
       fprintf (stderr, "Only 16-bit PCM supported\n");
@@ -68,15 +69,15 @@ int read_wav_header(FILE *file, int *rate, int *channels, int *format, int *size
    }
 
    fread(&stmp, 2, 1, file);
-   /*FIXME: swap bytes*/
+   stmp = le_short(stmp);
    *channels = stmp;
 
    fread(&itmp, 4, 1, file);
-   /*FIXME: swap bytes*/
+   itmp = le_int(itmp);
    *rate = itmp;
 
    fread(&itmp, 4, 1, file);
-   /*FIXME: swap bytes*/
+   itmp = le_int(itmp);
    if (itmp!=*rate**channels*2)
    {
       fprintf (stderr, "Corrupted header: ByteRate mismatch\n");
@@ -84,7 +85,7 @@ int read_wav_header(FILE *file, int *rate, int *channels, int *format, int *size
    }
 
    fread(&stmp, 2, 1, file);
-   /*FIXME: swap bytes*/
+   stmp = le_short(stmp);
    if (stmp!=*channels*2)
    {
       fprintf (stderr, "Corrupted header: BlockAlign mismatch\n");
@@ -92,7 +93,7 @@ int read_wav_header(FILE *file, int *rate, int *channels, int *format, int *size
    }
 
    fread(&stmp, 2, 1, file);
-   /*FIXME: swap bytes*/
+   stmp = le_short(stmp);
    if (stmp!=16)
    {
       fprintf (stderr, "Only 16-bit linear supported\n");
@@ -108,7 +109,7 @@ int read_wav_header(FILE *file, int *rate, int *channels, int *format, int *size
 
    /*Ignore this for now*/
    fread(&itmp, 4, 1, file);
-   /*FIXME: swap bytes*/
+   itmp = le_int(itmp);
 
    *format=16;
 
@@ -132,30 +133,30 @@ void write_wav_header(FILE *file, int rate, int channels, int format, int size)
 
    fprintf (file, "WAVEfmt ");
 
-   itmp = 16;
+   itmp = le_int(16);
    fwrite(&itmp, 4, 1, file);
 
-   stmp = 1;
+   stmp = le_short(1);
    fwrite(&stmp, 2, 1, file);
 
-   stmp = channels;
+   stmp = le_short(channels);
    fwrite(&stmp, 2, 1, file);
 
-   itmp = rate;
+   itmp = le_int(rate);
    fwrite(&itmp, 4, 1, file);
 
-   itmp = rate*channels*2;
+   itmp = le_int(rate*channels*2);
    fwrite(&itmp, 4, 1, file);
 
-   stmp = 2*channels;
+   stmp = le_short(2*channels);
    fwrite(&stmp, 2, 1, file);
 
-   stmp = 16;
+   stmp = le_short(16);
    fwrite(&stmp, 2, 1, file);
 
    fprintf (file, "data");
 
-   itmp = 0x7fffffff;
+   itmp = le_int(0x7fffffff);
    fwrite(&itmp, 4, 1, file);
 
 

@@ -49,7 +49,7 @@ pf_params pf_params_nb = {
 /* Post-filter parameters for low bit-rate narrowband */
 pf_params pf_params_lbr = {
    0.65,      /* formant enhancement numerator */
-   0.7,      /* formant enhancement denominator */
+   0.72,      /* formant enhancement denominator */
    0.4       /* pitch enhancement factor */
 };
 
@@ -202,6 +202,7 @@ static SpeexNBMode low_sb_mode = {
 
 SpeexMode low_wb_mode = {
    &low_sb_mode,
+   "low sub-band (used internally)",
    -1,
    -1,
    &nb_encoder_init,
@@ -219,6 +220,7 @@ SpeexMode low_wb_mode = {
 
 SpeexMode speex_nb_mode = {
    &nb_mode,
+   "full-rate narrowband",
    0,
    0,
    &nb_encoder_init,
@@ -236,6 +238,7 @@ SpeexMode speex_nb_mode = {
 
 SpeexMode speex_nb_lbr_mode = {
    &nb_lbr_mode,
+   "low bit-rate narrowband",
    1,
    0,
    &nb_encoder_init,
@@ -276,6 +279,7 @@ static SpeexSBMode sb_wb_mode = {
 
 SpeexMode speex_wb_mode = {
    &sb_wb_mode,
+   "full-rate wideband (sub-band CELP)",
    2,
    0,
    &sb_encoder_init,

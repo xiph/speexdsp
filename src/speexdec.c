@@ -36,6 +36,7 @@
 #include <string.h>
 #include "wav_io.h"
 #include "speex_header.h"
+#include "misc.h"
 
 #define MAX_FRAME_SIZE 2000
 
@@ -144,6 +145,9 @@ static void *process_header(ogg_packet *op, int pf_enabled, int *frame_size, int
    speex_decoder_ctl(st, SPEEX_GET_FRAME_SIZE, frame_size);
    
    *rate = header->rate;
+
+   fprintf (stderr, "Decoding %d Hz audio at %d bps using %s mode\n", 
+            *rate, mode->bitrate, mode->modeName);
 
    free(header);
    return st;
@@ -276,6 +280,7 @@ int main(int argc, char **argv)
                fout = out_file_open(outFile, rate);
 
             } else if (packet_count==1){
+               fprintf (stderr, "File comments: ");
                fwrite(op.packet, 1, op.bytes, stderr);
                fprintf (stderr, "\n");
             } else {
@@ -298,7 +303,7 @@ int main(int argc, char **argv)
                }
                /*Convert to short and save to output file*/
                for (i=0;i<frame_size;i++)
-                  out[i]=output[i];
+                  out[i]=(short)le_short(output[i]);
                fwrite(out, sizeof(short), frame_size, fout);
             }
             packet_count++;

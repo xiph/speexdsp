@@ -48,6 +48,9 @@ typedef struct SpeexMode {
    /** Pointer to the low-level mode data */
    void *mode;
 
+   /** The name of the mode (you should not rely on this to identify the mode)*/
+   char *modeName;
+
    /**ID of the mode*/
    int modeID;
 

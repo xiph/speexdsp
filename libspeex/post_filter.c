@@ -42,6 +42,7 @@ float *stack)
    float gain;
    pf_params *params;
    float *tmp_exc;
+   float formant_num, formant_den, voiced_fact;
 
    params = (pf_params*) par;
 
@@ -61,9 +62,18 @@ float *stack)
                                                );
    }
    
-   bw_lpc (params->formant_enh_num, ak, awk, p);
+   voiced_fact = pitch_gain[0]+pitch_gain[1]+pitch_gain[2];
+   if (voiced_fact<0)
+      voiced_fact=0;
+   if (voiced_fact>1)
+      voiced_fact=1;
+   formant_num = params->formant_enh_num;
+   formant_den =   voiced_fact    * params->formant_enh_den 
+                 + (1-voiced_fact)* params->formant_enh_num;
+
+   bw_lpc (formant_num, ak, awk, p);
    residue_mem(new_exc, awk, tmp_exc, nsf, p, mem);
-   bw_lpc (params->formant_enh_den, ak, awk, p);
+   bw_lpc (formant_den, ak, awk, p);
    syn_filt_mem(tmp_exc, awk, new_exc, nsf, p, mem2);
 
    for (i=0;i<nsf;i++)
