@@ -106,7 +106,7 @@ wld(
  *                      `--'
  * for lags between 0 and lag-1, and x == 0 outside 0...n-1
  */
-void autocorr(
+void _spx_autocorr(
               const float * x,   /*  in: [0...n-1] samples x   */
               float *ac,   /* out: [0...lag-1] ac values */
               int lag, int   n)

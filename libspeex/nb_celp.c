@@ -251,7 +251,7 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
       st->buf2[i] = st->frame[i] * st->window[i];
 
    /* Compute auto-correlation */
-   autocorr(st->buf2, st->autocorr, st->lpcSize+1, st->windowSize);
+   _spx_autocorr(st->buf2, st->autocorr, st->lpcSize+1, st->windowSize);
 
    st->autocorr[0] += 10;        /* prevents NANs */
    st->autocorr[0] *= st->lpc_floor; /* Noise floor in auto-correlation domain */
