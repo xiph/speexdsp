@@ -29,6 +29,9 @@ extern "C" {
 #endif
 
 #define SPEEX_SET_PF 0
+#define SPEEX_GET_PF 1
+#define SPEEX_GET_FRAME_SIZE 3
+
 
 struct SpeexMode;
 
@@ -38,7 +41,8 @@ typedef void (*encode_func)(void *state, float *in, SpeexBits *bits);
 typedef void *(*decoder_init_func)(struct SpeexMode *mode);
 typedef void (*decoder_destroy_func)(void *st);
 typedef void (*decode_func)(void *state, SpeexBits *bits, float *out, int lost);
-typedef void (*ctl_func)(void *state, int request, void *ptr);
+typedef void (*encoder_ctl_func)(void *state, int request, void *ptr);
+typedef void (*decoder_ctl_func)(void *state, int request, void *ptr);
 
 /** Struct defining a Speex mode */ 
 typedef struct SpeexMode {
@@ -63,11 +67,11 @@ typedef struct SpeexMode {
    /** Pointer to frame decoding function */
    decode_func dec;
 
-   /** ioctl-like requests for codec state */
-   ctl_func ctl;
+   /** ioctl-like requests for encoder */
+   encoder_ctl_func enc_ctl;
 
-   /** Frame size used for the current mode */
-   int frameSize;
+   /** ioctl-like requests for decoder */
+   decoder_ctl_func dec_ctl;
 
 } SpeexMode;
 
@@ -84,6 +88,9 @@ void speex_encoder_destroy(void *state);
     "in". The encoded bit-stream is saved in "bits".*/
 void speex_encode(void *state, float *in, SpeexBits *bits);
 
+void speex_encoder_ctl(void *state, int request, void *ptr);
+
+
 /** Returns a handle to a newly created decoder state structure. For now, the mode
     arguent can be &nb_mode or &wb_mode . In the future, more modes may be added. 
     Note that for now if you have more than one channels to decode, you need one 
@@ -97,8 +104,9 @@ void speex_decoder_destroy(void *state);
     bits. The output speech is saved written to out. */
 void speex_decode(void *state, SpeexBits *bits, float *out, int lost);
 
+void speex_decoder_ctl(void *state, int request, void *ptr);
 
-void speex_ctl(void *state, int request, void *ptr);
+
 
 /** Default narrowband mode */
 extern SpeexMode speex_nb_mode;

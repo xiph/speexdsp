@@ -184,8 +184,8 @@ int main(int argc, char **argv)
                }
                /*Initialize Speex decoder*/
                st = speex_decoder_init(mode);
-               speex_ctl(st, SPEEX_SET_PF, &pf_enabled);
-               frame_size=mode->frameSize;
+               speex_decoder_ctl(st, SPEEX_SET_PF, &pf_enabled);
+               speex_decoder_ctl(st, SPEEX_GET_FRAME_SIZE, &frame_size);
                first=0;
             } else {
                /*End of stream condition*/

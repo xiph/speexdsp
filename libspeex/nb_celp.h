@@ -144,7 +144,9 @@ void nb_decoder_destroy(void *state);
 /**Decodes one frame*/
 void nb_decode(void *state, SpeexBits *bits, float *out, int lost);
 
-void nb_ctl(void *state, int request, void *ptr);
+void nb_encoder_ctl(void *state, int request, void *ptr);
+
+void nb_decoder_ctl(void *state, int request, void *ptr);
 
 
 #endif

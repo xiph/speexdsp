@@ -24,7 +24,7 @@ int main(int argc, char **argv)
    dec = speex_decoder_init(&speex_nb_mode);
 
    pf=0;
-   speex_ctl(dec, SPEEX_SET_PF, &pf);
+   speex_decoder_ctl(dec, SPEEX_SET_PF, &pf);
 
    if (argc != 4 && argc != 3)
    {

@@ -746,17 +746,31 @@ void nb_decode(void *state, SpeexBits *bits, float *out, int lost)
 
 }
 
-
-void nb_ctl(void *state, int request, void *ptr)
+void nb_encoder_ctl(void *state, int request, void *ptr)
 {
+   EncState *st;
+   st=state;     
+   switch(request)
+   {
+   case SPEEX_GET_FRAME_SIZE:
+      (*(int*)ptr) = st->frameSize;
+      break;
+   default:
+      fprintf(stderr, "Unknown nb_ctl request: %d\n", request);
+   }
+}
+
+void nb_decoder_ctl(void *state, int request, void *ptr)
+{
+   DecState *st;
+   st=state;     
    switch(request)
    {
    case SPEEX_SET_PF:
-      {
-         DecState *st;
-         st=state;     
-         st->pf_enabled = *((int*)ptr);
-      }
+      st->pf_enabled = *((int*)ptr);
+      break;
+   case SPEEX_GET_FRAME_SIZE:
+      (*(int*)ptr) = st->frameSize;
       break;
    default:
       fprintf(stderr, "Unknown nb_ctl request: %d\n", request);

@@ -141,8 +141,8 @@ SpeexMode low_wb_mode = {
    &nb_decoder_init,
    &nb_decoder_destroy,
    &nb_decode,
-   &nb_ctl,
-   160
+   &nb_encoder_ctl,
+   &nb_decoder_ctl,
 };
 
 SpeexMode speex_nb_mode = {
@@ -153,8 +153,8 @@ SpeexMode speex_nb_mode = {
    &nb_decoder_init,
    &nb_decoder_destroy,
    &nb_decode,
-   &nb_ctl,
-   160
+   &nb_encoder_ctl,
+   &nb_decoder_ctl,
 };
 
 /* Split-band wideband CELP mode*/
@@ -188,8 +188,8 @@ SpeexMode speex_wb_mode = {
    &sb_decoder_init,
    &sb_decoder_destroy,
    &sb_decode,
-   &sb_ctl,
-   320
+   &sb_encoder_ctl,
+   &sb_decoder_ctl,
 };
 
 
@@ -226,7 +226,12 @@ void speex_decode(void *state, SpeexBits *bits, float *out, int lost)
 }
 
 
-void speex_ctl(void *state, int request, void *ptr)
+void speex_encoder_ctl(void *state, int request, void *ptr)
 {
-   (*((SpeexMode**)state))->ctl(state, request, ptr);
+   (*((SpeexMode**)state))->enc_ctl(state, request, ptr);
+}
+
+void speex_decoder_ctl(void *state, int request, void *ptr)
+{
+   (*((SpeexMode**)state))->dec_ctl(state, request, ptr);
 }

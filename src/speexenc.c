@@ -209,7 +209,7 @@ int main(int argc, char **argv)
       }
    }
 
-   frame_size=mode->frameSize;
+   speex_encoder_ctl(st, SPEEX_GET_FRAME_SIZE, &frame_size);
 
    /*Main encoding loop (one frame per iteration)*/
    while (1)
