@@ -45,7 +45,7 @@
 #endif
 
 #define SQRT_M_PI_2 0.88623
-#define LOUDNESS_EXP 3.5
+#define LOUDNESS_EXP 2.5
 
 #define NB_BANDS 8
 
@@ -464,22 +464,21 @@ static void speex_compute_agc(SpeexPreprocessState *st, float mean_prior)
          active_bands+=1;
    }
    active_bands /= (freq_end-freq_start+1);
-   /*fprintf (stderr, "%f\n", active_bands);*/
 
-   if (active_bands > .3)
+   if (active_bands > .2)
    {
       float loudness=0;
-      float rate, rate2=.03;
+      float rate, rate2=.2;
       st->nb_loudness_adapt++;
       rate=2.0/(1+st->nb_loudness_adapt);
-      if (rate < .02)
-         rate = .02;
-      if (rate < .07 && pow(loudness, LOUDNESS_EXP) > st->loudness)
-         rate = .07;
-      if (rate < .15 && pow(loudness, LOUDNESS_EXP) > 3*st->loudness)
-         rate = .15;
-      if (rate < .3 && pow(loudness, LOUDNESS_EXP) > 10*st->loudness)
-         rate = .3;
+      if (rate < .05)
+         rate = .05;
+      if (rate < .1 && pow(loudness, LOUDNESS_EXP) > st->loudness)
+         rate = .1;
+      if (rate < .2 && pow(loudness, LOUDNESS_EXP) > 3*st->loudness)
+         rate = .2;
+      if (rate < .4 && pow(loudness, LOUDNESS_EXP) > 10*st->loudness)
+         rate = .4;
 
       for (i=2;i<N;i++)
       {
@@ -498,6 +497,9 @@ static void speex_compute_agc(SpeexPreprocessState *st, float mean_prior)
    }
    
    agc_gain = st->agc_level/st->loudness2;
+   /*fprintf (stderr, "%f %f %f %f\n", active_bands, st->loudness, st->loudness2, agc_gain);*/
+   if (agc_gain>200)
+      agc_gain = 200;
 
    for (i=0;i<N;i++)
       st->gain2[i] *= agc_gain;
