@@ -44,7 +44,7 @@ int main(int argc, char **argv)
       frame_bits_reset(&bits);
       sb_encode(&st, input, &bits);
       nbBits = frame_bits_write(&bits, cbits, 200);
-      printf ("Encoding frame in %d bits\n", nbBits*8);
+      /*printf ("Encoding frame in %d bits\n", nbBits*8);*/
       if (argc==4)
          fwrite(cbits, 1, nbBits, fbits);
       {
@@ -55,7 +55,6 @@ int main(int argc, char **argv)
             esig += bak2[i]*bak2[i];
          }
          snr = 10*log10((esig+1)/(enoise+1));
-         printf ("real SNR = %f\n", snr);
       }
       frame_bits_rewind(&bits);
       

@@ -28,6 +28,7 @@
 #include "stack_alloc.h"
 #include "cb_search.h"
 #include "quant_lsp.h"
+#include "vq.h"
 
 #ifndef M_PI
 #define M_PI           3.14159265358979323846  /* pi */
@@ -526,7 +527,7 @@ void sb_encode(SBEncState *st, float *in, FrameBits *bits)
          for (k=0;k<N;k++)
          {
             int sign=0;
-            float quant, dist, min_dist;
+            float quant;
             int best_ind;
             int of=k*st->subframeSize/N;
             gains[k]*=g;
@@ -541,9 +542,7 @@ void sb_encode(SBEncState *st, float *in, FrameBits *bits)
                then convert to the log domain */
             quant = log((1+gains[k])*filter_ratio/(1+sqrt(el/st->subframeSize)));
             
-            /* Vector-quantize the gain */
-            min_dist = sqr(quant-quant_high_gain2[0]);
-
+            /* Quantize the gain */
             best_ind = vq_index(&quant, quant_high_gain2, 1, 8);
             quant=quant_high_gain2[best_ind];
 
@@ -575,7 +574,7 @@ void sb_encode(SBEncState *st, float *in, FrameBits *bits)
       
       POP(st->stack);
    }
-
+#if 0
    /* Up-sample coded low-band and high-band*/
    for (i=0;i<st->frame_size;i++)
    {
@@ -589,7 +588,7 @@ void sb_encode(SBEncState *st, float *in, FrameBits *bits)
    fir_mem(st->x1, h1, st->y1, st->full_frame_size, QMF_ORDER, st->g1_mem);
    for (i=0;i<st->full_frame_size;i++)
       in[i]=2*(st->y0[i]-st->y1[i]);
-
+#endif
    for (i=0;i<st->lpcSize;i++)
       st->old_lsp[i] = st->lsp[i];
    for (i=0;i<st->lpcSize;i++)
@@ -719,7 +718,6 @@ void sb_decode(SBDecState *st, FrameBits *bits, float *out)
          rl=1/(fabs(rl)+.001);
          rh=1/(fabs(rh)+.001);
          filter_ratio=fabs(.001+rh)/(.001+fabs(rl));
-         printf ("filter_ratio: %f\n", filter_ratio);
       }
 
       {
