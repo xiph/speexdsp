@@ -29,13 +29,13 @@
 
 The Speex Codec Manual
 \newline 
-(for version 1.0rc3)
+(version 1.0rc3)
 \layout Author
 
 Jean-Marc Valin
 \layout Standard
 \pagebreak_top 
-Copyright (c) 2002 Jean-Marc Valin.
+Copyright (c) 2002-2003 Jean-Marc Valin.
 \layout Standard
 
 Permission is granted to copy, distribute and/or modify this document under
@@ -1648,13 +1648,18 @@ RTP
  Payload Format 
 \layout Standard
 
-The latest RTP payload draft can be found at 
+The RTP payload draft is included in appendix 
+\begin_inset LatexCommand \ref{sec:IETF-draft}
+
+\end_inset 
+
+ and the latest version is available at 
 \begin_inset LatexCommand \url{http://www.speex.org/drafts/latest}
 
 \end_inset 
 
 .
- We are (2003/01/14) about to send the latest draft to the IETF for comments.
+ We are (2003/02/16) about to send the latest draft to the IETF for comments.
  
 \layout Subsection
 
@@ -5328,6 +5333,17 @@ Vorbis is a great project but its goals are not the same as Speex.
  typically 2-4 times higher compression at equal quality.
 \layout Subsection*
 
+Isn't there a GPL implementation of the GSM-FR codec? Why is Speex necessary?
+\layout Standard
+
+First of all, it's not clear whether or not GSM-FR is covered by a phillips
+ patent (see http://kbs.cs.tu-berlin.de/~jutta/toast.html).
+ Also, GSM-FR offers mediocre quality at a relatively high bit-rate, while
+ Speex can offer equivalent quality at almost half the bit-rate.
+ Last but not least, Speex offers a wide range of bit-rates and sampling
+ rates, while GSM-FR is limited to 8 kHz speech at 13 kbps.
+\layout Subsection*
+
 Under what license is Speex released?
 \layout Standard
 
@@ -5555,6 +5571,10 @@ d as a sum of unit pulses, thus making the codebook search much more efficient.
 \layout Section
 \pagebreak_top 
 Sample code
+\layout Standard
+
+This section shows sample code for encoding and decoding speech using the
+ Speex API.
 \layout Subsection
 
 sampleenc.c
