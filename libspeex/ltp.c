@@ -182,11 +182,6 @@ void open_loop_nbest_pitch(spx_sig_t *sw, int start, int end, int len, int *pitc
       /* Update energy for next pitch*/
       energy[i-start+1] = energy[i-start] + SHR(MULT16_16(swn[-i-1],swn[-i-1]),6) - SHR(MULT16_16(swn[-i+len-1],swn[-i+len-1]),6);
    }
-   for (i=start;i<=end;i++)
-   {
-      corr[i-start]=0;
-      score[i-start]=0;
-   }
 
    pitch_xcorr(swn, swn-end, corr, len, end-start+1, stack);
 
