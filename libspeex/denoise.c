@@ -88,6 +88,7 @@ SpeexDenoiseState *speex_denoise_state_init(int frame_size)
    st->frame_size = frame_size;
 
    /* Round ps_size down to the nearest power of two */
+#if 0
    i=1;
    st->ps_size = st->frame_size;
    while(1)
@@ -100,9 +101,14 @@ SpeexDenoiseState *speex_denoise_state_init(int frame_size)
          break;
       }
    }
-
+   
+   
    if (st->ps_size < 3*st->frame_size/4)
       st->ps_size = st->ps_size * 3 / 2;
+#else
+   st->ps_size = st->frame_size;
+#endif
+
    N = st->ps_size;
    N3 = 2*N - st->frame_size;
    N4 = st->frame_size - N3;
@@ -132,12 +138,15 @@ SpeexDenoiseState *speex_denoise_state_init(int frame_size)
    conj_window(st->window, 2*N3);
    for (i=2*N3;i<2*st->ps_size;i++)
       st->window[i]=1;
-   for (i=N3-1;i>=0;i--)
+   
+   if (N4>0)
    {
-      st->window[i+N3+N4]=st->window[i+N3];
-      st->window[i+N3]=1;
+      for (i=N3-1;i>=0;i--)
+      {
+         st->window[i+N3+N4]=st->window[i+N3];
+         st->window[i+N3]=1;
+      }
    }
-
    for (i=0;i<N;i++)
    {
       st->noise[i]=1e4;
@@ -167,7 +176,6 @@ SpeexDenoiseState *speex_denoise_state_init(int frame_size)
    st->nb_loudness_adapt = 0;
 
    drft_init(&st->fft_lookup,2*N);
-
 
    st->nb_adapt=0;
    st->consec_noise=0;

@@ -126,6 +126,11 @@ extern "C" {
 /** Get DTX status (1 for on, 0 for off) */
 #define SPEEX_GET_DTX 35
 
+/** Set submode encoding in each frame (1 for yes, 0 for no, setting to no breaks the standard) */
+#define SPEEX_SET_SUBMODE_ENCODING 36
+/** */
+#define SPEEX_GET_SUBMODE_ENCODING 37
+
 
 /* Used internally, not to be used in applications */
 /** Used internally*/
