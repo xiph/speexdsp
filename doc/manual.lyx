@@ -29,7 +29,7 @@
 
 The Speex Codec Manual
 \newline 
-(version 1.0.0)
+(version 1.0)
 \layout Author
 
 Jean-Marc Valin
@@ -612,6 +612,15 @@ Programming with Speex (the libspeex
 \end_inset 
 
 )
+\layout Standard
+
+This section explains how to use the Speex API.
+ Examples of code can also be found in appendix 
+\begin_inset LatexCommand \ref{sec:Sample-code}
+
+\end_inset 
+
+.
 \layout Subsection
 
 Encoding
@@ -1356,7 +1365,7 @@ Request acknowloedge (0=no, 1=all, 2=only for in-band data)
 
 \layout Standard
 
-Asks encoder to set VBR off (0), on(1), VAD(2), DTX(3)
+Asks encoder to set CBR (0), VAD(1), DTX(3), VBR(5), VBR+DTX(7)
 \end_inset 
 </cell>
 </row>
@@ -5518,7 +5527,7 @@ What is your (Jean-Marc) relationship with the University of Sherbrooke
  and how does Speex fit into that?
 \layout Standard
 
-I am currently (2003/01/13) doing a Ph.D.
+I am currently (2003/03/09) doing a Ph.D.
  at the University of Sherbrooke in mobile robotics.
  Although I did my master with the Sherbrooke speech coding group (in speech
  enhancement, not coding), I am not associated with them anymore.
@@ -5570,6 +5579,11 @@ d as a sum of unit pulses, thus making the codebook search much more efficient.
 \layout Section
 \pagebreak_top 
 Sample code
+\begin_inset LatexCommand \label{sec:Sample-code}
+
+\end_inset 
+
+
 \layout Standard
 
 This section shows sample code for encoding and decoding speech using the
