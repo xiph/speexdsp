@@ -1016,17 +1016,17 @@ int speex_preprocess_ctl(SpeexPreprocessState *state, int request, void *ptr)
       break;
 
    case SPEEX_PREPROCESS_SET_DEREVERB_LEVEL:
-      st->reverb_level = (*(int*)ptr);
+      st->reverb_level = (*(float*)ptr);
       break;
    case SPEEX_PREPROCESS_GET_DEREVERB_LEVEL:
-      (*(int*)ptr) = st->reverb_level;
+      (*(float*)ptr) = st->reverb_level;
       break;
    
    case SPEEX_PREPROCESS_SET_DEREVERB_DECAY:
-      st->reverb_decay = (*(int*)ptr);
+      st->reverb_decay = (*(float*)ptr);
       break;
    case SPEEX_PREPROCESS_GET_DEREVERB_DECAY:
-      (*(int*)ptr) = st->reverb_decay;
+      (*(float*)ptr) = st->reverb_decay;
       break;
 
       default:
