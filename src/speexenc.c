@@ -262,7 +262,7 @@ int main(int argc, char **argv)
    int close_in=0, close_out=0;
    int eos=0;
    int bitrate=0;
-   int cumul_bits=0, enc_frames=0;
+   double cumul_bits=0, enc_frames=0;
    char first_bytes[12];
    int wave_input=0;
    comment_init(&comments, &comments_length, vendor_string);
@@ -647,7 +647,7 @@ int main(int argc, char **argv)
          speex_encoder_ctl(st, SPEEX_GET_BITRATE, &tmp);
          fputc (ch, stderr);
          cumul_bits += tmp;
-         enc_frames++;
+         enc_frames += 1;
          if (vad_enabled || vbr_enabled || abr_enabled)
             fprintf (stderr, "Bitrate is use: %d bps  (average %d bps)   ", tmp, cumul_bits/enc_frames);
          else
