@@ -3154,6 +3154,11 @@ clearpage
 \layout Section
 \pagebreak_top 
 Feature description
+\layout Standard
+
+This section explains the main Speex features, as well as some concepts
+ in speech coding that help better understand the next sections.
+ 
 \layout Subsection*
 
 Sampling rate
@@ -4634,15 +4639,7 @@ The latest RTP payload draft can be found at
 \end_inset 
 
 .
- We are (2002/11/11) about to send the latest draft to the IETF for comments.
- 
-\layout Comment
-
-Since Speex encoded frames already contain mode information, they can be
- sent without any other information in an RTP packet.
- If more than one frame is transmitted, no byte padding is performed at
- the end of frames, except the last one.
- The number of frames contained in each packet MUST be transmitted out-of-band.
+ We are (2003/01/14) about to send the latest draft to the IETF for comments.
  
 \layout Subsection
 
@@ -4855,7 +4852,7 @@ char[]
 
 \layout Standard
 
-speex_header_version
+speex_version_id
 \end_inset 
 </cell>
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
@@ -5115,7 +5112,7 @@ int
 
 \layout Standard
 
-reserved1
+extra_headers
 \end_inset 
 </cell>
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
@@ -5141,7 +5138,7 @@ int
 
 \layout Standard
 
-reserved2
+reserved1
 \end_inset 
 </cell>
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
@@ -5167,7 +5164,7 @@ int
 
 \layout Standard
 
-reserved3
+reserved2
 \end_inset 
 </cell>
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
@@ -5239,6 +5236,13 @@ Vorbis is a great project but its goals are not the same as Speex.
  Speex targets speech only.
  For that reason Speex can achieve much better results than Vorbis on speech,
  typically 2-4 times higher compression at equal quality.
+\layout Subsection*
+
+Under what license is Speex released?
+\layout Standard
+
+As of version 1.0 beta 1, Speex in released under Xiph's BSD-like license.
+ This license is the most permissive of the open-source licenses.
 \layout Subsection*
 
 Ogg
@@ -5315,8 +5319,8 @@ This is called transcoding and it will always result in much poorer quality
 Does Speex run on Windows?
 \layout Standard
 
-As of 0.8.0, Speex can now compile on Windows, though limited testing has
- been done so far.
+As of 0.8.0, Speex can now compile on Windows.
+ There are also several front-ends available from the web site.
 \layout Subsection*
 
 Why is encoding so slow compared to decoding?
@@ -5409,7 +5413,7 @@ What is your (Jean-Marc) relationship with the University of Sherbrooke
  and how does Speex fit into that?
 \layout Standard
 
-I am currently (2002/08/13) doing a Ph.D.
+I am currently (2003/01/13) doing a Ph.D.
  at the University of Sherbrooke in mobile robotics.
  Although I did my master with the Sherbrooke speech coding group (in speech
  enhancement, not coding), I am not associated with them anymore.
