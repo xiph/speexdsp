@@ -32,7 +32,10 @@
 
 */
 
-#include <stdlib.h>
+#ifndef NULL
+#define NULL 0
+#endif
+
 #include "speex.h"
 #include "speex_bits.h"
 #include "speex_jitter.h"

@@ -33,7 +33,6 @@
 
 #include <math.h>
 #include "speex_preprocess.h"
-#include <stdio.h>
 #include "misc.h"
 #include "smallft.h"
 
@@ -785,7 +784,7 @@ int speex_preprocess(SpeexPreprocessState *st, float *x, float *echo)
    }
    st->Zlast = Zframe;
 
-   fprintf (stderr, "%f\n", Pframe);
+   /*fprintf (stderr, "%f\n", Pframe);*/
    /* Compute gain according to the Ephraim-Malah algorithm */
    for (i=1;i<N;i++)
    {

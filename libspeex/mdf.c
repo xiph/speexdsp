@@ -38,7 +38,7 @@
 #include "speex_echo.h"
 #include "smallft.h"
 #include <math.h>
-#include <stdio.h>
+/*#include <stdio.h>*/
 
 #define BETA .65
 

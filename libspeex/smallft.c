@@ -11,7 +11,7 @@
  ********************************************************************
 
  function: *unnormalized* fft transform
- last mod: $Id: smallft.c,v 1.2 2003/09/16 18:35:45 jm Exp $
+ last mod: $Id: smallft.c,v 1.3 2003/09/18 03:58:58 jm Exp $
 
  ********************************************************************/
 
@@ -28,11 +28,9 @@
  * FORTRAN version
  */
 
-#include <stdlib.h>
-#include <string.h>
 #include <math.h>
 #include "smallft.h"
-/*#include "misc.h"*/
+#include "misc.h"
 
 static void drfti1(int n, float *wa, int *ifac){
   static int ntryh[4] = { 4,2,3,5 };
@@ -1238,17 +1236,21 @@ void drft_backward(struct drft_lookup *l,float *data){
   drftb1(l->n,data,l->trigcache,l->trigcache+l->n,l->splitcache);
 }
 
-void drft_init(struct drft_lookup *l,int n){
+void drft_init(struct drft_lookup *l,int n)
+{
   l->n=n;
-  l->trigcache=calloc(3*n,sizeof(*l->trigcache));
-  l->splitcache=calloc(32,sizeof(*l->splitcache));
+  l->trigcache=speex_alloc(3*n*sizeof(*l->trigcache));
+  l->splitcache=speex_alloc(32*sizeof(*l->splitcache));
   fdrffti(n, l->trigcache, l->splitcache);
 }
 
-void drft_clear(struct drft_lookup *l){
-  if(l){
-    if(l->trigcache)free(l->trigcache);
-    if(l->splitcache)free(l->splitcache);
-    memset(l,0,sizeof(*l));
+void drft_clear(struct drft_lookup *l)
+{
+  if(l)
+  {
+    if(l->trigcache)
+      speex_free(l->trigcache);
+    if(l->splitcache)
+      speex_free(l->splitcache);
   }
 }
