@@ -182,8 +182,8 @@ SpeexSubmode nb_submode2 = {
    split_cb_search_nogain2,
    split_cb_nogain_unquant,
    &split_cb_nb_vlbr,
-   nb_post_filter,
-   &pf_params_lbr
+   NULL,
+   NULL
 };
 
 
@@ -283,7 +283,7 @@ SpeexMode speex_nb_mode = {
    &nb_mode,
    "narrowband",
    0,
-   2,
+   3,
    &nb_encoder_init,
    &nb_encoder_destroy,
    &nb_encode,
@@ -376,7 +376,7 @@ SpeexMode speex_wb_mode = {
    &sb_wb_mode,
    "full-rate wideband (sub-band CELP)",
    1,
-   2,
+   3,
    &sb_encoder_init,
    &sb_encoder_destroy,
    &sb_encode,

@@ -61,6 +61,7 @@ void usage()
    fprintf (stderr, "  --wideband   -w    Wideband (16 kHz) input file\n"); 
    fprintf (stderr, "  --quality n        Encoding quality setting from 0 to 10\n"); 
    fprintf (stderr, "  --lbr              Low bit-rate mode (equivalent to --quality 3)\n"); 
+   fprintf (stderr, "  --vbr              Enable variable bit-rate (VBR)\n"); 
    fprintf (stderr, "  --help       -h    This help\n"); 
    fprintf (stderr, "  --version    -v    Version information\n"); 
    fprintf (stderr, "\n");  
@@ -83,6 +84,7 @@ int main(int argc, char **argv)
    short in[MAX_FRAME_SIZE];
    float input[MAX_FRAME_SIZE];
    int frame_size;
+   int vbr_enabled;
    int i,nbBytes;
    SpeexMode *mode=NULL;
    void *st;
@@ -93,6 +95,7 @@ int main(int argc, char **argv)
       {"wideband", no_argument, NULL, 0},
       {"narrowband", no_argument, NULL, 0},
       {"lbr", no_argument, NULL, 0},
+      {"vbr", no_argument, NULL, 0},
       {"quality", required_argument, NULL, 0},
       {"help", no_argument, NULL, 0},
       {"version", no_argument, NULL, 0},
@@ -126,6 +129,8 @@ int main(int argc, char **argv)
                wideband=1;
          else if (strcmp(long_options[option_index].name,"lbr")==0)
                lbr=1;
+         else if (strcmp(long_options[option_index].name,"vbr")==0)
+               vbr_enabled=1;
          else if (strcmp(long_options[option_index].name,"quality")==0)
          {
             quality = atoi (optarg);
@@ -282,13 +287,22 @@ int main(int argc, char **argv)
    }
 
    speex_encoder_ctl(st, SPEEX_GET_FRAME_SIZE, &frame_size);
+   if (vbr_enabled)
+   {
+      int tmp;
+      tmp=1;
+      speex_encoder_ctl(st, SPEEX_SET_VBR, &tmp);
+   }
    if (lbr || quality != -1)
    {
       int tmp=quality;
       if (quality==-1)
          tmp = 3;
       speex_encoder_ctl(st, SPEEX_SET_QUALITY, &tmp);
+      if (vbr_enabled)
+         speex_encoder_ctl(st, SPEEX_SET_VBR_QUALITY, &tmp);
    }
+
    /*Main encoding loop (one frame per iteration)*/
    while (1)
    {

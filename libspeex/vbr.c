@@ -142,11 +142,11 @@ float vbr_analysis(VBRState *vbr, float *sig, int len, int pitch, float pitch_co
    } else {
       /* Checking for energy increases */
       if (ener > vbr->last_energy*4.0)
-         qual += 1;
+         qual += .7;
       if (ener > vbr->last_energy*1.8)
-         qual += 1;
+         qual += .7;
       if (ener > 3*vbr->average_energy)
-         qual += 1;
+         qual += .7;
       if (ener2 > 1.6*ener1)
          qual += .7;
       if (ener2 < .6*ener1)
@@ -164,6 +164,13 @@ float vbr_analysis(VBRState *vbr, float *sig, int len, int pitch, float pitch_co
       qual=-3;
    if (qual>3)
       qual=3;
+
+   if (vbr->consec_noise>=1)
+      qual-=1.2;
+   if (vbr->consec_noise>=4)
+      qual-=1.2;
+   if (vbr->consec_noise>=8)
+      qual-=1.2;
 
    vbr->last_pitch_coef = pitch_coef;
    vbr->last_quality = qual;

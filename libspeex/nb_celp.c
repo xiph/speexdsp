@@ -132,6 +132,8 @@ void *nb_encoder_init(SpeexMode *m)
    if (1) {
       st->vbr = malloc(sizeof(VBRState));
       vbr_init(st->vbr);
+      st->vbr_quality = 8;
+      st->vbr_enabled = 0;
    } else {
       st->vbr = 0;
    }
@@ -187,7 +189,7 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
    int ol_pitch;
    float ol_pitch_coef;
    float ol_gain;
-   float vbr_qual=0;
+   float delta_qual=0;
 
    st=state;
    
@@ -274,14 +276,17 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
 
    /*Experimental VBR stuff*/
    if (st->vbr)
-      vbr_qual = vbr_analysis(st->vbr, in, st->frameSize, ol_pitch, ol_pitch_coef);
-   if (0) {
-      int qual = (int)floor(3.2+1*vbr_qual+.5);
-      if (qual<0)
-         qual=0;
-      if (qual>10)
-         qual=10;
-      speex_encoder_ctl(state, SPEEX_SET_QUALITY, &qual);
+   {
+      delta_qual = vbr_analysis(st->vbr, in, st->frameSize, ol_pitch, ol_pitch_coef);
+      if (st->vbr_enabled) 
+      {
+         int qual = (int)floor(st->vbr_quality+delta_qual+.5);
+         if (qual<0)
+            qual=0;
+         if (qual>10)
+            qual=10;
+         speex_encoder_ctl(state, SPEEX_SET_QUALITY, &qual);
+      }
    }
    /*printf ("VBR quality = %f\n", vbr_qual);*/
 
@@ -960,6 +965,21 @@ void nb_encoder_ctl(void *state, int request, void *ptr)
       break;
    case SPEEX_SET_MODE:
       st->submodeID = (*(int*)ptr);
+      break;
+   case SPEEX_GET_MODE:
+      (*(int*)ptr) = st->submodeID;
+      break;
+   case SPEEX_SET_VBR:
+      st->vbr_enabled = (*(int*)ptr);
+      break;
+   case SPEEX_GET_VBR:
+      (*(int*)ptr) = st->vbr_enabled;
+      break;
+   case SPEEX_SET_VBR_QUALITY:
+      st->vbr_quality = (*(int*)ptr);
+      break;
+   case SPEEX_GET_VBR_QUALITY:
+      (*(int*)ptr) = st->vbr_quality;
       break;
    case SPEEX_SET_QUALITY:
       {

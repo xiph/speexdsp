@@ -75,6 +75,8 @@ typedef struct EncState {
    float *mem_sp, *mem_sw;
    float *pi_gain;
    VBRState *vbr;
+   int    vbr_quality;
+   int    vbr_enabled;
 
    SpeexSubmode **submodes;
    int    submodeID;

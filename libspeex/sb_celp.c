@@ -923,6 +923,18 @@ void sb_encoder_ctl(void *state, int request, void *ptr)
    case SPEEX_SET_LOW_MODE:
       speex_encoder_ctl(st->st_low, SPEEX_SET_MODE, ptr);
       break;
+   case SPEEX_SET_VBR:
+      speex_encoder_ctl(st->st_low, SPEEX_SET_VBR, ptr);
+      break;
+   case SPEEX_SET_VBR_QUALITY:
+      {
+         int qual = (*(int*)ptr)+1;
+         if (qual>10)
+            qual=10;
+         speex_encoder_ctl(st->st_low, SPEEX_SET_VBR_QUALITY, &qual);
+         speex_encoder_ctl(state, SPEEX_SET_QUALITY, ptr);
+         break;
+      }
    case SPEEX_SET_QUALITY:
       {
          int nb_mode;

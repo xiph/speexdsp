@@ -17,6 +17,7 @@ int main(int argc, char **argv)
    void *dec;
    SpeexBits bits;
    int pf;
+   int bitCount;
 
    for (i=0;i<FRAME_SIZE;i++)
       bak2[i]=0;
@@ -25,8 +26,10 @@ int main(int argc, char **argv)
 
    pf=0;
    speex_decoder_ctl(dec, SPEEX_SET_PF, &pf);
+   pf=1;
+   speex_encoder_ctl(st, SPEEX_SET_VBR, &pf);
    pf=10;
-   speex_encoder_ctl(st, SPEEX_SET_QUALITY, &pf);
+   speex_encoder_ctl(st, SPEEX_SET_VBR_QUALITY, &pf);
 
    if (argc != 4 && argc != 3)
    {
@@ -53,6 +56,7 @@ int main(int argc, char **argv)
       speex_bits_reset(&bits);
       speex_encode(st, input, &bits);
       nbBits = speex_bits_write(&bits, cbits, 200);
+      bitCount+=bits.nbBits;
       printf ("Encoding frame in %d bits\n", nbBits*8);
       if (argc==4)
          fwrite(cbits, 1, nbBits, fbits);
@@ -86,6 +90,7 @@ int main(int argc, char **argv)
       fwrite(in, sizeof(short), FRAME_SIZE, fout);
    }
    
+   fprintf (stderr, "Total encoded size: %d bits\n", bitCount);
    speex_encoder_destroy(st);
    speex_decoder_destroy(dec);
    return 1;
