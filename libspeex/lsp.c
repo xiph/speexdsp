@@ -68,7 +68,59 @@ Modified by Jean-Marc Valin
 \*---------------------------------------------------------------------------*/
 
 
+#ifdef FIXED_POINT
 
+#define SCALE1 8192.
+#define SCALE2 16384.
+#define SCALE 16384.
+
+#include <stdio.h>
+
+
+static float cheb_poly_eva(float *coef,float x,int m,char *stack)
+/*  float coef[]  	coefficients of the polynomial to be evaluated 	*/
+/*  float x   		the point where polynomial is to be evaluated 	*/
+/*  int m 		order of the polynomial 			*/
+{
+    int i;
+    spx_word16_t *T;
+    spx_word32_t sum;
+    int m2=m>>1;
+    spx_word16_t xn;
+    spx_word16_t *coefn;
+
+    /* Allocate memory for Chebyshev series formulation */
+    T=PUSH(stack, m2+1, spx_word16_t);
+    coefn=PUSH(stack, m2+1, spx_word16_t);
+
+    xn = floor(.5+x*16384);
+    
+    for (i=0;i<m2+1;i++)
+    {
+       coefn[i] = floor(.5+1024*coef[i]);
+       /*printf ("%f ", coef[i]);*/
+    }
+    /*printf ("\n");*/
+
+    /* Initialise values */
+    T[0]=16384;
+    T[1]=xn;
+
+    /* Evaluate Chebyshev series formulation using iterative approach  */
+    /* Evaluate polynomial and return value also free memory space */
+    sum = coefn[m2] + MULT16_16_P14(coefn[m2-1],xn);
+    /*x *= 2;*/
+    for(i=2;i<=m2;i++)
+    {
+       T[i] = MULT16_16_Q13(xn,T[i-1]) - T[i-2];
+       sum += MULT16_16_P14(coefn[m2-i],T[i]);
+       /*printf ("%f ", sum);*/
+    }
+    
+    /*printf ("\n");*/
+    return sum;
+}
+#else
 static float cheb_poly_eva(float *coef,float x,int m,char *stack)
 /*  float coef[]  	coefficients of the polynomial to be evaluated 	*/
 /*  float x   		the point where polynomial is to be evaluated 	*/
@@ -97,7 +149,7 @@ static float cheb_poly_eva(float *coef,float x,int m,char *stack)
     
     return sum;
 }
-
+#endif
 
 /*---------------------------------------------------------------------------*\
 
@@ -247,70 +299,7 @@ int lpc_to_lsp (spx_coef_t *a,int lpcrdr,float *freq,int nb,float delta, char *s
 
 \*---------------------------------------------------------------------------*/
 
-#if 0
-void lsp_to_lpc(float *freq,spx_coef_t *ak,int lpcrdr, char *stack)
-/*  float *freq 	array of LSP frequencies in the x domain	*/
-/*  float *ak 		array of LPC coefficients 			*/
-/*  int lpcrdr  	order of LPC coefficients 			*/
-
-
-{
-    int i,j;
-    float xout1,xout2,xin1,xin2;
-    float *Wp;
-    float *pw,*n1,*n2,*n3,*n4=NULL;
-    int m = lpcrdr/2;
-
-    Wp = PUSH(stack, 4*m+2, float);
-    pw = Wp;
-
-    /* initialise contents of array */
-
-    for(i=0;i<=4*m+1;i++){       	/* set contents of buffer to 0 */
-	*pw++ = 0.0;
-    }
-
-    /* Set pointers up */
-
-    pw = Wp;
-    xin1 = 1.0;
-    xin2 = 1.0;
-
-    /* reconstruct P(z) and Q(z) by  cascading second order
-      polynomials in form 1 - 2xz(-1) +z(-2), where x is the
-      LSP coefficient */
-
-    for(j=0;j<=lpcrdr;j++){
-       int i2=0;
-	for(i=0;i<m;i++,i2+=2){
-	    n1 = pw+(i*4);
-	    n2 = n1 + 1;
-	    n3 = n2 + 1;
-	    n4 = n3 + 1;
-	    xout1 = xin1 - 2*(freq[i2]) * *n1 + *n2;
-	    xout2 = xin2 - 2*(freq[i2+1]) * *n3 + *n4;
-	    *n2 = *n1;
-	    *n4 = *n3;
-	    *n1 = xin1;
-	    *n3 = xin2;
-	    xin1 = xout1;
-	    xin2 = xout2;
-	}
-	xout1 = xin1 + *(n4+1);
-	xout2 = xin2 - *(n4+2);
-	ak[j] = (xout1 + xout2)*0.5;
-	*(n4+1) = xin1;
-	*(n4+2) = xin2;
-
-	xin1 = 0.0;
-	xin2 = 0.0;
-    }
-
-}
-#else
-
-#define MULT16_32_Q14(a,b) (((a)*((b)>>14)) + ((a)*((signed int)((b)&0x00003fff))>>14))
-#define MULT16_32_Q15(a,b) (((a)*((b)>>15)) + ((a)*((signed int)((b)&0x00007fff))>>15))
+#if FIXED_POINT
 
 void lsp_to_lpc(float *freq,spx_coef_t *ak,int lpcrdr, char *stack)
 /*  float *freq 	array of LSP frequencies in the x domain	*/
@@ -369,6 +358,67 @@ void lsp_to_lpc(float *freq,spx_coef_t *ak,int lpcrdr, char *stack)
 	xout1 = xin1 + *(n4+1);
 	xout2 = xin2 - *(n4+2);
 	ak[j] = ((128+xout1 + xout2)>>8)/8192.;
+	*(n4+1) = xin1;
+	*(n4+2) = xin2;
+
+	xin1 = 0.0;
+	xin2 = 0.0;
+    }
+
+}
+#else
+
+void lsp_to_lpc(float *freq,spx_coef_t *ak,int lpcrdr, char *stack)
+/*  float *freq 	array of LSP frequencies in the x domain	*/
+/*  float *ak 		array of LPC coefficients 			*/
+/*  int lpcrdr  	order of LPC coefficients 			*/
+
+
+{
+    int i,j;
+    float xout1,xout2,xin1,xin2;
+    float *Wp;
+    float *pw,*n1,*n2,*n3,*n4=NULL;
+    int m = lpcrdr/2;
+
+    Wp = PUSH(stack, 4*m+2, float);
+    pw = Wp;
+
+    /* initialise contents of array */
+
+    for(i=0;i<=4*m+1;i++){       	/* set contents of buffer to 0 */
+	*pw++ = 0.0;
+    }
+
+    /* Set pointers up */
+
+    pw = Wp;
+    xin1 = 1.0;
+    xin2 = 1.0;
+
+    /* reconstruct P(z) and Q(z) by  cascading second order
+      polynomials in form 1 - 2xz(-1) +z(-2), where x is the
+      LSP coefficient */
+
+    for(j=0;j<=lpcrdr;j++){
+       int i2=0;
+	for(i=0;i<m;i++,i2+=2){
+	    n1 = pw+(i*4);
+	    n2 = n1 + 1;
+	    n3 = n2 + 1;
+	    n4 = n3 + 1;
+	    xout1 = xin1 - 2*(freq[i2]) * *n1 + *n2;
+	    xout2 = xin2 - 2*(freq[i2+1]) * *n3 + *n4;
+	    *n2 = *n1;
+	    *n4 = *n3;
+	    *n1 = xin1;
+	    *n3 = xin2;
+	    xin1 = xout1;
+	    xin2 = xout2;
+	}
+	xout1 = xin1 + *(n4+1);
+	xout2 = xin2 - *(n4+2);
+	ak[j] = (xout1 + xout2)*0.5;
 	*(n4+1) = xin1;
 	*(n4+2) = xin2;
 

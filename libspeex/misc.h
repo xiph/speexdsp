@@ -57,6 +57,12 @@ typedef int spx_word32_t;
 #define MULT16_32_Q14(a,b) (((a)*((b)>>14)) + ((a)*((signed int)((b)&0x00003fff))>>14))
 #define MULT16_32_Q15(a,b) (((a)*((b)>>15)) + ((a)*((signed int)((b)&0x00007fff))>>15))
 
+#define MULT16_16_Q13(a,b) (((signed int)(a))*(b)>>13)
+#define MULT16_16_Q14(a,b) (((signed int)(a))*(b)>>14)
+#define MULT16_16_Q15(a,b) (((signed int)(a))*(b)>>15)
+
+#define MULT16_16_P14(a,b) ((8192+((signed int)(a))*(b))>>14)
+
 #else
 
 typedef float spx_mem_t;
