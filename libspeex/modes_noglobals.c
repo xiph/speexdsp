@@ -217,7 +217,7 @@ sb_mode_new (
    int     defaultSubmode, /**< Default sub-mode to use when encoding */
    int     low_quality_map[], /**< Mode corresponding to each quality setting */
    int     quality_map[], /**< Mode corresponding to each quality setting */
-   float   (*vbr_thresh)[11],
+   const float (*vbr_thresh)[11],
    int     nb_modes
 		   )
 {

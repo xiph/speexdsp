@@ -40,9 +40,9 @@
 
 #define VBR_MEMORY_SIZE 5
 
-extern float vbr_nb_thresh[9][11];
-extern float vbr_hb_thresh[5][11];
-extern float vbr_uhb_thresh[2][11];
+extern const float vbr_nb_thresh[9][11];
+extern const float vbr_hb_thresh[5][11];
+extern const float vbr_uhb_thresh[2][11];
 
 typedef struct VBRState {
    float energy_alpha;
