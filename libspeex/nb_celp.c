@@ -199,7 +199,6 @@ int nb_encode(void *state, short *in, SpeexBits *bits)
    spx_mem_t *mem;
    char *stack;
    spx_sig_t *syn_resp;
-   float lsp_dist=0;
    spx_sig_t *orig;
 #ifdef EPIC_48K
    int pitch_half[2];
@@ -259,10 +258,6 @@ int nb_encode(void *state, short *in, SpeexBits *bits)
    }
 
 
-   lsp_dist=0;
-   for (i=0;i<st->lpcSize;i++)
-      lsp_dist += (st->old_lsp[i] - st->lsp[i])*(st->old_lsp[i] - st->lsp[i]);
-   lsp_dist /= LSP_SCALING*LSP_SCALING;
 
    /* Whole frame analysis (open-loop estimation of pitch and excitation gain) */
    {
@@ -359,6 +354,10 @@ int nb_encode(void *state, short *in, SpeexBits *bits)
    /*VBR stuff*/
    if (st->vbr && (st->vbr_enabled||st->vad_enabled))
    {
+      float lsp_dist=0;
+      for (i=0;i<st->lpcSize;i++)
+         lsp_dist += (st->old_lsp[i] - st->lsp[i])*(st->old_lsp[i] - st->lsp[i]);
+      lsp_dist /= LSP_SCALING*LSP_SCALING;
       
       if (st->abr_enabled)
       {
@@ -593,7 +592,6 @@ int nb_encode(void *state, short *in, SpeexBits *bits)
    /* Loop on sub-frames */
    for (sub=0;sub<st->nbSubframes;sub++)
    {
-      float tmp;
       int   offset;
       spx_sig_t *sp, *sw, *exc, *exc2;
       int pitch;
@@ -634,14 +632,14 @@ int nb_encode(void *state, short *in, SpeexBits *bits)
       lsp_to_lpc(st->interp_qlsp, st->interp_qlpc, st->lpcSize, stack);
 
       /* Compute analysis filter gain at w=pi (for use in SB-CELP) */
-      tmp=1;
-      st->pi_gain[sub]=0;
-      for (i=0;i<=st->lpcSize;i++)
       {
-         st->pi_gain[sub] += tmp*st->interp_qlpc[i];
-         tmp = -tmp;
+         spx_word32_t pi_g=st->interp_qlpc[0];
+         for (i=1;i<=st->lpcSize;i+=2)
+         {
+            pi_g += -st->interp_qlpc[i] +  st->interp_qlpc[i+1];
+         }
+         st->pi_gain[sub] = (float)pi_g / LPC_SCALING;
       }
-      st->pi_gain[sub] /= LPC_SCALING;
 
 
       /* Compute bandwidth-expanded (unquantized) LPCs for perceptual weighting */
@@ -1395,14 +1393,14 @@ int nb_decode(void *state, SpeexBits *bits, short *out)
       }
 
       /* Compute analysis filter at w=pi */
-      tmp=1;
-      st->pi_gain[sub]=0;
-      for (i=0;i<=st->lpcSize;i++)
       {
-         st->pi_gain[sub] += tmp*st->interp_qlpc[i];
-         tmp = -tmp;
+         spx_word32_t pi_g=st->interp_qlpc[0];
+         for (i=1;i<=st->lpcSize;i+=2)
+         {
+            pi_g += -st->interp_qlpc[i] +  st->interp_qlpc[i+1];
+         }
+         st->pi_gain[sub] = (float)pi_g / LPC_SCALING;
       }
-      st->pi_gain[sub] /= LPC_SCALING;
 
       /* Reset excitation */
       for (i=0;i<st->subframeSize;i++)

@@ -183,7 +183,7 @@ void open_loop_nbest_pitch(spx_sig_t *sw, int start, int end, int len, int *pitc
 
 
 /** Finds the best quantized 3-tap pitch predictor by analysis by synthesis */
-static float pitch_gain_search_3tap(
+static spx_word64_t pitch_gain_search_3tap(
 spx_sig_t target[],                 /* Target vector */
 spx_coef_t ak[],                     /* LPCs for this subframe */
 spx_coef_t awk1[],                   /* Weighted LPCs #1 for this subframe */
@@ -211,7 +211,7 @@ int cdbk_offset
    int   gain_cdbk_size;
    signed char *gain_cdbk;
    spx_word16_t sgain[3];
-   float err;
+   spx_word64_t err;
 
    ltp_params *params;
    params = (ltp_params*) par;
@@ -403,7 +403,7 @@ int cdbk_offset
    {
       spx_sig_t perr=target[i]-(MULT16_32_Q13(SHL(sgain[0],7),x[2][i])+MULT16_32_Q13(SHL(sgain[1],7),x[1][i])+MULT16_32_Q13(SHL(sgain[2],7),x[0][i]));
       spx_word16_t perr2 = SHR(perr,15);
-      err += MULT16_16(perr2,perr2);
+      err = ADD64(err,MULT16_16(perr2,perr2));
       
    }
 #else
@@ -446,7 +446,7 @@ int cdbk_offset
    int cdbk_index, pitch=0, best_gain_index=0;
    spx_sig_t *best_exc;
    int best_pitch=0;
-   float err, best_err=-1;
+   spx_word64_t err, best_err=-1;
    int N;
    ltp_params *params;
    int *nbest;

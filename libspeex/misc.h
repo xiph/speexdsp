@@ -43,6 +43,7 @@
 
 typedef signed short spx_word16_t;
 typedef signed int   spx_word32_t;
+typedef long long    spx_word64_t;
 typedef spx_word32_t spx_mem_t;
 typedef spx_word16_t spx_coef_t;
 typedef spx_word16_t spx_lsp_t;
@@ -68,6 +69,7 @@ extern long long spx_mips;
 #define ADD16(a,b) (spx_mips++,(a)+(b))
 #define SUB16(a,b) (spx_mips++,(a)-(b))
 #define ADD32(a,b) (spx_mips++,(a)+(b))
+#define ADD64(a,b) (spx_mips++,(a)+(b))
 #define SUB32(a,b) (spx_mips++,(a)-(b))
 #define MULT16_16_16(a,b)     (spx_mips++,((short)(a))*((short)(b)))
 
@@ -90,6 +92,7 @@ static inline spx_word32_t MULT16_16(spx_word16_t x, spx_word16_t y) {
 #define SUB16(a,b) ((a)-(b))
 #define ADD32(a,b) ((a)+(b))
 #define SUB32(a,b) ((a)-(b))
+#define ADD64(a,b) ((a)+(b))
 
 /* result fits in 16 bits */
 #define MULT16_16_16(a,b)     (((short)(a))*((short)(b)))
@@ -126,11 +129,14 @@ static inline spx_word32_t MULT16_32_Q15(spx_word16_t x, spx_word32_t y) {
 #define MULT16_32_Q15(a,b) ADD32(MULT16_16((a),SHR((b),15)), SHR(MULT16_16((a),((b)&0x00007fff)),15))
 #endif
 
+
 #define MULT16_16_Q13(a,b) (SHR(MULT16_16((a),(b)),13))
 #define MULT16_16_Q14(a,b) (SHR(MULT16_16((a),(b)),14))
 #define MULT16_16_Q15(a,b) (SHR(MULT16_16((a),(b)),15))
 
+#define MULT16_16_P13(a,b) (SHR(ADD16(4096,MULT16_16((a),(b))),13))
 #define MULT16_16_P14(a,b) (SHR(ADD16(8192,MULT16_16((a),(b))),14))
+#define MULT16_16_P15(a,b) (SHR(ADD16(16384,MULT16_16((a),(b))),15))
 
 #define MUL_16_32_R15(a,bh,bl) ADD32(MULT16_16((a),(bh)), SHR(MULT16_16((a),(bl)),15))
 
@@ -146,6 +152,7 @@ typedef float spx_lsp_t;
 typedef float spx_sig_t;
 typedef float spx_word16_t;
 typedef float spx_word32_t;
+typedef float spx_word64_t;
 
 #define LPC_SCALING  1.
 #define SIG_SCALING  1.
@@ -161,6 +168,7 @@ typedef float spx_word32_t;
 #define SUB16(a,b) ((a)-(b))
 #define ADD32(a,b) ((a)+(b))
 #define SUB32(a,b) ((a)-(b))
+#define ADD64(a,b) ((a)+(b))
 #define MULT16_16_16(a,b)     ((a)*(b))
 #define MULT16_16(a,b)     ((a)*(b))
 

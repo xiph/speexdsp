@@ -46,8 +46,8 @@ void bw_lpc(float gamma, spx_coef_t *lpc_in, spx_coef_t *lpc_out, int order)
    spx_word16_t tmp=g;
    for (i=1;i<order+1;i++)
    {
-      lpc_out[i] = MULT16_16_Q15(tmp,lpc_in[i]);
-      tmp = MULT16_16_Q15(tmp, g);
+      lpc_out[i] = MULT16_16_P15(tmp,lpc_in[i]);
+      tmp = MULT16_16_P15(tmp, g);
    }
 }
 #else
