@@ -156,8 +156,8 @@ typedef struct DecState {
    spx_mem_t *mem_sp;         /**< Filter memory for synthesis signal */
    spx_word32_t *pi_gain;        /**< Gain of LPC filter at theta=pi (fe/2) */
    int    last_pitch;     /**< Pitch of last correctly decoded frame */
-   float  last_pitch_gain; /**< Pitch gain of last correctly decoded frame */
-   float  pitch_gain_buf[3];  /**< Pitch gain of last decoded frames */
+   spx_word16_t  last_pitch_gain; /**< Pitch gain of last correctly decoded frame */
+   spx_word16_t  pitch_gain_buf[3];  /**< Pitch gain of last decoded frames */
    int    pitch_gain_buf_idx; /**< Tail of the buffer */
 
    int    encode_submode;

@@ -217,7 +217,7 @@ int nb_encode(void *state, short *in, SpeexBits *bits)
    EncState *st;
    int i, sub, roots;
    int ol_pitch;
-   float ol_pitch_coef;
+   spx_word16_t ol_pitch_coef;
    spx_word32_t ol_gain;
    spx_sig_t *res, *target;
    spx_mem_t *mem;
@@ -345,10 +345,6 @@ int nb_encode(void *state, short *in, SpeexBits *bits)
                                   &pitch_half[1], nol_pitch_coef, 1, stack);
          }
 #endif
-
-#ifdef FIXED_POINT
-         ol_pitch_coef *= GAIN_SCALING_1;
-#endif
       } else {
          ol_pitch=0;
          ol_pitch_coef=0;
@@ -370,7 +366,7 @@ int nb_encode(void *state, short *in, SpeexBits *bits)
          ol_gain2=ol1;
          if (ol2>ol1)
             ol_gain2=ol2;
-         ol_gain2 = sqrt(2*ol_gain2*(ol1+ol2))*1.3*(1-.5*ol_pitch_coef*ol_pitch_coef);
+         ol_gain2 = sqrt(2*ol_gain2*(ol1+ol2))*1.3*(1-.5*GAIN_SCALING_1*GAIN_SCALING_1*ol_pitch_coef*ol_pitch_coef);
       
          ol_gain=SHR(sqrt(1+ol_gain2/st->frameSize),SIG_SHIFT);
 
@@ -409,7 +405,7 @@ int nb_encode(void *state, short *in, SpeexBits *bits)
             st->vbr_quality=0;
       }
 
-      st->relative_quality = vbr_analysis(st->vbr, in, st->frameSize, ol_pitch, ol_pitch_coef);
+      st->relative_quality = vbr_analysis(st->vbr, in, st->frameSize, ol_pitch, GAIN_SCALING_1*ol_pitch_coef);
       /*if (delta_qual<0)*/
       /*  delta_qual*=.1*(3+st->vbr_quality);*/
       if (st->vbr_enabled) 
@@ -545,14 +541,14 @@ int nb_encode(void *state, short *in, SpeexBits *bits)
       speex_bits_pack(bits, pitch_half[1]-pitch_half[0]+1, 2);
       
       {
-         int quant = (int)floor(.5+7.4*ol_pitch_coef);
+         int quant = (int)floor(.5+7.4*GAIN_SCALING_1*ol_pitch_coef);
          if (quant>7)
             quant=7;
          if (quant<0)
             quant=0;
          ol_pitch_id=quant;
          speex_bits_pack(bits, quant, 3);
-         ol_pitch_coef=0.13514*quant;
+         ol_pitch_coef=GAIN_SCALING*0.13514*quant;
          
       }
       {
@@ -577,13 +573,13 @@ int nb_encode(void *state, short *in, SpeexBits *bits)
    if (SUBMODE(forced_pitch_gain))
    {
       int quant;
-      quant = (int)floor(.5+15*ol_pitch_coef);
+      quant = (int)floor(.5+15*ol_pitch_coef*GAIN_SCALING_1);
       if (quant>15)
          quant=15;
       if (quant<0)
          quant=0;
       speex_bits_pack(bits, quant, 4);
-      ol_pitch_coef=0.066667*quant;
+      ol_pitch_coef=GAIN_SCALING*0.066667*quant;
    }
    
    
@@ -761,7 +757,7 @@ int nb_encode(void *state, short *in, SpeexBits *bits)
          if (st->lbr_48k)
          {
             pitch = SUBMODE(ltp_quant)(target, sw, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2,
-                                       exc, SUBMODE(ltp_params), pit_min, pit_max, GAIN_SCALING*ol_pitch_coef,
+                                       exc, SUBMODE(ltp_params), pit_min, pit_max, ol_pitch_coef,
                                        st->lpcSize, st->subframeSize, bits, stack, 
                                        exc2, syn_resp, st->complexity, ol_pitch_id);
          } else {
@@ -769,7 +765,7 @@ int nb_encode(void *state, short *in, SpeexBits *bits)
 
          /* Perform pitch search */
          pitch = SUBMODE(ltp_quant)(target, sw, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2,
-                                    exc, SUBMODE(ltp_params), pit_min, pit_max, GAIN_SCALING*ol_pitch_coef,
+                                    exc, SUBMODE(ltp_params), pit_min, pit_max, ol_pitch_coef,
                                     st->lpcSize, st->subframeSize, bits, stack, 
                                     exc2, syn_resp, st->complexity, 0);
 #ifdef EPIC_48K
@@ -1018,14 +1014,15 @@ static void nb_decode_lost(DecState *st, short *out, char *stack)
 {
    int i, sub;
    spx_coef_t *awk1, *awk2, *awk3;
-   float pitch_gain, fact, gain_med;
+   float pitch_gain, fact;
+   spx_word16_t gain_med;
 
    fact = exp(-.04*st->count_lost*st->count_lost);
    gain_med = median3(st->pitch_gain_buf[0], st->pitch_gain_buf[1], st->pitch_gain_buf[2]);
    if (gain_med < st->last_pitch_gain)
       st->last_pitch_gain = gain_med;
    
-   pitch_gain = st->last_pitch_gain;
+   pitch_gain = GAIN_SCALING_1*st->last_pitch_gain;
    if (pitch_gain>.95)
       pitch_gain=.95;
 
@@ -1127,7 +1124,7 @@ static void nb_decode_lost(DecState *st, short *out, char *stack)
    
    st->first = 0;
    st->count_lost++;
-   st->pitch_gain_buf[st->pitch_gain_buf_idx++] = pitch_gain;
+   st->pitch_gain_buf[st->pitch_gain_buf_idx++] = GAIN_SCALING*pitch_gain;
    if (st->pitch_gain_buf_idx > 2) /* rollover */
       st->pitch_gain_buf_idx = 0;
 }
@@ -1265,7 +1262,7 @@ int nb_decode(void *state, SpeexBits *bits, short *out)
         st->exc[i]=0;*/
       {
          float innov_gain=0;
-         float pgain=st->last_pitch_gain;
+         float pgain=GAIN_SCALING_1*st->last_pitch_gain;
          if (pgain>.6)
             pgain=.6;
          for (i=0;i<st->frameSize;i++)
@@ -1488,13 +1485,13 @@ int nb_decode(void *state, SpeexBits *bits, short *out)
          {
              SUBMODE(ltp_unquant)(exc, pit_min, pit_max, ol_pitch_coef, SUBMODE(ltp_params), 
                                   st->subframeSize, &pitch, &pitch_gain[0], bits, stack, 
-                                  st->count_lost, offset, GAIN_SCALING*st->last_pitch_gain, ol_pitch_id);
+                                  st->count_lost, offset, st->last_pitch_gain, ol_pitch_id);
          } else {
 #endif
 
              SUBMODE(ltp_unquant)(exc, pit_min, pit_max, ol_pitch_coef, SUBMODE(ltp_params), 
                                   st->subframeSize, &pitch, &pitch_gain[0], bits, stack, 
-                                  st->count_lost, offset, GAIN_SCALING*st->last_pitch_gain, 0);
+                                  st->count_lost, offset, st->last_pitch_gain, 0);
 
 #ifdef EPIC_48K
          }
@@ -1654,7 +1651,11 @@ int nb_decode(void *state, SpeexBits *bits, short *out)
    st->first = 0;
    st->count_lost=0;
    st->last_pitch = best_pitch;
-   st->last_pitch_gain = .25*GAIN_SCALING_1*pitch_average;
+#ifdef FIXED_POINT
+   st->last_pitch_gain = PSHR(pitch_average,2);
+#else
+   st->last_pitch_gain = .25*pitch_average;   
+#endif
    st->pitch_gain_buf[st->pitch_gain_buf_idx++] = st->last_pitch_gain;
    if (st->pitch_gain_buf_idx > 2) /* rollover */
       st->pitch_gain_buf_idx = 0;
