@@ -49,20 +49,30 @@ void bw_lpc(float gamma, spx_coef_t *lpc_in, spx_coef_t *lpc_out, int order)
 
 #ifdef FIXED_POINT
 
-/* FIXME: These functions are ugly and probably cause too much error on small signals */
+/* FIXME: These functions are ugly and probably might too much error */
 void signal_mul(spx_sig_t *x, spx_sig_t *y, spx_word16_t scale, int len)
 {
    int i;
+   spx_word32_t s=16384*scale;
    for (i=0;i<len;i++)
-      y[i] = scale*x[i];
+   {
+      y[i] = MULT16_32_Q14((x[i]>>4),s)<<4;
+   }
 }
 
 void signal_div(spx_sig_t *x, spx_sig_t *y, spx_word16_t scale, int len)
 {
    int i;
-   spx_word16_t scale_1 = 32768./scale;
+   spx_word16_t scale_1;
+
+   if (scale<2)
+      scale_1 = 32767;
+   else
+      scale_1 = 32767/scale;
    for (i=0;i<len;i++)
+   {
       y[i] = MULT16_32_Q15(scale_1,x[i]);
+   }
 }
 
 #else
@@ -70,7 +80,6 @@ void signal_div(spx_sig_t *x, spx_sig_t *y, spx_word16_t scale, int len)
 void signal_mul(spx_sig_t *x, spx_sig_t *y, float scale, int len)
 {
    int i;
-   scale = floor(.5+scale);
    for (i=0;i<len;i++)
       y[i] = scale*x[i];
 }
@@ -78,7 +87,7 @@ void signal_mul(spx_sig_t *x, spx_sig_t *y, float scale, int len)
 void signal_div(spx_sig_t *x, spx_sig_t *y, float scale, int len)
 {
    int i;
-   float scale_1 = 1/floor(.5+scale);
+   float scale_1 = 1/scale;
    for (i=0;i<len;i++)
       y[i] = scale_1*x[i];
 }

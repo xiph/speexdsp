@@ -46,11 +46,6 @@
 
 #include <stdio.h>
 
-#ifdef SLOW_TRIG
-#include "math_approx.h"
-#define cos speex_cos
-#endif
-
 #ifndef M_PI
 #define M_PI           3.14159265358979323846  /* pi */
 #endif
@@ -60,10 +55,10 @@
 #endif
 
 #define SUBMODE(x) st->submodes[st->submodeID]->x
+float exc_gain_quant_scal3[8]={0.061130, 0.163546, 0.310413, 0.428220, 0.555887, 0.719055, 0.938694, 1.326874};
 
-float exc_gain_quant_scal3[8]={-2.794750f, -1.810660f, -1.169850f, -0.848119f, -0.587190f, -0.329818f, -0.063266f, 0.282826f};
+float exc_gain_quant_scal1[2]={0.70469, 1.05127};
 
-float exc_gain_quant_scal1[2]={-0.35f, 0.05f};
 
 #define sqr(x) ((x)*(x))
 
@@ -352,11 +347,11 @@ int nb_encode(void *state, short *in, SpeexBits *bits)
             ol_gain2=ol2;
          ol_gain2 = sqrt(2*ol_gain2*(ol1+ol2))*1.3*(1-.5*ol_pitch_coef*ol_pitch_coef);
       
-         ol_gain=sqrt(1+ol_gain2/st->frameSize);
+         ol_gain=SHR(sqrt(1+ol_gain2/st->frameSize),SIG_SHIFT);
 
       } else {
 #endif
-         ol_gain = compute_rms(st->exc, st->frameSize);
+         ol_gain = SHL(compute_rms(st->exc, st->frameSize),SIG_SHIFT);
 #ifdef EPIC_48K
       }
 #endif
@@ -532,12 +527,12 @@ int nb_encode(void *state, short *in, SpeexBits *bits)
          
       }
       {
-         int qe = (int)(floor(.5+2.1*log(ol_gain)))-2;
+         int qe = (int)(floor(.5+2.1*log(ol_gain*1.0/SIG_SCALING)))-2;
          if (qe<0)
             qe=0;
          if (qe>15)
             qe=15;
-         ol_gain = exp((qe+2)/2.1);
+         ol_gain = exp((qe+2)/2.1)*SIG_SCALING;
          speex_bits_pack(bits, qe, 4);
       }
 
@@ -565,12 +560,12 @@ int nb_encode(void *state, short *in, SpeexBits *bits)
    
    /*Quantize and transmit open-loop excitation gain*/
    {
-      int qe = (int)(floor(3.5*log(ol_gain)));
+      int qe = (int)(floor(3.5*log(ol_gain*1.0/SIG_SCALING)));
       if (qe<0)
          qe=0;
       if (qe>31)
          qe=31;
-      ol_gain = exp(qe/3.5);
+      ol_gain = exp(qe/3.5)*SIG_SCALING;
       speex_bits_pack(bits, qe, 5);
    }
 
@@ -760,7 +755,7 @@ int nb_encode(void *state, short *in, SpeexBits *bits)
       /* Quantization of innovation */
       {
          spx_sig_t *innov;
-         float ener=0, ener_1;
+         float ener=0;
 
          innov = st->innov+sub*st->subframeSize;
          for (i=0;i<st->subframeSize;i++)
@@ -774,13 +769,12 @@ int nb_encode(void *state, short *in, SpeexBits *bits)
             printf ("%f\n", st->buf2[i]/ener);
          */
          
-         ener /= ol_gain;
+         ener /= ol_gain*1.0/SIG_SCALING;
 
          /* Calculate gain correction for the sub-frame (if any) */
          if (SUBMODE(have_subframe_gain)) 
          {
             int qe;
-            ener=log(ener);
             if (SUBMODE(have_subframe_gain)==3)
             {
                qe = vq_index(&ener, exc_gain_quant_scal3, 1, 8);
@@ -791,19 +785,16 @@ int nb_encode(void *state, short *in, SpeexBits *bits)
                speex_bits_pack(bits, qe, 1);
                ener=exc_gain_quant_scal1[qe];               
             }
-            ener=exp(ener);
          } else {
             ener=1;
          }
 
-         ener*=ol_gain;
+         ener*=ol_gain*1.0/SIG_SCALING;
 
          /*printf ("%f %f\n", ener, ol_gain);*/
 
-         ener_1 = 1/ener;
-
          /* Normalize innovation */
-         signal_div(target, target, ener, st->subframeSize);
+         signal_div(target, target, .5+ener, st->subframeSize);
          
          /* Quantize innovation */
          if (SUBMODE(innovation_quant))
@@ -814,7 +805,7 @@ int nb_encode(void *state, short *in, SpeexBits *bits)
                                       innov, syn_resp, bits, stack, st->complexity);
             
             /* De-normalize innovation and update excitation */
-            signal_mul(innov, innov, ener, st->subframeSize);
+            signal_mul(innov, innov, .5+ener, st->subframeSize);
 
             for (i=0;i<st->subframeSize;i++)
                exc[i] += innov[i];
@@ -839,7 +830,7 @@ int nb_encode(void *state, short *in, SpeexBits *bits)
                exc[i] += innov2[i];
          }
 
-         signal_mul(target, target, ener, st->subframeSize);
+         signal_mul(target, target, .5+ener, st->subframeSize);
       }
 
       /*Keep the previous memory*/
@@ -1522,11 +1513,11 @@ int nb_decode(void *state, SpeexBits *bits, short *out)
          if (SUBMODE(have_subframe_gain)==3)
          {
             q_energy = speex_bits_unpack_unsigned(bits, 3);
-            ener = ol_gain*exp(exc_gain_quant_scal3[q_energy]);
+            ener = ol_gain*exc_gain_quant_scal3[q_energy];
          } else if (SUBMODE(have_subframe_gain)==1)
          {
             q_energy = speex_bits_unpack_unsigned(bits, 1);
-            ener = ol_gain*exp(exc_gain_quant_scal1[q_energy]);
+            ener = ol_gain*exc_gain_quant_scal1[q_energy];
          } else {
             ener = ol_gain;
          }
@@ -1540,7 +1531,7 @@ int nb_decode(void *state, SpeexBits *bits, short *out)
          }
 
          /* De-normalize innovation and update excitation */
-         signal_mul(innov, innov, ener, st->subframeSize);
+         signal_mul(innov, innov, .5+ener, st->subframeSize);
 
          /*Vocoder mode*/
          if (st->submodeID==1) 
