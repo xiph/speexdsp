@@ -419,7 +419,6 @@ int denoise(DenoiseState *st, float *x)
          loudness += scale*st->ps[i] * st->gain2[i] * st->gain2[i] * st->loudness_weight[i];
       }
       loudness=sqrt(loudness);
-      //if (st->consec_noise==0)
       fprintf (stderr, "%f\n", loudness);
    }
 

@@ -100,6 +100,10 @@ void *nb_encoder_init(SpeexMode *m)
    st->pre_mem2=0;
    st->bounded_pitch = 1;
 
+#ifdef EPIC_48K
+   st->lbr_48k=mode->lbr48k;
+#endif
+
    /* Allocating input buffer */
    st->inBuf = PUSH(st->stack, st->bufSize, float);
    st->frame = st->inBuf + st->bufSize - st->windowSize;
@@ -117,8 +121,8 @@ void *nb_encoder_init(SpeexMode *m)
    /* Asymmetric "pseudo-Hamming" window */
    {
       int part1, part2;
-      part1 = st->subframeSize*7/2;
-      part2 = st->subframeSize*5/2;
+      part1=st->frameSize - (st->subframeSize>>1);
+      part2=(st->frameSize>>1) + (st->subframeSize>>1);
       st->window = PUSH(st->stack, st->windowSize, float);
       for (i=0;i<part1;i++)
          st->window[i]=.54-.46*cos(M_PI*i/part1);
@@ -201,6 +205,10 @@ int nb_encode(void *state, float *in, SpeexBits *bits)
    float *syn_resp;
    float lsp_dist=0;
    float *orig;
+#ifdef EPIC_48K
+   int pitch_half[2];
+   int ol_pitch_id=0;
+#endif
 
    st=(EncState *)state;
    stack=st->stack;
@@ -314,6 +322,21 @@ int nb_encode(void *state, float *in, SpeexBits *bits)
          /*if (ol_pitch>50)
            ol_pitch/=2;*/
          /*ol_pitch_coef = sqrt(ol_pitch_coef);*/
+
+#ifdef EPIC_48K
+         if (st->lbr_48k)
+         {
+            if (ol_pitch < st->min_pitch+2)
+               ol_pitch = st->min_pitch+2;
+            if (ol_pitch > st->max_pitch-2)
+               ol_pitch = st->max_pitch-2;
+            open_loop_nbest_pitch(st->sw, ol_pitch-2, ol_pitch+2, st->frameSize>>1, 
+                                  &pitch_half[0], nol_pitch_coef, 1, stack);
+            open_loop_nbest_pitch(st->sw+(st->frameSize>>1), pitch_half[0]-1, pitch_half[0]+2, st->frameSize>>1, 
+                                  &pitch_half[1], nol_pitch_coef, 1, stack);
+         }
+#endif
+
       } else {
          ol_pitch=0;
          ol_pitch_coef=0;
@@ -322,11 +345,32 @@ int nb_encode(void *state, float *in, SpeexBits *bits)
       fir_mem2(st->frame, st->interp_lpc, st->exc, st->frameSize, st->lpcSize, st->mem_exc);
 
       /* Compute open-loop excitation gain */
+#ifdef EPIC_48K
+      if (st->lbr_48k)
+      {
+         float ol1=0,ol2=0;
+         for (i=0;i<st->frameSize>>1;i++)
+            ol1 += st->exc[i]*st->exc[i];
+         for (i=st->frameSize>>1;i<st->frameSize;i++)
+            ol2 += st->exc[i]*st->exc[i];
+
+         ol_gain=ol1;
+         if (ol2>ol1)
+            ol_gain=ol2;
+         ol_gain = sqrt(2*ol_gain*(ol1+ol2))*1.3*(1-.5*ol_pitch_coef*ol_pitch_coef);
+      
+      ol_gain=sqrt(1+ol_gain/st->frameSize);
+
+      } else {
+#endif
       ol_gain=0;
       for (i=0;i<st->frameSize;i++)
          ol_gain += st->exc[i]*st->exc[i];
       
       ol_gain=sqrt(1+ol_gain/st->frameSize);
+#ifdef EPIC_48K
+      }
+#endif
    }
 
    /*VBR stuff*/
@@ -428,12 +472,19 @@ int nb_encode(void *state, float *in, SpeexBits *bits)
       st->relative_quality = -1;
    }
 
+#ifdef EPIC_48K
+   if (!st->lbr_48k) {
+#endif
+
    /* First, transmit a zero for narrowband */
    speex_bits_pack(bits, 0, 1);
 
    /* Transmit the sub-mode we use for this frame */
    speex_bits_pack(bits, st->submodeID, NB_SUBMODE_BITS);
 
+#ifdef EPIC_48K
+   }
+#endif
 
    /* If null mode (no transmission), just set a couple things to zero*/
    if (st->submodes[st->submodeID] == NULL)
@@ -474,12 +525,41 @@ int nb_encode(void *state, float *in, SpeexBits *bits)
      st->qlsp[i]=st->lsp[i];
 #endif
 
+#ifdef EPIC_48K
+   if (st->lbr_48k) {
+      speex_bits_pack(bits, pitch_half[0]-st->min_pitch, 7);
+      speex_bits_pack(bits, pitch_half[1]-pitch_half[0]+1, 2);
+      
+      {
+         int quant = (int)floor(.5+7.4*ol_pitch_coef);
+         if (quant>7)
+            quant=7;
+         if (quant<0)
+            quant=0;
+         ol_pitch_id=quant;
+         speex_bits_pack(bits, quant, 3);
+         ol_pitch_coef=0.13514*quant;
+         
+      }
+      {
+         int qe = (int)(floor(.5+2.1*log(ol_gain)))-2;
+         if (qe<0)
+            qe=0;
+         if (qe>15)
+            qe=15;
+         ol_gain = exp((qe+2)/2.1);
+         speex_bits_pack(bits, qe, 4);
+      }
+
+   } else {
+#endif
+
    /*If we use low bit-rate pitch mode, transmit open-loop pitch*/
    if (SUBMODE(lbr_pitch)!=-1)
    {
       speex_bits_pack(bits, ol_pitch-st->min_pitch, 7);
    } 
-   
+
    if (SUBMODE(forced_pitch_gain))
    {
       int quant;
@@ -503,6 +583,11 @@ int nb_encode(void *state, float *in, SpeexBits *bits)
       ol_gain = exp(qe/3.5);
       speex_bits_pack(bits, qe, 5);
    }
+
+#ifdef EPIC_48K
+   }
+#endif
+
 
    /* Special case for first frame */
    if (st->first)
@@ -528,6 +613,16 @@ int nb_encode(void *state, float *in, SpeexBits *bits)
       int   offset;
       float *sp, *sw, *exc, *exc2;
       int pitch;
+
+#ifdef EPIC_48K
+      if (st->lbr_48k)
+      {
+         if (sub*2 < st->nbSubframes)
+            ol_pitch = pitch_half[0];
+         else
+            ol_pitch = pitch_half[1];
+      }
+#endif
 
       /* Offset relative to start of frame */
       offset = st->subframeSize*sub;
@@ -645,11 +740,24 @@ int nb_encode(void *state, float *in, SpeexBits *bits)
          if (st->bounded_pitch && pit_max>offset)
             pit_max=offset;
 
+#ifdef EPIC_48K
+         if (st->lbr_48k)
+         {
+            pitch = SUBMODE(ltp_quant)(target, sw, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2,
+                                       exc, SUBMODE(ltp_params), pit_min, pit_max, ol_pitch_coef,
+                                       st->lpcSize, st->subframeSize, bits, stack, 
+                                       exc2, syn_resp, st->complexity, ol_pitch_id);
+         } else {
+#endif
+
          /* Perform pitch search */
          pitch = SUBMODE(ltp_quant)(target, sw, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2,
                                     exc, SUBMODE(ltp_params), pit_min, pit_max, ol_pitch_coef,
                                     st->lpcSize, st->subframeSize, bits, stack, 
-                                    exc2, syn_resp, st->complexity);
+                                    exc2, syn_resp, st->complexity, 0);
+#ifdef EPIC_48K
+         }
+#endif
 
          st->pitch[sub]=pitch;
       } else {
@@ -820,6 +928,10 @@ void *nb_decoder_init(SpeexMode *m)
    st->mode=m;
 
    st->stack = ((char*)st) + sizeof(DecState);
+
+#ifdef EPIC_48K
+   st->lbr_48k=mode->lbr48k;
+#endif
 
    st->first=1;
    /* Codec parameters, should eventually have several "modes"*/
@@ -1019,9 +1131,17 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
    char *stack;
    float *awk1, *awk2, *awk3;
    float pitch_average=0;
+#ifdef EPIC_48K
+   int pitch_half[2];
+   int ol_pitch_id=0;
+#endif
 
    st=(DecState*)state;
    stack=st->stack;
+
+#ifdef EPIC_48K
+   if (!st->lbr_48k) {
+#endif
 
    /* Check if we're in DTX mode*/
    if (!bits && st->dtx_enabled)
@@ -1101,6 +1221,9 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
       st->submodeID = m;
 
    }
+#ifdef EPIC_48K
+   }
+#endif
 
    /* Shift all buffers by one frame */
    speex_move(st->inBuf, st->inBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(float));
@@ -1163,6 +1286,23 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
          st->old_qlsp[i] = st->qlsp[i];
    }
 
+#ifdef EPIC_48K
+   if (st->lbr_48k) {
+      pitch_half[0] = st->min_pitch+speex_bits_unpack_unsigned(bits, 7);
+      pitch_half[1] = pitch_half[0]+speex_bits_unpack_unsigned(bits, 2)-1;
+
+      ol_pitch_id = speex_bits_unpack_unsigned(bits, 3);
+      ol_pitch_coef=0.13514*ol_pitch_id;
+
+      {
+         int qe;
+         qe = speex_bits_unpack_unsigned(bits, 4);
+         ol_gain = exp((qe+2)/2.1);
+      }
+
+   } else {
+#endif
+
    /* Get open-loop pitch estimation for low bit-rate pitch coding */
    if (SUBMODE(lbr_pitch)!=-1)
    {
@@ -1182,6 +1322,9 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
       qe = speex_bits_unpack_unsigned(bits, 5);
       ol_gain = exp(qe/3.5);
    }
+#ifdef EPIC_48K
+   }
+#endif
 
    awk1=PUSH(stack, st->lpcSize+1, float);
    awk2=PUSH(stack, st->lpcSize+1, float);
@@ -1205,6 +1348,16 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
    {
       int offset;
       float *sp, *exc, tmp;
+
+#ifdef EPIC_48K
+      if (st->lbr_48k)
+      {
+         if (sub*2 < st->nbSubframes)
+            ol_pitch = pitch_half[0];
+         else
+            ol_pitch = pitch_half[1];
+      }
+#endif
 
       /* Offset relative to start of frame */
       offset = st->subframeSize*sub;
@@ -1294,9 +1447,23 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
             pit_max = st->max_pitch;
          }
 
-         /* Pitch synthesis */
-         SUBMODE(ltp_unquant)(exc, pit_min, pit_max, ol_pitch_coef, SUBMODE(ltp_params), 
-                              st->subframeSize, &pitch, &pitch_gain[0], bits, stack, st->count_lost, offset, st->last_pitch_gain);
+
+#ifdef EPIC_48K
+         if (st->lbr_48k)
+         {
+             SUBMODE(ltp_unquant)(exc, pit_min, pit_max, ol_pitch_coef, SUBMODE(ltp_params), 
+                                  st->subframeSize, &pitch, &pitch_gain[0], bits, stack, 
+                                  st->count_lost, offset, st->last_pitch_gain, ol_pitch_id);
+         } else {
+#endif
+
+             SUBMODE(ltp_unquant)(exc, pit_min, pit_max, ol_pitch_coef, SUBMODE(ltp_params), 
+                                  st->subframeSize, &pitch, &pitch_gain[0], bits, stack, 
+                                  st->count_lost, offset, st->last_pitch_gain, 0);
+#ifdef EPIC_48K
+         }
+#endif
+
          
          /* If we had lost frames, check energy of last received frame */
          if (st->count_lost && ol_gain < st->last_ol_gain)

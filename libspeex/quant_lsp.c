@@ -309,3 +309,72 @@ void lsp_unquant_high(float *lsp, int order, SpeexBits *bits)
    for (i=0;i<order;i++)
       lsp[i] += 0.0019531*high_lsp_cdbk2[id*order+i];
 }
+
+
+#ifdef EPIC_48K
+
+extern signed char cdbk_lsp_vlbr[5120];
+extern signed char cdbk_lsp2_vlbr[160];
+
+void lsp_quant_48k(float *lsp, float *qlsp, int order, SpeexBits *bits)
+{
+   int i;
+   float tmp1, tmp2;
+   int id;
+
+   for (i=0;i<order;i++)
+      qlsp[i]=lsp[i];
+
+   quant_weight[0] = 1/(qlsp[1]-qlsp[0]);
+   quant_weight[order-1] = 1/(qlsp[order-1]-qlsp[order-2]);
+   for (i=1;i<order-1;i++)
+   {
+#if 1
+      tmp1 = 1/((.15+qlsp[i]-qlsp[i-1])*(.15+qlsp[i]-qlsp[i-1]));
+      tmp2 = 1/((.15+qlsp[i+1]-qlsp[i])*(.15+qlsp[i+1]-qlsp[i]));
+#else
+      tmp1 = 1/(qlsp[i]-qlsp[i-1]);
+      tmp2 = 1/(qlsp[i+1]-qlsp[i]);
+#endif
+      quant_weight[i] = tmp1 > tmp2 ? tmp1 : tmp2;
+   }
+
+   for (i=0;i<order;i++)
+      qlsp[i]-=(.25*i+.3125);
+   for (i=0;i<order;i++)
+      qlsp[i]*=256;
+   
+   id = lsp_quant(qlsp, cdbk_lsp_vlbr, 512, order);
+   speex_bits_pack(bits, id, 9);
+
+   for (i=0;i<order;i++)
+      qlsp[i]*=4;
+   
+   id = lsp_weight_quant(qlsp, quant_weight, cdbk_lsp2_vlbr, 16, 10);
+   speex_bits_pack(bits, id, 4);
+
+   for (i=0;i<order;i++)
+      qlsp[i]*=0.00097655;
+
+   for (i=0;i<order;i++)
+      qlsp[i]=lsp[i]-qlsp[i];
+}
+
+void lsp_unquant_48k(float *lsp, int order, SpeexBits *bits)
+{
+   int i, id;
+   for (i=0;i<order;i++)
+      lsp[i]=.25*i+.3125;
+
+
+   id=speex_bits_unpack_unsigned(bits, 9);
+   for (i=0;i<10;i++)
+      lsp[i] += 0.0039062*cdbk_lsp_vlbr[id*10+i];
+
+   id=speex_bits_unpack_unsigned(bits, 4);
+   for (i=0;i<10;i++)
+      lsp[i] += 0.00097655*cdbk_lsp2_vlbr[id*10+i];
+   
+}
+
+#endif

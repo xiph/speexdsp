@@ -60,6 +60,11 @@ typedef struct EncState {
    int    ol_pitch;       /**< Open-loop pitch */
    int    ol_voiced;      /**< Open-loop voiced/non-voiced decision */
    int   *pitch;
+
+#ifdef EPIC_48K
+   int    lbr_48k;
+#endif
+
    float  gamma1;         /**< Perceptual filter: A(z/gamma1) */
    float  gamma2;         /**< Perceptual filter: A(z/gamma2) */
    float  lag_factor;     /**< Lag windowing Gaussian width */
@@ -132,8 +137,12 @@ typedef struct DecState {
    int    min_pitch;      /**< Minimum pitch value allowed */
    int    max_pitch;      /**< Maximum pitch value allowed */
    int    sampling_rate;
-   float  last_ol_gain;   /**< Open-loop gain for previous frame */
 
+#ifdef EPIC_48K
+   int    lbr_48k;
+#endif
+
+   float  last_ol_gain;   /**< Open-loop gain for previous frame */
 
    float  gamma1;         /**< Perceptual filter: A(z/gamma1) */
    float  gamma2;         /**< Perceptual filter: A(z/gamma2) */

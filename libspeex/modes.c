@@ -353,6 +353,9 @@ static SpeexNBMode nb_mode = {
    .01,   /*lag_factor*/
    1.0001, /*lpc_floor*/
    0.0,    /*preemph*/
+#ifdef EPIC_48K
+   0,
+#endif
    {NULL, &nb_submode1, &nb_submode2, &nb_submode3, &nb_submode4, &nb_submode5, &nb_submode6, &nb_submode7,
    &nb_submode8, NULL, NULL, NULL, NULL, NULL, NULL, NULL},
    5,
@@ -549,6 +552,92 @@ SpeexMode speex_uwb_mode = {
    &sb_decoder_ctl,
 };
 
+
+
+
+#ifdef EPIC_48K
+
+extern signed char gain_cdbk_ulbr[];
+extern signed char exc_12_32_table[];
+
+/* Parameters for Long-Term Prediction (LTP)*/
+static ltp_params ltp_params_48k = {
+   gain_cdbk_ulbr,
+   3,
+   0
+};
+
+static split_cb_params split_cb_nb_48k = {
+   12,               /*subvect_size*/
+   4,               /*nb_subvect*/
+   exc_12_32_table, /*shape_cb*/
+   5,               /*shape_bits*/
+   0,
+};
+
+
+/* 4.8 kbps very low bit-rate mode */
+static SpeexSubmode nb_48k_submode = {
+   0,
+   0,
+   0,
+   0,
+   /*LSP quantization*/
+   lsp_quant_48k,
+   lsp_unquant_48k,
+   /*No pitch quantization*/
+   pitch_search_3tap,
+   pitch_unquant_3tap,
+   &ltp_params_48k,
+   /*Innovation quantization*/
+   split_cb_search_shape_sign,
+   split_cb_shape_sign_unquant,
+   &split_cb_nb_48k,
+
+   0.8, 0.6, .7,
+   144
+};
+
+
+/* Special, non-standard 4.8 kbps mode */
+static SpeexNBMode nb_48k_mode = {
+   240,    /*frameSize*/
+   48,     /*subframeSize*/
+   10,     /*lpcSize*/
+   640,    /*bufSize*/
+   17,     /*pitchStart*/
+   144,    /*pitchEnd*/
+   0.9,    /*gamma1*/
+   0.6,    /*gamma2*/
+   .01,   /*lag_factor*/
+   1.0003, /*lpc_floor*/
+   0.0,    /*preemph*/
+   1,
+   {NULL, NULL, &nb_48k_submode, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL},
+   2,
+   {2,2,2,2,2,2,2,2,2,2,2}
+};
+
+
+/* Default mode for narrowband */
+SpeexMode speex_nb_48k_mode = {
+   &nb_48k_mode,
+   nb_mode_query,
+   "narrowband 4.8 kbps",
+   1000,
+   4,
+   &nb_encoder_init,
+   &nb_encoder_destroy,
+   &nb_encode,
+   &nb_decoder_init,
+   &nb_decoder_destroy,
+   &nb_decode,
+   &nb_encoder_ctl,
+   &nb_decoder_ctl,
+};
+
+
+#endif
 
 
 

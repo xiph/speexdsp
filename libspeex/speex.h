@@ -320,6 +320,11 @@ extern SpeexMode speex_wb_mode;
 /** Default "ultra-wideband" mode */
 extern SpeexMode speex_uwb_mode;
 
+#ifdef EPIC_48K
+/** 4.8 kbps narrowband mode */
+extern SpeexMode speex_nb_48k_mode;
+#endif
+
 /** List of all modes available */
 extern SpeexMode *speex_mode_list[SPEEX_NB_MODES];
 

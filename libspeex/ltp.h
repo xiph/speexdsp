@@ -61,7 +61,8 @@ SpeexBits *bits,
 char *stack,
 float *exc2,
 float *r,
-int   complexity
+int   complexity,
+int   cdbk_offset
 );
 
 /*Unquantize adaptive codebook and update pitch contribution*/
@@ -78,26 +79,9 @@ SpeexBits *bits,
 char *stack,
 int lost,
 int subframe_offset,
-float last_pitch_gain
+float last_pitch_gain,
+int cdbk_offset
 );
-
-float pitch_gain_search_3tap(
-float target[],                 /* Target vector */
-float ak[],                     /* LPCs for this subframe */
-float awk1[],                   /* Weighted LPCs #1 for this subframe */
-float awk2[],                   /* Weighted LPCs #2 for this subframe */
-float exc[],                    /* Excitation */
-void *par,
-int   pitch,                    /* Pitch value */
-int   p,                        /* Number of LPC coeffs */
-int   nsf,                      /* Number of samples in subframe */
-SpeexBits *bits,
-char *stack,
-float *exc2,
-float *r,
-int  *cdbk_index
-);
-
 
 /** Forced pitch delay and gain */
 int forced_pitch_quant(
@@ -117,7 +101,8 @@ SpeexBits *bits,
 char *stack,
 float *exc2,
 float *r,
-int complexity
+int complexity,
+int cdbk_offset
 );
 
 /** Unquantize forced pitch delay and gain */
@@ -134,5 +119,6 @@ SpeexBits *bits,
 char *stack,
 int lost,
 int subframe_offset,
-float last_pitch_gain
+float last_pitch_gain,
+int cdbk_offset
 );

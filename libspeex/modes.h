@@ -57,11 +57,11 @@ typedef void (*lsp_unquant_func)(float *, int, SpeexBits *);
 /** Long-term predictor quantization */
 typedef int (*ltp_quant_func)(float *, float *, float *, float *, 
                               float *, float *, void *, int, int, float, 
-                              int, int, SpeexBits*, char *, float *, float *, int);
+                              int, int, SpeexBits*, char *, float *, float *, int, int);
 
 /** Long-term un-quantize */
 typedef void (*ltp_unquant_func)(float *, int, int, float, void *, int, int *,
-                                 float *, SpeexBits*, char*, int, int, float);
+                                 float *, SpeexBits*, char*, int, int, float, int);
 
 
 /** Innovation quantization function */
@@ -113,6 +113,10 @@ typedef struct SpeexNBMode {
    float   lag_factor;     /**< Lag-windowing parameter */
    float   lpc_floor;      /**< Noise floor for LPC analysis */
    float   preemph;        /**< Pre-emphasis */
+
+#ifdef EPIC_48K
+   int     lbr48k;         /**< 1 for the special 4.8 kbps mode */
+#endif
 
    SpeexSubmode *submodes[NB_SUBMODES]; /**< Sub-mode data for the mode */
    int     defaultSubmode; /**< Default sub-mode to use when encoding */

@@ -68,4 +68,13 @@ void lsp_quant_high(float *lsp, float *qlsp, int order, SpeexBits *bits);
 /* Decodes high-band LSPs */
 void lsp_unquant_high(float *lsp, int order, SpeexBits *bits);
 
+#ifdef EPIC_48K
+/* Quantizes narrowband LSPs with 14 bits */
+void lsp_quant_48k(float *lsp, float *qlsp, int order, SpeexBits *bits);
+
+/* Decodes quantized narrowband LSPs (14 bits) */
+void lsp_unquant_48k(float *lsp, int order, SpeexBits *bits);
+#endif
+
+
 #endif

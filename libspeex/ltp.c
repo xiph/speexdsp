@@ -140,7 +140,7 @@ void open_loop_nbest_pitch(float *sw, int start, int end, int len, int *pitch, f
 
 
 /** Finds the best quantized 3-tap pitch predictor by analysis by synthesis */
-float pitch_gain_search_3tap(
+static float pitch_gain_search_3tap(
 float target[],                 /* Target vector */
 float ak[],                     /* LPCs for this subframe */
 float awk1[],                   /* Weighted LPCs #1 for this subframe */
@@ -154,7 +154,8 @@ SpeexBits *bits,
 char *stack,
 float *exc2,
 float *r,
-int  *cdbk_index
+int  *cdbk_index,
+int cdbk_offset
 )
 {
    int i,j;
@@ -170,8 +171,8 @@ int  *cdbk_index
 
    ltp_params *params;
    params = (ltp_params*) par;
-   gain_cdbk=params->gain_cdbk;
-   gain_cdbk_size=1<<params->gain_bits;
+   gain_cdbk_size = 1<<params->gain_bits;
+   gain_cdbk = params->gain_cdbk + 3*gain_cdbk_size*cdbk_offset;
    tmp = PUSH(stack, 3*nsf, float);
    tmp2 = PUSH(stack, 3*nsf, float);
 
@@ -305,7 +306,8 @@ SpeexBits *bits,
 char *stack,
 float *exc2,
 float *r,
-int complexity
+int complexity,
+int cdbk_offset
 )
 {
    int i,j;
@@ -346,7 +348,7 @@ int complexity
       for (j=0;j<nsf;j++)
          exc[j]=0;
       err=pitch_gain_search_3tap(target, ak, awk1, awk2, exc, par, pitch, p, nsf,
-                                 bits, stack, exc2, r, &cdbk_index);
+                                 bits, stack, exc2, r, &cdbk_index, cdbk_offset);
       if (err<best_err || best_err<0)
       {
          for (j=0;j<nsf;j++)
@@ -380,16 +382,20 @@ SpeexBits *bits,
 char *stack,
 int count_lost,
 int subframe_offset,
-float last_pitch_gain)
+float last_pitch_gain,
+int cdbk_offset
+)
 {
    int i;
    int pitch;
    int gain_index;
    float gain[3];
    signed char *gain_cdbk;
+   int gain_cdbk_size;
    ltp_params *params;
    params = (ltp_params*) par;
-   gain_cdbk=params->gain_cdbk;
+   gain_cdbk_size = 1<<params->gain_bits;
+   gain_cdbk = params->gain_cdbk + 3*gain_cdbk_size*cdbk_offset;
 
    pitch = speex_bits_unpack_unsigned(bits, params->pitch_bits);
    pitch += start;
@@ -505,7 +511,8 @@ SpeexBits *bits,
 char *stack,
 float *exc2,
 float *r,
-int complexity
+int complexity,
+int cdbk_offset
 )
 {
    int i;
@@ -532,7 +539,9 @@ SpeexBits *bits,
 char *stack,
 int count_lost,
 int subframe_offset,
-float last_pitch_gain)
+float last_pitch_gain,
+int cdbk_offset
+)
 {
    int i;
    /*pitch_coef=.9;*/
