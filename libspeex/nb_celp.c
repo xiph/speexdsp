@@ -39,10 +39,10 @@
 #include "filters.h"
 #include "stack_alloc.h"
 #include "vq.h"
-#include "speex_bits.h"
+#include <speex/speex_bits.h>
 #include "vbr.h"
 #include "misc.h"
-#include "speex_callbacks.h"
+#include <speex/speex_callbacks.h>
 
 #ifdef SLOW_TRIG
 #include "math_approx.h"
@@ -1589,6 +1589,9 @@ int nb_encoder_ctl(void *state, int request, void *ptr)
          for (i=0;i<st->bufSize;i++)
             st->excBuf[i]=st->swBuf[i]=st->inBuf[i]=st->exc2Buf[i]=0;
       }
+      break;
+   case SPEEX_GET_LOOKAHEAD:
+      (*(int*)ptr)=(st->windowSize-st->frameSize);
       break;
    case SPEEX_GET_PI_GAIN:
       {

@@ -32,7 +32,7 @@
 
 */
 
-#include "speex_bits.h"
+#include <speex/speex_bits.h>
 #include "misc.h"
 
 void speex_bits_init(SpeexBits *bits)

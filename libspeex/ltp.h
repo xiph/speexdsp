@@ -30,7 +30,7 @@
    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "speex_bits.h"
+#include <speex/speex_bits.h>
 
 
 typedef struct ltp_params {

@@ -1207,6 +1207,10 @@ int sb_encoder_ctl(void *state, int request, void *ptr)
             st->h0_mem[i]=st->h1_mem[i]=st->g0_mem[i]=st->g1_mem[i]=0;
       }
       break;
+   case SPEEX_GET_LOOKAHEAD:
+      speex_encoder_ctl(st->st_low, SPEEX_GET_LOOKAHEAD, ptr);
+      (*(int*)ptr) = 2*(*(int*)ptr) + QMF_ORDER - 1;
+      break;
    case SPEEX_GET_PI_GAIN:
       {
          int i;

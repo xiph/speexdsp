@@ -1,4 +1,4 @@
-#include "speex.h"
+#include <speex/speex.h>
 #include <stdio.h>
 #include <stdlib.h>
 

@@ -5,6 +5,8 @@
 # Disable automatic dependency tracking if using other tools than gcc and gmake
 #AUTOMAKE_OPTIONS = no-dependencies
 
+INCLUDES = -I$(top_srcdir)/include
+
 lib_LTLIBRARIES = libspeex.la
 
 # Sources for compilation in the library
@@ -38,12 +40,6 @@ libspeex_la_SOURCES = nb_celp.c \
 	math_approx.c \
 	stereo.c
 
-
-include_HEADERS =  speex.h \
-	speex_bits.h \
-	speex_header.h \
-	speex_callbacks.h \
-	speex_stereo.h
 
 noinst_HEADERS = lsp.h \
 	nb_celp.h \

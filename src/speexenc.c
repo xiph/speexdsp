@@ -38,12 +38,13 @@
 #include <string.h>
 #include <time.h>
 
-#include "speex.h"
+#include <speex/speex.h>
 #include <ogg/ogg.h>
 #include "wav_io.h"
-#include "speex_header.h"
-#include "speex_stereo.h"
+#include <speex/speex_header.h>
+#include <speex/speex_stereo.h>
 #include "misc.h"
+#include <speex/speex_preprocess.h>
 
 #if defined WIN32 || defined _WIN32
 #include "getopt_win.h"
@@ -99,7 +100,7 @@ static int read_samples(FILE *fin,int frame_size, int bits, int channels, int ls
 
    /*fprintf (stderr, "%d\n", nb_read);*/
    if (nb_read==0)
-      return 1;
+      return 0;
 
    s=(short*)in;
    if(bits==8)
@@ -121,6 +122,7 @@ static int read_samples(FILE *fin,int frame_size, int bits, int channels, int ls
       }
    }
 
+   /* FIXME: This is probably redundent now */
    /* copy to float input buffer */
    for (i=0;i<frame_size*channels;i++)
    {
@@ -133,18 +135,18 @@ static int read_samples(FILE *fin,int frame_size, int bits, int channels, int ls
    }
 
 
-   return 0;
+   return nb_read;
 }
 
 void version()
 {
-   printf ("speexenc (Speex encoder) version " VERSION " (compiled " __DATE__ ")\n");
+   printf ("speexenc (Speex encoder) version " SPEEX_VERSION " (compiled " __DATE__ ")\n");
    printf ("Copyright (C) 2002-2003 Jean-Marc Valin\n");
 }
 
 void version_short()
 {
-   printf ("speexenc version " VERSION "\n");
+   printf ("speexenc version " SPEEX_VERSION "\n");
    printf ("Copyright (C) 2002-2003 Jean-Marc Valin\n");
 }
 
@@ -199,12 +201,14 @@ void usage()
 
 int main(int argc, char **argv)
 {
+   int nb_samples, total_samples=0, nb_encoded;
    int c;
    int option_index = 0;
    char *inFile, *outFile;
    FILE *fin, *fout;
    float input[MAX_FRAME_SIZE];
    int frame_size;
+   int quiet=0;
    int vbr_enabled=0;
    int abr_enabled=0;
    int vad_enabled=0;
@@ -228,6 +232,7 @@ int main(int argc, char **argv)
       {"nframes", required_argument, NULL, 0},
       {"comp", required_argument, NULL, 0},
       {"help", no_argument, NULL, 0},
+      {"quiet", no_argument, NULL, 0},
       {"le", no_argument, NULL, 0},
       {"be", no_argument, NULL, 0},
       {"8bit", no_argument, NULL, 0},
@@ -256,7 +261,7 @@ int main(int argc, char **argv)
    SpeexHeader header;
    int nframes=1;
    int complexity=3;
-   char *vendor_string = "Encoded with Speex " VERSION;
+   char *vendor_string = "Encoded with Speex " SPEEX_VERSION;
    char *comments;
    int comments_length;
    int close_in=0, close_out=0;
@@ -266,6 +271,7 @@ int main(int argc, char **argv)
    char first_bytes[12];
    int wave_input=0;
    int tmp;
+   int lookahead = 0;   
 
    comment_init(&comments, &comments_length, vendor_string);
 
@@ -327,6 +333,9 @@ int main(int argc, char **argv)
          {
             usage();
             exit(0);
+         } else if (strcmp(long_options[option_index].name,"quiet")==0)
+         {
+            quiet = 1;
          } else if (strcmp(long_options[option_index].name,"version")==0)
          {
             version();
@@ -498,8 +507,9 @@ int main(int argc, char **argv)
          rate=32000;
    }
 
-   if (rate!=8000 && rate!=16000 && rate!=32000)
-      fprintf (stderr, "Warning: Speex is only optimized for 8, 16 and 32 kHz. It will still work at %d Hz but your mileage may vary\n", rate); 
+   if (!quiet)
+      if (rate!=8000 && rate!=16000 && rate!=32000)
+         fprintf (stderr, "Warning: Speex is only optimized for 8, 16 and 32 kHz. It will still work at %d Hz but your mileage may vary\n", rate); 
 
    speex_init_header(&header, rate, 1, mode);
    header.frames_per_packet=nframes;
@@ -510,7 +520,8 @@ int main(int argc, char **argv)
       char *st_string="mono";
       if (chan==2)
          st_string="stereo";
-      fprintf (stderr, "Encoding %d Hz audio using %s mode (%s)\n", 
+      if (!quiet)
+         fprintf (stderr, "Encoding %d Hz audio using %s mode (%s)\n", 
                header.rate, mode->modeName, st_string);
    }
    /*fprintf (stderr, "Encoding %d Hz audio at %d bps using %s mode\n", 
@@ -536,42 +547,6 @@ int main(int argc, char **argv)
       }
       close_out=1;
    }
-
-
-   /*Write header*/
-   {
-
-      op.packet = (unsigned char *)speex_header_to_packet(&header, (int*)&(op.bytes));
-      op.b_o_s = 1;
-      op.e_o_s = 0;
-      op.granulepos = 0;
-      op.packetno = 0;
-      ogg_stream_packetin(&os, &op);
-      free(op.packet);
-
-      op.packet = (unsigned char *)comments;
-      op.bytes = comments_length;
-      op.b_o_s = 0;
-      op.e_o_s = 0;
-      op.granulepos = 0;
-      op.packetno = 1;
-      ogg_stream_packetin(&os, &op);
-      
-      while((result = ogg_stream_flush(&os, &og)))
-      {
-         if(!result) break;
-         ret = oe_write_page(&og, fout);
-         if(ret != og.header_len + og.body_len)
-         {
-            fprintf (stderr,"Error: failed writing header to output stream\n");
-            exit(1);
-         }
-         else
-            bytes_written += ret;
-      }
-   }
-
-   free(comments);
 
    speex_encoder_ctl(st, SPEEX_GET_FRAME_SIZE, &frame_size);
    speex_encoder_ctl(st, SPEEX_SET_COMPLEXITY, &complexity);
@@ -614,25 +589,64 @@ int main(int argc, char **argv)
       speex_encoder_ctl(st, SPEEX_SET_ABR, &abr_enabled);
    }
 
+   speex_encoder_ctl(st, SPEEX_GET_LOOKAHEAD, &lookahead);
+   
+   /*Write header*/
+   {
+
+      op.packet = (unsigned char *)speex_header_to_packet(&header, (int*)&(op.bytes));
+      op.b_o_s = 1;
+      op.e_o_s = 0;
+      op.granulepos = 0;
+      op.packetno = 0;
+      ogg_stream_packetin(&os, &op);
+      free(op.packet);
+
+      op.packet = (unsigned char *)comments;
+      op.bytes = comments_length;
+      op.b_o_s = 0;
+      op.e_o_s = 0;
+      op.granulepos = 0;
+      op.packetno = 1;
+      ogg_stream_packetin(&os, &op);
+      
+      while((result = ogg_stream_flush(&os, &og)))
+      {
+         if(!result) break;
+         ret = oe_write_page(&og, fout);
+         if(ret != og.header_len + og.body_len)
+         {
+            fprintf (stderr,"Error: failed writing header to output stream\n");
+            exit(1);
+         }
+         else
+            bytes_written += ret;
+      }
+   }
+
+   free(comments);
+
    speex_bits_init(&bits);
 
    if (!wave_input)
    {
-      if (read_samples(fin,frame_size,fmt,chan,lsb,input, first_bytes, NULL))
-         eos=1;
+      nb_samples = read_samples(fin,frame_size,fmt,chan,lsb,input, first_bytes, NULL);
    } else {
-      if (read_samples(fin,frame_size,fmt,chan,lsb,input, NULL, &size))
-         eos=1;
+      nb_samples = read_samples(fin,frame_size,fmt,chan,lsb,input, NULL, &size);
    }
+   if (nb_samples==0)
+      eos=1;
+   total_samples += nb_samples;
+   nb_encoded = -lookahead;
    /*Main encoding loop (one frame per iteration)*/
-   while (!eos)
+   while (!eos || total_samples>nb_encoded)
    {
       id++;
       /*Encode current frame*/
       if (chan==2)
          speex_encode_stereo(input, frame_size, &bits);
       speex_encode(st, input, &bits);
-      
+      nb_encoded += frame_size;
       if (print_bitrate) {
          int tmp;
          char ch=13;
@@ -640,27 +654,31 @@ int main(int argc, char **argv)
          fputc (ch, stderr);
          cumul_bits += tmp;
          enc_frames += 1;
-         if (vad_enabled || vbr_enabled || abr_enabled)
-            fprintf (stderr, "Bitrate is use: %d bps  (average %d bps)   ", tmp, (int)(cumul_bits/enc_frames));
-         else
-            fprintf (stderr, "Bitrate is use: %d bps     ", tmp);
+         if (!quiet)
+         {
+            if (vad_enabled || vbr_enabled || abr_enabled)
+               fprintf (stderr, "Bitrate is use: %d bps  (average %d bps)   ", tmp, (int)(cumul_bits/enc_frames));
+            else
+               fprintf (stderr, "Bitrate is use: %d bps     ", tmp);
+         }
          
       }
 
       if (wave_input)
       {
-         if (read_samples(fin,frame_size,fmt,chan,lsb,input, NULL, &size))
-         {
-            eos=1;
-            op.e_o_s = 1;
-         }
+         nb_samples = read_samples(fin,frame_size,fmt,chan,lsb,input, NULL, &size);
       } else {
-         if (read_samples(fin,frame_size,fmt,chan,lsb,input, NULL, NULL))
-         {
-            eos=1;
-            op.e_o_s = 1;
-         }
+         nb_samples = read_samples(fin,frame_size,fmt,chan,lsb,input, NULL, NULL);
       }
+      if (nb_samples==0)
+      {
+         eos=1;
+      }
+      if (eos && total_samples<=nb_encoded)
+         op.e_o_s = 1;
+      else
+         op.e_o_s = 0;
+      total_samples += nb_samples;
 
       if ((id+1)%nframes!=0)
          continue;
@@ -670,11 +688,15 @@ int main(int argc, char **argv)
       op.packet = (unsigned char *)cbits;
       op.bytes = nbBytes;
       op.b_o_s = 0;
-      if (eos)
+      /*Is this redundent?*/
+      if (eos && total_samples<=nb_encoded)
          op.e_o_s = 1;
       else
          op.e_o_s = 0;
-      op.granulepos = (id+nframes)*frame_size;
+      op.granulepos = (id+1)*frame_size-lookahead;
+      if (op.granulepos>total_samples)
+         op.granulepos = total_samples;
+      /*printf ("granulepos: %d %d %d %d %d %d\n", (int)op.granulepos, id, nframes, lookahead, 5, 6);*/
       op.packetno = 2+id/nframes;
       ogg_stream_packetin(&os, &op);
 
@@ -703,7 +725,10 @@ int main(int argc, char **argv)
       op.bytes = nbBytes;
       op.b_o_s = 0;
       op.e_o_s = 1;
-      op.granulepos = (id+nframes)*frame_size;
+      op.granulepos = (id+1)*frame_size-lookahead;
+      if (op.granulepos>total_samples)
+         op.granulepos = total_samples;
+
       op.packetno = 2+id/nframes;
       ogg_stream_packetin(&os, &op);
    }

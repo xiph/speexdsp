@@ -126,6 +126,9 @@ extern "C" {
 /** Get DTX status (1 for on, 0 for off) */
 #define SPEEX_GET_DTX 35
 
+/* 36 and 37 aren't supported in this version */
+#define SPEEX_GET_LOOKAHEAD 39
+
 
 /* Used internally, not to be used in applications */
 /** Used internally*/
@@ -152,6 +155,11 @@ extern "C" {
 /** Query the size of an encoded frame for a particular sub-mode */
 #define SPEEX_SUBMODE_BITS_PER_FRAME 1
 
+#define SPEEX_LIB_GET_MAJOR_VERSION 1
+#define SPEEX_LIB_GET_MINOR_VERSION 3
+#define SPEEX_LIB_GET_MICRO_VERSION 5
+#define SPEEX_LIB_GET_EXTRA_VERSION 7
+#define SPEEX_LIB_GET_VERSION_STRING 9
 
 /** Number of defined modes in Speex */
 #define SPEEX_NB_MODES 3
@@ -310,6 +318,11 @@ int speex_decoder_ctl(void *state, int request, void *ptr);
  */
 int speex_mode_query(SpeexMode *mode, int request, void *ptr);
 
+/** Functions for controlling the behavior of libspeex
+ *  * @param request ioctl-type request (one of the SPEEX_LIB_* macros)
+ *   * @param ptr Data exchanged to-from function
+ *    */
+int speex_lib_ctl(int request, void *ptr);
 
 /** Default narrowband mode */
 extern SpeexMode speex_nb_mode;

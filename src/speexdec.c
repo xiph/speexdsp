@@ -37,8 +37,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "speex.h"
-#include "ogg/ogg.h"
+#include <speex/speex.h>
+#include <ogg/ogg.h>
 
 #if defined WIN32 || defined _WIN32
 #include <windows.h>
@@ -49,6 +49,10 @@
 #include <fcntl.h>
 #endif
 #include <math.h>
+
+#ifdef __MINGW32__
+#include "wave_out.c"
+#endif
 
 #ifdef HAVE_SYS_SOUNDCARD_H
 #include <sys/soundcard.h>
@@ -70,9 +74,9 @@
 
 #include <string.h>
 #include "wav_io.h"
-#include "speex_header.h"
-#include "speex_stereo.h"
-#include "speex_callbacks.h"
+#include <speex/speex_header.h>
+#include <speex/speex_stereo.h>
+#include <speex/speex_callbacks.h>
 #include "misc.h"
 
 #define MAX_FRAME_SIZE 2000
@@ -278,17 +282,17 @@ void usage()
 
 void version()
 {
-   printf ("speexdec (Speex decoder) version " VERSION " (compiled " __DATE__ ")\n");
+   printf ("speexdec (Speex decoder) version " SPEEX_VERSION " (compiled " __DATE__ ")\n");
    printf ("Copyright (C) 2002-2003 Jean-Marc Valin\n");
 }
 
 void version_short()
 {
-   printf ("speexdec version " VERSION "\n");
+   printf ("speexdec version " SPEEX_VERSION "\n");
    printf ("Copyright (C) 2002-2003 Jean-Marc Valin\n");
 }
 
-static void *process_header(ogg_packet *op, int enh_enabled, int *frame_size, int *rate, int *nframes, int forceMode, int *channels, SpeexStereoState *stereo, int *extra_headers)
+static void *process_header(ogg_packet *op, int enh_enabled, int *frame_size, int *rate, int *nframes, int forceMode, int *channels, SpeexStereoState *stereo, int *extra_headers, int quiet)
 {
    void *st;
    SpeexMode *mode;
@@ -365,20 +369,23 @@ static void *process_header(ogg_packet *op, int enh_enabled, int *frame_size, in
    if (*channels==-1)
       *channels = header->nb_channels;
    
-   fprintf (stderr, "Decoding %d Hz audio using %s mode", 
-            *rate, mode->modeName);
+   if (!quiet)
+   {
+      fprintf (stderr, "Decoding %d Hz audio using %s mode", 
+               *rate, mode->modeName);
 
-   if (*channels==1)
-      fprintf (stderr, " (mono");
-   else
-      fprintf (stderr, " (stereo");
+      if (*channels==1)
+         fprintf (stderr, " (mono");
+      else
+         fprintf (stderr, " (stereo");
       
-   if (header->vbr)
-      fprintf (stderr, ", VBR)\n");
-   else
-      fprintf(stderr, ")\n");
-   /*fprintf (stderr, "Decoding %d Hz audio at %d bps using %s mode\n", 
-    *rate, mode->bitrate, mode->modeName);*/
+      if (header->vbr)
+         fprintf (stderr, ", VBR)\n");
+      else
+         fprintf(stderr, ")\n");
+      /*fprintf (stderr, "Decoding %d Hz audio at %d bps using %s mode\n", 
+       *rate, mode->bitrate, mode->modeName);*/
+   }
 
    *extra_headers = header->extra_headers;
 
@@ -399,9 +406,13 @@ int main(int argc, char **argv)
    SpeexBits bits;
    int packet_count=0;
    int stream_init = 0;
+   int quiet = 0;
+   ogg_int64_t page_granule=0, last_granule=0;
+   int skip_samples=0, page_nb_packets;
    struct option long_options[] =
    {
       {"help", no_argument, NULL, 0},
+      {"quiet", no_argument, NULL, 0},
       {"version", no_argument, NULL, 0},
       {"version-short", no_argument, NULL, 0},
       {"enh", no_argument, NULL, 0},
@@ -452,6 +463,9 @@ int main(int argc, char **argv)
          {
             usage();
             exit(0);
+         } else if (strcmp(long_options[option_index].name,"quiet")==0)
+         {
+            quiet = 1;
          } else if (strcmp(long_options[option_index].name,"version")==0)
          {
             version();
@@ -566,19 +580,36 @@ int main(int argc, char **argv)
       /*Loop for all complete pages we got (most likely only one)*/
       while (ogg_sync_pageout(&oy, &og)==1)
       {
+         int packet_no;
          if (stream_init == 0) {
             ogg_stream_init(&os, ogg_page_serialno(&og));
             stream_init = 1;
          }
          /*Add page to the bitstream*/
          ogg_stream_pagein(&os, &og);
+         page_granule = ogg_page_granulepos(&og);
+         page_nb_packets = ogg_page_packets(&og);
+         if (page_granule>0 && frame_size)
+         {
+            skip_samples = page_nb_packets*frame_size*nframes - (page_granule-last_granule);
+            if (ogg_page_eos(&og))
+               skip_samples = -skip_samples;
+            /*else if (!ogg_page_bos(&og))
+               skip_samples = 0;*/
+         } else
+         {
+            skip_samples = 0;
+         }
+         /*printf ("page granulepos: %d %d %d\n", skip_samples, page_nb_packets, (int)page_granule);*/
+         last_granule = page_granule;
          /*Extract all available packets*/
+         packet_no=0;
          while (!eos && ogg_stream_packetout(&os, &op)==1)
          {
             /*If first packet, process as Speex header*/
             if (packet_count==0)
             {
-               st = process_header(&op, enh_enabled, &frame_size, &rate, &nframes, forceMode, &channels, &stereo, &extra_headers);
+               st = process_header(&op, enh_enabled, &frame_size, &rate, &nframes, forceMode, &channels, &stereo, &extra_headers, quiet);
                if (!nframes)
                   nframes=1;
                if (!st)
@@ -587,12 +618,13 @@ int main(int argc, char **argv)
 
             } else if (packet_count==1)
             {
-               print_comments((char*)op.packet, op.bytes);
+               if (!quiet)
+                  print_comments((char*)op.packet, op.bytes);
             } else if (packet_count<=1+extra_headers)
             {
                /* Ignore extra headers */
             } else {
-               
+               packet_no++;
                int lost=0;
                if (loss_percent>0 && 100*((float)rand())/RAND_MAX<loss_percent)
                   lost=1;
@@ -651,14 +683,38 @@ int main(int argc, char **argv)
                      for (i=0;i<frame_size*channels;i++)
                         out[i]=(short)floor(.5+output[i]);
 		  }
+                  {
+                     int frame_offset = 0;
+                     int new_frame_size = frame_size;
+                     /*printf ("packet %d %d\n", packet_no, skip_samples);*/
+                     if (packet_no == 1 && j==0 && skip_samples > 0)
+                     {
+                        /*printf ("chopping first packet\n");*/
+                        new_frame_size -= skip_samples;
+                        frame_offset = skip_samples;
+                     }
+                     if (packet_no == page_nb_packets && skip_samples < 0)
+                     {
+                        int packet_length = nframes*frame_size+skip_samples;
+                        new_frame_size = packet_length - j*frame_size;
+                        if (new_frame_size<0)
+                           new_frame_size = 0;
+                        if (new_frame_size>frame_size)
+                           new_frame_size = frame_size;
+                        /*printf ("chopping end: %d %d %d\n", new_frame_size, packet_length, packet_no);*/
+                     }
+                     if (new_frame_size)
+                     {  
 #if defined WIN32 || defined _WIN32
-                  if (strlen(outFile)==0)
-                      WIN_Play_Samples (out, sizeof(short) * frame_size*channels);
-                  else
+                        if (strlen(outFile)==0)
+                           WIN_Play_Samples (out+frame_offset*channels, sizeof(short) * new_frame_size*channels);
+                        else
 #endif
-                  fwrite(out, sizeof(short), frame_size*channels, fout);
+                           fwrite(out+frame_offset*channels, sizeof(short), new_frame_size*channels, fout);
                   
-                  audio_size+=sizeof(short)*frame_size*channels;
+                        audio_size+=sizeof(short)*new_frame_size*channels;
+                     }
+                  }
                }
             }
             packet_count++;

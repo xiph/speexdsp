@@ -34,7 +34,7 @@
 #include "ltp.h"
 #include "stack_alloc.h"
 #include "filters.h"
-#include "speex_bits.h"
+#include <speex/speex_bits.h>
 
 #ifdef _USE_SSE
 #include "ltp_sse.h"
