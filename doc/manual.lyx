@@ -119,22 +119,14 @@ Designing for VoIP instead of cell phone use means that Speex must be robust
  unaltered or don't arrive at all.
  Also, the idea was to have a reasonnable complexity and memory requirement
  without compromising too much on the efficiency of the codec.
- 
 \layout Standard
 
-This led us to choose the CELP technique for Speex.
- Also many design decisions were based on the original goals and assumptions:
-\layout Itemize
-
-Minimizing the amount of information extracted from past frames (for robustness
- to packet loss)
-\layout Itemize
-
-Dynamically-selectable codebooks (LSP, pitch and innovation)
-\layout Itemize
-
-G.728-like fixed codebooks (without backward-adaptive grains because of patent
- issues)
+All this led us to the choice of CELP as the encoding technique to use for
+ Speex.
+ One of the main reasons is that CELP has long proved that it could do the
+ job and scale well to both low bit-rates (think DoD CELP @ 4.8 kbps) and
+ high bit-rates (think G.728 @ 16 kbps).
+ 
 \layout Section
 \pagebreak_top 
 Introduction to CELP Coding
@@ -454,6 +446,20 @@ This section looks at how Speex works for narrowband (
 
 , corresponding to 160 samples.
  Each frame is also subdivided into 4 sub-frames of 40 samples each.
+\layout Standard
+
+Also many design decisions were based on the original goals and assumptions:
+\layout Itemize
+
+Minimizing the amount of information extracted from past frames (for robustness
+ to packet loss)
+\layout Itemize
+
+Dynamically-selectable codebooks (LSP, pitch and innovation)
+\layout Itemize
+
+G.728-like fixed codebooks (without backward-adaptive grains because of patent
+ issues)
 \layout Subsection
 
 LPC Analysis
@@ -581,7 +587,7 @@ collapsed false
 
 
 \begin_inset  Tabular
-<lyxtabular version="3" rows="11" columns="9">
+<lyxtabular version="3" rows="12" columns="9">
 <features>
 <column alignment="center" valignment="top" leftline="true" width="0pt">
 <column alignment="center" valignment="top" leftline="true" width="0pt">
@@ -663,6 +669,80 @@ Update rate
 \layout Standard
 
 6
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Wideband bit
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+frame
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+1
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+1
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+1
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+1
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+1
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+1
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+1
 \end_inset 
 </cell>
 </row>
@@ -1354,7 +1434,7 @@ frame
 
 \layout Standard
 
-4
+5
 \end_inset 
 </cell>
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
@@ -1362,7 +1442,7 @@ frame
 
 \layout Standard
 
-42
+43
 \end_inset 
 </cell>
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
@@ -1370,7 +1450,7 @@ frame
 
 \layout Standard
 
-118
+119
 \end_inset 
 </cell>
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
@@ -1378,7 +1458,7 @@ frame
 
 \layout Standard
 
-159
+160
 \end_inset 
 </cell>
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
@@ -1386,7 +1466,7 @@ frame
 
 \layout Standard
 
-219
+220
 \end_inset 
 </cell>
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
@@ -1394,7 +1474,7 @@ frame
 
 \layout Standard
 
-299
+300
 \end_inset 
 </cell>
 <cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
@@ -1402,7 +1482,7 @@ frame
 
 \layout Standard
 
-363
+364
 \end_inset 
 </cell>
 </row>
@@ -1494,7 +1574,7 @@ Quality
 
 \layout Standard
 
-200
+250
 \end_inset 
 </cell>
 <cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
@@ -1520,7 +1600,7 @@ No sound (VBR only)
 
 \layout Standard
 
-2,100
+2,150
 \end_inset 
 </cell>
 <cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
@@ -1546,7 +1626,7 @@ Comfort noise only (VBR only)
 
 \layout Standard
 
-5,900
+5,950
 \end_inset 
 </cell>
 <cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
@@ -1572,7 +1652,7 @@ Very noticeable artifacts/noise, good intelligibility
 
 \layout Standard
 
-7,950
+8,000
 \end_inset 
 </cell>
 <cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
@@ -1580,7 +1660,7 @@ Very noticeable artifacts/noise, good intelligibility
 
 \layout Standard
 
-Artifacts/noise often noticeable
+Artifacts/noise sometimes noticeable
 \end_inset 
 </cell>
 </row>
@@ -1598,7 +1678,7 @@ Artifacts/noise often noticeable
 
 \layout Standard
 
-10,950
+11,000
 \end_inset 
 </cell>
 <cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
@@ -1624,7 +1704,7 @@ Artifacts usually noticeable only with headphones
 
 \layout Standard
 
-14,950
+15,000
 \end_inset 
 </cell>
 <cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
@@ -1650,7 +1730,7 @@ Need good headphones to tell the difference
 
 \layout Standard
 
-18,150
+18,200
 \end_inset 
 </cell>
 <cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
@@ -1818,7 +1898,7 @@ collapsed false
 
 
 \begin_inset  Tabular
-<lyxtabular version="3" rows="6" columns="6">
+<lyxtabular version="3" rows="7" columns="6">
 <features>
 <column alignment="center" valignment="top" leftline="true" width="0pt">
 <column alignment="center" valignment="top" leftline="true" width="0pt">
@@ -1873,6 +1953,56 @@ Update rate
 \layout Standard
 
 3
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Wideband bit
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+frame
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+1
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+1
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+1
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+1
 \end_inset 
 </cell>
 </row>
@@ -2098,7 +2228,7 @@ frame
 
 \layout Standard
 
-3
+4
 \end_inset 
 </cell>
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
@@ -2106,7 +2236,7 @@ frame
 
 \layout Standard
 
-35
+36
 \end_inset 
 </cell>
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
@@ -2114,7 +2244,7 @@ frame
 
 \layout Standard
 
-111
+112
 \end_inset 
 </cell>
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
@@ -2122,7 +2252,7 @@ frame
 
 \layout Standard
 
-191
+192
 \end_inset 
 </cell>
 </row>
@@ -2341,7 +2471,7 @@ After you're done with the encoding, free all resources with:
 speex_bits_destroy(&bits);
 \layout LyX-Code
 
-speex_encoder_destroy(&enc_state);
+speex_encoder_destroy(enc_state);
 \layout Standard
 
 That's about it for the encoder.
@@ -2443,6 +2573,15 @@ output_frame
  last correctly received frame.
  When a frame is lost, the Speex decoder will do its best to "guess" the
  correct signal.
+\layout Standard
+
+After you're done with the decoding, free all resources with:
+\layout LyX-Code
+
+speex_bits_destroy(&bits);
+\layout LyX-Code
+
+speex_decoder_destroy(dec_state);
 \layout Subsection
 
 Codec Options (speex_*_ctl)
@@ -2734,7 +2873,7 @@ END OF STREAM
 \end_inset 
 
  (without terminating null).
- The the 
+ The 
 \emph on 
 end of stream
 \emph default 
@@ -2742,7 +2881,7 @@ end of stream
 \family typewriter 
 e_o_s
 \family default 
-) flag set to 1.
+) flag is set to 1.
  The decoder should rely on the 
 \family typewriter 
 e_o_s
@@ -3219,7 +3358,7 @@ clearpage
 FAQ
 \layout Subsection*
 
-Vorbis is open-source and patent-free, why not use it?
+Vorbis is open-source and patent-free, why do we need Speex?
 \layout Standard
 
 Vorbis is a great project but its goals are not the same as Speex.
@@ -3262,7 +3401,7 @@ For most kinds of compression, encoding is inherently slower than decoding.
  than the encoder.
 \layout Subsection*
 
-Why is Speex so slow on my iPaq (insert any platform without an FPU)?
+Why is Speex so slow on my iPaq (or insert any platform without an FPU)?
 \layout Standard
 
 Well the parenthesis provides the answer: no FPU (floating-point unit).
@@ -3318,8 +3457,8 @@ Can Speex pass DTMF?
 
 I guess it all depends on the bit-rate used.
  Though no formal testing has yet been performed, I'd say don't go below
- the 14.95 kbps mode if you want DTMF to be transmitted correctly.
- Also, make sure you don't use the lowest complexity (SPEEX_SET_COMPLEXITY),
+ the 15 kbps mode if you want DTMF to be transmitted correctly.
+ Also, make sure you don't use the lowest complexity (see SPEEX_SET_COMPLEXITY),
  as it causes important noise.
 \layout Subsection*
 
@@ -3327,6 +3466,56 @@ Can Speex pass V.9x modem signals correctly?
 \layout Standard
 
 If I could to that I'd be very rich by now :-)
+\layout Subsection*
+
+What is your (Jean-Marc) relationship with the University of Sherbrooke
+ and how does Speex fit into that?
+\layout Standard
+
+I am currently (2002/08/13) doing a Ph.D.
+ at the University of Sherbrooke in mobile robotics.
+ Although I did my master with the Sherbrooke speech coding group (in speech
+ enhancement, not coding), I am not associated with them anymore.
+ It should 
+\series bold 
+not
+\series default 
+ be understood that they or the University of Sherbrooke endorse the Speex
+ project in any way.
+ Furthermore, Speex does not make use of any code or proprietary technology
+ developed in the Sherbrooke speech coding group.
+ 
+\layout Subsection*
+
+CELP, ACELP, what's the difference?
+\layout Standard
+
+CELP stands for 
+\begin_inset Quotes eld
+\end_inset 
+
+Code Excited Linear Prediction
+\begin_inset Quotes erd
+\end_inset 
+
+, while ACELP stands for 
+\begin_inset Quotes eld
+\end_inset 
+
+
+\emph on 
+Algebraic
+\emph default 
+ Code Excited Linear Prediction
+\begin_inset Quotes erd
+\end_inset 
+
+.
+ That means ACELP is a CELP technique that uses an algebraic codebook represente
+d as a sum of unit pulses, thus making the codebook search much more efficient.
+ This technique was invented at the University of Sherbrooke and is now
+ one of the most widely used form of CELP.
+ Unfortunately, since it is patented, it cannot be used in Speex.
 \layout Section
 \pagebreak_top 
 GNU Free Documentation License
