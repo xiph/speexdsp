@@ -73,7 +73,8 @@ int   entries,			/* number of overlapping entries to search */
 float *gain,			/* gain of optimum entry */
 int   *index,			/* index of optimum entry */
 int   p,                        /* number of LPC coeffs */
-int   nsf                       /* number of samples in subframe */
+int   nsf,                      /* number of samples in subframe */
+float *stack
 )
 {
   float *resp;		        /* zero state response to current entry */
@@ -85,9 +86,13 @@ int   nsf                       /* number of samples in subframe */
 
   /* Initialise */
   
-  resp = (float*)malloc(sizeof(float)*nsf);
+  /*resp = (float*)malloc(sizeof(float)*nsf);
   h = (float*)malloc(sizeof(float)*nsf);
   impulse = (float*)malloc(sizeof(float)*nsf);
+  */
+  resp=PUSH(stack, nsf);
+  h=PUSH(stack, nsf);
+  impulse=PUSH(stack, nsf);
 
   for(i=0; i<nsf; i++)
     impulse[i] = 0.0;
@@ -134,9 +139,12 @@ int   nsf                       /* number of samples in subframe */
     }
   }
 
-  free(resp);
+  /*free(resp);
   free(h);
-  free(impulse);
+  free(impulse);*/
+  POP(stack);
+  POP(stack);
+  POP(stack);
   return bscore;
 }
 

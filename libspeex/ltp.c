@@ -86,7 +86,7 @@ float *stack
 #if 1
    sc = overlap_cb_search(target, ak, awk1, awk2,
                      &exc[-end], end-start+1, gain, pitch, p,
-                     nsf);
+                     nsf, stack);
                      *pitch=end-*pitch;
 #ifdef DEBUG
    printf ("ol score: %d %f\n", *pitch, sc);
@@ -121,7 +121,7 @@ float *stack
          fexc[i]=oexc[fact*i+j];
       score=overlap_cb_search(target, ak, awk1, awk2,
                         fexc, 16, gain, &correction, p,
-                        nsf);
+                        nsf, stack);
       if (score>best_score)
       {
          best_cor = correction;
@@ -261,7 +261,7 @@ float *stack
    /* Perform closed-loop 1-tap search*/
    overlap_cb_search(target, ak, awk1, awk2,
                      &exc[-end], end-start+1, gain, &pitch, p,
-                     nsf);
+                     nsf, stack);
    /* Real pitch value */
    pitch=end-pitch;
    
@@ -363,7 +363,7 @@ float *stack
    /* Perform closed-loop 1-tap search*/
    overlap_cb_search(target, ak, awk1, awk2,
                      &exc[-end], end-start+1, gain, &pitch, p,
-                     nsf);
+                     nsf, stack);
    /* Real pitch value */
    pitch=end-pitch;
    

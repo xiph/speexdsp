@@ -39,7 +39,8 @@ int   entries,			/* number of overlapping entries to search */
 float *gain,			/* gain of optimum entry */
 int   *index,			/* index of optimum entry */
 int   p,                        /* number of LPC coeffs */
-int   nsf                       /* number of samples in subframe */
+int   nsf,                      /* number of samples in subframe */
+float *stack
 );
 
 void split_cb_search(

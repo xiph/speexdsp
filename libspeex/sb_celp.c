@@ -187,8 +187,8 @@ void sb_encoder_init(SBEncState *st, SpeexMode *mode)
    encoder_init(&st->st_low, mode);
    st->full_frame_size = 2*st->st_low.frameSize;
    st->frame_size = st->st_low.frameSize;
-   st->subframeSize = 40;
-   st->nbSubframes = 4;
+   st->subframeSize = st->st_low.subframeSize;
+   st->nbSubframes = st->st_low.nbSubframes;
    st->windowSize = mode->windowSize;
    st->lpcSize=8;
 
@@ -314,7 +314,7 @@ void sb_encode(SBEncState *st, float *in, FrameBits *bits)
       st->high[i]=st->high[st->frame_size+i];
       st->high[st->frame_size+i]=st->x1d[i];
    }
-   
+
    /* Start encoding the high-band */
 
    for (i=0;i<st->windowSize;i++)
@@ -420,7 +420,7 @@ void sb_encode(SBEncState *st, float *in, FrameBits *bits)
             mem[i]=st->mem_sp[i];
          /* Compute "real excitation" */
          residue_mem(sp, st->interp_qlpc, exc, st->subframeSize, st->lpcSize, st->mem_sp);
-         
+
          /* Compute energy of low-band and high-band excitation */
          for (i=0;i<st->subframeSize;i++)
             eh+=sqr(exc[i]);
@@ -439,7 +439,7 @@ void sb_encode(SBEncState *st, float *in, FrameBits *bits)
 
          /* Update the input signal using the non-coded memory */
          syn_filt_mem(exc, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, mem);
-         
+    
       } else {/* Stochastic split-VQ excitation */
          int k,N=4;
          float el=0,eh=0,eb=0,g;
@@ -491,7 +491,7 @@ void sb_encode(SBEncState *st, float *in, FrameBits *bits)
             int of=k*st->subframeSize/N;
             overlap_cb_search(target+of, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2,
                               &stoc[0], 64, &gains[k], &index[k], st->lpcSize,
-                              st->subframeSize/N);
+                              st->subframeSize/N, st->stack);
             
             frame_bits_pack(bits,index[k],6);
             
@@ -574,7 +574,9 @@ void sb_encode(SBEncState *st, float *in, FrameBits *bits)
       
       POP(st->stack);
    }
-#if 0
+
+
+#ifndef RELEASE
    /* Up-sample coded low-band and high-band*/
    for (i=0;i<st->frame_size;i++)
    {

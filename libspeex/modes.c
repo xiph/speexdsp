@@ -228,3 +228,4 @@ SpeexMode mp_sb_mode = {
    &mpulse_sb
 #endif
 };
+
