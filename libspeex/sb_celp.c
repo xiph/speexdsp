@@ -397,6 +397,7 @@ void sb_encode(void *state, float *in, FrameBits *bits)
       float *exc, *sp, *mem, *res, *target, *sw, tmp, filter_ratio;
       int offset;
       float rl, rh;
+      int fold;
 
       offset = st->subframeSize*sub;
       sp=st->high+offset;
@@ -441,14 +442,14 @@ void sb_encode(void *state, float *in, FrameBits *bits)
       /* Compute ratio, will help predict the gain */
       filter_ratio=fabs(.01+rh)/(.01+fabs(rl));
 
-      
-      if (0) {/* 1 for spectral folding excitation, 0 for stochastic */
+      fold = filter_ratio<5;
+      printf ("filter_ratio %f\n", filter_ratio);
+
+      if (fold) {/* 1 for spectral folding excitation, 0 for stochastic */
          float el=0,eh=0,g;
-         /* Backup memory */
-         for (i=0;i<st->lpcSize;i++)
-            mem[i]=st->mem_sp[i];
+         frame_bits_pack(bits, 1, 1);
          /* Compute "real excitation" */
-         residue_mem(sp, st->interp_qlpc, exc, st->subframeSize, st->lpcSize, st->mem_sp);
+         residue_mem(sp, st->interp_qlpc, exc, st->subframeSize, st->lpcSize, st->mem_sp2);
 
 #if 1
          /* Compute energy of low-band and high-band excitation */
@@ -480,7 +481,7 @@ void sb_encode(void *state, float *in, FrameBits *bits)
 #endif
          /* Update the input signal using the non-coded memory */
          /* FIXME: is that right? */
-         syn_filt_mem(exc, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, mem);
+         /*syn_filt_mem(exc, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, st->mem_sp);*/
 
          /* FIXME: Update perceptually weighted signal in case we switch to the
             other mode */
@@ -489,6 +490,7 @@ void sb_encode(void *state, float *in, FrameBits *bits)
          float gc;
          float *innov;
 
+         frame_bits_pack(bits, 0, 1);
          innov = PUSH(st->stack, st->subframeSize);
 
          for (i=0;i<st->subframeSize;i++)
@@ -542,6 +544,9 @@ void sb_encode(void *state, float *in, FrameBits *bits)
 
          for (i=0;i<st->subframeSize;i++)
             exc[i] += innov[i]/gc;
+
+         POP(st->stack);
+      }
 #if 1
          /*Keep the previous memory*/
          for (i=0;i<st->lpcSize;i++)
@@ -553,8 +558,7 @@ void sb_encode(void *state, float *in, FrameBits *bits)
          residue_mem(sp, st->bw_lpc1, sw, st->subframeSize, st->lpcSize, mem);
          syn_filt_mem(sw, st->bw_lpc2, sw, st->subframeSize, st->lpcSize, st->mem_sw);
 #endif
-         POP(st->stack);
-      }
+      
       
       POP(st->stack);
    }
@@ -742,7 +746,7 @@ void sb_decode(void *state, FrameBits *bits, float *out)
       
       for (i=0;i<st->subframeSize;i++)
          exc[i]=0;
-      if (0)
+      if (frame_bits_unpack_unsigned(bits, 1))
       {
          float g;
          int quant;

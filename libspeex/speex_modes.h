@@ -22,6 +22,10 @@
 #ifndef SPEEX_MODES_H
 #define SPEEX_MODES_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "bits.h"
 
 struct SpeexMode;
@@ -53,7 +57,11 @@ void decode(void *state, FrameBits *bits, float *out);
 
 extern SpeexMode nb_mode;
 extern SpeexMode wb_mode;
-extern SpeexMode low_wb_mode;
+
+
+#ifdef __cplusplus
+}
+#endif
 
 
 #endif
