@@ -460,11 +460,23 @@ void sb_encode(void *state, float *in, FrameBits *bits)
          g=eh/(.01+el);
          g=sqrt(g);
 
+         /* FIXME: Should encode the gain here */
+         g *= filter_ratio;
+         {
+            int quant = (int) floor(.5 + 9.4 * log(10*(g+.0001)));
+            if (quant<0)
+               quant=0;
+            if (quant>31)
+               quant=31;
+            frame_bits_pack(bits, quant, 5);
+            g= .1*exp(quant/9.4);
+         }
+         printf ("folding gain: %f\n", g);
+         g /= filter_ratio;
+
          /* High-band excitation using the low-band excitation and a gain */
          for (i=0;i<st->subframeSize;i++)
             exc[i]=g*((EncState*)st->st_low)->exc[offset+i];
-
-         /* FIXME: Should encode the gain here */
 #endif
          /* Update the input signal using the non-coded memory */
          syn_filt_mem(exc, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, mem);
@@ -726,9 +738,24 @@ void sb_decode(void *state, FrameBits *bits, float *out)
       
       for (i=0;i<st->subframeSize;i++)
          exc[i]=0;
-      split_cb_nogain_unquant(exc, &split_cb_high, st->subframeSize, gain, 
-                              bits, st->stack);
-
+      if (0)
+      {
+         float g;
+         int quant;
+         quant = frame_bits_unpack_unsigned(bits, 5);
+         g= .1*exp(quant/9.4);
+         
+         printf ("unquant folding gain: %f\n", g);
+         g /= filter_ratio;
+         
+         g *= .8;
+         /* High-band excitation using the low-band excitation and a gain */
+         for (i=0;i<st->subframeSize;i++)
+            exc[i]=g*((DecState*)st->st_low)->exc[offset+i];
+      } else {
+         split_cb_nogain_unquant(exc, &split_cb_high, st->subframeSize, gain, 
+                                 bits, st->stack);
+      }
       syn_filt_mem(exc, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, st->mem_sp);
 
    }

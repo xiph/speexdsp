@@ -1,5 +1,5 @@
 - VBR
 
-- VAD & comfort noise generation
+- VAD/DTX/comfort noise generation
 
-- High-band pre-emphasis
+- Post-filter
