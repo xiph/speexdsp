@@ -21,6 +21,7 @@
 #include <getopt.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #include "speex.h"
 #include <ogg/ogg.h>
@@ -41,6 +42,56 @@ int oe_write_page(ogg_page *page, FILE *fp)
 #define MAX_FRAME_SIZE 2000
 #define MAX_FRAME_BYTES 2000
 
+/* Convert input audio bits, endians and channels */
+int read_samples(FILE *fin,int frame_size, int bits, int channels, int lsb, float * input)
+{   
+   unsigned char in[MAX_FRAME_BYTES*2];
+   int i,d;
+   short *s;
+
+   /*Read input audio*/
+   fread(in,bits/8*channels, frame_size, fin);
+   if (feof(fin))
+      return 1;
+   s=(short*)in;
+   if(bits==8)
+   {
+      /* Convert 8->16 bits */
+      for(i=frame_size*channels-1;i>=0;i--)
+      {
+         s[i]=(in[i]<<8)^0x8000;
+      }
+   } else
+   {
+      /* convert to our endian format */
+      for(i=0;i<frame_size*channels;i++)
+      {
+         if(lsb) 
+            s[i]=le_short(s[i]); 
+         else
+            s[i]=be_short(s[i]);
+      }
+   }
+
+   if(channels==2)
+   {
+      /* downmix to mono */
+      for(i=0;i<frame_size;i++)
+      {
+         d=s[i*2]+s[i*2+1];
+         s[i]=d>>1;
+      }
+   }
+
+   /* copy to float input buffer */
+   for (i=0;i<frame_size;i++)
+   {
+      input[i]=(short)s[i];
+   }
+
+   return 0;
+}
+
 void usage()
 {
    fprintf (stderr, "Speex encoder version " VERSION "\n");
@@ -59,17 +110,21 @@ void usage()
    fprintf (stderr, "options:\n");
    fprintf (stderr, "  --narrowband -n    Narrowband (8 kHz) input file\n"); 
    fprintf (stderr, "  --wideband   -w    Wideband (16 kHz) input file\n"); 
-   fprintf (stderr, "  --quality n        Encoding quality setting from 0 to 10\n"); 
+   fprintf (stderr, "  --quality n        Encoding quality (0-10), default 3\n"); 
    fprintf (stderr, "  --lbr              Low bit-rate mode (equivalent to --quality 3)\n"); 
    fprintf (stderr, "  --vbr              Enable variable bit-rate (VBR)\n"); 
-   fprintf (stderr, "  --comp n           Set encoding complexity (0-10)\n"); 
-   fprintf (stderr, "  --nframes n        Number of frames per Ogg packet\n"); 
+   fprintf (stderr, "  --comp n           Set encoding complexity (0-10), default 3\n"); 
+   fprintf (stderr, "  --nframes n        Number of frames per Ogg packet (1-10), default 1\n"); 
    fprintf (stderr, "  --help       -h    This help\n"); 
    fprintf (stderr, "  --version    -v    Version information\n"); 
    fprintf (stderr, "  -V                 Verbose mode (show bit-rate)\n"); 
+   fprintf (stderr, "raw input options:\n");
+   fprintf (stderr, "  --le               Raw input is little-endian\n"); 
+   fprintf (stderr, "  --be               Raw input is big-endian\n"); 
+   fprintf (stderr, "  --8bit             Raw input is 8-bit unsigned\n"); 
+   fprintf (stderr, "  --16bit            Raw input is 16-bit signed\n"); 
    fprintf (stderr, "\n");  
-   fprintf (stderr, "Input must be mono\n"); 
-   fprintf (stderr, "Raw PCM needs to be 16-bit little-endian\n"); 
+   fprintf (stderr, "Default Raw PCM input is 16-bit, little-endian, mono\n"); 
 }
 
 void version()
@@ -84,11 +139,10 @@ int main(int argc, char **argv)
    int narrowband=0, wideband=0;
    char *inFile, *outFile;
    FILE *fin, *fout;
-   short in[MAX_FRAME_SIZE];
    float input[MAX_FRAME_SIZE];
    int frame_size;
    int vbr_enabled=0;
-   int i,nbBytes;
+   int nbBytes;
    SpeexMode *mode=NULL;
    void *st;
    SpeexBits bits;
@@ -103,13 +157,20 @@ int main(int argc, char **argv)
       {"nframes", required_argument, NULL, 0},
       {"comp", required_argument, NULL, 0},
       {"help", no_argument, NULL, 0},
+      {"le", no_argument, NULL, 0},
+      {"be", no_argument, NULL, 0},
+      {"lin8", no_argument, NULL, 0},
+      {"lin16", no_argument, NULL, 0},
       {"version", no_argument, NULL, 0},
       {0, 0, 0, 0}
    };
    int print_bitrate=0;
-   int rate, chan, fmt, size;
+   int rate, size;
+   int chan=1;
+   int fmt=16;
    int quality=-1;
    int lbr=0;
+   int lsb=1;
    ogg_stream_state os;
    ogg_page 		 og;
    ogg_packet 		 op;
@@ -161,6 +222,18 @@ int main(int argc, char **argv)
          {
             version();
             exit(0);
+         } else if (strcmp(long_options[option_index].name,"le")==0)
+         {
+            lsb=1;
+         } else if (strcmp(long_options[option_index].name,"be")==0)
+         {
+            lsb=0;
+         } else if (strcmp(long_options[option_index].name,"lin8")==0)
+         {
+            fmt=8;
+         } else if (strcmp(long_options[option_index].name,"lin16")==0)
+         {
+            fmt=16;
          }
          break;
       case 'n':
@@ -222,9 +295,12 @@ int main(int argc, char **argv)
    }
 
    rate=0;
-   if (strcmp(inFile+strlen(inFile)-4,".wav")==0)
-      if (read_wav_header(fin, &rate, &chan, &fmt, &size)==-1)
-         exit(1);
+   if (strcmp(inFile+strlen(inFile)-4,".wav")==0 || strcmp(inFile+strlen(inFile)-4,".WAV"))
+      {
+         if (read_wav_header(fin, &rate, &chan, &fmt, &size)==-1)
+            exit(1);
+	 lsb=1; /* CHECK: exists big-endian .wav ?? */
+      }
    /*fprintf (stderr, "wave info: %d %d %d %d\n", rate, chan, fmt, size);*/
 
    if (rate==16000)
@@ -336,12 +412,8 @@ int main(int argc, char **argv)
    while (1)
    {
       id++;
-      /*Read input audio*/
-      fread(in, sizeof(short), frame_size, fin);
-      if (feof(fin))
+      if (read_samples(fin,frame_size,fmt,chan,lsb,input))
          break;
-      for (i=0;i<frame_size;i++)
-         input[i]=(short)le_short(in[i]);
       /*Encode current frame*/
       speex_encode(st, input, &bits);
       

@@ -26,6 +26,8 @@ int read_wav_header(FILE *file, int *rate, int *channels, int *format, int *size
    char ch[5];
    int itmp;
    short stmp;
+   int bpersec;
+   short balign;
 
    ch[4]=0;
    fread(ch, 1, 4, file);
@@ -56,7 +58,7 @@ int read_wav_header(FILE *file, int *rate, int *channels, int *format, int *size
    itmp = le_int(itmp);
    if (itmp!=16)
    {
-      fprintf (stderr, "Only 16-bit PCM supported\n");
+      fprintf (stderr, "Unsupported WAVE file fmt chunk, not PCM?\n");
       return -1;
    }
 
@@ -64,39 +66,53 @@ int read_wav_header(FILE *file, int *rate, int *channels, int *format, int *size
    stmp = le_short(stmp);
    if (stmp!=1)
    {
-      fprintf (stderr, "Only 16-bit PCM supported\n");
+      fprintf (stderr, "Only PCM encoding is supported\n");
       return -1;
    }
 
    fread(&stmp, 2, 1, file);
    stmp = le_short(stmp);
    *channels = stmp;
+   
+   if (stmp>1)
+   {
+      fprintf (stderr, "Only mono supported for now\n");
+      return -1;
+   }
 
    fread(&itmp, 4, 1, file);
    itmp = le_int(itmp);
    *rate = itmp;
+   if (*rate != 8000 && *rate != 16000)
+   {
+      fprintf (stderr, "Only 8 kHz (narrowband) and 16 kHz (wideband) supported\n");
+      return -1;
+   }
 
    fread(&itmp, 4, 1, file);
-   itmp = le_int(itmp);
-   if (itmp!=*rate**channels*2)
+   bpersec = le_int(itmp);
+
+   fread(&stmp, 2, 1, file);
+   balign = le_short(stmp);
+
+   fread(&stmp, 2, 1, file);
+   stmp = le_short(stmp);
+   if (stmp!=16 && stmp!=8)
+   {
+      fprintf (stderr, "Only 8/16-bit linear supported\n");
+      return -1;
+   }
+   *format=stmp;
+
+   if (bpersec!=*rate**channels*stmp/8)
    {
       fprintf (stderr, "Corrupted header: ByteRate mismatch\n");
       return -1;
    }
 
-   fread(&stmp, 2, 1, file);
-   stmp = le_short(stmp);
-   if (stmp!=*channels*2)
+   if (balign!=*channels*stmp/8)
    {
       fprintf (stderr, "Corrupted header: BlockAlign mismatch\n");
-      return -1;
-   }
-
-   fread(&stmp, 2, 1, file);
-   stmp = le_short(stmp);
-   if (stmp!=16)
-   {
-      fprintf (stderr, "Only 16-bit linear supported\n");
       return -1;
    }
 
@@ -111,7 +127,6 @@ int read_wav_header(FILE *file, int *rate, int *channels, int *format, int *size
    fread(&itmp, 4, 1, file);
    itmp = le_int(itmp);
 
-   *format=16;
 
    return 1;
 }
