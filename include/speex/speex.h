@@ -387,7 +387,7 @@ extern const SpeexMode speex_nb_48k_mode;
 #endif
 
 /** List of all modes available */
-extern const SpeexMode *speex_mode_list[SPEEX_NB_MODES];
+extern const SpeexMode * const speex_mode_list[SPEEX_NB_MODES];
 
 #ifdef __cplusplus
 }
