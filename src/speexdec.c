@@ -49,9 +49,9 @@ int main(int argc, char **argv)
    FILE *fin, *fout;
    short out[MAX_FRAME_SIZE];
    float output[MAX_FRAME_SIZE];
-   int frame_size;
+   int frame_size=0;
    SpeexMode *mode=NULL;
-   void *st;
+   void *st=NULL;
    FrameBits bits;
    int first = 1;
    struct option long_options[] =
@@ -132,11 +132,6 @@ int main(int argc, char **argv)
    ogg_sync_init(&oy);
    ogg_stream_init(&os, 0);
    
-   /* FIXME: Read header here...*/
-   /*st = decoder_init(mode);*/
-
-   /*frame_size=mode->frameSize;*/
-
    speex_bits_init(&bits);
    while (1/*||feof(fin)*/)
    {
