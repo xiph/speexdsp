@@ -20,9 +20,18 @@
 */
 
 #include "vbr.h"
+#include <math.h>
+#include <stdio.h>
+
+#define sqr(x) ((x)*(x))
+
+#define MIN_ENERGY 1000
+#define NOISE_POW .3
 
 void vbr_init(VBRState *vbr)
 {
+   int i;
+
    vbr->average_energy=0;
    vbr->last_energy=1;
    vbr->accum_sum=0;
@@ -30,6 +39,15 @@ void vbr_init(VBRState *vbr)
    vbr->soft_pitch=0;
    vbr->last_pitch_coef=0;
    vbr->last_quality=0;
+
+   vbr->noise_accum = .05*pow(MIN_ENERGY, NOISE_POW);
+   vbr->noise_accum_count=.05;
+   vbr->noise_level=vbr->noise_accum/vbr->noise_accum_count;
+   vbr->consec_noise=0;
+
+
+   for (i=0;i<VBR_MEMORY_SIZE;i++)
+      vbr->last_log_energy[i] = log(MIN_ENERGY);
 }
 
 
@@ -62,6 +80,11 @@ float vbr_analysis(VBRState *vbr, float *sig, int len, int pitch, float pitch_co
    int i;
    float ener=0, ener1=0, ener2=0;
    float qual=0;
+   int va;
+   float log_energy;
+   float non_st=0;
+   float voicing;
+   float pow_ener;
 
    for (i=0;i<len>>1;i++)
       ener1 += sig[i]*sig[i];
@@ -70,8 +93,37 @@ float vbr_analysis(VBRState *vbr, float *sig, int len, int pitch, float pitch_co
       ener2 += sig[i]*sig[i];
    ener=ener1+ener2;
 
+   log_energy = log(ener+MIN_ENERGY);
+   for (i=0;i<VBR_MEMORY_SIZE;i++)
+      non_st += sqr(log_energy-vbr->last_log_energy[i]);
+   non_st =  non_st/(30*VBR_MEMORY_SIZE);
+   if (non_st>1)
+      non_st=1;
+
+   voicing = 3*(pitch_coef-.4)*fabs(pitch_coef-.4);
    vbr->average_energy = (1-vbr->energy_alpha)*vbr->average_energy + vbr->energy_alpha*ener;
-   
+   vbr->noise_level=vbr->noise_accum/vbr->noise_accum_count;
+   pow_ener = pow(ener,NOISE_POW);
+   if ((voicing<.3 && non_st < .2 && pow_ener < 1.2*vbr->noise_level)
+       || (voicing<.2 && non_st < .1))
+   {
+      float tmp;
+      va = 0;
+      vbr->consec_noise++;
+      if (pow_ener > 3*vbr->noise_level)
+         tmp = 3*vbr->noise_level;
+      else 
+         tmp = pow_ener;
+      if (vbr->consec_noise>=4)
+      {
+         vbr->noise_accum = .95*vbr->noise_accum + .05*tmp;
+         vbr->noise_accum_count = .95*vbr->noise_accum_count + .05;
+      }
+   } else {
+      va = 1;
+      vbr->consec_noise=0;
+   }
+
    /* Checking for "pseudo temporal masking" */
    if (ener < .1*vbr->average_energy)
       qual -= .7;
@@ -113,9 +165,15 @@ float vbr_analysis(VBRState *vbr, float *sig, int len, int pitch, float pitch_co
    if (qual>3)
       qual=3;
 
-   vbr->last_energy = ener;
    vbr->last_pitch_coef = pitch_coef;
    vbr->last_quality = qual;
+
+   for (i=VBR_MEMORY_SIZE-1;i>0;i--)
+      vbr->last_log_energy[i] = vbr->last_log_energy[i-1];
+   vbr->last_log_energy[0] = log_energy;
+
+   printf ("VBR: %f %f %f %d %f\n", (float)(log_energy-log(vbr->average_energy+MIN_ENERGY)), non_st, voicing, va, vbr->noise_level);
+
    return qual;
 }
 

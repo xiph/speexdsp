@@ -23,15 +23,21 @@
 #ifndef VBR_H
 #define VBR_H
 
+#define VBR_MEMORY_SIZE 5
 
 typedef struct VBRState {
    float energy_alpha;
    float average_energy;
    float last_energy;
+   float last_log_energy[VBR_MEMORY_SIZE];
    float accum_sum;
    float last_pitch_coef;
    float soft_pitch;
    float last_quality;
+   float noise_level;
+   float noise_accum;
+   float noise_accum_count;
+   int   consec_noise;
 } VBRState;
 
 void vbr_init(VBRState *vbr);
