@@ -36,3 +36,4 @@ make install
 /usr/bin/speexdec
 /usr/include/speex.h
 /usr/include/speex_bits.h
+/usr/include/speex_header.h

@@ -34,7 +34,7 @@ AM_PROG_LIBTOOL
 AC_C_BIGENDIAN
 AC_CHECK_HEADERS(sys/soundcard.h)
 src=src
-AC_CHECK_HEADERS(aogg/ogg.h, [], [src=])
+AC_CHECK_HEADERS(ogg/ogg.h, [], [src=])
 AC_CHECK_LIB(m, sin)
 
 AC_CHECK_LIB(ogg, ogg_stream_init, [LIB_OGG='-logg'; AC_SUBST(LIB_OGG)] , [ src=])
@@ -52,7 +52,7 @@ AC_OUTPUT([Makefile libspeex/Makefile src/Makefile Speex.spec ])
 
 if test "x$src" = "x"; then 
 echo "You don't seem to have libogg installed. Only the Speex library (libspeex) will be built (no encoder/decoder executable)"
-echo "You can get libogg from http://www.ogg.org/ogg/index.html"
+echo "You can download libogg from http://www.ogg.org/ogg/index.html"
 fi
 
 echo "Type \"make; make install\" to compile and install Speex";

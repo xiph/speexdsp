@@ -1,5 +1,5 @@
 %define name     Speex
-%define ver      0.2.0
+%define ver      0.3.0
 %define rel      1
 
 Summary: An open-source, patent-free speech codec
@@ -36,3 +36,4 @@ make install
 /usr/bin/speexdec
 /usr/include/speex.h
 /usr/include/speex_bits.h
+/usr/include/speex_header.h
