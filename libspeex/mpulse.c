@@ -68,7 +68,7 @@ int porder(int *p, int *s, int *o, int len)
    st=uniq;
    en=&uniq[nb_uniq-1];
 
-   for (i=0;i<5;i++)
+   for (i=0;i<len;i++)
       printf ("%d ", p[i]);
    printf ("\n");
    for (i=0;i<nb_uniq;i++)
@@ -156,6 +156,14 @@ void rorder(int *p, int *s, int *o, int bit, int len)
    ss[0]=bit;
    n=1;
 
+   for (i=0;i<len;i++)
+      printf ("%d ", p[i]);
+   printf ("\n");
+   for (i=0;i<nb_uniq;i++)
+      printf ("%d ", uniq[i]);
+   printf ("\n");
+
+
    for (i=1;i<len;i++)
    {
       if (i>1&&p[i-1]==p[i-2])
@@ -182,6 +190,10 @@ void rorder(int *p, int *s, int *o, int bit, int len)
       if (i<len&&o[i]!=o[i+1])
          n++;
    }
+
+   for (i=0;i<len;i++)
+      printf ("%d ", s[i]);
+   printf ("\n");
 
 }
 
@@ -368,6 +380,59 @@ float *stack
    POP(stack);
    POP(stack);
    POP(stack);
+   POP(stack);
+   POP(stack);
+   POP(stack);
+}
+
+
+void mpulse_unquant(
+float *exc,
+void *par,                      /* non-overlapping codebook */
+int   nsf,                      /* number of samples in subframe */
+FrameBits *bits,
+float *stack
+)
+{
+   int i,j, bit1, nb_pulse, quant_gain;
+   float g;
+   int nb_tracks, track_ind_bits;
+   int *track, *signs, *tr;
+   mpulse_params *params;
+   int pulses_per_track;
+   params = (mpulse_params *) par;
+
+   nb_pulse=params->nb_pulse;
+   nb_tracks=params->nb_tracks;
+   pulses_per_track=nb_pulse/nb_tracks;
+   track_ind_bits=params->track_ind_bits;
+
+   track = (int*)PUSH(stack,pulses_per_track);
+   signs = (int*)PUSH(stack,pulses_per_track);
+   tr = (int*)PUSH(stack,pulses_per_track);
+   
+   quant_gain=frame_bits_unpack_unsigned(bits, 7);
+   g=exp((quant_gain/8.0)+1);
+
+   for (i=0;i<nb_tracks;i++)
+   {
+      int ind;
+      int max_val=nsf/nb_tracks;
+      bit1=frame_bits_unpack_unsigned(bits, 1);
+      ind = frame_bits_unpack_unsigned(bits,track_ind_bits);
+      printf ("unquant ind = %d\n", ind);
+      for (j=0;j<pulses_per_track;j++)
+      {
+         track[pulses_per_track-1-j]=ind%max_val;
+         ind /= max_val;
+      }
+      rorder(track, signs, tr, bit1, pulses_per_track);
+      for (j=0;j<pulses_per_track;j++)
+      {
+         exc[tr[i]*nb_tracks+i] += signs[j] ? -g : g;
+      }
+   }
+
    POP(stack);
    POP(stack);
    POP(stack);

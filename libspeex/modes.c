@@ -125,7 +125,7 @@ SpeexMode mp_nb_mode = {
    &ltp_params_nb,
    /*Innovation quantization*/
    mpulse_search,
-   NULL,
+   mpulse_unquant,
    &mpulse_nb
 };
 
@@ -179,6 +179,6 @@ SpeexMode mp_wb_mode = {
    &ltp_params_wb,
    /*Innovation quantization*/
    mpulse_search,
-   NULL,
+   mpulse_unquant,
    &mpulse_wb
 };

@@ -45,5 +45,12 @@ FrameBits *bits,
 float *stack
 );
 
+void mpulse_unquant(
+float *exc,
+void *par,                      /* non-overlapping codebook */
+int   nsf,                      /* number of samples in subframe */
+FrameBits *bits,
+float *stack
+);
 
 #endif
