@@ -34,7 +34,7 @@
 
 
 typedef struct ltp_params {
-   float  *gain_cdbk;
+   signed char *gain_cdbk;
    int     gain_bits;
    int     pitch_bits;
 } ltp_params;

@@ -165,7 +165,7 @@ int  *cdbk_index
    float A[3][3];
    float gain[3];
    int   gain_cdbk_size;
-   float *gain_cdbk;
+   signed char *gain_cdbk;
    float err1,err2;
 
    ltp_params *params;
@@ -216,7 +216,7 @@ int  *cdbk_index
    
    {
       float C[9];
-      float *ptr=gain_cdbk;
+      signed char *ptr=gain_cdbk;
       int best_cdbk=0;
       float best_sum=0;
       C[0]=corr[2];
@@ -232,16 +232,21 @@ int  *cdbk_index
       for (i=0;i<gain_cdbk_size;i++)
       {
          float sum=0;
+         float g0,g1,g2;
          ptr = gain_cdbk+3*i;
-         sum += C[0]*ptr[0];
-         sum += C[1]*ptr[1];
-         sum += C[2]*ptr[2];
-         sum -= C[3]*ptr[0]*ptr[1];
-         sum -= C[4]*ptr[2]*ptr[1];
-         sum -= C[5]*ptr[2]*ptr[0];
-         sum -= .5*C[6]*ptr[0]*ptr[0];
-         sum -= .5*C[7]*ptr[1]*ptr[1];
-         sum -= .5*C[8]*ptr[2]*ptr[2];
+         g0=0.015625*ptr[0]+.5;
+         g1=0.015625*ptr[1]+.5;
+         g2=0.015625*ptr[2]+.5;
+
+         sum += C[0]*g0;
+         sum += C[1]*g1;
+         sum += C[2]*g2;
+         sum -= C[3]*g0*g1;
+         sum -= C[4]*g2*g1;
+         sum -= C[5]*g2*g0;
+         sum -= .5*C[6]*g0*g0;
+         sum -= .5*C[7]*g1*g1;
+         sum -= .5*C[8]*g2*g2;
 
          /* If 1, force "safe" pitch values to handle packet loss better */
          if (0) {
@@ -260,9 +265,9 @@ int  *cdbk_index
             best_cdbk=i;
          }
       }
-      gain[0] = gain_cdbk[best_cdbk*3];
-      gain[1] = gain_cdbk[best_cdbk*3+1];
-      gain[2] = gain_cdbk[best_cdbk*3+2];
+      gain[0] = 0.015625*gain_cdbk[best_cdbk*3]  + .5;
+      gain[1] = 0.015625*gain_cdbk[best_cdbk*3+1]+ .5;
+      gain[2] = 0.015625*gain_cdbk[best_cdbk*3+2]+ .5;
 
       *cdbk_index=best_cdbk;
    }
@@ -428,7 +433,7 @@ float last_pitch_gain)
    int pitch;
    int gain_index;
    float gain[3];
-   float *gain_cdbk;
+   signed char *gain_cdbk;
    ltp_params *params;
    params = (ltp_params*) par;
    gain_cdbk=params->gain_cdbk;
@@ -437,9 +442,9 @@ float last_pitch_gain)
    pitch += start;
    gain_index = speex_bits_unpack_unsigned(bits, params->gain_bits);
    /*printf ("decode pitch: %d %d\n", pitch, gain_index);*/
-   gain[0] = gain_cdbk[gain_index*3];
-   gain[1] = gain_cdbk[gain_index*3+1];
-   gain[2] = gain_cdbk[gain_index*3+2];
+   gain[0] = 0.015625*gain_cdbk[gain_index*3]+.5;
+   gain[1] = 0.015625*gain_cdbk[gain_index*3+1]+.5;
+   gain[2] = 0.015625*gain_cdbk[gain_index*3+2]+.5;
 
    if (count_lost && pitch > subframe_offset)
    {

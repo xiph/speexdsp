@@ -48,8 +48,8 @@
 SpeexMode *speex_mode_list[SPEEX_NB_MODES] = {&speex_nb_mode, &speex_wb_mode, &speex_uwb_mode};
 
 /* Extern declarations for all codebooks we use here */
-extern float gain_cdbk_nb[];
-extern float gain_cdbk_lbr[];
+extern signed char gain_cdbk_nb[];
+extern signed char gain_cdbk_lbr[];
 extern signed char hexc_table[];
 extern signed char exc_5_256_table[];
 extern signed char exc_5_64_table[];
