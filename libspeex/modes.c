@@ -92,9 +92,9 @@ static ltp_params ltp_params_med = {
 
 /* Split-VQ innovation parameters for very low bit-rate narrowband */
 static split_cb_params split_cb_nb_vlbr = {
-   20,               /*subvect_size*/
-   2,               /*nb_subvect*/
-   exc_10_32_table, /*shape_cb*/
+   10,               /*subvect_size*/
+   4,               /*nb_subvect*/
+   exc_10_16_table, /*shape_cb*/
    4,               /*shape_bits*/
    0,
 };
