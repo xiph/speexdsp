@@ -47,7 +47,7 @@
 
 #define MAX_IN_SAMPLES 640
 
-SpeexMode *speex_mode_list[SPEEX_NB_MODES] = {&speex_nb_mode, &speex_wb_mode, &speex_uwb_mode};
+const SpeexMode * const speex_mode_list[SPEEX_NB_MODES] = {&speex_nb_mode, &speex_wb_mode, &speex_uwb_mode};
 
 /* Extern declarations for all codebooks we use here */
 extern signed char gain_cdbk_nb[];
@@ -714,4 +714,11 @@ int speex_lib_ctl(int request, void *ptr)
          break;
    }
    return 0;
+}
+
+const SpeexMode * const speex_lib_get_mode (int mode)
+{
+  if (mode < 0 || mode > SPEEX_NB_MODES) return NULL;
+
+  return speex_mode_list[mode];
 }

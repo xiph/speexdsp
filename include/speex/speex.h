@@ -164,6 +164,15 @@ extern "C" {
 /** Number of defined modes in Speex */
 #define SPEEX_NB_MODES 3
 
+/** modeID for the defined narrowband mode */
+#define SPEEX_MODEID_NB 0
+
+/** modeID for the defined wideband mode */
+#define SPEEX_MODEID_WB 1
+
+/** modeID for the defined ultra-wideband mode */
+#define SPEEX_MODEID_UWB 2
+
 struct SpeexMode;
 
 
@@ -352,7 +361,10 @@ extern SpeexMode speex_wb_mode;
 extern SpeexMode speex_uwb_mode;
 
 /** List of all modes available */
-extern SpeexMode *speex_mode_list[SPEEX_NB_MODES];
+extern const SpeexMode * const speex_mode_list[SPEEX_NB_MODES];
+
+/** Obtain one of the modes available */
+const SpeexMode * const speex_lib_get_mode (int mode);
 
 #ifdef __cplusplus
 }
