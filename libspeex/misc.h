@@ -41,8 +41,8 @@
 
 #ifdef FIXED_POINT
 
-typedef short        spx_word16_t;
-typedef int          spx_word32_t;
+typedef signed short spx_word16_t;
+typedef signed int   spx_word32_t;
 typedef spx_word32_t spx_mem_t;
 typedef spx_word16_t spx_coef_t;
 typedef spx_word32_t spx_sig_t;
@@ -53,8 +53,12 @@ typedef spx_word32_t spx_sig_t;
 #define LPC_SHIFT    13
 #define SIG_SHIFT    14
 
+#define PSHR(a,shift) (((a)+(1<<((shift)-1))) >> (shift))
 #define SHR(a,shift) ((a) >> (shift))
 #define SHL(a,shift) ((a) << (shift))
+
+/* result fits in 16 bits */
+#define MULT16_16_16(a,b)     (((short)(a))*(b))
 
 #define MULT16_16(a,b)     (((signed int)(a))*(b))
 #define MULT16_32_Q13(a,b) (((a)*((b)>>13)) + ((a)*((signed int)((b)&0x00001fff))>>13))
@@ -84,8 +88,10 @@ typedef float spx_word32_t;
 #define LPC_SHIFT    0
 #define SIG_SHIFT    0
 
+#define PSHR(a,shift)       (a)
 #define SHR(a,shift)       (a)
 #define SHL(a,shift)       (a)
+#define MULT16_16_16(a,b)     ((a)*(b))
 #define MULT16_16(a,b)     ((a)*(b))
 
 #define MULT16_32_Q13(a,b)     ((a)*(b))

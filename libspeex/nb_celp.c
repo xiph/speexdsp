@@ -890,7 +890,7 @@ int nb_encode(void *state, short *in, SpeexBits *bits)
 
    /* Replace input by synthesized speech */
    for (i=0;i<st->frameSize;i++)
-     in[i]=SHR(st->frame[i],SIG_SHIFT);
+     in[i]=PSHR(st->frame[i],SIG_SHIFT);
 
    if (SUBMODE(innovation_quant) == noise_codebook_quant || st->submodeID==0)
       st->bounded_pitch = 1;
@@ -1087,7 +1087,7 @@ static void nb_decode_lost(DecState *st, short *out, char *stack)
    }
 
    for (i=0;i<st->frameSize;i++)
-      out[i]=SHR(st->frame[i],SIG_SHIFT);
+      out[i]=PSHR(st->frame[i],SIG_SHIFT);
    
    st->first = 0;
    st->count_lost++;
@@ -1247,7 +1247,7 @@ int nb_decode(void *state, SpeexBits *bits, short *out)
       iir_mem2(st->exc, lpc, st->frame, st->frameSize, st->lpcSize, st->mem_sp);
 
       for (i=0;i<st->frameSize;i++)
-         out[i]=SHR(st->frame[i],SIG_SHIFT);
+         out[i]=PSHR(st->frame[i],SIG_SHIFT);
       st->count_lost=0;
       return 0;
    }
@@ -1599,7 +1599,7 @@ int nb_decode(void *state, SpeexBits *bits, short *out)
    
    /*Copy output signal*/
    for (i=0;i<st->frameSize;i++)
-     out[i]=SHR(st->frame[i],SIG_SHIFT);
+     out[i]=PSHR(st->frame[i],SIG_SHIFT);
 
    /*for (i=0;i<st->frameSize;i++)
      printf ("%d\n", (int)st->frame[i]);*/

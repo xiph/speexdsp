@@ -34,8 +34,6 @@
 #include <math.h>
 #include "misc.h"
 
-extern int lsp_nb_vqid[64];
-
 /* FIXME: Get rid of this kludge quick before someone gets hurt */
 static spx_word16_t quant_weight[MAX_LSP_SIZE];
 
@@ -134,9 +132,13 @@ void lsp_quant_nb(float *lsp, float *qlsp, int order, SpeexBits *bits)
    for (i=0;i<order;i++)
       qlsp[i]-=(.25*i+.25);
 
+#ifdef FIXED_POINT
+   for (i=0;i<order;i++)
+      nlsp[i]=floor(.5+qlsp[i]*LSP_SCALE);
+#else
    for (i=0;i<order;i++)
       nlsp[i] = LSP_SCALE*qlsp[i];
-
+#endif
    id = lsp_quant(nlsp, cdbk_nb, NB_CDBK_SIZE, order);
    speex_bits_pack(bits, id, 6);
 
@@ -223,9 +225,13 @@ void lsp_quant_lbr(float *lsp, float *qlsp, int order, SpeexBits *bits)
 
    for (i=0;i<order;i++)
       qlsp[i]-=(.25*i+.25);
+#ifdef FIXED_POINT
+   for (i=0;i<order;i++)
+      nlsp[i]=floor(.5+qlsp[i]*LSP_SCALE);
+#else
    for (i=0;i<order;i++)
       nlsp[i]=qlsp[i]*LSP_SCALE;
-   
+#endif   
    id = lsp_quant(nlsp, cdbk_nb, NB_CDBK_SIZE, order);
    speex_bits_pack(bits, id, 6);
 
@@ -292,9 +298,13 @@ void lsp_quant_high(float *lsp, float *qlsp, int order, SpeexBits *bits)
 
    for (i=0;i<order;i++)
       qlsp[i]-=(.3125*i+.75);
+#ifdef FIXED_POINT
+   for (i=0;i<order;i++)
+      nlsp[i] = floor(.5+qlsp[i]*LSP_SCALE);
+#else
    for (i=0;i<order;i++)
       nlsp[i] = qlsp[i]*LSP_SCALE;
-
+#endif
    id = lsp_quant(nlsp, high_lsp_cdbk, 64, order);
    speex_bits_pack(bits, id, 6);
 

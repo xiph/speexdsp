@@ -814,7 +814,7 @@ static void sb_decode_lost(SBDecState *st, short *out, int dtx, char *stack)
 
 #ifdef FIXED_POINT
    for (i=0;i<st->full_frame_size;i++)
-      out[i]=SHR(st->y0[i]-st->y1[i],SIG_SHIFT-1);
+      out[i]=PSHR(st->y0[i]-st->y1[i],SIG_SHIFT-1);
 #else
    for (i=0;i<st->full_frame_size;i++)
       out[i]=2*(st->y0[i]-st->y1[i]);   
@@ -917,7 +917,7 @@ int sb_decode(void *state, SpeexBits *bits, short *out)
 
 #ifdef FIXED_POINT
       for (i=0;i<st->full_frame_size;i++)
-         out[i]=SHR(st->y0[i]-st->y1[i],SIG_SHIFT-1);
+         out[i]=PSHR(st->y0[i]-st->y1[i],SIG_SHIFT-1);
 #else
       for (i=0;i<st->full_frame_size;i++)
          out[i]=2*(st->y0[i]-st->y1[i]);   
@@ -1084,7 +1084,7 @@ int sb_decode(void *state, SpeexBits *bits, short *out)
 
 #ifdef FIXED_POINT
    for (i=0;i<st->full_frame_size;i++)
-      out[i]=SHR(st->y0[i]-st->y1[i],SIG_SHIFT-1);
+      out[i]=PSHR(st->y0[i]-st->y1[i],SIG_SHIFT-1);
 #else
    for (i=0;i<st->full_frame_size;i++)
       out[i]=2*(st->y0[i]-st->y1[i]);   

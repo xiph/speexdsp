@@ -117,7 +117,8 @@ int   complexity
       for (j=0;j<nb_subvect;j++)
          nind[i][j]=oind[i][j]=-1;
    }
-
+   
+   /* FIXME: make that adaptive? */
    for (i=0;i<nsf;i++)
       t[i]=SHR(target[i],6);
 
