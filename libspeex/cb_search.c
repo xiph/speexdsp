@@ -220,56 +220,53 @@ float *stack
    }
 
    {
-#if 1
       int best_vq_index=0, max_index;
       float max_gain=0, log_max, min_dist=0, *sign;
 
-      sign = PUSH(stack, nb_subvect);
-      for (i=0;i<nb_subvect;i++)
+      if (gain_cb) /*If no gain codebok, do not quantize (for testing/debugging) */
       {
-         if (gains[i]<0)
+         sign = PUSH(stack, nb_subvect);
+         for (i=0;i<nb_subvect;i++)
          {
-            gains[i]=-gains[i];
-            sign[i]=-1;
-         } else {
-            sign[i]=1;
+            if (gains[i]<0)
+            {
+               gains[i]=-gains[i];
+               sign[i]=-1;
+            } else {
+               sign[i]=1;
+            }
          }
-      }
-      for (i=0;i<nb_subvect;i++)
-         if (gains[i]>max_gain)
-            max_gain=gains[i];
-      log_max=log(max_gain+1);
-      max_index = (int)(floor(.5+log_max-3));
-      if (max_index>7)
-         max_index=7;
-      if (max_index<0)
-         max_index=0;
-      max_gain=1/exp(max_index+3.0);
-      for (i=0;i<nb_subvect;i++)
-        gains[i]*=max_gain;
-      frame_bits_pack(bits,max_index,3);
+         for (i=0;i<nb_subvect;i++)
+            if (gains[i]>max_gain)
+               max_gain=gains[i];
+         log_max=log(max_gain+1);
+         max_index = (int)(floor(.5+log_max-3));
+         if (max_index>7)
+            max_index=7;
+         if (max_index<0)
+            max_index=0;
+         max_gain=1/exp(max_index+3.0);
+         for (i=0;i<nb_subvect;i++)
+            gains[i]*=max_gain;
+         frame_bits_pack(bits,max_index,3);
 
-      /*Vector quantize gains[i]*/
-      best_vq_index = vq_index(gains, gain_cb, nb_subvect, gain_cb_size);
-      frame_bits_pack(bits,best_vq_index,params->gain_bits);
+         /*Vector quantize gains[i]*/
+         best_vq_index = vq_index(gains, gain_cb, nb_subvect, gain_cb_size);
+         frame_bits_pack(bits,best_vq_index,params->gain_bits);
 
-      printf ("best_gains_vq_index %d %f %d\n", best_vq_index, min_dist, max_index);
+         printf ("best_gains_vq_index %d %f %d\n", best_vq_index, min_dist, max_index);
 
-#if 1 /* If 0, the gains are not quantized */
-      for (i=0;i<nb_subvect;i++)
-         gains[i]= sign[i]*gain_cb[best_vq_index*nb_subvect+i]/max_gain/(Ee[ind[i]]+.001);
-#else 
-      for (i=0;i<nb_subvect;i++)
-         gains[i]= sign[i]*gains[i]/max_gain/(Ee[ind[i]]+.001);
-#endif  
+         for (i=0;i<nb_subvect;i++)
+            gains[i]= sign[i]*gain_cb[best_vq_index*nb_subvect+i]/max_gain/(Ee[ind[i]]+.001);
     
 
-      POP(stack);
-#else
-      for (i=0;i<nb_subvect;i++)
-         gains[i]= gains[i]/(Ee[ind[i]]+.001);
+         POP(stack);
+      } else {
 
-#endif
+         for (i=0;i<nb_subvect;i++)
+            gains[i]= gains[i]/(Ee[ind[i]]+.001);
+      }
+
       for (i=0;i<nb_subvect;i++)
          for (j=0;j<subvect_size;j++)
             exc[subvect_size*i+j]+=gains[i]*shape_cb[ind[i]*subvect_size+j];

@@ -19,6 +19,7 @@
 
 */
 
+#include <stdlib.h>
 #include "modes.h"
 #include "ltp.h"
 #include "quant_lsp.h"
@@ -55,7 +56,7 @@ split_cb_params split_cb_wb = {
    8,               /*nb_subvect*/
    exc_wb_table,    /*shape_cb*/
    7,               /*shape_bits*/
-   exc_gains_table, /*gain_cb*/
+   NULL, /*gain_cb*/
    8                /*gain_bits*/
 };
 
@@ -96,7 +97,7 @@ SpeexMode wb_mode = {
    0.4,    /*gamma2*/
    /*LSP quantization*/
    lsp_quant_wb,
-   lsp_unquant_nb,
+   lsp_unquant_wb,
    /*Pitch quantization*/
    pitch_search_3tap,
    pitch_unquant_3tap,

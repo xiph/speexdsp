@@ -212,3 +212,54 @@ void lsp_quant_wb(float *lsp, float *qlsp, int order, FrameBits *bits)
    for (i=0;i<order;i++)
       qlsp[i]=lsp[i]-qlsp[i];
 }
+
+
+void lsp_unquant_wb(float *lsp, int order, FrameBits *bits)
+{
+
+   int i, id;
+   for (i=0;i<order;i++)
+      lsp[i]=0;
+
+
+   id=frame_bits_unpack_unsigned(bits, 6);
+   for (i=0;i<16;i++)
+      lsp[i] += lsp_cdbk_wb[id*16+i];
+
+
+   id=frame_bits_unpack_unsigned(bits, 6);
+   for (i=0;i<4;i++)
+      lsp[i] += lsp_cdbk_wb11[id*4+i];
+
+   id=frame_bits_unpack_unsigned(bits, 6);
+   for (i=0;i<4;i++)
+      lsp[i] += lsp_cdbk_wb12[id*4+i];
+
+
+   id=frame_bits_unpack_unsigned(bits, 6);
+   for (i=0;i<4;i++)
+      lsp[i+4] += lsp_cdbk_wb21[id*4+i];
+
+   id=frame_bits_unpack_unsigned(bits, 6);
+   for (i=0;i<4;i++)
+      lsp[i+4] += lsp_cdbk_wb22[id*4+i];
+
+
+   id=frame_bits_unpack_unsigned(bits, 6);
+   for (i=0;i<4;i++)
+      lsp[i+8] += lsp_cdbk_wb31[id*4+i];
+
+   id=frame_bits_unpack_unsigned(bits, 4);
+   for (i=0;i<4;i++)
+      lsp[i+8] += lsp_cdbk_wb32[id*4+i];
+
+
+   id=frame_bits_unpack_unsigned(bits, 6);
+   for (i=0;i<4;i++)
+      lsp[i+12] += lsp_cdbk_wb41[id*4+i];
+
+   id=frame_bits_unpack_unsigned(bits, 4);
+   for (i=0;i<4;i++)
+      lsp[i+12] += lsp_cdbk_wb42[id*4+i];
+
+}
