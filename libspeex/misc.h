@@ -1,7 +1,9 @@
-/* Copyright (C) 2002 Jean-Marc Valin 
-   File: mics.h
-   Various utility routines for Speex
-
+/* Copyright (C) 2002 Jean-Marc Valin */
+/**
+   @file misc.h
+   @brief Various compatibility routines for Speex
+*/
+/*
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Lesser General Public
    License as published by the Free Software Foundation; either
@@ -31,8 +33,13 @@ unsigned int le_int(unsigned int i);
 unsigned short be_short(unsigned short s);
 unsigned short le_short(unsigned short s);
 
+/**< Speex wrapper for calloc. To do your own dynamic allocation, all you need to do is replace this function and speex_free */
 void *speex_alloc (int size);
+
+/**< Speex wrapper for calloc. To do your own dynamic allocation, all you need to do is replace this function and speex_alloc */
 void speex_free (void *ptr);
+
+/** Speex wrapper for mem_move */
 void *speex_move (void *dest, void *src, int n);
 
 #endif

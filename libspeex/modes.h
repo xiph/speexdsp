@@ -1,7 +1,9 @@
-/** Copyright (C) 2002 Jean-Marc Valin
+/* Copyright (C) 2002 Jean-Marc Valin */
+/**
    @file modes.h
    @brief Describes the different modes of the codec
-
+*/
+/*
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Lesser General Public
    License as published by the Free Software Foundation; either
@@ -67,19 +69,21 @@ typedef struct SpeexSubmode {
    lsp_unquant_func  lsp_unquant; /**< LSP unquantization function */
 
    /*Lont-term predictor functions*/
-   ltp_quant_func    ltp_quant;
-   ltp_unquant_func  ltp_unquant;
-   void             *ltp_params;
+   ltp_quant_func    ltp_quant; /**< Long-term predictor (pitch) quantizer */
+   ltp_unquant_func  ltp_unquant; /**< Long-term predictor (pitch) un-quantizer */
+   void             *ltp_params; /**< Pitch parameters (options) */
 
    /*Quantization of innovation*/
-   innovation_quant_func innovation_quant;
-   innovation_unquant_func innovation_unquant;
-   void             *innovation_params;
+   innovation_quant_func innovation_quant; /**< Innovation quantization */
+   innovation_unquant_func innovation_unquant; /**< Innovation un-quantization */
+   void             *innovation_params; /**< Innovation quantization parameters*/
 
    /*Synthesis filter enhancement*/
-   float lpc_enh_k1, lpc_enh_k2, comb_gain;
+   float             lpc_enh_k1; /**< Enhancer constant */
+   float             lpc_enh_k2; /**< Enhancer constant */
+   float             comb_gain;  /**< Gain of enhancer comb filter */
 
-   int               bits_per_frame;
+   int               bits_per_frame; /**< Number of bits per frame after encoding*/
 } SpeexSubmode;
 
 /** Struct defining the encoding/decoding mode*/

@@ -1,7 +1,9 @@
-/** Copyright (C) 2002 Jean-Marc Valin
+/* Copyright (C) 2002 Jean-Marc Valin*/
+/**
   @file speex.h
   @brief Describes the different modes of the codec
-
+*/
+/*
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Lesser General Public
    License as published by the Free Software Foundation; either
@@ -28,16 +30,16 @@ extern "C" {
 #endif
 
 /* Values allowed for *ctl() requests */
-#define SPEEX_SET_ENH 0
-#define SPEEX_GET_ENH 1
+#define SPEEX_SET_ENH 0 /**< Set enhancement on/off (decoder only) */
+#define SPEEX_GET_ENH 1 /**< Get enhancement state (decoder only) */
 /*Would be SPEEX_SET_FRAME_SIZE, but it's (currently) invalid*/
-#define SPEEX_GET_FRAME_SIZE 3
-#define SPEEX_SET_QUALITY 4
-#define SPEEX_GET_QUALITY 5
-#define SPEEX_SET_MODE 6
-#define SPEEX_GET_MODE 7
-#define SPEEX_SET_LOW_MODE 8
-#define SPEEX_GET_LOW_MODE 9
+#define SPEEX_GET_FRAME_SIZE 3 /**< Obtain frame size used by encoder/decoder */
+#define SPEEX_SET_QUALITY 4 /**< Set quality value */
+#define SPEEX_GET_QUALITY 5 /**< Get current quality setting */
+#define SPEEX_SET_MODE 6 /**< Set sub-mode to use */
+#define SPEEX_GET_MODE 7 /**< Get current sub-mode in use */
+#define SPEEX_SET_LOW_MODE 8 /**< Set low-band sub-mode to use (wideband only)*/
+#define SPEEX_GET_LOW_MODE 9 /**< Get current low-band mode in use (wideband only)*/
 #define SPEEX_SET_HIGH_MODE 10
 #define SPEEX_GET_HIGH_MODE 11
 #define SPEEX_SET_VBR 12
@@ -178,11 +180,21 @@ void speex_decoder_destroy(void *state);
  */
 int speex_decode(void *state, SpeexBits *bits, float *out);
 
-/** Used like the ioctl function to control the encoder parameters */
+/** Used like the ioctl function to control the encoder parameters
+ *
+ * @param state Decoder state
+ * @param request ioctl-type request (one of the SPEEX_* macros)
+ * @param ptr Data exchanged to-from function
+ */
 void speex_decoder_ctl(void *state, int request, void *ptr);
 
 
-/** Query function for mode information */
+/** Query function for mode information
+ *
+ * @param mode Speex mode
+ * @param request ioctl-type request (one of the SPEEX_* macros)
+ * @param ptr Data exchanged to-from function
+ */
 void speex_mode_query(SpeexMode *mode, int request, void *ptr);
 
 
