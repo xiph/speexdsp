@@ -201,7 +201,7 @@ void encode(EncState *st, float *in, FrameBits *bits)
    
    /* LSP Quantization */
    st->lsp_quant(st->lsp, st->qlsp, st->lpcSize, bits);
-   printf ("LSP ");
+   /*printf ("LSP ");
    for (i=0;i<st->lpcSize;i++)
       printf ("%f ", st->lsp[i]);
    printf ("\n");
@@ -209,7 +209,7 @@ void encode(EncState *st, float *in, FrameBits *bits)
    for (i=0;i<st->lpcSize;i++)
       printf ("%f ", st->qlsp[i]);
    printf ("\n");
-   return;
+   return;*/
    /* Special case for first frame */
    if (st->first)
    {
