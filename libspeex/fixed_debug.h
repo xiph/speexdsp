@@ -190,16 +190,104 @@ static inline short MULT16_16_Q15(int a, int b)
    return res;
 }
 
-#define MULT16_16_P13(a,b) (SHR(ADD32(4096,MULT16_16((a),(b))),13))
-#define MULT16_16_P14(a,b) (SHR(ADD32(8192,MULT16_16((a),(b))),14))
-#define MULT16_16_P15(a,b) (SHR(ADD32(16384,MULT16_16((a),(b))),15))
+static inline short MULT16_16_P13(int a, int b) 
+{
+   long long res;
+   if (!VERIFY_SHORT(a) || !VERIFY_SHORT(b))
+   {
+      fprintf (stderr, "MULT16_16_P13: inputs are not short: %d %d\n", a, b);
+   }
+   res = ((long long)a)*b;
+   res += 4096;
+   if (!VERIFY_INT(res))
+      fprintf (stderr, "MULT16_16_P13: overflow: %d*%d=%d\n", a, b, res);
+   res >>= 13;
+   if (!VERIFY_SHORT(res))
+      fprintf (stderr, "MULT16_16_P13: output is not short: %d*%d=%d\n", a, b, res);
+   spx_mips++;
+   return res;
+}
+static inline short MULT16_16_P14(int a, int b) 
+{
+   long long res;
+   if (!VERIFY_SHORT(a) || !VERIFY_SHORT(b))
+   {
+      fprintf (stderr, "MULT16_16_P14: inputs are not short: %d %d\n", a, b);
+   }
+   res = ((long long)a)*b;
+   res += 8192;
+   if (!VERIFY_INT(res))
+      fprintf (stderr, "MULT16_16_P14: overflow: %d*%d=%d\n", a, b, res);
+   res >>= 14;
+   if (!VERIFY_SHORT(res))
+      fprintf (stderr, "MULT16_16_P14: output is not short: %d*%d=%d\n", a, b, res);
+   spx_mips++;
+   return res;
+}
+static inline short MULT16_16_P15(int a, int b) 
+{
+   long long res;
+   if (!VERIFY_SHORT(a) || !VERIFY_SHORT(b))
+   {
+      fprintf (stderr, "MULT16_16_P15: inputs are not short: %d %d\n", a, b);
+   }
+   res = ((long long)a)*b;
+   res += 16384;
+   if (!VERIFY_INT(res))
+      fprintf (stderr, "MULT16_16_P15: overflow: %d*%d=%d\n", a, b, res);
+   res >>= 15;
+   if (!VERIFY_SHORT(res))
+      fprintf (stderr, "MULT16_16_P15: output is not short: %d*%d=%d\n", a, b, res);
+   spx_mips++;
+   return res;
+}
 
 #define MUL_16_32_R15(a,bh,bl) ADD32(MULT16_16((a),(bh)), SHR(MULT16_16((a),(bl)),15))
 
 
+static inline int DIV32_16(long long a, long long b) 
+{
+   long long res;
+   if (b==0)
+   {
+      fprintf(stderr, "DIV32_16: divide by zero: %d/%d\n", a, b);
+      return 0;
+   }
+   if (!VERIFY_INT(a) || !VERIFY_SHORT(b))
+   {
+      fprintf (stderr, "DIV32_16: inputs are not int/short: %d %d\n", a, b);
+   }
+   res = a/b;
+   if (!VERIFY_SHORT(res))
+   {
+      fprintf (stderr, "DIV32_16: output is not short: %d / %d = %d\n", (int)a,(int)b,(int)res);
+      if (res>32767)
+         res = 32767;
+      if (res<-32768)
+         res = -32768;
+   }
+   spx_mips++;
+   return res;
+}
+static inline int DIV32(long long a, long long b) 
+{
+   long long res;
+   if (b==0)
+   {
+      fprintf(stderr, "DIV32: divide by zero: %d/%d\n", a, b);
+      return 0;
+   }
 
-#define DIV32_16(a,b) ((short)(((signed int)(a))/((short)(b))))
-#define DIV32(a,b) (((signed int)(a))/((signed int)(b)))
+   if (!VERIFY_INT(a) || !VERIFY_INT(b))
+   {
+      fprintf (stderr, "DIV32: inputs are not int/short: %d %d\n", a, b);
+   }
+   res = a/b;
+   if (!VERIFY_INT(res))
+      fprintf (stderr, "DIV32: output is not int: %d\n", res);
+   spx_mips++;
+   return res;
+}
 
 
 

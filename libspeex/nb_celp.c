@@ -801,8 +801,18 @@ int nb_encode(void *state, short *in, SpeexBits *bits)
             printf ("%f\n", st->buf2[i]/ener);
          */
          
-         fine_gain = DIV32_16(ener,SHR(ol_gain,SIG_SHIFT));
-
+         /*FIXME: Should use DIV32_16 and make sure result fits in 16 bits */
+#ifdef FIXED_POINT
+         {
+            spx_word32_t f = DIV32(ener,PSHR(ol_gain,SIG_SHIFT));
+            if (f<32768)
+               fine_gain = f;
+            else
+               fine_gain = 32767;
+         }
+#else
+         fine_gain = DIV32_16(ener,PSHR(ol_gain,SIG_SHIFT));
+#endif
          /* Calculate gain correction for the sub-frame (if any) */
          if (SUBMODE(have_subframe_gain)) 
          {
