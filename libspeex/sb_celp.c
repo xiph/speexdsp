@@ -221,6 +221,7 @@ void *sb_encoder_init(SpeexMode *m)
    st->vbr_quality = 8;
    st->vbr_enabled = 0;
    st->vad_enabled = 0;
+   st->abr_enabled = 0;
    st->relative_quality=0;
 
    st->complexity=2;
@@ -353,6 +354,27 @@ void sb_encode(void *state, float *in, SpeexBits *bits)
    if (st->vbr_enabled || st->vad_enabled){
       float e_low=0, e_high=0;
       float ratio;
+      if (st->abr_enabled)
+      {
+         float qual_change=0;
+         if (st->abr_drift2 * st->abr_drift > 0)
+         {
+            /* Only adapt if long-term and short-term drift are the same sign */
+            qual_change = -.00001*st->abr_drift/(1+st->abr_count);
+            if (qual_change>.1)
+               qual_change=.1;
+            if (qual_change<-.1)
+               qual_change=-.1;
+         }
+         st->vbr_quality += qual_change;
+         if (st->vbr_quality>10)
+            st->vbr_quality=10;
+         if (st->vbr_quality<0)
+            st->vbr_quality=0;
+         /*printf ("%f %f\n", st->abr_drift, st->vbr_quality);*/
+      }
+
+
       for (i=0;i<st->frame_size;i++)
       {
          e_low  += st->x0d[i]* st->x0d[i];
@@ -387,6 +409,15 @@ void sb_encode(void *state, float *in, SpeexBits *bits)
          /*fprintf (stderr, "%f %d\n", low_qual, modeid);*/
          speex_encoder_ctl(state, SPEEX_SET_HIGH_MODE, &modeid);
          /*fprintf (stderr, "%d %d\n", st->submodeID, modeid);*/
+         if (st->abr_enabled)
+         {
+            int bitrate;
+            speex_encoder_ctl(state, SPEEX_GET_BITRATE, &bitrate);
+            st->abr_drift+=(bitrate-st->abr_enabled);
+            st->abr_drift2 = .95*st->abr_drift2 + .05*(bitrate-st->abr_enabled);
+            st->abr_count += 1.0;
+         }
+
       } else {
          /* VAD only */
          int modeid;
@@ -1107,6 +1138,35 @@ void sb_encoder_ctl(void *state, int request, void *ptr)
          speex_encoder_ctl(state, SPEEX_SET_QUALITY, &q);
          break;
       }
+   case SPEEX_SET_ABR:
+      st->abr_enabled = (*(int*)ptr);
+      st->vbr_enabled = 1;
+      speex_encoder_ctl(st->st_low, SPEEX_SET_VBR, &st->vbr_enabled);
+      {
+         int i=10, rate, target;
+         float vbr_qual;
+         target = (*(int*)ptr);
+         while (i>=0)
+         {
+            speex_encoder_ctl(st, SPEEX_SET_QUALITY, &i);
+            speex_encoder_ctl(st, SPEEX_GET_BITRATE, &rate);
+            if (rate <= target)
+               break;
+            i--;
+         }
+         vbr_qual=i;
+         if (vbr_qual<0)
+            vbr_qual=0;
+         speex_encoder_ctl(st, SPEEX_SET_VBR_QUALITY, &vbr_qual);
+         st->abr_count=0;
+         st->abr_drift=0;
+         st->abr_drift2=0;
+      }
+      
+      break;
+   case SPEEX_GET_ABR:
+      (*(int*)ptr) = st->abr_enabled;
+      break;
    case SPEEX_SET_QUALITY:
       {
          int nb_qual;

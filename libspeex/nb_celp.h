@@ -103,7 +103,7 @@ typedef struct EncState {
    float  relative_quality; /**< Relative quality that will be needed by VBR */
    int    vbr_enabled;    /**< 1 for enabling VBR, 0 otherwise */
    int    vad_enabled;    /**< 1 for enabling VAD, 0 otherwise */
-   int    abr_enabled;    /**< 1 for enabling ABR, 0 otherwise */
+   int    abr_enabled;    /**< ABR setting (in bps), 0 if off */
    float  abr_drift;
    float  abr_drift2;
    float  abr_count;

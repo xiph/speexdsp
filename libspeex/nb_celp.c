@@ -1479,7 +1479,6 @@ void nb_encoder_ctl(void *state, int request, void *ptr)
          vbr_qual=i;
          if (vbr_qual<0)
             vbr_qual=0;
-         fprintf (stderr, "%f\n", vbr_qual);
          speex_encoder_ctl(st, SPEEX_SET_VBR_QUALITY, &vbr_qual);
          st->abr_count=0;
          st->abr_drift=0;

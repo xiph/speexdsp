@@ -92,6 +92,10 @@ typedef struct SBEncState {
 
    float  vbr_quality;         /**< Quality setting for VBR encoding */
    int    vbr_enabled;         /**< 1 for enabling VBR, 0 otherwise */
+   int    abr_enabled;         /**< ABR setting (in bps), 0 if off */
+   float  abr_drift;
+   float  abr_drift2;
+   float  abr_count;
    int    vad_enabled;         /**< 1 for enabling VAD, 0 otherwise */
    float  relative_quality;
 
