@@ -47,7 +47,8 @@ void usage()
    fprintf (stderr, "options:\n");
    fprintf (stderr, "\t--narrowband -n    Narrowband (8 kHz) input file\n"); 
    fprintf (stderr, "\t--wideband   -w    Wideband (16 kHz) input file\n"); 
-   fprintf (stderr, "\t--lbr              Low bit-rate mode (in combination with --narrowband)\n"); 
+   fprintf (stderr, "\t--quality n        Encoding quality setting from 0 to 10\n"); 
+   fprintf (stderr, "\t--lbr              Low bit-rate mode (equivalent to --quality 3)\n"); 
    fprintf (stderr, "\t--help       -h    This help\n"); 
    fprintf (stderr, "\t--version    -v    Version information\n"); 
    fprintf (stderr, "\nInput must be raw audio (mono, no header), 16 bits or a mono wav file\n"); 
@@ -78,11 +79,13 @@ int main(int argc, char **argv)
       {"wideband", no_argument, NULL, 0},
       {"narrowband", no_argument, NULL, 0},
       {"lbr", no_argument, NULL, 0},
+      {"quality", required_argument, NULL, 0},
       {"help", no_argument, NULL, 0},
       {"version", no_argument, NULL, 0},
       {0, 0, 0, 0}
    };
    int rate, chan, fmt, size;
+   int quality=-1;
    int lbr=0;
    ogg_stream_state os;
    ogg_page 		 og;
@@ -109,7 +112,10 @@ int main(int argc, char **argv)
                wideband=1;
          else if (strcmp(long_options[option_index].name,"lbr")==0)
                lbr=1;
-         else if (strcmp(long_options[option_index].name,"help")==0)
+         else if (strcmp(long_options[option_index].name,"quality")==0)
+         {
+            quality = atoi (optarg);
+         } else if (strcmp(long_options[option_index].name,"help")==0)
          {
             usage();
             exit(0);
@@ -207,8 +213,10 @@ int main(int argc, char **argv)
 
    speex_init_header(&header, rate, 1, mode);
 
-   fprintf (stderr, "Encoding %d Hz audio at %d bps using %s mode\n", 
-            header.rate, mode->bitrate, mode->modeName);
+   fprintf (stderr, "Encoding %d Hz audio using %s mode\n", 
+            header.rate, mode->modeName);
+   /*fprintf (stderr, "Encoding %d Hz audio at %d bps using %s mode\n", 
+     header.rate, mode->bitrate, mode->modeName);*/
 
    /*Initialize Speex encoder*/
    st = speex_encoder_init(mode);
@@ -229,13 +237,6 @@ int main(int argc, char **argv)
    /*Write header (format will change)*/
    {
 
-      /*if (narrowband)
-      if (lbr)
-         op.packet = (unsigned char *)"speex narrow-lbr";
-      else
-         op.packet = (unsigned char *)"speex narrowband";
-      if (wideband)
-      op.packet = (unsigned char *)"speex wideband**";*/
       op.packet = (unsigned char *)speex_header_to_packet(&header, (int*)&(op.bytes));
       op.b_o_s = 1;
       op.e_o_s = 0;
@@ -267,9 +268,11 @@ int main(int argc, char **argv)
    }
 
    speex_encoder_ctl(st, SPEEX_GET_FRAME_SIZE, &frame_size);
-   if (lbr)
+   if (lbr || quality != -1)
    {
-      int tmp=3;
+      int tmp=quality;
+      if (quality==-1)
+         tmp = 3;
       speex_encoder_ctl(st, SPEEX_SET_QUALITY, &tmp);
    }
    /*Main encoding loop (one frame per iteration)*/

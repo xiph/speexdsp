@@ -446,7 +446,7 @@ void sb_encode(void *state, float *in, SpeexBits *bits)
       for (i=0;i<st->subframeSize;i++)
          el+=sqr(((EncState*)st->st_low)->exc[offset+i]);
 
-      if (fold) {/* 1 for spectral folding excitation, 0 for stochastic */
+      if (!SUBMODE(innovation_quant)) {/* 1 for spectral folding excitation, 0 for stochastic */
          float g;
          /*speex_bits_pack(bits, 1, 1);*/
 
@@ -497,8 +497,10 @@ void sb_encode(void *state, float *in, SpeexBits *bits)
          }
 #else
          /* High-band excitation using the low-band excitation and a gain */
-         for (i=0;i<st->subframeSize;i++)
+         //FIXME: Should we replace the excitation in the encoder of just in the decoder?
+         /*                  for (i=0;i<st->subframeSize;i++)
             exc[i]=g*((EncState*)st->st_low)->exc[offset+i];
+         */
 #endif
 
 #endif
@@ -810,7 +812,7 @@ void sb_decode(void *state, SpeexBits *bits, float *out, int lost)
       
       for (i=0;i<st->subframeSize;i++)
          exc[i]=0;
-      if (0/*speex_bits_unpack_unsigned(bits, 1)*/)
+      if (!SUBMODE(innovation_unquant))
       {
          float g;
          int quant;
@@ -822,7 +824,7 @@ void sb_decode(void *state, SpeexBits *bits, float *out, int lost)
          
          /* High-band excitation using the low-band excitation and a gain */
          for (i=0;i<st->subframeSize;i++)
-            exc[i]=g*((DecState*)st->st_low)->exc[offset+i];
+            exc[i]=.6*g*((DecState*)st->st_low)->exc[offset+i];
       } else {
          float gc, scale;
          int qgc = speex_bits_unpack_unsigned(bits, 4);
@@ -923,20 +925,46 @@ void sb_encoder_ctl(void *state, int request, void *ptr)
       break;
    case SPEEX_SET_QUALITY:
       {
-         int tmp;
+         int nb_mode;
          int quality = (*(int*)ptr);
-         if (quality<5)
+         switch (quality)
          {
+         case 0:
+         case 1:
+            nb_mode=1;
             st->submodeID = 1;
-            tmp=4;
-            speex_encoder_ctl(st->st_low, SPEEX_SET_MODE, &tmp);
-         } else if (quality<=10)
-         {
+            break;
+         case 2:
+            nb_mode=2;
+            st->submodeID = 1;
+            break;
+         case 3:
+            nb_mode=3;
+            st->submodeID = 1;
+            break;
+         case 4:
+            nb_mode=3;
             st->submodeID = 2;
-            tmp=5;
-            speex_encoder_ctl(st->st_low, SPEEX_SET_MODE, &tmp);
-         } else
+            break;
+         case 5:
+            nb_mode=4;
+            st->submodeID = 2;
+            break;
+         case 6:
+         case 7:
+            nb_mode=5;
+            st->submodeID = 2;
+            break;
+         case 8:
+         case 9:
+         case 10:
+            nb_mode=5;
+            st->submodeID = 3;
+            break;
+         default:
             fprintf(stderr, "Unknown sb_ctl quality: %d\n", quality);
+         }
+         speex_encoder_ctl(st->st_low, SPEEX_SET_MODE, &nb_mode);
       }
       break;
    default:

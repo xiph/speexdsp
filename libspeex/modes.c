@@ -59,7 +59,7 @@ pf_params pf_params_lbr = {
 pf_params pf_params_sb = {
    0.65,      /* formant enhancement numerator */
    0.68,      /* formant enhancement denominator */
-   0.3       /* pitch enhancement factor */
+   0.2       /* pitch enhancement factor */
 };
 
 /* Post-filter parameters for wideband */
@@ -271,8 +271,27 @@ SpeexMode speex_nb_mode = {
    0
 };
 
-
 SpeexSubmode wb_submode1 = {
+   0,
+   1,
+   /*LSP quantization*/
+   lsp_quant_high,
+   lsp_unquant_high,
+   /*Pitch quantization*/
+   NULL,
+   NULL,
+   NULL,
+   /*No innovation quantization*/
+   NULL,
+   NULL,
+   NULL,
+   /*No post-filter*/
+   NULL,
+   NULL
+};
+
+
+SpeexSubmode wb_submode2 = {
    0,
    1,
    /*LSP quantization*/
@@ -291,7 +310,7 @@ SpeexSubmode wb_submode1 = {
 };
 
 
-SpeexSubmode wb_submode2 = {
+SpeexSubmode wb_submode3 = {
    0,
    1,
    /*LSP quantization*/
@@ -322,8 +341,8 @@ static SpeexSBMode sb_wb_mode = {
    .002,   /*lag_factor*/
    1.0001, /*lpc_floor*/
    0.0,    /*preemph*/
-   {NULL, &wb_submode1, &wb_submode2, NULL, NULL, NULL, NULL, NULL},
-   2
+   {NULL, &wb_submode1, &wb_submode2, &wb_submode3, NULL, NULL, NULL, NULL},
+   3
 };
 
 

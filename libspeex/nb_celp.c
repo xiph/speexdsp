@@ -919,7 +919,7 @@ void nb_encoder_ctl(void *state, int request, void *ptr)
       {
          int quality = (*(int*)ptr);
          if (quality<=0)
-            st->submodeID = 0;
+            st->submodeID = 1;
          else if (quality<=2)
             st->submodeID = 1;
          else if (quality<=4)
