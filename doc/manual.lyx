@@ -634,7 +634,7 @@ The value '-' for input_file or output_file corresponds respectively to
 \layout Description
 
 --rate\SpecialChar ~
-n For decoding at n Hz sampling rate
+n Force decoding at n Hz sampling rate
 \layout Description
 
 --packet-loss\SpecialChar ~
@@ -1681,7 +1681,7 @@ Speex can encode speech in both narrowband and wideband and provides different
  bit-rates.
  However, not all features need to be supported by a certain implementation
  or device.
- In order to be said 
+ In order to be called 
 \begin_inset Quotes eld
 \end_inset 
 
@@ -1830,7 +1830,7 @@ granulepos=0
 .
 \layout Standard
 
-The third and subsequant packets each contain one or more (number found
+The third and subsequent packets each contain one or more (number found
  in header) Speex frames.
  These are identified with 
 \family typewriter 
@@ -5530,8 +5530,8 @@ This is called transcoding and it will always result in much poorer quality
 Does Speex run on Windows?
 \layout Standard
 
-As of 0.8.0, Speex can now compile on Windows.
- There are also several front-ends available from the web site.
+Compilation on Windows has been supported since version 0.8.0.
+ There are also several front-ends available from the website.
 \layout Subsection*
 
 Why is encoding so slow compared to decoding?
