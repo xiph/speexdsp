@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define FRAME_SIZE 256
+#define FRAME_SIZE 320
 #include <math.h>
 int main(int argc, char **argv)
 {

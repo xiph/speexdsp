@@ -56,7 +56,8 @@ typedef struct SpeexMode {
    int     pitchEnd;
    float   gamma1;
    float   gamma2;
-   
+   float   lag_factor;
+   float   lpc_floor;
    /*LSP functions*/
    lsp_quant_func    lsp_quant;
    lsp_unquant_func  lsp_unquant;

@@ -53,6 +53,8 @@ void encoder_init(EncState *st, SpeexMode *mode)
    st->gamma2=mode->gamma2;
    st->min_pitch=mode->pitchStart;
    st->max_pitch=mode->pitchEnd;
+   st->lag_factor=mode->lag_factor;
+   st->lpc_floor = mode->lpc_floor;
 
    st->lsp_quant = mode->lsp_quant;
    st->ltp_quant = mode->ltp_quant;
@@ -100,7 +102,7 @@ void encoder_init(EncState *st, SpeexMode *mode)
    /* Create the window for autocorrelation (lag-windowing) */
    st->lagWindow = malloc((st->lpcSize+1)*sizeof(float));
    for (i=0;i<st->lpcSize+1;i++)
-      st->lagWindow[i]=exp(-.5*sqr(2*M_PI*.01*i));
+      st->lagWindow[i]=exp(-.5*sqr(2*M_PI*st->lag_factor*i));
 
    st->autocorr = malloc((st->lpcSize+1)*sizeof(float));
 
@@ -178,7 +180,7 @@ void encode(EncState *st, float *in, FrameBits *bits)
    autocorr(st->buf2, st->autocorr, st->lpcSize+1, st->windowSize);
 
    st->autocorr[0] += 1;        /* prevents NANs */
-   st->autocorr[0] *= 1.0001;   /* 40 dB noise floor */
+   st->autocorr[0] *= st->lpc_floor; /* Noise floor in auto-correlation domain */
    /* Lag windowing: equivalent to filtering in the power-spectrum domain */
    for (i=0;i<st->lpcSize+1;i++)
       st->autocorr[i] *= st->lagWindow[i];
@@ -201,6 +203,8 @@ void encode(EncState *st, float *in, FrameBits *bits)
    
    /* LSP Quantization */
    st->lsp_quant(st->lsp, st->qlsp, st->lpcSize, bits);
+   /*for (i=0;i<st->lpcSize;i++)
+     st->qlsp[i]=st->lsp[i];*/
    /*printf ("LSP ");
    for (i=0;i<st->lpcSize;i++)
       printf ("%f ", st->lsp[i]);

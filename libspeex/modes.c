@@ -71,6 +71,8 @@ SpeexMode nb_mode = {
    144,    /*pitchEnd*/
    0.9,    /*gamma1*/
    0.6,    /*gamma2*/
+   .01,
+   1.0001,
    /*LSP quantization*/
    lsp_quant_nb,
    lsp_unquant_nb,
@@ -85,16 +87,19 @@ SpeexMode nb_mode = {
 };
 
 
+
 SpeexMode wb_mode = {
-   256,    /*frameSize*/
+   320,    /*frameSize*/
    64,     /*subframeSize*/
-   512,    /*windowSize*/
+   640,    /*windowSize*/
    16,     /*lpcSize*/
-   1024,   /*bufSize*/
+   1280,   /*bufSize*/
    35,     /*pitchStart*/
    290,    /*pitchEnd*/
    0.9,    /*gamma1*/
    0.4,    /*gamma2*/
+   .001,
+   1.00001,
    /*LSP quantization*/
    lsp_quant_wb,
    lsp_unquant_wb,
