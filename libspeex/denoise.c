@@ -399,7 +399,7 @@ int speex_denoise(SpeexDenoiseState *st, float *x)
 
       for (i=0;i<NB_BANDS;i++)
       {
-         bands[i]=100;
+         bands[i]=1e4;
          for (j=i*N/NB_BANDS;j<(i+1)*N/NB_BANDS;j++)
          {
             bands[i] += ps[j];
@@ -424,24 +424,29 @@ int speex_denoise(SpeexDenoiseState *st, float *x)
       st->speech_prob = p0/(p1+p0);
       */
 
-      if (mean_post > 1)
+      if (st->noise_bandsN < 50 || st->speech_bandsN < 50)
       {
-         float adapt = 1./st->speech_bandsN++;
-         if (adapt<.005)
-            adapt = .005;
-         for (i=0;i<NB_BANDS;i++)
+         if (mean_post > 5)
          {
-            st->speech_bands[i] = (1-adapt)*st->speech_bands[i] + adapt*bands[i];
-            st->speech_bands2[i] = (1-adapt)*st->speech_bands2[i] + adapt*bands[i]*bands[i];
-         }
-      } else {
-         float adapt = 1./st->noise_bandsN++;
-         if (adapt<.005)
-            adapt = .005;
-         for (i=0;i<NB_BANDS;i++)
-         {
-            st->noise_bands[i] = (1-adapt)*st->noise_bands[i] + adapt*bands[i];
-            st->noise_bands2[i] = (1-adapt)*st->noise_bands2[i] + adapt*bands[i]*bands[i];
+            float adapt = 1./st->speech_bandsN++;
+            if (adapt<.005)
+               adapt = .005;
+            for (i=0;i<NB_BANDS;i++)
+            {
+               st->speech_bands[i] = (1-adapt)*st->speech_bands[i] + adapt*bands[i];
+               /*st->speech_bands2[i] = (1-adapt)*st->speech_bands2[i] + adapt*bands[i]*bands[i];*/
+               st->speech_bands2[i] = (1-adapt)*st->speech_bands2[i] + adapt*(bands[i]-st->speech_bands[i])*(bands[i]-st->speech_bands[i]);
+            }
+         } else {
+            float adapt = 1./st->noise_bandsN++;
+            if (adapt<.005)
+               adapt = .005;
+            for (i=0;i<NB_BANDS;i++)
+            {
+               st->noise_bands[i] = (1-adapt)*st->noise_bands[i] + adapt*bands[i];
+               /*st->noise_bands2[i] = (1-adapt)*st->noise_bands2[i] + adapt*bands[i]*bands[i];*/
+               st->noise_bands2[i] = (1-adapt)*st->noise_bands2[i] + adapt*(bands[i]-st->noise_bands[i])*(bands[i]-st->noise_bands[i]);
+            }
          }
       }
       p0=p1=1;
@@ -449,27 +454,56 @@ int speex_denoise(SpeexDenoiseState *st, float *x)
       {
          float noise_var, speech_var;
          float tmp1, tmp2, pr;
-         noise_var = st->noise_bands2[i] - st->noise_bands[i]*st->noise_bands[i];
-         speech_var = st->speech_bands2[i] - st->speech_bands[i]*st->speech_bands[i];
+         /*noise_var = 1.01*st->noise_bands2[i] - st->noise_bands[i]*st->noise_bands[i];
+           speech_var = 1.01*st->speech_bands2[i] - st->speech_bands[i]*st->speech_bands[i];*/
+         noise_var = st->noise_bands2[i];
+         speech_var = st->speech_bands2[i];
          if (noise_var < .1)
             noise_var = .1;
          if (speech_var < .1)
             speech_var = .1;
+         
+         /*speech_var = sqrt(speech_var*noise_var);
+           noise_var = speech_var;*/
+         if (speech_var < .05*speech_var)
+            noise_var = .05*speech_var; 
+         if (speech_var < .05*noise_var)
+            speech_var = .05*noise_var;
+         
+         if (bands[i] < st->noise_bands[i])
+            speech_var = noise_var;
+         if (bands[i] > st->speech_bands[i])
+            noise_var = speech_var;
+
          tmp1 = exp(-.5*(bands[i]-st->speech_bands[i])*(bands[i]-st->speech_bands[i])/speech_var)/sqrt(2*M_PI*speech_var);
          tmp2 = exp(-.5*(bands[i]-st->noise_bands[i])*(bands[i]-st->noise_bands[i])/noise_var)/sqrt(2*M_PI*noise_var);
          /*fprintf (stderr, "%f ", (float)(p0/(.01+p0+p1)));*/
-         /*fprintf (stderr, "%f ", (float)sqrt(bands[i]));*/
-         pr = tmp1/(1e-5+tmp1+tmp2);
+         /*fprintf (stderr, "%f ", (float)(bands[i]));*/
+         pr = tmp1/(1e-25+tmp1+tmp2);
+         /*if (bands[i] < st->noise_bands[i])
+            pr=.01;
+         if (bands[i] > st->speech_bands[i] && pr < .995)
+         pr=.995;*/
+         if (pr>.999)
+            pr=.999;
+         if (pr<.001)
+            pr=.001;
+         /*fprintf (stderr, "%f ", pr);*/
          p0 *= pr;
          p1 *= (1-pr);
       }
+
       p0 = pow(p0,.3);
-      p1 = pow(p1,.3);
+      p1 = pow(p1,.3);      
+
+      if (p0>100*p1)
+         p0=100*p1;
+      
 
       p0 *= .99*st->speech_prob + .01*(1-st->speech_prob);
       p1 *= .01*st->speech_prob + .99*(1-st->speech_prob);
       
-      st->speech_prob = p0/(p1+p0);
+      st->speech_prob = p0/(1e-25+p1+p0);
       /*fprintf (stderr, "%f ", st->speech_prob);*/
 
       if (st->speech_prob>.5 || (st->last_speech < 10 && st->speech_prob>.25))
@@ -481,6 +515,33 @@ int speex_denoise(SpeexDenoiseState *st, float *x)
          if (st->last_speech<10)
            is_speech = 1;
       }
+
+      if (st->noise_bandsN > 50 && st->speech_bandsN > 50)
+      {
+         if (mean_post > 5)
+         {
+            float adapt = 1./st->speech_bandsN++;
+            if (adapt<.005)
+               adapt = .005;
+            for (i=0;i<NB_BANDS;i++)
+            {
+               st->speech_bands[i] = (1-adapt)*st->speech_bands[i] + adapt*bands[i];
+               /*st->speech_bands2[i] = (1-adapt)*st->speech_bands2[i] + adapt*bands[i]*bands[i];*/
+               st->speech_bands2[i] = (1-adapt)*st->speech_bands2[i] + adapt*(bands[i]-st->speech_bands[i])*(bands[i]-st->speech_bands[i]);
+            }
+         } else {
+            float adapt = 1./st->noise_bandsN++;
+            if (adapt<.005)
+               adapt = .005;
+            for (i=0;i<NB_BANDS;i++)
+            {
+               st->noise_bands[i] = (1-adapt)*st->noise_bands[i] + adapt*bands[i];
+               /*st->noise_bands2[i] = (1-adapt)*st->noise_bands2[i] + adapt*bands[i]*bands[i];*/
+               st->noise_bands2[i] = (1-adapt)*st->noise_bands2[i] + adapt*(bands[i]-st->noise_bands[i])*(bands[i]-st->noise_bands[i]);
+            }
+         }
+      }
+
 
    }
 
@@ -554,6 +615,16 @@ int speex_denoise(SpeexDenoiseState *st, float *x)
    for (i=0;i<N;i++)
       st->gain2[i] *= 6000.0/st->loudness2;
 
+#if 1
+   if (!is_speech)
+   {
+      for (i=0;i<N;i++)
+         st->gain2[i] = 0;
+   } else {
+      for (i=0;i<N;i++)
+         st->gain2[i] = 1;
+   }
+#endif
    /* Apply computed gain */
    for (i=1;i<N;i++)
    {
