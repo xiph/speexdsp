@@ -230,8 +230,8 @@ int main(int argc, char **argv)
       {"help", no_argument, NULL, 0},
       {"le", no_argument, NULL, 0},
       {"be", no_argument, NULL, 0},
-      {"lin8", no_argument, NULL, 0},
-      {"lin16", no_argument, NULL, 0},
+      {"8bit", no_argument, NULL, 0},
+      {"16bit", no_argument, NULL, 0},
       {"stereo", no_argument, NULL, 0},
       {"rate", required_argument, NULL, 0},
       {"version", no_argument, NULL, 0},
@@ -341,10 +341,10 @@ int main(int argc, char **argv)
          } else if (strcmp(long_options[option_index].name,"be")==0)
          {
             lsb=0;
-         } else if (strcmp(long_options[option_index].name,"lin8")==0)
+         } else if (strcmp(long_options[option_index].name,"8bit")==0)
          {
             fmt=8;
-         } else if (strcmp(long_options[option_index].name,"lin16")==0)
+         } else if (strcmp(long_options[option_index].name,"16bit")==0)
          {
             fmt=16;
          } else if (strcmp(long_options[option_index].name,"stereo")==0)

@@ -1,11 +1,13 @@
 #LyX 1.3 created this file. For more info see http://www.lyx.org/
 \lyxformat 221
 \textclass article
+\begin_preamble
+\usepackage{times}
+\end_preamble
 \language english
 \inputencoding auto
 \fontscheme default
 \graphics default
-\float_placement h
 \paperfontsize default
 \spacing single 
 \papersize Default
@@ -336,7 +338,7 @@ Discontinuous Transmission
  (DTX)
 \layout Standard
 
-Discontinuous transmission is an addition to VAD operation, that allows
+Discontinuous transmission is an addition to VAD/VBR operation, that allows
  to stop transmitting completely when the background noise is stationnary.
  In file-based operation, since we cannot just stop writing to the file,
  only 5 bits are used for such frames (corresponding to 250 bps).
@@ -1209,7 +1211,15 @@ Asks decoder to set perceptual enhancement off (0) or on(1)
 
 \layout Standard
 
-reserved
+Asks (if 1) the encoder to be less 
+\begin_inset Quotes eld
+\end_inset 
+
+agressive
+\begin_inset Quotes erd
+\end_inset 
+
+ due to high packet loss
 \end_inset 
 </cell>
 </row>
@@ -2289,7 +2299,7 @@ Linear Prediction (LPC)
 Linear prediction is at the base of may speech coding techniques, including
  CELP.
  The idea behind it is to predict the signal 
-\begin_inset Formula $x(n)$
+\begin_inset Formula $x[n]$
 \end_inset 
 
  using a linear combination of its past samples:
@@ -2427,7 +2437,7 @@ The filter coefficients
 \end_inset 
 
  is toeplitz hermitian.
- Also, it can be proved that all the roots of 
+ Also, it can be proven that all the roots of 
 \begin_inset Formula $A(z)$
 \end_inset 
 
@@ -2524,6 +2534,9 @@ Because LPC coefficients have very little robustness to quantization, they
  (LSP) coefficients which have a much better behaviour with quantization,
  one of them being that it's easy to keep the filter stable.
  
+\layout Comment
+
+Describe LSP's
 \layout Subsection
 
 Pitch Prediction
@@ -2560,15 +2573,7 @@ where
 \begin_inset Formula $\beta$
 \end_inset 
 
- is the pitch gain and 
-\begin_inset Formula $c(n)$
-\end_inset 
-
- is taken from the 
-\emph on 
-innovation codebook
-\emph default 
-.
+ is the pitch gain.
  We call that long-term prediction since the excitation is predicted from
  
 \begin_inset Formula $e[n-T]$
@@ -2596,7 +2601,12 @@ innovation
 \begin_inset Formula $c[n]$
 \end_inset 
 
- taken from a fixed codebook.
+ taken from a fixed codebook, hence the name 
+\emph on 
+Code
+\emph default 
+ Excited Linear Prediction.
+ The final excitation is given by:
 \layout Standard
 
 
@@ -2605,7 +2615,11 @@ e[n]=p[n]+c[n]=\beta e[n-T]+c[n]\]
 
 \end_inset 
 
-This is where most of the bits in a CELP codec are allocated.
+The quantization of 
+\begin_inset Formula $c[n]$
+\end_inset 
+
+ is where most of the bits in a CELP codec are allocated.
  It represents the information that couldn't be obtained either from linear
  prediction or pitch prediction.
  In the 
@@ -2727,6 +2741,31 @@ If a filter
 \end_inset 
 
 .
+\layout Standard
+
+Analysis-by-synthesis refers to the fact that when trying to find the best
+ pitch parameters (
+\begin_inset Formula $T$
+\end_inset 
+
+, 
+\begin_inset Formula $\beta$
+\end_inset 
+
+) and innovation signal 
+\begin_inset Formula $c[n]$
+\end_inset 
+
+, we do not work by making the excitation 
+\begin_inset Formula $e[n]$
+\end_inset 
+
+ as close as the original one (which would be simpler), but apply the synthesis
+ (and weighting) filter and try making 
+\begin_inset Formula $X_{w}(z)$
+\end_inset 
+
+ as close to the original as possible.
 \layout Section
 \pagebreak_top 
 Speex narrowband mode
@@ -2877,7 +2916,8 @@ where
 \end_inset 
 
  instead.
- The period and quantized gains are determined in closed loop.
+ The period and quantized gains are determined in closed loop (analysis-by-synth
+esis).
  In most modes, the pitch period is encoded with 7 bits in the 
 \begin_inset Formula $\left[17,144\right]$
 \end_inset 
@@ -2894,10 +2934,11 @@ where
 Innovation Codebook
 \layout Standard
 
-In Speex, the innovation signal is quantized using shape-only vector quantizatio
-n (VQ).
- That means that the codebooks that are used represent both the shape and
- the gain at the same time.
+In Speex, the innovation signal is quantized using sub-vector shape-only
+ vector quantization (VQ).
+ That means that the innovation signal is divided in sub-vectors (of size
+ 5 to 20) and quantized using a codebook that represents both the shape
+ and the gain at the same time.
  This save many bits that would otherwise be allocated for a separate gain
  at the price of a slight increase in complexity.
  
@@ -2907,7 +2948,7 @@ Bit allocation
 \layout Standard
 
 There are 7 different narrowband bit-rates defined for Speex, ranging from
- 200 bps to 18.15 kbps, although the modes below 5.9 kbps should not be used
+ 250 bps to 24.6 kbps, although the modes below 5.9 kbps should not be used
  for speech.
  The bit-allocation for each mode is detailed in table 
 \begin_inset LatexCommand \ref{cap:bits-narrowband}
@@ -4172,7 +4213,7 @@ N/A
 
 \layout Standard
 
-No sound (VBR only)
+No transmission (DTX)
 \end_inset 
 </cell>
 </row>
@@ -4436,7 +4477,7 @@ Completely transparent for voice, good quality music
 
 \layout Standard
 
--
+10.5
 \end_inset 
 </cell>
 <cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
