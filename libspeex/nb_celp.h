@@ -139,7 +139,7 @@ typedef struct DecState {
    int    lbr_48k;
 #endif
 
-   float  last_ol_gain;   /**< Open-loop gain for previous frame */
+   spx_word16_t  last_ol_gain;   /**< Open-loop gain for previous frame */
 
    float  gamma1;         /**< Perceptual filter: A(z/gamma1) */
    float  gamma2;         /**< Perceptual filter: A(z/gamma2) */

@@ -129,7 +129,7 @@ int main(int argc, char **argv)
    seg_snr /= snr_frames;
    fprintf(stderr,"SNR = %f\nsegmental SNR = %f\n",snr, seg_snr);
 
-#ifdef COUNT_MIPS
+#ifdef FIXED_DEBUG
    printf ("Total: %f MIPS\n", (float)(1e-6*50*spx_mips/snr_frames));
 #endif
    

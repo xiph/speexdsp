@@ -46,7 +46,7 @@ void print_vec(float *vec, int len, char *name)
 }
 #endif
 
-#ifdef COUNT_MIPS
+#ifdef FIXED_DEBUG
 long long spx_mips=0;
 #endif
 
