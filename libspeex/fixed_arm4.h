@@ -59,12 +59,23 @@
 #define MAC16_16(c,a,b)     (ADD32((c),MULT16_16((a),(b))))
 #define MULT16_32_Q12(a,b) ADD32(MULT16_16((a),SHR((b),12)), SHR(MULT16_16((a),((b)&0x00000fff)),12))
 #define MULT16_32_Q13(a,b) ADD32(MULT16_16((a),SHR((b),13)), SHR(MULT16_16((a),((b)&0x00001fff)),13))
-#define MULT16_32_Q14(a,b) ADD32(MULT16_16((a),SHR((b),14)), SHR(MULT16_16((a),((b)&0x00003fff)),14))
+//#define MULT16_32_Q14(a,b) ADD32(MULT16_16((a),SHR((b),14)), SHR(MULT16_16((a),((b)&0x00003fff)),14))
+static inline spx_word32_t MULT16_32_Q14(spx_word16_t x, spx_word32_t y) {
+  int res;
+  int dummy;
+  asm (
+        "smull  %0,%1,%2,%3 \n\t"
+        "mov %0, %0, lsr #14 \n\t"
+        "add %0, %0, %1, lsl #18 \n\t"
+   : "=&r"(res), "=&r" (dummy)
+   : "r"(y),"r"((int)x));
+  return(res);
+}
 
 #define MULT16_32_Q11(a,b) ADD32(MULT16_16((a),SHR((b),11)), SHR(MULT16_16((a),((b)&0x000007ff)),11))
 #define MAC16_32_Q11(c,a,b) ADD32(c,ADD32(MULT16_16((a),SHR((b),11)), SHR(MULT16_16((a),((b)&0x000007ff)),11)))
 
-#define MULT16_32_Q15(a,b) ADD32(MULT16_16((a),SHR((b),15)), SHR(MULT16_16((a),((b)&0x00007fff)),15))
+//#define MULT16_32_Q15(a,b) ADD32(MULT16_16((a),SHR((b),15)), SHR(MULT16_16((a),((b)&0x00007fff)),15))
 static inline spx_word32_t MULT16_32_Q15(spx_word16_t x, spx_word32_t y) {
   int res;
   int dummy;

@@ -170,7 +170,6 @@ void open_loop_nbest_pitch(spx_sig_t *sw, int start, int end, int len, int *pitc
    for (i=0;i<N;i++)
    {
         best_score[i]=-1;
-        gain[i]=0;
         pitch[i]=start;
    }
 
@@ -250,15 +249,18 @@ void open_loop_nbest_pitch(spx_sig_t *sw, int start, int end, int len, int *pitc
    }
 
    /* Compute open-loop gain */
-   for (j=0;j<N;j++)
+   if (gain)
    {
-      spx_word16_t g;
-      i=pitch[j];
-      g = DIV32(corr[i-start], 10+SHR(MULT16_16(spx_sqrt(e0),spx_sqrt(energy[i-start])),6));
-      /* FIXME: g = max(g,corr/energy) */
-      if (g<0)
-         g = 0;
-      gain[j]=g;
+       for (j=0;j<N;j++)
+       {
+          spx_word16_t g;
+          i=pitch[j];
+          g = DIV32(corr[i-start], 10+SHR(MULT16_16(spx_sqrt(e0),spx_sqrt(energy[i-start])),6));
+          /* FIXME: g = max(g,corr/energy) */
+                   if (g<0)
+                   g = 0;
+             gain[j]=g;
+       }
    }
 }
 
@@ -521,7 +523,6 @@ int cdbk_offset
    int N;
    ltp_params *params;
    int *nbest;
-   spx_word16_t *gains;
 
    N=complexity;
    if (N>10)
@@ -530,7 +531,6 @@ int cdbk_offset
       N=1;
 
    nbest=PUSH(stack, N, int);
-   gains = PUSH(stack, N, spx_word16_t);
    params = (ltp_params*) par;
 
    if (end<start)
@@ -548,7 +548,7 @@ int cdbk_offset
    
    if (N>end-start+1)
       N=end-start+1;
-   open_loop_nbest_pitch(sw, start, end, nsf, nbest, gains, N, stack);
+   open_loop_nbest_pitch(sw, start, end, nsf, nbest, NULL, N, stack);
    for (i=0;i<N;i++)
    {
       pitch=nbest[i];

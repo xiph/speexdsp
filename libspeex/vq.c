@@ -123,6 +123,10 @@ void vq_nbest(spx_word16_t *_in, const __m128 *codebook, int len, int entries, _
 
 #else
 
+#if defined(SHORTCUTS) && (defined(ARM4_ASM) || defined(ARM5E_ASM))
+#include "vq_arm4.h"
+#else
+
 /*Finds the indices of the n-best entries in a codebook*/
 void vq_nbest(spx_word16_t *in, const spx_word16_t *codebook, int len, int entries, spx_word32_t *E, int N, int *nbest, spx_word32_t *best_dist, char *stack)
 {
@@ -151,6 +155,7 @@ void vq_nbest(spx_word16_t *in, const spx_word16_t *codebook, int len, int entri
       }
    }
 }
+#endif
 
 #endif
 
