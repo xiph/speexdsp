@@ -786,10 +786,7 @@ float *stack
 
    /* Decode codewords and gains */
    for (i=0;i<nb_subvect;i++)
-   {
-      int gain_id;
       ind[i] = frame_bits_unpack_unsigned(bits, params->shape_bits);
-   }
 
    /* Compute decoded excitation */
    for (i=0;i<nb_subvect;i++)
