@@ -31,6 +31,7 @@
 #include "speex_bits.h"
 #include "vbr.h"
 #include "misc.h"
+#include "speex_callbacks.h"
 
 extern int training_weight;
 #ifndef M_PI
@@ -756,6 +757,13 @@ void *nb_decoder_init(SpeexMode *m)
    st->pi_gain = speex_alloc(st->nbSubframes*sizeof(float));
    st->last_pitch = 40;
    st->count_lost=0;
+
+
+   st->user_callback.func = &speex_default_user_handler;
+   st->user_callback.data = NULL;
+   for (i=0;i<16;i++)
+      st->speex_callbacks[i].func = NULL;
+
    return st;
 }
 
@@ -865,11 +873,18 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
    m = speex_bits_peek_unsigned(bits, 5);
    if (m==15)
    {
+      speex_bits_unpack_unsigned(bits, 5);
       return -1;
    } else if (m==14)
    {
-      int req_size = speex_bits_unpack_unsigned(bits, 6);
-      speex_bits_advance(bits, 8*req_size);
+      int ret = speex_inband_handler(bits, st->speex_callbacks, state);
+      if (ret)
+         return ret;
+   } else if (m==13)
+   {
+      int ret = st->user_callback.func(bits, state, st->user_callback.data);
+      if (ret)
+         return ret;
    } else if (m>7)
    {
       return -2;

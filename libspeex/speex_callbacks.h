@@ -29,12 +29,15 @@
 extern "C" {
 #endif
 
+#define SPEEX_MAX_CALLBACKS 16
+
+
 #define SPEEX_INBAND_MODE_REQUEST        0
 #define SPEEX_INBAND_HIGH_MODE_REQUEST   1
 #define SPEEX_INBAND_CHAR                2
 
 
-typedef int (*speex_callback_func)(void *state, void *data);
+typedef int (*speex_callback_func)(SpeexBits *bits, void *state, void *data);
 
 typedef struct SpeexCallback {
    int callback_id;
@@ -42,13 +45,16 @@ typedef struct SpeexCallback {
    void *data;
 } SpeexCallback;
 
-int speex_inband_handler(void *state, void *data);
+int speex_inband_handler(SpeexBits *bits, SpeexCallback *callback_list, void *state);
 
-int speex_std_mode_request_handler(void *state, void *data);
+int speex_std_mode_request_handler(SpeexBits *bits, void *state, void *data);
 
-int speex_std_high_mode_request_handler(void *state, void *data);
+int speex_std_high_mode_request_handler(SpeexBits *bits, void *state, void *data);
 
-int speex_std_char_handler(void *state, void *data);
+int speex_std_char_handler(SpeexBits *bits, void *state, void *data);
+
+
+int speex_default_user_handler(SpeexBits *bits, void *state, void *data);
 
 #ifdef __cplusplus
 }
