@@ -52,7 +52,15 @@ fi
 AC_SUBST(src)
 
 AC_CHECK_LIB(m, sin)
-AC_CHECK_LIB(gnugetopt, getopt_long)
+
+# Check for getopt_long; if not found, use included source.
+AC_CHECK_FUNCS([getopt_long],,
+[# FreeBSD has a gnugetopt library.
+  AC_CHECK_LIB([gnugetopt],[getopt_long],
+[AC_DEFINE([HAVE_GETOPT_LONG])],
+[# Use the GNU replacement.
+AC_LIBOBJ(getopt)
+AC_LIBOBJ(getopt1)])])
 
 AC_DEFINE_UNQUOTED(VERSION, "${VERSION}")
 

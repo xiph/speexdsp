@@ -1,3 +1,9 @@
+2004-02-18 Jean-Marc Valin <jean-marc.valin@usherbrooke.ca>
+	Integrated IRIX patch (getopt stuff) from Michael Pruett <michael@68k.org> 
+
+2004-02-18 Jean-Marc Valin <jean-marc.valin@usherbrooke.ca>
+	Changed the Makefile.am so that KDevelop can parse SUBDIRS correctly 
+
 2002/03/27 Jean-Marc Valin:
 Working encoder and decoder for both narrowband and wideband.
 

@@ -34,6 +34,9 @@
 #include <unistd.h>
 #include <getopt.h>
 #endif
+#ifndef HAVE_GETOPT_LONG
+#include "getopt_win.h"
+#endif
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
