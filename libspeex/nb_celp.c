@@ -347,7 +347,7 @@ int nb_encode(void *state, short *in, SpeexBits *bits)
 #endif
 
 #ifdef FIXED_POINT
-         ol_pitch_coef *= 0.0039062;
+         ol_pitch_coef *= GAIN_SCALING_1;
 #endif
       } else {
          ol_pitch=0;
@@ -761,7 +761,7 @@ int nb_encode(void *state, short *in, SpeexBits *bits)
          if (st->lbr_48k)
          {
             pitch = SUBMODE(ltp_quant)(target, sw, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2,
-                                       exc, SUBMODE(ltp_params), pit_min, pit_max, ol_pitch_coef,
+                                       exc, SUBMODE(ltp_params), pit_min, pit_max, GAIN_SCALING*ol_pitch_coef,
                                        st->lpcSize, st->subframeSize, bits, stack, 
                                        exc2, syn_resp, st->complexity, ol_pitch_id);
          } else {
@@ -769,7 +769,7 @@ int nb_encode(void *state, short *in, SpeexBits *bits)
 
          /* Perform pitch search */
          pitch = SUBMODE(ltp_quant)(target, sw, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2,
-                                    exc, SUBMODE(ltp_params), pit_min, pit_max, ol_pitch_coef,
+                                    exc, SUBMODE(ltp_params), pit_min, pit_max, GAIN_SCALING*ol_pitch_coef,
                                     st->lpcSize, st->subframeSize, bits, stack, 
                                     exc2, syn_resp, st->complexity, 0);
 #ifdef EPIC_48K
@@ -1140,7 +1140,7 @@ int nb_decode(void *state, SpeexBits *bits, short *out)
    spx_word16_t pitch_gain[3];
    spx_word32_t ol_gain=0;
    int ol_pitch=0;
-   float ol_pitch_coef=0;
+   spx_word16_t ol_pitch_coef=0;
    int best_pitch=40;
    spx_word16_t best_pitch_gain=0;
    int wideband;
@@ -1325,7 +1325,7 @@ int nb_decode(void *state, SpeexBits *bits, short *out)
       pitch_half[1] = pitch_half[0]+speex_bits_unpack_unsigned(bits, 2)-1;
 
       ol_pitch_id = speex_bits_unpack_unsigned(bits, 3);
-      ol_pitch_coef=0.13514*ol_pitch_id;
+      ol_pitch_coef=GAIN_SCALING*0.13514*ol_pitch_id;
 
       {
          int qe;
@@ -1346,7 +1346,7 @@ int nb_decode(void *state, SpeexBits *bits, short *out)
    {
       int quant;
       quant = speex_bits_unpack_unsigned(bits, 4);
-      ol_pitch_coef=0.066667*quant;
+      ol_pitch_coef=GAIN_SCALING*0.066667*quant;
    }
    
    /* Get global excitation gain */
@@ -1488,13 +1488,13 @@ int nb_decode(void *state, SpeexBits *bits, short *out)
          {
              SUBMODE(ltp_unquant)(exc, pit_min, pit_max, ol_pitch_coef, SUBMODE(ltp_params), 
                                   st->subframeSize, &pitch, &pitch_gain[0], bits, stack, 
-                                  st->count_lost, offset, st->last_pitch_gain, ol_pitch_id);
+                                  st->count_lost, offset, GAIN_SCALING*st->last_pitch_gain, ol_pitch_id);
          } else {
 #endif
 
              SUBMODE(ltp_unquant)(exc, pit_min, pit_max, ol_pitch_coef, SUBMODE(ltp_params), 
                                   st->subframeSize, &pitch, &pitch_gain[0], bits, stack, 
-                                  st->count_lost, offset, st->last_pitch_gain, 0);
+                                  st->count_lost, offset, GAIN_SCALING*st->last_pitch_gain, 0);
 
 #ifdef EPIC_48K
          }
@@ -1561,7 +1561,7 @@ int nb_decode(void *state, SpeexBits *bits, short *out)
          /*Vocoder mode*/
          if (st->submodeID==1) 
          {
-            float g=ol_pitch_coef;
+            float g=ol_pitch_coef*GAIN_SCALING_1;
 
             
             for (i=0;i<st->subframeSize;i++)

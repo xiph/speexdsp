@@ -171,7 +171,7 @@ void open_loop_nbest_pitch(spx_sig_t *sw, int start, int end, int len, int *pitc
    {
       spx_word16_t g;
       i=pitch[j];
-      g = DIV32(corr[i-start], 10+SHR(MULT16_16(spx_sqrt(e0),spx_sqrt(energy[i-start])),8));
+      g = DIV32(corr[i-start], 10+SHR(MULT16_16(spx_sqrt(e0),spx_sqrt(energy[i-start])),6));
       /* FIXME: g = max(g,corr/energy) */
       if (g<0)
          g = 0;
@@ -421,7 +421,7 @@ spx_sig_t exc[],                    /* Excitation */
 void *par,
 int   start,                    /* Smallest pitch value allowed */
 int   end,                      /* Largest pitch value allowed */
-float pitch_coef,               /* Voicing (pitch) coefficient */
+spx_word16_t pitch_coef,               /* Voicing (pitch) coefficient */
 int   p,                        /* Number of LPC coeffs */
 int   nsf,                      /* Number of samples in subframe */
 SpeexBits *bits,
@@ -495,7 +495,7 @@ void pitch_unquant_3tap(
 spx_sig_t exc[],                    /* Excitation */
 int   start,                    /* Smallest pitch value allowed */
 int   end,                      /* Largest pitch value allowed */
-float pitch_coef,               /* Voicing (pitch) coefficient */
+spx_word16_t pitch_coef,               /* Voicing (pitch) coefficient */
 void *par,
 int   nsf,                      /* Number of samples in subframe */
 int *pitch_val,
@@ -504,7 +504,7 @@ SpeexBits *bits,
 char *stack,
 int count_lost,
 int subframe_offset,
-float last_pitch_gain,
+spx_word16_t last_pitch_gain,
 int cdbk_offset
 )
 {
@@ -545,7 +545,7 @@ int cdbk_offset
       gain[2] = 0.015625*sgain[2];
 #endif
       if (1) {
-	 float tmp = count_lost < 4 ? last_pitch_gain : 0.4 * last_pitch_gain;
+	 float tmp = count_lost < 4 ? GAIN_SCALING_1*last_pitch_gain : 0.4 * GAIN_SCALING_1 * last_pitch_gain;
          if (tmp>.95)
             tmp=.95;
          gain_sum = fabs(gain[1]);
@@ -646,7 +646,7 @@ spx_sig_t exc[],                    /* Excitation */
 void *par,
 int   start,                    /* Smallest pitch value allowed */
 int   end,                      /* Largest pitch value allowed */
-float pitch_coef,               /* Voicing (pitch) coefficient */
+spx_word16_t pitch_coef,               /* Voicing (pitch) coefficient */
 int   p,                        /* Number of LPC coeffs */
 int   nsf,                      /* Number of samples in subframe */
 SpeexBits *bits,
@@ -658,11 +658,12 @@ int cdbk_offset
 )
 {
    int i;
-   if (pitch_coef>.99)
-      pitch_coef=.99;
+   float coef = GAIN_SCALING_1*pitch_coef;
+   if (coef>.99)
+      coef=.99;
    for (i=0;i<nsf;i++)
    {
-      exc[i]=exc[i-start]*pitch_coef;
+      exc[i]=exc[i-start]*coef;
    }
    return start;
 }
@@ -672,7 +673,7 @@ void forced_pitch_unquant(
 spx_sig_t exc[],                    /* Excitation */
 int   start,                    /* Smallest pitch value allowed */
 int   end,                      /* Largest pitch value allowed */
-float pitch_coef,               /* Voicing (pitch) coefficient */
+spx_word16_t pitch_coef,               /* Voicing (pitch) coefficient */
 void *par,
 int   nsf,                      /* Number of samples in subframe */
 int *pitch_val,
@@ -681,19 +682,19 @@ SpeexBits *bits,
 char *stack,
 int count_lost,
 int subframe_offset,
-float last_pitch_gain,
+spx_word16_t last_pitch_gain,
 int cdbk_offset
 )
 {
    int i;
-   /*pitch_coef=.9;*/
-   if (pitch_coef>.99)
-      pitch_coef=.99;
+   float coef = GAIN_SCALING_1*pitch_coef;
+   if (coef>.99)
+      coef=.99;
    for (i=0;i<nsf;i++)
    {
-      exc[i]=exc[i-start]*pitch_coef;
+      exc[i]=exc[i-start]*coef;
    }
    *pitch_val = start;
    gain_val[0]=gain_val[2]=0;
-   gain_val[1] = GAIN_SCALING*pitch_coef;
+   gain_val[1] = pitch_coef;
 }

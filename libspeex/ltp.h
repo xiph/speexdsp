@@ -59,7 +59,7 @@ spx_sig_t exc[],                    /* Overlapping codebook */
 void *par,
 int   start,                    /* Smallest pitch value allowed */
 int   end,                      /* Largest pitch value allowed */
-float pitch_coef,               /* Voicing (pitch) coefficient */
+spx_word16_t pitch_coef,               /* Voicing (pitch) coefficient */
 int   p,                        /* Number of LPC coeffs */
 int   nsf,                      /* Number of samples in subframe */
 SpeexBits *bits,
@@ -75,7 +75,7 @@ void pitch_unquant_3tap(
 spx_sig_t exc[],                    /* Excitation */
 int   start,                    /* Smallest pitch value allowed */
 int   end,                      /* Largest pitch value allowed */
-float pitch_coef,               /* Voicing (pitch) coefficient */
+spx_word16_t pitch_coef,               /* Voicing (pitch) coefficient */
 void *par,
 int   nsf,                      /* Number of samples in subframe */
 int *pitch_val,
@@ -84,7 +84,7 @@ SpeexBits *bits,
 char *stack,
 int lost,
 int subframe_offset,
-float last_pitch_gain,
+spx_word16_t last_pitch_gain,
 int cdbk_offset
 );
 
@@ -99,7 +99,7 @@ spx_sig_t exc[],                    /* Excitation */
 void *par,
 int   start,                    /* Smallest pitch value allowed */
 int   end,                      /* Largest pitch value allowed */
-float pitch_coef,               /* Voicing (pitch) coefficient */
+spx_word16_t pitch_coef,               /* Voicing (pitch) coefficient */
 int   p,                        /* Number of LPC coeffs */
 int   nsf,                      /* Number of samples in subframe */
 SpeexBits *bits,
@@ -115,7 +115,7 @@ void forced_pitch_unquant(
 spx_sig_t exc[],                    /* Excitation */
 int   start,                    /* Smallest pitch value allowed */
 int   end,                      /* Largest pitch value allowed */
-float pitch_coef,               /* Voicing (pitch) coefficient */
+spx_word16_t pitch_coef,               /* Voicing (pitch) coefficient */
 void *par,
 int   nsf,                      /* Number of samples in subframe */
 int *pitch_val,
@@ -124,6 +124,6 @@ SpeexBits *bits,
 char *stack,
 int lost,
 int subframe_offset,
-float last_pitch_gain,
+spx_word16_t last_pitch_gain,
 int cdbk_offset
 );
