@@ -39,10 +39,10 @@
 #define POP(stack) (stack-=((int*)stack)[-1]+1)
 */
 
-#define PUSH(stack, size) (stack+=(size),stack-(size))
-
-
-/*#define PUSH(stack, size) (stack=(float*)(((int)stack)+(size*sizeof(float))),(float*)(((int)stack)-(size*sizeof(float))))
+/*#define PUSH(stack, size) (stack+=(size),stack-(size))
  */
+
+#define PUSH(stack, size) (stack=(float*)(((int)stack)+((size)*sizeof(float))),(float*)(((int)stack)-((size)*sizeof(float))))
+
 
 #endif

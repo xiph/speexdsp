@@ -184,12 +184,24 @@ int   complexity
             for (m=0;m<nsf;m++)
                t[m]=ot[j][m];
             /*update target*/
+
+#if 0
+            /* Old code: update all target */
             for (m=0;m<subvect_size;m++)
             {
                float g=shape_cb[best_index[k]*subvect_size+m];
                for (n=subvect_size*i+m,q=0;n<nsf;n++,q++)
                   t[n] -= g*r[q];
             }
+            
+#else
+            /* New code: update only enough to calculate error*/
+            {
+               float *res = resp+best_index[k]*subvect_size;
+               for (m=0;m<subvect_size;m++)
+                  t[subvect_size*i+m] -= res[m];
+            }
+#endif
             
             /*compute error (distance)*/
             err=odist[j];
@@ -198,6 +210,17 @@ int   complexity
             /*update n-best list*/
             if (err<ndist[N-1] || ndist[N-1]<-.5)
             {
+#if 1
+               /* New code: update the rest of the target only if it's worth it */
+               for (m=0;m<subvect_size;m++)
+               {
+                  float g=shape_cb[best_index[k]*subvect_size+m];
+                  q=subvect_size-m;
+                  for (n=subvect_size*(i+1);n<nsf;n++,q++)
+                     t[n] -= g*r[q];
+               }
+#endif          
+
                for (m=0;m<N;m++)
                {
                   if (err < ndist[m] || ndist[m]<-.5)
