@@ -161,6 +161,12 @@ speex_submode_new (int lbr_pitch, int forced_pitch_gain,
 static void
 speex_submode_free (const SpeexSubmode * submode)
 {
+  if (submode->ltp_params)
+    speex_ltp_params_free (submode->ltp_params);
+
+  if (submode->innovation_params)
+    speex_split_cb_params_free (submode->innovation_params);
+
   speex_free ((void *)submode);
 }
 
@@ -508,7 +514,7 @@ static const SpeexSubmode * nb_submode2 (void)
    /*No pitch quantization*/
    pitch_search_3tap,
    pitch_unquant_3tap,
-   &ltp_params_vlbr,
+   ltp_params_vlbr(),
    /*Innovation quantization*/
    split_cb_search_shape_sign,
    split_cb_shape_sign_unquant,
