@@ -53,6 +53,10 @@
 #endif
 #include <math.h>
 
+#ifdef __MINGW32__
+#include "wave_out.c"
+#endif
+
 #ifdef HAVE_SYS_SOUNDCARD_H
 #include <sys/soundcard.h>
 #include <sys/types.h>
