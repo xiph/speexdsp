@@ -273,7 +273,7 @@ void encode(EncState *st, float *in, FrameBits *bits)
       st->pi_gain[sub]=0;
       for (i=0;i<=st->lpcSize;i++)
       {
-         st->pi_gain[sub] += tmp*st->interp_lpc[i];
+         st->pi_gain[sub] += tmp*st->interp_qlpc[i];
          tmp = -tmp;
       }
      
@@ -471,6 +471,8 @@ void decoder_init(DecState *st, SpeexMode *mode)
    st->interp_qlsp = malloc(st->lpcSize*sizeof(float));
    st->mem_sp = calloc(st->lpcSize, sizeof(float));
 
+   st->pi_gain = calloc(st->nbSubframes, sizeof(float));
+
 }
 
 void decoder_destroy(DecState *st)
@@ -483,6 +485,7 @@ void decoder_destroy(DecState *st)
    free(st->interp_qlsp);
    free(st->stack);
    free(st->mem_sp);
+   free(st->pi_gain);
 }
 
 void decode(DecState *st, FrameBits *bits, float *out)
@@ -522,6 +525,14 @@ void decode(DecState *st, FrameBits *bits, float *out)
       for (i=0;i<st->lpcSize;i++)
          st->interp_qlsp[i] = cos(st->interp_qlsp[i]);
       lsp_to_lpc(st->interp_qlsp, st->interp_qlpc, st->lpcSize, st->stack);
+
+      tmp=1;
+      st->pi_gain[sub]=0;
+      for (i=0;i<=st->lpcSize;i++)
+      {
+         st->pi_gain[sub] += tmp*st->interp_qlpc[i];
+         tmp = -tmp;
+      }
 
       /* Reset excitation */
       for (i=0;i<st->subframeSize;i++)

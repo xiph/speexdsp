@@ -283,3 +283,21 @@ void lsp_quant_high(float *lsp, float *qlsp, int order, FrameBits *bits)
    for (i=0;i<order;i++)
       qlsp[i]=lsp[i]-qlsp[i];
 }
+
+void lsp_unquant_high(float *lsp, int order, FrameBits *bits)
+{
+
+   int i, id;
+   for (i=0;i<order;i++)
+      lsp[i]=0;
+
+
+   id=frame_bits_unpack_unsigned(bits, 6);
+   for (i=0;i<order;i++)
+      lsp[i] += high_lsp_cdbk[id*order+i];
+
+
+   id=frame_bits_unpack_unsigned(bits, 6);
+   for (i=0;i<order;i++)
+      lsp[i] += high_lsp_cdbk2[id*order+i];
+}

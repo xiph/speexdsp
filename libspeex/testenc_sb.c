@@ -78,5 +78,5 @@ int main(int argc, char **argv)
    
    sb_encoder_destroy(&st);
    sb_decoder_destroy(&dec);
-   return 1;
+   return 0;
 }
