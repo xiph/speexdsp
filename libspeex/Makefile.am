@@ -1,7 +1,3 @@
-## Process this file with automake to produce Makefile.in. -*-Makefile-*-
-
-# $Id: Makefile.am,v 1.57 2004/01/18 08:13:31 jm Exp $
-
 # Disable automatic dependency tracking if using other tools than gcc and gmake
 #AUTOMAKE_OPTIONS = no-dependencies
 
