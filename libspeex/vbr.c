@@ -35,9 +35,6 @@
 #include "vbr.h"
 #include <math.h>
 
-#ifdef DEBUG
-#include <stdio.h>
-#endif
 
 #define sqr(x) ((x)*(x))
 
@@ -47,7 +44,7 @@
 
 float vbr_nb_thresh[8][11]={
    {-1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0}, /*   CNG   */
-   {-.01, -0.2, -0.3, -0.4, -0.5, -0.6, -0.7, -0.8, -0.9, -0.9, -1.0}, /*  2 kbps */
+   { 3.0,  2.5,  1.5,  0.5, -0.1, -0.3, -0.5, -0.7, -0.8, -0.9, -1.0}, /*  2 kbps */
    { 8.5,  5.6,  4.7,  4.2,  3.9,  3.5,  3.0,  2.5,  2.0,  1.0,  0.0}, /*  6 kbps */
    {11.0,  8.5,  7.5,  6.5,  5.0,  3.9,  3.9,  3.9,  3.5,  3.0,  1.0}, /*  8 kbps */
    {11.0, 11.0,  9.9,  9.0,  8.0,  7.0,  6.5,  6.0,  5.0,  4.0,  2.0}, /* 11 kbps */
@@ -117,7 +114,7 @@ void vbr_init(VBRState *vbr)
   non-stationary (harder to notice high-frequency noise)???
 
 */
-#include <stdio.h>
+
 float vbr_analysis(VBRState *vbr, float *sig, int len, int pitch, float pitch_coef)
 {
    int i;

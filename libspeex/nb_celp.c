@@ -411,6 +411,22 @@ int nb_encode(void *state, float *in, SpeexBits *bits)
                break;
             mode--;
          }
+         
+         if (mode==0)
+         {
+            if (st->submodeID>1 || lsp_dist>.05 || st->dtx_count>20)
+            {
+               mode=1;
+               st->dtx_count=0;
+            } else {
+               mode=0;
+               st->dtx_count++;
+            }
+         } else {
+            if (st->submodeID>1)
+               st->dtx_count=0;
+         }
+
          /*fprintf(stderr, "");
          fprintf (stderr, "encode %f %d\n", st->relative_quality, mode);
          fprintf(stderr, "encode: %d %d\n",st->submodeID, mode);*/
