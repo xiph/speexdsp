@@ -679,7 +679,8 @@ void *nb_decoder_init(SpeexMode *m)
    st->mem_pf2 = calloc(st->lpcSize, sizeof(float));
 
    st->pi_gain = calloc(st->nbSubframes, sizeof(float));
-   
+   st->last_pitch = 40;
+   st->count_lost=0;
    return st;
 }
 
@@ -711,6 +712,8 @@ void nb_decode(void *state, SpeexBits *bits, float *out, int lost)
    float pitch_gain[3];
    float ol_gain;
    int ol_pitch=0;
+   int best_pitch=40;
+   float best_pitch_gain=-1;
    st=state;
 
    memmove(st->inBuf, st->inBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(float));
@@ -719,7 +722,7 @@ void nb_decode(void *state, SpeexBits *bits, float *out, int lost)
 
 
    st->lsp_unquant(st->qlsp, st->lpcSize, bits);
-   if (st->first)
+   if (st->first || st->count_lost)
    {
       for (i=0;i<st->lpcSize;i++)
          st->old_qlsp[i] = st->qlsp[i];
@@ -757,6 +760,7 @@ void nb_decode(void *state, SpeexBits *bits, float *out, int lost)
 
       lsp_enforce_margin(st->interp_qlsp, st->lpcSize, .002);
 
+
       /* Compute interpolated LPCs (unquantized) */
       for (i=0;i<st->lpcSize;i++)
          st->interp_qlsp[i] = cos(st->interp_qlsp[i]);
@@ -783,11 +787,34 @@ void nb_decode(void *state, SpeexBits *bits, float *out, int lost)
             ol_pitch=st->min_pitch+7;
          pit_min = ol_pitch-7;
          pit_max = ol_pitch+8;
-         st->ltp_unquant(exc, pit_min, pit_max, st->ltp_params, st->subframeSize, &pitch, &pitch_gain[0], bits, st->stack, lost);
-      } else
-         st->ltp_unquant(exc, st->min_pitch, st->max_pitch, st->ltp_params, st->subframeSize, &pitch, &pitch_gain[0], bits, st->stack, lost);
-      
+         st->ltp_unquant(exc, pit_min, pit_max, st->ltp_params, st->subframeSize, &pitch, &pitch_gain[0], bits, st->stack, 0);
+      } else {
+         st->ltp_unquant(exc, st->min_pitch, st->max_pitch, st->ltp_params, st->subframeSize, &pitch, &pitch_gain[0], bits, st->stack, 0);
+      }
 
+      if (!lost)
+      {
+         tmp = fabs(pitch_gain[0])+fabs(pitch_gain[1])+fabs(pitch_gain[2]);
+         tmp = fabs(pitch_gain[0]+pitch_gain[1]+pitch_gain[2]);
+         if (tmp>best_pitch_gain)
+         {
+            best_pitch = pitch;
+            while (best_pitch+pitch<st->max_pitch)
+            {
+               best_pitch+=pitch;
+            }
+            best_pitch_gain = tmp*.9;
+            if (best_pitch_gain>.85)
+               best_pitch_gain=.85;
+         }
+      } else {
+         for (i=0;i<st->subframeSize;i++)
+            exc[i]=0;
+         /*printf ("best_pitch: %d %f\n", st->last_pitch, st->last_pitch_gain);*/
+         for (i=0;i<st->subframeSize;i++)
+            exc[i]=st->last_pitch_gain*exc[i-st->last_pitch];
+      }
+         
       {
          int q_energy;
          float ener;
@@ -807,6 +834,9 @@ void nb_decode(void *state, SpeexBits *bits, float *out, int lost)
          
          /*Fixed codebook contribution*/
          st->innovation_unquant(innov, st->innovation_params, st->subframeSize, bits, st->stack);
+
+         if (st->count_lost)
+            ener*=pow(.8,st->count_lost);
 
          for (i=0;i<st->subframeSize;i++)
             exc[i]+=ener*innov[i];
@@ -852,7 +882,15 @@ void nb_decode(void *state, SpeexBits *bits, float *out, int lost)
 
    /* The next frame will not be the first (Duh!) */
    st->first = 0;
-
+   if (!lost)
+      st->count_lost=0;
+   else
+      st->count_lost++;
+   if (!lost)
+   {
+      st->last_pitch = best_pitch;
+      st->last_pitch_gain = best_pitch_gain;
+   }
 }
 
 void nb_encoder_ctl(void *state, int request, void *ptr)

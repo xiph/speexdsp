@@ -86,6 +86,7 @@ typedef struct EncState {
 typedef struct DecState {
    SpeexMode *mode;
    int    first;          /* Is this the first frame? */
+   int    count_lost;     /* Was the last frame lost? */
    int    frameSize;      /* Size of frames */
    int    subframeSize;   /* Size of sub-frames */
    int    nbSubframes;    /* Number of sub-frames */
@@ -114,6 +115,8 @@ typedef struct DecState {
    float *mem_pf;
    float *mem_pf2;
    float *pi_gain;
+   int    last_pitch;
+   float  last_pitch_gain;
 
    lsp_unquant_func  lsp_unquant;
    ltp_unquant_func  ltp_unquant;

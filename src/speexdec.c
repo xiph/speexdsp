@@ -289,11 +289,28 @@ int main(int argc, char **argv)
                /*End of stream condition*/
                if (strncmp((char *)op.packet, "END OF STREAM", 13)==0)
                   break;
-               /*Copy Ogg packet to Speex bitstream*/
-               speex_bits_read_from(&bits, (char*)op.packet, op.bytes);
-               /*Decode a frame*/
-               speex_decode(st, &bits, output, 0);
-               
+
+               /* Put 0 here only to simulate packet loss */
+               if (1)
+               {
+                  /*Copy Ogg packet to Speex bitstream*/
+                  speex_bits_read_from(&bits, (char*)op.packet, op.bytes);
+                  /*Decode a frame*/
+                  speex_decode(st, &bits, output, 0);
+               } else {
+                  static int first=1;
+                  if ((((float)rand())/RAND_MAX < .1) && !first)
+                  {
+                     printf ("PACKET LOSS\n");
+                     speex_bits_rewind(&bits);
+                     speex_decode(st, &bits, output, 1);
+                  } else {
+                     printf ("PACKET OK\n");
+                     speex_bits_read_from(&bits, (char*)op.packet, op.bytes);
+                     speex_decode(st, &bits, output, 0);
+                  }
+                  first=0;
+               }
                /*PCM saturation (just in case)*/
                for (i=0;i<frame_size;i++)
                {

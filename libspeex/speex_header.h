@@ -22,6 +22,10 @@
 #ifndef SPEEX_HEADER_H
 #define SPEEX_HEADER_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct SpeexMode;
 #define SPEEX_HEADER_VERSION_LENGTH 20
 
@@ -50,5 +54,10 @@ void speex_init_header(SpeexHeader *header, int rate, int nb_channels, struct Sp
 char *speex_header_to_packet(SpeexHeader *header, int *size);
 
 SpeexHeader *speex_packet_to_header(char *packet, int size);
+
+#ifdef __cplusplus
+}
+#endif
+
 
 #endif
