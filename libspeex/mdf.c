@@ -321,11 +321,11 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
    {
       if (st->cancel_count<8*M)
       {
-         st->adapt_rate = .5f/(2+M);
+         st->adapt_rate = .15f/(2+M);
       } else {
          st->adapt_rate = spectral_dist*(1.0f/(2+M));
-         if (st->adapt_rate>.5f/(2+M))
-            st->adapt_rate=.5f/(2+M);
+         if (st->adapt_rate>.15f/(2+M))
+            st->adapt_rate=.15f/(2+M);
          if (st->adapt_rate<0)
             st->adapt_rate=0;
       }

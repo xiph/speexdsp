@@ -6,11 +6,7 @@
 EXTRA_DIST = Speex.spec Speex.spec.in Speex.kdevelop
 
 #Fools KDevelop into including all files
-if TRUE
 SUBDIRS = libspeex @src@ doc win32
-else
-SUBDIRS = libspeex src doc win32
-endif
 
 DIST_SUBDIRS = libspeex src doc win32
 
