@@ -57,11 +57,33 @@ Modified by Jean-Marc Valin
 #endif
 
 #ifdef FIXED_POINT
-#define ANGLE2X(a) (cos((a)/LSP_SCALING))
+
+#define C1 8187
+#define C2 -4058
+#define C3 301
+static spx_word16_t cos_32(spx_word16_t x)
+{
+   spx_word16_t x2;
+
+   if (x<12868)
+   {
+      x2 = MULT16_16_Q13(x,x);
+      return C1 + MULT16_16_Q13(x2, C2 + MULT16_16_Q13(C3, x2));
+   } else {
+      x = 25736-x;
+      x2 = MULT16_16_Q13(x,x);
+      return -C1 - MULT16_16_Q13(x2, C2 + MULT16_16_Q13(C3, x2));
+   }
+}
+
+#define ANGLE2X(a) (SHL(cos_32(a),2))
 #define X2ANGLE(x) (acos(x)*LSP_SCALING)
+
 #else
+
 #define ANGLE2X(a) (cos(a))
 #define X2ANGLE(x) (acos(x))
+
 #endif
 
 
@@ -344,7 +366,7 @@ void lsp_to_lpc(spx_lsp_t *freq,spx_coef_t *ak,int lpcrdr, char *stack)
     
     freqn = PUSH(stack, lpcrdr, spx_word16_t);
     for (i=0;i<lpcrdr;i++)
-       freqn[i] = ANGLE2X(freq[i])*32768.;
+       freqn[i] = ANGLE2X(freq[i]);
 
     Wp = PUSH(stack, 4*m+2, spx_word32_t);
     pw = Wp;
