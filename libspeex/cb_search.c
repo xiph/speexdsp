@@ -51,6 +51,7 @@ static float scal_gains4[16] = {
    2.42801
 };
 
+
 /*---------------------------------------------------------------------------*\
                                                                              
  void overlap_cb_search()							      
@@ -213,11 +214,6 @@ float *stack
       float *res = resp+i*subvect_size;
 
       /* Compute codeword response */
-#if 0
-      residue_zero(shape_cb+i*subvect_size, awk1, res, subvect_size, p);
-      syn_filt_zero(res, ak, res, subvect_size, p);
-      syn_filt_zero(res, awk2, res, subvect_size,p);
-#else
       int k;
       for(j=0;j<subvect_size;j++)
          res[j]=0;
@@ -226,29 +222,28 @@ float *stack
          for (k=j;k<subvect_size;k++)
             res[k]+=shape_cb[i*subvect_size+j]*r[k-j];
       }
-#endif
       /* Compute energy of codeword response */
       E[i]=0;
       for(j=0;j<subvect_size;j++)
          E[i]+=res[j]*res[j];
-      
+      E[i]=1/(.001+E[i]);
    }
 
    for (i=0;i<nb_subvect;i++)
    {
-      int best_index=0;
+      int best_index=0, k, m;
       float g, corr, best_gain=0, score, best_score=-1;
       /* Find best codeword for current sub-vector */
       for (j=0;j<shape_cb_size;j++)
       {
          corr=xcorr(resp+j*subvect_size,t+subvect_size*i,subvect_size);
-         score=corr*corr/(.001+E[j]);
-         g = corr/(.001+E[j]);
+         score=corr*corr*E[j];
+         g = corr*E[j];
          if (score>best_score)
          {
             best_index=j;
             best_score=score;
-            best_gain=corr/(.001+E[j]);
+            best_gain=g;
          }
       }
       frame_bits_pack(bits,best_index,params->shape_bits);
@@ -276,28 +271,13 @@ float *stack
       }
       ind[i]=best_index;
       gains[i]=best_gain;
-#if 0
-      for (j=0;j<nsf;j++)
-         e[j]=0;
+      /* Update target for next subvector */
       for (j=0;j<subvect_size;j++)
-         e[subvect_size*i+j]=best_gain*shape_cb[best_index*subvect_size+j];
-      residue_zero(e, awk1, r, nsf, p);
-      syn_filt_zero(r, ak, r, nsf, p);
-      syn_filt_zero(r, awk2, r, nsf,p);
-      for (j=0;j<nsf;j++)
-         t[j]-=r[j];
-#else
       {
-         int k,m;
-         float g;
-         for (j=0;j<subvect_size;j++)
-         {
-            g=best_gain*shape_cb[best_index*subvect_size+j];
-            for (k=subvect_size*i+j,m=0;k<nsf;k++,m++)
-               t[k] -= g*r[m];
-         }
+         g=best_gain*shape_cb[best_index*subvect_size+j];
+         for (k=subvect_size*i+j,m=0;k<nsf;k++,m++)
+            t[k] -= g*r[m];
       }
-#endif
    }
    
    /* Put everything back together */

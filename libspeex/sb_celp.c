@@ -543,16 +543,8 @@ void sb_encode(SBEncState *st, float *in, FrameBits *bits)
             
             /* Vector-quantize the gain */
             min_dist = sqr(quant-quant_high_gain2[0]);
-            best_ind=0;
-            for (i=1;i<8;i++)
-            {
-               dist = sqr(quant-quant_high_gain2[i]);
-               if (dist<min_dist)
-               {
-                  best_ind=i;
-                  min_dist=dist;
-               }
-            }
+
+            best_ind = vq_index(&quant, quant_high_gain2, 1, 8);
             quant=quant_high_gain2[best_ind];
 
             frame_bits_pack(bits,sign,1);
