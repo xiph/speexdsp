@@ -268,14 +268,16 @@ void encode(EncState *st, float *in, int *outSize, void *bits)
       /* Compute target signal */
       for (i=0;i<st->subframeSize;i++)
          target[i]=sw[i]-res[i];
-#if 1
-      /* Perform adaptive codebook search (pitch prediction) */
-      overlap_cb_search(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2,
-                        &exc[-120], 100, &gain[0], &pitch, st->lpcSize,
+
+#if 1 /*If set to 0, we compute the excitation directly from the target, i.e. we're cheating */
+
+      /* Perform adaptive codebook search (3-tap pitch predictor) */
+      pitch_search_3tap(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2,
+                        exc, 20, 147, &gain[0], &pitch, st->lpcSize,
                         st->subframeSize);
-      printf ("gain = %f, pitch = %d\n",gain[0], 120-pitch);
       for (i=0;i<st->subframeSize;i++)
-        exc[i]=gain[0]*exc[i-120+pitch];
+        exc[i]=gain[0]*exc[i-pitch]+gain[1]*exc[i-pitch-1]+gain[2]*exc[i-pitch-2];
+      printf ("3tap pitch = %d, gains = [%f %f %f]\n",pitch, gain[0], gain[1], gain[2]);
 
       /* Update target for adaptive codebook contribution */
       residue_zero(exc, st->bw_lpc1, res, st->subframeSize, st->lpcSize);
@@ -298,7 +300,10 @@ void encode(EncState *st, float *in, int *outSize, void *bits)
       syn_filt_zero(res, st->bw_lpc2, res, st->subframeSize, st->lpcSize);
       for (i=0;i<st->subframeSize;i++)
          target[i]-=gain[0]*res[i];
+
+
 #else
+      /* We're cheating to get perfect reconstruction */
       syn_filt_zero(target, st->bw_lpc1, res, st->subframeSize, st->lpcSize);
       residue_zero(res, st->interp_qlpc, exc, st->subframeSize, st->lpcSize);
       residue_zero(exc, st->bw_lpc2, exc, st->subframeSize, st->lpcSize);
@@ -308,11 +313,10 @@ void encode(EncState *st, float *in, int *outSize, void *bits)
       syn_filt_mem(exc, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, st->mem5);
 
       /* Compute weighted signal again, from synthesized speech (not sure it's the right thing) */
-#if 0
-      residue_mem(sp, st->bw_lpc1, sw, st->subframeSize, st->lpcSize, st->mem6);
+      residue_mem(sp, st->bw_lpc1, sw, st->subframeSize, st->lpcSize, st->mem1);
+      syn_filt_mem(sw, st->bw_lpc2, sw, st->subframeSize, st->lpcSize, st->mem2);
       for (i=0;i<st->lpcSize;i++)
         st->mem3[i]=sw[st->subframeSize-i-1];
-#endif
    }
 
    /* Store the LSPs for interpolation in the next frame */

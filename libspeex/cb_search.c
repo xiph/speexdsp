@@ -6,7 +6,7 @@
     COMPANY.....: Voicetronix
     DATE CREATED: 19/2/02
 
-    General gain-shape codebbok search.
+    General gain-shape codebook search.
 
 \*-----------------------------------------------------------------------*/
 

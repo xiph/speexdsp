@@ -95,3 +95,12 @@ void residue_mem(float *x, float *a, float *y, int N, int ord, float *mem)
    for (i=0;i<ord;i++)
       mem[i]=x[N-i-1];
 }
+
+float xcorr(float *x, float *y, int len)
+{
+   int i;
+   float sum=0;
+   for (i=0;i<len;i++)
+      sum += x[i]*y[i];
+   return sum;
+}

@@ -38,4 +38,7 @@ void residue_zero(float *x, float *a, float *y, int N, int ord);
 /* Analysis (FIR) filter using memory */
 void residue_mem(float *x, float *a, float *y, int N, int ord, float *mem);
 
+/* Cross correlation */
+float xcorr(float *x, float *y, int len);
+
 #endif

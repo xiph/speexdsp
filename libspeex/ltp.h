@@ -20,9 +20,6 @@
 
 extern float gain_cdbk_nb[];
 
-/** Computes the open-loop pitch prediction. Returns pitch period and pitch gain */
-int open_loop_ltp(float *x, int len, int start, int end, float *gain);
-
 
 /** Computes a 3-tap pitch predictor */
 int three_tap_ltp(float *x, int len, int start, int end, float *gain);
@@ -30,9 +27,17 @@ int three_tap_ltp(float *x, int len, int start, int end, float *gain);
 /** Finds the best 3-tap pitch predictor from a codebook*/
 int ltp_closed_loop(float *x, int len, int start, int end, float *gain);
 
-/** In place 3-tap pitch predictor (FIR)*/
-void predictor_three_tap(float *x, int len, int period, float *gain);
-
-
-/** In place 3-tap inverse pitch predictor (IIR)*/
-void inverse_three_tap(float *x, int len, int period, float *gain);
+/** Finds the best quantized 3-tap pitch predictor by analysis by synthesis */
+void pitch_search_3tap(
+float target[],                 /* Target vector */
+float ak[],                     /* LPCs for this subframe */
+float awk1[],                   /* Weighted LPCs #1 for this subframe */
+float awk2[],                   /* Weighted LPCs #2 for this subframe */
+float exc[],                    /* Overlapping codebook */
+int   start,                    /* Smallest pitch value allowed */
+int   end,                      /* Largest pitch value allowed */
+float *gain,                    /* 3-tab gains of optimum entry */
+int   *pitch,                   /* Index of optimum entry */
+int   p,                        /* Number of LPC coeffs */
+int   nsf                       /* Number of samples in subframe */
+);
