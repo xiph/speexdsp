@@ -356,13 +356,11 @@ int sb_encode(void *state, float *in, SpeexBits *bits)
       }
 
 
-      for (i=0;i<st->frame_size;i++)
-      {
-         /*FIXME: Are the two signals (low, high) in sync? */
-         e_low  += st->x0d[i]* st->x0d[i] / (SIG_SCALING*SIG_SCALING);
-         e_high += st->high[i]* st->high[i] / (SIG_SCALING*SIG_SCALING);
-      }
-      ratio = log((1+e_high)/(1+e_low));
+      /*FIXME: Are the two signals (low, high) in sync? */
+      e_low = compute_rms(st->x0d, st->frame_size);
+      e_high = compute_rms(st->high, st->frame_size);
+      ratio = 2*log((1+e_high)/(1+e_low));
+      
       speex_encoder_ctl(st->st_low, SPEEX_GET_RELATIVE_QUALITY, &st->relative_quality);
       if (ratio<-4)
          ratio=-4;
@@ -533,18 +531,16 @@ int sb_encode(void *state, float *in, SpeexBits *bits)
       /* Compute "real excitation" */
       fir_mem2(sp, st->interp_qlpc, exc, st->subframeSize, st->lpcSize, st->mem_sp2);
       /* Compute energy of low-band and high-band excitation */
-      for (i=0;i<st->subframeSize;i++)
-         eh+=sqr(exc[i]/SIG_SCALING);
+
+      eh = compute_rms(exc, st->subframeSize);
 
       if (!SUBMODE(innovation_quant)) {/* 1 for spectral folding excitation, 0 for stochastic */
          float g;
-         /*speex_bits_pack(bits, 1, 1);*/
-         for (i=0;i<st->subframeSize;i++)
-            el+=sqr(low_innov[offset+i]/SIG_SCALING);
+
+         el = compute_rms(low_innov+offset, st->subframeSize);
 
          /* Gain to use if we want to use the low-band excitation for high-band */
          g=eh/(.01+el);
-         g=sqrt(g);
 
          g *= filter_ratio;
          /*print_vec(&g, 1, "gain factor");*/
@@ -565,11 +561,10 @@ int sb_encode(void *state, float *in, SpeexBits *bits)
       } else {
          float gc, scale, scale_1;
 
-         for (i=0;i<st->subframeSize;i++)
-            el+=sqr(low_exc[offset+i]/SIG_SCALING);
-         /*speex_bits_pack(bits, 0, 1);*/
+         el = compute_rms(low_exc+offset, st->subframeSize);
+         /*FIXME: cleanup the "historical" mess with sqrt(st->subframeSize) */
+         gc = (1+eh)*filter_ratio/(1+el)/sqrt(st->subframeSize);
 
-         gc = sqrt(1+eh)*filter_ratio/sqrt((1+el)*st->subframeSize);
          {
             int qgc = (int)floor(.5+3.7*(log(gc)+2));
             if (qgc<0)
@@ -580,7 +575,7 @@ int sb_encode(void *state, float *in, SpeexBits *bits)
             gc = exp((1/3.7)*qgc-2);
          }
 
-         scale = gc*sqrt(1+el)/filter_ratio;
+         scale = gc*(1+el*sqrt(st->subframeSize))/filter_ratio;
          scale_1 = 1/scale;
 
          for (i=0;i<st->subframeSize;i++)
@@ -1024,8 +1019,6 @@ int sb_decode(void *state, SpeexBits *bits, float *out)
          float g;
          int quant;
 
-         for (i=0;i<st->subframeSize;i++)
-            el+=sqr(low_innov[offset+i]/SIG_SCALING);
          quant = speex_bits_unpack_unsigned(bits, 5);
          g= exp(((float)quant-10)/8.0);
          
@@ -1039,13 +1032,12 @@ int sb_decode(void *state, SpeexBits *bits, float *out)
       } else {
          float gc, scale;
          int qgc = speex_bits_unpack_unsigned(bits, 4);
-         for (i=0;i<st->subframeSize;i++)
-            el+=sqr(low_exc[offset+i]/SIG_SCALING);
 
+         el = compute_rms(low_exc+offset, st->subframeSize);
 
          gc = exp((1/3.7)*qgc-2);
 
-         scale = gc*sqrt(1+el)/filter_ratio;
+         scale = gc*(1+el*sqrt(st->subframeSize))/filter_ratio;
 
          SUBMODE(innovation_unquant)(exc, SUBMODE(innovation_params), st->subframeSize, 
                                 bits, stack);

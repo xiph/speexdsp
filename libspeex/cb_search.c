@@ -314,7 +314,7 @@ int   complexity
       }
 #else
       for (j=0;j<subvect_size;j++)
-         e[subvect_size*i+j]=sign*0.03125*SIG_SCALING*shape_cb[rind*subvect_size+j];
+         e[subvect_size*i+j]=sign*0.03125*shape_cb[rind*subvect_size+j];
 #endif
    }   
    /* Update excitation */

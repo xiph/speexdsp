@@ -49,6 +49,47 @@ void bw_lpc(float gamma, spx_coef_t *lpc_in, spx_coef_t *lpc_out, int order)
 
 #ifdef FIXED_POINT
 
+spx_word16_t compute_rms(spx_sig_t *x, int len)
+{
+   int i;
+   spx_word32_t sum=0;
+   spx_sig_t max_val=1;
+   int sig_shift;
+
+   for (i=0;i<len;i++)
+   {
+      spx_sig_t tmp = x[i];
+      if (tmp<0)
+         tmp = -1;
+      if (tmp > max_val)
+         max_val = tmp;
+   }
+
+   sig_shift=0;
+   while (max_val>2048)
+   {
+      sig_shift++;
+      max_val >>= 1;
+   }
+
+   for (i=0;i<len;i+=4)
+   {
+      spx_word32_t sum2=0;
+      spx_word16_t tmp;
+      tmp = SHR(x[i],sig_shift);
+      sum2 += MULT16_16(tmp,tmp);
+      tmp = SHR(x[i+1],sig_shift);
+      sum2 += MULT16_16(tmp,tmp);
+      tmp = SHR(x[i+2],sig_shift);
+      sum2 += MULT16_16(tmp,tmp);
+      tmp = SHR(x[i+3],sig_shift);
+      sum2 += MULT16_16(tmp,tmp);
+      sum += sum2;
+   }
+   
+   /*FIXME: remove division*/
+   return (1<<sig_shift)*sqrt(1+sum/len)/SIG_SCALING;
+}
 
 #define MUL_16_32_R15(a,bh,bl) ((a)*(bh) + ((a)*(bl)>>15))
 
@@ -123,6 +164,16 @@ void fir_mem2(spx_sig_t *x, spx_coef_t *num, spx_sig_t *y, int N, int ord, spx_m
 #include "filters_sse.h"
 #else
 
+spx_word16_t compute_rms(spx_sig_t *x, int len)
+{
+   int i;
+   float sum=0;
+   for (i=0;i<len;i++)
+   {
+      sum += x[i]*x[i];
+   }
+   return sqrt(.1+sum/len);
+}
 
 void filter_mem2(spx_sig_t *x, spx_coef_t *num, spx_coef_t *den, spx_sig_t *y, int N, int ord,  spx_mem_t *mem)
 {

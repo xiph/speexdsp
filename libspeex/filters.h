@@ -35,6 +35,8 @@
 
 #include "misc.h"
 
+spx_word16_t compute_rms(spx_sig_t *x, int len);
+
 typedef struct CombFilterMem {
    int   last_pitch;
    float last_pitch_gain[3];

@@ -350,10 +350,11 @@ int nb_encode(void *state, float *in, SpeexBits *bits)
       if (st->lbr_48k)
       {
          float ol1=0,ol2=0;
-         for (i=0;i<st->frameSize>>1;i++)
-            ol1 += st->exc[i]*st->exc[i] / (SIG_SCALING*SIG_SCALING);
-         for (i=st->frameSize>>1;i<st->frameSize;i++)
-            ol2 += st->exc[i]*st->exc[i] / (SIG_SCALING*SIG_SCALING);
+         
+         ol1 = compute_rms(st->exc, st->frameSize>>1);
+         ol2 = compute_rms(st->exc+(st->frameSize>>1), st->frameSize>>1);
+         ol1 *= ol1*(st->frameSize>>1);
+         ol2 *= ol2*(st->frameSize>>1);
 
          ol_gain=ol1;
          if (ol2>ol1)
@@ -364,11 +365,7 @@ int nb_encode(void *state, float *in, SpeexBits *bits)
 
       } else {
 #endif
-      ol_gain=0;
-      for (i=0;i<st->frameSize;i++)
-         ol_gain += st->exc[i]*st->exc[i] / (SIG_SCALING*SIG_SCALING);
-      
-      ol_gain=sqrt(1+ol_gain/st->frameSize);
+         ol_gain = compute_rms(st->exc, st->frameSize);
 #ifdef EPIC_48K
       }
 #endif
@@ -783,9 +780,9 @@ int nb_encode(void *state, float *in, SpeexBits *bits)
             innov[i]=0;
          
          residue_percep_zero(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2, st->buf2, st->subframeSize, st->lpcSize, stack);
-         for (i=0;i<st->subframeSize;i++)
-            ener+=st->buf2[i]*st->buf2[i] / (SIG_SCALING*SIG_SCALING);
-         ener=sqrt(.1+ener/st->subframeSize);
+
+         ener = compute_rms(st->buf2, st->subframeSize);
+
          /*for (i=0;i<st->subframeSize;i++)
             printf ("%f\n", st->buf2[i]/ener);
          */
