@@ -215,6 +215,7 @@ int   update_target
    }
 
    /* Update excitation */
+   /* FIXME: We could update the excitation directly above */
    for (j=0;j<nsf;j++)
       exc[j]+=e[j];
    
