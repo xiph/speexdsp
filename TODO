@@ -2,14 +2,13 @@ Standards
 -Complete Speex RTP profile
 
 Features
-*Support for intensity stereo
-*Support for 32 kHz sampling rate
-*Explicit encoding of DTMF/TTY?
-*Add maximum bit-rate control for VBR
+*Add maximum/minimum/average bit-rate control for VBR
 *Add "VAD-only" VBR (constant bit-rate or comfort noise)
+*Add encoder/decoder reset function
 
 Codec
--Better VBR logic for choosing mode
--Wideband VBR
+-Improve VBR 
+-Improve perceptual enhancement
+-Ultra-wideband VBR
 -Improve VAD
 -Improve narrowband vocoder

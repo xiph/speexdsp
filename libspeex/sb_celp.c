@@ -359,8 +359,8 @@ void sb_encode(void *state, float *in, SpeexBits *bits)
       speex_encoder_ctl(st->st_low, SPEEX_GET_RELATIVE_QUALITY, &low_qual);
       if (ratio<-4)
          ratio=-4;
-      if (ratio>0)
-         ratio=0;
+      if (ratio>2)
+         ratio=2;
       /*if (ratio>-2)*/
       low_qual+=1.0*(ratio+2);
       /*{
