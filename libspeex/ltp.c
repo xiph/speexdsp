@@ -502,5 +502,6 @@ int lost)
       exc[i]=exc[i-start]*pitch_coef;
    }
    *pitch_val = start;
-   *gain_val = pitch_coef;
+   gain_val[0]=gain_val[2]=0;
+   gain_val[1] = pitch_coef;
 }
