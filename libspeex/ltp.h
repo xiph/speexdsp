@@ -17,6 +17,7 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
+#include "bits.h"
 
 extern float gain_cdbk_nb[];
 
@@ -54,7 +55,8 @@ float *gain,                    /* 3-tab gains of optimum entry */
 int   *pitch,                   /* Best pitch delay */
 int   *gain_index,              /* Index of optimum gain */
 int   p,                        /* Number of LPC coeffs */
-int   nsf                       /* Number of samples in subframe */
+int   nsf,                      /* Number of samples in subframe */
+FrameBits *bits
 );
 
 /** Finds the best quantized 3-tap pitch predictor by analysis by synthesis */

@@ -21,6 +21,7 @@
 #include "cb_search.h"
 #include "stack_alloc.h"
 #include "filters.h"
+#include "bits.h"
 
 #define abs(x) ((x)<0 ? -(x) : (x))
 
@@ -320,7 +321,8 @@ float *gain,                    /* 3-tab gains of optimum entry */
 int   *pitch,                   /* Index of optimum entry */
 int   *gain_index,              /* Index of optimum gain */
 int   p,                        /* Number of LPC coeffs */
-int   nsf                       /* Number of samples in subframe */
+int   nsf,                      /* Number of samples in subframe */
+FrameBits *bits
 )
 {
    int i,j;
@@ -387,9 +389,12 @@ int   nsf                       /* Number of samples in subframe */
       gain[1] = gain_cdbk_nb[best_cdbk*12+1];
       gain[2] = gain_cdbk_nb[best_cdbk*12+2];
       *gain_index=best_cdbk;
+      frame_bits_pack(bits,(*pitch)-start,7);
+      frame_bits_pack(bits,best_cdbk,7);
 
    }
    --*pitch;
+
 
    {
       float tmp1=0,tmp2=0;

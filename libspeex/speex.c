@@ -200,6 +200,8 @@ void encode(EncState *st, float *in, FrameBits *bits)
       for (i=0;i<st->lpcSize;i++)
          st->qlsp[i]=st->lsp[i];
       id=lsp_quant_nb(st->qlsp,10 );
+      /*Watch out for 32-bit ints*/
+      frame_bits_pack(bits,id,30);
       lsp_unquant_nb(st->qlsp,10,id);
    }
 
@@ -311,7 +313,7 @@ void encode(EncState *st, float *in, FrameBits *bits)
 #else
       pitch_search_3tap(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2,
                         exc, 20, 147, &gain[0], &pitch, &pitch_gain_index, st->lpcSize,
-                        st->subframeSize);
+                        st->subframeSize, bits);
       for (i=0;i<st->subframeSize;i++)
         exc[i]=gain[0]*exc[i-pitch]+gain[1]*exc[i-pitch-1]+gain[2]*exc[i-pitch-2];
       printf ("3-tap pitch = %d, gains = [%f %f %f]\n",pitch, gain[0], gain[1], gain[2]);
@@ -357,7 +359,7 @@ void encode(EncState *st, float *in, FrameBits *bits)
 #else
       split_cb_search(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2,
                         exc_table, 64, &gain[0], &pitch, st->lpcSize,
-                        st->subframeSize, exc);
+                        st->subframeSize, exc, bits);
 #endif
       /* Compute weighted noise energy, SNR */
       enoise=0;

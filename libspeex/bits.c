@@ -62,13 +62,14 @@ void frame_bits_init_from(FrameBits *bits, char *bytes, int len)
    bits->bitPtr=0;
 }
 
-void frame_bits_write(FrameBits *bits, char *bytes, int max_len)
+int frame_bits_write(FrameBits *bits, char *bytes, int max_len)
 {
    int i;
    if (max_len > ((bits->nbBits+7)>>3))
       max_len = ((bits->nbBits+7)>>3);
    for (i=0;i<max_len;i++)
       bytes[i]=bits->bytes[i];
+   return max_len;
 }
 
 void frame_bits_pack(FrameBits *bits, int data, int nbBits)
@@ -81,7 +82,7 @@ void frame_bits_pack(FrameBits *bits, int data, int nbBits)
       bit = (d>>(nbBits-1))&1;
       bits->bytes[bits->bytePtr] |= bit<<(7-bits->bitPtr);
       bits->bitPtr++;
-      fprintf(stderr, "%d %d\n", nbBits, bit);
+      /*fprintf(stderr, "%d %d\n", nbBits, bit);*/
       if (bits->bitPtr==8)
       {
          bits->bitPtr=0;

@@ -142,7 +142,8 @@ float *gain,			/* gain of optimum entries */
 int   *index,			/* index of optimum entries */
 int   p,                        /* number of LPC coeffs */
 int   nsf,                      /* number of samples in subframe */
-float *exc
+float *exc,
+FrameBits *bits
 )
 {
    int i,j;
@@ -181,9 +182,10 @@ float *exc
             best_gain=corr/(.001+E[j]);
          }
       }
+      frame_bits_pack(bits,best_index,8);
       ind[i]=best_index;
       gains[i]=best_gain*Ee[ind[i]];
-      if (1) { /* Simulating scalar quantization of the gain*/
+      if (0) { /* Simulating scalar quantization of the gain*/
          float sign=1;
          printf("before: %f\n", best_gain);
          if (best_gain<0)
@@ -246,7 +248,8 @@ float *exc
       max_gain=1/exp(max_index+3.0);
       for (i=0;i<5;i++)
         gains[i]*=max_gain;
-      
+      frame_bits_pack(bits,max_index,3);
+
       if (max_index>2)
       {
       for (i=0;i<5;i++)
@@ -265,6 +268,7 @@ float *exc
             best_vq_index=i;
          }
       }
+      frame_bits_pack(bits,best_vq_index,8);
       printf ("best_gains_vq_index %d %f %d\n", best_vq_index, min_dist, max_index);
 #if 1
       for (i=0;i<5;i++)

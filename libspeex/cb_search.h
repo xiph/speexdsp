@@ -20,6 +20,8 @@
 #ifndef CB_SEARCH_H
 #define CB_SEARCH_H
 
+#include "bits.h"
+
 float overlap_cb_search(
 float target[],			/* target vector */
 float ak[],			/* LPCs for this subframe */
@@ -45,7 +47,8 @@ float *gain,			/* gain of optimum entries */
 int   *index,			/* index of optimum entries */
 int   p,                        /* number of LPC coeffs */
 int   nsf,                      /* number of samples in subframe */
-float *exc
+float *exc,
+FrameBits *bits
 );
 
 #endif

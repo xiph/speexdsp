@@ -39,7 +39,7 @@ void frame_bits_reset(FrameBits *bits);
 
 void frame_bits_init_from(FrameBits *bits, char *bytes, int len);
 
-void frame_bits_write(FrameBits *bits, char *bytes, int max_len);
+int frame_bits_write(FrameBits *bits, char *bytes, int max_len);
 
 void frame_bits_pack(FrameBits *bits, int data, int nbBits);
 
