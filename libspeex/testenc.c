@@ -33,6 +33,9 @@ int main(int argc, char **argv)
    tmp=4;
    speex_encoder_ctl(st, SPEEX_SET_COMPLEXITY, &tmp);
 
+   speex_mode_query(&speex_nb_mode, SPEEX_MODE_FRAME_SIZE, &tmp);
+   fprintf (stderr, "frame size: %d\n", tmp);
+
    if (argc != 4 && argc != 3)
    {
       fprintf (stderr, "Usage: encode [in file] [out file] [bits file]\nargc = %d", argc);

@@ -522,5 +522,5 @@ static void wb_mode_query(void *mode, int request, void *ptr)
 
 void speex_mode_query(SpeexMode *mode, int request, void *ptr)
 {
-   mode->query(mode, request, ptr);
+   mode->query(mode->mode, request, ptr);
 }
