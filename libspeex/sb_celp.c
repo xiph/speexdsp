@@ -260,7 +260,7 @@ void *sb_encoder_init(const SpeexMode *m)
    st->relative_quality=0;
 
    st->complexity=2;
-   speex_decoder_ctl(st->st_low, SPEEX_GET_SAMPLING_RATE, &st->sampling_rate);
+   speex_encoder_ctl(st->st_low, SPEEX_GET_SAMPLING_RATE, &st->sampling_rate);
    st->sampling_rate*=2;
 
 #ifdef ENABLE_VALGRIND
