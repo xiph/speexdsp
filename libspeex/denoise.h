@@ -56,6 +56,7 @@ typedef struct DenoiseState {
    float *outbuf;            /**< Output buffer (for overlap and add) */
 
    int nb_adapt;             /**< Number of frames used for adaptation so far */
+   int consec_noise;         /**< */
    int nb_denoise;           /**< Number of frames processed so far */
    int nb_min_estimate;      /**< */
    int last_update;          /**< */

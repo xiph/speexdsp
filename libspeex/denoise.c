@@ -143,6 +143,7 @@ DenoiseState *denoise_state_init(int frame_size)
 
 
    st->nb_adapt=0;
+   st->consec_noise=0;
    st->nb_denoise=0;
    st->nb_min_estimate=0;
    st->last_update=0;
@@ -322,8 +323,10 @@ int denoise(DenoiseState *st, float *x)
       gamma = 1.0/st->nb_denoise;
 
       /*Make update rate smaller when there's no speech*/
-      if (mean_post<2)
-         min_gamma *= (mean_post+.2);
+      if (mean_post<3)
+         min_gamma *= (mean_post+.1);
+      else
+         min_gamma *= 3.1;
 
       if (gamma<min_gamma)
          gamma=min_gamma;
@@ -352,20 +355,17 @@ int denoise(DenoiseState *st, float *x)
 #endif
    /*fprintf (stderr, "%f %f\n", mean_prior,mean_post);*/
 
-   /* Save old power spectrum */
-   for (i=1;i<N;i++)
-      st->old_ps[i] = ps[i];
-
-   for (i=1;i<N;i++)
-      st->last_ps[st->last_id*N+i] = ps[i];
-   st->last_id++;
-   if (st->last_id>=NB_LAST_PS)
-      st->last_id=0;
-
    /* If SNR is low (both a priori and a posteriori), update the noise estimate*/
    if (mean_prior<.23 && mean_post < .5 && st->nb_adapt>=20)
    {
-      update_noise(st, ps);
+      st->consec_noise++;
+   } else {
+      st->consec_noise=0;
+   }
+
+   if (st->consec_noise>=3)
+   {
+      update_noise(st, st->old_ps);
       st->last_update=0;
    } else {
       st->last_update++;
@@ -434,6 +434,16 @@ int denoise(DenoiseState *st, float *x)
    /* Update outbuf */
    for (i=0;i<N3;i++)
       st->outbuf[i] = st->frame[st->frame_size+i];
+
+   /* Save old power spectrum */
+   for (i=1;i<N;i++)
+      st->old_ps[i] = ps[i];
+
+   for (i=1;i<N;i++)
+      st->last_ps[st->last_id*N+i] = ps[i];
+   st->last_id++;
+   if (st->last_id>=NB_LAST_PS)
+      st->last_id=0;
 
    return 1;
 }
