@@ -212,33 +212,15 @@ float *stack
    for (i=0;i<nb_subvect;i++)
    {
       int best_index[2]={0,0}, k, m;
-      float g, dist, best_dist[2]={-1,-1};
-      float *a, *x;
+      float g, best_dist[2]={-1,-1};
+      float *x;
       float energy=0;
       x=t+subvect_size*i;
 
       for (k=0;k<subvect_size;k++)
          energy+=x[k]*x[k];
-      /* Find best codeword for current sub-vector */
-      for (j=0;j<shape_cb_size;j++)
-      {
-         dist=0;
-         a=resp+j*subvect_size;
-         dist=energy+E[j];
-         for (k=0;k<subvect_size;k++)
-            dist -= 2*a[k]*x[k];
-         if (dist<best_dist[0] || best_dist[0]<0)
-         {
-            best_dist[1]=best_dist[0];
-            best_index[1]=best_index[0];
-            best_dist[0]=dist;
-            best_index[0]=j;
-         } else if (dist<best_dist[1] || best_dist[1]<0)
-         {
-            best_dist[1]=dist;
-            best_index[1]=j;
-         }
-      }
+      /* Find best codewords for current sub-vector */
+      vq_nbest(x, resp, subvect_size, shape_cb_size, E, 2, best_index, best_dist);
       if (i<nb_subvect-1)
       {
          int nbest;
@@ -257,7 +239,9 @@ float *stack
             }
             
             {
-               int i2=vq_index(&tt[subvect_size*(i+1)], resp, subvect_size, shape_cb_size);
+               float dd;
+               int i2;
+               vq_nbest(&tt[subvect_size*(i+1)], resp, subvect_size, shape_cb_size, E, 1, &i2, &dd);
                for (j=0;j<subvect_size;j++)
                {
                   g=shape_cb[i2*subvect_size+j];

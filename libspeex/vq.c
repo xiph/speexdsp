@@ -41,3 +41,36 @@ int vq_index(float *in, float *codebook, int len, int entries)
    }
    return best_index;
 }
+
+
+/*Finds the indices of the n-best entries in a codebook*/
+void vq_nbest(float *in, float *codebook, int len, int entries, float *E, int N, int *nbest, float *best_dist)
+{
+   int i,j,k;
+   for (i=0;i<entries;i++)
+   {
+      float dist=.5*E[i];
+      for (j=0;j<len;j++)
+         dist -= in[j]**codebook++;
+      if (i<N || dist<best_dist[N-1])
+      {
+
+         for (j=0;j<N;j++)
+         {
+            if (j >= i || dist < best_dist[j])
+            {
+               for (k=N-1;k>j;k--)
+               {
+                  best_dist[k]=best_dist[k-1];
+                  nbest[k] = nbest[k-1];
+               }
+               best_dist[j]=dist;
+               nbest[j]=i;
+               break;
+            }
+         }
+      }
+   }
+}
+
+
