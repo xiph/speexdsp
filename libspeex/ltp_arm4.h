@@ -100,7 +100,7 @@ static void pitch_xcorr(const spx_word16_t *_x, const spx_word16_t *_y, spx_word
       for (j=0;j<len;j+=4)
       {
          spx_word32_t part1, part2, part3, part4, x0;
-         spx_word16_t z0,z1,z2,z3;
+         spx_word32_t dead1;
          __asm__ __volatile__ (
                "\tldrsh %10, [%8], #2 \n"
                "\tmul %4, %10, %0 \n"
@@ -133,22 +133,22 @@ static void pitch_xcorr(const spx_word16_t *_x, const spx_word16_t *_y, spx_word
 
 
                "\tldr %10, %11 \n"
+               "\tldr %15, %12 \n"
                "\tadd %4, %10, %4, asr #6 \n"
-               "\tldr %10, %12 \n"
                "\tstr %4, %11 \n"
-               "\tadd %5, %10, %5, asr #6 \n"
                "\tldr %10, %13 \n"
+               "\tadd %5, %15, %5, asr #6 \n"
                "\tstr %5, %12 \n"
+               "\tldr %15, %14 \n"
                "\tadd %6, %10, %6, asr #6 \n"
-               "\tldr %10, %14 \n"
+               "\tadd %7, %15, %7, asr #6 \n"
                "\tstr %6, %13 \n"
-               "\tadd %7, %10, %7, asr #6 \n"
                "\tstr %7, %14 \n"
 
             : "=r" (y0), "=r" (y1), "=r" (y2), "=r" (y3),
          "=r" (part1),  "=r" (part2),  "=r" (part3),  "=r" (part4),
          "=r" (x), "=r" (y), "=r" (x0),
-         "=m" (sum1), "=m" (sum2), "=m" (sum3), "=m" (sum4)
+         "=m" (sum1), "=m" (sum2), "=m" (sum3), "=m" (sum4), "=r" (dead1)
             : "0" (y0), "1" (y1), "2" (y2), "3" (y3),
             "8" (x), "9" (y),
             "11" (sum1), "12" (sum2), "13" (sum3), "14" (sum4)
