@@ -217,9 +217,9 @@ void *sb_encoder_init(SpeexMode *m)
          st->window[part1+i]=(spx_word16_t)(SIG_SCALING*(.54+.46*cos(M_PI*i/part2)));
    }
 
-   st->lagWindow = PUSH(st->stack, st->lpcSize+1, float);
+   st->lagWindow = PUSH(st->stack, st->lpcSize+1, spx_word16_t);
    for (i=0;i<st->lpcSize+1;i++)
-      st->lagWindow[i]=exp(-.5*sqr(2*M_PI*st->lag_factor*i));
+      st->lagWindow[i]=16384*exp(-.5*sqr(2*M_PI*st->lag_factor*i));
 
    st->autocorr = PUSH(st->stack, st->lpcSize+1, spx_word16_t);
    st->lpc = PUSH(st->stack, st->lpcSize+1, spx_coef_t);
@@ -331,7 +331,7 @@ int sb_encode(void *state, short *in, SpeexBits *bits)
    st->autocorr[0] = (spx_word16_t)(st->autocorr[0]*st->lpc_floor); /* Noise floor in auto-correlation domain */
    /* Lag windowing: equivalent to filtering in the power-spectrum domain */
    for (i=0;i<st->lpcSize+1;i++)
-      st->autocorr[i] = (spx_word16_t)(st->autocorr[i]*st->lagWindow[i]);
+      st->autocorr[i] = MULT16_16_Q14(st->autocorr[i],st->lagWindow[i]);
 
    /* Levinson-Durbin */
    _spx_lpc(st->lpc+1, st->autocorr, st->lpcSize);

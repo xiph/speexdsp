@@ -207,10 +207,9 @@ int cdbk_offset
    spx_sig_t *e[3];
    spx_word32_t corr[3];
    spx_word32_t A[3][3];
-   float gain[3];
    int   gain_cdbk_size;
    signed char *gain_cdbk;
-   spx_word16_t sgain[3];
+   spx_word16_t gain[3];
    spx_word64_t err;
 
    ltp_params *params;
@@ -366,16 +365,7 @@ int cdbk_offset
          sum -= MULT16_32_Q15(MULT16_16_16(g1,g1),C[7]);
          sum -= MULT16_32_Q15(MULT16_16_16(g2,g2),C[8]);
 
-         /* If 1, force "safe" pitch values to handle packet loss better */
-         if (0) {
-            float tot = fabs(ptr[1]);
-            if (ptr[0]>0)
-               tot+=ptr[0];
-            if (ptr[2]>0)
-               tot+=ptr[2];
-            if (tot>1)
-               continue;
-         }
+         /* We could force "safe" pitch values to handle packet loss better */
 
          if (sum>best_sum || i==0)
          {
@@ -383,25 +373,26 @@ int cdbk_offset
             best_cdbk=i;
          }
       }
+#ifdef FIXED_POINT
+      gain[0] = 32+(spx_word16_t)gain_cdbk[best_cdbk*3];
+      gain[1] = 32+(spx_word16_t)gain_cdbk[best_cdbk*3+1];
+      gain[2] = 32+(spx_word16_t)gain_cdbk[best_cdbk*3+2];
+#else
       gain[0] = 0.015625*gain_cdbk[best_cdbk*3]  + .5;
       gain[1] = 0.015625*gain_cdbk[best_cdbk*3+1]+ .5;
       gain[2] = 0.015625*gain_cdbk[best_cdbk*3+2]+ .5;
-
-      sgain[0] = 32+(spx_word16_t)gain_cdbk[best_cdbk*3];
-      sgain[1] = 32+(spx_word16_t)gain_cdbk[best_cdbk*3+1];
-      sgain[2] = 32+(spx_word16_t)gain_cdbk[best_cdbk*3+2];
-
+#endif
       *cdbk_index=best_cdbk;
    }
    
 #ifdef FIXED_POINT
    for (i=0;i<nsf;i++)
-     exc[i]=MULT16_32_Q13(SHL(sgain[0],7),e[2][i])+MULT16_32_Q13(SHL(sgain[1],7),e[1][i])+MULT16_32_Q13(SHL(sgain[2],7),e[0][i]);
+     exc[i]=MULT16_32_Q13(SHL(gain[0],7),e[2][i])+MULT16_32_Q13(SHL(gain[1],7),e[1][i])+MULT16_32_Q13(SHL(gain[2],7),e[0][i]);
    
    err=0;
    for (i=0;i<nsf;i++)
    {
-      spx_sig_t perr=target[i]-(MULT16_32_Q13(SHL(sgain[0],7),x[2][i])+MULT16_32_Q13(SHL(sgain[1],7),x[1][i])+MULT16_32_Q13(SHL(sgain[2],7),x[0][i]));
+      spx_sig_t perr=target[i]-(MULT16_32_Q13(SHL(gain[0],7),x[2][i])+MULT16_32_Q13(SHL(gain[1],7),x[1][i])+MULT16_32_Q13(SHL(gain[2],7),x[0][i]));
       spx_word16_t perr2 = SHR(perr,15);
       err = ADD64(err,MULT16_16(perr2,perr2));
       
