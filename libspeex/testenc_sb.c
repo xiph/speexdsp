@@ -59,7 +59,7 @@ int main(int argc, char **argv)
 
       frame_bits_rewind(&bits);
       
-      sb_decode(&dec, &bits, input);
+      /*sb_decode(&dec, &bits, input);*/
 
       frame_bits_reset(&bits);
       for (i=0;i<FRAME_SIZE;i++)

@@ -18,8 +18,18 @@
 */
 
 #include "filters.h"
+#include <stdio.h>
 
 #define min(a,b) ((a) < (b) ? (a) : (b))
+
+void print_vec(float *vec, int len, char *name)
+{
+   int i;
+   printf ("%s ", name);
+   for (i=0;i<len;i++)
+      printf (" %f", vec[i]);
+   printf ("\n");
+}
 
 void bw_lpc(float gamma, float *lpc_in, float *lpc_out, int order)
 {

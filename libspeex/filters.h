@@ -20,6 +20,8 @@
 #ifndef FILTERS_H
 #define FILTERS_H
 
+void print_vec(float *vec, int len, char *name);
+
 /* Apply bandwidth expansion on LPC coef */
 void bw_lpc(float gamma, float *lpc_in, float *lpc_out, int order);
 

@@ -56,7 +56,7 @@ FrameBits *bits,
 float *stack
 );
 
-void split_cb_search_wb(
+void split_cb_search_nogain(
 float target[],			/* target vector */
 float ak[],			/* LPCs for this subframe */
 float awk1[],			/* Weighted LPCs for this subframe */
@@ -68,6 +68,21 @@ float *exc,
 FrameBits *bits,
 float *stack
 );
+
+
+void split_cb_search2(
+float target[],			/* target vector */
+float ak[],			/* LPCs for this subframe */
+float awk1[],			/* Weighted LPCs for this subframe */
+float awk2[],			/* Weighted LPCs for this subframe */
+void *par,                      /* Codebook/search parameters*/
+int   p,                        /* number of LPC coeffs */
+int   nsf,                      /* number of samples in subframe */
+float *exc,
+FrameBits *bits,
+float *stack
+);
+
 
 void split_cb_unquant(
 float *exc,

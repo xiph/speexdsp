@@ -52,6 +52,8 @@ typedef struct EncState {
    float *frame;          /* Start of original frame */
    float *excBuf;         /* Excitation buffer */
    float *exc;            /* Start of excitation frame */
+   float *exc2Buf;           /* "Pitch enhanced" excitation */
+   float *exc2;           /* "Pitch enhanced" excitation */
    float *swBuf;          /* Weighted signal buffer */
    float *sw;             /* Start of weighted signal frame */
    float *window;         /* Temporary (Hanning) window */

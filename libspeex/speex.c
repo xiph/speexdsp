@@ -96,6 +96,9 @@ void encoder_init(EncState *st, SpeexMode *mode)
    st->swBuf = calloc(st->bufSize,sizeof(float));
    st->sw = st->swBuf + st->bufSize - st->windowSize;
 
+   st->exc2Buf = calloc(st->bufSize,sizeof(float));
+   st->exc2 = st->exc2Buf + st->bufSize - st->windowSize;
+
    /* Hanning window */
    st->window = malloc(st->windowSize*sizeof(float));
    for (i=0;i<st->windowSize;i++)
@@ -141,6 +144,7 @@ void encoder_destroy(EncState *st)
    free(st->excBuf);
    free(st->swBuf);
    free(st->os_filt);
+   free(st->exc2Buf);
    free(st->stack);
 
    free(st->window);
@@ -179,6 +183,7 @@ void encode(EncState *st, float *in, FrameBits *bits)
       st->inBuf[st->bufSize-st->frameSize+i] = in[i] - st->preemph*in[i-1];
    st->pre_mem = in[st->frameSize-1];
 
+   memmove(st->exc2Buf, st->exc2Buf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(float));
    memmove(st->excBuf, st->excBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(float));
    memmove(st->swBuf, st->swBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(float));
 
@@ -237,8 +242,9 @@ void encode(EncState *st, float *in, FrameBits *bits)
    {
       float esig, enoise, snr, tmp;
       int   offset;
-      float *sp, *sw, *res, *exc, *target, *mem;
-      
+      float *sp, *sw, *res, *exc, *target, *mem, *exc2;
+      int pitch;
+
       /* Offset relative to start of frame */
       offset = st->subframeSize*sub;
       /* Original signal */
@@ -247,6 +253,9 @@ void encode(EncState *st, float *in, FrameBits *bits)
       exc=st->exc+offset;
       /* Weighted signal */
       sw=st->sw+offset;
+
+      exc2=st->exc2+offset;
+
       /* Filter response */
       res = PUSH(st->stack, st->subframeSize);
       /* Target signal */
@@ -304,6 +313,8 @@ void encode(EncState *st, float *in, FrameBits *bits)
       /* Reset excitation */
       for (i=0;i<st->subframeSize;i++)
          exc[i]=0;
+      for (i=0;i<st->subframeSize;i++)
+         exc2[i]=0;
 
       /* Compute zero response of A(z/g1) / ( A(z/g2) * Aq(z) ) */
       for (i=0;i<st->lpcSize;i++)
@@ -337,9 +348,9 @@ void encode(EncState *st, float *in, FrameBits *bits)
 
       /* Long-term prediction */
 #if 1
-      st->ltp_quant(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2,
+      pitch = st->ltp_quant(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2,
                     exc, st->ltp_params, st->min_pitch, st->max_pitch, 
-                    st->lpcSize, st->subframeSize, bits, st->stack);
+                    st->lpcSize, st->subframeSize, bits, st->stack, exc2);
 #else
       {
          float gain[3];
@@ -408,6 +419,25 @@ void encode(EncState *st, float *in, FrameBits *bits)
       residue_mem(sp, st->bw_lpc1, sw, st->subframeSize, st->lpcSize, mem);
       syn_filt_mem(sw, st->bw_lpc2, sw, st->subframeSize, st->lpcSize, st->mem_sw);
 
+#if 0
+      /*for (i=0;i<st->subframeSize;i++)
+        exc2[i]=.75*exc[i]+.2*exc[i-pitch]+.05*exc[i-2*pitch];*/
+      {
+         float max_exc=0;
+         for (i=0;i<st->subframeSize;i++)
+            if (fabs(exc[i])>max_exc)
+               max_exc=fabs(exc[i]);
+         max_exc=1/(max_exc+.01);
+         for (i=0;i<st->subframeSize;i++)
+         {
+            float xx=max_exc*exc[i];
+            exc2[i]=exc[i]*(1-exp(-100*xx*xx));
+         }
+      }
+#else
+      for (i=0;i<st->subframeSize;i++)
+         exc2[i]=exc[i];
+#endif
       POP(st->stack);
       POP(st->stack);
       POP(st->stack);

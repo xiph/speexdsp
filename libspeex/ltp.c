@@ -327,7 +327,7 @@ float *stack
 
 
 /** Finds the best quantized 3-tap pitch predictor by analysis by synthesis */
-void pitch_search_3tap(
+int pitch_search_3tap(
 float target[],                 /* Target vector */
 float ak[],                     /* LPCs for this subframe */
 float awk1[],                   /* Weighted LPCs #1 for this subframe */
@@ -339,12 +339,14 @@ int   end,                      /* Largest pitch value allowed */
 int   p,                        /* Number of LPC coeffs */
 int   nsf,                      /* Number of samples in subframe */
 FrameBits *bits,
-float *stack
+float *stack,
+float *exc2
 )
 {
    int i,j;
-   float *tmp;
+   float *tmp, *tmp2;
    float *x[3];
+   float *e[3];
    float corr[3];
    float A[3][3];
    float gain[3];
@@ -355,14 +357,20 @@ float *stack
    gain_cdbk=params->gain_cdbk;
    gain_cdbk_size=1<<params->gain_bits;
    tmp = PUSH(stack, 3*nsf);
+   tmp2 = PUSH(stack, 3*nsf);
 
    x[0]=tmp;
    x[1]=tmp+nsf;
    x[2]=tmp+2*nsf;
 
+   e[0]=tmp2;
+   e[1]=tmp2+nsf;
+   e[2]=tmp2+2*nsf;
+
    /* Perform closed-loop 1-tap search*/
+   /* FIXME: Should better handle short (<nsf) pitch periods*/
    overlap_cb_search(target, ak, awk1, awk2,
-                     &exc[-end], end-start+1, gain, &pitch, p,
+                     &exc2[-end], end-start+1, gain, &pitch, p,
                      nsf, stack);
    /* Real pitch value */
    pitch=end-pitch;
@@ -370,7 +378,15 @@ float *stack
    
    for (i=0;i<3;i++)
    {
-      residue_zero(&exc[-pitch-1+i],awk1,x[i],nsf,p);
+      int pp=pitch+1-i;
+      for (j=0;j<nsf;j++)
+      {
+         if (j-pp<0)
+            e[i][j]=exc2[j-pp];
+         else
+            e[i][j]=exc2[j-pp-pitch];
+      }
+      residue_zero(e[i],awk1,x[i],nsf,p);
       syn_filt_zero(x[i],ak,x[i],nsf,p);
       syn_filt_zero(x[i],awk2,x[i],nsf,p);
    }
@@ -404,6 +420,11 @@ float *stack
          ptr = gain_cdbk+12*i;
          for (j=0;j<9;j++)
             sum+=C[j]*ptr[j+3];
+         if (0) {
+            float tot=ptr[0]+ptr[1]+ptr[2];
+            if (tot < 1.1)
+               sum *= 1+.15*tot;
+         }
          if (sum>best_sum || i==0)
          {
             best_sum=sum;
@@ -418,10 +439,8 @@ float *stack
 
    }
    
-   /*FIXME: backward or forward? (ie recursive or not?)*/
-   /*for (i=0;i<nsf;i++)*/
-   for (i=nsf-1;i>=0;i--)
-      exc[i]=gain[0]*exc[i-pitch+1]+gain[1]*exc[i-pitch]+gain[2]*exc[i-pitch-1];
+   for (i=0;i<nsf;i++)
+      exc[i]=gain[0]*e[2][i]+gain[1]*e[1][i]+gain[2]*e[0][i];
 #ifdef DEBUG
    printf ("3-tap pitch = %d, gains = [%f %f %f]\n",pitch, gain[0], gain[1], gain[2]);
    {
@@ -434,6 +453,7 @@ float *stack
       printf ("prediction gain = %f\n",tmp1/(tmp2+1));
    }
 #endif
+   return pitch;
 }
 
 

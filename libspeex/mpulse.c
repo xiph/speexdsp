@@ -292,7 +292,7 @@ float *stack
          float dist;
          float *base=t+j;
          /*Fill any track until it's full*/
-         if (nb[j%nb_tracks]==pulses_per_track)
+         if (nb[j%nb_tracks]==pulses_per_track || nb[j%nb_tracks] > (i)/nb_tracks)
               continue;
          /*Constrain search in alternating tracks*/
          /*FIXME: Should get rid of this, it's *really* slow*/

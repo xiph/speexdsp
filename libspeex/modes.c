@@ -67,17 +67,17 @@ split_cb_params split_cb_wb = {
 };
 
 mpulse_params mpulse_nb = {
-   12,     /*nb_pulse*/
-   4,      /*nb_tracks*/
-   2.2,    /*gain_coef*/
+   15,     /*nb_pulse*/
+   5,      /*nb_tracks*/
+   4,    /*gain_coef*/
    10
 };
 
 
 mpulse_params mpulse_sb = {
-   50,     /*nb_pulse*/
-   10,      /*nb_tracks*/
-   2.5,    /*gain_coef*/
+   25,     /*nb_pulse*/
+   5,      /*nb_tracks*/
+   3.8,    /*gain_coef*/
    10
 };
 
@@ -205,10 +205,10 @@ SpeexMode mp_sb_mode = {
    640,    /*bufSize*/
    17,     /*pitchStart*/
    144,    /*pitchEnd*/
-   0.9,    /*gamma1*/
+   .9,    /*gamma1*/
    0.6,    /*gamma2*/
    .002,   /*lag_factor*/
-   1.0001, /*lpc_floor*/
+   1.00005, /*lpc_floor*/
    0.0,    /*preemph*/
    /*LSP quantization*/
    lsp_quant_nb,
@@ -219,7 +219,7 @@ SpeexMode mp_sb_mode = {
    &ltp_params_nb,
    /*Innovation quantization*/
 #if 1
-   split_cb_search,
+   split_cb_search2,
    split_cb_unquant,
    &split_cb_sb
 #else

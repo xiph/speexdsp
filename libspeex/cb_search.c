@@ -40,6 +40,10 @@
 #include "vq.h"
 #include "matrix.h"
 
+#define min(a,b) ((a) < (b) ? (a) : (b))
+#define max(a,b) ((a) > (b) ? (a) : (b))
+
+
 static float scal_gains4[16] = {
    0.27713,
    0.49282,
@@ -121,7 +125,7 @@ float *stack
       d += target[i]*resp[i];
       e += resp[i]*resp[i];
     }
-    g = d/(e+.1);
+    g = d/(e+.0001);
     score = g*d;
     /*printf ("score: %f %f %f %f\n", target[0],d,e,score);*/
     if (score >= bscore) {
@@ -283,6 +287,368 @@ float *stack
       for (j=0;j<subvect_size;j++)
       {
          g=best_gain*shape_cb[best_index*subvect_size+j];
+         for (k=subvect_size*i+j,m=0;k<nsf;k++,m++)
+            t[k] -= g*r[m];
+      }
+   }
+   
+   /* Put everything back together */
+   for (i=0;i<nb_subvect;i++)
+      for (j=0;j<subvect_size;j++)
+         e[subvect_size*i+j]=gains[i]*shape_cb[ind[i]*subvect_size+j];
+
+   /* Update excitation */
+   for (j=0;j<nsf;j++)
+      exc[j]+=e[j];
+   
+   /* Update target */
+   residue_zero(e, awk1, r, nsf, p);
+   syn_filt_zero(r, ak, r, nsf, p);
+   syn_filt_zero(r, awk2, r, nsf,p);
+   for (j=0;j<nsf;j++)
+      target[j]-=r[j];
+
+   
+
+
+   POP(stack);
+   POP(stack);
+   POP(stack);
+   POP(stack);
+   POP(stack);
+   POP(stack);
+}
+
+void split_cb_search_nogain(
+float target[],			/* target vector */
+float ak[],			/* LPCs for this subframe */
+float awk1[],			/* Weighted LPCs for this subframe */
+float awk2[],			/* Weighted LPCs for this subframe */
+void *par,                      /* Codebook/search parameters*/
+int   p,                        /* number of LPC coeffs */
+int   nsf,                      /* number of samples in subframe */
+float *exc,
+FrameBits *bits,
+float *stack
+)
+{
+   int i,j;
+   float *resp;
+   float *t, *r, *e;
+   int *ind;
+   float *shape_cb;
+   int shape_cb_size, subvect_size, nb_subvect;
+   split_cb_params *params;
+
+   params = (split_cb_params *) par;
+   subvect_size = params->subvect_size;
+   nb_subvect = params->nb_subvect;
+   shape_cb_size = 1<<params->shape_bits;
+   shape_cb = params->shape_cb;
+   resp = PUSH(stack, shape_cb_size*subvect_size);
+   t = PUSH(stack, nsf);
+   r = PUSH(stack, nsf);
+   e = PUSH(stack, nsf);
+   ind = (int*)PUSH(stack, nb_subvect);
+
+   for (i=0;i<nsf;i++)
+      t[i]=target[i];
+
+   e[0]=1;
+   for (i=1;i<nsf;i++)
+      e[i]=0;
+   residue_zero(e, awk1, r, nsf, p);
+   syn_filt_zero(r, ak, r, nsf, p);
+   syn_filt_zero(r, awk2, r, nsf,p);
+   
+   /* Pre-compute codewords response and energy */
+   for (i=0;i<shape_cb_size;i++)
+   {
+      float *res = resp+i*subvect_size;
+
+      /* Compute codeword response */
+      int k;
+      for(j=0;j<subvect_size;j++)
+         res[j]=0;
+      for(j=0;j<subvect_size;j++)
+      {
+         for (k=j;k<subvect_size;k++)
+            res[k]+=shape_cb[i*subvect_size+j]*r[k-j];
+      }
+   }
+
+   for (i=0;i<nb_subvect;i++)
+   {
+      int best_index=0, k, m;
+      float g, dist, best_dist=-1;
+      float *a, *b;
+      /* Find best codeword for current sub-vector */
+      for (j=0;j<shape_cb_size;j++)
+      {
+         dist=0;
+         a=resp+j*subvect_size;
+         b=t+subvect_size*i;
+         for (k=0;k<subvect_size;k++)
+            dist += (a[k]-b[k])*(a[k]-b[k]);
+         if (dist<best_dist || j==0)
+         {
+            best_dist=dist;
+            best_index=j;
+         }
+      }
+      /*printf ("best index: %d/%d\n", best_index, shape_cb_size);*/
+      frame_bits_pack(bits,best_index,params->shape_bits);
+
+      ind[i]=best_index;
+      /* Update target for next subvector */
+      for (j=0;j<subvect_size;j++)
+      {
+         g=shape_cb[best_index*subvect_size+j];
+         for (k=subvect_size*i+j,m=0;k<nsf;k++,m++)
+            t[k] -= g*r[m];
+      }
+   }
+   
+   /* Put everything back together */
+   for (i=0;i<nb_subvect;i++)
+      for (j=0;j<subvect_size;j++)
+         e[subvect_size*i+j]=shape_cb[ind[i]*subvect_size+j];
+
+   /* Update excitation */
+   for (j=0;j<nsf;j++)
+      exc[j]+=e[j];
+   
+   /* Update target */
+   residue_zero(e, awk1, r, nsf, p);
+   syn_filt_zero(r, ak, r, nsf, p);
+   syn_filt_zero(r, awk2, r, nsf,p);
+   for (j=0;j<nsf;j++)
+      target[j]-=r[j];
+
+   
+
+
+   POP(stack);
+   POP(stack);
+   POP(stack);
+   POP(stack);
+}
+
+
+
+
+void split_cb_search2(
+float target[],			/* target vector */
+float ak[],			/* LPCs for this subframe */
+float awk1[],			/* Weighted LPCs for this subframe */
+float awk2[],			/* Weighted LPCs for this subframe */
+void *par,                      /* Codebook/search parameters*/
+int   p,                        /* number of LPC coeffs */
+int   nsf,                      /* number of samples in subframe */
+float *exc,
+FrameBits *bits,
+float *stack
+)
+{
+   int i,j, id;
+   float *resp, *E, q;
+   float *t, *r, *e;
+   float *gains;
+   int *ind;
+   float *shape_cb;
+   int shape_cb_size, subvect_size, nb_subvect;
+   float exc_energy=0;
+   split_cb_params *params;
+
+   params = (split_cb_params *) par;
+   subvect_size = params->subvect_size;
+   nb_subvect = params->nb_subvect;
+   shape_cb_size = 1<<params->shape_bits;
+   shape_cb = params->shape_cb;
+   resp = PUSH(stack, shape_cb_size*subvect_size);
+   E = PUSH(stack, shape_cb_size);
+   t = PUSH(stack, nsf);
+   r = PUSH(stack, nsf);
+   e = PUSH(stack, nsf);
+   gains = PUSH(stack, nb_subvect);
+   ind = (int*)PUSH(stack, nb_subvect);
+
+   /* Compute energy of the "real excitation" */
+   syn_filt_zero(target, awk1, e, nsf, p);
+   residue_zero(e, ak, e, nsf, p);
+   residue_zero(e, awk2, e, nsf, p);
+   for (i=0;i<nsf;i++)
+      exc_energy += e[i]*e[i];
+   exc_energy=sqrt(exc_energy/nb_subvect);
+
+   /* Quantize global ("average") gain */
+   q=log(exc_energy+.1);
+   q=floor(.5+2*(q-2));
+   if (q<0)
+      q=0;
+   if (q>15)
+      q=15;
+   id = (int)q;
+   frame_bits_pack(bits, id, 4);
+   exc_energy=exp(.5*q+2);
+
+
+   for (i=0;i<nsf;i++)
+      t[i]=target[i];
+
+   e[0]=1;
+   for (i=1;i<nsf;i++)
+      e[i]=0;
+   residue_zero(e, awk1, r, nsf, p);
+   syn_filt_zero(r, ak, r, nsf, p);
+   syn_filt_zero(r, awk2, r, nsf,p);
+   
+   /* Pre-compute codewords response and energy */
+   for (i=0;i<shape_cb_size;i++)
+   {
+      float *res = resp+i*subvect_size;
+
+      /* Compute codeword response */
+      int k;
+      for(j=0;j<subvect_size;j++)
+         res[j]=0;
+      for(j=0;j<subvect_size;j++)
+      {
+         for (k=j;k<subvect_size;k++)
+            res[k]+=shape_cb[i*subvect_size+j]*r[k-j];
+      }
+      /* Compute energy of codeword response */
+      E[i]=0;
+      for(j=0;j<subvect_size;j++)
+         E[i]+=res[j]*res[j];
+      E[i]=1/(.001+E[i]);
+   }
+
+   for (i=0;i<nb_subvect;i++)
+   {
+      int best_index[2]={0,0}, k, m;
+      float g, corr, best_gain[2]={0,0}, score, best_score[2]={-1,-1};
+      /* Find best codeword for current sub-vector */
+      for (j=0;j<shape_cb_size;j++)
+      {
+         corr=xcorr(resp+j*subvect_size,t+subvect_size*i,subvect_size);
+         score=corr*corr*E[j];
+         g = corr*E[j];
+         if (score>best_score[0])
+         {
+            best_index[1]=best_index[0];
+            best_score[1]=best_score[0];
+            best_gain[1]=best_gain[0];
+
+            best_index[0]=j;
+            best_score[0]=score;
+            best_gain[0]=g;
+         } else if (score>best_score[1]) {
+            best_index[1]=j;
+            best_score[1]=score;
+            best_gain[1]=g;            
+         }
+      }
+      
+      /* Quantize gain */
+      for (k=0;k<2;k++) {
+         int s=0, best_id;
+         best_gain[k] /= .01+exc_energy;
+         if (best_gain[k]<0)
+         {
+            best_gain[k]=-best_gain[k];
+            s=1;
+         }
+
+         /* Find gain index (it's a scalar but we use the VQ code anyway)*/
+         best_id = vq_index(&best_gain[k], scal_gains4, 1, 8);
+
+         best_gain[k]=scal_gains4[best_id];
+         /*printf ("gain_quant: %f %d %f\n", best_gain, best_id, scal_gains4[best_id]);*/
+         if (s)
+            best_gain[k]=-best_gain[k];
+         best_gain[k] *= exc_energy;
+      }
+
+
+
+      if (i<nb_subvect-1) {
+         int best_index2=0;
+         float best_score2=-1, best_gain2=0;
+         int nbest, best;
+         float err[2]={0,0};
+         float *tt=PUSH(stack,nsf);
+         for (nbest=0;nbest<2;nbest++)
+         {
+            for (j=0;j<nsf;j++)
+               tt[j]=t[j];
+            for (j=0;j<subvect_size;j++)
+            {
+               g=best_gain[nbest]*shape_cb[best_index[nbest]*subvect_size+j];
+               for (k=subvect_size*i+j,m=0;k<nsf;k++,m++)
+                  tt[k] -= g*r[m];
+            }
+            
+
+            for (j=0;j<shape_cb_size;j++)
+            {
+               corr=xcorr(resp+j*subvect_size,tt+subvect_size*(i+1),subvect_size);
+               score=corr*corr*E[j];
+               g = corr*E[j];
+               if (score>best_score2)
+               {
+                  best_index2=j;
+                  best_score2=score;
+                  best_gain2=g;
+               }
+            }
+
+            {
+               int s=0, best_id;
+               best_gain2 /= .01+exc_energy;
+               if (best_gain2<0)
+               {
+                  best_gain2=-best_gain2;
+                  s=1;
+               }
+               best_id = vq_index(&best_gain2, scal_gains4, 1, 8);
+               best_gain2=scal_gains4[best_id];
+               if (s)
+                  best_gain2=-best_gain2;
+               best_gain2 *= exc_energy;
+            }
+
+            for (j=0;j<subvect_size;j++)
+            {
+               g=best_gain2*shape_cb[best_index2*subvect_size+j];
+               for (k=subvect_size*(i+1)+j,m=0;k<nsf;k++,m++)
+                  tt[k] -= g*r[m];
+            }
+            for (j=subvect_size*i;j<subvect_size*(i+2);j++)
+               err[nbest]-=tt[j]*tt[j];
+            
+            best_score[nbest]=err[nbest];
+         }
+
+         if (best_score[1]>best_score[0])
+         {
+            best_index[0]=best_index[1];
+            best_score[0]=best_score[1];
+            best_gain[0]=best_gain[1];
+
+         }
+         POP(stack);
+      }
+
+
+      
+
+      ind[i]=best_index[0];
+      gains[i]=best_gain[0];
+      /* Update target for next subvector */
+      for (j=0;j<subvect_size;j++)
+      {
+         g=best_gain[0]*shape_cb[best_index[0]*subvect_size+j];
          for (k=subvect_size*i+j,m=0;k<nsf;k++,m++)
             t[k] -= g*r[m];
       }

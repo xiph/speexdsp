@@ -69,6 +69,7 @@ float quant_high_gain2[8] = {
    2.25160,
 };
 
+
 #if 0
 #define QMF_ORDER 32
 static float h0[32] = {
@@ -191,6 +192,7 @@ void sb_encoder_init(SBEncState *st, SpeexMode *mode)
    st->nbSubframes = st->st_low.nbSubframes;
    st->windowSize = mode->windowSize;
    st->lpcSize=8;
+   st->bufSize=st->st_low.bufSize;
 
    st->lag_factor = .002;
    st->lpc_floor = 1.0001;
@@ -213,8 +215,9 @@ void sb_encoder_init(SBEncState *st, SpeexMode *mode)
    st->g1_mem=calloc(QMF_ORDER, sizeof(float));
 
    st->buf=calloc(st->windowSize, sizeof(float));
-   st->excBuf=calloc(2*st->frame_size, sizeof(float));
-   st->exc=st->excBuf+st->frame_size;
+   st->excBuf=calloc(st->bufSize, sizeof(float));
+   st->exc = st->excBuf + st->bufSize - st->windowSize;
+   /*st->exc=st->excBuf+st->frame_size;*/
 
    st->res=calloc(st->frame_size, sizeof(float));
    st->sw=calloc(st->frame_size, sizeof(float));
@@ -291,6 +294,13 @@ void sb_encoder_destroy(SBEncState *st)
    
 }
 
+extern float hexc_table[];
+split_cb_params split_cb_high = {
+   8,               /*subvect_size*/
+   5,               /*nb_subvect*/
+   hexc_table,       /*shape_cb*/
+   8,               /*shape_bits*/
+};
 
 void sb_encode(SBEncState *st, float *in, FrameBits *bits)
 {
@@ -310,10 +320,12 @@ void sb_encode(SBEncState *st, float *in, FrameBits *bits)
    /* High-band buffering / sync with low band */
    for (i=0;i<st->frame_size;i++)
    {
-      st->excBuf[i]=st->exc[i];
+      /*st->excBuf[i]=st->exc[i];*/
       st->high[i]=st->high[st->frame_size+i];
       st->high[st->frame_size+i]=st->x1d[i];
    }
+
+   memmove(st->excBuf, st->excBuf+st->frame_size, (st->bufSize-st->frame_size)*sizeof(float));
 
    /* Start encoding the high-band */
 
@@ -353,8 +365,8 @@ void sb_encode(SBEncState *st, float *in, FrameBits *bits)
       printf (" %f", st->lsp[i]);
       printf ("\n");
    for (i=0;i<st->lpcSize;i++)
-   st->qlsp[i]=st->lsp[i];
-   */
+   st->qlsp[i]=st->lsp[i];*/
+   
 
    if (st->first)
    {
@@ -412,6 +424,7 @@ void sb_encode(SBEncState *st, float *in, FrameBits *bits)
       rh=1/(fabs(rh)+.001);
       /* Compute ratio, will help predict the gain */
       filter_ratio=fabs(.001+rh)/(.001+fabs(rl));
+
       
       if (0) {/* 1 for spectral folding excitation, 0 for stochastic */
          float el=0,eh=0,g;
@@ -420,13 +433,23 @@ void sb_encode(SBEncState *st, float *in, FrameBits *bits)
             mem[i]=st->mem_sp[i];
          /* Compute "real excitation" */
          residue_mem(sp, st->interp_qlpc, exc, st->subframeSize, st->lpcSize, st->mem_sp);
-
+         
+#if 0
          /* Compute energy of low-band and high-band excitation */
          for (i=0;i<st->subframeSize;i++)
             eh+=sqr(exc[i]);
          for (i=0;i<st->subframeSize;i++)
             el+=sqr(st->st_low.exc[offset+i]);
-         
+
+         for (i=0;i<st->subframeSize;i++)
+         {
+            float p=(.1+exc[i])*filter_ratio/(1+sqrt(el/st->subframeSize));
+            if (i%8==0)
+               printf ("\nhexc: ");
+            printf ("%f ", p);
+         }
+         printf ("\n");
+
          /* Gain to use if we want to use the low-band excitation for high-band */
          g=eh/(.01+el);
          g=sqrt(g);
@@ -436,11 +459,10 @@ void sb_encode(SBEncState *st, float *in, FrameBits *bits)
             exc[i]=g*st->st_low.exc[offset+i];
          
          /* FIXME: Should encode the gain here */
-
+#endif
          /* Update the input signal using the non-coded memory */
          syn_filt_mem(exc, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, mem);
-    
-      } else {/* Stochastic split-VQ excitation */
+      } else if (0) {/* Stochastic split-VQ excitation */
          int k,N=4;
          float el=0,eh=0,eb=0,g;
          int *index;
@@ -481,10 +503,14 @@ void sb_encode(SBEncState *st, float *in, FrameBits *bits)
          /* Energy of "real excitation" */
          for (i=0;i<st->subframeSize;i++)
             eh+=sqr(exc[i]);
-         
+
          for (i=0;i<st->subframeSize;i++)
             exc[i]=0;
-         
+         /*
+st->st_low.ltp_quant(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2,
+                    exc, st->st_low.ltp_params, st->st_low.min_pitch, st->st_low.max_pitch, 
+                    st->lpcSize, st->subframeSize, bits, st->stack, exc);
+         */
          /* For all sub-vectors, find best gain and codeword/shape */
          for (k=0;k<N;k++)
          {
@@ -556,11 +582,12 @@ void sb_encode(SBEncState *st, float *in, FrameBits *bits)
             /* FIXME: Should we use the "adjusted excitation" in the encoder? */
             for (i=0;i<st->subframeSize/N;i++)
               exc[of+i]=gains[k]*stoc[index[k]+i];
+
          }
          POP(st->stack);
          POP(st->stack);
-         
-         
+
+
          /*Keep the previous memory*/
          for (i=0;i<st->lpcSize;i++)
             mem[i]=st->mem_sp[i];
@@ -570,6 +597,65 @@ void sb_encode(SBEncState *st, float *in, FrameBits *bits)
          /* Compute weighted signal again, from synthesized speech (not sure it's the right thing) */
          residue_mem(sp, st->bw_lpc1, sw, st->subframeSize, st->lpcSize, mem);
          syn_filt_mem(sw, st->bw_lpc2, sw, st->subframeSize, st->lpcSize, st->mem_sw);
+      } else {
+         float el=0;
+         float gc;
+
+         for (i=0;i<st->subframeSize;i++)
+            el+=sqr(st->st_low.exc[offset+i]);
+
+         gc = (.01+filter_ratio)/(1+sqrt(el/st->subframeSize));
+
+         /* Reset excitation */
+         for (i=0;i<st->subframeSize;i++)
+            exc[i]=0;
+         
+         /* Compute zero response (ringing) of A(z/g1) / ( A(z/g2) * Aq(z) ) */
+         for (i=0;i<st->lpcSize;i++)
+            mem[i]=st->mem_sp[i];
+         syn_filt_mem(exc, st->interp_qlpc, exc, st->subframeSize, st->lpcSize, mem);
+         for (i=0;i<st->lpcSize;i++)
+            mem[i]=st->mem_sp[i];
+         residue_mem(exc, st->bw_lpc1, res, st->subframeSize, st->lpcSize, mem);
+         for (i=0;i<st->lpcSize;i++)
+            mem[i]=st->mem_sw[i];
+         syn_filt_mem(res, st->bw_lpc2, res, st->subframeSize, st->lpcSize, mem);
+         
+         /* Compute weighted signal */
+         for (i=0;i<st->lpcSize;i++)
+            mem[i]=st->mem_sp[i];
+         residue_mem(sp, st->bw_lpc1, sw, st->subframeSize, st->lpcSize, mem);
+         for (i=0;i<st->lpcSize;i++)
+            mem[i]=st->mem_sw[i];
+         syn_filt_mem(sw, st->bw_lpc2, sw, st->subframeSize, st->lpcSize, mem);
+         
+         /* Compute target signal */
+         for (i=0;i<st->subframeSize;i++)
+            target[i]=gc*(sw[i]-res[i]);
+         
+         /* Reset excitation */
+         for (i=0;i<st->subframeSize;i++)
+            exc[i]=0;
+
+         print_vec(target, st->subframeSize, "\ntarget");
+         split_cb_search_nogain(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2, 
+                                &split_cb_high, st->lpcSize, st->subframeSize, 
+                                exc, bits, st->stack);
+         print_vec(target, st->subframeSize, "after");
+
+         for (i=0;i<st->subframeSize;i++)
+            exc[i] *= 1/gc;
+#if 1
+         /*Keep the previous memory*/
+         for (i=0;i<st->lpcSize;i++)
+            mem[i]=st->mem_sp[i];
+         /* Final signal synthesis from excitation */
+         syn_filt_mem(exc, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, st->mem_sp);
+         
+         /* Compute weighted signal again, from synthesized speech (not sure it's the right thing) */
+         residue_mem(sp, st->bw_lpc1, sw, st->subframeSize, st->lpcSize, mem);
+         syn_filt_mem(sw, st->bw_lpc2, sw, st->subframeSize, st->lpcSize, st->mem_sw);
+#endif
       }
       
       POP(st->stack);
