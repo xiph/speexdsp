@@ -323,8 +323,6 @@ float *stack
    int *ind;
    float *gains;
    float *sign;
-   int max_gain_ind, vq_gain_ind;
-   float max_gain, *Ee;
    float *shape_cb;
    int shape_cb_size, subvect_size, nb_subvect;
    split_cb_params *params;
@@ -338,7 +336,6 @@ float *stack
    ind = (int*)PUSH(stack, nb_subvect);
    gains = PUSH(stack, nb_subvect);
    sign = PUSH(stack, nb_subvect);
-   Ee=PUSH(stack, nb_subvect);
 
    for (i=0;i<nb_subvect;i++)
    {
@@ -347,9 +344,6 @@ float *stack
          sign[i]=-1;
       else
          sign[i]=1;
-      Ee[i]=.001;
-      for (j=0;j<subvect_size;j++)
-         Ee[i]+=shape_cb[ind[i]*subvect_size+j]*shape_cb[ind[i]*subvect_size+j];
    }
 
    /*FIXME: Gain quantization changed, need to re-write that part */
@@ -360,7 +354,6 @@ float *stack
       for (j=0;j<subvect_size;j++)
          exc[subvect_size*i+j]+=gains[i]*shape_cb[ind[i]*subvect_size+j];
    
-   POP(stack);
    POP(stack);
    POP(stack);
    POP(stack);
