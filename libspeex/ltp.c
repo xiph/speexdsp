@@ -215,7 +215,6 @@ int  *cdbk_index
          A[i][j]=A[j][i]=inner_prod(x[i],x[j],nsf);
    
    {
-      int j;
       float C[9];
       float *ptr=gain_cdbk;
       int best_cdbk=0;
@@ -233,9 +232,18 @@ int  *cdbk_index
       for (i=0;i<gain_cdbk_size;i++)
       {
          float sum=0;
-         ptr = gain_cdbk+12*i;
-         for (j=0;j<9;j++)
-            sum+=C[j]*ptr[j+3];
+         ptr = gain_cdbk+3*i;
+         sum += C[0]*ptr[0];
+         sum += C[1]*ptr[1];
+         sum += C[2]*ptr[2];
+         sum -= C[3]*ptr[0]*ptr[1];
+         sum -= C[4]*ptr[2]*ptr[1];
+         sum -= C[5]*ptr[2]*ptr[0];
+         sum -= .5*C[6]*ptr[0]*ptr[0];
+         sum -= .5*C[7]*ptr[1]*ptr[1];
+         sum -= .5*C[8]*ptr[2]*ptr[2];
+
+         /* If 1, force "safe" pitch values to handle packet loss better */
          if (0) {
             float tot = fabs(ptr[1]);
             if (ptr[0]>0)
@@ -245,20 +253,16 @@ int  *cdbk_index
             if (tot>1)
                continue;
          }
-         if (0) {
-            float tot=ptr[0]+ptr[1]+ptr[2];
-            if (tot < 1.1)
-               sum *= 1+.15*tot;
-         }
+
          if (sum>best_sum || i==0)
          {
             best_sum=sum;
             best_cdbk=i;
          }
       }
-      gain[0] = gain_cdbk[best_cdbk*12];
-      gain[1] = gain_cdbk[best_cdbk*12+1];
-      gain[2] = gain_cdbk[best_cdbk*12+2];
+      gain[0] = gain_cdbk[best_cdbk*3];
+      gain[1] = gain_cdbk[best_cdbk*3+1];
+      gain[2] = gain_cdbk[best_cdbk*3+2];
 
       *cdbk_index=best_cdbk;
    }
@@ -433,9 +437,9 @@ float last_pitch_gain)
    pitch += start;
    gain_index = speex_bits_unpack_unsigned(bits, params->gain_bits);
    /*printf ("decode pitch: %d %d\n", pitch, gain_index);*/
-   gain[0] = gain_cdbk[gain_index*12];
-   gain[1] = gain_cdbk[gain_index*12+1];
-   gain[2] = gain_cdbk[gain_index*12+2];
+   gain[0] = gain_cdbk[gain_index*3];
+   gain[1] = gain_cdbk[gain_index*3+1];
+   gain[2] = gain_cdbk[gain_index*3+2];
 
    if (count_lost && pitch > subframe_offset)
    {
