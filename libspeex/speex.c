@@ -26,7 +26,7 @@ void encoder_init(EncState *st)
       st->window[i]=.5*(1-cos(2*M_PI*i/st->windowSize));
    st->buf2 = malloc(st->windowSize*sizeof(float));
    st->lpc = malloc(st->lpcSize*sizeof(float));
-   st->autocorr = malloc(st->lpcSize*sizeof(float));
+   st->autocorr = malloc((st->lpcSize+1)*sizeof(float));
    st->lsp = malloc(st->lpcSize*sizeof(float));
    st->rc = malloc(st->lpcSize*sizeof(float));
 }
@@ -56,15 +56,15 @@ void encode(EncState *st, float *in, int *outSize, void *bits)
    for (i=0;i<st->windowSize;i++)
       st->buf2[i] = st->inBuf[i] * st->window[i];
    
-   autocorr(st->buf2, st->autocorr, st->lpcSize-1, st->windowSize);
+   autocorr(st->buf2, st->autocorr, st->lpcSize+1, st->windowSize);
    st->autocorr[0] += 1;        /* prevents nan */
    st->autocorr[0] *= 1.0001;   /* 40 dB noise floor */
    /*Should do lag windowing here */
-   error = wld(st->lpc, st->autocorr, st->rc, st->lpcSize-1);
+   error = wld(st->lpc, st->autocorr, st->rc, st->lpcSize);
    printf ("prediction error = %f, R[0] = %f, gain = %f\n", error, st->autocorr[0], 
            st->autocorr[0]/error);
-   roots=lpc_to_lsp (st->lpc, st->lpcSize-1, st->lsp, 4, 0.02);
-   for (i=0;i<st->lpcSize-1;i++)
+   roots=lpc_to_lsp (st->lpc, st->lpcSize, st->lsp, 4, 0.02);
+   for (i=0;i<roots;i++)
       printf("%f ", st->lsp[i]);
    printf ("\nfound %d roots\n", roots);
 }

@@ -40,9 +40,6 @@ wld(
 {
    int i, j;  float r, error = ac[0];
 
-   lpc[0]=1; /*for compatibility*/
-   lpc++; /*for compatibility*/
-
    if (ac[0] == 0) {
       for (i = 0; i < p; i++) ref[i] = 0; return 0; }
 
@@ -82,7 +79,6 @@ void autocorr(
               int lag, int   n)
 {
    float d; int i;
-   lag++;   /*Compensate for the old routine*/
    while (lag--) {
       for (i = lag, d = 0; i < n; i++) d += x[i] * x[i-lag];
       ac[lag] = d;
