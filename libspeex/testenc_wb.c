@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include "speex_callbacks.h"
 
-#ifdef COUNT_MIPS
+#ifdef FIXED_DEBUG
 extern long long spx_mips;
 #endif
 

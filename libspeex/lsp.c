@@ -125,6 +125,10 @@ static spx_word32_t cheb_poly_eva(spx_word32_t *coef,spx_word16_t x,int m,char *
     int m2=m>>1;
     spx_word16_t *coefn;
 
+    /*Prevents overflows*/
+    if (x>16383)
+       x = 16383;
+
     /* Allocate memory for Chebyshev series formulation */
     T=PUSH(stack, m2+1, spx_word16_t);
     coefn=PUSH(stack, m2+1, spx_word16_t);

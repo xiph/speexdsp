@@ -35,28 +35,104 @@
 #ifndef FIXED_DEBUG_H
 #define FIXED_DEBUG_H
 
-#ifdef FIXED_DEBUG
+#include <stdio.h>
+
 extern long long spx_mips;
 #define MIPS_INC spx_mips++,
-#else
-#define MIPS_INC
-#endif
+
+#define VERIFY_SHORT(x) ((x)<=32767&&(x)>=-32768)
+#define VERIFY_INT(x) ((x)<=2147483647LL&&(x)>=-2147483648LL)
 
 #define SHR(a,shift) ((a) >> (shift))
 #define SHL(a,shift) ((a) << (shift))
 
+static inline short ADD16(int a, int b) 
+{
+   int res;
+   if (!VERIFY_SHORT(a) || !VERIFY_SHORT(b))
+   {
+      fprintf (stderr, "ADD16: inputs are not short: %d %d\n", a, b);
+   }
+   res = a+b;
+   if (!VERIFY_SHORT(res))
+      fprintf (stderr, "ADD16: output is not short: %d\n", res);
+   spx_mips++;
+   return res;
+}
+static inline short SUB16(int a, int b) 
+{
+   int res;
+   if (!VERIFY_SHORT(a) || !VERIFY_SHORT(b))
+   {
+      fprintf (stderr, "SUB16: inputs are not short: %d %d\n", a, b);
+   }
+   res = a-b;
+   if (!VERIFY_SHORT(res))
+      fprintf (stderr, "SUB16: output is not short: %d\n", res);
+   spx_mips++;
+   return res;
+}
 
-#define ADD16(a,b) (MIPS_INC(short)((short)(a)+(short)(b)))
-#define SUB16(a,b) (MIPS_INC(a)-(b))
-#define ADD32(a,b) (MIPS_INC(a)+(b))
-#define SUB32(a,b) (MIPS_INC(a)-(b))
+static inline int ADD32(long long a, long long b) 
+{
+   long long res;
+   if (!VERIFY_INT(a) || !VERIFY_INT(b))
+   {
+      fprintf (stderr, "ADD32: inputs are not int: %d %d\n", a, b);
+   }
+   res = a+b;
+   if (!VERIFY_INT(res))
+      fprintf (stderr, "ADD32: output is not int: %d\n", res);
+   spx_mips++;
+   return res;
+}
+
+static inline int SUB32(long long a, long long b) 
+{
+   long long res;
+   if (!VERIFY_INT(a) || !VERIFY_INT(b))
+   {
+      fprintf (stderr, "SUB32: inputs are not int: %d %d\n", a, b);
+   }
+   res = a-b;
+   if (!VERIFY_INT(res))
+      fprintf (stderr, "SUB32: output is not int: %d\n", res);
+   spx_mips++;
+   return res;
+}
+
 #define ADD64(a,b) (MIPS_INC(a)+(b))
 
 #define PSHR(a,shift) (SHR((a)+(1<<((shift)-1)),shift))
 
 /* result fits in 16 bits */
-#define MULT16_16_16(a,b)     (MIPS_INC(short)(((short)(a))*((short)(b))))
-#define MULT16_16(a,b)     (MIPS_INC((short)(a))*((short)(b)))
+static inline short MULT16_16_16(int a, int b) 
+{
+   int res;
+   if (!VERIFY_SHORT(a) || !VERIFY_SHORT(b))
+   {
+      fprintf (stderr, "MULT16_16_16: inputs are not short: %d %d\n", a, b);
+   }
+   res = a*b;
+   if (!VERIFY_SHORT(res))
+      fprintf (stderr, "MULT16_16_16: output is not short: %d\n", res);
+   spx_mips++;
+   return res;
+}
+
+static inline int MULT16_16(int a, int b) 
+{
+   long long res;
+   if (!VERIFY_SHORT(a) || !VERIFY_SHORT(b))
+   {
+      fprintf (stderr, "MULT16_16: inputs are not short: %d %d\n", a, b);
+   }
+   res = ((long long)a)*b;
+   if (!VERIFY_INT(res))
+      fprintf (stderr, "MULT16_16: output is not int: %d\n", res);
+   spx_mips++;
+   return res;
+}
 
 #define MAC16_16(c,a,b)     (ADD32((c),MULT16_16((a),(b))))
 
@@ -71,9 +147,48 @@ extern long long spx_mips;
 #define MAC16_32_Q15(c,a,b) ADD32(c,ADD32(MULT16_16((a),SHR((b),15)), SHR(MULT16_16((a),((b)&0x00007fff)),15)))
 
 
-#define MULT16_16_Q13(a,b) (SHR(MULT16_16((a),(b)),13))
-#define MULT16_16_Q14(a,b) (SHR(MULT16_16((a),(b)),14))
-#define MULT16_16_Q15(a,b) (SHR(MULT16_16((a),(b)),15))
+static inline short MULT16_16_Q13(int a, int b) 
+{
+   long long res;
+   if (!VERIFY_SHORT(a) || !VERIFY_SHORT(b))
+   {
+      fprintf (stderr, "MULT16_16_Q13: inputs are not short: %d %d\n", a, b);
+   }
+   res = ((long long)a)*b;
+   res >>= 13;
+   if (!VERIFY_SHORT(res))
+      fprintf (stderr, "MULT16_16_Q13: output is not short: %d*%d=%d\n", a, b, res);
+   spx_mips++;
+   return res;
+}
+static inline short MULT16_16_Q14(int a, int b) 
+{
+   long long res;
+   if (!VERIFY_SHORT(a) || !VERIFY_SHORT(b))
+   {
+      fprintf (stderr, "MULT16_16_Q14: inputs are not short: %d %d\n", a, b);
+   }
+   res = ((long long)a)*b;
+   res >>= 14;
+   if (!VERIFY_SHORT(res))
+      fprintf (stderr, "MULT16_16_Q14: output is not short: %d\n", res);
+   spx_mips++;
+   return res;
+}
+static inline short MULT16_16_Q15(int a, int b) 
+{
+   long long res;
+   if (!VERIFY_SHORT(a) || !VERIFY_SHORT(b))
+   {
+      fprintf (stderr, "MULT16_16_Q15: inputs are not short: %d %d\n", a, b);
+   }
+   res = ((long long)a)*b;
+   res >>= 15;
+   if (!VERIFY_SHORT(res))
+      fprintf (stderr, "MULT16_16_Q15: output is not short: %d\n", res);
+   spx_mips++;
+   return res;
+}
 
 #define MULT16_16_P13(a,b) (SHR(ADD32(4096,MULT16_16((a),(b))),13))
 #define MULT16_16_P14(a,b) (SHR(ADD32(8192,MULT16_16((a),(b))),14))
