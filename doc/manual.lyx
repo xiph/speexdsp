@@ -29,7 +29,7 @@
 
 The Speex Codec Manual
 \newline 
-(draft for Speex 0.6.0)
+(draft for Speex 0.7.0)
 \layout Author
 
 Jean-Marc Valin
@@ -149,7 +149,7 @@ Dynamically-selectable codebooks (LSP, pitch and innovation)
 G.728-like fixed codebooks (without backward-adaptive grains because of patent
  issues)
 \layout Section
-
+\pagebreak_top 
 Introduction to CELP Coding
 \layout Standard
 
@@ -447,7 +447,7 @@ A_{noise}(z)=\frac{1}{W(z)}=\frac{A\left(\frac{z}{\gamma _{2}}\right)}{A\left(\f
 
 
 \layout Section
-
+\pagebreak_top 
 Speex narrowband mode
 \begin_inset LatexCommand \label{sec:Speex-narrowband-mode}
 
@@ -981,7 +981,7 @@ frame
 
 \layout Standard
 
-Exc gain
+OL Exc gain
 \end_inset 
 </cell>
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
@@ -1227,7 +1227,7 @@ sub-frame
 
 \layout Standard
 
-3
+1
 \end_inset 
 </cell>
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
@@ -1243,7 +1243,7 @@ sub-frame
 
 \layout Standard
 
-3
+1
 \end_inset 
 </cell>
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
@@ -1251,7 +1251,7 @@ sub-frame
 
 \layout Standard
 
-3
+1
 \end_inset 
 </cell>
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
@@ -1375,7 +1375,7 @@ frame
 
 \layout Standard
 
-50
+42
 \end_inset 
 </cell>
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
@@ -1391,7 +1391,7 @@ frame
 
 \layout Standard
 
-167
+159
 \end_inset 
 </cell>
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
@@ -1399,7 +1399,7 @@ frame
 
 \layout Standard
 
-227
+219
 \end_inset 
 </cell>
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
@@ -1533,7 +1533,7 @@ No sound (VBR only)
 
 \layout Standard
 
-2,500
+2,100
 \end_inset 
 </cell>
 <cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
@@ -1585,7 +1585,7 @@ Very noticeable artifacts/noise, good intelligibility
 
 \layout Standard
 
-8,350
+7,950
 \end_inset 
 </cell>
 <cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
@@ -1611,7 +1611,7 @@ Artifacts/noise often noticeable
 
 \layout Standard
 
-11,350
+10,950
 \end_inset 
 </cell>
 <cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
@@ -1701,7 +1701,7 @@ This part of the codec only applies to the decoder and can even be changed
  For that reason, the implementation provided should only be considered
  as a reference implementation.
 \layout Section
-
+\pagebreak_top 
 Speex wideband mode (sub-band CELP)
 \layout Standard
 
@@ -2202,7 +2202,7 @@ The decoder takes the following options:
 --version\SpecialChar ~
 (-v) Pring version information
 \layout Section
-
+\pagebreak_top 
 Programming with Speex (the libspeex API)
 \layout Subsection
 
@@ -2544,7 +2544,7 @@ SPEEX_GET_BITRATE Get the current bit-rate in use (in bps)
 
  normally only used internally
 \layout Section
-
+\pagebreak_top 
 Formats and standards
 \layout Standard
 
@@ -3191,8 +3191,100 @@ Vorbis is a great project but its goals are not the same as Speex.
  Speex targets speech only.
  For that reason Speex can achieve much better results than Vorbis on speech,
  typically 2-4 times higher compression at equal quality.
-\layout Section
+\layout Subsection*
 
+Can I use Speex for compressing music?
+\layout Standard
+
+Just like Vorbis is not really adapted to speech, Speex is really not adapted
+ for music.
+ In most cases, you'll be better of with Vorbis when it comes to music.
+\layout Subsection*
+
+I converted some MP3's to Speex and the quality is bad.
+ What's wrong?
+\layout Standard
+
+This is called transcoding and it will always result in much poorer quality
+ than the original MP3.
+ Unless you have a really good (size) reason to do so, never transcode speech.
+ This is even valid for self transcoding (tandeming), i.e.
+ If you decode a Speex file and re-encode it again at the same bit-rate,
+ you will lose quality.
+\layout Subsection*
+
+Why is encoding so slow compared to decoding?
+\layout Standard
+
+For most kinds of compression, encoding is inherently slower than decoding.
+ In the case of Speex, encoding consists of finding, for each vector of
+ 5 to 10 samples, the entry that matches the best within a codebook consisting
+ of 16 to 256 entries.
+ On the other hand, at decoding all that needs to be done is lookup the
+ right entry in the codebook using the encoded index.
+ Since a lookup is much faster than a search, the decoder works much faster
+ than the encoder.
+\layout Subsection*
+
+Why is Speex so slow on my iPaq (insert any platform without an FPU)?
+\layout Standard
+
+Well the parenthesis provides the answer: no FPU (floating-point unit).
+ The Speex code makes heavy use of floating-point operations.
+ On devices with no FPU, all floating-point instructions need to be emulated.
+ This is a very time consuming operation.
+\layout Subsection*
+
+I'm getting unusual background noise (hiss) when using libspeex in my applicatio
+n.
+ How do I fix that?
+\layout Standard
+
+One of the cause could be scaling of the input speech.
+ Speex expects signals to have a 
+\begin_inset Formula $\pm 2^{16}$
+\end_inset 
+
+ (signed short) dynamic range.
+ If the dynamic range of your signals is too small (e.g.
+ 
+\begin_inset Formula $\pm 1.0$
+\end_inset 
+
+), you will suffer important quantization noise.
+ A good target is to have a dynamic range around 
+\begin_inset Formula $\pm 8000$
+\end_inset 
+
+ which is large enough, but small enough to make sure there's no clipping
+ when converting back to signed short.
+\layout Subsection*
+
+I get very distorted speech when using libspeex in my application.
+ What's wrong?
+\layout Standard
+
+There are many possible causes for that.
+ One of them is errors in the way the bits are manipulated.
+ Another possible cause is the use of the same encoder or decoder state
+ for more than one audio stream (channel), which produces strange effects
+ with the filter memories.
+ If the input speech has an amplitude close to 
+\begin_inset Formula $2^{16}$
+\end_inset 
+
+, it is possible that at decoding, the amplitude be a bit higher than that,
+ causing clipping when saving as 16-bit PCM.
+\layout Subsection*
+
+Can Speex pass DTMF?
+\layout Standard
+
+I guess it all depends on the bit-rate used.
+ Though no formal testing has yet been performed, I'd say don't go below
+ the 14.95 kbps mode if you want DTMF to be transmitted correctly.
+\layout Section
+\pagebreak_top 
 GNU Free Documentation License
 \layout Standard
 
