@@ -36,19 +36,28 @@ int   nsf                       /* number of samples in subframe */
 );
 
 
+typedef struct split_cb_params {
+   int     subvect_size;
+   int     nb_subvect;
+   float  *shape_cb;
+   int     shape_bits;
+   float  *gain_cb;
+   int     gain_bits;
+} split_cb_params;
+
+extern split_cb_params split_cb_nb;
+
 void split_cb_search(
 float target[],			/* target vector */
 float ak[],			/* LPCs for this subframe */
 float awk1[],			/* Weighted LPCs for this subframe */
 float awk2[],			/* Weighted LPCs for this subframe */
-float codebook[][8],		/* overlapping codebook */
-int   entries,			/* number of entries to search */
-float *gain,			/* gain of optimum entries */
-int   *index,			/* index of optimum entries */
+void *par,                      /* Codebook/search parameters*/
 int   p,                        /* number of LPC coeffs */
 int   nsf,                      /* number of samples in subframe */
 float *exc,
-FrameBits *bits
+FrameBits *bits,
+float *stack
 );
 
 void split_cb_unquant(

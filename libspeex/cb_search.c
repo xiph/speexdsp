@@ -34,10 +34,13 @@
 #include "filters.h"
 #include <math.h>
 #include <stdio.h>
+#include "stack_alloc.h"
+#include "vq.h"
 
 #define EXC_CB_SIZE 128
 #define min(a,b) ((a) < (b) ? (a) : (b))
-extern float exc_gains_table[128][5];
+extern float exc_gains_table[];
+extern float exc_table[];
 
 /*---------------------------------------------------------------------------*\
                                                                              
@@ -128,7 +131,14 @@ int   nsf                       /* number of samples in subframe */
 }
 
 
-
+split_cb_params split_cb_nb = {
+   8,               /*subvect_size*/
+   5,               /*nb_subvect*/
+   exc_table,       /*shape_cb*/
+   7,               /*shape_bits*/
+   exc_gains_table, /*gain_cb*/
+   8                /*gain_bits*/
+};
 
 
 void split_cb_search(
@@ -136,43 +146,63 @@ float target[],			/* target vector */
 float ak[],			/* LPCs for this subframe */
 float awk1[],			/* Weighted LPCs for this subframe */
 float awk2[],			/* Weighted LPCs for this subframe */
-float codebook[][8],		/* non-overlapping codebook */
-int   entries,			/* number of entries to search */
-float *gain,			/* gain of optimum entries */
-int   *index,			/* index of optimum entries */
+void *par,                      /* Codebook/search parameters*/
 int   p,                        /* number of LPC coeffs */
 int   nsf,                      /* number of samples in subframe */
 float *exc,
-FrameBits *bits
+FrameBits *bits,
+float *stack
 )
 {
    int i,j;
-   float resp[EXC_CB_SIZE][8], E[EXC_CB_SIZE], Ee[EXC_CB_SIZE];
-   float t[40], r[40], e[40];
-   float gains[5];
-   int ind[5];
-   for (i=0;i<40;i++)
+   float *resp, *E, *Ee;
+   float *t, *r, *e;
+   float *gains;
+   int *ind;
+   float *shape_cb, *gain_cb;
+   int shape_cb_size, gain_cb_size, subvect_size, nb_subvect;
+   split_cb_params *params;
+
+   params = (split_cb_params *) par;
+   subvect_size = params->subvect_size;
+   nb_subvect = params->nb_subvect;
+   shape_cb_size = 1<<params->shape_bits;
+   shape_cb = params->shape_cb;
+   gain_cb_size = 1<<params->gain_bits;
+   gain_cb = params->gain_cb;
+   resp = PUSH(stack, shape_cb_size*8);
+   E = PUSH(stack, shape_cb_size);
+   Ee = PUSH(stack, shape_cb_size);
+   t = PUSH(stack, nsf);
+   r = PUSH(stack, nsf);
+   e = PUSH(stack, nsf);
+   gains = PUSH(stack, nb_subvect);
+   ind = (int*)PUSH(stack, nb_subvect);
+   
+
+   for (i=0;i<nsf;i++)
       t[i]=target[i];
-   for (i=0;i<EXC_CB_SIZE;i++)
+   for (i=0;i<shape_cb_size;i++)
    {
-      residue_zero(codebook[i], awk1, resp[i], 8, p);
-      syn_filt_zero(resp[i], ak, resp[i], 8, p);
-      syn_filt_zero(resp[i], awk2, resp[i], 8,p);
+      float *res = resp+i*subvect_size;
+      residue_zero(shape_cb+i*subvect_size, awk1, res, 8, p);
+      syn_filt_zero(res, ak, res, 8, p);
+      syn_filt_zero(res, awk2, res, 8,p);
       E[i]=0;
       for(j=0;j<8;j++)
-         E[i]+=resp[i][j]*resp[i][j];
+         E[i]+=res[j]*res[j];
       Ee[i]=0;
       for(j=0;j<8;j++)
-         Ee[i]+=codebook[i][j]*codebook[i][j];
+         Ee[i]+=shape_cb[i*subvect_size+j]*shape_cb[i*subvect_size+j];
       
    }
    for (i=0;i<5;i++)
    {
       int best_index=0;
       float g, corr, best_gain=0, score, best_score=-1;
-      for (j=0;j<EXC_CB_SIZE;j++)
+      for (j=0;j<shape_cb_size;j++)
       {
-         corr=xcorr(resp[j],t+8*i,8);
+         corr=xcorr(resp+j*subvect_size,t+8*i,8);
          score=corr*corr/(.001+E[j]);
          g = corr/(.001+E[j]);
          if (score>best_score)
@@ -182,48 +212,23 @@ FrameBits *bits
             best_gain=corr/(.001+E[j]);
          }
       }
-      frame_bits_pack(bits,best_index,7);
+      frame_bits_pack(bits,best_index,params->shape_bits);
       if (best_gain>0)
          frame_bits_pack(bits,0,1);
       else
           frame_bits_pack(bits,1,1);        
       ind[i]=best_index;
       gains[i]=best_gain*Ee[ind[i]];
-      if (0) { /* Simulating scalar quantization of the gain*/
-         float sign=1;
-         printf("before: %f\n", best_gain);
-         if (best_gain<0)
-         {
-            sign=-1;
-         }
-         best_gain = fabs(best_gain)+.1;
-         best_gain = log(best_gain);
-         if (best_gain>8)
-            best_gain=8;
-         if (best_gain<0)
-            best_gain=0;
-         /*best_gain=.125*floor(8*best_gain+.5);*/
-         best_gain=.25*floor(4*best_gain+.5);
-         best_gain=sign*exp(best_gain);
-         if (fabs(best_gain)<1.01)
-            best_gain=0;
-         printf("after: %f\n", best_gain);
-      }
 
-      printf ("search: %d %f %f %f\n", best_index, best_gain, best_gain*best_gain*E[best_index], best_score);
-      for (j=0;j<40;j++)
+      for (j=0;j<nsf;j++)
          e[j]=0;
       for (j=0;j<8;j++)
-         e[8*i+j]=best_gain*codebook[best_index][j];
-      residue_zero(e, awk1, r, 40, p);
-      syn_filt_zero(r, ak, r, 40, p);
-      syn_filt_zero(r, awk2, r, 40,p);
-      for (j=0;j<40;j++)
+         e[8*i+j]=best_gain*shape_cb[best_index*subvect_size+j];
+      residue_zero(e, awk1, r, nsf, p);
+      syn_filt_zero(r, ak, r, nsf, p);
+      syn_filt_zero(r, awk2, r, nsf,p);
+      for (j=0;j<nsf;j++)
          t[j]-=r[j];
-
-      /*FIXME: Should move that out of the loop if we are to vector-quantize the gains*/
-      /*for (j=0;j<40;j++)
-        exc[j]+=e[j];*/
    }
 
    {
@@ -254,50 +259,38 @@ FrameBits *bits
         gains[i]*=max_gain;
       frame_bits_pack(bits,max_index,3);
 
-      if (max_index>2)
-      {
-      for (i=0;i<5;i++)
-         printf ("%f ", gains[i]);
-      printf ("cbgains: \n");
-      }
       /*Vector quantize gains[i]*/
-      for (i=0;i<256;i++)
-      {
-         float dist=0;
-         for (j=0;j<5;j++)
-            dist += (exc_gains_table[i][j]-gains[j])*(exc_gains_table[i][j]-gains[j]);
-         if (i==0 || dist<min_dist)
-         {
-            min_dist=dist;
-            best_vq_index=i;
-         }
-      }
-      frame_bits_pack(bits,best_vq_index,8);
+      best_vq_index = vq_index(gains, gain_cb, nb_subvect, gain_cb_size);
+      frame_bits_pack(bits,best_vq_index,params->gain_bits);
+
       printf ("best_gains_vq_index %d %f %d\n", best_vq_index, min_dist, max_index);
-#if 1
+
+#if 1 /* If 0, the gains are not quantized */
       for (i=0;i<5;i++)
-         gains[i]= sign[i]*exc_gains_table[best_vq_index][i]/max_gain/(Ee[ind[i]]+.001);
+         gains[i]= sign[i]*gain_cb[best_vq_index*nb_subvect+i]/max_gain/(Ee[ind[i]]+.001);
 #else 
       for (i=0;i<5;i++)
          gains[i]= sign[i]*gains[i]/max_gain/(Ee[ind[i]]+.001);
 #endif  
-
-   printf ("unquant gains: ");
-   for (i=0;i<5;i++)
-      printf ("%f ", gains[i]);
-   printf ("\n");
     
       for (i=0;i<5;i++)
          for (j=0;j<8;j++)
-            exc[8*i+j]+=gains[i]*codebook[ind[i]][j];
+            exc[8*i+j]+=gains[i]*shape_cb[ind[i]*subvect_size+j];
    }
-   /*for (i=0;i<5;i++)
-      printf ("%f ", gains[i]);
-      printf ("cbgains: \n");*/
-   /*TODO: Perform joint optimization of gains and quantization with prediction*/
+
+   /*TODO: Perform joint optimization of gains*/
    
-   for (i=0;i<40;i++)
+   for (i=0;i<nsf;i++)
       target[i]=t[i];
+
+   POP(stack);
+   POP(stack);
+   POP(stack);
+   POP(stack);
+   POP(stack);
+   POP(stack);
+   POP(stack);
+   POP(stack);
 }
 
 void split_cb_unquant(
@@ -330,7 +323,7 @@ FrameBits *bits
 
    max_gain=exp(max_gain_ind+3.0);
    for (i=0;i<5;i++)
-      gains[i] = sign[i]*exc_gains_table[vq_gain_ind][i]*max_gain/Ee[i];
+      gains[i] = sign[i]*exc_gains_table[vq_gain_ind*5+i]*max_gain/Ee[i];
    
    printf ("unquant gains: ");
    for (i=0;i<5;i++)

@@ -327,8 +327,8 @@ void encode(EncState *st, float *in, FrameBits *bits)
 #else
       /* Perform a split-codebook search */
       split_cb_search(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2,
-                        exc_table, 64, &gain[0], &pitch, st->lpcSize,
-                        st->subframeSize, exc, bits);
+                        &split_cb_nb, st->lpcSize,
+                        st->subframeSize, exc, bits, st->stack);
 #endif
 
       /* Compute weighted noise energy, SNR */
