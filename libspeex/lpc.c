@@ -85,7 +85,7 @@ int          p
       r = -ac[i + 1];
       for (j = 0; j < i; j++) 
          r -= lpc[j] * ac[i - j];
-      r /= error;
+      r /= error+.004*ac[0];
 
       /*  Update LPC coefficients and total error */
       lpc[i] = r;
