@@ -393,7 +393,7 @@ void sb_encode(void *state, float *in, FrameBits *bits)
    {
       float *exc, *sp, *mem, *res, *target, *sw, tmp, filter_ratio;
       int offset;
-      float rl, rh;
+      float rl, rh, eh=0, el=0;
       int fold;
 
       offset = st->subframeSize*sub;
@@ -443,18 +443,19 @@ void sb_encode(void *state, float *in, FrameBits *bits)
       /*printf ("filter_ratio %f\n", filter_ratio);*/
       fold=0;
 
+      /* Compute "real excitation" */
+      residue_mem(sp, st->interp_qlpc, exc, st->subframeSize, st->lpcSize, st->mem_sp2);
+      /* Compute energy of low-band and high-band excitation */
+      for (i=0;i<st->subframeSize;i++)
+         eh+=sqr(exc[i]);
+      for (i=0;i<st->subframeSize;i++)
+         el+=sqr(((EncState*)st->st_low)->exc[offset+i]);
+
       if (fold) {/* 1 for spectral folding excitation, 0 for stochastic */
-         float el=0,eh=0,g;
+         float g;
          /*speex_bits_pack(bits, 1, 1);*/
-         /* Compute "real excitation" */
-         residue_mem(sp, st->interp_qlpc, exc, st->subframeSize, st->lpcSize, st->mem_sp2);
 
 #if 1
-         /* Compute energy of low-band and high-band excitation */
-         for (i=0;i<st->subframeSize;i++)
-            eh+=sqr(exc[i]);
-         for (i=0;i<st->subframeSize;i++)
-            el+=sqr(((EncState*)st->st_low)->exc[offset+i]);
          /* Gain to use if we want to use the low-band excitation for high-band */
          g=eh/(.01+el);
          g=sqrt(g);
@@ -484,17 +485,40 @@ void sb_encode(void *state, float *in, FrameBits *bits)
          /* FIXME: Update perceptually weighted signal in case we switch to the
             other mode */
       } else {
-         float el=0;
-         float gc;
+         float gc, scale, scale_1;
          float *innov;
 
          /*speex_bits_pack(bits, 0, 1);*/
          innov = PUSH(st->stack, st->subframeSize);
 
-         for (i=0;i<st->subframeSize;i++)
-            el+=sqr(((EncState*)st->st_low)->exc[offset+i]);
 
-         gc = (.01+filter_ratio)/(1+sqrt(el/st->subframeSize));
+         gc = sqrt(1+eh)*filter_ratio/sqrt((1+el)*st->subframeSize);
+
+         {
+            int qgc = (int)floor(.5+3.7*(log(gc)+2));
+            if (qgc<0)
+               qgc=0;
+            if (qgc>15)
+               qgc=15;
+            speex_bits_pack(bits, qgc, 4);
+            gc = exp((1/3.7)*qgc-2);
+         }
+
+         scale = gc*sqrt(1+el)/filter_ratio;
+         scale_1 = 1/scale;
+         if (0 && rand()%5==0)
+         {
+            float sc = 1/sqrt(.1+eh/st->subframeSize);
+            if (rand()&1)
+               sc=-sc;
+            for (i=0;i<st->subframeSize;i++)
+            {
+               float tmp=exc[i]*sc;
+               if (i%8==0)
+                  printf ("\nhexc");
+               printf (" %f", tmp);
+            }
+         }
 
          /* Reset excitation */
          for (i=0;i<st->subframeSize;i++)
@@ -528,7 +552,7 @@ void sb_encode(void *state, float *in, FrameBits *bits)
 
 
          for (i=0;i<st->subframeSize;i++)
-            target[i]*=gc;
+            target[i]*=scale_1;
          
          /* Reset excitation */
          for (i=0;i<st->subframeSize;i++)
@@ -541,7 +565,7 @@ void sb_encode(void *state, float *in, FrameBits *bits)
          /*print_vec(target, st->subframeSize, "after");*/
 
          for (i=0;i<st->subframeSize;i++)
-            exc[i] += innov[i]/gc;
+            exc[i] += innov[i]*scale;
 
          POP(st->stack);
       }
@@ -763,10 +787,18 @@ void sb_decode(void *state, FrameBits *bits, float *out)
          for (i=0;i<st->subframeSize;i++)
             exc[i]=g*((DecState*)st->st_low)->exc[offset+i];
       } else {
+         float gc, scale;
+         int qgc = speex_bits_unpack_unsigned(bits, 4);
+
+         gc = exp((1/3.7)*qgc-2);
+
+         scale = gc*sqrt(1+el)/filter_ratio;
+
+
          st->innovation_unquant(exc, st->innovation_params, st->subframeSize, 
                                 bits, st->stack);
          for (i=0;i<st->subframeSize;i++)
-            exc[i]*=gain;
+            exc[i]*=scale;
       }
       syn_filt_mem(exc, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, st->mem_sp);
 

@@ -519,6 +519,7 @@ float *exc2
       }
    }
 
+   /*printf ("pitch: %d %d\n", best_pitch, best_gain_index);*/
    speex_bits_pack(bits, best_pitch-start, params->pitch_bits);
    speex_bits_pack(bits, best_gain_index, params->gain_bits);
    /*printf ("encode pitch: %d %d\n", best_pitch, best_gain_index);*/

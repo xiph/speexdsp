@@ -429,7 +429,7 @@ void nb_encode(void *state, float *in, FrameBits *bits)
          ener=sign/sqrt(.01+ener/st->subframeSize);
          for (i=0;i<st->subframeSize;i++)
          {
-            if (i%8==0)
+            if (i%4==0)
                printf ("\nexc ");
             printf ("%f ", ener*st->buf2[i]);
          }
@@ -441,7 +441,7 @@ void nb_encode(void *state, float *in, FrameBits *bits)
 #else
       if (0)
       {
-      /* Perform a split-codebook search */
+      /* Perform innovation search */
       st->innovation_quant(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2,
                            st->innovation_params, st->lpcSize,
                            st->subframeSize, exc, bits, st->stack);
@@ -468,7 +468,6 @@ void nb_encode(void *state, float *in, FrameBits *bits)
                qe=63;
             ener = exp(qe/7.0);
             speex_bits_pack(bits, qe, 6);
-            /*printf ("quant_energy: %d %f\n", qe, ener);*/
          }
          ener_1 = 1/ener;
          
