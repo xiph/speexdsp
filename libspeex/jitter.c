@@ -41,6 +41,8 @@
 #include "speex_jitter.h"
 #include <stdio.h>
 
+#define LATE_BINS 4
+
 void speex_jitter_init(SpeexJitter *jitter, void *decoder, int sampling_rate)
 {
    int i;
@@ -75,7 +77,7 @@ void speex_jitter_put(SpeexJitter *jitter, char *packet, int len, int timestamp)
    int i,j;
    int timestamp_offset;
    int arrival_margin;
-   
+
    if (jitter->reset_state)
    {
       jitter->reset_state=0;
@@ -84,6 +86,17 @@ void speex_jitter_put(SpeexJitter *jitter, char *packet, int len, int timestamp)
       jitter->late_ratio = 0;
       jitter->early_ratio = 0;
       jitter->ontime_ratio = 0;
+      for (i=0;i<MAX_MARGIN;i++)
+      {
+         jitter->shortterm_margin[i] = 0;
+         jitter->longterm_margin[i] = 0;
+      }
+      for (i=0;i<SPEEX_JITTER_MAX_BUFFER_SIZE;i++)
+      {
+         jitter->len[i]=-1;
+         jitter->timestamp[i]=-1;
+      }
+      fprintf(stderr, "reset to %d\n", timestamp);
    }
    
    /* Cleanup buffer (remove old packets that weren't played) */
@@ -107,11 +120,21 @@ void speex_jitter_put(SpeexJitter *jitter, char *packet, int len, int timestamp)
    /*fprintf(stderr, "%d %d %f\n", timestamp, jitter->pointer_timestamp, jitter->drift_average);*/
    if (i==SPEEX_JITTER_MAX_BUFFER_SIZE)
    {
-      fprintf (stderr, "Buffer is full, discarding frame\n");
+      int earliest=jitter->timestamp[0];
+      i=0;
+      for (j=1;j<SPEEX_JITTER_MAX_BUFFER_SIZE;j++)
+      {
+         if (jitter->timestamp[j]<earliest)
+         {
+            earliest = jitter->timestamp[j];
+            i=j;
+         }
+      }
+      fprintf (stderr, "Buffer is full, discarding earliest frame %d (currently at %d)\n", timestamp, jitter->pointer_timestamp);
       /*No place left in the buffer*/
       
       /*skip some frame(s) */
-      return;
+      /*return;*/
    }
    
    /* Copy packet in buffer */
@@ -123,48 +146,32 @@ void speex_jitter_put(SpeexJitter *jitter, char *packet, int len, int timestamp)
    jitter->len[i]=len;
    
    /* Don't count late packets when adjusting the synchro (we're taking care of them elsewhere) */
-   if (timestamp > jitter->pointer_timestamp)
+   if (timestamp <= jitter->pointer_timestamp)
    {
-      timestamp_offset = timestamp-jitter->pointer_timestamp - (jitter->buffer_size+1)*jitter->frame_time;
-      jitter->drift_average = .99*jitter->drift_average + .01*timestamp_offset;
-   } else {
-      fprintf (stderr, "frame for timestamp %d arrived too late\n", timestamp);
+      fprintf (stderr, "frame for timestamp %d arrived too late (at time %d)\n", timestamp, jitter->pointer_timestamp);
    }
 
    /* Adjust the buffer size depending on network conditions */
-   arrival_margin = (timestamp - jitter->pointer_timestamp - jitter->frame_time) - (int)jitter->drift_average;
-   if (arrival_margin >= -2*jitter->frame_time)
+   arrival_margin = (timestamp - jitter->pointer_timestamp - jitter->frame_time);
+   
+   if (arrival_margin >= -LATE_BINS*jitter->frame_time)
    {
-      jitter->late_ratio *= .99;
-      jitter->early_ratio *= .99;
-      jitter->ontime_ratio *= .99;
+      int int_margin;
+      for (i=0;i<MAX_MARGIN;i++)
+      {
+         jitter->shortterm_margin[i] *= .98;
+         jitter->longterm_margin[i] *= .995;
+      }
+      int_margin = (arrival_margin + LATE_BINS*jitter->frame_time)/jitter->frame_time;
+      if (int_margin>MAX_MARGIN-1)
+         int_margin = MAX_MARGIN-1;
+      if (int_margin>=0)
+      {
+         jitter->shortterm_margin[int_margin] += .02;
+         jitter->longterm_margin[int_margin] += .005;
+      }
    }
    
-   if (arrival_margin < 0 && arrival_margin >= -3*jitter->frame_time)
-   {
-      jitter->late_ratio += .01;
-   } else if (arrival_margin <= jitter->frame_time && arrival_margin >= 0) 
-   {
-      jitter->ontime_ratio += .01;
-   } else if (arrival_margin > jitter->frame_time)
-   {
-      jitter->early_ratio += .01;
-   }
-   
-   if (jitter->late_ratio + jitter->ontime_ratio < .01 && jitter->early_ratio > .8)
-   {
-      jitter->buffer_size--;
-      jitter->early_ratio = 0;
-      jitter->drift_average += jitter->frame_time;
-      fprintf (stderr, "buffer %d -> %d\n", jitter->buffer_size+1, jitter->buffer_size);
-   }
-   if (jitter->late_ratio > .03)
-   {
-      jitter->buffer_size++;
-      jitter->late_ratio = 0;
-      jitter->drift_average -= jitter->frame_time;
-      fprintf (stderr, "buffer %d -> %d\n", jitter->buffer_size-1, jitter->buffer_size);
-   }
    /*fprintf (stderr, "margin : %d %d %f %f %f %f\n", arrival_margin, jitter->buffer_size, 100*jitter->loss_rate, 100*jitter->late_ratio, 100*jitter->ontime_ratio, 100*jitter->early_ratio);*/
 }
 
@@ -172,33 +179,70 @@ void speex_jitter_get(SpeexJitter *jitter, short *out)
 {
    int i;
    int ret;
-   int drop, interp;
-   int drop_margin, interp_margin;
+   float late_ratio_short;
+   float late_ratio_long;
+   float ontime_ratio_short;
+   float ontime_ratio_long;
+   float early_ratio_short;
+   float early_ratio_long;
    
-   drop_margin = (1+jitter->buffer_size) * jitter->frame_time/2;
-   interp_margin = jitter->frame_time/2;
-   /*drop_margin = 15;
-   interp_margin = 15;*/
-   
-   /* Handle frame interpolation (playing too fast) */
-   if (-jitter->drift_average > interp_margin)
+   late_ratio_short = 0;
+   late_ratio_long = 0;
+   for (i=0;i<LATE_BINS;i++)
    {
+      late_ratio_short += jitter->shortterm_margin[i];
+      late_ratio_long += jitter->longterm_margin[i];
+   }
+   ontime_ratio_short = jitter->shortterm_margin[LATE_BINS];
+   ontime_ratio_long = jitter->longterm_margin[LATE_BINS];
+   early_ratio_short = early_ratio_long = 0;
+   for (i=LATE_BINS+1;i<MAX_MARGIN;i++)
+   {
+      early_ratio_short += jitter->shortterm_margin[i];
+      early_ratio_long += jitter->longterm_margin[i];
+   }
+   if (0&&jitter->pointer_timestamp%1000==0)
+   {
+      fprintf (stderr, "%f %f %f %f %f %f\n", early_ratio_short, early_ratio_long, ontime_ratio_short, ontime_ratio_long, late_ratio_short, late_ratio_long);
+      /*fprintf (stderr, "%f %f\n", early_ratio_short + ontime_ratio_short + late_ratio_short, early_ratio_long + ontime_ratio_long + late_ratio_long);*/
+   }
+   
+   if (late_ratio_short > .1 || late_ratio_long > .03)
+   {
+      jitter->shortterm_margin[MAX_MARGIN-1] += jitter->shortterm_margin[MAX_MARGIN-2];
+      jitter->longterm_margin[MAX_MARGIN-1] += jitter->longterm_margin[MAX_MARGIN-2];
+      for (i=MAX_MARGIN-2;i>=0;i--)
+      {
+         jitter->shortterm_margin[i+1] = jitter->shortterm_margin[i];
+         jitter->longterm_margin[i+1] = jitter->longterm_margin[i];         
+      }
+      jitter->shortterm_margin[0] = 0;
+      jitter->longterm_margin[0] = 0;            
       fprintf (stderr, "interpolate frame\n");
       speex_decode_int(jitter->dec, NULL, out);
       jitter->drift_average += jitter->frame_time;
       return;
    }
-
+   
    /* Increment timestamp */
    jitter->pointer_timestamp += jitter->frame_time;
-
-   /* Handle frame dropping (receiving too fast) */
-   if (jitter->drift_average > drop_margin)
+   
+   if (late_ratio_short + ontime_ratio_short < .005 && late_ratio_long + ontime_ratio_long < .01 && early_ratio_short > .8)
    {
+      jitter->shortterm_margin[0] += jitter->shortterm_margin[1];
+      jitter->longterm_margin[0] += jitter->longterm_margin[1];
+      for (i=1;i<MAX_MARGIN-1;i++)
+      {
+         jitter->shortterm_margin[i] = jitter->shortterm_margin[i+1];
+         jitter->longterm_margin[i] = jitter->longterm_margin[i+1];         
+      }
+      jitter->shortterm_margin[MAX_MARGIN-1] = 0;
+      jitter->longterm_margin[MAX_MARGIN-1] = 0;      
       fprintf (stderr, "drop frame\n");
       jitter->pointer_timestamp += jitter->frame_time;
       jitter->drift_average -= jitter->frame_time;
    }
+
 
    /* Send zeros while we fill in the buffer */
    if (jitter->pointer_timestamp<0)
@@ -223,9 +267,12 @@ void speex_jitter_get(SpeexJitter *jitter, short *out)
          /* Try decoding last received packet */
          ret = speex_decode_int(jitter->dec, &jitter->current_packet, out);
          if (ret == 0)
+         {
+            jitter->lost_count = 0;
             return;
-         else
+         } else {
             jitter->valid_bits = 0;
+         }
       }
 
       fprintf (stderr, "lost/late frame %d\n", jitter->pointer_timestamp);
@@ -240,6 +287,7 @@ void speex_jitter_get(SpeexJitter *jitter, short *out)
       }
       jitter->loss_rate = .999*jitter->loss_rate + .001;
    } else {
+      jitter->lost_count = 0;
       /* Found the right packet */
       speex_bits_read_from(&jitter->current_packet, jitter->buf[i], jitter->len[i]);
       jitter->len[i]=-1;

@@ -42,8 +42,10 @@
 extern "C" {
 #endif
 
-#define SPEEX_JITTER_MAX_PACKET_SIZE 2000
+#define SPEEX_JITTER_MAX_PACKET_SIZE 1500
 #define SPEEX_JITTER_MAX_BUFFER_SIZE 20
+
+#define MAX_MARGIN 12
 
 typedef struct SpeexJitter {
    int buffer_size;
@@ -63,6 +65,8 @@ typedef struct SpeexJitter {
    
    int lost_count;
    float drift_average;
+   float shortterm_margin[MAX_MARGIN];
+   float longterm_margin[MAX_MARGIN];
    float late_ratio;
    float ontime_ratio;
    float early_ratio;
