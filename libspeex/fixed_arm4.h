@@ -32,15 +32,15 @@
    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef FIXED_GENERIC_H
-#define FIXED_GENERIC_H
+#ifndef FIXED_ARM4_H
+#define FIXED_ARM4_H
 
 #define SHR(a,shift) ((a) >> (shift))
 #define SHL(a,shift) ((a) << (shift))
 
 #define SATURATE(x,a) ((x)>(a) ? (a) : (x)<-(a) ? -(a) : (x))
 
-#define ADD16(a,b) ((short)((short)(a)+(short)(b)))
+#define ADD16(a,b) ((a)+(b))
 #define SUB16(a,b) ((a)-(b))
 #define ADD32(a,b) ((a)+(b))
 #define SUB32(a,b) ((a)-(b))
@@ -49,9 +49,9 @@
 #define PSHR(a,shift) (SHR((a)+(1<<((shift)-1)),shift))
 
 /* result fits in 16 bits */
-#define MULT16_16_16(a,b)     ((((short)(a))*((short)(b))))
+#define MULT16_16_16(a,b)     ((a)*(b))
 
-#define MULT16_16(a,b)     (((short)(a))*((short)(b)))
+#define MULT16_16(a,b)     ((a)*(b))
 
 
 
@@ -65,6 +65,18 @@
 #define MAC16_32_Q11(c,a,b) ADD32(c,ADD32(MULT16_16((a),SHR((b),11)), SHR(MULT16_16((a),((b)&0x000007ff)),11)))
 
 #define MULT16_32_Q15(a,b) ADD32(MULT16_16((a),SHR((b),15)), SHR(MULT16_16((a),((b)&0x00007fff)),15))
+static inline spx_word32_t MULT16_32_Q15(spx_word16_t x, spx_word32_t y) {
+  int res;
+  int dummy;
+  asm (
+        "smull  %0,%1,%2,%3 \n\t"
+        "mov %0, %0, lsr #15 \n\t"
+        "add %0, %0, %1, lsl #17 \n\t"
+   : "=&r"(res), "=&r" (dummy)
+   : "r"(y),"r"((int)x));
+  return(res);
+}
+
 #define MAC16_32_Q15(c,a,b) ADD32(c,ADD32(MULT16_16((a),SHR((b),15)), SHR(MULT16_16((a),((b)&0x00007fff)),15)))
 
 
@@ -83,7 +95,6 @@
 
 
 
-//#define DIV32_16(a,b) ((short)(((signed int)(a))/((short)(b))))
 static inline short DIV32_16(int a, int b)
 {
    int res=0;

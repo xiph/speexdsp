@@ -32,8 +32,8 @@
    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef FIXED_ARM_H
-#define FIXED_ARM_H
+#ifndef FIXED_ARM5E_H
+#define FIXED_ARM5E_H
 
 #define SHR(a,shift) ((a) >> (shift))
 #define SHL(a,shift) ((a) << (shift))
