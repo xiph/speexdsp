@@ -485,8 +485,11 @@ int cdbk_offset
    
    err=0;
    for (i=0;i<nsf;i++)
-      err+=(target[i]-gain[2]*x[0][i]-gain[1]*x[1][i]-gain[0]*x[2][i])
-      * (target[i]-gain[2]*x[0][i]-gain[1]*x[1][i]-gain[0]*x[2][i]);
+   {
+      spx_sig_t tmp = gain[2]*x[0][i]+gain[1]*x[1][i]+gain[0]*x[2][i];
+      new_target[i] = target[i] - tmp;
+      err+=new_target[i]*new_target[i];
+   }
 #endif
 
    return err;
