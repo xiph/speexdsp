@@ -24,6 +24,9 @@
 #include "modes.h"
 #include "speex.h"
 
+#define MAX_FRAME_SIZE 2000
+#define MAX_FRAME_BYTES 1000
+
 void usage()
 {
    fprintf (stderr, "speexenc [options] <input file> <output file>\n");
@@ -46,6 +49,13 @@ int main(int argc, char **argv)
    int option_index = 0;
    int narrowband=0, wideband=0;
    char *inFile, *outFile;
+   FILE *fin, *fout;
+   short in[MAX_FRAME_SIZE];
+   float input[MAX_FRAME_SIZE];
+   int frame_size;
+   SpeexMode *mode;
+   EncState st;
+   FrameBits bits;
    struct option long_options[] =
    {
       {"wideband", no_argument, NULL, 0},
@@ -113,5 +123,31 @@ int main(int argc, char **argv)
    };
    if (!wideband)
       narrowband=1;
+   if (narrowband)
+      mode=&mp_nb_mode;
+   if (wideband)
+      mode=&mp_wb_mode;
+
+   fin = fopen(inFile, "r");
+   fout = fopen(outFile, "w");
+
+   encoder_init(&st, mode);
+   frame_size=mode->frameSize;
+
+   while (!feof(fin))
+   {
+      int i,nbBytes;
+      char cbits[MAX_FRAME_BYTES];
+      fread(in, sizeof(short), frame_size, fin);
+      for (i=0;i<frame_size;i++)
+         input[i]=in[i];
+      frame_bits_reset(&bits);
+      encode(&st, input, &bits);
+      nbBytes = frame_bits_write(&bits, cbits, 200);
+      fwrite(cbits, 1, nbBytes, fout);
+   }
    
+   encoder_destroy(&st);
+   exit(0);
+   return 1;
 }
