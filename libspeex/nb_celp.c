@@ -92,16 +92,16 @@ void *nb_encoder_init(SpeexMode *m)
    st->exc2Buf = calloc(st->bufSize,sizeof(float));
    st->exc2 = st->exc2Buf + st->bufSize - st->windowSize;
 
-   /* Asymetric "pseudo-Hanning" window */
+   /* Asymetric "pseudo-Hamming" window */
    {
       int part1, part2;
       part1 = st->subframeSize*7/2;
       part2 = st->subframeSize*5/2;
       st->window = malloc(st->windowSize*sizeof(float));
       for (i=0;i<part1;i++)
-         st->window[i]=.5*(1-cos(M_PI*i/part1));
+         st->window[i]=.54-.46*cos(M_PI*i/part1);
       for (i=0;i<part2;i++)
-         st->window[part1+i]=.5*(1+cos(M_PI*i/part2));
+         st->window[part1+i]=.54+.46*cos(M_PI*i/part2);
    }
    /* Create the window for autocorrelation (lag-windowing) */
    st->lagWindow = malloc((st->lpcSize+1)*sizeof(float));
@@ -266,10 +266,12 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
       residue(st->frame, st->bw_lpc1, st->exc, st->frameSize, st->lpcSize);
       syn_filt(st->exc, st->bw_lpc2, st->sw, st->frameSize, st->lpcSize);
       
-      open_loop_nbest_pitch(st->sw, st->min_pitch, st->max_pitch, st->frameSize, &ol_pitch, 1, st->stack);
-      /*printf ("ol_pitch: %d\n", ol_pitch);*/
       if (st->lbr_pitch)
+      {
+         open_loop_nbest_pitch(st->sw, st->min_pitch, st->max_pitch, st->frameSize, &ol_pitch, 1, st->stack);
          speex_bits_pack(bits, ol_pitch-st->min_pitch, 7);
+      } else 
+         ol_pitch = 0;
 
       residue(st->frame, st->interp_lpc, st->exc, st->frameSize, st->lpcSize);
       

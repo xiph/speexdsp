@@ -199,16 +199,16 @@ void *sb_encoder_init(SpeexMode *m)
    st->res=calloc(st->frame_size, sizeof(float));
    st->sw=calloc(st->frame_size, sizeof(float));
    st->target=calloc(st->frame_size, sizeof(float));
-   /*Asymetric "pseudo-Hanning" window*/
+   /*Asymetric "pseudo-Hamming" window*/
    {
       int part1, part2;
       part1 = st->subframeSize*7/2;
       part2 = st->subframeSize*5/2;
       st->window = malloc(st->windowSize*sizeof(float));
       for (i=0;i<part1;i++)
-         st->window[i]=.5*(1-cos(M_PI*i/part1));
+         st->window[i]=.54-.46*cos(M_PI*i/part1);
       for (i=0;i<part2;i++)
-         st->window[part1+i]=.5*(1+cos(M_PI*i/part2));
+         st->window[part1+i]=.54+.46*cos(M_PI*i/part2);
    }
 
    st->lagWindow = malloc((st->lpcSize+1)*sizeof(float));
