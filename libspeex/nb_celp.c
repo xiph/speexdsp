@@ -924,6 +924,9 @@ void nb_decode(void *state, SpeexBits *bits, float *out, int lost)
          POP(st->stack);
       }
 
+      for (i=0;i<st->subframeSize;i++)
+         sp[i]=exc[i];
+
       if (st->lpc_enh_enabled && SUBMODE(comb_gain>0))
          comb_filter(exc, sp, st->interp_qlpc, st->lpcSize, st->subframeSize,
                               pitch, pitch_gain, .5);
