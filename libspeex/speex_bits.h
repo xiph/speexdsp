@@ -24,6 +24,7 @@
 
 #define MAX_BYTES_PER_FRAME 1000
 
+/** Bit-packing data structure representing (part of) a bit-stream. */
 typedef struct SpeexBits {
    char bytes[MAX_BYTES_PER_FRAME];
    int  nbBits;
@@ -31,18 +32,25 @@ typedef struct SpeexBits {
    int  bitPtr;
 } SpeexBits;
 
+/** Initializes and allocates resources for a SpeexBits struct */
 void speex_bits_init(SpeexBits *bits);
 
+/** Frees all resources assiociated to a SpeexBits struct. Right now this does nothing since no resources are allocated, but this could change in the future.*/
 void speex_bits_destroy(SpeexBits *bits);
 
+/** Resets bits to initial value (just after initialization, erasing content)*/
 void speex_bits_reset(SpeexBits *bits);
 
+/** Rewind the bit-stream to beginning (ready for read) without erasing content*/
 void speex_bits_rewind(SpeexBits *bits);
 
+/** Initializes the bit-stream from the data in an area of memory (no need to
+    call speex_bits_init before) */
 void speex_bits_init_from(SpeexBits *bits, char *bytes, int len);
 
 void speex_bits_read_whole_bytes(SpeexBits *bits, char *bytes, int len);
 
+/** Write the content of a bit-stream to an area of memory */
 int speex_bits_write(SpeexBits *bits, char *bytes, int max_len);
 
 int speex_bits_write_whole_bytes(SpeexBits *bits, char *bytes, int max_len);

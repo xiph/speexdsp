@@ -39,32 +39,56 @@ typedef void (*decode_func)(void *state, SpeexBits *bits, float *out, int lost);
 
 /** Struct defining a Speex mode */ 
 typedef struct SpeexMode {
+   /** Pointer to the low-level mode data */
    void *mode;
+
+   /** Pointer to encoder initialization function */
    encoder_init_func enc_init;
+
+   /** Pointer to encoder destruction function */
    encoder_destroy_func enc_destroy;
+
+   /** Pointer to frame encoding function */
    encode_func enc;
+
+   /** Pointer to decoder initialization function */
    decoder_init_func dec_init;
+
+   /** Pointer to decoder destruction function */
    decoder_destroy_func dec_destroy;
+
+   /** Pointer to frame decoding function */
    decode_func dec;
+
+   /** Frame size used for the current mode */
    int frameSize;
+
 } SpeexMode;
 
-/** Creates an encoder state ("object") from a mode */ 
+/**Returns a handle to a newly created Speex encoder state structure. For now, the 
+   "mode" arguent can be &nb_mode or &wb_mode . In the future, more modes may be 
+   added. Note that for now if you have more than one channels to encode, you need 
+   one state per channel.*/
 void *speex_encoder_init(SpeexMode *mode);
 
-/** Destroy a Speex encoder state */
+/** Frees all resources associated to an existing Speex encoder state. */
 void speex_encoder_destroy(void *state);
 
-/** Encode a frame */
+/** Uses an existing encoder state to encode one frame of speech pointed to by
+    "in". The encoded bit-stream is saved in "bits".*/
 void speex_encode(void *state, float *in, SpeexBits *bits);
 
-/** Creates a decoder state ("object") from a mode */ 
+/** Returns a handle to a newly created decoder state structure. For now, the mode
+    arguent can be &nb_mode or &wb_mode . In the future, more modes may be added. 
+    Note that for now if you have more than one channels to decode, you need one 
+    state per channel. */ 
 void *speex_decoder_init(SpeexMode *mode);
 
-/** Destroy a Speex decoder state */
+/** Frees all resources associated to an existing decoder state. */
 void speex_decoder_destroy(void *state);
 
-/** Decode a frame */
+/** Uses an existing decoder state to decode one frame of speech from bit-stream 
+    bits. The output speech is saved written to out. */
 void speex_decode(void *state, SpeexBits *bits, float *out, int lost);
 
 /** Default narrowband mode */
