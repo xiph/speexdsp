@@ -502,6 +502,10 @@ void decode(DecState *st, FrameBits *bits, float *out)
 {
    int i, sub;
 
+   memmove(st->inBuf, st->inBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(float));
+   memmove(st->excBuf, st->excBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(float));
+
+
    lsp_unquant_nb(st->qlsp, st->lpcSize, bits);
    if (st->first)
    {
@@ -543,7 +547,7 @@ void decode(DecState *st, FrameBits *bits, float *out)
 
       /*Adaptive codebook contribution*/
       pitch_unquant_3tap(exc, st->min_pitch, st->max_pitch, st->subframeSize, bits, st->stack);
-
+       
       /*Fixed codebook contribution*/
       split_cb_unquant(exc, exc_table, st->subframeSize, bits);
 

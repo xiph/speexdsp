@@ -280,7 +280,13 @@ FrameBits *bits
 #else 
       for (i=0;i<5;i++)
          gains[i]= sign[i]*gains[i]/max_gain/(Ee[ind[i]]+.001);
-#endif      
+#endif  
+
+   printf ("unquant gains: ");
+   for (i=0;i<5;i++)
+      printf ("%f ", gains[i]);
+   printf ("\n");
+    
       for (i=0;i<5;i++)
          for (j=0;j<8;j++)
             exc[8*i+j]+=gains[i]*codebook[ind[i]][j];
@@ -301,10 +307,12 @@ int   nsf,                      /* number of samples in subframe */
 FrameBits *bits
 )
 {
-   int i;
+   int i,j;
    int ind[5];
    float gains[5];
    float sign[5];
+   int max_gain_ind, vq_gain_ind;
+   float max_gain, Ee[5];
    for (i=0;i<5;i++)
    {
       ind[i] = frame_bits_unpack_unsigned(bits, 7);
@@ -312,6 +320,25 @@ FrameBits *bits
          sign[i]=-1;
       else
          sign[i]=1;
+      Ee[i]=.001;
+      for (j=0;j<8;j++)
+         Ee[i]+=codebook[ind[i]][j]*codebook[ind[i]][j];
    }
-   frame_bits_unpack_unsigned(bits, 11);
+   max_gain_ind = frame_bits_unpack_unsigned(bits, 3);
+   vq_gain_ind = frame_bits_unpack_unsigned(bits, 8);
+   printf ("unquant gains ind: %d %d\n", max_gain_ind, vq_gain_ind);
+
+   max_gain=exp(max_gain_ind+3.0);
+   for (i=0;i<5;i++)
+      gains[i] = sign[i]*exc_gains_table[vq_gain_ind][i]*max_gain/Ee[i];
+   
+   printf ("unquant gains: ");
+   for (i=0;i<5;i++)
+      printf ("%f ", gains[i]);
+   printf ("\n");
+
+   for (i=0;i<5;i++)
+      for (j=0;j<8;j++)
+         exc[8*i+j]+=gains[i]*codebook[ind[i]][j];
+   
 }
