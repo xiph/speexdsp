@@ -82,9 +82,7 @@ static void compute_weighted_codebook(const signed char *shape_cb, const spx_sig
 
 
 
-#if 0
-
-void split_cb_search_shape_sign(
+void split_cb_search_shape_sign_N1(
 spx_sig_t target[],			/* target vector */
 spx_coef_t ak[],			/* LPCs for this subframe */
 spx_coef_t awk1[],			/* Weighted LPCs for this subframe */
@@ -234,7 +232,7 @@ int   update_target
    }
 }
 
-#else
+
 
 void split_cb_search_shape_sign(
 spx_sig_t target[],			/* target vector */
@@ -282,6 +280,11 @@ int   update_target
    if (N<1)
       N=1;
    
+   if (N==1)
+   {
+      split_cb_search_shape_sign_N1(target,ak,awk1,awk2,par,p,nsf,exc,r,bits,stack,complexity,update_target);
+      return;
+   }
    ot=PUSH(stack, N, spx_word16_t*);
    nt=PUSH(stack, N, spx_word16_t*);
    oind=PUSH(stack, N, int*);
@@ -518,7 +521,7 @@ int   update_target
          target[j]-=r2[j];
    }
 }
-#endif
+
 
 void split_cb_shape_sign_unquant(
 spx_sig_t *exc,
