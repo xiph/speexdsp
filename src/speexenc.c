@@ -72,7 +72,7 @@ int oe_write_page(ogg_page *page, FILE *fp)
 #define MAX_FRAME_BYTES 2000
 
 /* Convert input audio bits, endians and channels */
-static int read_samples(FILE *fin,int frame_size, int bits, int channels, int lsb, float * input, char *buff, int *size)
+static int read_samples(FILE *fin,int frame_size, int bits, int channels, int lsb, short * input, char *buff, int *size)
 {   
    unsigned char in[MAX_FRAME_BYTES*2];
    int i;
@@ -122,6 +122,7 @@ static int read_samples(FILE *fin,int frame_size, int bits, int channels, int ls
       }
    }
 
+   /* FIXME: This is probably redundent now */
    /* copy to float input buffer */
    for (i=0;i<frame_size*channels;i++)
    {
@@ -206,7 +207,7 @@ int main(int argc, char **argv)
    int option_index = 0;
    char *inFile, *outFile;
    FILE *fin, *fout;
-   float input[MAX_FRAME_SIZE];
+   short input[MAX_FRAME_SIZE];
    int frame_size;
    int vbr_enabled=0;
    int abr_enabled=0;
@@ -659,7 +660,7 @@ int main(int argc, char **argv)
       /*Encode current frame*/
       if (chan==2)
          speex_encode_stereo(input, frame_size, &bits);
-      
+
       if (preprocess)
          speex_preprocess(preprocess, input, NULL);
 

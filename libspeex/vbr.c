@@ -116,7 +116,7 @@ void vbr_init(VBRState *vbr)
 
 */
 
-float vbr_analysis(VBRState *vbr, float *sig, int len, int pitch, float pitch_coef)
+float vbr_analysis(VBRState *vbr, short *sig, int len, int pitch, float pitch_coef)
 {
    int i;
    float ener=0, ener1=0, ener2=0;
@@ -128,10 +128,10 @@ float vbr_analysis(VBRState *vbr, float *sig, int len, int pitch, float pitch_co
    float pow_ener;
 
    for (i=0;i<len>>1;i++)
-      ener1 += sig[i]*sig[i];
+      ener1 += ((float)sig[i])*sig[i];
 
    for (i=len>>1;i<len;i++)
-      ener2 += sig[i]*sig[i];
+      ener2 += ((float)sig[i])*sig[i];
    ener=ener1+ener2;
 
    log_energy = log(ener+MIN_ENERGY);

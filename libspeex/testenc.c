@@ -12,7 +12,6 @@ int main(int argc, char **argv)
    short in_short[FRAME_SIZE];
    short out_short[FRAME_SIZE];
    float in_float[FRAME_SIZE];
-   float out_float[FRAME_SIZE];
    float sigpow,errpow,snr, seg_snr=0;
    int snr_frames = 0;
    char cbits[200];
@@ -79,7 +78,7 @@ int main(int argc, char **argv)
          in_float[i]=in_short[i];
       speex_bits_reset(&bits);
 
-      speex_encode(st, in_float, &bits);
+      speex_encode(st, in_short, &bits);
       nbBits = speex_bits_write(&bits, cbits, 200);
       bitCount+=bits.nbBits;
 
@@ -87,19 +86,9 @@ int main(int argc, char **argv)
          fwrite(cbits, 1, nbBits, fbits);
       speex_bits_rewind(&bits);
 
-      speex_decode(dec, &bits, out_float);
+      speex_decode(dec, &bits, out_short);
       speex_bits_reset(&bits);
 
-      /* Save the bits here */
-      for (i=0;i<FRAME_SIZE;i++)
-      {
-         if (out_float[i]>32767)
-            out_short[i]=32767;
-         else if (out_float[i]<-32768)
-            out_short[i]=-32768;
-         else
-             out_short[i]=(short)(out_float[i]+.5);
-      }
       fwrite(&out_short[skip_group_delay], sizeof(short), FRAME_SIZE-skip_group_delay, fout);
       skip_group_delay = 0;
    }

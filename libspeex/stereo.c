@@ -37,17 +37,17 @@
 /*float e_ratio_quant[4] = {1, 1.26, 1.587, 2};*/
 static float e_ratio_quant[4] = {.25f, .315f, .397f, .5f};
 
-void speex_encode_stereo(float *data, int frame_size, SpeexBits *bits)
+void speex_encode_stereo(short *data, int frame_size, SpeexBits *bits)
 {
    int i, tmp;
    float e_left=0, e_right=0, e_tot=0;
    float balance, e_ratio;
    for (i=0;i<frame_size;i++)
    {
-      e_left  += data[2*i]*data[2*i];
-      e_right += data[2*i+1]*data[2*i+1];
-      data[i] =  .5*(data[2*i]+data[2*i+1]);
-      e_tot   += data[i]*data[i];
+      e_left  += ((float)data[2*i])*data[2*i];
+      e_right += ((float)data[2*i+1])*data[2*i+1];
+      data[i] =  .5*(((float)data[2*i])+data[2*i+1]);
+      e_tot   += ((float)data[i])*data[i];
    }
    balance=(e_left+1)/(e_right+1);
    e_ratio = e_tot/(1+e_left+e_right);
@@ -74,7 +74,7 @@ void speex_encode_stereo(float *data, int frame_size, SpeexBits *bits)
    speex_bits_pack(bits, tmp, 2);
 }
 
-void speex_decode_stereo(float *data, int frame_size, SpeexStereoState *stereo)
+void speex_decode_stereo(short *data, int frame_size, SpeexStereoState *stereo)
 {
    float balance, e_ratio;
    int i;
@@ -84,7 +84,7 @@ void speex_decode_stereo(float *data, int frame_size, SpeexStereoState *stereo)
    e_ratio=stereo->e_ratio;
    for (i=frame_size-1;i>=0;i--)
    {
-      e_tot += data[i]*data[i];
+      e_tot += ((float)data[i])*data[i];
    }
    e_sum=e_tot/e_ratio;
    e_left  = e_sum*balance / (1+balance);

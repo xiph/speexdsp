@@ -193,7 +193,7 @@ void nb_encoder_destroy(void *state)
    speex_free(st);
 }
 
-int nb_encode(void *state, float *in, SpeexBits *bits)
+int nb_encode(void *state, short *in, SpeexBits *bits)
 {
    EncState *st;
    int i, sub, roots;
@@ -999,7 +999,7 @@ void nb_decoder_destroy(void *state)
 
 #define median3(a, b, c)	((a) < (b) ? ((b) < (c) ? (b) : ((a) < (c) ? (c) : (a))) : ((c) < (b) ? (b) : ((c) < (a) ? (c) : (a))))
 
-static void nb_decode_lost(DecState *st, float *out, char *stack)
+static void nb_decode_lost(DecState *st, short *out, char *stack)
 {
    int i, sub;
    spx_coef_t *awk1, *awk2, *awk3;
@@ -1101,7 +1101,7 @@ static void nb_decode_lost(DecState *st, float *out, char *stack)
    }
 
    for (i=0;i<st->frameSize;i++)
-      out[i]=st->frame[i];
+      out[i]=SHR(st->frame[i],SIG_SHIFT);
    
    st->first = 0;
    st->count_lost++;
@@ -1110,7 +1110,7 @@ static void nb_decode_lost(DecState *st, float *out, char *stack)
       st->pitch_gain_buf_idx = 0;
 }
 
-int nb_decode(void *state, SpeexBits *bits, float *out)
+int nb_decode(void *state, SpeexBits *bits, short *out)
 {
    DecState *st;
    int i, sub;
@@ -1261,7 +1261,7 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
       iir_mem2(st->exc, lpc, st->frame, st->frameSize, st->lpcSize, st->mem_sp);
 
       for (i=0;i<st->frameSize;i++)
-         out[i]=st->frame[i];
+         out[i]=SHR(st->frame[i],SIG_SHIFT);
       st->count_lost=0;
       return 0;
    }
@@ -1616,6 +1616,9 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
    /*Copy output signal*/
    for (i=0;i<st->frameSize;i++)
      out[i]=SHR(st->frame[i],SIG_SHIFT);
+
+   /*for (i=0;i<st->frameSize;i++)
+     printf ("%d\n", (int)st->frame[i]);*/
 
    /* Store the LSPs for interpolation in the next frame */
    for (i=0;i<st->lpcSize;i++)

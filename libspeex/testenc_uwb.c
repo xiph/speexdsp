@@ -60,7 +60,7 @@ int main(int argc, char **argv)
       for (i=0;i<FRAME_SIZE;i++)
          bak[i]=input[i]=in[i];
       speex_bits_reset(&bits);
-      speex_encode(st, input, &bits);
+      speex_encode(st, in, &bits);
       nbBits = speex_bits_write(&bits, cbits, 200);
       bitCount+=bits.nbBits;
       printf ("Encoding frame in %d bits\n", nbBits*8);
@@ -78,21 +78,9 @@ int main(int argc, char **argv)
       }
       speex_bits_rewind(&bits);
       
-      speex_decode(dec, &bits, input);
+      speex_decode(dec, &bits, in);
 
-      /* Save the bits here */
-      for (i=0;i<FRAME_SIZE;i++)
-      {
-         if (input[i]>32000)
-            input[i]=32000;
-         else if (input[i]<-32000)
-            input[i]=-32000;
-      }
       speex_bits_reset(&bits);
-      for (i=0;i<FRAME_SIZE;i++)
-         in[i]=(short)input[i];
-      for (i=0;i<FRAME_SIZE;i++)
-         bak2[i]=bak[i];
       fwrite(in, sizeof(short), FRAME_SIZE, fout);
    }
    

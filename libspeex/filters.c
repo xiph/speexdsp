@@ -397,7 +397,7 @@ CombFilterMem *mem
    float fact;
    /*Compute excitation energy prior to enhancement*/
    for (i=0;i<nsf;i++)
-      exc_energy+=exc[i]*exc[i];
+      exc_energy+=((float)exc[i])*exc[i];
 
    /*Some gain adjustment is pitch is too high or if unvoiced*/
    {
@@ -435,7 +435,7 @@ CombFilterMem *mem
 
    /*Gain after enhancement*/
    for (i=0;i<nsf;i++)
-      new_exc_energy+=new_exc[i]*new_exc[i];
+      new_exc_energy+=((float)new_exc[i])*new_exc[i];
 
    /*Compute scaling factor and normalize energy*/
    gain = sqrt(exc_energy)/sqrt(.1+new_exc_energy);

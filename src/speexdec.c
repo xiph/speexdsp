@@ -397,7 +397,7 @@ int main(int argc, char **argv)
    char *inFile, *outFile;
    FILE *fin, *fout=NULL;
    short out[MAX_FRAME_SIZE];
-   float output[MAX_FRAME_SIZE];
+   short output[MAX_FRAME_SIZE];
    int frame_size=0;
    void *st=NULL;
    SpeexBits bits;
@@ -620,6 +620,9 @@ int main(int argc, char **argv)
                   else
                      ret = speex_decode(st, NULL, output);
 
+                  /*for (i=0;i<frame_size*channels;i++)
+                    printf ("%d\n", (int)output[i]);*/
+
                   if (ret==-1)
                      break;
                   if (ret==-2)
@@ -641,14 +644,6 @@ int main(int argc, char **argv)
                      speex_decoder_ctl(st, SPEEX_GET_BITRATE, &tmp);
                      fputc (ch, stderr);
                      fprintf (stderr, "Bitrate is use: %d bps     ", tmp);
-                  }
-                  /*PCM saturation (just in case)*/
-                  for (i=0;i<frame_size*channels;i++)
-                  {
-                     if (output[i]>32000.0)
-                        output[i]=32000.0;
-                     else if (output[i]<-32000.0)
-                        output[i]=-32000.0;
                   }
                   /*Convert to short and save to output file*/
 		  if (strlen(outFile)!=0)

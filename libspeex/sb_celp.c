@@ -233,7 +233,7 @@ void sb_encoder_destroy(void *state)
 }
 
 
-int sb_encode(void *state, float *in, SpeexBits *bits)
+int sb_encode(void *state, short *in, SpeexBits *bits)
 {
    SBEncState *st;
    int i, roots, sub;
@@ -250,10 +250,15 @@ int sb_encode(void *state, float *in, SpeexBits *bits)
    mode = (SpeexSBMode*)(st->mode->mode);
 
    {
-      float *low = PUSH(stack, st->frame_size, float);
+      float *sig_in;
+      short *low = PUSH(stack, st->frame_size, short);
+
+      sig_in = PUSH(stack, st->full_frame_size, float);
+      for (i=0;i<st->full_frame_size;i++)
+         sig_in[i] = in[i];
 
       /* Compute the two sub-bands by filtering with h0 and h1*/
-      qmf_decomp(in, h0, st->x0d, st->x1d, st->full_frame_size, QMF_ORDER, st->h0_mem, stack);
+      qmf_decomp(sig_in, h0, st->x0d, st->x1d, st->full_frame_size, QMF_ORDER, st->h0_mem, stack);
       
       for (i=0;i<st->frame_size;i++)
          low[i] = st->x0d[i];
@@ -741,7 +746,7 @@ void sb_decoder_destroy(void *state)
    speex_free(state);
 }
 
-static void sb_decode_lost(SBDecState *st, float *out, int dtx, char *stack)
+static void sb_decode_lost(SBDecState *st, short *out, int dtx, char *stack)
 {
    int i;
    spx_coef_t *awk1, *awk2, *awk3;
@@ -829,7 +834,7 @@ static void sb_decode_lost(SBDecState *st, float *out, int dtx, char *stack)
    return;
 }
 
-int sb_decode(void *state, SpeexBits *bits, float *out)
+int sb_decode(void *state, SpeexBits *bits, short *out)
 {
    int i, sub;
    SBDecState *st;
@@ -847,8 +852,8 @@ int sb_decode(void *state, SpeexBits *bits, float *out)
    mode = (SpeexSBMode*)(st->mode->mode);
 
    {
-      float *low;
-      low = PUSH(stack, st->frame_size, float);
+      short *low;
+      low = PUSH(stack, st->frame_size, short);
       
       /* Decode the low-band */
       ret = speex_decode(st->st_low, bits, low);

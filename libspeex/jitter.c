@@ -122,7 +122,7 @@ void speex_jitter_put(SpeexJitter *jitter, char *packet, int len, int timestamp)
    /* Adjust the buffer size depending on network conditions */
 }
 
-void speex_jitter_get(SpeexJitter *jitter, float *out)
+void speex_jitter_get(SpeexJitter *jitter, short *out)
 {
    int i;
    int ret;

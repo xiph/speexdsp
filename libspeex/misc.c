@@ -130,7 +130,7 @@ void speex_rand_vec(float std, spx_sig_t *data, int len)
 {
    int i;
    for (i=0;i<len;i++)
-      data[i]+=3*std*((((float)rand())/RAND_MAX)-.5);
+      data[i]+=SIG_SCALING*3*std*((((float)rand())/RAND_MAX)-.5);
 }
 
 float speex_rand(float std)

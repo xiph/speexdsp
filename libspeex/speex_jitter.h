@@ -68,7 +68,7 @@ void speex_jitter_destroy(SpeexJitter *jitter);
 
 void speex_jitter_put(SpeexJitter *jitter, char *packet, int len, int time);
 
-void speex_jitter_get(SpeexJitter *jitter, float *out);
+void speex_jitter_get(SpeexJitter *jitter, short *out);
 
 
 #endif
