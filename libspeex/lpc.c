@@ -63,9 +63,6 @@
 
 #include "lpc.h"
 
-#ifdef FIXED_POINT
-#include <math.h>
-
 /* returns minimum mean square error    */
 spx_word32_t _spx_lpc(
 spx_coef_t       *lpc, /* out: [0...p-1] LPC coefficients      */
@@ -87,11 +84,14 @@ int          p
    for (i = 0; i < p; i++) {
 
       /* Sum up this iteration's reflection coefficient */
-      int rr = -ac[i + 1]<<13;
+      spx_word32_t rr = -SHL(ac[i + 1],13);
       for (j = 0; j < i; j++) 
-         rr -= lpc[j] * ac[i - j];
+         rr -= MULT16_16(lpc[j],ac[i - j]);
+#ifdef FIXED_POINT
       r = DIV32_16(rr,error+16);
-
+#else
+      r = rr/(error+.003*ac[0]);
+#endif
       /*  Update LPC coefficients and total error */
       lpc[i] = r;
       for (j = 0; j < i>>1; j++) 
@@ -109,13 +109,15 @@ int          p
 }
 
 
+#ifdef FIXED_POINT
+
 /* Compute the autocorrelation
  *                      ,--,
  *              ac(i) = >  x(n) * x(n-i)  for all n
  *                      `--'
  * for lags between 0 and lag-1, and x == 0 outside 0...n-1
  */
-#include <stdio.h>
+
 void _spx_autocorr(
 const spx_word16_t *x,   /*  in: [0...n-1] samples x   */
 spx_word16_t       *ac,  /* out: [0...lag-1] ac values */
@@ -155,54 +157,11 @@ int          n
       
       ac[i] = d >> ac_shift;
    }
-   /*ac[0] += 1;*/
-   /*printf ("%d %d %d, %f\n", ac0, shift, ac_shift, ac[0]);*/
 }
 
 
 #else
 
-
-
-/* returns minimum mean square error    */
-spx_word32_t _spx_lpc(
-spx_coef_t       *lpc, /* out: [0...p-1] LPC coefficients      */
-const float *ac,  /* in:  [0...p] autocorrelation values  */
-int          p
-)
-{
-   int i, j;  float r, error = ac[0];
-
-   if (ac[0] == 0)
-   {
-      for (i = 0; i < p; i++)
-         lpc[i] = 0;
-      return 0;
-   }
-
-   for (i = 0; i < p; i++) {
-
-      /* Sum up this iteration's reflection coefficient */
-      r = -ac[i + 1];
-      for (j = 0; j < i; j++) 
-         r -= lpc[j] * ac[i - j];
-      r /= error;
-
-      /*  Update LPC coefficients and total error */
-      lpc[i] = r;
-      for (j = 0; j < i/2; j++) 
-      {
-         float tmp  = lpc[j];
-         lpc[j]     += r * lpc[i-1-j];
-         lpc[i-1-j] += r * tmp;
-      }
-      if (i & 1) 
-         lpc[j] += lpc[j] * r;
-
-      error *= 1.0 - r * r;
-   }
-   return error;
-}
 
 
 /* Compute the autocorrelation

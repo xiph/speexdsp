@@ -60,7 +60,7 @@ int normalize16(spx_sig_t *x, spx_word16_t *y, int max_scale, int len)
       spx_sig_t tmp = x[i];
       if (tmp<0)
          tmp = -tmp;
-      if (tmp > max_val)
+      if (tmp >= max_val)
          max_val = tmp;
    }
 

@@ -38,8 +38,9 @@
 
 #include <stdio.h>
 
-#ifdef FIXED_POINT
-
+#ifdef _USE_SSE
+#include "ltp_sse.h"
+#else
 static spx_word32_t inner_prod(spx_word16_t *x, spx_word16_t *y, int len)
 {
    int i;
@@ -55,45 +56,29 @@ static spx_word32_t inner_prod(spx_word16_t *x, spx_word16_t *y, int len)
    }
    return sum;
 }
+#endif
 
 void open_loop_nbest_pitch(spx_sig_t *sw, int start, int end, int len, int *pitch, float *gain, int N, char *stack)
 {
    int i,j,k;
-   /*float corr=0;*/
-   /*float energy;*/
    float *best_score;
    float e0;
    spx_word32_t *corr, *energy;
    float *score;
-
    spx_word16_t *swn;
-   spx_sig_t max_sw=1;
-   int sw_shift=0;
 
    best_score = PUSH(stack,N, float);
    corr = PUSH(stack,end-start+1, spx_word32_t);
    energy = PUSH(stack,end-start+2, spx_word32_t);
    score = PUSH(stack,end-start+1, float);
 
+#ifdef FIXED_POINT
    swn = PUSH(stack, end+len, spx_word16_t);
-   for (i=-end;i<len;i++)
-   {
-      spx_sig_t tmp = sw[i];
-      if (tmp<0)
-         tmp = -tmp;
-      if (tmp > max_sw)
-         max_sw = tmp;
-   }
-   while (max_sw>16384)
-   {
-      sw_shift++;
-      max_sw>>=1;
-   }
-   for (i=0;i<end+len;i++)
-      swn[i] = SHR(sw[i-end],sw_shift);
-   
+   normalize16(sw-end, swn, 16384, end+len);
    swn += end;
-
+#else
+   swn = sw;
+#endif
 
    for (i=0;i<N;i++)
    {
@@ -153,110 +138,6 @@ void open_loop_nbest_pitch(spx_sig_t *sw, int start, int end, int len, int *pitc
 
 }
 
-#else
-
-
-#ifdef _USE_SSE
-#include "ltp_sse.h"
-#else
-static float inner_prod(spx_sig_t *x, spx_sig_t *y, int len)
-{
-   int i;
-   float sum1=0,sum2=0,sum3=0,sum4=0;
-   for (i=0;i<len;)
-   {
-      sum1 += x[i]*y[i];
-      sum2 += x[i+1]*y[i+1];
-      sum3 += x[i+2]*y[i+2];
-      sum4 += x[i+3]*y[i+3];
-      i+=4;
-   }
-   return sum1+sum2+sum3+sum4;
-}
-#endif
-
-/*Original, non-optimized version*/
-/*static float inner_prod(float *x, float *y, int len)
-{
-   int i;
-   float sum=0;
-   for (i=0;i<len;i++)
-      sum += x[i]*y[i];
-   return sum;
-}
-*/
-
-
-void open_loop_nbest_pitch(spx_sig_t *sw, int start, int end, int len, int *pitch, float *gain, int N, char *stack)
-{
-   int i,j,k;
-   /*float corr=0;*/
-   /*float energy;*/
-   float *best_score;
-   float e0;
-   float *corr, *energy, *score;
-
-   best_score = PUSH(stack,N, float);
-   corr = PUSH(stack,end-start+1, float);
-   energy = PUSH(stack,end-start+2, float);
-   score = PUSH(stack,end-start+1, float);
-   for (i=0;i<N;i++)
-   {
-        best_score[i]=-1;
-        gain[i]=0;
-   }
-   energy[0]=inner_prod(sw-start, sw-start, len);
-   e0=inner_prod(sw, sw, len);
-   for (i=start;i<=end;i++)
-   {
-      /* Update energy for next pitch*/
-      energy[i-start+1] = energy[i-start] + sw[-i-1]*sw[-i-1] - sw[-i+len-1]*sw[-i+len-1];
-   }
-   for (i=start;i<=end;i++)
-   {
-      corr[i-start]=0;
-      score[i-start]=0;
-   }
-
-   for (i=start;i<=end;i++)
-   {
-      /* Compute correlation*/
-      corr[i-start]=inner_prod(sw, sw-i, len);
-      score[i-start]=corr[i-start]*corr[i-start]/(energy[i-start]+1);
-   }
-   for (i=start;i<=end;i++)
-   {
-      if (score[i-start]>best_score[N-1])
-      {
-         float g1, g;
-         g1 = corr[i-start]/(energy[i-start]+10);
-         g = sqrt(g1*corr[i-start]/(e0+10));
-         if (g>g1)
-            g=g1;
-         if (g<0)
-            g=0;
-         for (j=0;j<N;j++)
-         {
-            if (score[i-start] > best_score[j])
-            {
-               for (k=N-1;k>j;k--)
-               {
-                  best_score[k]=best_score[k-1];
-                  pitch[k]=pitch[k-1];
-                  gain[k] = gain[k-1];
-               }
-               best_score[j]=score[i-start];
-               pitch[j]=i;
-               gain[j]=g;
-               break;
-            }
-         }
-      }
-   }
-
-}
-#endif
-
 
 
 /** Finds the best quantized 3-tap pitch predictor by analysis by synthesis */
@@ -282,8 +163,8 @@ int cdbk_offset
    spx_sig_t *tmp, *tmp2;
    spx_sig_t *x[3];
    spx_sig_t *e[3];
-   float corr[3];
-   float A[3][3];
+   spx_word32_t corr[3];
+   spx_word32_t A[3][3];
    float gain[3];
    int   gain_cdbk_size;
    signed char *gain_cdbk;
@@ -335,6 +216,7 @@ int cdbk_offset
 
 #ifdef FIXED_POINT
    {
+      /* If using fixed-point, we need to normalize the signals first */
       spx_word16_t *y[3];
       spx_word16_t *t;
 
@@ -403,10 +285,10 @@ int cdbk_offset
 #endif
 
    {
-      float C[9];
+      spx_word32_t C[9];
       signed char *ptr=gain_cdbk;
       int best_cdbk=0;
-      float best_sum=0;
+      spx_word32_t best_sum=0;
       C[0]=corr[2];
       C[1]=corr[1];
       C[2]=corr[0];
@@ -416,25 +298,30 @@ int cdbk_offset
       C[6]=A[2][2];
       C[7]=A[1][1];
       C[8]=A[0][0];
-      
+#ifndef FIXED_POINT
+      C[6]*=.5;
+      C[7]*=.5;
+      C[8]*=.5;
+#endif
       for (i=0;i<gain_cdbk_size;i++)
       {
-         float sum=0;
-         float g0,g1,g2;
+         spx_word32_t sum=0;
+         spx_word16_t g0,g1,g2;
          ptr = gain_cdbk+3*i;
-         g0=0.015625*ptr[0]+.5;
-         g1=0.015625*ptr[1]+.5;
-         g2=0.015625*ptr[2]+.5;
+         g0=ptr[0]+32;
+         g1=ptr[1]+32;
+         g2=ptr[2]+32;
 
-         sum += C[0]*g0;
-         sum += C[1]*g1;
-         sum += C[2]*g2;
-         sum -= C[3]*g0*g1;
-         sum -= C[4]*g2*g1;
-         sum -= C[5]*g2*g0;
-         sum -= .5*C[6]*g0*g0;
-         sum -= .5*C[7]*g1*g1;
-         sum -= .5*C[8]*g2*g2;
+         /* FIXME: check for possible overflows on sum and MULT16_32 */
+         sum += MULT16_32_Q14(MULT16_16(g0,64),C[0]);
+         sum += MULT16_32_Q14(MULT16_16(g1,64),C[1]);
+         sum += MULT16_32_Q14(MULT16_16(g2,64),C[2]);
+         sum -= MULT16_32_Q14(MULT16_16(g0,g1),C[3]);
+         sum -= MULT16_32_Q14(MULT16_16(g2,g1),C[4]);
+         sum -= MULT16_32_Q14(MULT16_16(g2,g0),C[5]);
+         sum -= MULT16_32_Q15(MULT16_16(g0,g0),C[6]);
+         sum -= MULT16_32_Q15(MULT16_16(g1,g1),C[7]);
+         sum -= MULT16_32_Q15(MULT16_16(g2,g2),C[8]);
 
          /* If 1, force "safe" pitch values to handle packet loss better */
          if (0) {
