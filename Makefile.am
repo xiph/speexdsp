@@ -3,7 +3,7 @@
 # Disable automatic dependency tracking if using other tools than gcc and gmake
 #AUTOMAKE_OPTIONS = no-dependencies
 
-EXTRA_DIST = Speex.spec Speex.spec.in
+EXTRA_DIST = Speex.spec Speex.spec.in Speex.kdevelop
 
 #Fools KDevelop into including all files
 if TRUE
