@@ -74,7 +74,7 @@ void lpc_flat(float gamma, float *lpc_in, float *lpc_out, int order)
    float re[10], im[10], conv[10];
    float alpha;
    alpha = 1/(4-4*gamma);
-   poly_roots(lpc_in, re, im, conv, 10, 30, 7);
+   poly_roots(lpc_in, re, im, conv, 10, 30, 4);
    for (i=0;i<order;i++)
    {
       float fact,tmp;
