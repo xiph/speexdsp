@@ -116,6 +116,7 @@ float xcorr(float *x, float *y, int len)
    return sum;
 }
 
+/*
 void fir_mem(float *x, float *a, float *y, int N, int M, float *mem)
 {
    int i,j;
@@ -129,4 +130,28 @@ void fir_mem(float *x, float *a, float *y, int N, int M, float *mem)
    }
    for (i=0;i<M-1;i++)
       mem[i]=x[N-i-1];
+}
+*/
+
+#define MAX_FILTER 100
+#define MAX_SIGNAL 1000
+void fir_mem(float *xx, float *aa, float *y, int N, int M, float *mem)
+{
+   int i,j;
+   float a[MAX_FILTER];
+   float x[MAX_SIGNAL];
+   for (i=0;i<M;i++)
+      a[M-i-1]=aa[i];
+   for (i=0;i<M-1;i++)
+      x[i]=mem[M-i-2];
+   for (i=0;i<N;i++)
+      x[i+M-1]=xx[i];
+   for (i=0;i<N;i++)
+   {
+      y[i]=0;
+      for (j=0;j<M;j++)
+         y[i]+=a[j]*x[i+j];
+   }
+   for (i=0;i<M-1;i++)
+     mem[i]=xx[N-i-1];
 }

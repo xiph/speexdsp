@@ -156,7 +156,7 @@ float *stack
 {
    int i,j, id;
    float *resp, *E, q;
-   float *t, *r, *e, *tresp;
+   float *t, *r, *e;
    float *gains;
    int *ind;
    float *shape_cb;
@@ -170,7 +170,6 @@ float *stack
    shape_cb_size = 1<<params->shape_bits;
    shape_cb = params->shape_cb;
    resp = PUSH(stack, shape_cb_size*subvect_size);
-   tresp = PUSH(stack, shape_cb_size*nsf);
    E = PUSH(stack, shape_cb_size);
    t = PUSH(stack, nsf);
    r = PUSH(stack, nsf);
@@ -201,16 +200,33 @@ float *stack
    for (i=0;i<nsf;i++)
       t[i]=target[i];
 
+   e[0]=1;
+   for (i=1;i<nsf;i++)
+      e[i]=0;
+   residue_zero(e, awk1, r, nsf, p);
+   syn_filt_zero(r, ak, r, nsf, p);
+   syn_filt_zero(r, awk2, r, nsf,p);
+   
    /* Pre-compute codewords response and energy */
    for (i=0;i<shape_cb_size;i++)
    {
       float *res = resp+i*subvect_size;
 
       /* Compute codeword response */
+#if 0
       residue_zero(shape_cb+i*subvect_size, awk1, res, subvect_size, p);
       syn_filt_zero(res, ak, res, subvect_size, p);
       syn_filt_zero(res, awk2, res, subvect_size,p);
-
+#else
+      int k;
+      for(j=0;j<subvect_size;j++)
+         res[j]=0;
+      for(j=0;j<subvect_size;j++)
+      {
+         for (k=j;k<subvect_size;k++)
+            res[k]+=shape_cb[i*subvect_size+j]*r[k-j];
+      }
+#endif
       /* Compute energy of codeword response */
       E[i]=0;
       for(j=0;j<subvect_size;j++)
@@ -260,7 +276,7 @@ float *stack
       }
       ind[i]=best_index;
       gains[i]=best_gain;
-
+#if 0
       for (j=0;j<nsf;j++)
          e[j]=0;
       for (j=0;j<subvect_size;j++)
@@ -269,9 +285,19 @@ float *stack
       syn_filt_zero(r, ak, r, nsf, p);
       syn_filt_zero(r, awk2, r, nsf,p);
       for (j=0;j<nsf;j++)
-         tresp[i*nsf+j]=r[j];
-      for (j=0;j<nsf;j++)
          t[j]-=r[j];
+#else
+      {
+         int k,m;
+         float g;
+         for (j=0;j<subvect_size;j++)
+         {
+            g=best_gain*shape_cb[best_index*subvect_size+j];
+            for (k=subvect_size*i+j,m=0;k<nsf;k++,m++)
+               t[k] -= g*r[m];
+         }
+      }
+#endif
    }
    
    /* Put everything back together */
@@ -293,7 +319,6 @@ float *stack
    
 
 
-   POP(stack);
    POP(stack);
    POP(stack);
    POP(stack);
