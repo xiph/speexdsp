@@ -112,7 +112,6 @@ typedef struct SpeexNBMode {
    float   gamma2;         /**< Perceptual filter parameter #2 */
    float   lag_factor;     /**< Lag-windowing parameter */
    float   lpc_floor;      /**< Noise floor for LPC analysis */
-   float   preemph;        /**< Pre-emphasis */
 
 #ifdef EPIC_48K
    int     lbr48k;         /**< 1 for the special 4.8 kbps mode */
@@ -135,7 +134,6 @@ typedef struct SpeexSBMode {
    float   gamma2;        /**< Perceptual filter parameter #1 */
    float   lag_factor;    /**< Lag-windowing parameter */
    float   lpc_floor;     /**< Noise floor for LPC analysis */
-   float   preemph;       /**< Pre-emphasis */
    float   folding_gain;
 
    SpeexSubmode *submodes[SB_SUBMODES]; /**< Sub-mode data for the mode */

@@ -582,7 +582,7 @@ static void update_noise_prob(SpeexPreprocessState *st)
          st->Smin[i] = st->Stmp[i] = st->S[i]+100;
    }
 
-   if (st->nb_preprocess%80==0)
+   if (st->nb_preprocess%100==0)
    {
       for (i=1;i<N-1;i++)
       {
@@ -670,14 +670,15 @@ int speex_preprocess(SpeexPreprocessState *st, float *x, float *echo)
       else
          min_gamma *= 4.;
 #else
-      min_gamma = .2*fabs(mean_prior - mean_post)*fabs(mean_prior - mean_post);
-      if (min_gamma>.6)
-         min_gamma = .6;
-      if (min_gamma<.01)
-         min_gamma = .01;
+      min_gamma = .1*fabs(mean_prior - mean_post)*fabs(mean_prior - mean_post);
+      if (min_gamma>.15)
+         min_gamma = .15;
+      if (min_gamma<.02)
+         min_gamma = .02;
 #endif
+      /*min_gamma = .08;*/
 
-      if (gamma<min_gamma)
+      /*if (gamma<min_gamma)*/
          gamma=min_gamma;
       
       for (i=1;i<N;i++)

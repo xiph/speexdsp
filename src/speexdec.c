@@ -194,6 +194,7 @@ FILE *out_file_open(char *outFile, int rate, int *channels)
 #endif
       info.play.encoding = AUDIO_ENCODING_SLINEAR;
       info.play.precision = 16;
+      info.play.sample_rate = rate;
       info.play.channels = *channels;
       
       if (ioctl(audio_fd, AUDIO_SETINFO, &info) < 0)

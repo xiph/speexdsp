@@ -36,15 +36,8 @@
 #define MISC_H
 
 #ifndef VERSION
-#define VERSION "speex-1.0"
+#define VERSION "speex-1.1"
 #endif
-
-/*Disable some warnings on VC++*/
-#ifdef _MSC_VER
-#pragma warning(disable : 4244)
-#pragma warning(disable : 4305)
-#endif
-
 
 #ifdef FIXED_POINT
 

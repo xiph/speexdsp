@@ -136,7 +136,8 @@ int   complexity
       {
          res[j]=0;
          for (k=0;k<=j;k++)
-            res[j] += 0.03125*shape[k]*r[j-k];
+            res[j] += shape[k]*r[j-k];
+         res[j] *= 0.03125;
       }
       
       /* Compute codeword energy */

@@ -59,9 +59,9 @@
 
 #define SUBMODE(x) st->submodes[st->submodeID]->x
 
-float exc_gain_quant_scal3[8]={-2.794750, -1.810660, -1.169850, -0.848119, -0.587190, -0.329818, -0.063266, 0.282826};
+float exc_gain_quant_scal3[8]={-2.794750f, -1.810660f, -1.169850f, -0.848119f, -0.587190f, -0.329818f, -0.063266f, 0.282826f};
 
-float exc_gain_quant_scal1[2]={-0.35, 0.05};
+float exc_gain_quant_scal1[2]={-0.35f, 0.05f};
 
 #define sqr(x) ((x)*(x))
 
@@ -92,12 +92,9 @@ void *nb_encoder_init(SpeexMode *m)
    st->max_pitch=mode->pitchEnd;
    st->lag_factor=mode->lag_factor;
    st->lpc_floor = mode->lpc_floor;
-   st->preemph = mode->preemph;
   
    st->submodes=mode->submodes;
    st->submodeID=st->submodeSelect=mode->defaultSubmode;
-   st->pre_mem=0;
-   st->pre_mem2=0;
    st->bounded_pitch = 1;
 
    st->encode_submode = 1;
@@ -217,10 +214,8 @@ int nb_encode(void *state, float *in, SpeexBits *bits)
 
    /* Copy new data in input buffer */
    speex_move(st->inBuf, st->inBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(float));
-   st->inBuf[st->bufSize-st->frameSize] = in[0] - st->preemph*st->pre_mem;
-   for (i=1;i<st->frameSize;i++)
-      st->inBuf[st->bufSize-st->frameSize+i] = in[i] - st->preemph*in[i-1];
-   st->pre_mem = in[st->frameSize-1];
+   for (i=0;i<st->frameSize;i++)
+      st->inBuf[st->bufSize-st->frameSize+i] = in[i];
 
    /* Move signals 1 frame towards the past */
    speex_move(st->exc2Buf, st->exc2Buf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(float));
@@ -504,10 +499,8 @@ int nb_encode(void *state, float *in, SpeexBits *bits)
       /* Final signal synthesis from excitation */
       iir_mem2(st->exc, st->interp_qlpc, st->frame, st->frameSize, st->lpcSize, st->mem_sp);
 
-      in[0] = st->frame[0] + st->preemph*st->pre_mem2;
-      for (i=1;i<st->frameSize;i++)
-         in[i]=st->frame[i] + st->preemph*in[i-1];
-      st->pre_mem2=in[st->frameSize-1];
+      for (i=0;i<st->frameSize;i++)
+         in[i]=st->frame[i];
 
       return 0;
 
@@ -678,8 +671,7 @@ int nb_encode(void *state, float *in, SpeexBits *bits)
       else
       {
          st->bw_lpc2[0]=1;
-         st->bw_lpc2[1]=-st->preemph;
-         for (i=2;i<=st->lpcSize;i++)
+         for (i=1;i<=st->lpcSize;i++)
             st->bw_lpc2[i]=0;
       }
 
@@ -909,10 +901,8 @@ int nb_encode(void *state, float *in, SpeexBits *bits)
    }
 
    /* Replace input by synthesized speech */
-   in[0] = st->frame[0] + st->preemph*st->pre_mem2;
-   for (i=1;i<st->frameSize;i++)
-     in[i]=st->frame[i] + st->preemph*in[i-1];
-   st->pre_mem2=in[st->frameSize-1];
+   for (i=0;i<st->frameSize;i++)
+     in[i]=st->frame[i];
 
    if (SUBMODE(innovation_quant) == noise_codebook_quant || st->submodeID==0)
       st->bounded_pitch = 1;
@@ -952,12 +942,10 @@ void *nb_decoder_init(SpeexMode *m)
    st->gamma2=mode->gamma2;
    st->min_pitch=mode->pitchStart;
    st->max_pitch=mode->pitchEnd;
-   st->preemph = mode->preemph;
 
    st->submodes=mode->submodes;
    st->submodeID=mode->defaultSubmode;
 
-   st->pre_mem=0;
    st->lpc_enh_enabled=0;
 
 
@@ -1110,10 +1098,8 @@ static void nb_decode_lost(DecState *st, float *out, char *stack)
       }      
    }
 
-   out[0] = st->frame[0] + st->preemph*st->pre_mem;
-   for (i=1;i<st->frameSize;i++)
-      out[i]=st->frame[i] + st->preemph*out[i-1];
-   st->pre_mem=out[st->frameSize-1];
+   for (i=0;i<st->frameSize;i++)
+      out[i]=st->frame[i];
    
    st->first = 0;
    st->count_lost++;
@@ -1272,10 +1258,8 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
       /* Final signal synthesis from excitation */
       iir_mem2(st->exc, lpc, st->frame, st->frameSize, st->lpcSize, st->mem_sp);
 
-      out[0] = st->frame[0] + st->preemph*st->pre_mem;
-      for (i=1;i<st->frameSize;i++)
-         out[i]=st->frame[i] + st->preemph*out[i-1];
-      st->pre_mem=out[st->frameSize-1];
+      for (i=0;i<st->frameSize;i++)
+         out[i]=st->frame[i];
       st->count_lost=0;
       return 0;
    }
@@ -1624,11 +1608,8 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
    }
    
    /*Copy output signal*/
-   out[0] = st->frame[0] + st->preemph*st->pre_mem;
-   for (i=1;i<st->frameSize;i++)
-     out[i]=st->frame[i] + st->preemph*out[i-1];
-   st->pre_mem=out[st->frameSize-1];
-
+   for (i=0;i<st->frameSize;i++)
+     out[i]=st->frame[i];
 
    /* Store the LSPs for interpolation in the next frame */
    for (i=0;i<st->lpcSize;i++)
