@@ -22,7 +22,7 @@
 #ifndef MODES_H
 #define MODES_H
 
-#include "speex_modes.h"
+#include "speex.h"
 #include "speex_bits.h"
 
 /* Quantizes LSPs */

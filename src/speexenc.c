@@ -22,7 +22,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "speex_modes.h"
+#include "speex.h"
 
 #define MAX_FRAME_SIZE 2000
 #define MAX_FRAME_BYTES 1000

@@ -1,4 +1,4 @@
-#include "speex_modes.h"
+#include "speex.h"
 #include <stdio.h>
 #include <stdlib.h>
 
