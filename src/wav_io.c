@@ -87,9 +87,9 @@ int read_wav_header(FILE *file, int *rate, int *channels, int *format, int *size
    stmp = le_short(stmp);
    *channels = stmp;
    
-   if (stmp>1)
+   if (stmp>2)
    {
-      fprintf (stderr, "Only mono supported for now\n");
+      fprintf (stderr, "Only mono and (intensity) stereo supported\n");
       return -1;
    }
 

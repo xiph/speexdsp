@@ -238,6 +238,15 @@ int  *cdbk_index
          for (j=0;j<9;j++)
             sum+=C[j]*ptr[j+3];
          if (0) {
+            float tot = fabs(ptr[1]);
+            if (ptr[0]>0)
+               tot+=ptr[0];
+            if (ptr[2]>0)
+               tot+=ptr[2];
+            if (tot>1)
+               continue;
+         }
+         if (0) {
             float tot=ptr[0]+ptr[1]+ptr[2];
             if (tot < 1.1)
                sum *= 1+.15*tot;

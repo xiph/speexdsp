@@ -100,6 +100,7 @@ int read_samples(FILE *fin,int frame_size, int bits, int channels, int lsb, floa
       }
    }
 
+#if 0
    if(channels==2)
    {
       /* downmix to mono */
@@ -109,9 +110,10 @@ int read_samples(FILE *fin,int frame_size, int bits, int channels, int lsb, floa
          s[i]=d>>1;
       }
    }
+#endif
 
    /* copy to float input buffer */
-   for (i=0;i<frame_size;i++)
+   for (i=0;i<frame_size*channels;i++)
    {
       input[i]=(short)s[i];
    }
@@ -155,6 +157,7 @@ void usage()
    printf (" --be               Raw input is big-endian\n"); 
    printf (" --8bit             Raw input is 8-bit unsigned\n"); 
    printf (" --16bit            Raw input is 16-bit signed\n"); 
+   printf (" --stereo           Consider input as stereo\n"); 
    printf ("Default raw PCM input is 16-bit, little-endian, mono\n"); 
    printf ("\n");
    printf ("More information is available from the Speex site: http://www.speex.org\n");
@@ -196,6 +199,7 @@ int main(int argc, char **argv)
       {"be", no_argument, NULL, 0},
       {"lin8", no_argument, NULL, 0},
       {"lin16", no_argument, NULL, 0},
+      {"stereo", no_argument, NULL, 0},
       {"version", no_argument, NULL, 0},
       {"comment", required_argument, NULL, 0},
       {"author", required_argument, NULL, 0},
@@ -278,6 +282,9 @@ int main(int argc, char **argv)
          } else if (strcmp(long_options[option_index].name,"lin16")==0)
          {
             fmt=16;
+         } else if (strcmp(long_options[option_index].name,"stereo")==0)
+         {
+            chan=2;
          } else if (strcmp(long_options[option_index].name,"comment")==0)
          {
            comment_add(&comments, &comments_length, NULL, optarg); 
@@ -527,6 +534,8 @@ int main(int argc, char **argv)
    {
       id++;
       /*Encode current frame*/
+      if (chan==2)
+         speex_encode_stereo(input, frame_size, &bits);
       speex_encode(st, input, &bits);
       
       if (print_bitrate) {

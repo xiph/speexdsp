@@ -30,25 +30,53 @@
 */
 
 #include "speex_stereo.h"
+#include "speex_callbacks.h"
+#include "vq.h"
+#include <math.h>
 
-void encode_stereo(float *data, int frame_size, SpeexBits *bits)
+/*float e_ratio_quant[4] = {1, 1.26, 1.587, 2};*/
+static float e_ratio_quant[4] = {.25, .315, .397, .5};
+
+#include <stdio.h>
+
+void speex_encode_stereo(float *data, int frame_size, SpeexBits *bits)
 {
-   int i;
+   int i, tmp;
    float e_left=0, e_right=0, e_tot=0;
    float balance, e_ratio;
    for (i=0;i<frame_size;i++)
    {
       e_left  += data[2*i]*data[2*i];
       e_right += data[2*i+1]*data[2*i+1];
-      data[i] =  data[2*i]+data[2*i+1];
+      data[i] =  .5*(data[2*i]+data[2*i+1]);
       e_tot   += data[i]*data[i];
    }
    balance=(e_left+1)/(e_right+1);
    e_ratio = e_tot/(1+e_left+e_right);
+
+   /*Quantization*/
+   speex_bits_pack(bits, 14, 5);
+   speex_bits_pack(bits, SPEEX_INBAND_STEREO, 4);
    
+   balance=4*log(balance);
+
+   /*Pack sign*/
+   if (balance>0)
+      speex_bits_pack(bits, 0, 1);
+   else
+      speex_bits_pack(bits, 1, 1);
+   balance=floor(.5+fabs(balance));
+   if (balance>30)
+      balance=31;
+   
+   speex_bits_pack(bits, (int)balance, 5);
+   
+   /*Quantize energy ratio*/
+   tmp=vq_index(&e_ratio, e_ratio_quant, 1, 4);
+   speex_bits_pack(bits, tmp, 2);
 }
 
-void decode_stereo(float *data, int frame_size, SpeexStereoState *stereo)
+void speex_decode_stereo(float *data, int frame_size, SpeexStereoState *stereo)
 {
    float balance, e_ratio;
    int i;
@@ -71,4 +99,23 @@ void decode_stereo(float *data, int frame_size, SpeexStereoState *stereo)
       data[2*i] = e_left*data[i];
       data[2*i+1] = e_right*data[i];
    }
+}
+
+
+int speex_std_stereo_request_handler(SpeexBits *bits, void *state, void *data)
+{
+   SpeexStereoState *stereo;
+   float sign=1;
+   int tmp;
+
+   stereo = (SpeexStereoState*)data;
+   if (speex_bits_unpack_unsigned(bits, 1))
+      sign=-1;
+   tmp = speex_bits_unpack_unsigned(bits, 5);
+   stereo->balance = sign*exp(.25*tmp);
+
+   tmp = speex_bits_unpack_unsigned(bits, 2);
+   stereo->e_ratio = e_ratio_quant[tmp];
+
+   return 0;
 }

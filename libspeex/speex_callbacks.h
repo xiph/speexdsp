@@ -60,9 +60,12 @@ extern "C" {
 /*These are 8-bit requests*/
 /** Send a character in-band */
 #define SPEEX_INBAND_CHAR                8
+#define SPEEX_INBAND_STEREO              9
 
+/*These are 16-bit requests*/
 #define SPEEX_INBAND_MAX_BITRATE         10
 
+/*These are 32-bit requests*/
 #define SPEEX_INBAND_ACKNOWLEDGE         12
 
 /** Callback function type */
