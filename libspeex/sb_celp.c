@@ -493,7 +493,6 @@ int sb_encode(void *state, short *in, SpeexBits *bits)
    for (sub=0;sub<st->nbSubframes;sub++)
    {
       spx_sig_t *exc, *sp, *res, *target, *sw;
-      float tmp;
       spx_word16_t filter_ratio;
       int offset;
       spx_word32_t rl, rh;

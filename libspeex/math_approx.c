@@ -46,6 +46,8 @@ spx_word16_t spx_sqrt(spx_word32_t x)
    int k=0;
    spx_word32_t rt;
 
+   if (x==0)
+      return 0;
 #if 1
    if (x>16777216)
    {

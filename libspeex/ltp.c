@@ -35,6 +35,7 @@
 #include "stack_alloc.h"
 #include "filters.h"
 #include "speex_bits.h"
+#include "math_approx.h"
 
 #include <stdio.h>
 
@@ -84,6 +85,7 @@ void open_loop_nbest_pitch(spx_sig_t *sw, int start, int end, int len, int *pitc
    {
         best_score[i]=-1;
         gain[i]=0;
+        pitch[i]=start;
    }
 
 
@@ -163,21 +165,22 @@ void open_loop_nbest_pitch(spx_sig_t *sw, int start, int end, int len, int *pitc
          }
       }
    }
-   
+
    /* Compute open-loop gain */
    for (j=0;j<N;j++)
    {
-      float g1, g;
+      spx_word32_t g;
       i=pitch[j];
-      g1 = corr[i-start]/(energy[i-start]+10.);
-      g = sqrt(g1*corr[i-start]/(e0+10.));
-      if (g>g1)
-         g=g1;
+      g = DIV32(corr[i-start], 10+SHR(MULT16_16(spx_sqrt(e0),spx_sqrt(energy[i-start])),8));
+      /* FIXME: g = max(g,corr/energy) */
       if (g<0)
-         g=0;
+         g = 0;
+#ifdef FIXED_POINT
+      gain[j]=0.0039062*g;
+#else
       gain[j]=g;
+#endif
    }
-
 }
 
 
