@@ -60,7 +60,7 @@ void speex_bits_init(SpeexBits *bits);
 /** Initializes SpeexBits struct using a pre-allocated buffer*/
 void speex_bits_init_buffer(SpeexBits *bits, void *buff, int buf_size);
 
-/** Frees all resources assiociated to a SpeexBits struct. Right now this does nothing since no resources are allocated, but this could change in the future.*/
+/** Frees all resources associated to a SpeexBits struct. Right now this does nothing since no resources are allocated, but this could change in the future.*/
 void speex_bits_destroy(SpeexBits *bits);
 
 /** Resets bits to initial value (just after initialization, erasing content)*/

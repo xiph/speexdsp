@@ -44,7 +44,7 @@
 
 /**Structure representing the full state of the narrowband encoder*/
 typedef struct EncState {
-   SpeexMode *mode;       /**< Mode curresponding to the state */
+   SpeexMode *mode;       /**< Mode corresponding to the state */
    int    first;          /**< Is this the first frame? */
    int    frameSize;      /**< Size of frames */
    int    subframeSize;   /**< Size of sub-frames */
@@ -62,7 +62,7 @@ typedef struct EncState {
    int   *pitch;
    float  gamma1;         /**< Perceptual filter: A(z/gamma1) */
    float  gamma2;         /**< Perceptual filter: A(z/gamma2) */
-   float  lag_factor;     /**< Lag windowing gaussian width */
+   float  lag_factor;     /**< Lag windowing Gaussian width */
    float  lpc_floor;      /**< Noise floor multiplier for A[0] in LPC analysis*/
    float  preemph;        /**< Pre-emphasis: P(z) = 1 - a*z^-1*/
    float  pre_mem;        /**< 1-element memory for pre-emphasis */
@@ -120,7 +120,7 @@ typedef struct EncState {
 
 /**Structure representing the full state of the narrowband decoder*/
 typedef struct DecState {
-   SpeexMode *mode;       /**< Mode curresponding to the state */
+   SpeexMode *mode;       /**< Mode corresponding to the state */
    int    first;          /**< Is this the first frame? */
    int    count_lost;     /**< Was the last frame lost? */
    int    frameSize;      /**< Size of frames */

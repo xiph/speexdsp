@@ -114,7 +114,7 @@ void *nb_encoder_init(SpeexMode *m)
 
    st->innov = PUSH(st->stack, st->frameSize, float);
 
-   /* Asymetric "pseudo-Hamming" window */
+   /* Asymmetric "pseudo-Hamming" window */
    {
       int part1, part2;
       part1 = st->subframeSize*7/2;
@@ -1036,7 +1036,7 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
          return 0;
       }
 
-      /* Search for next narrwoband block (handle requests, skip wideband blocks) */
+      /* Search for next narrowband block (handle requests, skip wideband blocks) */
       do {
          wideband = speex_bits_unpack_unsigned(bits, 1);
          if (wideband) /* Skip wideband block (for compatibility) */

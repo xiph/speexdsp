@@ -47,7 +47,7 @@ int speex_inband_handler(SpeexBits *bits, SpeexCallback *callback_list, void *st
    {
       return callback->func(bits, state, callback->data);
    } else
-      /*If callback is not registered, skip the right numbr of bits*/
+      /*If callback is not registered, skip the right number of bits*/
    {
       int adv;
       if (id<2)

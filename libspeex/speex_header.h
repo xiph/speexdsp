@@ -60,7 +60,7 @@ typedef struct SpeexHeader {
    int frame_size;             /**< Size of frames */
    int vbr;                    /**< 1 for a VBR encoding, 0 otherwise */
    int frames_per_packet;      /**< Number of frames stored per Ogg packet */
-   int extra_headers;          /**< Number of additionnal headers after the comments */
+   int extra_headers;          /**< Number of additional headers after the comments */
    int reserved1;              /**< Reserved for future use, must be zero */
    int reserved2;              /**< Reserved for future use, must be zero */
 } SpeexHeader;

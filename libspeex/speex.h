@@ -235,7 +235,7 @@ typedef struct SpeexMode {
 
 /**
  * Returns a handle to a newly created Speex encoder state structure. For now, 
- * the "mode" arguent can be &nb_mode or &wb_mode . In the future, more modes 
+ * the "mode" argument can be &nb_mode or &wb_mode . In the future, more modes 
  * may be added. Note that for now if you have more than one channels to 
  * encode, you need one state per channel.
  *
@@ -267,7 +267,7 @@ int speex_encoder_ctl(void *state, int request, void *ptr);
 
 
 /** Returns a handle to a newly created decoder state structure. For now, 
- * the mode arguent can be &nb_mode or &wb_mode . In the future, more modes
+ * the mode argument can be &nb_mode or &wb_mode . In the future, more modes
  * may be added.  Note that for now if you have more than one channels to
  * decode, you need one state per channel.
  *
@@ -320,7 +320,7 @@ extern SpeexMode speex_wb_mode;
 /** Default "ultra-wideband" mode */
 extern SpeexMode speex_uwb_mode;
 
-/** List of all modes availavle */
+/** List of all modes available */
 extern SpeexMode *speex_mode_list[SPEEX_NB_MODES];
 
 #ifdef __cplusplus

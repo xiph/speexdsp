@@ -63,7 +63,7 @@ Modified by Jean-Marc Valin
 	AUTHOR......: David Rowe
 	DATE CREATED: 24/2/93
 
-    This function evalutes a series of chebyshev polynomials
+    This function evaluates a series of Chebyshev polynomials
 
 \*---------------------------------------------------------------------------*/
 
@@ -78,14 +78,14 @@ static float cheb_poly_eva(float *coef,float x,int m,char *stack)
     float *T,sum;
     int m2=m>>1;
 
-    /* Allocate memory for chebyshev series formulation */
+    /* Allocate memory for Chebyshev series formulation */
     T=PUSH(stack, m2+1, float);
 
     /* Initialise values */
     T[0]=1;
     T[1]=x;
 
-    /* Evaluate chebyshev series formulation using iterative approach 	*/
+    /* Evaluate Chebyshev series formulation using iterative approach  */
     /* Evaluate polynomial and return value also free memory space */
     sum = coef[m2] + coef[m2-1]*x;
     x *= 2;
@@ -136,7 +136,7 @@ int lpc_to_lsp (float *a,int lpcrdr,float *freq,int nb,float delta, char *stack)
     int roots=0;              	/* DR 8/2/94: number of roots found 	*/
     flag = 1;                	/*  program is searching for a root when,
 				1 else has found one 			*/
-    m = lpcrdr/2;            	/* order of P'(z) & Q'(z) polynimials 	*/
+    m = lpcrdr/2;            	/* order of P'(z) & Q'(z) polynomials 	*/
 
 
     /* Allocate memory space for polynomials */
@@ -146,7 +146,7 @@ int lpc_to_lsp (float *a,int lpcrdr,float *freq,int nb,float delta, char *stack)
     /* determine P'(z)'s and Q'(z)'s coefficients where
       P'(z) = P(z)/(1 + z^(-1)) and Q'(z) = Q(z)/(1-z^(-1)) */
 
-    px = P;                      /* initilaise ptrs 			*/
+    px = P;                      /* initialise ptrs 			*/
     qx = Q;
     p = px;
     q = qx;

@@ -173,7 +173,7 @@ void *sb_encoder_init(SpeexMode *m)
    st->res=PUSH(st->stack, st->frame_size, float);
    st->sw=PUSH(st->stack, st->frame_size, float);
    st->target=PUSH(st->stack, st->frame_size, float);
-   /*Asymetric "pseudo-Hamming" window*/
+   /*Asymmetric "pseudo-Hamming" window*/
    {
       int part1, part2;
       part1 = st->subframeSize*7/2;
