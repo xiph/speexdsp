@@ -209,6 +209,7 @@ int main(int argc, char **argv)
    FILE *fin, *fout;
    short input[MAX_FRAME_SIZE];
    int frame_size;
+   int quiet=0;
    int vbr_enabled=0;
    int abr_enabled=0;
    int vad_enabled=0;
@@ -234,6 +235,7 @@ int main(int argc, char **argv)
       {"denoise", no_argument, NULL, 0},
       {"agc", no_argument, NULL, 0},
       {"help", no_argument, NULL, 0},
+      {"quiet", no_argument, NULL, 0},
       {"le", no_argument, NULL, 0},
       {"be", no_argument, NULL, 0},
       {"8bit", no_argument, NULL, 0},
@@ -341,6 +343,9 @@ int main(int argc, char **argv)
          {
             usage();
             exit(0);
+         } else if (strcmp(long_options[option_index].name,"quiet")==0)
+         {
+            quiet = 1;
          } else if (strcmp(long_options[option_index].name,"version")==0)
          {
             version();
@@ -516,8 +521,9 @@ int main(int argc, char **argv)
          rate=32000;
    }
 
-   if (rate!=8000 && rate!=16000 && rate!=32000)
-      fprintf (stderr, "Warning: Speex is only optimized for 8, 16 and 32 kHz. It will still work at %d Hz but your mileage may vary\n", rate); 
+   if (!quiet)
+      if (rate!=8000 && rate!=16000 && rate!=32000)
+         fprintf (stderr, "Warning: Speex is only optimized for 8, 16 and 32 kHz. It will still work at %d Hz but your mileage may vary\n", rate); 
 
    speex_init_header(&header, rate, 1, mode);
    header.frames_per_packet=nframes;
@@ -528,7 +534,8 @@ int main(int argc, char **argv)
       char *st_string="mono";
       if (chan==2)
          st_string="stereo";
-      fprintf (stderr, "Encoding %d Hz audio using %s mode (%s)\n", 
+      if (!quiet)
+         fprintf (stderr, "Encoding %d Hz audio using %s mode (%s)\n", 
                header.rate, mode->modeName, st_string);
    }
    /*fprintf (stderr, "Encoding %d Hz audio at %d bps using %s mode\n", 
@@ -673,10 +680,13 @@ int main(int argc, char **argv)
          fputc (ch, stderr);
          cumul_bits += tmp;
          enc_frames += 1;
-         if (vad_enabled || vbr_enabled || abr_enabled)
-            fprintf (stderr, "Bitrate is use: %d bps  (average %d bps)   ", tmp, (int)(cumul_bits/enc_frames));
-         else
-            fprintf (stderr, "Bitrate is use: %d bps     ", tmp);
+         if (!quiet)
+         {
+            if (vad_enabled || vbr_enabled || abr_enabled)
+               fprintf (stderr, "Bitrate is use: %d bps  (average %d bps)   ", tmp, (int)(cumul_bits/enc_frames));
+            else
+               fprintf (stderr, "Bitrate is use: %d bps     ", tmp);
+         }
          
       }
 

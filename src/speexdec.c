@@ -292,7 +292,7 @@ void version_short()
    printf ("Copyright (C) 2002-2003 Jean-Marc Valin\n");
 }
 
-static void *process_header(ogg_packet *op, int enh_enabled, int *frame_size, int *rate, int *nframes, int forceMode, int *channels, SpeexStereoState *stereo, int *extra_headers)
+static void *process_header(ogg_packet *op, int enh_enabled, int *frame_size, int *rate, int *nframes, int forceMode, int *channels, SpeexStereoState *stereo, int *extra_headers, int quiet)
 {
    void *st;
    const SpeexMode *mode;
@@ -369,20 +369,23 @@ static void *process_header(ogg_packet *op, int enh_enabled, int *frame_size, in
    if (*channels==-1)
       *channels = header->nb_channels;
    
-   fprintf (stderr, "Decoding %d Hz audio using %s mode", 
-            *rate, mode->modeName);
+   if (!quiet)
+   {
+      fprintf (stderr, "Decoding %d Hz audio using %s mode", 
+               *rate, mode->modeName);
 
-   if (*channels==1)
-      fprintf (stderr, " (mono");
-   else
-      fprintf (stderr, " (stereo");
+      if (*channels==1)
+         fprintf (stderr, " (mono");
+      else
+         fprintf (stderr, " (stereo");
       
-   if (header->vbr)
-      fprintf (stderr, ", VBR)\n");
-   else
-      fprintf(stderr, ")\n");
-   /*fprintf (stderr, "Decoding %d Hz audio at %d bps using %s mode\n", 
-    *rate, mode->bitrate, mode->modeName);*/
+      if (header->vbr)
+         fprintf (stderr, ", VBR)\n");
+      else
+         fprintf(stderr, ")\n");
+      /*fprintf (stderr, "Decoding %d Hz audio at %d bps using %s mode\n", 
+       *rate, mode->bitrate, mode->modeName);*/
+   }
 
    *extra_headers = header->extra_headers;
 
@@ -403,9 +406,11 @@ int main(int argc, char **argv)
    SpeexBits bits;
    int packet_count=0;
    int stream_init = 0;
+   int quiet = 0;
    struct option long_options[] =
    {
       {"help", no_argument, NULL, 0},
+      {"quiet", no_argument, NULL, 0},
       {"version", no_argument, NULL, 0},
       {"version-short", no_argument, NULL, 0},
       {"enh", no_argument, NULL, 0},
@@ -456,6 +461,9 @@ int main(int argc, char **argv)
          {
             usage();
             exit(0);
+         } else if (strcmp(long_options[option_index].name,"quiet")==0)
+         {
+            quiet = 1;
          } else if (strcmp(long_options[option_index].name,"version")==0)
          {
             version();
@@ -586,7 +594,7 @@ int main(int argc, char **argv)
             /*If first packet, process as Speex header*/
             if (packet_count==0)
             {
-               st = process_header(&op, enh_enabled, &frame_size, &rate, &nframes, forceMode, &channels, &stereo, &extra_headers);
+               st = process_header(&op, enh_enabled, &frame_size, &rate, &nframes, forceMode, &channels, &stereo, &extra_headers, quiet);
                if (!nframes)
                   nframes=1;
                if (!st)
@@ -595,7 +603,8 @@ int main(int argc, char **argv)
 
             } else if (packet_count==1)
             {
-               print_comments((char*)op.packet, op.bytes);
+               if (!quiet)
+                  print_comments((char*)op.packet, op.bytes);
             } else if (packet_count<=1+extra_headers)
             {
                /* Ignore extra headers */
