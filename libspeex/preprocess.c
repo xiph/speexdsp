@@ -144,12 +144,16 @@ SpeexPreprocessState *speex_preprocess_state_init(int frame_size, int sampling_r
    st->agc_enabled = 0;
    st->agc_level = 8000;
    st->vad_enabled = 0;
+   st->dereverb_enabled = 0;
+   st->reverb_decay = .5;
+   st->reverb_level = .2;
 
    st->frame = (float*)speex_alloc(2*N*sizeof(float));
    st->ps = (float*)speex_alloc(N*sizeof(float));
    st->gain2 = (float*)speex_alloc(N*sizeof(float));
    st->window = (float*)speex_alloc(2*N*sizeof(float));
    st->noise = (float*)speex_alloc(N*sizeof(float));
+   st->reverb_estimate = (float*)speex_alloc(N*sizeof(float));
    st->old_ps = (float*)speex_alloc(N*sizeof(float));
    st->gain = (float*)speex_alloc(N*sizeof(float));
    st->prior = (float*)speex_alloc(N*sizeof(float));
@@ -189,6 +193,7 @@ SpeexPreprocessState *speex_preprocess_state_init(int frame_size, int sampling_r
    for (i=0;i<N;i++)
    {
       st->noise[i]=1e4;
+      st->reverb_estimate[i]=0.;
       st->old_ps[i]=1e4;
       st->gain[i]=1;
       st->post[i]=1;
@@ -232,6 +237,7 @@ void speex_preprocess_state_destroy(SpeexPreprocessState *st)
    speex_free(st->gain2);
    speex_free(st->window);
    speex_free(st->noise);
+   speex_free(st->reverb_estimate);
    speex_free(st->old_ps);
    speex_free(st->gain);
    speex_free(st->prior);
@@ -243,6 +249,7 @@ void speex_preprocess_state_destroy(SpeexPreprocessState *st)
    speex_free(st->Smin);
    speex_free(st->Stmp);
    speex_free(st->update_prob);
+   speex_free(st->zeta);
 
    speex_free(st->noise_bands);
    speex_free(st->noise_bands2);
@@ -258,7 +265,7 @@ void speex_preprocess_state_destroy(SpeexPreprocessState *st)
    speex_free(st);
 }
 
-static void update_noise(SpeexPreprocessState *st, float *ps, float *echo)
+static void update_noise(SpeexPreprocessState *st, float *ps, int *echo)
 {
    int i;
    float beta;
@@ -599,7 +606,7 @@ static void update_noise_prob(SpeexPreprocessState *st)
    for (i=1;i<N-1;i++)
    {
       st->update_prob[i] *= .2;
-      if (st->S[i] > 5*st->Smin[i])
+      if (st->S[i] > 4*st->Smin[i])
          st->update_prob[i] += .8;
       /*fprintf (stderr, "%f ", st->S[i]/st->Smin[i]);*/
       /*fprintf (stderr, "%f ", st->update_prob[i]);*/
@@ -607,7 +614,7 @@ static void update_noise_prob(SpeexPreprocessState *st)
 
 }
 
-int speex_preprocess(SpeexPreprocessState *st, short *x, float *echo)
+int speex_preprocess(SpeexPreprocessState *st, short *x, int *echo)
 {
    int i;
    int is_speech=1;
@@ -640,7 +647,7 @@ int speex_preprocess(SpeexPreprocessState *st, short *x, float *echo)
    /* Compute a posteriori SNR */
    for (i=1;i<N;i++)
    {
-      st->post[i] = ps[i]/(1+st->noise[i]+st->echo_noise[i]) - 1;
+      st->post[i] = ps[i]/(1+st->noise[i]+st->echo_noise[i]+st->reverb_estimate[i]) - 1;
       if (st->post[i]>100)
          st->post[i]=100;
       /*if (st->post[i]<0)
@@ -686,7 +693,7 @@ int speex_preprocess(SpeexPreprocessState *st, short *x, float *echo)
          
          /* A priori SNR update */
          st->prior[i] = gamma*max(0.0,st->post[i]) +
-         (1-gamma)*st->gain[i]*st->gain[i]*st->old_ps[i]/(1+st->noise[i]+st->echo_noise[i]);
+         (1-gamma)*st->gain[i]*st->gain[i]*st->old_ps[i]/(1+st->noise[i]+st->echo_noise[i]+st->reverb_estimate[i]);
          
          if (st->prior[i]>100)
             st->prior[i]=100;
@@ -739,8 +746,13 @@ int speex_preprocess(SpeexPreprocessState *st, short *x, float *echo)
    } else {
       for (i=1;i<N-1;i++)
       {
-         if (st->update_prob[i]<.5)
-            st->noise[i] = .90*st->noise[i] + .1*st->ps[i];
+         if (st->update_prob[i]<.5 || st->ps[i] < st->noise[i])
+         {
+            if (echo)
+               st->noise[i] = .90*st->noise[i] + .1*(st->ps[i]-echo[i]);
+            else
+               st->noise[i] = .90*st->noise[i] + .1*st->ps[i];
+         }
       }
    }
 
@@ -836,7 +848,8 @@ int speex_preprocess(SpeexPreprocessState *st, short *x, float *echo)
       {
          st->gain[i]=2;
       }
-
+      
+      st->reverb_estimate[i] = st->reverb_decay*st->reverb_estimate[i] + st->reverb_decay*st->reverb_level*st->gain[i]*st->gain[i]*st->ps[i];
       if (st->denoise_enabled)
       {
          st->gain2[i]=p*p*st->gain[i];
@@ -917,7 +930,7 @@ int speex_preprocess(SpeexPreprocessState *st, short *x, float *echo)
    return is_speech;
 }
 
-void speex_preprocess_estimate_update(SpeexPreprocessState *st, short *x, float *noise)
+void speex_preprocess_estimate_update(SpeexPreprocessState *st, short *x, int *echo)
 {
    int i;
    int N = st->ps_size;
@@ -933,8 +946,13 @@ void speex_preprocess_estimate_update(SpeexPreprocessState *st, short *x, float 
    
    for (i=1;i<N-1;i++)
    {
-      if (st->update_prob[i]<.5)
-         st->noise[i] = .90*st->noise[i] + .1*ps[i];
+      if (st->update_prob[i]<.5 || st->ps[i] < st->noise[i])
+      {
+         if (echo)
+            st->noise[i] = .90*st->noise[i] + .1*(st->ps[i]-echo[i]);
+         else
+            st->noise[i] = .90*st->noise[i] + .1*st->ps[i];
+      }
    }
 
    for (i=0;i<N3;i++)
@@ -944,6 +962,8 @@ void speex_preprocess_estimate_update(SpeexPreprocessState *st, short *x, float 
    for (i=1;i<N;i++)
       st->old_ps[i] = ps[i];
 
+   for (i=1;i<N;i++)
+      st->reverb_estimate[i] *= st->reverb_decay;
 }
 
 
@@ -951,6 +971,7 @@ int speex_preprocess_ctl(SpeexPreprocessState *state, int request, void *ptr)
 {
    SpeexPreprocessState *st;
    st=(SpeexPreprocessState*)state;
+   int i;
    switch(request)
    {
    case SPEEX_PREPROCESS_SET_DENOISE:
@@ -984,7 +1005,31 @@ int speex_preprocess_ctl(SpeexPreprocessState *state, int request, void *ptr)
    case SPEEX_PREPROCESS_GET_VAD:
       (*(int*)ptr) = st->vad_enabled;
       break;
-   default:
+   
+   case SPEEX_PREPROCESS_SET_DEREVERB:
+      st->dereverb_enabled = (*(int*)ptr);
+      for (i=0;i<st->ps_size;i++)
+         st->reverb_estimate[i]=0;
+      break;
+   case SPEEX_PREPROCESS_GET_DEREVERB:
+      (*(int*)ptr) = st->dereverb_enabled;
+      break;
+
+   case SPEEX_PREPROCESS_SET_DEREVERB_LEVEL:
+      st->reverb_level = (*(int*)ptr);
+      break;
+   case SPEEX_PREPROCESS_GET_DEREVERB_LEVEL:
+      (*(int*)ptr) = st->reverb_level;
+      break;
+   
+   case SPEEX_PREPROCESS_SET_DEREVERB_DECAY:
+      st->reverb_decay = (*(int*)ptr);
+      break;
+   case SPEEX_PREPROCESS_GET_DEREVERB_DECAY:
+      (*(int*)ptr) = st->reverb_decay;
+      break;
+
+      default:
       speex_warning_int("Unknown speex_preprocess_ctl request: ", request);
       return -1;
    }

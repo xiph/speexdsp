@@ -50,12 +50,16 @@ typedef struct SpeexPreprocessState {
    int    agc_enabled;
    float  agc_level;
    int    vad_enabled;
-
+   int    dereverb_enabled;
+   float  reverb_decay;
+   float  reverb_level;
+   
    float *frame;             /**< Processing frame (2*ps_size) */
    float *ps;                /**< Current power spectrum */
    float *gain2;             /**< Adjusted gains */
    float *window;            /**< Analysis/Synthesis window */
    float *noise;             /**< Noise estimate */
+   float *reverb_estimate;   /**< Estimate of reverb energy */
    float *old_ps;            /**< Power spectrum for last frame */
    float *gain;              /**< Ephraim Malah gain */
    float *prior;             /**< A-priori SNR */
@@ -103,10 +107,10 @@ SpeexPreprocessState *speex_preprocess_state_init(int frame_size, int sampling_r
 void speex_preprocess_state_destroy(SpeexPreprocessState *st);
 
 /** Preprocess a frame */
-int speex_preprocess(SpeexPreprocessState *st, short *x, float *noise);
+int speex_preprocess(SpeexPreprocessState *st, short *x, int *echo);
 
 /** Preprocess a frame */
-void speex_preprocess_estimate_update(SpeexPreprocessState *st, short *x, float *noise);
+void speex_preprocess_estimate_update(SpeexPreprocessState *st, short *x, int *echo);
 
 /** Used like the ioctl function to control the preprocessor parameters */
 int speex_preprocess_ctl(SpeexPreprocessState *st, int request, void *ptr);
@@ -124,6 +128,15 @@ int speex_preprocess_ctl(SpeexPreprocessState *st, int request, void *ptr);
 
 #define SPEEX_PREPROCESS_SET_AGC_LEVEL 6
 #define SPEEX_PREPROCESS_GET_AGC_LEVEL 7
+
+#define SPEEX_PREPROCESS_SET_DEREVERB 8
+#define SPEEX_PREPROCESS_GET_DEREVERB 9
+
+#define SPEEX_PREPROCESS_SET_DEREVERB_LEVEL 10
+#define SPEEX_PREPROCESS_GET_DEREVERB_LEVEL 11
+
+#define SPEEX_PREPROCESS_SET_DEREVERB_DECAY 12
+#define SPEEX_PREPROCESS_GET_DEREVERB_DECAY 13
 
 #ifdef __cplusplus
 }
