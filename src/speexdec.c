@@ -106,8 +106,8 @@ void usage()
    fprintf (stderr, "options:\n");
    fprintf (stderr, "\t--help       -h      This help\n"); 
    fprintf (stderr, "\t--version    -v      Version information\n"); 
-   fprintf (stderr, "\t--pf         --pf    Enable post-filter\n"); 
-   fprintf (stderr, "\t--no-pf      --no-pf Disable post-filter\n"); 
+   fprintf (stderr, "\t--pf                 Enable post-filter\n"); 
+   fprintf (stderr, "\t--no-pf              Disable post-filter\n");
 }
 
 void version()
@@ -210,6 +210,7 @@ int main(int argc, char **argv)
          break;
       case 'h':
          usage();
+         exit(0);
          break;
       case 'v':
          version();

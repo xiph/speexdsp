@@ -124,6 +124,7 @@ int main(int argc, char **argv)
          break;
       case 'h':
          usage();
+         exit(0);
          break;
       case 'v':
          version();
