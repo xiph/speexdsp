@@ -141,6 +141,10 @@ void *nb_encoder_init(SpeexMode *m)
    st->interp_qlsp = speex_alloc(st->lpcSize*sizeof(float));
    st->rc = speex_alloc(st->lpcSize*sizeof(float));
    st->first = 1;
+   for (i=0;i<st->lpcSize;i++)
+   {
+      st->lsp[i]=(M_PI*((float)(i+1)))/(st->lpcSize+1);
+   }
 
    st->mem_sp = speex_alloc(st->lpcSize*sizeof(float));
    st->mem_sw = speex_alloc(st->lpcSize*sizeof(float));
@@ -211,7 +215,6 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
 {
    EncState *st;
    int i, sub, roots;
-   float error;
    int ol_pitch;
    float ol_pitch_coef;
    float ol_gain;
@@ -251,30 +254,33 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
       st->autocorr[i] *= st->lagWindow[i];
 
    /* Levinson-Durbin */
-   error = wld(st->lpc+1, st->autocorr, st->rc, st->lpcSize);
+   wld(st->lpc+1, st->autocorr, st->rc, st->lpcSize);
    st->lpc[0]=1;
 
    /* LPC to LSPs (x-domain) transform */
    roots=lpc_to_lsp (st->lpc, st->lpcSize, st->lsp, 15, 0.2, stack);
-   if (roots!=st->lpcSize)
+   if (roots==st->lpcSize)
    {
-      roots = lpc_to_lsp (st->lpc, st->lpcSize, st->lsp, 11, 0.02, stack);
-      if (roots!=st->lpcSize) {
-         /*fprintf (stderr, "roots!=st->lpcSize (found only %d roots)\n", roots);*/
-
-         /*If we can't find all LSP's, do some damage control and use a flat filter*/
+      /* LSP x-domain to angle domain*/
+      for (i=0;i<st->lpcSize;i++)
+         st->lsp[i] = acos(st->lsp[i]);
+   } else {
+      if (st->complexity>1)
+         roots = lpc_to_lsp (st->lpc, st->lpcSize, st->lsp, 11, 0.05, stack);
+      if (roots==st->lpcSize) 
+      {
+         /* LSP x-domain to angle domain*/
+         for (i=0;i<st->lpcSize;i++)
+            st->lsp[i] = acos(st->lsp[i]);
+      } else {
+         /*If we can't find all LSP's, do some damage control and use previous filter*/
          for (i=0;i<st->lpcSize;i++)
          {
-            st->lsp[i]=cos(M_PI*((float)(i+1))/(st->lpcSize+1));
+            st->lsp[i]=st->old_lsp[i];
          }
       }
    }
 
-
-   /* LSP x-domain to angle domain*/
-   for (i=0;i<st->lpcSize;i++)
-      st->lsp[i] = acos(st->lsp[i]);
-   /*print_vec(st->lsp, 10, "LSP:");*/
    /* LSP Quantization */
    if (st->first)
    {
@@ -303,7 +309,6 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
 
 
       /*Open-loop pitch*/
-      /*if (SUBMODE(lbr_pitch) != -1 || st->vbr_enabled || SUBMODE(forced_pitch_gain))*/
       if (!st->submodes[st->submodeID] || st->vbr_enabled || SUBMODE(forced_pitch_gain) ||
           SUBMODE(lbr_pitch) != -1)
       {
@@ -453,7 +458,7 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
    /* Loop on sub-frames */
    for (sub=0;sub<st->nbSubframes;sub++)
    {
-      float esig, enoise, snr, tmp;
+      float tmp;
       int   offset;
       float *sp, *sw, *exc, *exc2;
       int pitch;
@@ -528,19 +533,14 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
          mem[i]=st->mem_sp[i];
       iir_mem2(exc, st->interp_qlpc, exc, st->subframeSize, st->lpcSize, mem);
       
-
       for (i=0;i<st->lpcSize;i++)
          mem[i]=st->mem_sw[i];
       filter_mem2(exc, st->bw_lpc1, st->bw_lpc2, res, st->subframeSize, st->lpcSize, mem);
-
+      
       /* Compute weighted signal */
       for (i=0;i<st->lpcSize;i++)
          mem[i]=st->mem_sw[i];
       filter_mem2(sp, st->bw_lpc1, st->bw_lpc2, sw, st->subframeSize, st->lpcSize, mem);
-
-      esig=0;
-      for (i=0;i<st->subframeSize;i++)
-         esig+=sw[i]*sw[i];
       
       /* Compute target signal */
       for (i=0;i<st->subframeSize;i++)
@@ -592,16 +592,6 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
       syn_percep_zero(exc, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2, res, st->subframeSize, st->lpcSize, stack);
       for (i=0;i<st->subframeSize;i++)
         target[i]-=res[i];
-
-      /* Compute noise energy and SNR */
-      enoise=0;
-      for (i=0;i<st->subframeSize;i++)
-         enoise += target[i]*target[i];
-      snr = 10*log10((esig+1)/(enoise+1));
-      /*st->pitch[sub]=(int)snr;*/
-#ifdef DEBUG
-      printf ("pitch SNR = %f\n", snr);
-#endif
 
 
       /* Quantization of innovation */
@@ -693,15 +683,6 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
             target[i]*=ener;
 
       }
-
-      /* Compute weighted noise energy and SNR */
-      enoise=0;
-      for (i=0;i<st->subframeSize;i++)
-         enoise += target[i]*target[i];
-      snr = 10*log10((esig+1)/(enoise+1));
-#ifdef DEBUG
-      printf ("seg SNR = %f\n", snr);
-#endif
 
       /*Keep the previous memory*/
       for (i=0;i<st->lpcSize;i++)
@@ -1036,6 +1017,7 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
          st->interp_qlsp[i] = cos(st->interp_qlsp[i]);
       lsp_to_lpc(st->interp_qlsp, st->interp_qlpc, st->lpcSize, stack);
 
+      /* Compute enhanced synthesis filter */
       {
          float r=.9;
          
@@ -1071,6 +1053,7 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
       if (SUBMODE(ltp_unquant))
       {
          int pit_min, pit_max;
+         /* Handle pitch constraints if any */
          if (SUBMODE(lbr_pitch) != -1)
          {
             int margin;
@@ -1091,6 +1074,7 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
             pit_max = st->max_pitch;
          }
 
+         /* Pitch synthesis */
          SUBMODE(ltp_unquant)(exc, pit_min, pit_max, ol_pitch_coef, SUBMODE(ltp_params), 
                               st->subframeSize, &pitch, &pitch_gain[0], bits, stack, st->count_lost);
          
@@ -1098,10 +1082,6 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
          if (tmp>best_pitch_gain)
          {
             best_pitch = pitch;
-            /*while (best_pitch+pitch<st->max_pitch)
-            {
-               best_pitch+=pitch;
-               }*/
             best_pitch_gain = tmp*.9;
             if (best_pitch_gain>.85)
                best_pitch_gain=.85;

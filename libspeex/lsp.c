@@ -72,37 +72,28 @@ float cheb_poly_eva(float *coef,float x,int m,float *stack)
 /*  float coef[]  	coefficients of the polynomial to be evaluated 	*/
 /*  float x   		the point where polynomial is to be evaluated 	*/
 /*  int m 		order of the polynomial 			*/
-
-
 {
     int i;
-    float *T,*t,*u,*v,sum;
+    float *T,sum;
+    int m2=m>>1;
 
     /* Allocate memory for chebyshev series formulation */
+    T=PUSH(stack, m2+1);
 
-    T=PUSH(stack, m/2+1);
-
-    /* Initialise pointers */
-
-    t = T;                          	/* T[i-2] 			*/
-    *t++ = 1.0;
-    u = t--;                        	/* T[i-1] 			*/
-    *u++ = x;
-    v = u--;                        	/* T[i] 			*/
+    /* Initialise values */
+    T[0]=1;
+    T[1]=x;
 
     /* Evaluate chebyshev series formulation using iterative approach 	*/
-
-    for(i=2;i<=m/2;i++)
-	*v++ = (2*x)*(*u++) - *t++;  	/* T[i] = 2*x*T[i-1] - T[i-2]	*/
-
-    sum=0.0;                        	/* initialise sum to zero 	*/
-    t = T;                          	/* reset pointer 		*/
-
     /* Evaluate polynomial and return value also free memory space */
-
-    for(i=0;i<=m/2;i++)
-	sum+=coef[(m/2)-i]**t++;
-
+    sum = coef[m2] + coef[m2-1]*x;
+    x *= 2;
+    for(i=2;i<=m2;i++)
+    {
+       T[i] = x*T[i-1] - T[i-2];
+       sum += coef[m2-i] * T[i];
+    }
+    
     return sum;
 }
 
