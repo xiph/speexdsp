@@ -5,4 +5,4 @@
 
 SUBDIRS = libspeex speexenc speexdec
 
-EXTRA_DIST = speex.iss
+EXTRA_DIST = speex.iss config.h
