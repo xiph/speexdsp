@@ -46,7 +46,7 @@
 typedef struct SpeexHeader {
    char speex_string[8];
    char speex_version[SPEEX_HEADER_VERSION_LENGTH];
-   int speex_header_version;
+   int speex_version_id;
    int header_size;
    int rate;
    int mode;
@@ -56,9 +56,9 @@ typedef struct SpeexHeader {
    int frame_size;
    int vbr;
    int frames_per_packet;
+   int extra_headers;
    int reserved1;
    int reserved2;
-   int reserved3;
 } SpeexHeader;
 */
 
@@ -78,7 +78,7 @@ void speex_init_header(SpeexHeader *header, int rate, int nb_channels, SpeexMode
    for (;i<SPEEX_HEADER_VERSION_LENGTH;i++)
       header->speex_version[i]=0;
    
-   header->speex_header_version = SPEEX_HEADER_VERSION;
+   header->speex_version_id = 1;
    header->header_size = sizeof(SpeexHeader);
    
    header->rate = rate;
@@ -105,7 +105,7 @@ char *speex_header_to_packet(SpeexHeader *header, int *size)
    speex_move(le_header, header, sizeof(SpeexHeader));
    
    /*Make sure everything is now little-endian*/
-   ENDIAN_SWITCH(le_header->speex_header_version);
+   ENDIAN_SWITCH(le_header->speex_version_id);
    ENDIAN_SWITCH(le_header->header_size);
    ENDIAN_SWITCH(le_header->rate);
    ENDIAN_SWITCH(le_header->mode);
@@ -115,6 +115,7 @@ char *speex_header_to_packet(SpeexHeader *header, int *size)
    ENDIAN_SWITCH(le_header->frame_size);
    ENDIAN_SWITCH(le_header->vbr);
    ENDIAN_SWITCH(le_header->frames_per_packet);
+   ENDIAN_SWITCH(le_header->extra_headers);
 
    *size = sizeof(SpeexHeader);
    return (char *)le_header;
@@ -133,9 +134,9 @@ SpeexHeader *speex_packet_to_header(char *packet, int size)
       }
    
    /*FIXME: Do we allow larger headers?*/
-   if (sizeof(SpeexHeader) != size)
+   if (size < sizeof(SpeexHeader))
    {
-      speex_warning("Speex header size mismarch");
+      speex_warning("Speex header too small");
       return NULL;
    }
    
@@ -144,7 +145,7 @@ SpeexHeader *speex_packet_to_header(char *packet, int size)
    speex_move(le_header, packet, sizeof(SpeexHeader));
    
    /*Make sure everything is converted correctly from little-endian*/
-   ENDIAN_SWITCH(le_header->speex_header_version);
+   ENDIAN_SWITCH(le_header->speex_version_id);
    ENDIAN_SWITCH(le_header->header_size);
    ENDIAN_SWITCH(le_header->rate);
    ENDIAN_SWITCH(le_header->mode);
@@ -154,6 +155,7 @@ SpeexHeader *speex_packet_to_header(char *packet, int size)
    ENDIAN_SWITCH(le_header->frame_size);
    ENDIAN_SWITCH(le_header->vbr);
    ENDIAN_SWITCH(le_header->frames_per_packet);
+   ENDIAN_SWITCH(le_header->extra_headers);
 
    return le_header;
 

@@ -46,14 +46,11 @@ struct SpeexMode;
 /** Maximum number of characters for encoding the Speex version number in the header */
 #define SPEEX_HEADER_VERSION_LENGTH 20
 
-/** Current version of the Speex header */
-#define SPEEX_HEADER_VERSION 1
-
 /** Speex header info for file-based formats */
 typedef struct SpeexHeader {
    char speex_string[8];       /**< Identifies a Speex bit-stream, always set to "Speex   " */
    char speex_version[SPEEX_HEADER_VERSION_LENGTH]; /**< Speex version */
-   int speex_header_version;   /**< Version number for the header */
+   int speex_version_id;       /**< Version for Speex (for checking compatibility) */
    int header_size;            /**< Total size of the header ( sizeof(SpeexHeader) ) */
    int rate;                   /**< Sampling rate used */
    int mode;                   /**< Mode used (0 for narrowband, 1 for wideband) */

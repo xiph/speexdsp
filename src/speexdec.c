@@ -256,7 +256,7 @@ void version_short()
    printf ("Copyright (C) 2002 Jean-Marc Valin\n");
 }
 
-static void *process_header(ogg_packet *op, int enh_enabled, int *frame_size, int *rate, int *nframes, int forceMode, int *channels, SpeexStereoState *stereo)
+static void *process_header(ogg_packet *op, int enh_enabled, int *frame_size, int *rate, int *nframes, int forceMode, int *channels, SpeexStereoState *stereo, int *extra_headers)
 {
    void *st;
    SpeexMode *mode;
@@ -282,6 +282,12 @@ static void *process_header(ogg_packet *op, int enh_enabled, int *frame_size, in
       modeID = forceMode;
    mode = speex_mode_list[modeID];
    
+   if (header->speex_version_id != 1)
+   {
+      fprintf (stderr, "This file was encoded with Speex bit-stream version %d, which I don't know how to decode\n", header->speex_version_id);
+      return NULL;
+   }
+
    if (mode->bitstream_version < header->mode_bitstream_version)
    {
       fprintf (stderr, "The file was encoded with a newer version of Speex. You need to upgrade in order to play it.\n");
@@ -342,6 +348,8 @@ static void *process_header(ogg_packet *op, int enh_enabled, int *frame_size, in
    /*fprintf (stderr, "Decoding %d Hz audio at %d bps using %s mode\n", 
     *rate, mode->bitrate, mode->modeName);*/
 
+   *extra_headers = header->extra_headers;
+
    free(header);
    return st;
 }
@@ -392,6 +400,7 @@ int main(int argc, char **argv)
    SpeexStereoState stereo = SPEEX_STEREO_STATE_INIT;
    int channels=-1;
    int rate=0;
+   int extra_headers;
 
    enh_enabled = 1;
 
@@ -537,20 +546,19 @@ int main(int argc, char **argv)
             /*If first packet, process as Speex header*/
             if (packet_count==0)
             {
-               st = process_header(&op, enh_enabled, &frame_size, &rate, &nframes, forceMode, &channels, &stereo);
+               st = process_header(&op, enh_enabled, &frame_size, &rate, &nframes, forceMode, &channels, &stereo, &extra_headers);
                if (!nframes)
                   nframes=1;
                if (!st)
                   exit(1);
                fout = out_file_open(outFile, rate, &channels);
 
-            } else if (packet_count==1){
+            } else if (packet_count==1)
+            {
                print_comments((char*)op.packet, op.bytes);
-               /*
-               fprintf (stderr, "File comments: ");
-               fwrite(op.packet, 1, op.bytes, stderr);
-               fprintf (stderr, "\n");
-               */
+            } else if (packet_count<=1+extra_headers)
+            {
+               /* Ignore extra headers */
             } else {
                
                int lost=0;
