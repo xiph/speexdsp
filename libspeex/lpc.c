@@ -76,7 +76,6 @@ int          p
    int i, j;  
    spx_word16_t r;
    spx_word16_t error = ac[0];
-   spx_word16_t lpcq[10];
 
    if (ac[0] == 0)
    {
@@ -90,24 +89,22 @@ int          p
       /* Sum up this iteration's reflection coefficient */
       int rr = -ac[i + 1]<<13;
       for (j = 0; j < i; j++) 
-         rr -= lpcq[j] * ac[i - j];
+         rr -= lpc[j] * ac[i - j];
       r = DIV32_16(rr,error+16);
 
       /*  Update LPC coefficients and total error */
-      lpcq[i] = r;
+      lpc[i] = r;
       for (j = 0; j < i>>1; j++) 
       {
-         spx_word16_t tmp  = lpcq[j];
-         lpcq[j]     += MULT16_16_Q13(r,lpcq[i-1-j]);
-         lpcq[i-1-j] += MULT16_16_Q13(r,tmp);
+         spx_word16_t tmp  = lpc[j];
+         lpc[j]     += MULT16_16_Q13(r,lpc[i-1-j]);
+         lpc[i-1-j] += MULT16_16_Q13(r,tmp);
       }
       if (i & 1) 
-         lpcq[j] += MULT16_16_Q13(lpcq[j],r);
+         lpc[j] += MULT16_16_Q13(lpc[j],r);
 
       error -= MULT16_16_Q13(r,MULT16_16_Q13(error,r));
    }
-   for (i = 0; i < p; i++)
-      lpc[i] = lpcq[i];
    return error;
 }
 
@@ -158,7 +155,7 @@ int          n
       
       ac[i] = d >> ac_shift;
    }
-   /*ac[0] = 8192.;*/
+   /*ac[0] += 1;*/
    /*printf ("%d %d %d, %f\n", ac0, shift, ac_shift, ac[0]);*/
 }
 

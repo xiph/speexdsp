@@ -479,7 +479,7 @@ static SpeexSBMode sb_wb_mode = {
    640,    /*bufSize*/
    .9,    /*gamma1*/
    0.6,    /*gamma2*/
-   .002,   /*lag_factor*/
+   .001,   /*lag_factor*/
    1.0001, /*lpc_floor*/
    0.0,    /*preemph*/
    0.9,

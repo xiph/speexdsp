@@ -69,7 +69,7 @@ Modified by Jean-Marc Valin
 
 #ifdef FIXED_POINT
 
-static float cheb_poly_eva(float *coef,float x,int m,char *stack)
+static float cheb_poly_eva(spx_word32_t *coef,float x,int m,char *stack)
 /*  float coef[]  	coefficients of the polynomial to be evaluated 	*/
 /*  float x   		the point where polynomial is to be evaluated 	*/
 /*  int m 		order of the polynomial 			*/
@@ -89,7 +89,7 @@ static float cheb_poly_eva(float *coef,float x,int m,char *stack)
     
     for (i=0;i<m2+1;i++)
     {
-       coefn[i] = floor(.5+1024*coef[i]);
+       coefn[i] = coef[i];
        /*printf ("%f ", coef[i]);*/
     }
     /*printf ("\n");*/
@@ -113,7 +113,7 @@ static float cheb_poly_eva(float *coef,float x,int m,char *stack)
     return sum;
 }
 #else
-static float cheb_poly_eva(float *coef,float x,int m,char *stack)
+static float cheb_poly_eva(spx_word32_t *coef,float x,int m,char *stack)
 /*  float coef[]  	coefficients of the polynomial to be evaluated 	*/
 /*  float x   		the point where polynomial is to be evaluated 	*/
 /*  int m 		order of the polynomial 			*/
@@ -169,13 +169,13 @@ int lpc_to_lsp (spx_coef_t *a,int lpcrdr,float *freq,int nb,float delta, char *s
     float psuml,psumr,psumm,temp_xr,xl,xr,xm=0;
     float temp_psumr/*,temp_qsumr*/;
     int i,j,m,flag,k;
-    float *Q;                 	/* ptrs for memory allocation 		*/
-    float *P;
-    float *px;                	/* ptrs of respective P'(z) & Q'(z)	*/
-    float *qx;
-    float *p;
-    float *q;
-    float *pt;                	/* ptr used for cheb_poly_eval()
+    spx_word32_t *Q;                 	/* ptrs for memory allocation 		*/
+    spx_word32_t *P;
+    spx_word32_t *px;                	/* ptrs of respective P'(z) & Q'(z)	*/
+    spx_word32_t *qx;
+    spx_word32_t *p;
+    spx_word32_t *q;
+    spx_word32_t *pt;                	/* ptr used for cheb_poly_eval()
 				whether P' or Q' 			*/
     int roots=0;              	/* DR 8/2/94: number of roots found 	*/
     flag = 1;                	/*  program is searching for a root when,
@@ -184,8 +184,8 @@ int lpc_to_lsp (spx_coef_t *a,int lpcrdr,float *freq,int nb,float delta, char *s
 
 
     /* Allocate memory space for polynomials */
-    Q = PUSH(stack, (m+1), float);
-    P = PUSH(stack, (m+1), float);
+    Q = PUSH(stack, (m+1), spx_word32_t);
+    P = PUSH(stack, (m+1), spx_word32_t);
 
     /* determine P'(z)'s and Q'(z)'s coefficients where
       P'(z) = P(z)/(1 + z^(-1)) and Q'(z) = Q(z)/(1-z^(-1)) */
@@ -194,11 +194,35 @@ int lpc_to_lsp (spx_coef_t *a,int lpcrdr,float *freq,int nb,float delta, char *s
     qx = Q;
     p = px;
     q = qx;
-    *px++ = 1.0;
-    *qx++ = 1.0;
+
+#ifdef FIXED_POINT
+    *px++ = LPC_SCALING;
+    *qx++ = LPC_SCALING;
     for(i=1;i<=m;i++){
-	*px++ = (a[i]+a[lpcrdr+1-i])/LPC_SCALING - *p++;
-	*qx++ = (a[i]-a[lpcrdr+1-i])/LPC_SCALING + *q++;
+	*px++ = (a[i]+a[lpcrdr+1-i]) - *p++;
+	*qx++ = (a[i]-a[lpcrdr+1-i]) + *q++;
+    }
+    px = P;
+    qx = Q;
+    for(i=0;i<m;i++)
+    {
+       /*if (fabs(*px)>=32768)
+          speex_warning_int("px", *px);
+       if (fabs(*qx)>=32768)
+       speex_warning_int("qx", *qx);*/
+       *px = (2+*px)>>2;
+       *qx = (2+*qx)>>2;
+       px++;
+       qx++;
+    }
+    P[m] = (4+P[m])>>3;
+    Q[m] = (4+Q[m])>>3;
+#else
+    *px++ = LPC_SCALING;
+    *qx++ = LPC_SCALING;
+    for(i=1;i<=m;i++){
+	*px++ = (a[i]+a[lpcrdr+1-i]) - *p++;
+	*qx++ = (a[i]-a[lpcrdr+1-i]) + *q++;
     }
     px = P;
     qx = Q;
@@ -208,6 +232,8 @@ int lpc_to_lsp (spx_coef_t *a,int lpcrdr,float *freq,int nb,float delta, char *s
 	 px++;
 	 qx++;
     }
+#endif
+
     px = P;             	/* re-initialise ptrs 			*/
     qx = Q;
 

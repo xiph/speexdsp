@@ -57,13 +57,6 @@ void filter_mem2(float *x, spx_coef_t *num, spx_coef_t *den, float *y, int N, in
 {
    int i,j;
    int xi,yi;
-   short nums[11], dens[11];
-   
-   for (i=0;i<ord+1;i++)
-   {
-      nums[i] = (int)floor(.5+num[i]);
-      dens[i] = (int)floor(.5+den[i]);
-   }
 
    for (i=0;i<N;i++)
    {
@@ -73,9 +66,9 @@ void filter_mem2(float *x, spx_coef_t *num, spx_coef_t *den, float *y, int N, in
       xh = xi>>15; xl=xi&0x00007fff; yh = yi>>15; yl=yi&0x00007fff; 
       for (j=0;j<ord-1;j++)
       {
-         mem[j] = mem[j+1] +  MUL_16_32_R15(nums[j+1],xh,xl) - MUL_16_32_R15(dens[j+1],yh,yl);
+         mem[j] = mem[j+1] +  MUL_16_32_R15(num[j+1],xh,xl) - MUL_16_32_R15(den[j+1],yh,yl);
       }
-      mem[ord-1] = MUL_16_32_R15(nums[ord],xh,xl) - MUL_16_32_R15(dens[ord],yh,yl);
+      mem[ord-1] = MUL_16_32_R15(num[ord],xh,xl) - MUL_16_32_R15(den[ord],yh,yl);
       y[i] = yi*(1.f/16384.f);
    }
 }
@@ -84,18 +77,7 @@ void iir_mem2(float *x, spx_coef_t *den, float *y, int N, int ord, spx_mem_t *me
 {
    int i,j;
    int xi,yi;
-   short dens[11];
    
-   for (i=0;i<11;i++)
-   {
-      if (fabs(den[i])>3.999*8192)
-      {
-         speex_warning_int("tata", den[i]*100);
-         den[i]=3.999*8192;
-      }
-      dens[i] = (int)floor(.5+den[i]);
-   }
-
    for (i=0;i<N;i++)
    {
       int yh,yl;
@@ -104,9 +86,9 @@ void iir_mem2(float *x, spx_coef_t *den, float *y, int N, int ord, spx_mem_t *me
       yh = yi>>15; yl=yi&0x00007fff; 
       for (j=0;j<ord-1;j++)
       {
-         mem[j] = mem[j+1] - MUL_16_32_R15(dens[j+1],yh,yl);
+         mem[j] = mem[j+1] - MUL_16_32_R15(den[j+1],yh,yl);
       }
-      mem[ord-1] = - MUL_16_32_R15(dens[ord],yh,yl);
+      mem[ord-1] = - MUL_16_32_R15(den[ord],yh,yl);
       y[i] = yi*(1.f/16384.f);
    }
 }
@@ -116,12 +98,6 @@ void fir_mem2(float *x, spx_coef_t *num, float *y, int N, int ord, spx_mem_t *me
 {
    int i,j;
    int xi,yi;
-   short nums[11];
-   
-   for (i=0;i<11;i++)
-   {
-      nums[i] = (int)floor(.5+num[i]);
-   }
 
    for (i=0;i<N;i++)
    {
@@ -131,9 +107,9 @@ void fir_mem2(float *x, spx_coef_t *num, float *y, int N, int ord, spx_mem_t *me
       xh = xi>>15; xl=xi&0x00007fff;
       for (j=0;j<ord-1;j++)
       {
-         mem[j] = mem[j+1] +  MUL_16_32_R15(nums[j+1],xh,xl);
+         mem[j] = mem[j+1] +  MUL_16_32_R15(num[j+1],xh,xl);
       }
-      mem[ord-1] = MUL_16_32_R15(nums[ord],xh,xl);
+      mem[ord-1] = MUL_16_32_R15(num[ord],xh,xl);
       y[i] = yi*(1.f/16384.f);
    }
 
