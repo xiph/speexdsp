@@ -82,14 +82,14 @@ static void compute_quant_weights(spx_lsp_t *qlsp, spx_word16_t *quant_weight, i
 }
 
 /* Note: x is modified*/
-static int lsp_quant(spx_word16_t *x, signed char *cdbk, int nbVec, int nbDim)
+static int lsp_quant(spx_word16_t *x, const signed char *cdbk, int nbVec, int nbDim)
 {
    int i,j;
    spx_word32_t dist;
    spx_word16_t tmp;
    spx_word32_t best_dist=0;
    int best_id=0;
-   signed char *ptr=cdbk;
+   const signed char *ptr=cdbk;
    for (i=0;i<nbVec;i++)
    {
       dist=0;
@@ -112,14 +112,14 @@ static int lsp_quant(spx_word16_t *x, signed char *cdbk, int nbVec, int nbDim)
 }
 
 /* Note: x is modified*/
-static int lsp_weight_quant(spx_word16_t *x, spx_word16_t *weight, signed char *cdbk, int nbVec, int nbDim)
+static int lsp_weight_quant(spx_word16_t *x, spx_word16_t *weight, const signed char *cdbk, int nbVec, int nbDim)
 {
    int i,j;
    spx_word32_t dist;
    spx_word16_t tmp;
    spx_word32_t best_dist=0;
    int best_id=0;
-   signed char *ptr=cdbk;
+   const signed char *ptr=cdbk;
    for (i=0;i<nbVec;i++)
    {
       dist=0;
@@ -287,8 +287,8 @@ void lsp_unquant_lbr(spx_lsp_t *lsp, int order, SpeexBits *bits)
 }
 
 
-extern signed char high_lsp_cdbk[];
-extern signed char high_lsp_cdbk2[];
+extern const signed char high_lsp_cdbk[];
+extern const signed char high_lsp_cdbk2[];
 
 
 void lsp_quant_high(spx_lsp_t *lsp, spx_lsp_t *qlsp, int order, SpeexBits *bits)
@@ -359,8 +359,8 @@ void lsp_unquant_high(spx_lsp_t *lsp, int order, SpeexBits *bits)
 
 #ifdef EPIC_48K
 
-extern signed char cdbk_lsp_vlbr[5120];
-extern signed char cdbk_lsp2_vlbr[160];
+extern const signed char cdbk_lsp_vlbr[5120];
+extern const signed char cdbk_lsp2_vlbr[160];
 
 void lsp_quant_48k(spx_lsp_t *lsp, spx_lsp_t *qlsp, int order, SpeexBits *bits)
 {

@@ -1333,7 +1333,7 @@ int sb_decoder_ctl(void *state, int request, void *ptr)
       st->submodeID = (*(int*)ptr);
       break;
    case SPEEX_SET_LOW_MODE:
-      speex_encoder_ctl(st->st_low, SPEEX_SET_LOW_MODE, ptr);
+      speex_decoder_ctl(st->st_low, SPEEX_SET_LOW_MODE, ptr);
       break;
    case SPEEX_GET_LOW_MODE:
       speex_decoder_ctl(st->st_low, SPEEX_GET_LOW_MODE, ptr);
