@@ -33,8 +33,6 @@
 */
 
 #include "speex_bits.h"
-#include <stdio.h>
-#include <stdlib.h>
 #include "misc.h"
 
 void speex_bits_init(SpeexBits *bits)
@@ -91,8 +89,7 @@ void speex_bits_read_from(SpeexBits *bits, char *bytes, int len)
    int i;
    if (len > MAX_BYTES_PER_FRAME)
    {
-      fprintf (stderr, "Trying to init frame with too many bits");
-      exit(1);
+      speex_error ("Trying to init frame with too many bits");
    }
    for (i=0;i<len;i++)
       bits->bytes[i]=bytes[i];
@@ -162,7 +159,7 @@ void speex_bits_pack(SpeexBits *bits, int data, int nbBits)
       bit = (d>>(nbBits-1))&1;
       bits->bytes[bits->bytePtr] |= bit<<(7-bits->bitPtr);
       bits->bitPtr++;
-      /*fprintf(stderr, "%d %d\n", nbBits, bit);*/
+
       if (bits->bitPtr==8)
       {
          bits->bitPtr=0;

@@ -30,12 +30,11 @@
 */
 
 
-#include <stdlib.h>
 #include "cb_search.h"
 #include "filters.h"
 #include "stack_alloc.h"
 #include "vq.h"
-
+#include "misc.h"
 
 void split_cb_search_shape_sign(
 float target[],			/* target vector */
@@ -384,8 +383,5 @@ SpeexBits *bits,
 void *stack
 )
 {
-   int i;
-
-   for (i=0;i<nsf;i++)
-      exc[i]+=3*((((float)rand())/RAND_MAX)-.5);
+   speex_rand_vec(1, exc, nsf);
 }

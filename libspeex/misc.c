@@ -104,3 +104,38 @@ void *speex_move (void *dest, void *src, int n)
 {
    return memmove(dest,src,n);
 }
+
+void speex_error(char *str)
+{
+   fprintf (stderr, "Fatal error: %s\n", str);
+   exit(1);
+}
+
+void speex_warning(char *str)
+{
+   fprintf (stderr, "warning: %s\n", str);
+}
+
+void speex_warning_int(char *str, int val)
+{
+   fprintf (stderr, "warning: %s %d\n", str, val);
+}
+
+void speex_rand_vec(float std, float *data, int len)
+{
+   int i;
+   for (i=0;i<len;i++)
+      data[i]+=3*std*((((float)rand())/RAND_MAX)-.5);
+}
+
+float speex_rand(float std)
+{
+   return 3*std*((((float)rand())/RAND_MAX)-.5);
+}
+
+float _speex_putc(int ch, void *file)
+{
+   FILE *f = (FILE *)file;
+   fputc(ch, f);
+
+}

@@ -44,8 +44,6 @@ Modified by Jean-Marc Valin
 */
 
 #include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include "lsp.h"
 #include "stack_alloc.h"
 
@@ -54,6 +52,9 @@ Modified by Jean-Marc Valin
 #define M_PI           3.14159265358979323846  /* pi */
 #endif
 
+#ifndef NULL
+#define NULL 0
+#endif
 
 /*---------------------------------------------------------------------------*\
 

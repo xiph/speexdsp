@@ -30,10 +30,7 @@
 */
 
 
-#include <stdlib.h>
 #include <math.h>
-#include <stdio.h>
-/*#include "nb_celp.h"*/
 #include "sb_celp.h"
 #include "stdlib.h"
 #include "filters.h"
@@ -600,6 +597,7 @@ int sb_encode(void *state, float *in, SpeexBits *bits)
 
          scale = gc*sqrt(1+el)/filter_ratio;
          scale_1 = 1/scale;
+#if 0
          if (0 && rand()%5==0)
          {
             float sc = 1/sqrt(.1+eh/st->subframeSize);
@@ -613,7 +611,7 @@ int sb_encode(void *state, float *in, SpeexBits *bits)
                printf (" %f", tmp);
             }
          }
-
+#endif
          for (i=0;i<st->subframeSize;i++)
             exc[i]=0;
          exc[0]=1;
@@ -677,8 +675,8 @@ int sb_encode(void *state, float *in, SpeexBits *bits)
                exc[i] += innov2[i];
          }
 
-
-         if (0) {
+#if 0
+         {
             float en=0;
             for (i=0;i<st->subframeSize;i++)
                en+=exc[i]*exc[i];
@@ -687,7 +685,7 @@ int sb_encode(void *state, float *in, SpeexBits *bits)
                exc[i]*=en;
             printf ("correction high: %f\n", en);
          }
-
+#endif
       }
 
          /*Keep the previous memory*/
@@ -1317,7 +1315,7 @@ void sb_encoder_ctl(void *state, int request, void *ptr)
       (*(float*)ptr)=st->relative_quality;
       break;
    default:
-      fprintf(stderr, "Unknown nb_ctl request: %d\n", request);
+      speex_warning_int("Unknown nb_ctl request: ", request);
    }
 
 }
@@ -1400,7 +1398,7 @@ void sb_decoder_ctl(void *state, int request, void *ptr)
       }
       break;
    default:
-      fprintf(stderr, "Unknown sb_ctl request: %d\n", request);
+      speex_warning_int("Unknown nb_ctl request: ", request);
    }
 
 }

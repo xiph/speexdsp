@@ -29,8 +29,6 @@
    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <stdlib.h>
-#include <stdio.h>
 #include <math.h>
 #include "nb_celp.h"
 #include "lpc.h"
@@ -53,6 +51,10 @@
 
 #ifndef M_PI
 #define M_PI           3.14159265358979323846  /* pi */
+#endif
+
+#ifndef NULL
+#define NULL 0
 #endif
 
 #define SUBMODE(x) st->submodes[st->submodeID]->x
@@ -687,7 +689,7 @@ int nb_encode(void *state, float *in, SpeexBits *bits)
 
          st->pitch[sub]=pitch;
       } else {
-         fprintf (stderr, "No pitch prediction, what's wrong\n");
+         speex_error ("No pitch prediction, what's wrong");
       }
 
       /* Update target for adaptive codebook contribution */
@@ -741,14 +743,15 @@ int nb_encode(void *state, float *in, SpeexBits *bits)
 
          ener_1 = 1/ener;
 
-         if (0) {
+#if 0
+         {
             int start=rand()%35;
             printf ("norm_exc: ");
             for (i=start;i<start+5;i++)
                printf ("%f ", ener_1*st->buf2[i]);
             printf ("\n");
          }
-         
+#endif    
          /* Normalize innovation */
          for (i=0;i<st->subframeSize;i++)
             target[i]*=ener_1;
@@ -767,7 +770,7 @@ int nb_encode(void *state, float *in, SpeexBits *bits)
             for (i=0;i<st->subframeSize;i++)
                exc[i] += innov[i];
          } else {
-            fprintf(stderr, "No fixed codebook\n");
+            speex_error("No fixed codebook");
          }
 
          /* In some (rare) modes, we do a second search (more bits) to reduce noise even more */
@@ -1013,7 +1016,7 @@ static void nb_decode_lost(DecState *st, float *out, void *stack)
 #else
          /*exc[i]=pitch_gain*exc[i-st->last_pitch] +  fact*st->innov[i+offset];*/
          exc[i]=pitch_gain*exc[i-st->last_pitch] + 
-         fact*sqrt(1-pitch_gain)*3*innov_gain*((((float)rand())/RAND_MAX)-.5);
+         fact*sqrt(1-pitch_gain)*speex_rand(innov_gain);
 #endif
       }
       }
@@ -1094,7 +1097,7 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
             wideband = speex_bits_unpack_unsigned(bits, 1);
             if (wideband)
             {
-               fprintf (stderr, "Corrupted stream?\n");
+               speex_error ("Corrupted stream?");
             }
          }
 
@@ -1143,11 +1146,10 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
             pitch_gain=.6;
          for (i=0;i<st->frameSize;i++)
             innov_gain += st->innov[i]*st->innov[i];
-         innov_gain=sqrt(innov_gain/160);
+         innov_gain=sqrt(innov_gain/st->frameSize);
          for (i=0;i<st->frameSize;i++)
-         {
-            st->exc[i]=3*innov_gain*((((float)rand())/RAND_MAX)-.5);
-         }
+            st->exc[i]=0;
+         speex_rand_vec(innov_gain, st->exc, st->frameSize);
       }
 
 
@@ -1340,7 +1342,7 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
                         best_pitch_gain=.85;*/
          }
       } else {
-         fprintf (stderr, "No pitch prediction, what's wrong\n");
+         speex_error("No pitch prediction, what's wrong");
       }
       
       /* Unquantize the innovation */
@@ -1373,7 +1375,7 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
             /*Fixed codebook contribution*/
             SUBMODE(innovation_unquant)(innov, SUBMODE(innovation_params), st->subframeSize, bits, stack);
          } else {
-            fprintf(stderr, "No fixed codebook\n");
+            speex_error("No fixed codebook");
          }
 
          /* De-normalize innovation and update excitation */
@@ -1638,7 +1640,7 @@ void nb_encoder_ctl(void *state, int request, void *ptr)
       (*(float*)ptr)=st->relative_quality;
       break;
    default:
-      fprintf(stderr, "Unknown nb_ctl request: %d\n", request);
+      speex_warning_int("Unknown nb_ctl request: ", request);
    }
 }
 
@@ -1723,6 +1725,6 @@ void nb_decoder_ctl(void *state, int request, void *ptr)
       }
       break;
    default:
-      fprintf(stderr, "Unknown nb_ctl request: %d\n", request);
+      speex_warning_int("Unknown nb_ctl request: ", request);
    }
 }

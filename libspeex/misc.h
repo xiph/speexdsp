@@ -59,4 +59,16 @@ void speex_free (void *ptr);
 /** Speex wrapper for mem_move */
 void *speex_move (void *dest, void *src, int n);
 
+void speex_error(char *str);
+
+void speex_warning(char *str);
+
+void speex_warning_int(char *str, int val);
+
+void speex_rand_vec(float std, float *data, int len);
+
+float speex_rand(float std);
+
+float _speex_putc(int ch, void *file);
+
 #endif

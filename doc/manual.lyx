@@ -45,36 +45,6 @@ Permission is granted to copy, distribute and/or modify this document under
  A copy of the license is included in the section entitled "GNU Free Documentati
 on License".
  
-\layout Section*
-
-Disclaimer
-\layout Standard
-
-This document is meant to provide useful information on the Speex codec
- but there is absolutely no warranty regarding usefulness or correctness
- of the information provided.
- Also, some techniques used in Speex are said to be 
-\begin_inset Quotes eld
-\end_inset 
-
-similar
-\begin_inset Quotes erd
-\end_inset 
-
- to techniques used in known codecs.
- This should not be understood as an acknowledgment that Speex is using
- any patented algorithm used in these codecs, but merely that comprehension
- of Speex can be facilitated by thinking that the principles of operation
- are the same or similar.
- Of course, there's also the obligatory 
-\begin_inset Quotes eld
-\end_inset 
-
-all trademarks are property of their respective owner
-\begin_inset Quotes erd
-\end_inset 
-
-.
 \layout Standard
 \pagebreak_top \pagebreak_bottom 
 

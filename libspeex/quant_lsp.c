@@ -32,7 +32,6 @@
 
 #include "quant_lsp.h"
 #include <math.h>
-#include <stdio.h>
 
 extern int lsp_nb_vqid[64];
 static float quant_weight[MAX_LSP_SIZE];

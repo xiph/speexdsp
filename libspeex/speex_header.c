@@ -33,9 +33,11 @@
 
 #include "speex_header.h"
 #include "misc.h"
-#include <stdio.h>
 #include "speex.h"
-#include <stdlib.h>
+
+#ifndef NULL
+#define NULL 0
+#endif
 
 #define ENDIAN_SWITCH(x) {x=le_int(x);}
 
@@ -83,7 +85,7 @@ void speex_init_header(SpeexHeader *header, int rate, int nb_channels, SpeexMode
    header->mode = m->modeID;
    header->mode_bitstream_version = m->bitstream_version;
    if (m->modeID<0)
-      fprintf (stderr, "This mode is meant to be used alone\n");
+      speex_warning("This mode is meant to be used alone");
    header->nb_channels = nb_channels;
    header->bitrate = -1;
    speex_mode_query(m, SPEEX_MODE_FRAME_SIZE, &header->frame_size);
@@ -125,14 +127,15 @@ SpeexHeader *speex_packet_to_header(char *packet, int size)
    char *h = "Speex   ";
    for (i=0;i<8;i++)
       if (packet[i]!=h[i])
-   {
-      fprintf (stderr, "This doesn't look like a Speex file\n");
-      return NULL;
-   }
-
+      {
+         speex_warning ("This doesn't look like a Speex file");
+         return NULL;
+      }
+   
+   /*FIXME: Do we allow larger headers?*/
    if (sizeof(SpeexHeader) != size)
    {
-      fprintf (stderr, "Speex header size mismarch\n");
+      speex_warning("Speex header size mismarch");
       return NULL;
    }
    

@@ -32,8 +32,6 @@
 
 */
 
-#include <stdlib.h>
-#include <stdio.h>
 #include "modes.h"
 #include "ltp.h"
 #include "quant_lsp.h"
@@ -41,6 +39,11 @@
 #include "sb_celp.h"
 #include "nb_celp.h"
 #include "vbr.h"
+#include "misc.h"
+
+#ifndef NULL
+#define NULL 0
+#endif
 
 SpeexMode *speex_mode_list[SPEEX_NB_MODES] = {&speex_nb_mode, &speex_wb_mode, &speex_uwb_mode};
 
@@ -571,7 +574,7 @@ static void nb_mode_query(void *mode, int request, void *ptr)
       *((int*)ptr) = m->submodes[*((int*)ptr)]->bits_per_frame;
       break;
    default:
-      fprintf(stderr, "Unknown wb_mode_query request: %d\n", request);
+      speex_warning_int("Unknown nb_mode_query request: ", request);
    }
 
 }
@@ -589,7 +592,7 @@ static void wb_mode_query(void *mode, int request, void *ptr)
       *((int*)ptr) = m->submodes[*((int*)ptr)]->bits_per_frame;
       break;
    default:
-      fprintf(stderr, "Unknown wb_mode_query request: %d\n", request);
+      speex_warning_int("Unknown wb_mode_query request: ", request);
    }
 }
 

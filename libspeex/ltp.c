@@ -31,7 +31,6 @@
 */
 
 #include <math.h>
-#include <stdio.h>
 #include "ltp.h"
 #include "stack_alloc.h"
 #include "filters.h"
