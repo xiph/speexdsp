@@ -98,41 +98,28 @@ Introduction to Speex
 
 The Speex project has been started because there was a need for a speech
  codec that was open-source and free from software patents.
- Speex has thus been designed with the following goals in mind:
-\layout Itemize
-
-No use of patented algorithms (e.g.
- no ACELP)
-\layout Itemize
-
-Optimized for speech, not music
-\layout Itemize
-
-Good for Voice over IP (VoIP)
-\layout Itemize
-
-Provide very good quality speech (at least as an option)
-\layout Itemize
-
-Allow a wide range of quality/bit-rates
-\layout Itemize
-
-Integrate both narrowband and wideband coding
-\layout Itemize
-
-Reasonable complexity
+ These are essential conditions for being used by any open-source software.
+ There is already Vorbis that does general audio, but it is not really suitable
+ for speech.
+ Also, unlike many other speech codecs, Speex is not targeted at cell phones
+ (not many open-source cell phones anyway :-) ) but rather voice over IP
+ (VoIP) and file-based compression.
+ 
 \layout Standard
 
-Throughout the design the following assumptions and constraints were considered
-\layout Itemize
+As design goals, we wanted to have a codec that would allowed both very
+ good quality speech and low bit-rate (unfortunately not at the same time!),
+ which led us to developing a codec with multiple bit-rates.
+ Of course very good quality also meant we had to do wideband (16 kHz sampling
+ rate) in addition to narrowband (telephone quality, 8 kHz sampling rate).
+\layout Standard
 
-Presence of packet losses
-\layout Itemize
-
-Integrity of received frames (no bit-errors)
-\layout Itemize
-
-Memory footprint is neither critical nor unlimited
+Designing for VoIP instead of cell phone use means that Speex must be robust
+ to lost packets, but not to corrupted ones since packets either arrive
+ unaltered or don't arrive at all.
+ Also, the idea was to have a reasonnable complexity and memory requirement
+ without compromising too much on the efficiency of the codec.
+ 
 \layout Standard
 
 This led us to choose the CELP technique for Speex.
@@ -2580,6 +2567,18 @@ SPEEX_GET_BITRATE Get the current bit-rate in use (in bps)
 \end_inset 
 
  normally only used internally
+\layout Subsection
+
+Packing more than one frame per packet
+\layout Standard
+
+Sometimes it is desirable to pack more than one frame per packet (or other
+ basic unit of storage).
+ The proper way to do it is to call speex_encode 
+\begin_inset Formula $N$
+\end_inset 
+
+ times before writing the stream with speex_bits_write.
 \layout Section
 \pagebreak_top 
 Formats and standards
