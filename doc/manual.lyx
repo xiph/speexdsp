@@ -3210,7 +3210,22 @@ Complexity (variable)
 \layout Standard
 
 With Speex, it is possible to vary the complexity allowed for the encoder.
+ This is done by controlling how the search is performed with an integer
+ ranging from 1 to 10 in a way that's similar to the -1 to -9 options to
  
+\emph on 
+gzip
+\emph default 
+ and 
+\emph on 
+bzip2
+\emph default 
+ compression utilities.
+ For normal use, the noise level at complexity 1is between 1 and 2 dB higher
+ than at complexity 10, but the CPU requirements for complexity 10 is about
+ 5 time higher than for complexity 1.
+ In practice, the best trade-off is between complexity 2 and 4, though higher
+ settings are often useful when encoding non-speech sounds like DTMF tones.
 \layout Subsection*
 
 Variable Bit-Rate (VBR)
@@ -3227,8 +3242,8 @@ difficulty
 
  of the audio being encoded.
  In the example of Speex, sounds like vowels and high-energy transients
- require a higher bit-rate to achieve good quality, while fricatives (s,f
- sounds) can be coded adequately with less bits.
+ require a higher bit-rate to achieve good quality, while fricatives (e.g.
+ s,f sounds) can be coded adequately with less bits.
  For this reason, VBR can achive lower bit-rate for the same quality, or
  a better quality for a certain bit-rate.
  Despite its advantages, VBR has two main drawbacks: first, by only specifying
@@ -3243,6 +3258,9 @@ Average Bit-Rate (ABR)
 
 Average bit-rate solves one of the problems of VBR, as it dynamically adjusts
  VBR quality in order to meet a specific target bit-rate.
+ Because the quality/bit-rate is adjusted in real-time (open-loop), the
+ global quality will be slightly lower than that obtained be encoding in
+ VBR with exactly the right quality setting to meet the target average bit-rate.
 \layout Subsection*
 
 Voice Activity Detection (VAD)
@@ -3254,7 +3272,7 @@ When enabled, voice activity detection detects whether the audio being encoded
  is only useful in non-VBR operation.
  In this case, Speex detects non-speech periods and encode them with just
  enough bits to reproduce the background noise.
- This is calles 
+ This is called 
 \begin_inset Quotes eld
 \end_inset 
 
@@ -3463,7 +3481,7 @@ n For decoding at n Hz sampling rate
 \layout Description
 
 --packet-loss\SpecialChar ~
-n Simulate n % rando m packet loss
+n Simulate n % random packet loss
 \layout Description
 
 -V Verbose operation, print bit-rate currently in use

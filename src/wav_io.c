@@ -41,8 +41,11 @@ int read_wav_header(FILE *file, int *rate, int *channels, int *format, int *size
    short stmp;
    int bpersec;
    short balign;
+   int skip_bytes;
+   int i;
 
    ch[4]=0;
+#if 0
    fread(ch, 1, 4, file);
    if (strcmp(ch, "RIFF")!=0)
    {
@@ -59,22 +62,35 @@ int read_wav_header(FILE *file, int *rate, int *channels, int *format, int *size
       fprintf (stderr, "RIFF file is not a WAVE file\n");
       return -1;
    }
-
+#endif
    fread(ch, 1, 4, file);
-   if (strcmp(ch, "fmt ")!=0)
+   while (strcmp(ch, "fmt ")!=0)
+   {
+      fread(&itmp, 4, 1, file);
+      itmp = le_int(itmp);
+      /*fprintf (stderr, "skip=%d\n", itmp);*/
+      /*strange way of seeking, but it works even for pipes*/
+      for (i=0;i<itmp;i++)
+         fgetc(file);
+      /*fseek(file, itmp, SEEK_CUR);*/
+      fread(ch, 1, 4, file);
+      if (feof(file))
+      {
+         fprintf (stderr, "Corrupted WAVE file: no \"fmt \"\n");
+         return -1;
+      }
+   }
+   /*if (strcmp(ch, "fmt ")!=0)
    {
       fprintf (stderr, "Corrupted WAVE file: no \"fmt \"\n");
       return -1;
-   }
+      }*/
    
    fread(&itmp, 4, 1, file);
    itmp = le_int(itmp);
-   if (itmp!=16)
-   {
-      fprintf (stderr, "Unsupported WAVE file fmt chunk, not PCM?\n");
-      return -1;
-   }
-
+   skip_bytes=itmp-16;
+   /*fprintf (stderr, "skip=%d\n", skip_bytes);*/
+   
    fread(&stmp, 2, 1, file);
    stmp = le_short(stmp);
    if (stmp!=1)
@@ -129,17 +145,36 @@ int read_wav_header(FILE *file, int *rate, int *channels, int *format, int *size
       return -1;
    }
 
+   
+   /*strange way of seeking, but it works even for pipes*/
+   if (skip_bytes>0)
+      for (i=0;i<skip_bytes;i++)
+         fgetc(file);
+
+   /*fseek(file, skip_bytes, SEEK_CUR);*/
+
    fread(ch, 1, 4, file);
-   if (strcmp(ch, "data")!=0)
+   while (strcmp(ch, "data")!=0)
    {
-      fprintf (stderr, "Corrupted WAVE file: no \"data\"\n");
-      return -1;
+      fread(&itmp, 4, 1, file);
+      itmp = le_int(itmp);
+      /*strange way of seeking, but it works even for pipes*/
+      for (i=0;i<itmp;i++)
+         fgetc(file);
+      /*fseek(file, itmp, SEEK_CUR);*/
+      fread(ch, 1, 4, file);
+      if (feof(file))
+      {
+         fprintf (stderr, "Corrupted WAVE file: no \"data\"\n");
+         return -1;
+      }
    }
 
    /*Ignore this for now*/
    fread(&itmp, 4, 1, file);
    itmp = le_int(itmp);
 
+   *size=itmp;
 
    return 1;
 }

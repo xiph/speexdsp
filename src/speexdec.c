@@ -86,7 +86,7 @@ static void print_comments(char *comments, int length)
    end = c+length;
    len=readint(c, 0);
    c+=4;
-   if (c+len>=end)
+   if (c+len>end)
    {
       fprintf (stderr, "Invalid/corrupted comments\n");
       return;
@@ -94,7 +94,7 @@ static void print_comments(char *comments, int length)
    fwrite(c, 1, len, stderr);
    c+=len;
    fprintf (stderr, "\n");
-   if (c+4>=end)
+   if (c+4>end)
    {
       fprintf (stderr, "Invalid/corrupted comments\n");
       return;
@@ -103,14 +103,14 @@ static void print_comments(char *comments, int length)
    c+=4;
    for (i=0;i<nb_fields;i++)
    {
-      if (c+4>=end)
+      if (c+4>end)
       {
          fprintf (stderr, "Invalid/corrupted comments\n");
          return;
       }
       len=readint(c, 0);
       c+=4;
-      if (c+len>=end)
+      if (c+len>end)
       {
          fprintf (stderr, "Invalid/corrupted comments\n");
          return;

@@ -51,7 +51,6 @@
 #define cos speex_cos
 #endif
 
-extern int training_weight;
 #ifndef M_PI
 #define M_PI           3.14159265358979323846  /* pi */
 #endif
@@ -64,10 +63,6 @@ float exc_gain_quant_scal1[2]={-0.35, 0.05};
 
 #define sqr(x) ((x)*(x))
 
-#ifndef min
-#define min(a,b) ((a) < (b) ? (a) : (b))
-#endif
-
 void *nb_encoder_init(SpeexMode *m)
 {
    EncState *st;
@@ -76,6 +71,8 @@ void *nb_encoder_init(SpeexMode *m)
 
    mode=(SpeexNBMode *)m->mode;
    st = (EncState*)speex_alloc(sizeof(EncState));
+   if (!st)
+      return NULL;
    st->mode=m;
 
    st->frameSize = mode->frameSize;

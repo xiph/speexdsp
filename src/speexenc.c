@@ -71,14 +71,21 @@ int oe_write_page(ogg_page *page, FILE *fp)
 #define MAX_FRAME_BYTES 2000
 
 /* Convert input audio bits, endians and channels */
-int read_samples(FILE *fin,int frame_size, int bits, int channels, int lsb, float * input)
+static int read_samples(FILE *fin,int frame_size, int bits, int channels, int lsb, float * input, char *buff)
 {   
    unsigned char in[MAX_FRAME_BYTES*2];
    int i;
    short *s;
 
    /*Read input audio*/
-   fread(in,bits/8*channels, frame_size, fin);
+   if (buff)
+   {
+      for (i=0;i<12;i++)
+         in[i]=buff[i];
+      fread(in+12,1,bits/8*channels*frame_size-12, fin);
+   } else {
+      fread(in,bits/8*channels, frame_size, fin);
+   }
    if (feof(fin))
       return 1;
    s=(short*)in;
@@ -237,6 +244,8 @@ int main(int argc, char **argv)
    int eos=0;
    int bitrate=0;
    int cumul_bits=0, enc_frames=0;
+   char first_bytes[12];
+   int wave_input=0;
    comment_init(&comments, &comments_length, vendor_string);
 
    /*Process command-line options*/
@@ -399,11 +408,16 @@ int main(int argc, char **argv)
       close_in=1;
    }
 
-   if (strcmp(inFile+strlen(inFile)-4,".wav")==0 || strcmp(inFile+strlen(inFile)-4,".WAV")==0)
    {
-      if (read_wav_header(fin, &rate, &chan, &fmt, &size)==-1)
-         exit(1);
-      lsb=1; /* CHECK: exists big-endian .wav ?? */
+      fread(first_bytes, 1, 12, fin);
+      if (strncmp(first_bytes,"RIFF",4)==0 && strncmp(first_bytes,"RIFF",4)==0)
+      {
+         size = le_int((*(int*)(first_bytes+4))-36);
+         if (read_wav_header(fin, &rate, &chan, &fmt, &size)==-1)
+            exit(1);
+         wave_input=1;
+         lsb=1; /* CHECK: exists big-endian .wav ?? */
+      }
    }
 
    if (!mode && !rate)
@@ -584,9 +598,14 @@ int main(int argc, char **argv)
 
    speex_bits_init(&bits);
 
-   if (read_samples(fin,frame_size,fmt,chan,lsb,input))
-      eos=1;
-
+   if (!wave_input)
+   {
+      if (read_samples(fin,frame_size,fmt,chan,lsb,input, first_bytes))
+         eos=1;
+   } else {
+      if (read_samples(fin,frame_size,fmt,chan,lsb,input, NULL))
+         eos=1;
+   }
    /*Main encoding loop (one frame per iteration)*/
    while (!eos)
    {
@@ -610,7 +629,7 @@ int main(int argc, char **argv)
          
       }
 
-      if (read_samples(fin,frame_size,fmt,chan,lsb,input))
+      if (read_samples(fin,frame_size,fmt,chan,lsb,input, NULL))
       {
          eos=1;
          op.e_o_s = 1;
