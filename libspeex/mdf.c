@@ -1,7 +1,11 @@
 /* Copyright (C) Jean-Marc Valin
 
    File: speex_echo.c
+   Echo cancelling based on the MDF algorithm described in:
 
+   J. S. Soo, K. K. Pang Multidelay block frequency adaptive filter, 
+   IEEE Trans. Acoust. Speech Signal Process., Vol. ASSP-38, No. 2, 
+   February 1990.
 
    Redistribution and use in source and binary forms, with or without
    modification, are permitted provided that the following conditions are
@@ -111,6 +115,7 @@ void speex_echo_cancel(SpeexEchoState *st, float *ref, float *echo, float *out, 
    scale = 1.0/N;
    st->cancel_count++;
 
+   /* Copy input data to buffer */
    for (i=0;i<st->frame_size;i++)
    {
       st->x[i] = st->x[i+st->frame_size];
@@ -127,7 +132,9 @@ void speex_echo_cancel(SpeexEchoState *st, float *ref, float *echo, float *out, 
    for (i=0;i<N;i++)
       st->X[(M-1)*N+i]=st->x[i];
 
+   /* Convert x (echo input) to frequency domain */
    drft_forward(&st->fft_lookup, &st->X[(M-1)*N]);
+
 
    /* Compute filter response Y */
    for (i=1;i<N-1;i+=2)
@@ -146,9 +153,13 @@ void speex_echo_cancel(SpeexEchoState *st, float *ref, float *echo, float *out, 
       st->Y[N-1] += st->X[(j+1)*N-1]*st->W[(j+1)*N-1];
    }
 
+
+   /* Transform d (reference signal) to frequency domain */
    for (i=0;i<N;i++)
       st->D[i]=st->d[i];
    drft_forward(&st->fft_lookup, st->D);
+
+   /* Evaluate "spectral distance" between Y and D t odetect crosstalk */
    for (i=1;i<N-1;i+=2)
    {
       float Sdd, Syy, Sdy;
@@ -160,6 +171,7 @@ void speex_echo_cancel(SpeexEchoState *st, float *ref, float *echo, float *out, 
    spectral_dist *= 2*scale;
    /*printf ("%f\n", spectral_dist);*/
 
+   /* Copy spectrum of Y to Yout for use in an echo post-filter */
    if (Yout)
    {
       for (i=1,j=1;i<N-1;i+=2,j++)
@@ -168,13 +180,13 @@ void speex_echo_cancel(SpeexEchoState *st, float *ref, float *echo, float *out, 
       }
       Yout[0] = Yout[st->frame_size] = 0;
       for (i=0;i<=st->frame_size;i++)
-         Yout[i] *= .08;
+         Yout[i] *= .1;
    }
 
    for (i=0;i<N;i++)
       st->y[i] = st->Y[i];
    
-   /* Filter response in time domain */
+   /* Convery Y (filter response) to time domain */
    drft_backward(&st->fft_lookup, st->y);
    for (i=0;i<N;i++)
       st->y[i] *= scale;
@@ -185,9 +197,9 @@ void speex_echo_cancel(SpeexEchoState *st, float *ref, float *echo, float *out, 
       out[i] = ref[i] - st->y[i+st->frame_size];
       st->E[i] = 0;
       st->E[i+st->frame_size] = out[i];
-      /*out[i] = st->y[i+st->frame_size];*/
    }
 
+   /* Convert error to frequency domain */
    drft_forward(&st->fft_lookup, st->E);
 
    for (i=0;i<st->frame_size;i++)
@@ -220,7 +232,7 @@ void speex_echo_cancel(SpeexEchoState *st, float *ref, float *echo, float *out, 
    }
 #endif
 
-   /* Compute input power in each band */
+   /* Compute input power in each frequency bin */
    {
       float s;
       float tmp, tmp2;
@@ -283,7 +295,7 @@ void speex_echo_cancel(SpeexEchoState *st, float *ref, float *echo, float *out, 
       st->PHI[N-1] = st->power_1[st->frame_size] * st->X[(j+1)*N-1]*st->E[N-1];
       
 
-#if 0
+#if 0 /* Set to 1 to enable MDF instead of AUMDF (and comment out weight constraint below) */
       drft_backward(&st->fft_lookup, st->PHI);
       for (i=0;i<N;i++)
          st->PHI[i]*=scale;
@@ -302,15 +314,16 @@ void speex_echo_cancel(SpeexEchoState *st, float *ref, float *echo, float *out, 
       
    }
 
+   /* Adjust adaptation rate */
    if (st->cancel_count>2*M)
    {
       if (st->cancel_count<8*M)
       {
-         st->adapt_rate = .5/M;
+         st->adapt_rate = .5/(2+M);
       } else {
-         st->adapt_rate = spectral_dist*(1.0/M);
-         if (st->adapt_rate>.5/M)
-            st->adapt_rate=.5/M;
+         st->adapt_rate = spectral_dist*(1.0/(2+M));
+         if (st->adapt_rate>.5/(2+M))
+            st->adapt_rate=.5/(2+M);
          if (st->adapt_rate<0)
             st->adapt_rate=0;
       }
@@ -321,7 +334,7 @@ void speex_echo_cancel(SpeexEchoState *st, float *ref, float *echo, float *out, 
    for (i=0;i<M*N;i++)
       st->W[i] += st->adapt_rate*st->grad[i];
 
-   /* AUMDF modification */
+   /* AUMDF weight constraint */
    for (j=0;j<M;j++)
    {
       if (st->cancel_count%M == j)
