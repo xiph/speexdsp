@@ -1090,10 +1090,8 @@ static void nb_decode_lost(DecState *st, spx_word16_t *out, char *stack)
       /*if (pitch_gain>.95)
         pitch_gain=.95;*/
       {
-         float innov_gain=0;
-         for (i=0;i<st->frameSize;i++)
-            innov_gain += 1.0*st->innov[i]*st->innov[i];
-         innov_gain=sqrt(innov_gain/st->frameSize);
+      float innov_gain=0;
+      innov_gain = compute_rms(st->innov, st->frameSize);
       for (i=0;i<st->subframeSize;i++)
       {
 #if 0
@@ -1279,9 +1277,7 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
          float pgain=GAIN_SCALING_1*st->last_pitch_gain;
          if (pgain>.6)
             pgain=.6;
-         for (i=0;i<st->frameSize;i++)
-            innov_gain += st->innov[i]*st->innov[i];
-         innov_gain=sqrt(innov_gain/st->frameSize);
+	 innov_gain = compute_rms(st->innov, st->frameSize);
          for (i=0;i<st->frameSize;i++)
             st->exc[i]=0;
          speex_rand_vec(innov_gain, st->exc, st->frameSize);
