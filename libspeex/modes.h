@@ -95,7 +95,7 @@ typedef struct SpeexSubmode {
    spx_word16_t      lpc_enh_k1; /**< Enhancer constant */
    spx_word16_t      lpc_enh_k2; /**< Enhancer constant */
    spx_word16_t      lpc_enh_k3; /**< Enhancer constant */
-   float             comb_gain;  /**< Gain of enhancer comb filter */
+   spx_word16_t      comb_gain;  /**< Gain of enhancer comb filter */
 
    int               bits_per_frame; /**< Number of bits per frame after encoding*/
 } SpeexSubmode;

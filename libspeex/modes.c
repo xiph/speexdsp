@@ -207,7 +207,7 @@ static const SpeexSubmode nb_submode8 = {
    split_cb_shape_sign_unquant,
    &split_cb_nb_ulbr,
 #ifdef FIXED_POINT
-   22938, 16384, 11796, .65,
+   22938, 16384, 11796, 21299,
 #else
    0.7, 0.5, .36, .65,
 #endif
@@ -232,7 +232,7 @@ static const SpeexSubmode nb_submode2 = {
    split_cb_shape_sign_unquant,
    &split_cb_nb_vlbr,
 #ifdef FIXED_POINT
-   22938, 16384, 11796, .55,
+   22938, 16384, 11796, 18022,
 #else
    0.7, 0.5, .36, .55,
 #endif
@@ -257,7 +257,7 @@ static const SpeexSubmode nb_submode3 = {
    split_cb_shape_sign_unquant,
    &split_cb_nb_lbr,
 #ifdef FIXED_POINT
-   22938, 18022, 9830, .45,
+   22938, 18022, 9830, 14746,
 #else
    0.7, 0.55, .30, .45,
 #endif
@@ -282,7 +282,7 @@ static const SpeexSubmode nb_submode4 = {
    split_cb_shape_sign_unquant,
    &split_cb_nb_med,
 #ifdef FIXED_POINT
-   22938, 20644, 5243, .35,
+   22938, 20644, 5243, 11469,
 #else
    0.7, 0.63, .16, .35,
 #endif
@@ -307,7 +307,7 @@ static const SpeexSubmode nb_submode5 = {
    split_cb_shape_sign_unquant,
    &split_cb_nb,
 #ifdef FIXED_POINT
-   22938, 21299, 3932, .25,
+   22938, 21299, 3932, 8192,
 #else
    0.7, 0.65, .12, .25,
 #endif
@@ -332,7 +332,7 @@ static const SpeexSubmode nb_submode6 = {
    split_cb_shape_sign_unquant,
    &split_cb_sb,
 #ifdef FIXED_POINT
-   22282, 21299, 2294, .1,
+   22282, 21299, 2294, 3277,
 #else
    0.68, 0.65, .07, .1,
 #endif
@@ -638,7 +638,7 @@ static const SpeexSubmode nb_48k_submode = {
    split_cb_shape_sign_unquant,
    &split_cb_nb_48k,
 #ifdef FIXED_POINT
-   22938, 16384, 11796, .55,
+   22938, 16384, 11796, 18022,
 #else
    0.7, 0.5, .36, .55,
 #endif

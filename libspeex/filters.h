@@ -65,9 +65,6 @@ void bw_lpc(spx_word16_t gamma, const spx_coef_t *lpc_in, spx_coef_t *lpc_out, i
 
 
 
-/* FIR filter */
-void fir_decim_mem(const spx_sig_t *x, const float *a, spx_sig_t *y, int N, int M, float *mem);
-
 void syn_percep_zero(const spx_sig_t *x, const spx_coef_t *ak, const spx_coef_t *awk1, const spx_coef_t *awk2, spx_sig_t *y, int N, int ord, char *stack);
 
 void residue_percep_zero(const spx_sig_t *xx, const spx_coef_t *ak, const spx_coef_t *awk1, const spx_coef_t *awk2, spx_sig_t *y, int N, int ord, char *stack);
@@ -82,7 +79,7 @@ int p,               /*LPC order*/
 int nsf,             /*sub-frame size*/
 int pitch,           /*pitch period*/
 spx_word16_t *pitch_gain,   /*pitch gain (3-tap)*/
-float  comb_gain,    /*gain of comb filter*/
+spx_word16_t  comb_gain,    /*gain of comb filter*/
 CombFilterMem *mem
 );
 

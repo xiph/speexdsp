@@ -461,7 +461,7 @@ int p,               /*LPC order*/
 int nsf,             /*sub-frame size*/
 int pitch,           /*pitch period*/
 spx_word16_t *pitch_gain,   /*pitch gain (3-tap)*/
-float  comb_gain,    /*gain of comb filter*/
+spx_word16_t  comb_gain,    /*gain of comb filter*/
 CombFilterMem *mem
 )
 {
@@ -470,7 +470,6 @@ CombFilterMem *mem
    float gain;
    spx_word16_t step;
    spx_word16_t fact;
-   spx_word16_t cgain;
 
    /*Compute excitation amplitude prior to enhancement*/
    exc_energy = compute_rms(exc, nsf);
@@ -484,16 +483,10 @@ CombFilterMem *mem
       if (g>1.3)
          comb_gain*=1.3/g;
       if (g<.5)
-         comb_gain*=2*g;
+         comb_gain*=2.*g;
    }
    step = DIV32(COMB_STEP, nsf);
    fact=0;
-
-#ifdef FIXED_POINT
-   cgain = comb_gain*32768;
-#else
-   cgain = comb_gain;
-#endif
 
    /*Apply pitch comb-filter (filter out noise between pitch harmonics)*/
    for (i=0;i<nsf;i++)
@@ -509,7 +502,7 @@ CombFilterMem *mem
                  MULT16_32_Q15(SHL(mem->last_pitch_gain[1],7),exc[i-mem->last_pitch]) +
                  MULT16_32_Q15(SHL(mem->last_pitch_gain[2],7),exc[i-mem->last_pitch-1]),2);
 
-      new_exc[i] = exc[i] + MULT16_32_Q15(cgain,MULT16_32_Q15(fact,exc1)  + MULT16_32_Q15(SUB16(COMB_STEP,fact), exc2));
+      new_exc[i] = exc[i] + MULT16_32_Q15(comb_gain,MULT16_32_Q15(fact,exc1)  + MULT16_32_Q15(SUB16(COMB_STEP,fact), exc2));
    }
 
    mem->last_pitch_gain[0] = pitch_gain[0];
