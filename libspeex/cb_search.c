@@ -137,7 +137,7 @@ int   complexity
          res[j]=0;
          for (k=0;k<=j;k++)
             res[j] += shape[k]*r[j-k];
-         res[j] *= 0.03125;
+         res[j] *= 0.03125*SIG_SCALING;
       }
       
       /* Compute codeword energy */
@@ -221,7 +221,7 @@ int   complexity
                      rind-=shape_cb_size;
                   }
 
-                  g=sign*0.03125*shape_cb[rind*subvect_size+m];
+                  g=sign*0.03125*SIG_SCALING*shape_cb[rind*subvect_size+m];
                   q=subvect_size-m;
                   for (n=subvect_size*(i+1);n<nsf;n++,q++)
                      t[n] -= g*r[q];
@@ -290,7 +290,7 @@ int   complexity
       }
 
       for (j=0;j<subvect_size;j++)
-         e[subvect_size*i+j]=sign*0.03125*shape_cb[rind*subvect_size+j];
+         e[subvect_size*i+j]=sign*0.03125*SIG_SCALING*shape_cb[rind*subvect_size+j];
    }   
    /* Update excitation */
    for (j=0;j<nsf;j++)

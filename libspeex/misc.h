@@ -54,6 +54,12 @@ typedef float   spx_sig_t;
 #define LPC_SCALING  8192.
 #define SIG_SCALING  16384.
 
+#define LPC_SHIFT    13
+#define SIG_SHIFT    14
+
+#define SHR(a,shift) ((a) >> (shift))
+
+#define MULT16_16(a,b)     (((signed int)(a))*(b))
 #define MULT16_32_Q14(a,b) (((a)*((b)>>14)) + ((a)*((signed int)((b)&0x00003fff))>>14))
 #define MULT16_32_Q15(a,b) (((a)*((b)>>15)) + ((a)*((signed int)((b)&0x00007fff))>>15))
 
@@ -79,6 +85,14 @@ typedef float spx_word32_t;
 
 #define LPC_SCALING  1.
 #define SIG_SCALING  1.
+
+#define LPC_SHIFT    0
+#define SIG_SHIFT    0
+
+#define SHR(a,shift)       (a)
+#define MULT16_16(a,b)     ((a)*(b))
+
+
 #endif
 
 #ifndef RELEASE

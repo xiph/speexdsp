@@ -181,11 +181,11 @@ void *sb_encoder_init(SpeexMode *m)
       int part1, part2;
       part1 = st->subframeSize*7/2;
       part2 = st->subframeSize*5/2;
-      st->window = PUSH(st->stack, st->windowSize, float);
+      st->window = PUSH(st->stack, st->windowSize, spx_word16_t);
       for (i=0;i<part1;i++)
-         st->window[i]=.54-.46*cos(M_PI*i/part1);
+         st->window[i]=SIG_SCALING*(.54-.46*cos(M_PI*i/part1));
       for (i=0;i<part2;i++)
-         st->window[part1+i]=.54+.46*cos(M_PI*i/part2);
+         st->window[part1+i]=SIG_SCALING*(.54+.46*cos(M_PI*i/part2));
    }
 
    st->lagWindow = PUSH(st->stack, st->lpcSize+1, float);
@@ -282,12 +282,16 @@ int sb_encode(void *state, float *in, SpeexBits *bits)
    else
       dtx=0;
 
-   /* Start encoding the high-band */
-   for (i=0;i<st->windowSize;i++)
-      st->buf[i] = st->high[i] * st->window[i] / SIG_SCALING;
+   {
+      spx_word16_t *w_sig;
+      w_sig = PUSH(stack, st->windowSize, spx_word16_t);
+      /* Window for analysis */
+      for (i=0;i<st->windowSize;i++)
+         w_sig[i] = SHR(MULT16_16(SHR((spx_word32_t)(st->high[i]),SIG_SHIFT),st->window[i]),SIG_SHIFT);
 
-   /* Compute auto-correlation */
-   _spx_autocorr(st->buf, st->autocorr, st->lpcSize+1, st->windowSize);
+      /* Compute auto-correlation */
+      _spx_autocorr(w_sig, st->autocorr, st->lpcSize+1, st->windowSize);
+   }
 
    st->autocorr[0] *= st->lpc_floor; /* Noise floor in auto-correlation domain */
    /* Lag windowing: equivalent to filtering in the power-spectrum domain */
@@ -599,9 +603,8 @@ int sb_encode(void *state, float *in, SpeexBits *bits)
 
 
          for (i=0;i<st->subframeSize;i++)
-            target[i]*=scale_1/SIG_SCALING;
+            target[i]*=scale_1;
 
-         FLOAT_SIGNAL;
          for (i=0;i<st->subframeSize;i++)
             syn_resp[i]/=SIG_SCALING;
 
@@ -616,7 +619,7 @@ int sb_encode(void *state, float *in, SpeexBits *bits)
          /*print_vec(target, st->subframeSize, "after");*/
 
          for (i=0;i<st->subframeSize;i++)
-            exc[i] += innov[i]*scale*SIG_SCALING;
+            exc[i] += innov[i]*scale;
 
          if (SUBMODE(double_codebook)) {
             char *tmp_stack=stack;
@@ -629,12 +632,11 @@ int sb_encode(void *state, float *in, SpeexBits *bits)
                                       SUBMODE(innovation_params), st->lpcSize, st->subframeSize, 
                                       innov2, syn_resp, bits, tmp_stack, (st->complexity+1)>>1);
             for (i=0;i<st->subframeSize;i++)
-               innov2[i]*=scale*(1/2.5)*SIG_SCALING;
+               innov2[i]*=scale*(1/2.5);
             for (i=0;i<st->subframeSize;i++)
                exc[i] += innov2[i];
          }
 
-         FIXED_SIGNAL;
          for (i=0;i<st->subframeSize;i++)
             syn_resp[i]/=SIG_SCALING;
 

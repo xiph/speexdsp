@@ -117,7 +117,7 @@ int          p
  */
 #include <stdio.h>
 void _spx_autocorr(
-const float *x,   /*  in: [0...n-1] samples x   */
+const spx_word16_t *x,   /*  in: [0...n-1] samples x   */
 spx_word16_t       *ac,  /* out: [0...lag-1] ac values */
 int          lag, 
 int          n
@@ -129,7 +129,7 @@ int          n
    int shift, ac_shift;
    
    for (j=0;j<n;j++)
-      ac0 += floor(x[j]*x[j])/256;
+      ac0 += MULT16_16(x[j],x[j])/256;
    ac0 += n;
    shift = 8;
    while (shift && ac0<0x40000000)
@@ -150,7 +150,7 @@ int          n
       d=0;
       for (j=i;j<n;j++)
       {
-         d += ((int)(floor(x[j]) * floor(x[j-i]))) >> shift;
+         d += MULT16_16(x[j],x[j-i]) >> shift;
       }
       
       ac[i] = d >> ac_shift;
@@ -212,7 +212,7 @@ int          p
  * for lags between 0 and lag-1, and x == 0 outside 0...n-1
  */
 void _spx_autocorr(
-const float *x,   /*  in: [0...n-1] samples x   */
+const spx_word16_t *x,   /*  in: [0...n-1] samples x   */
 float       *ac,  /* out: [0...lag-1] ac values */
 int          lag, 
 int          n

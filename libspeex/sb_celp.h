@@ -69,7 +69,7 @@ typedef struct SBEncState {
    float *res;                 /**< Zero-input response (ringing) */
    float *sw;                  /**< Perceptually weighted signal */
    float *target;              /**< Weighted target signal (analysis by synthesis) */
-   float *window;              /**< LPC analysis window */
+   spx_word16_t *window;              /**< LPC analysis window */
    float *lagWindow;           /**< Auto-correlation window */
    spx_word16_t *autocorr;            /**< Auto-correlation (for LPC analysis) */
    spx_coef_t *lpc;                 /**< LPC coefficients */

@@ -36,7 +36,7 @@
 #include "misc.h"
 
 void _spx_autocorr(
-              const float * x,   /*  in: [0...n-1] samples x   */
+              const spx_word16_t * x,   /*  in: [0...n-1] samples x   */
               spx_word16_t *ac,   /* out: [0...lag-1] ac values */
               int lag, int   n);
 
