@@ -132,7 +132,7 @@ All this led us to the choice of CELP as the encoding technique to use for
 The main characteristics can be summerized as follows:
 \layout Itemize
 
-Free software/open-source, royalty-free
+Free software/open-source, patent and royalty-free
 \layout Itemize
 
 Integration of wideband and narrowband in the same bit-stream
