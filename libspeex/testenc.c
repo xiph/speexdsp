@@ -105,8 +105,8 @@ int main(int argc, char **argv)
    {
 	float s=0, e=0;
         for (i=0;i<FRAME_SIZE;++i) {
-            s += in_short[i] * in_short[i];
-            e += (in_short[i]-out_short[i]) * (in_short[i]-out_short[i]);
+            s += (float)in_short[i] * in_short[i];
+            e += ((float)in_short[i]-out_short[i]) * ((float)in_short[i]-out_short[i]);
         }
 	seg_snr += 10*log10((s+1)/(e+1));
 	sigpow += s;
