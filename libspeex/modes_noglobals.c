@@ -298,7 +298,7 @@ static const ltp_params * ltp_params_nb (void)
    7,
    7
    );
-};
+}
 
 /* Parameters for Long-Term Prediction (LTP)*/
 static const ltp_params * ltp_params_vlbr (void)
@@ -308,7 +308,7 @@ static const ltp_params * ltp_params_vlbr (void)
    5,
    0
    );
-};
+}
 
 /* Parameters for Long-Term Prediction (LTP)*/
 static const ltp_params * ltp_params_lbr (void)
@@ -318,7 +318,7 @@ static const ltp_params * ltp_params_lbr (void)
    5,
    7
    );
-};
+}
 
 /* Parameters for Long-Term Prediction (LTP)*/
 static const ltp_params * ltp_params_med (void)
@@ -328,7 +328,7 @@ static const ltp_params * ltp_params_med (void)
    5,
    7
    );
-};
+}
 
 /* Split-VQ innovation parameters for very low bit-rate narrowband */
 static const split_cb_params * split_cb_nb_vlbr (void)
@@ -340,7 +340,7 @@ static const split_cb_params * split_cb_nb_vlbr (void)
    4,               /*shape_bits*/
    0
    );
-};
+}
 
 /* Split-VQ innovation parameters for very low bit-rate narrowband */
 static const split_cb_params * split_cb_nb_ulbr (void)
@@ -352,7 +352,7 @@ static const split_cb_params * split_cb_nb_ulbr (void)
    5,               /*shape_bits*/
    0
    );
-};
+}
 
 /* Split-VQ innovation parameters for low bit-rate narrowband */
 static const split_cb_params * split_cb_nb_lbr (void)
@@ -364,7 +364,7 @@ static const split_cb_params * split_cb_nb_lbr (void)
    5,               /*shape_bits*/
    0
    );
-};
+}
 
 
 /* Split-VQ innovation parameters narrowband */
@@ -377,7 +377,7 @@ static const split_cb_params * split_cb_nb (void)
    6,               /*shape_bits*/
    0
    );
-};
+}
 
 /* Split-VQ innovation parameters narrowband */
 static const split_cb_params * split_cb_nb_med (void)
@@ -389,7 +389,7 @@ static const split_cb_params * split_cb_nb_med (void)
    7,               /*shape_bits*/
    0
    );
-};
+}
 
 /* Split-VQ innovation for low-band wideband */
 static const split_cb_params * split_cb_sb (void)
@@ -401,7 +401,7 @@ static const split_cb_params * split_cb_sb (void)
    8,               /*shape_bits*/
    0
    );
-};
+}
 
 /* Split-VQ innovation for high-band wideband */
 static const split_cb_params * split_cb_high (void)
@@ -413,7 +413,7 @@ static const split_cb_params * split_cb_high (void)
    7,               /*shape_bits*/
    1
    );
-};
+}
 
 
 /* Split-VQ innovation for high-band wideband */
@@ -426,7 +426,7 @@ static const split_cb_params * split_cb_high_lbr (void)
    5,               /*shape_bits*/
    0
    );
-};
+}
 
 /* 2150 bps "vocoder-like" mode for comfort noise */
 static const SpeexSubmode * nb_submode1 (void)
@@ -454,7 +454,7 @@ static const SpeexSubmode * nb_submode1 (void)
 #endif
    43
    );
-};
+}
 
 /* 3.95 kbps very low bit-rate mode */
 static const SpeexSubmode * nb_submode8 (void)
@@ -487,7 +487,7 @@ static const SpeexSubmode * nb_submode8 (void)
 #endif
    79
    );
-};
+}
 
 /* 5.95 kbps very low bit-rate mode */
 static const SpeexSubmode * nb_submode2 (void)
@@ -515,7 +515,7 @@ static const SpeexSubmode * nb_submode2 (void)
 #endif
    119
    );
-};
+}
 
 /* 8 kbps low bit-rate mode */
 static const SpeexSubmode * nb_submode3 (void)
@@ -543,7 +543,7 @@ static const SpeexSubmode * nb_submode3 (void)
 #endif
    160
    );
-};
+}
 
 /* 11 kbps medium bit-rate mode */
 static const SpeexSubmode * nb_submode4 (void)
@@ -571,7 +571,7 @@ static const SpeexSubmode * nb_submode4 (void)
 #endif
    220
    );
-};
+}
 
 /* 15 kbps high bit-rate mode */
 static const SpeexSubmode * nb_submode5 (void)
@@ -599,7 +599,7 @@ static const SpeexSubmode * nb_submode5 (void)
 #endif
    300
    );
-};
+}
 
 /* 18.2 high bit-rate mode */
 static const SpeexSubmode * nb_submode6 (void)
@@ -627,7 +627,7 @@ static const SpeexSubmode * nb_submode6 (void)
 #endif
    364
    );
-};
+}
 
 /* 24.6 kbps high bit-rate mode */
 static const SpeexSubmode * nb_submode7 (void)
@@ -655,7 +655,7 @@ static const SpeexSubmode * nb_submode7 (void)
 #endif
    492
    );
-};
+}
 
 
 /* Default mode for narrowband */
@@ -664,7 +664,6 @@ static const SpeexNBMode * nb_mode (void)
   const SpeexSubmode ** submodes;
   int quality_map[11] = {1, 8, 2, 3, 3, 4, 4, 5, 5, 6, 7};
   const SpeexNBMode * ret;
-  int i;
 
   submodes = (const SpeexSubmode **)
     speex_alloc (sizeof (SpeexSubmode *) * SB_SUBMODES);
@@ -724,7 +723,7 @@ static const SpeexNBMode * nb_mode (void)
   speex_free (submodes);
 
   return NULL;
-};
+}
 
 
 /* Default mode for narrowband */
@@ -750,7 +749,7 @@ const SpeexMode * speex_nb_mode_new (void)
    &nb_encoder_ctl,
    &nb_decoder_ctl
    );
-};
+}
 
 void speex_nb_mode_free (const SpeexMode * mode)
 {
@@ -785,7 +784,7 @@ static const SpeexSubmode * wb_submode1 (void)
 #endif
    36
    );
-};
+}
 
 
 static const SpeexSubmode * wb_submode2 (void)
@@ -813,7 +812,7 @@ static const SpeexSubmode * wb_submode2 (void)
 #endif
    112
    );
-};
+}
 
 
 static const SpeexSubmode * wb_submode3 (void)
@@ -842,7 +841,7 @@ static const SpeexSubmode * wb_submode3 (void)
 #endif
    192
    );
-};
+}
 
 static const SpeexSubmode * wb_submode4 (void)
 {
@@ -869,7 +868,7 @@ static const SpeexSubmode * wb_submode4 (void)
 #endif
    352
    );
-};
+}
 
 
 /* Split-band wideband CELP mode*/
@@ -934,7 +933,7 @@ static const SpeexSBMode * sb_wb_mode (void)
   speex_free (submodes);
 
   return NULL;
-};
+}
 
 static void
 sb_wb_mode_free (const SpeexSBMode * mode)
@@ -964,7 +963,7 @@ const SpeexMode * speex_wb_mode_new (void)
    &sb_encoder_ctl,
    &sb_decoder_ctl
    );
-};
+}
 
 void speex_wb_mode_free (const SpeexMode * mode)
 {
@@ -1032,7 +1031,7 @@ static const SpeexSBMode * sb_uwb_mode (void)
   speex_free (submodes);
 
   return NULL;
-};
+}
 
 void sb_uwb_mode_free (const SpeexSBMode * mode)
 {
@@ -1062,7 +1061,7 @@ const SpeexMode * speex_uwb_mode_new (void)
    &sb_encoder_ctl,
    &sb_decoder_ctl
    );
-};
+}
 
 void speex_uwb_mode_free (const SpeexMode * mode)
 {
