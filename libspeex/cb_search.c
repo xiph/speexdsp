@@ -29,6 +29,8 @@
 #define min(a,b) ((a) < (b) ? (a) : (b))
 #define max(a,b) ((a) > (b) ? (a) : (b))
 
+
+
 void split_cb_search_nogain(
 float target[],			/* target vector */
 float ak[],			/* LPCs for this subframe */
@@ -39,295 +41,8 @@ int   p,                        /* number of LPC coeffs */
 int   nsf,                      /* number of samples in subframe */
 float *exc,
 SpeexBits *bits,
-float *stack
-)
-{
-   int i,j;
-   float *resp;
-   float *t, *r, *e;
-   int *ind;
-   float *shape_cb;
-   int shape_cb_size, subvect_size, nb_subvect;
-   split_cb_params *params;
-
-   params = (split_cb_params *) par;
-   subvect_size = params->subvect_size;
-   nb_subvect = params->nb_subvect;
-   shape_cb_size = 1<<params->shape_bits;
-   shape_cb = params->shape_cb;
-   resp = PUSH(stack, shape_cb_size*subvect_size);
-   t = PUSH(stack, nsf);
-   r = PUSH(stack, nsf);
-   e = PUSH(stack, nsf);
-   ind = (int*)PUSH(stack, nb_subvect);
-
-   for (i=0;i<nsf;i++)
-      t[i]=target[i];
-
-   e[0]=1;
-   for (i=1;i<nsf;i++)
-      e[i]=0;
-   residue_zero(e, awk1, r, nsf, p);
-   syn_filt_zero(r, ak, r, nsf, p);
-   syn_filt_zero(r, awk2, r, nsf,p);
-   
-   /* Pre-compute codewords response and energy */
-   for (i=0;i<shape_cb_size;i++)
-   {
-      float *res = resp+i*subvect_size;
-
-      /* Compute codeword response */
-      int k;
-      for(j=0;j<subvect_size;j++)
-         res[j]=0;
-      for(j=0;j<subvect_size;j++)
-      {
-         for (k=j;k<subvect_size;k++)
-            res[k]+=shape_cb[i*subvect_size+j]*r[k-j];
-      }
-   }
-
-   for (i=0;i<nb_subvect;i++)
-   {
-      int best_index=0, k, m;
-      float g, dist, best_dist=-1;
-      float *a, *b;
-
-      /* Find best codeword for current sub-vector */
-      for (j=0;j<shape_cb_size;j++)
-      {
-         dist=0;
-         a=resp+j*subvect_size;
-         b=t+subvect_size*i;
-         for (k=0;k<subvect_size;k++)
-            dist += (a[k]-b[k])*(a[k]-b[k]);
-         if (dist<best_dist || j==0)
-         {
-            best_dist=dist;
-            best_index=j;
-         }
-      }
-      /*printf ("best index: %d/%d\n", best_index, shape_cb_size);*/
-      speex_bits_pack(bits,best_index,params->shape_bits);
-
-      ind[i]=best_index;
-      /* Update target for next subvector */
-      for (j=0;j<subvect_size;j++)
-      {
-         g=shape_cb[best_index*subvect_size+j];
-         for (k=subvect_size*i+j,m=0;k<nsf;k++,m++)
-            t[k] -= g*r[m];
-      }
-
-   }
-   
-   /* Put everything back together */
-   for (i=0;i<nb_subvect;i++)
-      for (j=0;j<subvect_size;j++)
-         e[subvect_size*i+j]=shape_cb[ind[i]*subvect_size+j];
-
-   /* Update excitation */
-   for (j=0;j<nsf;j++)
-      exc[j]+=e[j];
-   
-   /* Update target */
-   residue_zero(e, awk1, r, nsf, p);
-   syn_filt_zero(r, ak, r, nsf, p);
-   syn_filt_zero(r, awk2, r, nsf,p);
-   for (j=0;j<nsf;j++)
-      target[j]-=r[j];
-
-   
-
-   POP(stack);
-   POP(stack);
-   POP(stack);
-   POP(stack);
-   POP(stack);
-}
-
-
-void split_cb_search_nogain2(
-float target[],			/* target vector */
-float ak[],			/* LPCs for this subframe */
-float awk1[],			/* Weighted LPCs for this subframe */
-float awk2[],			/* Weighted LPCs for this subframe */
-void *par,                      /* Codebook/search parameters*/
-int   p,                        /* number of LPC coeffs */
-int   nsf,                      /* number of samples in subframe */
-float *exc,
-SpeexBits *bits,
-float *stack
-)
-{
-   int i,j;
-   float *resp;
-   float *t, *r, *e, *E;
-   int *ind;
-   float *shape_cb;
-   int shape_cb_size, subvect_size, nb_subvect;
-   split_cb_params *params;
-   int best_index_mem[2][2];
-   float best_dist_mem[2];
-   int last_best=0;
-
-   params = (split_cb_params *) par;
-   subvect_size = params->subvect_size;
-   nb_subvect = params->nb_subvect;
-   shape_cb_size = 1<<params->shape_bits;
-   shape_cb = params->shape_cb;
-   resp = PUSH(stack, shape_cb_size*subvect_size);
-   t = PUSH(stack, nsf);
-   r = PUSH(stack, nsf);
-   e = PUSH(stack, nsf);
-   E = PUSH(stack, shape_cb_size);
-   ind = (int*)PUSH(stack, nb_subvect);
-
-   for (i=0;i<nsf;i++)
-      t[i]=target[i];
-
-   e[0]=1;
-   for (i=1;i<nsf;i++)
-      e[i]=0;
-   residue_zero(e, awk1, r, nsf, p);
-   syn_filt_zero(r, ak, r, nsf, p);
-   syn_filt_zero(r, awk2, r, nsf,p);
-   
-   /* Pre-compute codewords response and energy */
-   for (i=0;i<shape_cb_size;i++)
-   {
-      float *res = resp+i*subvect_size;
-
-      /* Compute codeword response */
-      int k;
-      for(j=0;j<subvect_size;j++)
-         res[j]=0;
-      for(j=0;j<subvect_size;j++)
-      {
-         for (k=j;k<subvect_size;k++)
-            res[k]+=shape_cb[i*subvect_size+j]*r[k-j];
-      }
-      E[i]=0;
-      for(j=0;j<subvect_size;j++)
-         E[i]+=res[j]*res[j];
-   }
-
-   for (i=0;i<nb_subvect;i++)
-   {
-      int best_index[2]={0,0}, k, m;
-      float g, best_dist[2]={-1,-1};
-      float *x;
-      float energy=0;
-      x=t+subvect_size*i;
-
-      for (k=0;k<subvect_size;k++)
-         energy+=x[k]*x[k];
-      /* Find best codewords for current sub-vector */
-      if (i==0)
-         vq_nbest(x, resp, subvect_size, shape_cb_size, E, 2, best_index, best_dist);
-      else
-      {
-         best_index[0]=best_index_mem[last_best][0];
-         best_index[1]=best_index_mem[last_best][1];
-      }
-      if (i<nb_subvect-1)
-      {
-         int nbest;
-         float *tt, err[2];
-         float best_score[2];
-         tt=PUSH(stack,nsf);
-         for (nbest=0;nbest<2;nbest++)
-         {
-            for (j=0;j<nsf;j++)
-               tt[j]=t[j];
-            for (j=0;j<subvect_size;j++)
-            {
-               g=shape_cb[best_index[nbest]*subvect_size+j];
-               for (k=subvect_size*i+j,m=0;k<nsf;k++,m++)
-                  tt[k] -= g*r[m];
-            }
-            
-            {
-               vq_nbest(&tt[subvect_size*(i+1)], resp, subvect_size, shape_cb_size, E, 2, best_index_mem[nbest], best_dist_mem);
-               for (j=0;j<subvect_size;j++)
-               {
-                  g=shape_cb[best_index_mem[nbest][0]*subvect_size+j];
-                  for (k=subvect_size*(i+1)+j,m=0;k<nsf;k++,m++)
-                     tt[k] -= g*r[m];
-               }
-            }
-
-            err[nbest]=0;
-            for (j=subvect_size*i;j<subvect_size*(i+2);j++)
-               err[nbest]-=tt[j]*tt[j];
-            
-            best_score[nbest]=err[nbest];
-         }
-
-         if (best_score[1]>best_score[0])
-         {
-            last_best=1;
-            best_index[0]=best_index[1];
-            best_score[0]=best_score[1];
-         } else
-            last_best=0;
-         POP(stack);
-
-      }
-
-      ind[i]=best_index[0];
-
-      /*printf ("best index: %d/%d\n", best_index, shape_cb_size);*/
-      speex_bits_pack(bits,ind[i],params->shape_bits);
-
-      /* Update target for next subvector */
-      for (j=0;j<subvect_size;j++)
-      {
-         g=shape_cb[ind[i]*subvect_size+j];
-         for (k=subvect_size*i+j,m=0;k<nsf;k++,m++)
-            t[k] -= g*r[m];
-      }
-   }
-   
-   /* Put everything back together */
-   for (i=0;i<nb_subvect;i++)
-      for (j=0;j<subvect_size;j++)
-         e[subvect_size*i+j]=shape_cb[ind[i]*subvect_size+j];
-
-   /* Update excitation */
-   for (j=0;j<nsf;j++)
-      exc[j]+=e[j];
-   
-   /* Update target */
-   residue_zero(e, awk1, r, nsf, p);
-   syn_filt_zero(r, ak, r, nsf, p);
-   syn_filt_zero(r, awk2, r, nsf,p);
-   for (j=0;j<nsf;j++)
-      target[j]-=r[j];
-
-   
-   POP(stack);
-   POP(stack);
-   POP(stack);
-   POP(stack);
-   POP(stack);
-   POP(stack);
-}
-
-
-
-
-void split_cb_search_nogain3(
-float target[],			/* target vector */
-float ak[],			/* LPCs for this subframe */
-float awk1[],			/* Weighted LPCs for this subframe */
-float awk2[],			/* Weighted LPCs for this subframe */
-void *par,                      /* Codebook/search parameters*/
-int   p,                        /* number of LPC coeffs */
-int   nsf,                      /* number of samples in subframe */
-float *exc,
-SpeexBits *bits,
-float *stack
+float *stack,
+int   complexity
 )
 {
    int i,j,k,m,n,q;
@@ -345,6 +60,12 @@ float *stack
    int N=2;
    int *best_index;
    float *best_dist;
+
+   N=complexity;
+   if (N<1)
+      N=1;
+   if (N>10)
+      N=10;
 
    params = (split_cb_params *) par;
    subvect_size = params->subvect_size;
@@ -543,7 +264,8 @@ int   p,                        /* number of LPC coeffs */
 int   nsf,                      /* number of samples in subframe */
 float *exc,
 SpeexBits *bits,
-float *stack
+float *stack,
+int   complexity
 )
 {
    int i,j;

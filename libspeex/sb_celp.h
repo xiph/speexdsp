@@ -75,6 +75,8 @@ typedef struct SBEncState {
 
    SpeexSubmode **submodes;
    int    submodeID;
+   int    complexity;
+
 } SBEncState;
 
 

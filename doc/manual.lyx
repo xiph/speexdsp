@@ -2120,6 +2120,33 @@ Bit allocation for high-band in wideband mode
 
 \layout Section
 
+Command-line encoder/decoder
+\layout Standard
+
+The base Speex distribution includes a command-line encoder (
+\emph on 
+speexenc
+\emph default 
+) and decoder (
+\emph on 
+speexdec
+\emph default 
+).
+\layout Subsection
+
+
+\emph on 
+speexenc
+\layout Standard
+
+The encoder
+\layout Subsection
+
+
+\emph on 
+speexdec
+\layout Section
+
 Programming with Speex (the libspeex API)
 \layout Subsection
 
@@ -2443,7 +2470,7 @@ SPEEX_GET_VBR_QUALITY* Get the current encoder VBR speech quality (integer
 SPEEX_SET_COMPLEXITY* Set the CPU resources allowed for the encoder
 \layout Description
 
-SPEEX_GET_COMPLEXITY*
+SPEEX_GET_COMPLEXITY* Get the CPU resources allowed for the encoder
 \layout Description
 
 * applies only to the encoder

@@ -28,8 +28,10 @@ int main(int argc, char **argv)
    speex_decoder_ctl(dec, SPEEX_SET_PF, &tmp);
    tmp=0;
    speex_encoder_ctl(st, SPEEX_SET_VBR, &tmp);
-   tmp=10;
+   tmp=6;
    speex_encoder_ctl(st, SPEEX_SET_QUALITY, &tmp);
+   tmp=2;
+   speex_encoder_ctl(st, SPEEX_SET_COMPLEXITY, &tmp);
 
    if (argc != 4 && argc != 3)
    {

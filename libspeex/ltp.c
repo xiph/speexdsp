@@ -271,7 +271,8 @@ int   p,                        /* Number of LPC coeffs */
 int   nsf,                      /* Number of samples in subframe */
 SpeexBits *bits,
 float *stack,
-float *exc2
+float *exc2,
+int complexity
 )
 {
    int i,j;
@@ -283,6 +284,13 @@ float *exc2
    ltp_params *params;
    int *nbest;
    float *gains;
+
+   N=complexity;
+   if (N<1)
+      N=1;
+   if (N>10)
+      N=10;
+
    nbest=(int*)PUSH(stack, N);
    gains = PUSH(stack, N);
    params = (ltp_params*) par;

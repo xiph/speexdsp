@@ -240,7 +240,9 @@ QADRTIC:
 			*u++ = -p / 2.0 + s;
 		else
 			*u++ = -p / 2.0 - s;
-		*u++ = q / u[-1];
+                /*FIXME: was *u++ = q/u[-1], not sure I fixed it right*/
+		*u = q / u[-1];
+                u++;
 		*v++ = 0.0;
 		*v++ = 0.0;
 	}

@@ -77,6 +77,7 @@ typedef struct EncState {
    VBRState *vbr;
    int    vbr_quality;
    int    vbr_enabled;
+   int    complexity;
 
    SpeexSubmode **submodes;
    int    submodeID;

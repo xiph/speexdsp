@@ -62,6 +62,7 @@ void usage()
    fprintf (stderr, "  --quality n        Encoding quality setting from 0 to 10\n"); 
    fprintf (stderr, "  --lbr              Low bit-rate mode (equivalent to --quality 3)\n"); 
    fprintf (stderr, "  --vbr              Enable variable bit-rate (VBR)\n"); 
+   fprintf (stderr, "  --comp n           Set encoding complexity (0-10)\n"); 
    fprintf (stderr, "  --nframes n        Number of frames per Ogg packet\n"); 
    fprintf (stderr, "  --help       -h    This help\n"); 
    fprintf (stderr, "  --version    -v    Version information\n"); 
@@ -98,6 +99,8 @@ int main(int argc, char **argv)
       {"lbr", no_argument, NULL, 0},
       {"vbr", no_argument, NULL, 0},
       {"quality", required_argument, NULL, 0},
+      {"nframes", required_argument, NULL, 0},
+      {"comp", required_argument, NULL, 0},
       {"help", no_argument, NULL, 0},
       {"version", no_argument, NULL, 0},
       {0, 0, 0, 0}
@@ -112,6 +115,7 @@ int main(int argc, char **argv)
    int id=0;
    SpeexHeader header;
    int nframes=1;
+   int complexity=3;
    char *comments = "Encoded with Speex " VERSION;
 
    /*Process command-line options*/
@@ -139,6 +143,9 @@ int main(int argc, char **argv)
          } else if (strcmp(long_options[option_index].name,"nframes")==0)
          {
             nframes = atoi (optarg);
+         } else if (strcmp(long_options[option_index].name,"comp")==0)
+         {
+            complexity = atoi (optarg);
          } else if (strcmp(long_options[option_index].name,"help")==0)
          {
             usage();
@@ -293,6 +300,7 @@ int main(int argc, char **argv)
    }
 
    speex_encoder_ctl(st, SPEEX_GET_FRAME_SIZE, &frame_size);
+   speex_encoder_ctl(st, SPEEX_SET_COMPLEXITY, &complexity);
    if (vbr_enabled)
    {
       int tmp;

@@ -241,7 +241,7 @@ void *sb_encoder_init(SpeexMode *m)
    st->mem_sp = speex_alloc(st->lpcSize*sizeof(float));
    st->mem_sp2 = speex_alloc(st->lpcSize*sizeof(float));
    st->mem_sw = speex_alloc(st->lpcSize*sizeof(float));
-
+   st->complexity=2;
 
    return st;
 }
@@ -587,7 +587,7 @@ void sb_encode(void *state, float *in, SpeexBits *bits)
          /*print_vec(target, st->subframeSize, "\ntarget");*/
          SUBMODE(innovation_quant)(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2, 
                                 SUBMODE(innovation_params), st->lpcSize, st->subframeSize, 
-                                innov, bits, st->stack);
+                                innov, bits, st->stack, st->complexity);
          /*print_vec(target, st->subframeSize, "after");*/
 
          for (i=0;i<st->subframeSize;i++)
@@ -981,6 +981,12 @@ void sb_encoder_ctl(void *state, int request, void *ptr)
          }
          speex_encoder_ctl(st->st_low, SPEEX_SET_MODE, &nb_mode);
       }
+      break;
+   case SPEEX_SET_COMPLEXITY:
+      st->complexity = (*(int*)ptr);
+      break;
+   case SPEEX_GET_COMPLEXITY:
+      (*(int*)ptr) = st->complexity;
       break;
    default:
       fprintf(stderr, "Unknown nb_ctl request: %d\n", request);

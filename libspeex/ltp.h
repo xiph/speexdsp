@@ -45,7 +45,8 @@ int   p,                        /* Number of LPC coeffs */
 int   nsf,                      /* Number of samples in subframe */
 SpeexBits *bits,
 float *stack,
-float *exc2
+float *exc2,
+int   complexity
 );
 
 /*Unquantize adaptive codebook and update pitch contribution*/

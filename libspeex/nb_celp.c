@@ -137,6 +137,7 @@ void *nb_encoder_init(SpeexMode *m)
    } else {
       st->vbr = 0;
    }
+   st->complexity=2;
 
    return st;
 }
@@ -466,12 +467,14 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
             }
             pitch = SUBMODE(ltp_quant)(target, sw, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2,
                                        exc, SUBMODE(ltp_params), pit_min, pit_max, 
-                                       st->lpcSize, st->subframeSize, bits, st->stack, exc2);
+                                       st->lpcSize, st->subframeSize, bits, st->stack, 
+                                       exc2, st->complexity);
          } else {
             /* Normal pitch handling */
             pitch = SUBMODE(ltp_quant)(target, sw, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2,
                                        exc, SUBMODE(ltp_params), st->min_pitch, st->max_pitch, 
-                                       st->lpcSize, st->subframeSize, bits, st->stack, exc2);
+                                       st->lpcSize, st->subframeSize, bits, st->stack, 
+                                       exc2, st->complexity);
          }
          /*printf ("cl_pitch: %d\n", pitch);*/
          st->pitch[sub]=pitch;
@@ -579,7 +582,7 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
             /* Normal quantization */
             SUBMODE(innovation_quant)(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2, 
                                       SUBMODE(innovation_params), st->lpcSize, st->subframeSize, 
-                                      innov, bits, st->stack);
+                                      innov, bits, st->stack, st->complexity);
             
             for (i=0;i<st->subframeSize;i++)
                exc[i] += innov[i]*ener;
@@ -1012,6 +1015,12 @@ void nb_encoder_ctl(void *state, int request, void *ptr)
          else
             fprintf(stderr, "Unknown nb_ctl quality: %d\n", quality);
       }
+      break;
+   case SPEEX_SET_COMPLEXITY:
+      st->complexity = (*(int*)ptr);
+      break;
+   case SPEEX_GET_COMPLEXITY:
+      (*(int*)ptr) = st->complexity;
       break;
    default:
       fprintf(stderr, "Unknown nb_ctl request: %d\n", request);
