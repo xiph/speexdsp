@@ -49,6 +49,8 @@
 #define SQRT_M_PI_2 0.88623
 #define LOUDNESS_EXP 3.5
 
+#define NB_BANDS 8
+
 static void conj_window(float *w, int len)
 {
    int i;
@@ -120,6 +122,12 @@ SpeexDenoiseState *speex_denoise_state_init(int frame_size)
    st->loudness_weight = (float*)speex_alloc(N*sizeof(float));
    st->inbuf = (float*)speex_alloc(N3*sizeof(float));
    st->outbuf = (float*)speex_alloc(N3*sizeof(float));
+
+   st->noise_bands = (float*)speex_alloc(NB_BANDS*sizeof(float));
+   st->noise_bands2 = (float*)speex_alloc(NB_BANDS*sizeof(float));
+   st->speech_bands = (float*)speex_alloc(NB_BANDS*sizeof(float));
+   st->speech_bands2 = (float*)speex_alloc(NB_BANDS*sizeof(float));
+   st->noise_bandsN = st->speech_bandsN = 1;
 
    conj_window(st->window, 2*N3);
    for (i=2*N3;i<2*st->ps_size;i++)
@@ -384,20 +392,86 @@ int speex_denoise(SpeexDenoiseState *st, float *x)
 
    /*fprintf (stderr, "%f %f ", mean_prior, mean_post);*/
    {
+      float bands[NB_BANDS];
+      int j;
       float p0, p1;
       float x = sqrt(mean_post);
-      p1 = .0005+.6*exp(-.5*(x-.4)*(x-.4)*11)+.1*exp(-1.2*x);
+
+      for (i=0;i<NB_BANDS;i++)
+      {
+         bands[i]=100;
+         for (j=i*N/NB_BANDS;j<(i+1)*N/NB_BANDS;j++)
+         {
+            bands[i] += ps[j];
+         }
+         bands[i]=log(bands[i]);
+      }
+      
+      /*p1 = .0005+.6*exp(-.5*(x-.4)*(x-.4)*11)+.1*exp(-1.2*x);
       if (x<1.5)
          p0=.1*exp(2*(x-1.5));
       else
          p0=.02+.1*exp(-.2*(x-1.5));
-      
-      p1 *= 1.0;
+      */
+
+      p0=1/(1+exp(3*(1.5-x)));
+      p1=1-p0;
+
       /*fprintf (stderr, "%f %f ", p0, p1);*/
+      /*p0 *= .99*st->speech_prob + .01*(1-st->speech_prob);
+      p1 *= .01*st->speech_prob + .99*(1-st->speech_prob);
+      
+      st->speech_prob = p0/(p1+p0);
+      */
+
+      if (mean_post > 1)
+      {
+         float adapt = 1./st->speech_bandsN++;
+         if (adapt<.005)
+            adapt = .005;
+         for (i=0;i<NB_BANDS;i++)
+         {
+            st->speech_bands[i] = (1-adapt)*st->speech_bands[i] + adapt*bands[i];
+            st->speech_bands2[i] = (1-adapt)*st->speech_bands2[i] + adapt*bands[i]*bands[i];
+         }
+      } else {
+         float adapt = 1./st->noise_bandsN++;
+         if (adapt<.005)
+            adapt = .005;
+         for (i=0;i<NB_BANDS;i++)
+         {
+            st->noise_bands[i] = (1-adapt)*st->noise_bands[i] + adapt*bands[i];
+            st->noise_bands2[i] = (1-adapt)*st->noise_bands2[i] + adapt*bands[i]*bands[i];
+         }
+      }
+      p0=p1=1;
+      for (i=0;i<NB_BANDS;i++)
+      {
+         float noise_var, speech_var;
+         float tmp1, tmp2, pr;
+         noise_var = st->noise_bands2[i] - st->noise_bands[i]*st->noise_bands[i];
+         speech_var = st->speech_bands2[i] - st->speech_bands[i]*st->speech_bands[i];
+         if (noise_var < .1)
+            noise_var = .1;
+         if (speech_var < .1)
+            speech_var = .1;
+         tmp1 = exp(-.5*(bands[i]-st->speech_bands[i])*(bands[i]-st->speech_bands[i])/speech_var)/sqrt(2*M_PI*speech_var);
+         tmp2 = exp(-.5*(bands[i]-st->noise_bands[i])*(bands[i]-st->noise_bands[i])/noise_var)/sqrt(2*M_PI*noise_var);
+         /*fprintf (stderr, "%f ", (float)(p0/(.01+p0+p1)));*/
+         /*fprintf (stderr, "%f ", (float)sqrt(bands[i]));*/
+         pr = tmp1/(1e-5+tmp1+tmp2);
+         p0 *= pr;
+         p1 *= (1-pr);
+      }
+      p0 = pow(p0,.3);
+      p1 = pow(p1,.3);
+
       p0 *= .99*st->speech_prob + .01*(1-st->speech_prob);
       p1 *= .01*st->speech_prob + .99*(1-st->speech_prob);
       
       st->speech_prob = p0/(p1+p0);
+      /*fprintf (stderr, "%f ", st->speech_prob);*/
+
       if (st->speech_prob>.5 || (st->last_speech < 10 && st->speech_prob>.25))
       {
          is_speech = 1;
@@ -405,9 +479,9 @@ int speex_denoise(SpeexDenoiseState *st, float *x)
       } else {
          st->last_speech++;
          if (st->last_speech<10)
-            is_speech = 1;
+           is_speech = 1;
       }
-      /*fprintf (stderr, "%f ", st->speech_prob);*/
+
    }
 
    if (st->consec_noise>=3)
