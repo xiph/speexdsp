@@ -78,7 +78,8 @@ typedef struct EncState {
    float *rc;             /**< Reflection coefficients */
    float *mem_sp;         /**< Filter memory for signal synthesis */
    float *mem_sw;         /**< Filter memory for perceptually-weighted signal */
-   float *mem_exc;        /**< Filter memory for excitation */
+   float *mem_sw_whole;   /**< Filter memory for perceptually-weighted signal (whole frame)*/
+   float *mem_exc;        /**< Filter memory for excitation (whole frame) */
    float *pi_gain;        /**< Gain of LPC filter at theta=pi (fe/2) */
 
    VBRState *vbr;         /**< State of the VBR data */

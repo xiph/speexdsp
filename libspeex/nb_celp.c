@@ -129,6 +129,7 @@ void *nb_encoder_init(SpeexMode *m)
 
    st->mem_sp = speex_alloc(st->lpcSize*sizeof(float));
    st->mem_sw = speex_alloc(st->lpcSize*sizeof(float));
+   st->mem_sw_whole = speex_alloc(st->lpcSize*sizeof(float));
    st->mem_exc = speex_alloc(st->lpcSize*sizeof(float));
 
    st->pi_gain = speex_alloc(st->nbSubframes*sizeof(float));
@@ -179,6 +180,7 @@ void nb_encoder_destroy(void *state)
 
    speex_free(st->mem_sp);
    speex_free(st->mem_sw);
+   speex_free(st->mem_sw_whole);
    speex_free(st->mem_exc);
    speex_free(st->pi_gain);
    speex_free(st->pitch);
@@ -252,11 +254,15 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
          st->old_lsp[i] = st->lsp[i];
    }
 
+   if (0) {
+      float dd=0;
+      for (i=0;i<st->lpcSize;i++)
+         dd += fabs(st->old_lsp[i] - st->lsp[i]);
+      printf ("lspdist = %f\n", dd);
+   }
 
    /* Whole frame analysis (open-loop estimation of pitch and excitation gain) */
    {
-      /*FIXME: stack alloc*/
-      static float mem[10];
       for (i=0;i<st->lpcSize;i++)
          st->interp_lsp[i] = .5*st->old_lsp[i] + .5*st->lsp[i];
 
@@ -270,9 +276,7 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
       bw_lpc(st->gamma1, st->interp_lpc, st->bw_lpc1, st->lpcSize);
       bw_lpc(st->gamma2, st->interp_lpc, st->bw_lpc2, st->lpcSize);
 
-      for (i=0;i<st->lpcSize;i++)
-         mem[i]=st->mem_sw[i];
-      filter_mem2(st->frame, st->bw_lpc1, st->bw_lpc2, st->sw, st->frameSize, st->lpcSize, mem);
+      filter_mem2(st->frame, st->bw_lpc1, st->bw_lpc2, st->sw, st->frameSize, st->lpcSize, st->mem_sw_whole);
 
       /*Open-loop pitch*/
       {
