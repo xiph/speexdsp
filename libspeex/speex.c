@@ -19,8 +19,9 @@ void encoder_init(EncState *st)
    st->nbSubframes=4;
    st->subframeSize=32;
    st->lpcSize = 10;
-   st->bufSize = 256;
+   st->bufSize = 512;
    st->inBuf = malloc(st->bufSize*sizeof(float));
+   st->frame = st->inBuf + st->bufSize - st->windowSize;
    for (i=0;i<st->bufSize;i++)
       st->inBuf[i]=0;
    st->window = malloc(st->windowSize*sizeof(float));
@@ -29,6 +30,7 @@ void encoder_init(EncState *st)
       st->window[i]=.5*(1-cos(2*M_PI*i/st->windowSize));
    st->buf2 = malloc(st->windowSize*sizeof(float));
    st->lpc = malloc((st->lpcSize+1)*sizeof(float));
+   st->interp_lpc = malloc((st->lpcSize+1)*sizeof(float));
    st->autocorr = malloc((st->lpcSize+1)*sizeof(float));
    /* Create the window for autocorrelation (lag-windowing) */
    st->lagWindow = malloc((st->lpcSize+1)*sizeof(float));
@@ -36,6 +38,7 @@ void encoder_init(EncState *st)
       st->lagWindow[i]=exp(-.5*sqr(2*M_PI*.01*i));
    st->lsp = malloc(st->lpcSize*sizeof(float));
    st->old_lsp = malloc(st->lpcSize*sizeof(float));
+   st->interp_lsp = malloc(st->lpcSize*sizeof(float));
    st->rc = malloc(st->lpcSize*sizeof(float));
    st->first = 1;
 }
@@ -55,17 +58,17 @@ void encoder_destroy(EncState *st)
 
 void encode(EncState *st, float *in, int *outSize, void *bits)
 {
-   int i, roots;
+   int i, j, sub, roots;
    float error;
 
    /* Copy new data in input buffer */
-   memmove(st->inBuf, st->inBuf+st->bufSize-st->frameSize, (st->bufSize-st->frameSize)*sizeof(float));
+   memmove(st->inBuf, st->inBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(float));
    for (i=0;i<st->frameSize;i++)
       st->inBuf[st->bufSize-st->frameSize+i] = in[i];
 
    /* Window for analysis */
    for (i=0;i<st->windowSize;i++)
-      st->buf2[i] = st->inBuf[i] * st->window[i];
+      st->buf2[i] = st->frame[i] * st->window[i];
    /* Compute auto-correlation */
    autocorr(st->buf2, st->autocorr, st->lpcSize+1, st->windowSize);
    st->autocorr[0] += 1;        /* prevents NANs */
@@ -74,30 +77,49 @@ void encode(EncState *st, float *in, int *outSize, void *bits)
    for (i=0;i<st->lpcSize+1;i++)
       st->autocorr[i] *= st->lagWindow[i];
    /* Levinson-Durbin */
+   for (i=0;i<st->lpcSize+1;i++)
+      printf("%f ", st->autocorr[i]);
+   printf ("\n");
+
    error = wld(st->lpc+1, st->autocorr, st->rc, st->lpcSize);
    st->lpc[0]=1;
    for (i=0;i<st->lpcSize+1;i++)
       printf("%f ", st->lpc[i]);
-   printf ("\nprediction error = %f, R[0] = %f, gain = %f\n", error, st->autocorr[0], 
-           st->autocorr[0]/error);
+   printf ("\nprediction error = %f, R[0] = %f, gain = %f\n", error, st->autocorr[0], st->autocorr[0]/error);
+
    /* LPC to LSPs (x-domain) transform */
    roots=lpc_to_lsp (st->lpc, st->lpcSize, st->lsp, 6, 0.02);
+   if (roots!=st->lpcSize)
+   {
+      fprintf ("roots!=st->lpcSize\n");
+      exit(1);
+   }
    for (i=0;i<roots;i++)
       printf("%f ", st->lsp[i]);
    printf ("\nfound %d roots\n", roots);
 
    /* Quantize LSPs */
 
-   /* Back to "quantized" LPC */
-   lsp_to_lpc(st->lsp, st->lpc, roots);
-   for (i=0;i<st->lpcSize+1;i++)
-      printf("%f ", st->lpc[i]);
-   printf ("\n\n");
+   for (sub=0;sub<st->nbSubframes;sub++)
+   {
+      float fact;
+      /* LSP interpolation */
+      fact = (.5 + sub)/st->nbSubframes;
+      for (i=0;i<st->lpcSize;i++)
+         st->interp_lsp[i] = (1-fact)*st->old_lsp[i] + fact*st->lsp[i];
 
-   /* Compute "weighted" residue */
+      /* Compute interpolated LPCs */
+      lsp_to_lpc(st->interp_lsp, st->interp_lpc, st->lpcSize);
+      for (i=0;i<st->lpcSize+1;i++)
+         printf("%f ", st->interp_lpc[i]);
+      printf ("\n");
+      
+      /* Compute "weighted" residue */
+      
+      /* Find pitch */
+   }
 
-   /* Find pitch */
-
+   printf ("\n");
    for (i=0;i<st->lpcSize;i++)
       st->old_lsp[i] = st->lsp[i];
    st->first = 0;
