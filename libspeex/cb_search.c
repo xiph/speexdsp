@@ -575,7 +575,7 @@ float *stack
       if (i<nb_subvect-1) {
          int best_index2=0;
          float best_score2=-1, best_gain2=0;
-         int nbest, best;
+         int nbest;
          float err[2]={0,0};
          float *tt=PUSH(stack,nsf);
          for (nbest=0;nbest<2;nbest++)

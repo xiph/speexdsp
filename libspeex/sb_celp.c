@@ -29,6 +29,7 @@
 #include "cb_search.h"
 #include "quant_lsp.h"
 #include "vq.h"
+#include <string.h>
 
 #ifndef M_PI
 #define M_PI           3.14159265358979323846  /* pi */
@@ -434,7 +435,7 @@ void sb_encode(SBEncState *st, float *in, FrameBits *bits)
          /* Compute "real excitation" */
          residue_mem(sp, st->interp_qlpc, exc, st->subframeSize, st->lpcSize, st->mem_sp);
          
-#if 0
+#if 1
          /* Compute energy of low-band and high-band excitation */
          for (i=0;i<st->subframeSize;i++)
             eh+=sqr(exc[i]);
