@@ -220,7 +220,7 @@ int   complexity
                /* New code: update the rest of the target only if it's worth it */
                for (m=0;m<subvect_size;m++)
                {
-                  float g;
+                  spx_word16_t g;
                   int rind;
                   float sign=1;
                   rind = best_index[k];
@@ -230,10 +230,16 @@ int   complexity
                      rind-=shape_cb_size;
                   }
 
-                  g=sign*0.03125*shape_cb[rind*subvect_size+m];
                   q=subvect_size-m;
+#ifdef FIXED_POINT
+                  g=sign*shape_cb[rind*subvect_size+m];
                   for (n=subvect_size*(i+1);n<nsf;n++,q++)
-                     t[n] -= SHR((long long)(g*r[q]),6);
+                     t[n] -= SHR(MULT16_16(g,r[q]),11);
+#else
+                  g=sign*0.03125*shape_cb[rind*subvect_size+m];
+                  for (n=subvect_size*(i+1);n<nsf;n++,q++)
+                     t[n] -= g*r[q];
+#endif
                }
 
 
@@ -290,16 +296,26 @@ int   complexity
    for (i=0;i<nb_subvect;i++)
    {
       int rind;
-      float sign=1;
+      spx_word16_t sign=1;
       rind = ind[i];
       if (rind>=shape_cb_size)
       {
          sign=-1;
          rind-=shape_cb_size;
       }
-
+#ifdef FIXED_POINT
+      if (sign==1)
+      {
+         for (j=0;j<subvect_size;j++)
+            e[subvect_size*i+j]=SHL((spx_word32_t)shape_cb[rind*subvect_size+j],SIG_SHIFT-5);
+      } else {
+         for (j=0;j<subvect_size;j++)
+            e[subvect_size*i+j]=-SHL((spx_word32_t)shape_cb[rind*subvect_size+j],SIG_SHIFT-5);
+      }
+#else
       for (j=0;j<subvect_size;j++)
          e[subvect_size*i+j]=sign*0.03125*SIG_SCALING*shape_cb[rind*subvect_size+j];
+#endif
    }   
    /* Update excitation */
    for (j=0;j<nsf;j++)
@@ -354,8 +370,14 @@ char *stack
       if (signs[i])
          s=-1;
 #ifdef FIXED_POINT
-      for (j=0;j<subvect_size;j++)
-         exc[subvect_size*i+j]+=s*0.03125*SIG_SCALING*shape_cb[ind[i]*subvect_size+j];
+      if (s==1)
+      {
+         for (j=0;j<subvect_size;j++)
+            exc[subvect_size*i+j]=SHL((spx_word32_t)shape_cb[ind[i]*subvect_size+j],SIG_SHIFT-5);
+      } else {
+         for (j=0;j<subvect_size;j++)
+            exc[subvect_size*i+j]=-SHL((spx_word32_t)shape_cb[ind[i]*subvect_size+j],SIG_SHIFT-5);
+      }
 #else
       for (j=0;j<subvect_size;j++)
          exc[subvect_size*i+j]+=s*0.03125*shape_cb[ind[i]*subvect_size+j];      
