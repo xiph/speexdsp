@@ -263,10 +263,10 @@ int main(int argc, char **argv)
            comment_add(&comments, &comments_length, NULL, optarg); 
          } else if (strcmp(long_options[option_index].name,"author")==0)
          {
-           comment_add(&comments, &comments_length, "AUTHOR=", optarg); 
+           comment_add(&comments, &comments_length, "author=", optarg); 
          } else if (strcmp(long_options[option_index].name,"title")==0)
          {
-           comment_add(&comments, &comments_length, "TITLE=", optarg); 
+           comment_add(&comments, &comments_length, "title=", optarg); 
          }
 
          break;
