@@ -190,7 +190,7 @@ void encode(EncState *st, float *in, FrameBits *bits)
    st->lpc[0]=1;
 
    /* LPC to LSPs (x-domain) transform */
-   roots=lpc_to_lsp (st->lpc, st->lpcSize, st->lsp, 6, 0.01, st->stack);
+   roots=lpc_to_lsp (st->lpc, st->lpcSize, st->lsp, 6, 0.002, st->stack);
    if (roots!=st->lpcSize)
    {
       fprintf (stderr, "roots!=st->lpcSize (found only %d roots)\n", roots);
@@ -317,11 +317,11 @@ void encode(EncState *st, float *in, FrameBits *bits)
       snr = 10*log10((esig+1)/(enoise+1));
       printf ("pitch SNR = %f\n", snr);
 
-#if 0 /*If set to 1, compute "real innovation" i.e. cheat to get perfect reconstruction*/
+#if 1 /*If set to 1, compute "real innovation" i.e. cheat to get perfect reconstruction*/
       syn_filt_zero(target, st->bw_lpc1, res, st->subframeSize, st->lpcSize);
       residue_zero(res, st->interp_qlpc, st->buf2, st->subframeSize, st->lpcSize);
       residue_zero(st->buf2, st->bw_lpc2, st->buf2, st->subframeSize, st->lpcSize);
-      if (snr>5 && (rand()%10==0))
+      if (snr>9 && (rand()%10==0))
       {
          printf ("exc ");
          for (i=0;i<st->subframeSize;i++)
@@ -332,9 +332,9 @@ void encode(EncState *st, float *in, FrameBits *bits)
          }
          printf ("\n");
       }
-      for (i=0;i<st->subframeSize;i++)
+      /*for (i=0;i<st->subframeSize;i++)
          exc[i]+=st->buf2[i];
-#else
+#else*/
       /* Perform a split-codebook search */
       st->innovation_quant(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2,
                            st->innovation_params, st->lpcSize,

@@ -29,7 +29,7 @@ extern float gain_cdbk_nb[];
 extern float exc_gains_table[];
 extern float exc_table[];
 extern float exc_wb_table[];
-
+extern float exc_gains_wb_table[];
 ltp_params ltp_params_nb = {
    gain_cdbk_nb,
    7,
@@ -53,10 +53,10 @@ split_cb_params split_cb_nb = {
 
 split_cb_params split_cb_wb = {
    8,               /*subvect_size*/
-   8,               /*nb_subvect*/
+   10,              /*nb_subvect*/
    exc_wb_table,    /*shape_cb*/
    7,               /*shape_bits*/
-   NULL, /*gain_cb*/
+   NULL/*exc_gains_wb_table*/, /*gain_cb*/
    8                /*gain_bits*/
 };
 
@@ -71,7 +71,7 @@ SpeexMode nb_mode = {
    144,    /*pitchEnd*/
    0.9,    /*gamma1*/
    0.6,    /*gamma2*/
-   .01,
+   .005,
    1.0001,
    /*LSP quantization*/
    lsp_quant_nb,
@@ -90,16 +90,16 @@ SpeexMode nb_mode = {
 
 SpeexMode wb_mode = {
    320,    /*frameSize*/
-   64,     /*subframeSize*/
+   80,     /*subframeSize*/
    640,    /*windowSize*/
    16,     /*lpcSize*/
    1280,   /*bufSize*/
    35,     /*pitchStart*/
    290,    /*pitchEnd*/
    0.9,    /*gamma1*/
-   0.4,    /*gamma2*/
-   .001,
-   1.00001,
+   0.6,    /*gamma2*/
+   .002,
+   1.00002,
    /*LSP quantization*/
    lsp_quant_wb,
    lsp_unquant_wb,

@@ -223,7 +223,7 @@ float *stack
       int best_vq_index=0, max_index;
       float max_gain=0, log_max, min_dist=0, *sign;
 
-      if (gain_cb) /*If no gain codebok, do not quantize (for testing/debugging) */
+      if (gain_cb) /*If no gain codebook, do not quantize (for testing/debugging) */
       {
          sign = PUSH(stack, nb_subvect);
          for (i=0;i<nb_subvect;i++)
@@ -251,18 +251,33 @@ float *stack
          frame_bits_pack(bits,max_index,3);
 
          /*Vector quantize gains[i]*/
+#if 1
          best_vq_index = vq_index(gains, gain_cb, nb_subvect, gain_cb_size);
          frame_bits_pack(bits,best_vq_index,params->gain_bits);
-
          printf ("best_gains_vq_index %d %f %d\n", best_vq_index, min_dist, max_index);
-
          for (i=0;i<nb_subvect;i++)
             gains[i]= sign[i]*gain_cb[best_vq_index*nb_subvect+i]/max_gain/(Ee[ind[i]]+.001);
+#else
+         best_vq_index = vq_index(gains, gain_cb, nb_subvect/2, gain_cb_size);
+         frame_bits_pack(bits,best_vq_index,params->gain_bits);
+         printf ("best_gains_vq_index %d %f %d\n", best_vq_index, min_dist, max_index);
+         for (i=0;i<nb_subvect/2;i++)
+            gains[i]= sign[i]*gain_cb[best_vq_index*nb_subvect+i]/max_gain/(Ee[ind[i]]+.001);
+
+         best_vq_index = vq_index(gains+5, gain_cb, nb_subvect/2, gain_cb_size);
+         frame_bits_pack(bits,best_vq_index,params->gain_bits);
+         printf ("best_gains_vq_index %d %f %d\n", best_vq_index, min_dist, max_index);
+         for (i=0;i<nb_subvect/2;i++)
+            gains[i+5]= sign[i+5]*gain_cb[best_vq_index*nb_subvect+i]/max_gain/(Ee[ind[i+5]]+.001);
+#endif
     
 
          POP(stack);
       } else {
-
+         printf ("exc: ");
+         for (i=0;i<nb_subvect;i++)
+            printf ("%f ", gains[i]);
+         printf ("\n");
          for (i=0;i<nb_subvect;i++)
             gains[i]= gains[i]/(Ee[ind[i]]+.001);
       }
