@@ -473,7 +473,6 @@ void sb_encode(void *state, float *in, SpeexBits *bits)
 
 
          gc = sqrt(1+eh)*filter_ratio/sqrt((1+el)*st->subframeSize);
-         printf ("gain_ratio: %f\n", gc);
          {
             int qgc = (int)floor(.5+3.7*(log(gc)+2));
             if (qgc<0)
@@ -896,13 +895,16 @@ void sb_encoder_ctl(void *state, int request, void *ptr)
             break;
          case 4:
             nb_mode=4;
-            st->submodeID = 2;
+            st->submodeID = 1;
             break;
          case 5:
             nb_mode=5;
-            st->submodeID = 2;
+            st->submodeID = 1;
             break;
          case 6:
+            nb_mode=5;
+            st->submodeID = 2;
+            break;
          case 7:
             nb_mode=6;
             st->submodeID = 2;
