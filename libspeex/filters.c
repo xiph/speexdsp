@@ -60,13 +60,13 @@ spx_word16_t compute_rms(spx_sig_t *x, int len)
    {
       spx_sig_t tmp = x[i];
       if (tmp<0)
-         tmp = -1;
+         tmp = -tmp;
       if (tmp > max_val)
          max_val = tmp;
    }
 
    sig_shift=0;
-   while (max_val>2048)
+   while (max_val>16383)
    {
       sig_shift++;
       max_val >>= 1;
@@ -84,11 +84,11 @@ spx_word16_t compute_rms(spx_sig_t *x, int len)
       sum2 += MULT16_16(tmp,tmp);
       tmp = SHR(x[i+3],sig_shift);
       sum2 += MULT16_16(tmp,tmp);
-      sum += sum2;
+      sum += SHR(sum2,6);
    }
    
    /*FIXME: remove division*/
-   return (1<<sig_shift)*sqrt(1+sum/len)/SIG_SCALING;
+   return (1<<(sig_shift+3))*sqrt(1+sum/len)/SIG_SCALING;
 }
 
 #define MUL_16_32_R15(a,bh,bl) ((a)*(bh) + ((a)*(bl)>>15))

@@ -38,6 +38,140 @@
 
 #include <stdio.h>
 
+#ifdef FIXED_POINT
+
+static spx_word32_t inner_prod2(spx_word16_t *x, spx_word16_t *y, int len)
+{
+   int i;
+   spx_word32_t sum=0;
+   for (i=0;i<len;i+=4)
+   {
+      spx_word32_t part=0;
+      part += MULT16_16(x[i],y[i]);
+      part += MULT16_16(x[i+1],y[i+1]);
+      part += MULT16_16(x[i+2],y[i+2]);
+      part += MULT16_16(x[i+3],y[i+3]);
+      sum += SHR(part,6);
+   }
+   return sum;
+}
+
+
+static float inner_prod(spx_sig_t *x, spx_sig_t *y, int len)
+{
+   int i;
+   float sum1=0,sum2=0,sum3=0,sum4=0;
+   for (i=0;i<len;)
+   {
+      sum1 += x[i]*y[i];
+      sum2 += x[i+1]*y[i+1];
+      sum3 += x[i+2]*y[i+2];
+      sum4 += x[i+3]*y[i+3];
+      i+=4;
+   }
+   return sum1+sum2+sum3+sum4;
+}
+
+void open_loop_nbest_pitch(spx_sig_t *sw, int start, int end, int len, int *pitch, float *gain, int N, char *stack)
+{
+   int i,j,k;
+   /*float corr=0;*/
+   /*float energy;*/
+   float *best_score;
+   float e0;
+   spx_word32_t *corr, *energy;
+   float *score;
+
+   spx_word16_t *swn;
+   spx_sig_t max_sw=1;
+   int sw_shift=0;
+
+   best_score = PUSH(stack,N, float);
+   corr = PUSH(stack,end-start+1, spx_word32_t);
+   energy = PUSH(stack,end-start+2, spx_word32_t);
+   score = PUSH(stack,end-start+1, float);
+
+   swn = PUSH(stack, end+len, spx_word16_t);
+   for (i=-end;i<len;i++)
+   {
+      spx_sig_t tmp = sw[i];
+      if (tmp<0)
+         tmp = -tmp;
+      if (tmp > max_sw)
+         max_sw = tmp;
+   }
+   while (max_sw>16384)
+   {
+      sw_shift++;
+      max_sw>>=1;
+   }
+   for (i=0;i<end+len;i++)
+      swn[i] = SHR(sw[i-end],sw_shift);
+   
+   swn += end;
+
+
+   for (i=0;i<N;i++)
+   {
+        best_score[i]=-1;
+        gain[i]=0;
+   }
+
+
+   energy[0]=inner_prod2(swn-start, swn-start, len);
+   e0=inner_prod2(swn, swn, len);
+   for (i=start;i<=end;i++)
+   {
+      /* Update energy for next pitch*/
+      energy[i-start+1] = energy[i-start] + SHR(MULT16_16(swn[-i-1],swn[-i-1]) - MULT16_16(swn[-i+len-1],swn[-i+len-1]),6);
+   }
+   for (i=start;i<=end;i++)
+   {
+      corr[i-start]=0;
+      score[i-start]=0;
+   }
+
+   for (i=start;i<=end;i++)
+   {
+      /* Compute correlation*/
+      corr[i-start]=inner_prod2(swn, swn-i, len);
+      score[i-start]=1.*corr[i-start]*corr[i-start]/(energy[i-start]+1.);
+   }
+   for (i=start;i<=end;i++)
+   {
+      if (score[i-start]>best_score[N-1])
+      {
+         float g1, g;
+         g1 = corr[i-start]/(energy[i-start]+10.);
+         g = sqrt(g1*corr[i-start]/(e0+10.));
+         if (g>g1)
+            g=g1;
+         if (g<0)
+            g=0;
+         for (j=0;j<N;j++)
+         {
+            if (score[i-start] > best_score[j])
+            {
+               for (k=N-1;k>j;k--)
+               {
+                  best_score[k]=best_score[k-1];
+                  pitch[k]=pitch[k-1];
+                  gain[k] = gain[k-1];
+               }
+               best_score[j]=score[i-start];
+               pitch[j]=i;
+               gain[j]=g;
+               break;
+            }
+         }
+      }
+   }
+
+}
+
+#else
+
+
 #ifdef _USE_SSE
 #include "ltp_sse.h"
 #else
@@ -137,7 +271,7 @@ void open_loop_nbest_pitch(spx_sig_t *sw, int start, int end, int len, int *pitc
    }
 
 }
-
+#endif
 
 
 
