@@ -226,11 +226,6 @@ int wb_mode_query(const void *mode, int request, void *ptr)
 }
 
 
-int speex_mode_query(const SpeexMode *mode, int request, void *ptr)
-{
-   return mode->query(mode->mode, request, ptr);
-}
-
 int speex_lib_ctl(int request, void *ptr)
 {
    switch (request)

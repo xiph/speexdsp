@@ -1,7 +1,16 @@
 # Disable automatic dependency tracking if using other tools than gcc and gmake
 #AUTOMAKE_OPTIONS = no-dependencies
 
+
+EXTRA_DIST=testenc.c testenc_wb.c testenc_uwb.c testdenoise.c testecho.c
+
 lib_LTLIBRARIES = libspeex.la
+
+if DISABLE_GLOBAL_POINTERS
+modes = modes_noglobals.c
+else
+modes = modes.c
+endif
 
 # Sources for compilation in the library
 libspeex_la_SOURCES = nb_celp.c \
@@ -16,7 +25,7 @@ libspeex_la_SOURCES = nb_celp.c \
 	cb_search.c \
 	filters.c \
 	bits.c \
-	modes.c \
+	$(modes) \
 	speex.c \
 	vq.c \
 	high_lsp_tables.c \
@@ -48,7 +57,8 @@ include_HEADERS =  speex.h \
 	speex_stereo.h \
 	speex_preprocess.h \
 	speex_jitter.h \
-	speex_echo.h
+	speex_echo.h \
+	speex_noglobals.h
 
 noinst_HEADERS = lsp.h \
 	nb_celp.h \
@@ -72,20 +82,7 @@ noinst_HEADERS = lsp.h \
 	fixed_debug.h \
 	fixed_generic.h \
 	cb_search_sse.h
-	
-	
+
+
 libspeex_la_LDFLAGS = -version-info @SPEEX_LT_CURRENT@:@SPEEX_LT_REVISION@:@SPEEX_LT_AGE@
 
-noinst_PROGRAMS = testenc testenc_wb testenc_uwb testdenoise
-
-testenc_SOURCES = testenc.c
-testenc_LDADD = libspeex.la
-
-testenc_wb_SOURCES = testenc_wb.c
-testenc_wb_LDADD = libspeex.la
-
-testenc_uwb_SOURCES = testenc_uwb.c
-testenc_uwb_LDADD = libspeex.la
-
-testdenoise_SOURCES = testdenoise.c
-testdenoise_LDADD = libspeex.la

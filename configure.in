@@ -88,6 +88,10 @@ AC_ARG_ENABLE(fixed-point-debug, [  --enable-fixed-point-debug  Debug fixed-poin
 
 AC_ARG_ENABLE(epic-48k, [  --enable-epic-48k       enable support for Epic 4.8 kbps mode], [if test "$enableval" = yes; then AC_DEFINE(EPIC_48K) fi])
 
+AC_ARG_ENABLE(global-pointers, [  --disable-global-pointers  disable use of writable global data], noglobals="yes", noglobals="no")
+if test "$noglobals" = yes; then AC_DEFINE(SPEEX_DISABLE_GLOBAL_POINTERS) fi
+AM_CONDITIONAL(DISABLE_GLOBAL_POINTERS, [test "x$noglobals" = "xyes"])
+
 dnl Output the makefiles and version.h.
 
 AC_OUTPUT([Makefile libspeex/Makefile src/Makefile doc/Makefile Speex.spec

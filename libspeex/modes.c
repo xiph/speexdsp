@@ -686,5 +686,9 @@ const SpeexMode speex_nb_48k_mode = {
 
 #endif
 
+int speex_mode_query(const SpeexMode *mode, int request, void *ptr)
+{
+   return mode->query(mode->mode, request, ptr);
+}
 
 
