@@ -719,10 +719,19 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
       /* Compute zero response of A(z/g1) / ( A(z/g2) * A(z) ) */
       for (i=0;i<st->lpcSize;i++)
          mem[i]=st->mem_sp[i];
+#ifdef SHORTCUTS2
+      iir_mem2(exc, st->interp_qlpc, exc, response_bound, st->lpcSize, mem);
+      for (i=0;i<st->lpcSize;i++)
+         mem[i]=st->mem_sw[i];
+      filter_mem2(exc, st->bw_lpc1, st->bw_lpc2, res, response_bound, st->lpcSize, mem);
+      for (i=response_bound;i<st->subframeSize;i++)
+         res[i]=0;
+#else
       iir_mem2(exc, st->interp_qlpc, exc, st->subframeSize, st->lpcSize, mem);
       for (i=0;i<st->lpcSize;i++)
          mem[i]=st->mem_sw[i];
       filter_mem2(exc, st->bw_lpc1, st->bw_lpc2, res, st->subframeSize, st->lpcSize, mem);
+#endif
       
       /* Compute weighted signal */
       for (i=0;i<st->lpcSize;i++)
