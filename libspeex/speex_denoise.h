@@ -38,7 +38,7 @@
 extern "C" {
 #endif
 
-typedef struct DenoiseState {
+typedef struct SpeexDenoiseState {
    int frame_size;           /**< Number of samples processed each time */
    int ps_size;              /**< Number of points in the power spectrum */
 
@@ -71,16 +71,16 @@ typedef struct DenoiseState {
    float  min_ener;          /**< */
    drft_lookup fft_lookup;   /**< */
 
-} DenoiseState;
+} SpeexDenoiseState;
 
 /** Creates a new denoising state */
-DenoiseState *denoise_state_init(int frame_size);
+SpeexDenoiseState *speex_denoise_state_init(int frame_size);
 
 /** Destroys a denoising state */
-void denoise_state_destroy(DenoiseState *st);
+void speex_denoise_state_destroy(SpeexDenoiseState *st);
 
 /** Denoise a frame */
-int denoise(DenoiseState *st, float *x);
+int speex_denoise(SpeexDenoiseState *st, float *x);
 
 #ifdef __cplusplus
 }

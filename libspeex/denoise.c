@@ -77,12 +77,12 @@ static void conj_window(float *w, int len)
    }
 }
 
-DenoiseState *denoise_state_init(int frame_size)
+SpeexDenoiseState *speex_denoise_state_init(int frame_size)
 {
    int i;
    int N, N3, N4;
 
-   DenoiseState *st = (DenoiseState *)speex_alloc(sizeof(DenoiseState));
+   SpeexDenoiseState *st = (SpeexDenoiseState *)speex_alloc(sizeof(SpeexDenoiseState));
    st->frame_size = frame_size;
 
    /* Round ps_size down to the nearest power of two */
@@ -168,7 +168,7 @@ DenoiseState *denoise_state_init(int frame_size)
    return st;
 }
 
-void denoise_state_destroy(DenoiseState *st)
+void speex_denoise_state_destroy(SpeexDenoiseState *st)
 {
    speex_free(st->frame);
    speex_free(st->ps);
@@ -192,7 +192,7 @@ void denoise_state_destroy(DenoiseState *st)
    speex_free(st);
 }
 
-static void update_noise(DenoiseState *st, float *ps)
+static void update_noise(SpeexDenoiseState *st, float *ps)
 {
    int i;
    float beta;
@@ -205,7 +205,7 @@ static void update_noise(DenoiseState *st, float *ps)
       st->noise[i] = (1-beta)*st->noise[i] + beta*ps[i];   
 }
 
-int denoise(DenoiseState *st, float *x)
+int speex_denoise(SpeexDenoiseState *st, float *x)
 {
    int i;
    int is_speech=0;
@@ -380,6 +380,7 @@ int denoise(DenoiseState *st, float *x)
       st->consec_noise=0;
    }
 
+   /*fprintf (stderr, "%f %f ", mean_prior, mean_post);*/
    if (mean_prior>1 && mean_post > 1)
    {
       is_speech=1;

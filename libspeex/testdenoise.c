@@ -9,23 +9,24 @@ int main()
    short out[NN];
    float x[NN];
    int i;
-   DenoiseState *st;
+   SpeexDenoiseState *st;
 
-   st = denoise_state_init(NN);
+   st = speex_denoise_state_init(NN);
    while (1)
    {
+      int vad;
       fread(in, sizeof(short), NN, stdin);
       if (feof(stdin))
          break;
       for (i=0;i<NN;i++)
          x[i]=in[i];
       
-      denoise(st, x);
+      vad = speex_denoise(st, x);
       for (i=0;i<NN;i++)
          out[i]=x[i];
-      
+      /*fprintf (stderr, "%d\n", vad);*/
       fwrite(out, sizeof(short), NN, stdout);
    }
-   denoise_state_destroy(st);
+   speex_denoise_state_destroy(st);
    return 0;
 }
