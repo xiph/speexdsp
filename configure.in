@@ -48,7 +48,7 @@ AC_DEFINE_UNQUOTED(VERSION, "${VERSION}")
 
 dnl Output the makefiles and version.h.
 
-AC_OUTPUT([Makefile libspeex/Makefile src/Makefile Speex.spec ])
+AC_OUTPUT([Makefile libspeex/Makefile src/Makefile doc/Makefile Speex.spec ])
 
 if test "x$src" = "x"; then 
 echo "You don't seem to have libogg installed. Only the Speex library (libspeex) will be built (no encoder/decoder executable)"
