@@ -25,9 +25,15 @@
 typedef struct SpeexMode {
    int     frameSize;
    int     subframeSize;
+   int     windowSize;
    int     lpcSize;
+   int     bufSize;
+   int     pitchStart;
+   int     pitchEnd;
    float   gamma1;
    float   gamma2;
+   /* Should add info about LSP quantization, pitch gain quantization 
+      and other codebooks */
 } SpeexMode;
 
 extern SpeexMode nb_mode;

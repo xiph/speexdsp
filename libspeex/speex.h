@@ -20,6 +20,9 @@
 #ifndef SPEEX_H
 #define SPEEX_H
 
+#include "modes.h"
+#include "bits.h"
+
 /**Structure representing the full state of the encoder*/
 typedef struct EncState {
    int    first;          /* Is this the first frame? */
@@ -82,15 +85,15 @@ typedef struct DecState {
 } DecState;
 
 /**Initializes encoder state*/
-void encoder_init(EncState *st);
+void encoder_init(EncState *st, SpeexMode *mode);
 /**De-allocates encoder state resources*/
 void encoder_destroy(EncState *st);
 /**Encodes one frame*/
-void encode(EncState *st, float *in, int *outSize, void *bits);
+void encode(EncState *st, float *in, FrameBits *bits);
 
-void decoder_init(DecState *st);
+void decoder_init(DecState *st, SpeexMode *mode);
 void decoder_destroy(DecState *st);
-void decode(DecState *st, float *bits, float *out);
+void decode(DecState *st, FrameBits *bits, float *out);
 
 
 

@@ -37,6 +37,16 @@ void frame_bits_destroy(FrameBits *bits)
    /* Will do something once the allocation is dynamic */
 }
 
+void frame_bits_reset(FrameBits *bits)
+{
+   int i;
+   for (i=0;i<MAX_BYTES_PER_FRAME;i++)
+      bits->bytes[i]=0;
+   bits->nbBits=0;
+   bits->bytePtr=0;
+   bits->bitPtr=0;
+}
+
 void frame_bits_init_from(FrameBits *bits, char *bytes, int len)
 {
    int i;

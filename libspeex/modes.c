@@ -24,7 +24,11 @@
 SpeexMode nb_mode = {
    160,    /*frameSize*/
    40,     /*subframeSize*/
+   320,    /*windowSize*/
    10,     /*lpcSize*/
+   640,    /*bufSize*/
+   20,     /*pitchStart*/
+   140,    /*pitchEnd*/
    0.9,    /*gamma1*/
    0.5     /*gamma2*/
 };

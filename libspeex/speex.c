@@ -37,18 +37,19 @@ extern float stoc[];
 #define sqr(x) ((x)*(x))
 #define min(a,b) ((a) < (b) ? (a) : (b))
 
-void encoder_init(EncState *st)
+void encoder_init(EncState *st, SpeexMode *mode)
 {
    int i;
    /* Codec parameters, should eventually have several "modes"*/
-   st->frameSize = 160;
-   st->windowSize = 320;
-   st->nbSubframes=4;
-   st->subframeSize=40;
-   st->lpcSize = 10;
-   st->bufSize = 640;
-   st->gamma1=.9;
-   st->gamma2=.5;
+   st->frameSize = mode->frameSize;
+   st->windowSize = mode->windowSize;
+   st->nbSubframes=mode->frameSize/mode->subframeSize;
+   st->subframeSize=mode->subframeSize;
+   st->lpcSize = mode->lpcSize;
+   st->bufSize = mode->bufSize;
+   st->gamma1=mode->gamma1;
+   st->gamma2=mode->gamma2;
+
 
    st->inBuf = malloc(st->bufSize*sizeof(float));
    st->frame = st->inBuf + st->bufSize - st->windowSize;
@@ -147,7 +148,7 @@ void encoder_destroy(EncState *st)
    free(st->mem7);
 }
 
-void encode(EncState *st, float *in, int *outSize, void *bits)
+void encode(EncState *st, float *in, FrameBits *bits)
 {
    int i, j, sub, roots;
    float error;
@@ -203,6 +204,7 @@ void encode(EncState *st, float *in, int *outSize, void *bits)
    for (sub=0;sub<st->nbSubframes;sub++)
    {
       float tmp, tmp1,tmp2,gain[3];
+      float esig=0, enoise=0, snr;
       int pitch, offset, pitch_gain_index;
       float *sp, *sw, *res, *exc, *target;
       
@@ -265,9 +267,9 @@ void encode(EncState *st, float *in, int *outSize, void *bits)
          st->mem4[i]=st->mem2[i];
       syn_filt_mem(sw, st->bw_lpc2, sw, st->subframeSize, st->lpcSize, st->mem4);
 
-      /*for (i=0;i<st->lpcSize;i++)
-        st->mem3[i]=sw[st->subframeSize-i-1];*/
-
+      for (i=0;i<st->subframeSize;i++)
+         esig+=sw[i]*sw[i];
+      
       /* Compute target signal */
       for (i=0;i<st->subframeSize;i++)
          target[i]=sw[i]-res[i];
@@ -306,6 +308,11 @@ void encode(EncState *st, float *in, int *outSize, void *bits)
       for (i=0;i<st->subframeSize;i++)
          target[i]-=gain[0]*res[i];
 
+
+      for (i=0;i<st->subframeSize;i++)
+         enoise += target[i]*target[i];
+      snr = 10*log10((esig+1)/(enoise+1));
+      printf ("seg SNR = %f\n", snr);
 
 #else
 
@@ -348,6 +355,7 @@ void encode(EncState *st, float *in, int *outSize, void *bits)
       /* Compute weighted signal again, from synthesized speech (not sure it's the right thing) */
       residue_mem(sp, st->bw_lpc1, sw, st->subframeSize, st->lpcSize, st->mem1);
       syn_filt_mem(sw, st->bw_lpc2, sw, st->subframeSize, st->lpcSize, st->mem2);
+
    }
 
    /* Store the LSPs for interpolation in the next frame */
@@ -365,7 +373,7 @@ void encode(EncState *st, float *in, int *outSize, void *bits)
 }
 
 
-void decoder_init(DecState *st)
+void decoder_init(DecState *st, SpeexMode *mode)
 {
 }
 
@@ -373,6 +381,6 @@ void decoder_destroy(DecState *st)
 {
 }
 
-void decode(DecState *st, float *bits, float *out)
+void decode(DecState *st, FrameBits *bits, float *out)
 {
 }
