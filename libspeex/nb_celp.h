@@ -23,7 +23,7 @@
 #include "modes.h"
 #include "speex_bits.h"
 
-/**Structure representing the full state of the encoder*/
+/**Structure representing the full state of the narrowband encoder*/
 typedef struct EncState {
    SpeexMode *mode;
    int    first;          /* Is this the first frame? */
@@ -85,6 +85,7 @@ typedef struct EncState {
    void             *innovation_params;
 } EncState;
 
+/**Structure representing the full state of the narrowband decoder*/
 typedef struct DecState {
    SpeexMode *mode;
    int    first;          /* Is this the first frame? */

@@ -28,6 +28,8 @@
 #include "sb_celp.h"
 #include "nb_celp.h"
 
+
+/* Extern declarations for all codebooks we use here */
 extern float gain_cdbk_nb[];
 extern float exc_gains_table[];
 extern float exc_table[];
@@ -36,6 +38,7 @@ extern float exc_gains_wb_table[];
 extern float exc_sb_table[];
 extern float hexc_table[];
 
+/* Parameters for Long-Term Prediction (LTP)*/
 static ltp_params ltp_params_nb = {
    gain_cdbk_nb,
    7,
@@ -48,6 +51,7 @@ static ltp_params ltp_params_wb = {
    8
 };
 
+/* Split-VQ innovation parameters */
 static split_cb_params split_cb_nb = {
    8,               /*subvect_size*/
    5,               /*nb_subvect*/
@@ -77,6 +81,7 @@ static split_cb_params split_cb_high = {
 };
 
 
+/* Various multi-pulse parameter definitions */
 static mpulse_params mpulse_nb = {
    15,     /*nb_pulse*/
    5,      /*nb_tracks*/
@@ -100,7 +105,7 @@ static mpulse_params mpulse_wb = {
    26,
 };
 
-
+/* Default mode for narrowband */
 static SpeexNBMode mp_nb_mode = {
    160,    /*frameSize*/
    40,     /*subframeSize*/
@@ -127,6 +132,7 @@ static SpeexNBMode mp_nb_mode = {
    &mpulse_nb
 };
 
+/* Narrowband mode used for split-band wideband CELP*/
 static SpeexNBMode low_sb_mode = {
    160,    /*frameSize*/
    40,     /*subframeSize*/
@@ -170,6 +176,18 @@ SpeexMode low_wb_mode = {
    160
 };
 
+SpeexMode nb_mode = {
+   &mp_nb_mode,
+   &nb_encoder_init,
+   &nb_encoder_destroy,
+   &nb_encode,
+   &nb_decoder_init,
+   &nb_decoder_destroy,
+   &nb_decode,
+   160
+};
+
+/* Split-band wideband CELP mode*/
 static SpeexSBMode sb_wb_mode = {
    &low_wb_mode,
    160,    /*frameSize*/
@@ -191,17 +209,6 @@ static SpeexSBMode sb_wb_mode = {
    &split_cb_high
 };
 
-
-SpeexMode nb_mode = {
-   &mp_nb_mode,
-   &nb_encoder_init,
-   &nb_encoder_destroy,
-   &nb_encode,
-   &nb_decoder_init,
-   &nb_decoder_destroy,
-   &nb_decode,
-   160
-};
 
 SpeexMode wb_mode = {
    &sb_wb_mode,

@@ -605,7 +605,7 @@ void *sb_decoder_init(SpeexMode *m)
    st->nbSubframes = 4;
    st->lpcSize=8;
    st->pf_order=15;
-   st->pf_gamma=.0;
+   st->pf_gamma=.1;
 
    st->first=1;
    st->stack = calloc(10000, sizeof(float));
@@ -787,7 +787,7 @@ void sb_decode(void *state, FrameBits *bits, float *out)
       out[i]=2*(st->y0[i]-st->y1[i]);
 
 
-   if (1)
+   if (0)
    {
       float tmp=1, e1=0, e2=0, g;
       for (i=0;i<st->full_frame_size;i++)

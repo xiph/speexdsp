@@ -24,10 +24,10 @@
 #include "speex_bits.h"
 #include "nb_celp.h"
 
-/**Structure representing the full state of the encoder*/
+/**Structure representing the full state of the sub-band encoder*/
 typedef struct SBEncState {
-   SpeexMode *mode;
-   void *st_low;
+   SpeexMode *mode;            /* Pointer to the mode (containing for vtable info) */
+   void *st_low;               /* State of the low-band (narrowband) encoder */
    int    full_frame_size;     /* Length of full-band frames*/
    int    frame_size;          /* Length of high-band frames*/
    int    subframeSize;        /* Length of high-band sub-frames*/
@@ -79,10 +79,10 @@ typedef struct SBEncState {
 } SBEncState;
 
 
-/**Structure representing the full state of the decoder*/
+/**Structure representing the full state of the sub-band decoder*/
 typedef struct SBDecState {
-   SpeexMode *mode;
-   void *st_low;
+   SpeexMode *mode;            /* Pointer to the mode (containing for vtable info) */
+   void *st_low;               /* State of the low-band (narrowband) encoder */
    int    full_frame_size;
    int    frame_size;
    int    subframeSize;
