@@ -187,12 +187,15 @@ float *stack
    /* Quantize global (average) gain */
    {
       float q;
+      int id;
       q=log(exc_energy+.1);
       q=floor(.5+2*(q-2));
       if (q<0)
          q=0;
       if (q>15)
          q=15;
+      id = (int)q;
+      frame_bits_pack(bits, id, 4);
       exc_energy=exp(.5*q+2);
    }
 
@@ -229,6 +232,7 @@ float *stack
             best_gain=corr/(.001+E[j]);
          }
       }
+      frame_bits_pack(bits,best_index,params->shape_bits);
       {
          int s=0, best_id, j;
          float best_dist;
@@ -251,16 +255,13 @@ float *stack
             }
          }
          best_gain=scal_gains4[best_id];
-         printf ("gain_quant: %f %d %f\n", best_gain, best_id, scal_gains4[best_id]);
+         /*printf ("gain_quant: %f %d %f\n", best_gain, best_id, scal_gains4[best_id]);*/
          if (s)
             best_gain=-best_gain;
          best_gain *= exc_energy;
+         frame_bits_pack(bits,s,1);
+         frame_bits_pack(bits,best_id,3);
       }
-      frame_bits_pack(bits,best_index,params->shape_bits);
-      if (best_gain>0)
-         frame_bits_pack(bits,0,1);
-      else
-          frame_bits_pack(bits,1,1);        
       ind[i]=best_index;
       gains[i]=best_gain;
 
@@ -275,27 +276,21 @@ float *stack
          tresp[i*nsf+j]=r[j];
       for (j=0;j<nsf;j++)
          t[j]-=r[j];
-      /*for (j=0;j<nsf;j++)
-        exc[j]+=e[j];*/
    }
-   {
-         printf ("exc_gains");
-         for (i=0;i<nb_subvect;i++)
-            printf (" %f", gains[i]/(.01f+exc_energy));
-         printf ("\n");
-      for (i=0;i<nb_subvect;i++)
-         for (j=0;j<subvect_size;j++)
-            e[subvect_size*i+j]=gains[i]*shape_cb[ind[i]*subvect_size+j];
+   
+   for (i=0;i<nb_subvect;i++)
+      for (j=0;j<subvect_size;j++)
+         e[subvect_size*i+j]=gains[i]*shape_cb[ind[i]*subvect_size+j];
 
-      for (j=0;j<nsf;j++)
-         exc[j]+=e[j];
-      residue_zero(e, awk1, r, nsf, p);
-      syn_filt_zero(r, ak, r, nsf, p);
-      syn_filt_zero(r, awk2, r, nsf,p);
-      for (j=0;j<nsf;j++)
-         target[j]-=r[j];
+   for (j=0;j<nsf;j++)
+      exc[j]+=e[j];
+   residue_zero(e, awk1, r, nsf, p);
+   syn_filt_zero(r, ak, r, nsf, p);
+   syn_filt_zero(r, awk2, r, nsf,p);
+   for (j=0;j<nsf;j++)
+      target[j]-=r[j];
 
-   }
+   
 
 
    POP(stack);

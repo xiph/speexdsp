@@ -47,13 +47,11 @@ typedef struct SBEncState {
 
    float *excBuf;
    float *exc;
-   float *exc_alias;
    float *buf;
    float *res;
    float *sw;
    float *target;
    float *window;
-   float *exc_window;
    float *lagWindow;
    float *autocorr;
    float *rc;
@@ -72,8 +70,34 @@ typedef struct SBEncState {
    float *mem_sp;
    float *mem_sp2;
    float *mem_sw;
-   float *mem_exc;
 } SBEncState;
+
+
+/**Structure representing the full state of the decoder*/
+typedef struct SBDecState {
+   DecState st_low;
+   int    full_frame_size;
+   int    frame_size;
+   int    subframeSize;
+   int    nbSubframes;
+   int    lpcSize;
+   int    first;
+
+   float *stack;
+   float *x0, *x0d, *x1, *x1d;
+   float *high;
+   float *y0, *y1;
+   float *h0_mem, *h1_mem, *g0_mem, *g1_mem;
+
+   float *exc;
+   float *qlsp;
+   float *old_qlsp;
+   float *interp_qlsp;
+   float *interp_qlpc;
+
+   float *mem_sp;
+   float *mem_sw;
+} SBDecState;
 
 
 /**Initializes encoder state*/
@@ -84,6 +108,16 @@ void sb_encoder_destroy(SBEncState *st);
 
 /**Encodes one frame*/
 void sb_encode(SBEncState *st, float *in, FrameBits *bits);
+
+
+/**Initializes decoder state*/
+void sb_decoder_init(SBDecState *st, SpeexMode *mode);
+
+/**De-allocates decoder state resources*/
+void sb_decoder_destroy(SBDecState *st);
+
+/**Decodes one frame*/
+void sb_decode(SBDecState *st, FrameBits *bits, float *out);
 
 
 #endif

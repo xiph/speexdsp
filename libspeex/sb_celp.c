@@ -214,7 +214,6 @@ void sb_encoder_init(SBEncState *st, SpeexMode *mode)
    st->buf=calloc(st->windowSize, sizeof(float));
    st->excBuf=calloc(2*st->frame_size, sizeof(float));
    st->exc=st->excBuf+st->frame_size;
-   st->exc_alias=calloc(st->frame_size, sizeof(float));
 
    st->res=calloc(st->frame_size, sizeof(float));
    st->sw=calloc(st->frame_size, sizeof(float));
@@ -222,10 +221,6 @@ void sb_encoder_init(SBEncState *st, SpeexMode *mode)
    st->window=calloc(st->windowSize, sizeof(float));
    for (i=0;i<st->windowSize;i++)
       st->window[i]=.5*(1-cos(2*M_PI*i/st->windowSize));
-
-   st->exc_window=calloc(st->frame_size, sizeof(float));
-   for (i=0;i<st->frame_size;i++)
-      st->exc_window[i]=.5*(1-cos(2*M_PI*i/st->frame_size));
 
    st->lagWindow = malloc((st->lpcSize+1)*sizeof(float));
    for (i=0;i<st->lpcSize+1;i++)
@@ -248,7 +243,6 @@ void sb_encoder_init(SBEncState *st, SpeexMode *mode)
    st->mem_sp = calloc(st->lpcSize, sizeof(float));
    st->mem_sp2 = calloc(st->lpcSize, sizeof(float));
    st->mem_sw = calloc(st->lpcSize, sizeof(float));
-   st->mem_exc = calloc(st->lpcSize, sizeof(float));
 
 }
 
@@ -289,6 +283,7 @@ void sb_encoder_destroy(SBEncState *st)
    free(st->interp_qlpc);
 
    free(st->mem_sp);
+   free(st->mem_sp2);
    free(st->mem_sw);
 
    free(st->stack);
@@ -344,30 +339,6 @@ void sb_encode(SBEncState *st, float *in, FrameBits *bits)
       fprintf (stderr, "roots!=st->lpcSize (found only %d roots)\n", roots);
       exit(1);
    }
-
-   {
-      for (i=0;i<st->frame_size;i++)
-         st->buf[i] = st->st_low.exc[i] * st->exc_window[i];
-      
-      /* Compute auto-correlation */
-      autocorr(st->buf, st->autocorr, st->lpcSize+1, st->frame_size);
-      
-      st->autocorr[0] += 1;        /* prevents NANs */
-      st->autocorr[0] *= st->lpc_floor; /* Noise floor in auto-correlation domain */
-      /* Lag windowing: equivalent to filtering in the power-spectrum domain */
-      for (i=0;i<st->lpcSize+1;i++)
-         st->autocorr[i] *= st->lagWindow[i];
-      
-      /* Levinson-Durbin */
-      wld(st->lpc+1, st->autocorr, st->rc, st->lpcSize);
-      st->lpc[0]=1;
-      printf ("exc_lpc: ");
-      for(i=0;i<=st->lpcSize;i++)
-         printf ("%f ", st->lpc[i]);
-      printf ("\n");
-      residue_mem(st->st_low.exc, st->lpc, st->exc_alias, st->frame_size, st->lpcSize, st->mem_exc);
-   }
-
 
    /* x-domain to angle domain*/
    for (i=0;i<st->lpcSize;i++)
@@ -447,8 +418,6 @@ void sb_encode(SBEncState *st, float *in, FrameBits *bits)
          float el=0,eh=0,g;
          for (i=0;i<st->subframeSize;i++)
             eh+=sqr(exc[i]);
-         /*for (i=0;i<st->subframeSize;i++)
-            el+=sqr(st->exc_alias[offset+i]);*/
          for (i=0;i<st->subframeSize;i++)
            el+=sqr(st->st_low.exc[offset+i]);
          g=eh/(.01+el);
@@ -456,8 +425,6 @@ void sb_encode(SBEncState *st, float *in, FrameBits *bits)
          g=sqrt(g);
          for (i=0;i<st->subframeSize;i++)
            exc[i]=g*st->st_low.exc[offset+i];
-         /*for (i=0;i<st->subframeSize;i++)
-           exc[i]=g*st->exc_alias[offset+i];*/
       }
       syn_filt_mem(exc, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, mem);
 
@@ -627,4 +594,73 @@ void sb_encode(SBEncState *st, float *in, FrameBits *bits)
       st->old_qlsp[i] = st->qlsp[i];
 
    st->first=0;
+}
+
+
+
+
+
+void sb_decoder_init(SBDecState *st, SpeexMode *mode)
+{
+   decoder_init(&st->st_low, mode);
+   st->full_frame_size = 2*st->st_low.frameSize;
+   st->frame_size = st->st_low.frameSize;
+   st->subframeSize = 40;
+   st->nbSubframes = 4;
+   st->lpcSize=8;
+
+   st->first=1;
+   st->stack = calloc(10000, sizeof(float));
+
+   st->x0=calloc(st->full_frame_size, sizeof(float));
+   st->x1=calloc(st->full_frame_size, sizeof(float));
+   st->x0d=calloc(st->frame_size, sizeof(float));
+   st->x1d=calloc(st->frame_size, sizeof(float));
+   st->high=calloc(st->full_frame_size, sizeof(float));
+   st->y0=calloc(st->full_frame_size, sizeof(float));
+   st->y1=calloc(st->full_frame_size, sizeof(float));
+
+   st->h0_mem=calloc(QMF_ORDER, sizeof(float));
+   st->h1_mem=calloc(QMF_ORDER, sizeof(float));
+   st->g0_mem=calloc(QMF_ORDER, sizeof(float));
+   st->g1_mem=calloc(QMF_ORDER, sizeof(float));
+
+   st->exc=calloc(st->frame_size, sizeof(float));
+
+   st->qlsp = malloc(st->lpcSize*sizeof(float));
+   st->old_qlsp = malloc(st->lpcSize*sizeof(float));
+   st->interp_qlsp = malloc(st->lpcSize*sizeof(float));
+   st->interp_qlpc = malloc((st->lpcSize+1)*sizeof(float));
+
+   st->mem_sp = calloc(st->lpcSize, sizeof(float));
+   st->mem_sw = calloc(st->lpcSize, sizeof(float));
+
+}
+
+void sb_decoder_destroy(SBDecState *st)
+{
+   decoder_destroy(&st->st_low);
+   free(st->x0);
+   free(st->x0d);
+   free(st->x1);
+   free(st->x1d);
+   free(st->high);
+   free(st->y0);
+   free(st->y1);
+   free(st->h0_mem);
+   free(st->h1_mem);
+   free(st->g0_mem);
+   free(st->g1_mem);
+   
+   free(st->exc);
+   free(st->qlsp);
+   free(st->old_qlsp);
+   free(st->interp_qlsp);
+   free(st->interp_qlpc);
+
+   free(st->mem_sp);
+   free(st->mem_sw);
+
+   free(st->stack);
+   
 }
