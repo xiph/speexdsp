@@ -44,11 +44,11 @@
 #define NB_CDBK_SIZE_HIGH2 64
 
 /*Narrowband codebooks*/
-extern float cdbk_nb[];
-extern float cdbk_nb_low1[];
-extern float cdbk_nb_low2[];
-extern float cdbk_nb_high1[];
-extern float cdbk_nb_high2[];
+extern signed char cdbk_nb[];
+extern signed char cdbk_nb_low1[];
+extern signed char cdbk_nb_low2[];
+extern signed char cdbk_nb_high1[];
+extern signed char cdbk_nb_high2[];
 
 /* Quantizes narrowband LSPs with 30 bits */
 void lsp_quant_nb(float *lsp, float *qlsp, int order, SpeexBits *bits);
