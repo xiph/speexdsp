@@ -649,7 +649,7 @@ int main(int argc, char **argv)
          cumul_bits += tmp;
          enc_frames += 1;
          if (vad_enabled || vbr_enabled || abr_enabled)
-            fprintf (stderr, "Bitrate is use: %d bps  (average %d bps)   ", tmp, cumul_bits/enc_frames);
+            fprintf (stderr, "Bitrate is use: %d bps  (average %d bps)   ", tmp, (int)(cumul_bits/enc_frames));
          else
             fprintf (stderr, "Bitrate is use: %d bps     ", tmp);
          
