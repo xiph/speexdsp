@@ -263,6 +263,9 @@ void *sb_encoder_init(const SpeexMode *m)
    speex_decoder_ctl(st->st_low, SPEEX_GET_SAMPLING_RATE, &st->sampling_rate);
    st->sampling_rate*=2;
 
+#ifdef ENABLE_VALGRIND
+   VALGRIND_MAKE_READABLE(st, (st->stack-(char*)st));
+#endif
    return st;
 }
 
@@ -759,6 +762,9 @@ void *sb_decoder_init(const SpeexMode *m)
    
    st->lpc_enh_enabled=0;
 
+#ifdef ENABLE_VALGRIND
+   VALGRIND_MAKE_READABLE(st, (st->stack-(char*)st));
+#endif
    return st;
 }
 
