@@ -75,7 +75,7 @@ mpulse_params mpulse_nb = {
 
 
 mpulse_params mpulse_sb = {
-   25,     /*nb_pulse*/
+   15,     /*nb_pulse*/
    5,      /*nb_tracks*/
    3.8,    /*gain_coef*/
    10

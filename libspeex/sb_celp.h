@@ -83,6 +83,8 @@ typedef struct SBDecState {
    int    nbSubframes;
    int    lpcSize;
    int    first;
+   float  pf_gamma;
+   int    pf_order;
 
    float *stack;
    float *x0, *x0d, *x1, *x1d;
@@ -91,13 +93,20 @@ typedef struct SBDecState {
    float *h0_mem, *h1_mem, *g0_mem, *g1_mem;
 
    float *exc;
+   float *pf_exc;
+   float *pf_window;
+   float *pf_autocorr;
+   float *pf_lpc;
+   float *pf_bwlpc;
    float *qlsp;
    float *old_qlsp;
    float *interp_qlsp;
    float *interp_qlpc;
 
    float *mem_sp;
-   float *mem_sw;
+   float *mem_pf_exc1;
+   float *mem_pf_exc2;
+   float *mem_pf_sp;
 } SBDecState;
 
 

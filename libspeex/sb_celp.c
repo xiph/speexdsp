@@ -576,12 +576,16 @@ void sb_encode(SBEncState *st, float *in, FrameBits *bits)
 
 void sb_decoder_init(SBDecState *st, SpeexMode *mode)
 {
+   int i;
+
    decoder_init(&st->st_low, mode);
    st->full_frame_size = 2*st->st_low.frameSize;
    st->frame_size = st->st_low.frameSize;
    st->subframeSize = 40;
    st->nbSubframes = 4;
    st->lpcSize=8;
+   st->pf_order=15;
+   st->pf_gamma=.0;
 
    st->first=1;
    st->stack = calloc(10000, sizeof(float));
@@ -599,7 +603,14 @@ void sb_decoder_init(SBDecState *st, SpeexMode *mode)
    st->g0_mem=calloc(QMF_ORDER, sizeof(float));
    st->g1_mem=calloc(QMF_ORDER, sizeof(float));
 
+   st->pf_exc=calloc(st->full_frame_size, sizeof(float));
    st->exc=calloc(st->frame_size, sizeof(float));
+   st->pf_window=calloc(st->full_frame_size, sizeof(float));
+   st->pf_autocorr=calloc(st->pf_order+1, sizeof(float));
+   st->pf_lpc=calloc(st->pf_order+1, sizeof(float));
+   st->pf_bwlpc=calloc(st->pf_order+1, sizeof(float));
+   for (i=0;i<st->full_frame_size;i++)
+      st->pf_window[i]=.5*(1-cos(2*M_PI*i/st->full_frame_size));
 
    st->qlsp = malloc(st->lpcSize*sizeof(float));
    st->old_qlsp = malloc(st->lpcSize*sizeof(float));
@@ -607,8 +618,9 @@ void sb_decoder_init(SBDecState *st, SpeexMode *mode)
    st->interp_qlpc = malloc((st->lpcSize+1)*sizeof(float));
 
    st->mem_sp = calloc(st->lpcSize, sizeof(float));
-   st->mem_sw = calloc(st->lpcSize, sizeof(float));
-
+   st->mem_pf_exc1 = calloc(st->pf_order, sizeof(float));
+   st->mem_pf_exc2 = calloc(st->pf_order, sizeof(float));
+   st->mem_pf_sp = calloc(st->pf_order, sizeof(float));
 }
 
 void sb_decoder_destroy(SBDecState *st)
@@ -627,13 +639,20 @@ void sb_decoder_destroy(SBDecState *st)
    free(st->g1_mem);
    
    free(st->exc);
+   free(st->pf_exc);
+   free(st->pf_window);
+   free(st->pf_autocorr);
+   free(st->pf_lpc);
+   free(st->pf_bwlpc);
    free(st->qlsp);
    free(st->old_qlsp);
    free(st->interp_qlsp);
    free(st->interp_qlpc);
 
    free(st->mem_sp);
-   free(st->mem_sw);
+   free(st->mem_pf_exc1);
+   free(st->mem_pf_exc2);
+   free(st->mem_pf_sp);
 
    free(st->stack);
    
@@ -719,6 +738,49 @@ void sb_decode(SBDecState *st, FrameBits *bits, float *out)
    fir_mem(st->x1, h1, st->y1, st->full_frame_size, QMF_ORDER, st->g1_mem);
    for (i=0;i<st->full_frame_size;i++)
       out[i]=2*(st->y0[i]-st->y1[i]);
+
+
+   if (0)
+   {
+      float tmp=1, e1=0, e2=0, g;
+      for (i=0;i<st->full_frame_size;i++)
+         st->pf_exc[i] = out[i] * st->pf_window[i];
+      
+      /* Compute auto-correlation */
+      autocorr(st->pf_exc, st->pf_autocorr, st->pf_order+1, st->full_frame_size);
+      
+      st->pf_autocorr[0] += 1;        /* prevents NANs */
+      st->pf_autocorr[0] *= 1.0001;    /* Noise floor in auto-correlation domain */
+      
+      /* Levinson-Durbin */
+      wld(st->pf_lpc+1, st->pf_autocorr, st->pf_exc, st->pf_order);
+      st->pf_lpc[0]=1;
+      
+      for (i=1;i<st->pf_order;i++)
+      {
+         tmp*=st->pf_gamma;
+         st->pf_bwlpc[i] = st->pf_lpc[i]*tmp;
+      }
+      st->pf_bwlpc[0]=1;
+      
+      print_vec(st->pf_lpc, st->pf_order, "post-filter LPC");
+      residue_mem(out, st->pf_lpc, st->pf_exc, st->full_frame_size, 
+                  st->pf_order, st->mem_pf_exc1);
+      for (i=0;i<st->full_frame_size;i++)
+         e1 += st->pf_exc[i]*st->pf_exc[i];
+      syn_filt_mem(st->pf_exc, st->pf_bwlpc, st->pf_exc, st->full_frame_size, 
+                  st->pf_order, st->mem_pf_exc2);
+      for (i=0;i<st->full_frame_size;i++)
+         e2 += st->pf_exc[i]*st->pf_exc[i];
+      g=sqrt(e1/(e2+.1));
+      printf ("post-filter gain: %f\n", g);
+      for (i=0;i<st->full_frame_size;i++)
+         st->pf_exc[i]=g*st->pf_exc[i];
+
+      syn_filt_mem(st->pf_exc, st->pf_lpc, out, st->full_frame_size, 
+                  st->pf_order, st->mem_pf_sp);
+   }
+
 
    for (i=0;i<st->lpcSize;i++)
       st->old_qlsp[i] = st->qlsp[i];
