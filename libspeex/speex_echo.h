@@ -36,6 +36,7 @@ typedef struct SpeexEchoState {
    int frame_size;           /**< Number of samples processed each time */
    int window_size;
    int M;
+   int cancel_count;
 
    float *x;
    float *X;
@@ -44,7 +45,9 @@ typedef struct SpeexEchoState {
    float *E;
    float *PHI;
    float *W;
-
+   float *power;
+   float *power_1;
+   
    drft_lookup fft_lookup;
 
 

@@ -45,6 +45,7 @@ SpeexEchoState *speex_echo_state_init(int frame_size, int filter_length)
    st->window_size = 2*frame_size;
    N = st->window_size;
    M = st->M = (filter_length+N-1)/frame_size;
+   st->cancel_count=0;
 
    drft_init(&st->fft_lookup, N);
    
@@ -56,7 +57,8 @@ SpeexEchoState *speex_echo_state_init(int frame_size, int filter_length)
    st->E = (float*)speex_alloc(N*sizeof(float));
    st->W = (float*)speex_alloc(M*N*sizeof(float));
    st->PHI = (float*)speex_alloc(N*sizeof(float));
-
+   st->power = (float*)speex_alloc((frame_size+1)*sizeof(float));
+   st->power_1 = (float*)speex_alloc((frame_size+1)*sizeof(float));
    return st;
 }
 
@@ -68,13 +70,14 @@ void speex_echo_state_destroy(SpeexEchoState *st)
 /** Performs echo cancellation a frame */
 void speex_echo_cancel(SpeexEchoState *st, float *ref, float *echo, float *out, float *Yout)
 {
-   int i,j;
+   int i,j,m;
    int N,M;
    float scale;
 
    N = st->window_size;
    M = st->M;
    scale = 1.0/N;
+   st->cancel_count++;
 
    for (i=0;i<st->frame_size;i++)
    {
@@ -91,6 +94,7 @@ void speex_echo_cancel(SpeexEchoState *st, float *ref, float *echo, float *out, 
 
    drft_forward(&st->fft_lookup, &st->X[(M-1)*N]);
 
+   /* Compute filter response Y */
    for (i=1;i<N-1;i+=2)
    {
       st->Y[i] = st->Y[i+1] = 0;
@@ -101,6 +105,11 @@ void speex_echo_cancel(SpeexEchoState *st, float *ref, float *echo, float *out, 
       }
    }
    st->Y[0] = st->Y[N-1] = 0;
+   for (j=0;j<M;j++)
+   {
+      st->Y[0] += st->X[j*N]*st->W[j*N];
+      st->Y[N-1] += st->X[(j+1)*N-1]*st->W[(j+1)*N-1];
+   }
 
    if (Yout)
       for (i=0;i<N;i++)
@@ -109,15 +118,12 @@ void speex_echo_cancel(SpeexEchoState *st, float *ref, float *echo, float *out, 
    for (i=0;i<N;i++)
       st->y[i] = st->Y[i];
    
-#if 0
-   for (i=0;i<N;i++)
-      st->y[i] = st->X[(M-1)*N+i];
-#endif
-
+   /* Filter response in time domain */
    drft_backward(&st->fft_lookup, st->y);
    for (i=0;i<N;i++)
       st->y[i] *= scale;
 
+   /* Compute error signal (echo canceller output) */
    for (i=0;i<st->frame_size;i++)
    {
       out[i] = ref[i] - st->y[i+st->frame_size];
@@ -127,6 +133,52 @@ void speex_echo_cancel(SpeexEchoState *st, float *ref, float *echo, float *out, 
 
    drft_forward(&st->fft_lookup, st->E);
 
+
+   /* Compute input power in each band */
+   {
+      float s;
+      float tmp, tmp2;
+
+      if (st->cancel_count<M)
+         s = 1.0/st->cancel_count;
+      else
+         s = 1.0/M;
+      
+      for (i=1,j=1;i<N-1;i+=2,j++)
+      {
+         tmp=0;
+         for (m=0;m<M;m++)
+         {
+            tmp += st->X[m*N+i]*st->X[m*N+i] + st->X[m*N+i+1]*st->X[m*N+i+1];
+         }
+         tmp *= s;
+         if (st->cancel_count<M)
+            st->power[j] = tmp;
+         else
+            st->power[j] = .8*st->power[j] + .2*tmp;
+      }
+      tmp=tmp2=0;
+      for (m=0;m<M;m++)
+      {
+         tmp += st->X[m*N]*st->X[m*N];
+         tmp2 += st->X[(m+1)*N-1]*st->X[(m+1)*N-1];
+      }
+      tmp *= s;
+      tmp2 *= s;
+      if (st->cancel_count<M)
+      {
+         st->power[0] = tmp;
+         st->power[st->frame_size] = tmp2;
+      } else {
+         st->power[0] = .8*st->power[0] + .2*tmp;
+         st->power[st->frame_size] = .8*st->power[st->frame_size] + .2*tmp2;
+      }
+      
+      for (i=0;i<=st->frame_size;i++)
+         st->power_1[i] = 1.0/(1e-10+st->power[i]);
+   }
+
+   /* Update filter weights */
    for (j=0;j<M;j++)
    {
       for (i=1;i<N-1;i+=2)
@@ -134,12 +186,19 @@ void speex_echo_cancel(SpeexEchoState *st, float *ref, float *echo, float *out, 
          st->PHI[i] = st->X[j*N+i]*st->E[i] + st->X[j*N+i+1]*st->E[i+1];
          st->PHI[i+1] = -st->X[j*N+i+1]*st->E[i] + st->X[j*N+i]*st->E[i+1];
       }
-      st->PHI[0] = st->PHI[N-1] = 0;
+      st->PHI[0] = st->X[j*N]*st->E[0];
+      st->PHI[N-1] = st->X[(j+1)*N-1]*st->E[N-1];
 
       /* Optionally perform some transform (normalization?) on PHI */
       
-      for (i=0;i<N;i++)
-         st->W[j*N+i] += .002*st->PHI[i];
+      for (i=1,m=1;i<N-1;i+=2,m++)
+         st->W[j*N+i] += .1*st->PHI[i]*st->power_1[m];
+      st->W[j*N] += .1*st->PHI[0]*st->power_1[0];
+      st->W[(j+1)*N-1] += .1*st->PHI[N-1]*st->power_1[st->frame_size];
+      /*
+      for (i=0,j=0;i<=N;i++,j++)
+         st->W[j*N+i] += .001*st->PHI[i];
+      */
    }
 }
 
