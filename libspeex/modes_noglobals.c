@@ -89,7 +89,7 @@ speex_ltp_params_new (const signed char * gain_cdbk, int gain_bits,
 static void
 speex_ltp_params_free (const ltp_params * params)
 {
-  speex_free (params);
+  speex_free ((void *)params);
 }
 
 static const split_cb_params *
@@ -114,7 +114,7 @@ speex_split_cb_params_new (int subvect_size, int nb_subvect,
 static void
 speex_split_cb_params_free (const split_cb_params * params)
 {
-  speex_free (params);
+  speex_free ((void *)params);
 }
 
 static SpeexSubmode *
@@ -724,7 +724,7 @@ static const SpeexNBMode * nb_mode (void)
   /* If nb_mode_new() was successful, the references to submodes have been
    * copied into ret->submodes[], and it's safe to free submodes.
    */
-  speex_free (submodes);
+  speex_free ((void *)submodes);
 
   return ret;
 
@@ -738,7 +738,7 @@ static const SpeexNBMode * nb_mode (void)
  nb_2: speex_submode_free (submodes[2]);
  nb_1: speex_submode_free (submodes[1]);
 
-  speex_free (submodes);
+  speex_free ((void *)submodes);
 
   return NULL;
 }
@@ -938,7 +938,7 @@ static const SpeexSBMode * sb_wb_mode (void)
   /* If sb_mode_new() was successful, the references to submodes have been
    * copied into ret->submodes[], and it's safe to free submodes.
    */
-  speex_free (submodes);
+  speex_free ((void *)submodes);
 
   return ret;
 
@@ -948,7 +948,7 @@ static const SpeexSBMode * sb_wb_mode (void)
  sb_2: speex_submode_free (submodes[2]);
  sb_1: speex_submode_free (submodes[1]);
 
-  speex_free (submodes);
+  speex_free ((void *)submodes);
 
   return NULL;
 }
@@ -1040,13 +1040,13 @@ static const SpeexSBMode * sb_uwb_mode (void)
   /* If sb_mode_new() was successful, the references to submodes have been
    * copied into ret->submodes[], and it's safe to free submodes.
    */
-  speex_free (submodes);
+  speex_free ((void *)submodes);
 
   return ret;
 
  uwb_1: speex_submode_free (submodes[1]);
 
-  speex_free (submodes);
+  speex_free ((void *)submodes);
 
   return NULL;
 }
