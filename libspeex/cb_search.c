@@ -500,6 +500,12 @@ float *stack
       float energy=0;
       x=t+subvect_size*i;
 
+#ifdef TRAINING
+      syn_filt_zero(x, awk1, e, nsf, p);
+      residue_zero(e, ak, e, nsf, p);
+      residue_zero(e, awk2, e, nsf,p);
+#endif
+
       for (k=0;k<subvect_size;k++)
          energy+=x[k]*x[k];
       /* Find best codeword for current sub-vector */
@@ -565,6 +571,9 @@ float *stack
 
       }
 
+#ifdef TRAINING
+      accum_cb(e, best_index[0], r, subvect_size);
+#endif
       ind[i]=best_index[0];
 
       /*printf ("best index: %d/%d\n", best_index, shape_cb_size);*/

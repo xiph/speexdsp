@@ -59,6 +59,7 @@ typedef void (*nb_post_filter_func)(float *, float *, float *, int, int, int,
 
 typedef struct SpeexSubmode {
    int     lbr_pitch;
+   int     have_subframe_gain;
    /*LSP functions*/
    lsp_quant_func    lsp_quant;
    lsp_unquant_func  lsp_unquant;

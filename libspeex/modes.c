@@ -142,8 +142,27 @@ static split_cb_params split_cb_high_lbr = {
 };
 
 
-
 SpeexSubmode nb_submode1 = {
+   0,
+   1,
+   /* LSP quantization */
+   lsp_quant_lbr,
+   lsp_unquant_lbr,
+   /* No pitch quantization */
+   NULL,
+   NULL,
+   NULL,
+   /* No innovation quantization (noise only) */
+   NULL,
+   NULL,
+   NULL,
+   /* No Post-filter */
+   NULL,
+   NULL
+};
+
+SpeexSubmode nb_submode2 = {
+   8,
    1,
    /*LSP quantization*/
    lsp_quant_lbr,
@@ -160,8 +179,9 @@ SpeexSubmode nb_submode1 = {
    &pf_params_lbr
 };
 
-SpeexSubmode nb_submode2 = {
-   0,
+SpeexSubmode nb_submode3 = {
+   -1,
+   1,
    /*LSP quantization*/
    lsp_quant_nb,
    lsp_unquant_nb,
@@ -177,8 +197,9 @@ SpeexSubmode nb_submode2 = {
    &pf_params_nb
 };
 
-SpeexSubmode nb_submode3 = {
-   0,
+SpeexSubmode nb_submode4 = {
+   -1,
+   1,
    /*LSP quantization*/
    lsp_quant_nb,
    lsp_unquant_nb,
@@ -194,8 +215,9 @@ SpeexSubmode nb_submode3 = {
    &pf_params_nb
 };
 
-SpeexSubmode nb_submode4 = {
-   0,
+SpeexSubmode nb_submode5 = {
+   -1,
+   1,
    /*LSP quantization*/
    lsp_quant_nb,
    lsp_unquant_nb,
@@ -225,8 +247,9 @@ SpeexNBMode nb_mode = {
    .005,   /*lag_factor*/
    1.0001, /*lpc_floor*/
    0.0,    /*preemph*/
-   {NULL, &nb_submode1, &nb_submode2, &nb_submode3, &nb_submode4},
-   3
+   {NULL, &nb_submode1, &nb_submode2, &nb_submode3, &nb_submode4, &nb_submode5, NULL, NULL,
+   NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL},
+   4
 };
 
 
@@ -251,6 +274,7 @@ SpeexMode speex_nb_mode = {
 
 SpeexSubmode wb_submode1 = {
    0,
+   1,
    /*LSP quantization*/
    lsp_quant_high,
    lsp_unquant_high,
@@ -269,6 +293,7 @@ SpeexSubmode wb_submode1 = {
 
 SpeexSubmode wb_submode2 = {
    0,
+   1,
    /*LSP quantization*/
    lsp_quant_high,
    lsp_unquant_high,
@@ -297,7 +322,7 @@ static SpeexSBMode sb_wb_mode = {
    .002,   /*lag_factor*/
    1.0001, /*lpc_floor*/
    0.0,    /*preemph*/
-   {NULL, &wb_submode1, &wb_submode2},
+   {NULL, &wb_submode1, &wb_submode2, NULL, NULL, NULL, NULL, NULL},
    2
 };
 

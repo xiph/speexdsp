@@ -176,7 +176,7 @@ void *sb_encoder_init(SpeexMode *m)
    st->submodes=mode->submodes;
    st->submodeID=mode->defaultSubmode;
    {
-      int mod=4;
+      int mod=5;
       speex_encoder_ctl(st->st_low, SPEEX_SET_MODE, &mod);
    }
 
@@ -928,12 +928,12 @@ void sb_encoder_ctl(void *state, int request, void *ptr)
          if (quality<5)
          {
             st->submodeID = 1;
-            tmp=2;
+            tmp=4;
             speex_encoder_ctl(st->st_low, SPEEX_SET_MODE, &tmp);
          } else if (quality<=10)
          {
             st->submodeID = 2;
-            tmp=3;
+            tmp=5;
             speex_encoder_ctl(st->st_low, SPEEX_SET_MODE, &tmp);
          } else
             fprintf(stderr, "Unknown sb_ctl quality: %d\n", quality);
