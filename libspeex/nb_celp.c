@@ -230,6 +230,8 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
    void *stack;
    float *syn_resp;
 
+   float *orig;
+
    st=(EncState *)state;
    stack=st->stack;
 
@@ -357,6 +359,8 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
       ol_gain=0;
       for (i=0;i<st->frameSize;i++)
          ol_gain += st->exc[i]*st->exc[i];
+      /*for (i=0;i<160;i++)
+        printf ("%f\n", st->exc[i]);*/
       
       ol_gain=sqrt(1+ol_gain/st->frameSize);
    }
@@ -477,6 +481,9 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
    target = PUSH(stack, st->subframeSize, float);
    syn_resp = PUSH(stack, st->subframeSize, float);
    mem = PUSH(stack, st->lpcSize, float);
+   orig = PUSH(stack, st->frameSize, float);
+   for (i=0;i<st->frameSize;i++)
+      orig[i]=st->frame[i];
 
    /* Loop on sub-frames */
    for (sub=0;sub<st->nbSubframes;sub++)
@@ -658,6 +665,8 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
 
          ener*=ol_gain;
 
+         /*printf ("%f %f\n", ener, ol_gain);*/
+
          ener_1 = 1/ener;
 
          if (0) {
@@ -731,6 +740,18 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
 
    /* The next frame will not be the first (Duh!) */
    st->first = 0;
+
+   {
+      float ener=0, err=0;
+      float snr;
+      for (i=0;i<st->frameSize;i++)
+      {
+         ener+=st->frame[i]*st->frame[i];
+         err += (st->frame[i]-orig[i])*(st->frame[i]-orig[i]);
+      }
+      snr = 10*log10((ener+1)/(err+1));
+      /*printf ("%f %f %f\n", snr, ener, err);*/
+   }
 
    /* Replace input by synthesized speech */
    in[0] = st->frame[0] + st->preemph*st->pre_mem2;
@@ -806,6 +827,9 @@ void *nb_decoder_init(SpeexMode *m)
    st->user_callback.data = NULL;
    for (i=0;i<16;i++)
       st->speex_callbacks[i].func = NULL;
+
+   st->voc_m1=st->voc_m2=st->voc_mean=0;
+   st->voc_offset=0;
 
    return st;
 }
@@ -1127,6 +1151,7 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
          k1=SUBMODE(lpc_enh_k1);
          k2=SUBMODE(lpc_enh_k2);
          k3=(1-(1-r*k1)/(1-r*k2))/r;
+         k3=k1-k2;
          if (!st->lpc_enh_enabled)
          {
             k1=k2;
@@ -1257,9 +1282,45 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
          /* De-normalize innovation and update excitation */
          for (i=0;i<st->subframeSize;i++)
             innov[i]*=ener;
-         for (i=0;i<st->subframeSize;i++)
-            exc[i]+=innov[i];
 
+         /*Vocoder mode*/
+         if (st->submodeID==1) 
+         {
+            /*FIXME: Remove static var*/
+            /*static float mean=0, m1=0,m2=0;
+              static int offset=0;*/
+            float g=ol_pitch_coef;
+
+            
+            for (i=0;i<st->subframeSize;i++)
+               exc[i]=0;
+            while (st->voc_offset<st->subframeSize)
+            {
+               if (st->voc_offset>=0)
+                  exc[st->voc_offset]=sqrt(1.0*ol_pitch);
+               st->voc_offset+=ol_pitch;
+            }
+            st->voc_offset -= st->subframeSize;
+
+            g=.5+2*(g-.6);
+            if (g<0)
+               g=0;
+            if (g>1)
+               g=1;
+            for (i=0;i<st->subframeSize;i++)
+            {
+               int tmp=exc[i];
+               exc[i]=.7*g*exc[i]*ol_gain + .6*g*st->voc_m1*ol_gain + .4*g*innov[i] - .4*g*st->voc_m2 + (1-g)*innov[i];
+               st->voc_m1 = tmp;
+               st->voc_m2=innov[i];
+               st->voc_mean = .95*st->voc_mean + .05*exc[i];
+               exc[i]-=st->voc_mean;
+            }
+         } else {
+            for (i=0;i<st->subframeSize;i++)
+               exc[i]+=innov[i];
+         }
+         /*printf ("%f %f\n", ener, ol_gain);*/
          /* Decode second codebook (only for some modes) */
          if (SUBMODE(double_codebook))
          {

@@ -154,6 +154,12 @@ typedef struct DecState {
    SpeexCallback speex_callbacks[SPEEX_MAX_CALLBACKS];
 
    SpeexCallback user_callback;
+
+   /*Vocoder data*/
+   float  voc_m1;
+   float  voc_m2;
+   float  voc_mean;
+   int    voc_offset;
 } DecState;
 
 /** Initializes encoder state*/
