@@ -56,6 +56,10 @@ void encoder_init(EncState *st, SpeexMode *mode)
 
    st->lsp_quant = mode->lsp_quant;
    st->ltp_quant = mode->ltp_quant;
+   st->innovation_quant = mode->innovation_quant;
+   st->innovation_params = mode->innovation_params;
+
+
    /* Over-sampling filter (fractional pitch)*/
    st->os_fact=4;
    st->os_filt_ord2=4*st->os_fact;
@@ -195,7 +199,7 @@ void encode(EncState *st, float *in, FrameBits *bits)
       st->lsp[i] = acos(st->lsp[i]);
    
    /* LSP Quantization */
-   st->lsp_quant(st->lsp, st->qlsp, 10, bits);
+   st->lsp_quant(st->lsp, st->qlsp, st->lpcSize, bits);
 
    /* Special case for first frame */
    if (st->first)
@@ -209,9 +213,8 @@ void encode(EncState *st, float *in, FrameBits *bits)
    /* Loop on sub-frames */
    for (sub=0;sub<st->nbSubframes;sub++)
    {
-      float tmp, gain[3];
-      float esig=0, enoise=0, snr;
-      int pitch, offset;
+      float esig, enoise, snr, tmp;
+      int   offset;
       float *sp, *sw, *res, *exc, *target, *mem;
       
       /* Offset relative to start of frame */
@@ -270,7 +273,8 @@ void encode(EncState *st, float *in, FrameBits *bits)
       for (i=0;i<st->lpcSize;i++)
          mem[i]=st->mem_sw[i];
       syn_filt_mem(sw, st->bw_lpc2, sw, st->subframeSize, st->lpcSize, mem);
-
+      
+      esig=0;
       for (i=0;i<st->subframeSize;i++)
          esig+=sw[i]*sw[i];
       
@@ -281,6 +285,7 @@ void encode(EncState *st, float *in, FrameBits *bits)
       for (i=0;i<st->subframeSize;i++)
          exc[i]=0;
 
+      /* Long-term prediction */
       st->ltp_quant(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2,
                         exc, 20, 147, st->lpcSize, st->subframeSize, 
                         bits, st->stack);
@@ -292,46 +297,19 @@ void encode(EncState *st, float *in, FrameBits *bits)
       for (i=0;i<st->subframeSize;i++)
         target[i]-=res[i];
 
+      /* Compute noise energy and SNR */
       enoise=0;
       for (i=0;i<st->subframeSize;i++)
          enoise += target[i]*target[i];
       snr = 10*log10((esig+1)/(enoise+1));
       printf ("pitch SNR = %f\n", snr);
-#if 0 /* 1 for stochastic excitation, 0 for split-VQ*/
-      for(j=0;j<1;j++){
-         /*float stoc2[1080];*/
-         float *stoc2 = PUSH(st->stack,1080);
-         for (i=0;i<1080;i++)
-         {
-            stoc2[i]=stoc[i];
-            if (i-(pitch-1)>=0)
-               stoc2[i] += .0*stoc[i-(pitch-1)];
-         }
-         POP(st->stack);
-      /* Perform stochastic codebook search */
-      overlap_cb_search(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2,
-                        stoc2, 1024, &gain[0], &pitch, st->lpcSize,
-                        st->subframeSize);
-      printf ("gain = %f index = %d energy = %f\n",gain[0], pitch, esig);
-      for (i=0;i<st->subframeSize;i++)
-         exc[i]+=gain[0]*stoc2[i+pitch];
-      
-      /* Update target for adaptive codebook contribution (Useless for now)*/
-      residue_zero(stoc2+pitch, st->bw_lpc1, res, st->subframeSize, st->lpcSize);
-      syn_filt_zero(res, st->interp_qlpc, res, st->subframeSize, st->lpcSize);
-      syn_filt_zero(res, st->bw_lpc2, res, st->subframeSize, st->lpcSize);
-      for (i=0;i<st->subframeSize;i++)
-         target[i]-=gain[0]*res[i];
-      }
 
-#else
       /* Perform a split-codebook search */
-      split_cb_search(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2,
-                        &split_cb_nb, st->lpcSize,
+      st->innovation_quant(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2,
+                        st->innovation_params, st->lpcSize,
                         st->subframeSize, exc, bits, st->stack);
-#endif
 
-      /* Compute weighted noise energy, SNR */
+      /* Compute weighted noise energy and SNR */
       enoise=0;
       for (i=0;i<st->subframeSize;i++)
          enoise += target[i]*target[i];

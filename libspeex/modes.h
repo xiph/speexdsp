@@ -39,6 +39,11 @@ typedef void (*ltp_quant_func)(float *, float *, float *,
 /*Long-term un-quantize*/
 typedef void (*ltp_unquant_func)(float *, int, int, int, FrameBits*, float*);
 
+
+typedef void (*innovation_quant_func)(float *, float *, float *, float *, void *, int, int, 
+                                      float *, FrameBits *, float *);
+
+
 /*Struct defining the encoding/decoding mode*/
 typedef struct SpeexMode {
    int     frameSize;
@@ -59,6 +64,10 @@ typedef struct SpeexMode {
    ltp_quant_func    ltp_quant;
    ltp_unquant_func  ltp_unquant;
    
+   /*Quantization of innovation */
+   innovation_quant_func innovation_quant;
+   void             *innovation_params;
+
 } SpeexMode;
 
 extern SpeexMode nb_mode;

@@ -70,6 +70,8 @@ typedef struct EncState {
 
    lsp_quant_func    lsp_quant;
    ltp_quant_func    ltp_quant;
+   innovation_quant_func innovation_quant;
+   void             *innovation_params;
 } EncState;
 
 typedef struct DecState {

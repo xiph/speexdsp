@@ -22,6 +22,7 @@
 #include "modes.h"
 #include "ltp.h"
 #include "quant_lsp.h"
+#include "cb_search.h"
 
 SpeexMode nb_mode = {
    160,    /*frameSize*/
@@ -36,5 +37,7 @@ SpeexMode nb_mode = {
    lsp_quant_nb,
    lsp_unquant_nb,
    pitch_search_3tap,
-   pitch_unquant_3tap
+   pitch_unquant_3tap,
+   split_cb_search,
+   &split_cb_nb
 };

@@ -170,7 +170,7 @@ float *stack
    shape_cb = params->shape_cb;
    gain_cb_size = 1<<params->gain_bits;
    gain_cb = params->gain_cb;
-   resp = PUSH(stack, shape_cb_size*8);
+   resp = PUSH(stack, shape_cb_size*subvect_size);
    E = PUSH(stack, shape_cb_size);
    Ee = PUSH(stack, shape_cb_size);
    t = PUSH(stack, nsf);
@@ -185,24 +185,24 @@ float *stack
    for (i=0;i<shape_cb_size;i++)
    {
       float *res = resp+i*subvect_size;
-      residue_zero(shape_cb+i*subvect_size, awk1, res, 8, p);
-      syn_filt_zero(res, ak, res, 8, p);
-      syn_filt_zero(res, awk2, res, 8,p);
+      residue_zero(shape_cb+i*subvect_size, awk1, res, subvect_size, p);
+      syn_filt_zero(res, ak, res, subvect_size, p);
+      syn_filt_zero(res, awk2, res, subvect_size,p);
       E[i]=0;
-      for(j=0;j<8;j++)
+      for(j=0;j<subvect_size;j++)
          E[i]+=res[j]*res[j];
       Ee[i]=0;
-      for(j=0;j<8;j++)
+      for(j=0;j<subvect_size;j++)
          Ee[i]+=shape_cb[i*subvect_size+j]*shape_cb[i*subvect_size+j];
       
    }
-   for (i=0;i<5;i++)
+   for (i=0;i<nb_subvect;i++)
    {
       int best_index=0;
       float g, corr, best_gain=0, score, best_score=-1;
       for (j=0;j<shape_cb_size;j++)
       {
-         corr=xcorr(resp+j*subvect_size,t+8*i,8);
+         corr=xcorr(resp+j*subvect_size,t+subvect_size*i,subvect_size);
          score=corr*corr/(.001+E[j]);
          g = corr/(.001+E[j]);
          if (score>best_score)
@@ -222,8 +222,8 @@ float *stack
 
       for (j=0;j<nsf;j++)
          e[j]=0;
-      for (j=0;j<8;j++)
-         e[8*i+j]=best_gain*shape_cb[best_index*subvect_size+j];
+      for (j=0;j<subvect_size;j++)
+         e[subvect_size*i+j]=best_gain*shape_cb[best_index*subvect_size+j];
       residue_zero(e, awk1, r, nsf, p);
       syn_filt_zero(r, ak, r, nsf, p);
       syn_filt_zero(r, awk2, r, nsf,p);
@@ -233,9 +233,10 @@ float *stack
 
    {
       int best_vq_index=0, max_index;
-      float max_gain=0, log_max, min_dist=0, sign[5];
+      float max_gain=0, log_max, min_dist=0, *sign;
 
-      for (i=0;i<5;i++)
+      sign = PUSH(stack, nb_subvect);
+      for (i=0;i<nb_subvect;i++)
       {
          if (gains[i]<0)
          {
@@ -245,7 +246,7 @@ float *stack
             sign[i]=1;
          }
       }
-      for (i=0;i<5;i++)
+      for (i=0;i<nb_subvect;i++)
          if (gains[i]>max_gain)
             max_gain=gains[i];
       log_max=log(max_gain+1);
@@ -255,7 +256,7 @@ float *stack
       if (max_index<0)
          max_index=0;
       max_gain=1/exp(max_index+3.0);
-      for (i=0;i<5;i++)
+      for (i=0;i<nb_subvect;i++)
         gains[i]*=max_gain;
       frame_bits_pack(bits,max_index,3);
 
@@ -266,16 +267,18 @@ float *stack
       printf ("best_gains_vq_index %d %f %d\n", best_vq_index, min_dist, max_index);
 
 #if 1 /* If 0, the gains are not quantized */
-      for (i=0;i<5;i++)
+      for (i=0;i<nb_subvect;i++)
          gains[i]= sign[i]*gain_cb[best_vq_index*nb_subvect+i]/max_gain/(Ee[ind[i]]+.001);
 #else 
-      for (i=0;i<5;i++)
+      for (i=0;i<nb_subvect;i++)
          gains[i]= sign[i]*gains[i]/max_gain/(Ee[ind[i]]+.001);
 #endif  
     
-      for (i=0;i<5;i++)
-         for (j=0;j<8;j++)
-            exc[8*i+j]+=gains[i]*shape_cb[ind[i]*subvect_size+j];
+      for (i=0;i<nb_subvect;i++)
+         for (j=0;j<subvect_size;j++)
+            exc[subvect_size*i+j]+=gains[i]*shape_cb[ind[i]*subvect_size+j];
+
+      POP(stack);
    }
 
    /*TODO: Perform joint optimization of gains*/
