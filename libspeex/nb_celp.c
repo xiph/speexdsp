@@ -198,6 +198,9 @@ void *nb_encoder_init(const SpeexMode *m)
    st->sampling_rate=8000;
    st->dtx_count=0;
 
+#ifdef ENABLE_VALGRIND
+   VALGRIND_MAKE_READABLE(st, (st->stack-(char*)st));
+#endif
    return st;
 }
 
@@ -1005,6 +1008,9 @@ void *nb_decoder_init(const SpeexMode *m)
    st->voc_m1=st->voc_m2=st->voc_mean=0;
    st->voc_offset=0;
    st->dtx_enabled=0;
+#ifdef ENABLE_VALGRIND
+   VALGRIND_MAKE_READABLE(st, (st->stack-(char*)st));
+#endif
    return st;
 }
 
