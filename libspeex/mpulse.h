@@ -24,6 +24,14 @@
 
 #include "bits.h"
 
+typedef struct mpulse_params {
+   int     nb_pulse;
+   int     nb_tracks;
+   int     gain_coef;
+   int     track_ind_bits;
+} mpulse_params;
+
+
 void mpulse_search(
 float target[],			/* target vector */
 float ak[],			/* LPCs for this subframe */

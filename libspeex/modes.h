@@ -76,5 +76,7 @@ typedef struct SpeexMode {
 
 extern SpeexMode nb_mode;
 extern SpeexMode wb_mode;
+extern SpeexMode mp_nb_mode;
+extern SpeexMode mp_wb_mode;
 
 #endif

@@ -22,8 +22,169 @@
 #include "mpulse.h"
 #include "stack_alloc.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include "filters.h"
 #include <math.h>
+
+#define MAX_PULSE 30
+#define MAX_POS  100
+
+int porder(int *p, int *s, int *o, int len)
+{
+   int i,j, bit1, nb_uniq=0;
+   int *st, *en;
+   int rep[MAX_POS];
+   int uniq[MAX_PULSE];
+   int n;
+   /*Stupid bubble sort but for small N, we don't care!*/
+   for (i=0;i<MAX_POS;i++)
+      rep[i]=0;
+   for (i=0;i<len;i++)
+   {
+      for (j=i+1;j<len;j++)
+      {
+         if (p[i]>p[j])
+         {
+            int tmp;
+            tmp=p[j];
+            p[j]=p[i];
+            p[i]=tmp;
+            tmp=s[j];
+            s[j]=s[i];
+            s[i]=tmp;
+         }
+      }
+   }
+   for (i=0;i<len;i++)
+   {
+      rep[p[i]]++;
+      if (i==0 || p[i]!=p[i-1])
+      {
+         uniq[nb_uniq]=p[i];
+         s[nb_uniq]=s[i];
+         nb_uniq++;
+      }
+   }
+   st=uniq;
+   en=&uniq[nb_uniq-1];
+
+   for (i=0;i<5;i++)
+      printf ("%d ", p[i]);
+   printf ("\n");
+   for (i=0;i<nb_uniq;i++)
+      printf ("%d ", uniq[i]);
+   printf ("\n");
+   for (i=0;i<nb_uniq;i++)
+      printf ("%d ", s[i]);
+   printf ("\n");
+
+   bit1=s[0];
+   n=0;
+   for (i=0;i<nb_uniq;i++)
+   {
+      int next;
+      if (i==nb_uniq-1)
+      {
+         next=*st;
+         for (j=0;j<rep[next];j++)
+         {
+            o[n]=next;
+            n++;
+         }
+      } else {
+         if (s[i+1])
+         {
+            next=*en;
+            for (j=0;j<rep[next];j++)
+            {
+               o[n]=next;
+               n++;
+            }
+            en--;
+         } else {
+            next=*st;
+            for (j=0;j<rep[next];j++)
+            {
+               o[n]=next;
+               n++;
+            }
+            st++;
+         }
+      }
+   }
+   return s[0];
+}
+
+void rorder(int *p, int *s, int *o, int bit, int len)
+{
+   int i,j,nb_uniq=0;
+   int *st, *en;
+   int rep[MAX_POS];
+   int uniq[MAX_PULSE];
+   int ss[MAX_PULSE];
+   int n;
+   /*Stupid bubble sort but for small N, we don't care!*/
+   for (i=0;i<len;i++)
+      o[i]=p[i];
+   for (i=0;i<len;i++)
+   {
+      for (j=i+1;j<len;j++)
+      {
+         if (o[i]>o[j])
+         {
+            int tmp;
+            tmp=o[j];
+            o[j]=o[i];
+            o[i]=tmp;
+         }
+      }
+   }
+
+   for (i=0;i<len;i++)  
+   {
+      rep[p[i]]++;
+      if (i==0 || o[i]!=o[i-1])
+      {
+         uniq[nb_uniq]=o[i];
+         s[nb_uniq]=s[i];
+         nb_uniq++;
+      }
+   }
+   st=uniq;
+   en=&uniq[nb_uniq-1];
+
+   ss[0]=bit;
+   n=1;
+
+   for (i=1;i<len;i++)
+   {
+      if (i>1&&p[i-1]==p[i-2])
+         continue;
+      if (p[i-1]==*st)
+      {
+         ss[n++]=0;
+         st++;
+      } else if (p[i-1]==*en)
+      {
+         ss[n++]=1;
+         en--;
+      } else 
+      {
+         fprintf (stderr, "ERROR in decoding signs\n");
+         exit(1);
+      }
+   }
+   
+   n=0;
+   for (i=0;i<len;i++)
+   {
+      s[i]=ss[n];
+      if (i<len&&o[i]!=o[i+1])
+         n++;
+   }
+
+}
+
 
 void mpulse_search(
 float target[],			/* target vector */
@@ -38,18 +199,30 @@ FrameBits *bits,
 float *stack
 )
 {
-   int i,j, nb_pulse=12;
+   int i,j, nb_pulse;
    float *resp, *t, *e, *pulses;
    float te=0,ee=0;
    float g;
-   int tracks[4]={0,0,0,0};
-   float *sign;
-   int pulses_per_track=nb_pulse/4;
+   int nb_tracks, track_ind_bits;
+   int *tracks, *signs, *tr, *nb;
+   mpulse_params *params;
+   int pulses_per_track;
+   params = (mpulse_params *) par;
+
+   nb_pulse=params->nb_pulse;
+   nb_tracks=params->nb_tracks;
+   pulses_per_track=nb_pulse/nb_tracks;
+   track_ind_bits=params->track_ind_bits;
+
+   tracks = (int*)PUSH(stack,nb_pulse);
+   signs = (int*)PUSH(stack,nb_pulse);
+   tr = (int*)PUSH(stack,pulses_per_track);
+   nb = (int*)PUSH(stack,nb_tracks);
+
    resp=PUSH(stack, nsf);
    t=PUSH(stack, nsf);
    e=PUSH(stack, nsf);
    pulses=PUSH(stack, nsf);
-   sign=PUSH(stack, nsf);
    
    syn_filt_zero(target, awk1, e, nsf, p);
    residue_zero(e, ak, e, nsf, p);
@@ -57,15 +230,9 @@ float *stack
    for (i=0;i<nsf;i++)
    {
       pulses[i]=0;
-      if (e[i]>0)
-         sign[i]=1;
-      else 
-         sign[i]=-1;
       te+=target[i]*target[i];
       ee+=e[i]*e[i];
    }
-   /*g=1.9154e-05*te+2.3396e-05*ee;*/
-
    g=2.2/sqrt(nb_pulse)*exp(0.18163*log(te+1)+0.17293*log(ee+1));
    
    e[0]=1;
@@ -82,6 +249,9 @@ float *stack
    for (i=0;i<nsf;i++)
       t[i]=target[i];
 
+   for (i=0;i<nb_tracks;i++)
+      nb[i]=0;
+
    /*For all pulses*/
    for (i=0;i<nb_pulse;i++)
    {
@@ -93,22 +263,9 @@ float *stack
          int k;
          float dist=0;
          /*Constrain search in alternating tracks*/
-         /*if ((i&3) != (j&3))
-           continue;*/
-         if (tracks[j&3]==pulses_per_track)
-            continue;
-#if 0
-         for (k=0;k<j;k++)
-            dist+=t[k]*t[k];
-         for (k=0;k<nsf-j;k++)
-            dist+=(t[k+j]-sign[j]*g*resp[k])*(t[k+j]-sign[j]*g*resp[k]);
-         if (dist<best_score || j==0)
-         {
-            best_score=dist;
-            best_gain=sign[j]*g;
-            best_ind=j;
-         }         
-#else
+         if ((i%nb_tracks) != (j%nb_tracks))
+           continue;
+         /*Try for positive sign*/
          for (k=0;k<j;k++)
             dist+=t[k]*t[k];
          for (k=0;k<nsf-j;k++)
@@ -119,7 +276,7 @@ float *stack
             best_gain=g;
             best_ind=j;
          }
-         /*printf ("dist: %f\n", dist);*/
+         /*Try again for negative sign*/
          dist=0;
          for (k=0;k<j;k++)
             dist+=t[k]*t[k];
@@ -131,9 +288,7 @@ float *stack
             best_gain=-g;
             best_ind=j;
          }
-#endif
       }
-      tracks[best_ind&3]++;
       printf ("best pulse: %d %d %f %f %f %f\n", i, best_ind, best_gain, te, ee, g);
       /*Remove pulse contribution from target*/
       for (j=best_ind;j<nsf;j++)
@@ -143,6 +298,12 @@ float *stack
          pulses[best_ind]+=1;
       else
          pulses[best_ind]-=1;
+      {
+         int t=best_ind%nb_tracks;
+         tracks[t*pulses_per_track+nb[t]] = best_ind/nb_tracks;
+         signs[t*pulses_per_track+nb[t]]  = best_gain >= 0 ? 0 : 1;
+         nb[t]++;
+      }
    }
    
    /*Global gain re-estimation*/
@@ -165,6 +326,7 @@ float *stack
          quant_gain=0;
       if (quant_gain>127)
          quant_gain=127;
+      frame_bits_pack(bits,quant_gain,7);
       g=exp((quant_gain/8.0)+1);
       
       for (i=0;i<nsf;i++)
@@ -181,7 +343,30 @@ float *stack
       exc[i]+=e[i];
    for (i=0;i<nsf;i++)
       target[i]=t[i];
+   
+   for (i=0;i<nb_tracks;i++)
+   {
+      int bit1, ind=0;
+      bit1=porder(tracks+i*pulses_per_track, signs+i*pulses_per_track,tr,pulses_per_track);
+      frame_bits_pack(bits,bit1,1);
+      for (j=0;j<pulses_per_track;j++)
+      {
+         ind*=nsf/nb_tracks;
+         ind+=tr[j];
+         printf ("%d ", ind);
+      }
+      
+      frame_bits_pack(bits,ind,track_ind_bits);
 
+      printf ("track %d %d:", i, ind);
+      for (j=0;j<pulses_per_track;j++)
+        printf ("%d ", tr[j]);
+      printf ("\n");
+   }
+   POP(stack);
+   POP(stack);
+   POP(stack);
+   POP(stack);
    POP(stack);
    POP(stack);
    POP(stack);
