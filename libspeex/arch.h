@@ -35,6 +35,8 @@
 #ifndef ARCH_H
 #define ARCH_H
 
+#define ABS(x) ((x) < 0 ? (-(x)) : (x))
+
 #ifdef FIXED_POINT
 
 typedef signed short spx_word16_t;

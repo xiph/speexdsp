@@ -295,7 +295,7 @@ int nb_encode(void *state, short *in, SpeexBits *bits)
           SUBMODE(lbr_pitch) != -1)
       {
          int nol_pitch[6];
-         float nol_pitch_coef[6];
+         spx_word16_t nol_pitch_coef[6];
          
          bw_lpc(st->gamma1, st->interp_lpc, st->bw_lpc1, st->lpcSize);
          bw_lpc(st->gamma2, st->interp_lpc, st->bw_lpc2, st->lpcSize);
@@ -309,9 +309,13 @@ int nb_encode(void *state, short *in, SpeexBits *bits)
          /*Try to remove pitch multiples*/
          for (i=1;i<6;i++)
          {
-            if ((nol_pitch_coef[i]>.85*ol_pitch_coef) && 
-                (fabs(nol_pitch[i]-ol_pitch/2.0)<=1 || fabs(nol_pitch[i]-ol_pitch/3.0)<=1 || 
-                 fabs(nol_pitch[i]-ol_pitch/4.0)<=1 || fabs(nol_pitch[i]-ol_pitch/5.0)<=1))
+#ifdef FIXED_POINT
+            if ((nol_pitch_coef[i]>MULT16_16_Q15(nol_pitch_coef[0],27853)) && 
+#else
+            if ((nol_pitch_coef[i]>.85*nol_pitch_coef[0]) && 
+#endif
+                (ABS(2*nol_pitch[i]-ol_pitch)<=2 || ABS(3*nol_pitch[i]-ol_pitch)<=3 || 
+                 ABS(4*nol_pitch[i]-ol_pitch)<=4 || ABS(5*nol_pitch[i]-ol_pitch)<=5))
             {
                /*ol_pitch_coef=nol_pitch_coef[i];*/
                ol_pitch = nol_pitch[i];
@@ -335,6 +339,9 @@ int nb_encode(void *state, short *in, SpeexBits *bits)
          }
 #endif
 
+#ifdef FIXED_POINT
+         ol_pitch_coef *= 0.0039062;
+#endif
       } else {
          ol_pitch=0;
          ol_pitch_coef=0;

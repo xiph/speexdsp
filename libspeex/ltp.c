@@ -59,7 +59,7 @@ static spx_word32_t inner_prod(spx_word16_t *x, spx_word16_t *y, int len)
 }
 #endif
 
-void open_loop_nbest_pitch(spx_sig_t *sw, int start, int end, int len, int *pitch, float *gain, int N, char *stack)
+void open_loop_nbest_pitch(spx_sig_t *sw, int start, int end, int len, int *pitch, spx_word16_t *gain, int N, char *stack)
 {
    int i,j,k;
    spx_word32_t *best_score;
@@ -169,17 +169,13 @@ void open_loop_nbest_pitch(spx_sig_t *sw, int start, int end, int len, int *pitc
    /* Compute open-loop gain */
    for (j=0;j<N;j++)
    {
-      spx_word32_t g;
+      spx_word16_t g;
       i=pitch[j];
       g = DIV32(corr[i-start], 10+SHR(MULT16_16(spx_sqrt(e0),spx_sqrt(energy[i-start])),8));
       /* FIXME: g = max(g,corr/energy) */
       if (g<0)
          g = 0;
-#ifdef FIXED_POINT
-      gain[j]=0.0039062*g;
-#else
       gain[j]=g;
-#endif
    }
 }
 
@@ -444,14 +440,14 @@ int cdbk_offset
    int N;
    ltp_params *params;
    int *nbest;
-   float *gains;
+   spx_word16_t *gains;
 
    N=complexity;
    if (N>10)
       N=10;
 
    nbest=PUSH(stack, N, int);
-   gains = PUSH(stack, N, float);
+   gains = PUSH(stack, N, spx_word16_t);
    params = (ltp_params*) par;
 
    if (N==0 || end<start)
