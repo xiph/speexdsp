@@ -220,7 +220,7 @@ float *stack
    }
 
    {
-#if 0
+#if 1
       int best_vq_index=0, max_index;
       float max_gain=0, log_max, min_dist=0, *sign;
 
