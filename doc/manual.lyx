@@ -494,17 +494,18 @@ Pitch Prediction
 
 \layout Standard
 
-During voiced segments, the speech signal is very periodic, so it is possible
- to take advantage of that by expressing the excitation signal 
-\begin_inset Formula $e(n)$
+During voiced segments, the speech signal is periodic, so it is possible
+ to take advantage of that property by approximating the excitation signal
+ 
+\begin_inset Formula $e[n]$
 \end_inset 
 
- as
+ by a gain times the past of the excitation:
 \layout Standard
 
 
 \begin_inset Formula \[
-e[n]=\beta e[n-T]+c[n]\]
+e[n]\simeq p[n]=\beta e[n-T]\]
 
 \end_inset 
 
@@ -528,28 +529,60 @@ where
 innovation codebook
 \emph default 
 .
- In the 
-\emph on 
-z
-\emph default 
--domain, the excitation can be expressed as:
-\layout Standard
-
-
-\begin_inset Formula \[
-e(z)=\frac{1}{1-\beta z^{-T}}\: c(z)\]
-
+ We call that long-term prediction since the excitation is predicted from
+ 
+\begin_inset Formula $e[n-T]$
 \end_inset 
 
+ with 
+\begin_inset Formula $T\gg N$
+\end_inset 
 
+.
 \layout Subsection
 
 Innovation Codebook
 \layout Standard
 
+The final excitation 
+\begin_inset Formula $e[n]$
+\end_inset 
+
+ will be the sum of the pitch prediction and an 
+\emph on 
+innovation
+\emph default 
+ signal 
+\begin_inset Formula $c[n]$
+\end_inset 
+
+ taken from a fixed codebook.
+\layout Standard
+
+
+\begin_inset Formula \[
+e[n]=p[n]+c[n]=\beta e[n-T]+c[n]\]
+
+\end_inset 
+
 This is where most of the bits in a CELP codec are allocated.
  It represents the information that couldn't be obtained either from linear
  prediction or pitch prediction.
+ In the 
+\emph on 
+z
+\emph default 
+-domain we can represent the final signal 
+\begin_inset Formula $X(z)$
+\end_inset 
+
+ as 
+\begin_inset Formula \[
+X(z)=\frac{C(z)}{A(z)\left(1-\beta z^{-T}\right)}\]
+
+\end_inset 
+
+
 \layout Subsection
 
 Analysis-by-Synthesis and Error Weighting
@@ -2286,7 +2319,7 @@ N/A
 
 \layout Standard
 
-(Tones/DTMF to be implemented)
+reserved
 \end_inset 
 </cell>
 </row>

@@ -47,15 +47,23 @@
 
 float vbr_nb_thresh[8][11]={
    {-1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0}, /* silence */
-   { 3.9,  2.5,  2.0,  1.5,  0.5,  0.0,  0.0,  0.0,  0.0,  0.0, -1.0}, /*  2 kbps */
-   { 8.0,  6.0,  3.9,  4.5,  4.0,  3.5,  3.0,  2.5,  2.0,  1.0,  0.0}, /*  6 kbps */
-   {11.0,  8.5,  7.5,  7.0,  6.5,  6.0,  5.5,  5.0,  4.0,  3.0,  1.0}, /*  8 kbps */
+   { 3.9,  2.5,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0, -1.0}, /*  2 kbps */
+   { 8.0,  5.6,  4.7,  4.2,  3.9,  3.5,  3.0,  2.5,  2.0,  1.0,  0.0}, /*  6 kbps */
+   {11.0,  8.5,  7.5,  6.5,  5.0,  3.9,  3.9,  3.9,  3.5,  3.0,  1.0}, /*  8 kbps */
    {11.0, 11.0,  9.9,  9.0,  8.0,  7.0,  6.5,  6.0,  5.0,  4.0,  2.0}, /* 11 kbps */
    {11.0, 11.0, 11.0, 11.0,  9.5,  9.0,  8.0,  7.0,  6.5,  5.0,  3.0}, /* 15 kbps */
    {11.0, 11.0, 11.0, 11.0, 11.0, 11.0,  9.5,  8.5,  8.0,  6.5,  4.0}, /* 18 kbps */
    {11.0, 11.0, 11.0, 11.0, 11.0, 11.0, 11.0, 11.0,  9.8,  7.5,  5.5}  /* 24 kbps */ 
 };
 
+
+float vbr_hb_thresh[5][11]={
+   {-1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0}, /* silence */
+   { 3.9,  2.5,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0, -1.0}, /*  2 kbps */
+   {11.0, 11.0,  9.9,  9.0,  8.0,  7.0,  6.5,  6.0,  5.0,  4.0,  2.0}, /*  6 kbps */
+   {11.0, 11.0, 11.0, 11.0, 11.0, 11.0,  9.5,  8.5,  8.0,  6.5,  4.0}, /* 10 kbps */
+   {11.0, 11.0, 11.0, 11.0, 11.0, 11.0, 11.0, 11.0,  9.8,  7.5,  5.5}  /* 18 kbps */ 
+};
 
 void vbr_init(VBRState *vbr)
 {
@@ -104,6 +112,7 @@ void vbr_init(VBRState *vbr)
   non-stationary (harder to notice high-frequency noise)???
 
 */
+#include <stdio.h>
 float vbr_analysis(VBRState *vbr, float *sig, int len, int pitch, float pitch_coef)
 {
    int i;
@@ -153,13 +162,6 @@ float vbr_analysis(VBRState *vbr, float *sig, int len, int pitch, float pitch_co
       vbr->consec_noise=0;
    }
 
-   /* Checking for "pseudo temporal masking" */
-   if (ener < .1*vbr->average_energy)
-      qual -= .5;
-   if (ener < .01*vbr->average_energy)
-      qual -= .5;
-   if (ener < .001*vbr->average_energy)
-      qual -= .5;
    /* Checking for very low absolute energy */
    if (ener < 30000)
    {
@@ -169,26 +171,33 @@ float vbr_analysis(VBRState *vbr, float *sig, int len, int pitch, float pitch_co
       if (ener < 3000)
          qual-=.7;
    } else {
-      /* Checking for energy increases */
-      if (ener > vbr->last_energy*4.0)
-         qual += .7;
-      if (ener > vbr->last_energy*1.8)
-         qual += .7;
-      if (ener > 2*vbr->average_energy)
-         qual += .7;
-      if (ener > 4*vbr->average_energy)
-         qual += .7;
-      if (ener2 > 1.6*ener1)
-         qual += .7;
-      if (ener2 < .6*ener1)
-         qual -= .5;
+      float short_diff, long_diff;
+      short_diff = log((ener+1)/(1+vbr->last_energy));
+      long_diff = log((ener+1)/(1+vbr->average_energy));
+      /*fprintf (stderr, "%f %f\n", short_diff, long_diff);*/
 
-      if (ener < .3*vbr->last_energy)
-         qual -= .6;
+      if (long_diff<-5)
+         long_diff=-5;
+      if (long_diff>2)
+         long_diff=2;
+
+      if (long_diff>0)
+         qual += .6*long_diff;
+      if (long_diff<0)
+         qual += .5*long_diff;
+      if (short_diff>0)
+      {
+         if (short_diff>5)
+            short_diff=5;
+         qual += .5*short_diff;
+      }
+      /* Checking for energy increases */
+      if (ener2 > 1.6*ener1)
+         qual += .5;
    }
    vbr->last_energy = ener;
    vbr->soft_pitch = .6*vbr->soft_pitch + .4*pitch_coef;
-   qual += 2.5*((pitch_coef-.4) + (vbr->soft_pitch-.4));
+   qual += 2.2*((pitch_coef-.4) + (vbr->soft_pitch-.4));
 
    if (qual < vbr->last_quality)
       qual = .5*qual + .5*vbr->last_quality;
@@ -197,7 +206,7 @@ float vbr_analysis(VBRState *vbr, float *sig, int len, int pitch, float pitch_co
    if (qual>10)
       qual=10;
    
-   if (vbr->consec_noise>=1)
+   if (vbr->consec_noise>=2)
       qual-=1.3;
    if (vbr->consec_noise>=5)
       qual-=1.3;

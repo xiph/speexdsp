@@ -384,7 +384,7 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
                break;
             mode--;
          }
-         /*fprintf (stderr, "%f %d\n", st->relative_quality, mode);*/
+         fprintf (stderr, "%f %d\n", st->relative_quality, mode);
          speex_encoder_ctl(state, SPEEX_SET_MODE, &mode);
       } else {
          st->relative_quality = -1;

@@ -363,7 +363,7 @@ void sb_encode(void *state, float *in, SpeexBits *bits)
          ratio=0;
       /*if (ratio>-2)*/
       low_qual+=1.0*(ratio+2);
-      {
+      /*{
          int high_mode=2;
          if (low_qual>10)
             high_mode=4;
@@ -371,8 +371,26 @@ void sb_encode(void *state, float *in, SpeexBits *bits)
             high_mode=3;
          else if (low_qual>5)
             high_mode=2;
-         /*high_mode=1;*/
          speex_encoder_ctl(st, SPEEX_SET_HIGH_MODE, &high_mode);
+      }*/
+      {
+         int mode;
+         mode = 4;
+         while (mode)
+         {
+            int v1;
+            float thresh;
+            v1=(int)floor(st->vbr_quality);
+            if (v1==10)
+               thresh = vbr_nb_thresh[mode][v1];
+            else
+               thresh = (st->vbr_quality-v1)*vbr_hb_thresh[mode][v1+1] + (1+v1-st->vbr_quality)*vbr_hb_thresh[mode][v1];
+            if (low_qual > thresh)
+               break;
+            mode--;
+         }
+         fprintf (stderr, "%f %d\n", low_qual, mode);
+         speex_encoder_ctl(state, SPEEX_SET_HIGH_MODE, &mode);
       }
       /*fprintf (stderr, "%f %f\n", ratio, low_qual);*/
    }
@@ -970,6 +988,7 @@ void sb_encoder_ctl(void *state, int request, void *ptr)
       {
          int q;
          float qual = (*(float*)ptr)+.5;
+         st->vbr_quality = (*(float*)ptr);
          if (qual>10)
             qual=10;
          q=(int)floor(.5+*(float*)ptr);
