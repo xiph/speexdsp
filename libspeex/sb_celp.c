@@ -463,8 +463,8 @@ int sb_encode(void *state, float *in, SpeexBits *bits)
       for (i=0;i<st->lpcSize;i++)
          st->interp_qlsp[i] = (1-tmp)*st->old_qlsp[i] + tmp*st->qlsp[i];
       
-      lsp_enforce_margin(st->interp_lsp, st->lpcSize, .002);
-      lsp_enforce_margin(st->interp_qlsp, st->lpcSize, .002);
+      lsp_enforce_margin(st->interp_lsp, st->lpcSize, .05);
+      lsp_enforce_margin(st->interp_qlsp, st->lpcSize, .05);
 
       /* Compute interpolated LPCs (quantized and unquantized) */
       for (i=0;i<st->lpcSize;i++)
@@ -919,7 +919,7 @@ int sb_decode(void *state, SpeexBits *bits, float *out)
       for (i=0;i<st->lpcSize;i++)
          st->interp_qlsp[i] = (1-tmp)*st->old_qlsp[i] + tmp*st->qlsp[i];
 
-      lsp_enforce_margin(st->interp_qlsp, st->lpcSize, .002);
+      lsp_enforce_margin(st->interp_qlsp, st->lpcSize, .05);
 
       /* LSPs to x-domain */
       for (i=0;i<st->lpcSize;i++)
