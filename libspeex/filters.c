@@ -488,6 +488,15 @@ CombFilterMem *mem
      exc_energy+=((float)exc[i])*exc[i];*/
 
    /*Some gain adjustment if pitch is too high or if unvoiced*/
+#ifdef FIXED_POINT
+   {
+      spx_word16_t g = gain_3tap_to_1tap(pitch_gain)+gain_3tap_to_1tap(mem->last_pitch_gain);
+      if (g > 166)
+         comb_gain = MULT16_16_Q15(DIV32_16(SHL(165,15),g), comb_gain);
+      if (g < 64)
+         comb_gain = MULT16_16_Q15(SHL(g, 9), comb_gain);
+   }
+#else
    {
       float g=0;
       g = GAIN_SCALING_1*.5*(gain_3tap_to_1tap(pitch_gain)+gain_3tap_to_1tap(mem->last_pitch_gain));
@@ -496,6 +505,7 @@ CombFilterMem *mem
       if (g<.5)
          comb_gain*=2.*g;
    }
+#endif
    step = DIV32(COMB_STEP, nsf);
    fact=0;
 
