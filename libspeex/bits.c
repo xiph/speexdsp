@@ -44,12 +44,10 @@
 
 void speex_bits_init(SpeexBits *bits)
 {
-   int i;
    bits->bytes = (char*)speex_alloc(MAX_BYTES_PER_FRAME);
    bits->buf_size = MAX_BYTES_PER_FRAME;
 
-   for (i=0;i<bits->buf_size;i++)
-      bits->bytes[i]=0;
+   bits->bytes[0]=0;
    bits->nbBits=0;
    bits->bytePtr=0;
    bits->bitPtr=0;
@@ -59,12 +57,10 @@ void speex_bits_init(SpeexBits *bits)
 
 void speex_bits_init_buffer(SpeexBits *bits, void *buff, int buf_size)
 {
-   int i;
    bits->bytes = (char*)buff;
    bits->buf_size = buf_size;
 
-   for (i=0;i<buf_size;i++)
-      bits->bytes[i]=0;
+   bits->bytes[0]=0;
    bits->nbBits=0;
    bits->bytePtr=0;
    bits->bitPtr=0;
@@ -81,9 +77,7 @@ void speex_bits_destroy(SpeexBits *bits)
 
 void speex_bits_reset(SpeexBits *bits)
 {
-   int i;
-   for (i=0;i<bits->buf_size;i++)
-      bits->bytes[i]=0;
+   bits->bytes[0]=0;
    bits->nbBits=0;
    bits->bytePtr=0;
    bits->bitPtr=0;
@@ -249,6 +243,7 @@ void speex_bits_pack(SpeexBits *bits, int data, int nbBits)
       {
          bits->bitPtr=0;
          bits->bytePtr++;
+         bits->bytes[bits->bytePtr] = 0;
       }
       bits->nbBits++;
       nbBits--;
