@@ -177,6 +177,10 @@ SOURCE=..\..\libspeex\speex_header.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\libspeex\speex_callbacks.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\libspeex\vbr.c
 # End Source File
 # Begin Source File
@@ -238,6 +242,10 @@ SOURCE=..\..\libspeex\speex_bits.h
 # Begin Source File
 
 SOURCE=..\..\libspeex\speex_header.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\libspeex\speex_callbacks.h
 # End Source File
 # Begin Source File
 
