@@ -30,6 +30,8 @@
 
 //    WAVE_OUT.H - Necessary stuff for WIN_AUDIO
 
+#ifndef WAVE_OUT_H
+#define WAVE_OUT_H
 
 #include <stdio.h>
 #include <windows.h>
@@ -66,3 +68,4 @@ Int        Set_WIN_Params             ( FILE_T dummyFile , Ldouble SampleFreq, U
 int        WIN_Play_Samples           ( const void* buff, size_t len );
 int        WIN_Audio_close            ( void );
 
+#endif /* WAVE_OUT_H */
