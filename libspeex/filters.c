@@ -254,10 +254,6 @@ void fir_mem2(spx_sig_t *x, spx_coef_t *num, spx_sig_t *y, int N, int ord, spx_m
 
 
 
-#ifdef _USE_SSE
-#include "filters_sse.h"
-#else
-
 spx_word16_t compute_rms(spx_sig_t *x, int len)
 {
    int i;
@@ -268,6 +264,11 @@ spx_word16_t compute_rms(spx_sig_t *x, int len)
    }
    return sqrt(.1+sum/len);
 }
+
+#ifdef _USE_SSE
+#include "filters_sse.h"
+#else
+
 
 void filter_mem2(spx_sig_t *x, spx_coef_t *num, spx_coef_t *den, spx_sig_t *y, int N, int ord,  spx_mem_t *mem)
 {
