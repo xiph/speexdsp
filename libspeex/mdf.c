@@ -65,6 +65,19 @@ SpeexEchoState *speex_echo_state_init(int frame_size, int filter_length)
 /** Destroys an echo canceller state */
 void speex_echo_state_destroy(SpeexEchoState *st)
 {
+   drft_clear(&st->fft_lookup);
+   speex_free(st->x);
+   speex_free(st->y);
+
+   speex_free(st->X);
+   speex_free(st->Y);
+   speex_free(st->E);
+   speex_free(st->W);
+   speex_free(st->PHI);
+   speex_free(st->power);
+   speex_free(st->power_1);
+
+   speex_free(st);
 }
 
 /** Performs echo cancellation a frame */
