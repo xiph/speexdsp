@@ -353,13 +353,14 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
 #endif
 
    /*If we use low bit-rate pitch mode, transmit open-loop pitch*/
-   if (SUBMODE(lbr_pitch)!=-1 && SUBMODE(ltp_params))
+   if (SUBMODE(lbr_pitch)!=-1)
    {
       speex_bits_pack(bits, ol_pitch-st->min_pitch, 7);
-   } else if (SUBMODE(lbr_pitch)==0)
+   } 
+   
+   if (SUBMODE(forced_pitch_gain))
    {
       int quant;
-      speex_bits_pack(bits, ol_pitch-st->min_pitch, 7);
       quant = (int)floor(.5+15*ol_pitch_coef);
       if (quant>15)
          quant=0;
@@ -492,13 +493,13 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
          exc[i]=exc2[i]=0;
 
       /* If we have a long-term predictor (not all sub-modes have one) */
-      if (SUBMODE(ltp_params))
+      if (SUBMODE(ltp_quant))
       {
+         int pit_min, pit_max;
          /* Long-term prediction */
          if (SUBMODE(lbr_pitch) != -1)
          {
             /* Low bit-rate pitch handling */
-            int pit_min, pit_max;
             int margin;
             margin = SUBMODE(lbr_pitch);
             if (margin)
@@ -512,24 +513,20 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
             } else {
                pit_min=pit_max=ol_pitch;
             }
-            pitch = SUBMODE(ltp_quant)(target, sw, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2,
-                                       exc, SUBMODE(ltp_params), pit_min, pit_max, 
-                                       st->lpcSize, st->subframeSize, bits, st->stack, 
-                                       exc2, st->complexity);
          } else {
-            /* Normal pitch handling */
-            pitch = SUBMODE(ltp_quant)(target, sw, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2,
-                                       exc, SUBMODE(ltp_params), st->min_pitch, st->max_pitch, 
-                                       st->lpcSize, st->subframeSize, bits, st->stack, 
-                                       exc2, st->complexity);
+            pit_min = st->min_pitch;
+            pit_max = st->max_pitch;
          }
+
+         pitch = SUBMODE(ltp_quant)(target, sw, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2,
+                                    exc, SUBMODE(ltp_params), pit_min, pit_max, ol_pitch_coef,
+                                    st->lpcSize, st->subframeSize, bits, st->stack, 
+                                    exc2, st->complexity);
+
          /*printf ("cl_pitch: %d\n", pitch);*/
          st->pitch[sub]=pitch;
-      } else if (SUBMODE(lbr_pitch==0)) {
-         for (i=0;i<st->subframeSize;i++)
-         {
-            exc[i]=exc[i-ol_pitch]*ol_pitch_coef;
-         }
+      } else {
+         fprintf (stderr, "No pitch prediction, what's wrong\n");
       }
 
       /* Update target for adaptive codebook contribution */
@@ -615,10 +612,7 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
             for (i=0;i<st->subframeSize;i++)
                exc[i] += innov[i]*ener;
          } else {
-            /* This is the "real" (cheating) excitation in the encoder but the decoder will
-               use white noise */
-            for (i=0;i<st->subframeSize;i++)
-               exc[i] += st->buf2[i];
+            fprintf(stderr, "No fixed codebook\n");
          }
          POP(st->stack);
          for (i=0;i<st->subframeSize;i++)
@@ -807,15 +801,17 @@ void nb_decode(void *state, SpeexBits *bits, float *out, int lost)
    }
 
    /* Get open-loop pitch estimation for low bit-rate pitch coding */
-   if (SUBMODE(lbr_pitch)!=-1 && SUBMODE(ltp_params))
+   if (SUBMODE(lbr_pitch)!=-1)
    {
       ol_pitch = st->min_pitch+speex_bits_unpack_unsigned(bits, 7);
-   } else if (SUBMODE(lbr_pitch)==0)
+   } 
+   
+   if (SUBMODE(forced_pitch_gain))
    {
       int quant;
-      ol_pitch = st->min_pitch+speex_bits_unpack_unsigned(bits, 7);
       quant = speex_bits_unpack_unsigned(bits, 4);
       ol_pitch_coef=0.066667*quant;
+      /*fprintf (stderr, "unquant pitch coef: %f\n", ol_pitch_coef);*/
    }
    
    /* Get global excitation gain */
@@ -879,9 +875,9 @@ void nb_decode(void *state, SpeexBits *bits, float *out, int lost)
       /*Adaptive codebook contribution*/
       if (SUBMODE(ltp_unquant))
       {
+         int pit_min, pit_max;
          if (SUBMODE(lbr_pitch) != -1)
          {
-            int pit_min, pit_max;
             int margin;
             margin = SUBMODE(lbr_pitch);
             if (margin)
@@ -895,10 +891,14 @@ void nb_decode(void *state, SpeexBits *bits, float *out, int lost)
             } else {
                pit_min=pit_max=ol_pitch;
             }
-            SUBMODE(ltp_unquant)(exc, pit_min, pit_max, SUBMODE(ltp_params), st->subframeSize, &pitch, &pitch_gain[0], bits, st->stack, 0);
          } else {
-            SUBMODE(ltp_unquant)(exc, st->min_pitch, st->max_pitch, SUBMODE(ltp_params), st->subframeSize, &pitch, &pitch_gain[0], bits, st->stack, 0);
+            pit_min = st->min_pitch;
+            pit_max = st->max_pitch;
          }
+
+         SUBMODE(ltp_unquant)(exc, pit_min, pit_max, ol_pitch_coef, SUBMODE(ltp_params), 
+                              st->subframeSize, &pitch, &pitch_gain[0], bits, st->stack, 0);
+         
          
          if (!lost)
          {
@@ -924,11 +924,8 @@ void nb_decode(void *state, SpeexBits *bits, float *out, int lost)
             for (i=0;i<st->subframeSize;i++)
                exc[i]=st->last_pitch_gain*exc[i-st->last_pitch];
          }
-      } else if (SUBMODE(lbr_pitch==0)) {
-         for (i=0;i<st->subframeSize;i++)
-         {
-            exc[i]=exc[i-ol_pitch]*ol_pitch_coef;
-         }
+      } else {
+         fprintf (stderr, "No pitch prediction, what's wrong\n");
       }
       
       /* Unquantize the innovation */
@@ -960,28 +957,7 @@ void nb_decode(void *state, SpeexBits *bits, float *out, int lost)
             /*Fixed codebook contribution*/
             SUBMODE(innovation_unquant)(innov, SUBMODE(innovation_params), st->subframeSize, bits, st->stack);
          } else {
-#if 1
-            float scale;
-            scale = 3*sqrt(1.2-ol_pitch_coef);
-            for (i=0;i<st->subframeSize;i++)
-               innov[i] = scale*((((float)rand())/RAND_MAX)-.5);
-#else
-            static int tim=0;
-            float pitch_scale, noise_scale;
-            float voice=ol_pitch_coef;
-            if (voice>.9)
-               voice=.9;
-            noise_scale = sqrt(1.01-voice);
-            pitch_scale = sqrt(ol_pitch*voice); 
-            for (i=0;i<st->subframeSize;i++)
-               innov[i] = 3*noise_scale*((((float)rand())/RAND_MAX)-.5);
-            while (tim<st->subframeSize)
-            {
-               innov[tim] += pitch_scale;
-               tim+=ol_pitch;
-            }
-            tim-=st->subframeSize;
-#endif
+            fprintf(stderr, "No fixed codebook\n");
          }
 
          if (st->count_lost)

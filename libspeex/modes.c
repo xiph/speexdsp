@@ -131,23 +131,24 @@ static split_cb_params split_cb_high_lbr = {
 static SpeexSubmode nb_submode1 = {
    0,
    1,
+   1,
    /* LSP quantization */
    lsp_quant_lbr,
    lsp_unquant_lbr,
    /* No pitch quantization */
-   NULL,
-   NULL,
+   forced_pitch_quant,
+   forced_pitch_unquant,
    NULL,
    /* No innovation quantization (noise only) */
+   noise_codebook_quant,
+   noise_codebook_unquant,
    NULL,
-   NULL,
-   NULL,
-
    0, 0, -1,
    43
 };
 
 static SpeexSubmode nb_submode2 = {
+   0,
    0,
    0,
    /*LSP quantization*/
@@ -169,6 +170,7 @@ static SpeexSubmode nb_submode2 = {
 
 static SpeexSubmode nb_submode3 = {
    -1,
+   0,
    1,
    /*LSP quantization*/
    lsp_quant_lbr,
@@ -188,6 +190,7 @@ static SpeexSubmode nb_submode3 = {
 
 static SpeexSubmode nb_submode4 = {
    -1,
+   0,
    1,
    /*LSP quantization*/
    lsp_quant_lbr,
@@ -207,6 +210,7 @@ static SpeexSubmode nb_submode4 = {
 
 static SpeexSubmode nb_submode5 = {
    -1,
+   0,
    3,
    /*LSP quantization*/
    lsp_quant_nb,
@@ -226,6 +230,7 @@ static SpeexSubmode nb_submode5 = {
 
 static SpeexSubmode nb_submode6 = {
    -1,
+   0,
    3,
    /*LSP quantization*/
    lsp_quant_nb,
@@ -283,6 +288,7 @@ SpeexMode speex_nb_mode = {
 
 static SpeexSubmode wb_submode1 = {
    0,
+   0,
    1,
    /*LSP quantization*/
    lsp_quant_high,
@@ -303,6 +309,7 @@ static SpeexSubmode wb_submode1 = {
 
 static SpeexSubmode wb_submode2 = {
    0,
+   0,
    1,
    /*LSP quantization*/
    lsp_quant_high,
@@ -322,6 +329,7 @@ static SpeexSubmode wb_submode2 = {
 
 
 static SpeexSubmode wb_submode3 = {
+   0,
    0,
    1,
    /*LSP quantization*/

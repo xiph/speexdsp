@@ -41,6 +41,7 @@ float exc[],                    /* Overlapping codebook */
 void *par,
 int   start,                    /* Smallest pitch value allowed */
 int   end,                      /* Largest pitch value allowed */
+float pitch_coef,               /* Voicing (pitch) coefficient */
 int   p,                        /* Number of LPC coeffs */
 int   nsf,                      /* Number of samples in subframe */
 SpeexBits *bits,
@@ -54,6 +55,7 @@ void pitch_unquant_3tap(
 float exc[],                    /* Excitation */
 int   start,                    /* Smallest pitch value allowed */
 int   end,                      /* Largest pitch value allowed */
+float pitch_coef,               /* Voicing (pitch) coefficient */
 void *par,
 int   nsf,                      /* Number of samples in subframe */
 int *pitch_val,
@@ -78,3 +80,38 @@ float *stack,
 float *exc2,
 int  *cdbk_index
 );
+
+
+/** Forced pitch delay and gain */
+int forced_pitch_quant(
+float target[],                 /* Target vector */
+float *sw,
+float ak[],                     /* LPCs for this subframe */
+float awk1[],                   /* Weighted LPCs #1 for this subframe */
+float awk2[],                   /* Weighted LPCs #2 for this subframe */
+float exc[],                    /* Excitation */
+void *par,
+int   start,                    /* Smallest pitch value allowed */
+int   end,                      /* Largest pitch value allowed */
+float pitch_coef,               /* Voicing (pitch) coefficient */
+int   p,                        /* Number of LPC coeffs */
+int   nsf,                      /* Number of samples in subframe */
+SpeexBits *bits,
+float *stack,
+float *exc2,
+int complexity
+);
+
+/** Unquantize forced pitch delay and gain */
+void forced_pitch_unquant(
+float exc[],                    /* Excitation */
+int   start,                    /* Smallest pitch value allowed */
+int   end,                      /* Largest pitch value allowed */
+float pitch_coef,               /* Voicing (pitch) coefficient */
+void *par,
+int   nsf,                      /* Number of samples in subframe */
+int *pitch_val,
+float *gain_val,
+SpeexBits *bits,
+float *stack,
+int lost);

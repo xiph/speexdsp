@@ -18,9 +18,7 @@
 */
 
 #include <math.h>
-#ifdef DEBUG
 #include <stdio.h>
-#endif
 #include "ltp.h"
 #include "stack_alloc.h"
 #include "filters.h"
@@ -48,7 +46,13 @@ void open_loop_nbest_pitch(float *sw, int start, int end, int len, int *pitch, f
       score=corr*corr/(energy+1);
       if (score>best_score[N-1])
       {
-         float g = sqrt(corr*corr/((energy+10)*(e0+10)));
+         float g1, g;
+         g1 = corr/(energy+10);
+         g = sqrt(corr/(e0+10));
+         if (g>g1)
+            g=g1;
+         if (g<0)
+            g=0;
          for (j=0;j<N;j++)
          {
             if (score > best_score[j])
@@ -269,6 +273,7 @@ float exc[],                    /* Excitation */
 void *par,
 int   start,                    /* Smallest pitch value allowed */
 int   end,                      /* Largest pitch value allowed */
+float pitch_coef,               /* Voicing (pitch) coefficient */
 int   p,                        /* Number of LPC coeffs */
 int   nsf,                      /* Number of samples in subframe */
 SpeexBits *bits,
@@ -337,6 +342,7 @@ void pitch_unquant_3tap(
 float exc[],                    /* Excitation */
 int   start,                    /* Smallest pitch value allowed */
 int   end,                      /* Largest pitch value allowed */
+float pitch_coef,               /* Voicing (pitch) coefficient */
 void *par,
 int   nsf,                      /* Number of samples in subframe */
 int *pitch_val,
@@ -414,4 +420,61 @@ int lost)
       
       POP(stack);
    }
+}
+
+
+/** Forced pitch delay and gain */
+int forced_pitch_quant(
+float target[],                 /* Target vector */
+float *sw,
+float ak[],                     /* LPCs for this subframe */
+float awk1[],                   /* Weighted LPCs #1 for this subframe */
+float awk2[],                   /* Weighted LPCs #2 for this subframe */
+float exc[],                    /* Excitation */
+void *par,
+int   start,                    /* Smallest pitch value allowed */
+int   end,                      /* Largest pitch value allowed */
+float pitch_coef,               /* Voicing (pitch) coefficient */
+int   p,                        /* Number of LPC coeffs */
+int   nsf,                      /* Number of samples in subframe */
+SpeexBits *bits,
+float *stack,
+float *exc2,
+int complexity
+)
+{
+   int i;
+   if (pitch_coef>.9)
+      pitch_coef=.9;
+   for (i=0;i<nsf;i++)
+   {
+      exc[i]=exc[i-start]*pitch_coef;
+   }
+   return start;
+}
+
+/** Unquantize forced pitch delay and gain */
+void forced_pitch_unquant(
+float exc[],                    /* Excitation */
+int   start,                    /* Smallest pitch value allowed */
+int   end,                      /* Largest pitch value allowed */
+float pitch_coef,               /* Voicing (pitch) coefficient */
+void *par,
+int   nsf,                      /* Number of samples in subframe */
+int *pitch_val,
+float *gain_val,
+SpeexBits *bits,
+float *stack,
+int lost)
+{
+   int i;
+   /*pitch_coef=.9;*/
+   if (pitch_coef>.9)
+      pitch_coef=.9;
+   for (i=0;i<nsf;i++)
+   {
+      exc[i]=exc[i-start]*pitch_coef;
+   }
+   *pitch_val = start;
+   *gain_val = pitch_coef;
 }

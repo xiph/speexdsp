@@ -508,8 +508,10 @@ float *stack
 
    /* Decode codewords and gains */
    for (i=0;i<nb_subvect;i++)
+   {
       ind[i] = speex_bits_unpack_unsigned(bits, params->shape_bits);
-
+      ind[i] = rand()%(1<<params->shape_bits);
+   }
    /* Compute decoded excitation */
    for (i=0;i<nb_subvect;i++)
       for (j=0;j<subvect_size;j++)
@@ -558,4 +560,47 @@ float *stack
    }
    POP(stack);
    POP(stack);
+}
+
+void noise_codebook_quant(
+float target[],			/* target vector */
+float ak[],			/* LPCs for this subframe */
+float awk1[],			/* Weighted LPCs for this subframe */
+float awk2[],			/* Weighted LPCs for this subframe */
+void *par,                      /* Codebook/search parameters*/
+int   p,                        /* number of LPC coeffs */
+int   nsf,                      /* number of samples in subframe */
+float *exc,
+SpeexBits *bits,
+float *stack,
+int   complexity
+)
+{
+   int i;
+   float *tmp=PUSH(stack, nsf);
+   syn_filt_zero(target, awk1, tmp, nsf, p);
+   residue_zero(tmp, ak, tmp, nsf, p);
+   residue_zero(tmp, awk2, tmp, nsf, p);
+
+   for (i=0;i<nsf;i++)
+      exc[i]+=tmp[i];
+   for (i=0;i<nsf;i++)
+      target[i]=0;
+
+   POP(stack);
+}
+
+
+void noise_codebook_unquant(
+float *exc,
+void *par,                      /* non-overlapping codebook */
+int   nsf,                      /* number of samples in subframe */
+SpeexBits *bits,
+float *stack
+)
+{
+   int i;
+
+   for (i=0;i<nsf;i++)
+      exc[i]+=2.5*((((float)rand())/RAND_MAX)-.5);
 }
