@@ -64,7 +64,6 @@ typedef struct EncState {
    float *interp_qlpc;    /* Interpolated quantized LPCs */
    float *bw_lpc1;        /* LPCs after bandwidth expansion by gamma1 for perceptual weighting*/
    float *bw_lpc2;        /* LPCs after bandwidth expansion by gamma2 for perceptual weighting*/
-   float *bw_az;          /* Convolution of bw_lpc2 and interp_qlpc */
    float *rc;             /* Reflection coefficients */
    float *mem_sp, *mem_sw;
    float *dmem1, *dmem2;
@@ -78,6 +77,8 @@ typedef struct DecState {
    int    windowSize;     /* Analysis (LPC) window length */
    int    lpcSize;        /* LPC order */
    int    bufSize;        /* Buffer size */
+   int    min_pitch;      /* Minimum pitch value allowed */
+   int    max_pitch;      /* Maximum pitch value allowed */
    float  gamma1;         /* Perceptual filter: A(z/gamma1) */
    float  gamma2;         /* Perceptual filter: A(z/gamma2) */
    float *inBuf;          /* Input buffer (original signal) */
@@ -88,6 +89,8 @@ typedef struct DecState {
    float *old_qlsp;       /* Quantized LSPs for previous frame */
    float *interp_qlsp;    /* Interpolated quantized LSPs */
    float *interp_qlpc;    /* Interpolated quantized LPCs */
+   float *bw_lpc1;        /* LPCs after bandwidth expansion by gamma1 for perceptual weighting*/
+   float *bw_lpc2;        /* LPCs after bandwidth expansion by gamma2 for perceptual weighting*/
 
 } DecState;
 

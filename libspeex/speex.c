@@ -106,7 +106,6 @@ void encoder_init(EncState *st, SpeexMode *mode)
    st->interp_qlpc = malloc((st->lpcSize+1)*sizeof(float));
    st->bw_lpc1 = malloc((st->lpcSize+1)*sizeof(float));
    st->bw_lpc2 = malloc((st->lpcSize+1)*sizeof(float));
-   st->bw_az = malloc((st->lpcSize*2+1)*sizeof(float));
 
    st->lsp = malloc(st->lpcSize*sizeof(float));
    st->qlsp = malloc(st->lpcSize*sizeof(float));
@@ -138,7 +137,6 @@ void encoder_destroy(EncState *st)
 
    free(st->bw_lpc1);
    free(st->bw_lpc2);
-   free(st->bw_az);
    free(st->autocorr);
    free(st->lagWindow);
    free(st->lsp);
@@ -465,6 +463,8 @@ void decoder_init(DecState *st, SpeexMode *mode)
    st->bufSize = mode->bufSize;
    st->gamma1=mode->gamma1;
    st->gamma2=mode->gamma2;
+   st->min_pitch=mode->pitchStart;
+   st->max_pitch=mode->pitchEnd;
 
 
    st->inBuf = malloc(st->bufSize*sizeof(float));
@@ -475,14 +475,31 @@ void decoder_init(DecState *st, SpeexMode *mode)
       st->inBuf[i]=0;
    for (i=0;i<st->bufSize;i++)
       st->excBuf[i]=0;
+
+   st->interp_qlpc = malloc((st->lpcSize+1)*sizeof(float));
+   st->bw_lpc1 = malloc((st->lpcSize+1)*sizeof(float));
+   st->bw_lpc2 = malloc((st->lpcSize+1)*sizeof(float));
+
+   st->qlsp = malloc(st->lpcSize*sizeof(float));
+   st->old_qlsp = malloc(st->lpcSize*sizeof(float));
+   st->interp_qlsp = malloc(st->lpcSize*sizeof(float));
+
 }
 
 void decoder_destroy(DecState *st)
 {
    free(st->inBuf);
    free(st->excBuf);
+   free(st->interp_qlpc);
+   free(st->bw_lpc1);
+   free(st->bw_lpc2);
+   free(st->qlsp);
+   free(st->old_qlsp);
+   free(st->interp_qlsp);
+ 
 }
 
 void decode(DecState *st, FrameBits *bits, float *out)
 {
+   int id = frame_bits_unpack_signed(bits, 30);
 }
