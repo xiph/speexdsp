@@ -1,5 +1,5 @@
-#LyX 1.2 created this file. For more info see http://www.lyx.org/
-\lyxformat 220
+#LyX 1.3 created this file. For more info see http://www.lyx.org/
+\lyxformat 221
 \textclass article
 \language english
 \inputencoding auto
@@ -891,42 +891,42 @@ SPEEX_GET_QUALITY* Get the current encoder speech quality (integer 0 to
 \layout Description
 
 SPEEX_SET_MODE*
-\begin_inset Formula $\dagger $
+\begin_inset Formula $\dagger$
 \end_inset 
 
 
 \layout Description
 
 SPEEX_GET_MODE*
-\begin_inset Formula $\dagger $
+\begin_inset Formula $\dagger$
 \end_inset 
 
 
 \layout Description
 
 SPEEX_SET_LOW_MODE*
-\begin_inset Formula $\dagger $
+\begin_inset Formula $\dagger$
 \end_inset 
 
 
 \layout Description
 
 SPEEX_GET_LOW_MODE*
-\begin_inset Formula $\dagger $
+\begin_inset Formula $\dagger$
 \end_inset 
 
 
 \layout Description
 
 SPEEX_SET_HIGH_MODE*
-\begin_inset Formula $\dagger $
+\begin_inset Formula $\dagger$
 \end_inset 
 
 
 \layout Description
 
 SPEEX_GET_HIGH_MODE*
-\begin_inset Formula $\dagger $
+\begin_inset Formula $\dagger$
 \end_inset 
 
 
@@ -1015,7 +1015,7 @@ SPEEX_GET_ABR* Get average bit-rate (ABR) setting (integer in bps)
 \layout Description
 
 
-\begin_inset Formula $\dagger $
+\begin_inset Formula $\dagger$
 \end_inset 
 
  normally only used internally
@@ -2287,7 +2287,7 @@ Linear prediction is at the base of may speech coding techniques, including
 
 
 \begin_inset Formula \[
-y[n]=\sum _{i=1}^{N}a_{i}x[n-i]\]
+y[n]=\sum_{i=1}^{N}a_{i}x[n-i]\]
 
 \end_inset 
 
@@ -2302,7 +2302,7 @@ where
 .
  The prediction error is thus given by:
 \begin_inset Formula \[
-e[n]=x[n]-y[n]=x[n]-\sum _{i=1}^{N}a_{i}x[n-i]\]
+e[n]=x[n]-y[n]=x[n]-\sum_{i=1}^{N}a_{i}x[n-i]\]
 
 \end_inset 
 
@@ -2316,7 +2316,7 @@ The goal of the LPC analysis is to find the best prediction coefficients
 
  which minimize the quadratic error function:
 \begin_inset Formula \[
-E=\sum _{n=0}^{L-1}\left[e[n]\right]^{2}=\sum _{n=0}^{L-1}\left[x[n]-\sum _{i=1}^{N}a_{i}x[n-i]\right]^{2}\]
+E=\sum_{n=0}^{L-1}\left[e[n]\right]^{2}=\sum_{n=0}^{L-1}\left[x[n]-\sum_{i=1}^{N}a_{i}x[n-i]\right]^{2}\]
 
 \end_inset 
 
@@ -2326,7 +2326,7 @@ That can be done by making all derivatives
 
  equal to zero:
 \begin_inset Formula \[
-\frac{\partial E}{\partial a_{i}}=\frac{\partial }{\partial a_{i}}\sum _{n=0}^{L-1}\left[x[n]-\sum _{i=1}^{N}a_{i}x[n-i]\right]^{2}=0\]
+\frac{\partial E}{\partial a_{i}}=\frac{\partial}{\partial a_{i}}\sum_{n=0}^{L-1}\left[x[n]-\sum_{i=1}^{N}a_{i}x[n-i]\right]^{2}=0\]
 
 \end_inset 
 
@@ -2360,7 +2360,7 @@ The
 
 
 \begin_inset Formula \[
-R(m)=\sum _{i=0}^{N-1}x[i]x[i-m]\]
+R(m)=\sum_{i=0}^{N-1}x[i]x[i-m]\]
 
 \end_inset 
 
@@ -2374,22 +2374,20 @@ For an order
  filter, we have:
 \begin_inset Formula \[
 \mathbf{R}=\left[\begin{array}{cccc}
- R(0) & R(1) & \cdots  & R(N-1)\\
- R(1) & R(0) & \cdots  & R(N-2)\\
- \vdots  & \vdots  & \ddots  & \vdots \\
- R(N-1) & R(N-2) & \cdots  & R(0)\end{array}
-\right]\]
+R(0) & R(1) & \cdots & R(N-1)\\
+R(1) & R(0) & \cdots & R(N-2)\\
+\vdots & \vdots & \ddots & \vdots\\
+R(N-1) & R(N-2) & \cdots & R(0)\end{array}\right]\]
 
 \end_inset 
 
 
 \begin_inset Formula \[
 \mathbf{r}=\left[\begin{array}{c}
- R(1)\\
- R(2)\\
- \vdots \\
- R(N)\end{array}
-\right]\]
+R(1)\\
+R(2)\\
+\vdots\\
+R(N)\end{array}\right]\]
 
 \end_inset 
 
@@ -2443,7 +2441,7 @@ The filter coefficients
 The linear prediction model represents each speech sample as linear combination
  of past samples, plus an error signal called the excitation (or residual).
 \begin_inset Formula \[
-x[n]=\sum _{i=1}^{N}a_{i}x[n-i]+e[n]\]
+x[n]=\sum_{i=1}^{N}a_{i}x[n-i]+e[n]\]
 
 \end_inset 
 
@@ -2475,7 +2473,7 @@ where
 
 
 \begin_inset Formula \[
-A(z)=1-\sum _{i=1}^{N}a_{i}z^{-i}\]
+A(z)=1-\sum_{i=1}^{N}a_{i}z^{-i}\]
 
 \end_inset 
 
@@ -2549,7 +2547,7 @@ where
 \end_inset 
 
  is the pitch period, 
-\begin_inset Formula $\beta $
+\begin_inset Formula $\beta$
 \end_inset 
 
  is the pitch gain and 
@@ -2648,7 +2646,7 @@ vice versa
 .
  That's why instead of minimizing the simple quadratic error
 \begin_inset Formula \[
-E=\sum _{n}\left(x[n]-\overline{x}[n]\right)^{2}\]
+E=\sum_{n}\left(x[n]-\overline{x}[n]\right)^{2}\]
 
 \end_inset 
 
@@ -2672,7 +2670,7 @@ where
 
 
 \begin_inset Formula \begin{equation}
-W(z)=\frac{A\left(\frac{z}{\gamma _{1}}\right)}{A\left(\frac{z}{\gamma _{2}}\right)}\label{eq:weighting_filter}\end{equation}
+W(z)=\frac{A\left(\frac{z}{\gamma_{1}}\right)}{A\left(\frac{z}{\gamma_{2}}\right)}\label{eq:weighting_filter}\end{equation}
 
 \end_inset 
 
@@ -2680,14 +2678,14 @@ W(z)=\frac{A\left(\frac{z}{\gamma _{1}}\right)}{A\left(\frac{z}{\gamma _{2}}\rig
 \layout Standard
 
 with control parameters 
-\begin_inset Formula $\gamma _{1}>\gamma _{2}$
+\begin_inset Formula $\gamma_{1}>\gamma_{2}$
 \end_inset 
 
 .
  If the noise is white in the perceptually weighted domain, then in the
  signal domain its spectral shape will be of the form
 \begin_inset Formula \[
-A_{noise}(z)=\frac{1}{W(z)}=\frac{A\left(\frac{z}{\gamma _{2}}\right)}{A\left(\frac{z}{\gamma _{1}}\right)}\]
+A_{noise}(z)=\frac{1}{W(z)}=\frac{A\left(\frac{z}{\gamma_{2}}\right)}{A\left(\frac{z}{\gamma_{1}}\right)}\]
 
 \end_inset 
 
@@ -2707,7 +2705,7 @@ If a filter
 \end_inset 
 
 -plane, the filter 
-\begin_inset Formula $A(z/\gamma )$
+\begin_inset Formula $A(z/\gamma)$
 \end_inset 
 
  filter will have its poles at 
@@ -2735,12 +2733,12 @@ Speex narrowband mode
 \layout Standard
 
 This section looks at how Speex works for narrowband (
-\begin_inset Formula $8\: \mathrm{kHz}$
+\begin_inset Formula $8\:\mathrm{kHz}$
 \end_inset 
 
  sampling rate) operation.
  The frame size for this mode is 
-\begin_inset Formula $20\: \mathrm{ms}$
+\begin_inset Formula $20\:\mathrm{ms}$
 \end_inset 
 
 , corresponding to 160 samples.
@@ -2808,11 +2806,11 @@ The perceptual weighting filter
 \end_inset 
 
  with 
-\begin_inset Formula $\gamma _{1}=0.9$
+\begin_inset Formula $\gamma_{1}=0.9$
 \end_inset 
 
  and 
-\begin_inset Formula $\gamma _{2}=0.6$
+\begin_inset Formula $\gamma_{2}=0.6$
 \end_inset 
 
 .
@@ -2838,7 +2836,7 @@ Speex uses a 3-tap prediction for pitch.
 
  is obtained by the past of the excitation by:
 \begin_inset Formula \[
-p[n]=\beta _{0}e[n-T-1]+\beta _{1}e[n-T]+\beta _{2}e[n-T+1]\]
+p[n]=\beta_{0}e[n-T-1]+\beta_{1}e[n-T]+\beta_{2}e[n-T+1]\]
 
 \end_inset 
 
@@ -2850,7 +2848,7 @@ where
 \end_inset 
 
  is the pitch period and the 
-\begin_inset Formula $\beta _{i}$
+\begin_inset Formula $\beta_{i}$
 \end_inset 
 
  are the prediction (filter) taps.
@@ -2875,7 +2873,7 @@ where
 \end_inset 
 
  range and the 
-\begin_inset Formula $\beta _{i}$
+\begin_inset Formula $\beta_{i}$
 \end_inset 
 
  coefficients are vector-quantized using 7 bits (15 kbps narrowband and
@@ -5458,18 +5456,18 @@ n.
 
 One of the cause could be scaling of the input speech.
  Speex expects signals to have a 
-\begin_inset Formula $\pm 2^{15}$
+\begin_inset Formula $\pm2^{15}$
 \end_inset 
 
  (signed short) dynamic range.
  If the dynamic range of your signals is too small (e.g.
  
-\begin_inset Formula $\pm 1.0$
+\begin_inset Formula $\pm1.0$
 \end_inset 
 
 ), you will suffer important quantization noise.
  A good target is to have a dynamic range around 
-\begin_inset Formula $\pm 8000$
+\begin_inset Formula $\pm8000$
 \end_inset 
 
  which is large enough, but small enough to make sure there's no clipping
@@ -5486,7 +5484,7 @@ There are many possible causes for that.
  for more than one audio stream (channel), which produces strange effects
  with the filter memories.
  If the input speech has an amplitude close to 
-\begin_inset Formula $\pm 2^{15}$
+\begin_inset Formula $\pm2^{15}$
 \end_inset 
 
 , it is possible that at decoding, the amplitude be a bit higher than that,
@@ -5575,13 +5573,29 @@ Sample code
 
 This section shows sample code for encoding and decoding speech using the
  Speex API.
+ The commands can be used to encode and decode a file by calling:
+\family typewriter 
+
+\newline 
+% sampleenc in_file.sw | sampledec out_file.sw
+\family default 
+
+\newline 
+where both files are raw (no header) files encoded at 16 bits per sample
+ (in the machine natural endianness).
 \layout Subsection
 
 sampleenc.c
 \layout Standard
 
+sampleenc takes a raw 16 bits/sample file, encodes it and outputs a Speex
+ stream to stdout.
+ Note that the packing used is NOT compatible with that of speexenc/speexdec.
+\layout Standard
+
 
 \begin_inset Include \verbatiminput{sampleenc.c}
+preview false
 
 \end_inset 
 
@@ -5591,8 +5605,14 @@ sampleenc.c
 sampledec.c
 \layout Standard
 
+sampledec reads a Speex stream from stdin, decodes it and outputs it to
+ a raw 16 bits/sample file.
+ Note that the packing used is NOT compatible with that of speexenc/speexdec.
+\layout Standard
+
 
 \begin_inset Include \verbatiminput{sampledec.c}
+preview false
 
 \end_inset 
 
@@ -5608,7 +5628,8 @@ IETF RTP Profile
 \layout Standard
 
 
-\begin_inset Include \verbatiminput{draft-herlein-speex-rtp-profile-07.txt}
+\begin_inset Include \verbatiminput{draft-herlein-speex-rtp-profile-00.txt}
+preview false
 
 \end_inset 
 
