@@ -208,6 +208,7 @@ static void update_noise(DenoiseState *st, float *ps)
 int denoise(DenoiseState *st, float *x)
 {
    int i;
+   int is_speech=0;
    float mean_post=0;
    float mean_prior=0;
    float energy;
@@ -379,6 +380,11 @@ int denoise(DenoiseState *st, float *x)
       st->consec_noise=0;
    }
 
+   if (mean_prior>1 && mean_post > 1)
+   {
+      is_speech=1;
+   }
+
    if (st->consec_noise>=3)
    {
       update_noise(st, st->old_ps);
@@ -488,5 +494,5 @@ int denoise(DenoiseState *st, float *x)
    if (st->last_id>=NB_LAST_PS)
       st->last_id=0;
 
-   return 1;
+   return is_speech;
 }
