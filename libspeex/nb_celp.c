@@ -30,6 +30,7 @@
 #include "stack_alloc.h"
 #include "vq.h"
 #include "speex_bits.h"
+#include "post_filter.h"
 
 #ifndef M_PI
 #define M_PI           3.14159265358979323846  /* pi */
@@ -429,7 +430,7 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
          ener=sign/sqrt(.01+ener/st->subframeSize);
          for (i=0;i<st->subframeSize;i++)
          {
-            if (i%4==0)
+            if (i%10==0)
                printf ("\nexc ");
             printf ("%f ", ener*st->buf2[i]);
          }
@@ -485,6 +486,8 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
             exc[i] += st->buf2[i];
 #endif
          POP(st->stack);
+         for (i=0;i<st->subframeSize;i++)
+            target[i]*=ener;
 
       }
 #endif
@@ -493,9 +496,9 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
       for (i=0;i<st->subframeSize;i++)
          enoise += target[i]*target[i];
       snr = 10*log10((esig+1)/(enoise+1));
-#ifdef DEBUG
+
       printf ("seg SNR = %f\n", snr);
-#endif
+
       /*Keep the previous memory*/
       for (i=0;i<st->lpcSize;i++)
          mem[i]=st->mem_sp[i];
@@ -585,10 +588,14 @@ void *nb_decoder_init(SpeexMode *m)
    st->frame = st->inBuf + st->bufSize - st->windowSize;
    st->excBuf = malloc(st->bufSize*sizeof(float));
    st->exc = st->excBuf + st->bufSize - st->windowSize;
+   st->exc2Buf = malloc(st->bufSize*sizeof(float));
+   st->exc2 = st->exc2Buf + st->bufSize - st->windowSize;
    for (i=0;i<st->bufSize;i++)
       st->inBuf[i]=0;
    for (i=0;i<st->bufSize;i++)
       st->excBuf[i]=0;
+   for (i=0;i<st->bufSize;i++)
+      st->exc2Buf[i]=0;
 
    st->interp_qlpc = malloc((st->lpcSize+1)*sizeof(float));
    st->qlsp = malloc(st->lpcSize*sizeof(float));
@@ -607,6 +614,7 @@ void nb_decoder_destroy(void *state)
    st=state;
    free(st->inBuf);
    free(st->excBuf);
+   free(st->exc2Buf);
    free(st->interp_qlpc);
    free(st->qlsp);
    free(st->old_qlsp);
@@ -622,11 +630,14 @@ void nb_decode(void *state, SpeexBits *bits, float *out, int lost)
 {
    DecState *st;
    int i, sub;
+   int pitch;
+   float pitch_gain;
 
    st=state;
 
    memmove(st->inBuf, st->inBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(float));
    memmove(st->excBuf, st->excBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(float));
+   memmove(st->exc2Buf, st->exc2Buf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(float));
 
 
    st->lsp_unquant(st->qlsp, st->lpcSize, bits);
@@ -640,7 +651,7 @@ void nb_decode(void *state, SpeexBits *bits, float *out, int lost)
    for (sub=0;sub<st->nbSubframes;sub++)
    {
       int offset;
-      float *sp, *exc, tmp;
+      float *sp, *exc, *exc2, tmp;
       
       /* Offset relative to start of frame */
       offset = st->subframeSize*sub;
@@ -648,6 +659,8 @@ void nb_decode(void *state, SpeexBits *bits, float *out, int lost)
       sp=st->frame+offset;
       /* Excitation */
       exc=st->exc+offset;
+      /* Excitation after post-filter*/
+      exc2=st->exc2+offset;
 
       /* LSP interpolation (quantized and unquantized) */
       tmp = (.5 + sub)/st->nbSubframes;
@@ -672,7 +685,7 @@ void nb_decode(void *state, SpeexBits *bits, float *out, int lost)
          exc[i]=0;
 
       /*Adaptive codebook contribution*/
-      st->ltp_unquant(exc, st->min_pitch, st->max_pitch, st->ltp_params, st->subframeSize, bits, st->stack, lost);
+      st->ltp_unquant(exc, st->min_pitch, st->max_pitch, st->ltp_params, st->subframeSize, &pitch, &pitch_gain, bits, st->stack, lost);
       
 
       {
@@ -697,8 +710,13 @@ void nb_decode(void *state, SpeexBits *bits, float *out, int lost)
          POP(st->stack);
       }
 
+      for (i=0;i<st->subframeSize;i++)
+         exc2[i]=exc[i];
+      /*nb_post_filter(exc, exc2, st->interp_qlpc, st->lpcSize, st->subframeSize,
+        pitch, pitch_gain, st->stack);*/
+
       /*Compute decoded signal*/
-      syn_filt_mem(exc, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, st->mem_sp);
+      syn_filt_mem(exc2, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, st->mem_sp);
 
    }
    

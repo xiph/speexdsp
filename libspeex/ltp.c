@@ -230,8 +230,9 @@ float *stack
 
 }
 
-void pitch_search_3tap_unquant(
+int pitch_search_3tap_unquant(
 float target[],                 /* Target vector */
+float *sw,
 float ak[],                     /* LPCs for this subframe */
 float awk1[],                   /* Weighted LPCs #1 for this subframe */
 float awk2[],                   /* Weighted LPCs #2 for this subframe */
@@ -242,7 +243,8 @@ int   end,                      /* Largest pitch value allowed */
 int   p,                        /* Number of LPC coeffs */
 int   nsf,                      /* Number of samples in subframe */
 SpeexBits *bits,
-float *stack
+float *stack,
+float *exc2
 )
 {
    int i,j;
@@ -322,6 +324,7 @@ float *stack
    }
 #endif
    POP(stack);
+   return pitch;
 }
 
 
@@ -537,6 +540,8 @@ int   start,                    /* Smallest pitch value allowed */
 int   end,                      /* Largest pitch value allowed */
 void *par,
 int   nsf,                      /* Number of samples in subframe */
+int *pitch_val,
+float *gain_val,
 SpeexBits *bits,
 float *stack,
 int lost)
@@ -567,6 +572,10 @@ int lost)
             gain[i]*=fact;
       }
    }
+
+   *pitch_val = pitch;
+   *gain_val = gain[0]+gain[1]+gain[2];
+
 #ifdef DEBUG
    printf ("unquantized pitch: %d %f %f %f\n", pitch, gain[0], gain[1], gain[2]);
 #endif
