@@ -317,6 +317,7 @@ int speex_denoise(SpeexDenoiseState *st, float *x)
 
    /* Noise estimation always updated for the 20 first times */
    if (st->nb_adapt<15)
+      /*if (st->nb_adapt<25 && st->nb_adapt>15)*/
    {
       update_noise(st, ps);
       st->last_update=0;
@@ -328,8 +329,8 @@ int speex_denoise(SpeexDenoiseState *st, float *x)
       st->post[i] = ps[i]/(1+st->noise[i]) - 1;
       if (st->post[i]>100)
          st->post[i]=100;
-      if (st->post[i]<0)
-        st->post[i]=0;
+      /*if (st->post[i]<0)
+        st->post[i]=0;*/
       mean_post+=st->post[i];
    }
    mean_post /= N;
@@ -345,14 +346,21 @@ int speex_denoise(SpeexDenoiseState *st, float *x)
    {
       /* A priori update rate */
       float gamma;
-      float min_gamma=0.05;
+      float min_gamma=0.12;
       gamma = 1.0/st->nb_denoise;
 
       /*Make update rate smaller when there's no speech*/
-      if (mean_post<3)
-         min_gamma *= (mean_post+.1);
+#if 0
+      if (mean_post<3.5 && mean_prior < 1)
+         min_gamma *= (mean_post+.5);
       else
-         min_gamma *= 3.1;
+         min_gamma *= 4.;
+#else
+      min_gamma = .5*fabs(mean_prior - mean_post);
+      if (min_gamma>.5)
+         min_gamma = .5;
+#endif
+      /*min_gamma = .5;*/
 
       if (gamma<min_gamma)
          gamma=min_gamma;
@@ -381,13 +389,28 @@ int speex_denoise(SpeexDenoiseState *st, float *x)
 #endif
    /*fprintf (stderr, "%f %f\n", mean_prior,mean_post);*/
 
-   /* If SNR is low (both a priori and a posteriori), update the noise estimate*/
-   if (mean_prior<.23 && mean_post < .5 && st->nb_adapt>=20)
+   if (st->nb_denoise>=20)
    {
-      st->consec_noise++;
-      /*fprintf (stderr, "noise\n");*/
-   } else {
-      st->consec_noise=0;
+      int do_update = 0;
+      float noise_ener=0, sig_ener=0;
+      /* If SNR is low (both a priori and a posteriori), update the noise estimate*/
+      /*if (mean_prior<.23 && mean_post < .5)*/
+      if (mean_prior<.23 && mean_post < .5)
+         do_update = 1;
+      for (i=1;i<N;i++)
+      {
+         noise_ener += st->noise[i];
+         sig_ener += ps[i];
+      }
+      if (noise_ener > 3*sig_ener)
+         do_update = 1;
+      /*do_update = 0;*/
+      if (do_update)
+      {
+         st->consec_noise++;
+      } else {
+         st->consec_noise=0;
+      }
    }
 
    /*fprintf (stderr, "%f %f ", mean_prior, mean_post);*/
@@ -595,18 +618,32 @@ int speex_denoise(SpeexDenoiseState *st, float *x)
       prior_ratio = st->prior[i]/(1.0001+st->prior[i]);
       theta = (1+st->post[i])*prior_ratio;
 
+#if 0
+      /* Spectral magnitude estimator */
       /* Approximation of:
          exp(-theta/2)*((1+theta)*I0(theta/2) + theta.*I1(theta/2))
          because I don't feel like computing Bessel functions
       */
       /*MM = -.22+1.155*sqrt(theta+1.1);*/
       MM=-.22+1.163*sqrt(theta+1.1)-.0015*theta;
-
       st->gain[i] = SQRT_M_PI_2*sqrt(prior_ratio/(1.0001+st->post[i]))*MM;
       if (st->gain[i]>1)
       {
          st->gain[i]=1;
       }
+#else
+      /* log-spectral magnitude estimator */
+      if (theta<6)
+         MM = 0.74082*pow(theta+1,.61)/sqrt(.0001+theta);
+      else
+         MM=1;
+      st->gain[i] = prior_ratio * MM;
+      /*Put some (very arbitraty) limit on the gain*/
+      if (st->gain[i]>2)
+      {
+         st->gain[i]=2;
+      }
+#endif
       /*st->gain[i] = prior_ratio;*/
    }
    st->gain[0]=0;
@@ -615,8 +652,9 @@ int speex_denoise(SpeexDenoiseState *st, float *x)
    for (i=1;i<N-1;i++)
    {
       st->gain2[i]=st->gain[i];
-      if (st->gain2[i]<.1)
-         st->gain2[i]=.1;
+      /* Limits noise reduction to -26 dB, put prevents some musical noise */
+      if (st->gain2[i]<.05)
+        st->gain2[i]=.05;
    }
    st->gain2[N-1]=0;
 
@@ -647,7 +685,7 @@ int speex_denoise(SpeexDenoiseState *st, float *x)
    for (i=0;i<N;i++)
       st->gain2[i] *= 6000.0/st->loudness2;
 
-#if 1
+#if 0
    if (!is_speech)
    {
       for (i=0;i<N;i++)
