@@ -40,6 +40,7 @@
 #include "cb_search.h"
 #include "sb_celp.h"
 #include "nb_celp.h"
+#include "vbr.h"
 
 SpeexMode *speex_mode_list[SPEEX_NB_MODES] = {&speex_nb_mode, &speex_wb_mode, &speex_uwb_mode};
 
@@ -446,7 +447,9 @@ static SpeexSBMode sb_wb_mode = {
    {NULL, &wb_submode1, &wb_submode2, &wb_submode3, &wb_submode4, NULL, NULL, NULL},
    3,
    {0, 1, 2, 3, 4, 5, 5, 6, 6, 7, 7},
-   {0, 1, 1, 1, 1, 1, 2, 2, 3, 3, 4}
+   {0, 1, 1, 1, 1, 1, 2, 2, 3, 3, 4},
+   vbr_hb_thresh,
+   5
 };
 
 
@@ -487,7 +490,9 @@ static SpeexSBMode sb_uwb_mode = {
    {NULL, &wb_submode1, NULL, NULL, NULL, NULL, NULL, NULL},
    1,
    {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
-   {0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}
+   {0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+   vbr_uhb_thresh,
+   2
 };
 
 

@@ -220,6 +220,7 @@ void *sb_encoder_init(SpeexMode *m)
 
    st->vbr_quality = 8;
    st->vbr_enabled = 0;
+   st->relative_quality=0;
 
    st->complexity=2;
    speex_decoder_ctl(st->st_low, SPEEX_GET_SAMPLING_RATE, &st->sampling_rate);
@@ -282,9 +283,11 @@ void sb_encode(void *state, float *in, SpeexBits *bits)
    void *stack;
    float *mem, *innov, *syn_resp;
    float *low_pi_gain, *low_exc, *low_innov;
+   SpeexSBMode *mode;
 
    st = (SBEncState*)state;
    stack=st->stack;
+   mode = (SpeexSBMode*)(st->mode->mode);
 
    /* Compute the two sub-bands by filtering with h0 and h1*/
    qmf_decomp(in, h0, st->x0d, st->x1d, st->full_frame_size, QMF_ORDER, st->h0_mem, stack);
@@ -349,49 +352,39 @@ void sb_encode(void *state, float *in, SpeexBits *bits)
    if (st->vbr_enabled){
       float e_low=0, e_high=0;
       float ratio;
-      float low_qual;
       for (i=0;i<st->frame_size;i++)
       {
          e_low  += st->x0d[i]* st->x0d[i];
          e_high += st->high[i]* st->high[i];
       }
       ratio = log((1+e_high)/(1+e_low));
-      speex_encoder_ctl(st->st_low, SPEEX_GET_RELATIVE_QUALITY, &low_qual);
+      speex_encoder_ctl(st->st_low, SPEEX_GET_RELATIVE_QUALITY, &st->relative_quality);
       if (ratio<-4)
          ratio=-4;
       if (ratio>2)
          ratio=2;
       /*if (ratio>-2)*/
-      low_qual+=1.0*(ratio+2);
-      /*{
-         int high_mode=2;
-         if (low_qual>10)
-            high_mode=4;
-         else if (low_qual>7.5)
-            high_mode=3;
-         else if (low_qual>5)
-            high_mode=2;
-         speex_encoder_ctl(st, SPEEX_SET_HIGH_MODE, &high_mode);
-      }*/
+      st->relative_quality+=1.0*(ratio+2);
       {
-         int mode;
-         mode = 4;
-         while (mode)
+         int modeid;
+         modeid = mode->nb_modes-1;
+         while (modeid)
          {
             int v1;
             float thresh;
             v1=(int)floor(st->vbr_quality);
             if (v1==10)
-               thresh = vbr_nb_thresh[mode][v1];
+               thresh = mode->vbr_thresh[modeid][v1];
             else
-               thresh = (st->vbr_quality-v1)*vbr_hb_thresh[mode][v1+1] + (1+v1-st->vbr_quality)*vbr_hb_thresh[mode][v1];
-            if (low_qual > thresh)
+               thresh = (st->vbr_quality-v1)   * mode->vbr_thresh[modeid][v1+1] + 
+                        (1+v1-st->vbr_quality) * mode->vbr_thresh[modeid][v1];
+            if (st->relative_quality > thresh)
                break;
-            mode--;
+            modeid--;
          }
-         /*fprintf (stderr, "%f %d\n", low_qual, mode);*/
-         speex_encoder_ctl(state, SPEEX_SET_HIGH_MODE, &mode);
-         /*fprintf (stderr, "%d %d\n", st->submodeID, mode);*/
+         /*fprintf (stderr, "%f %d\n", low_qual, modeid);*/
+         speex_encoder_ctl(state, SPEEX_SET_HIGH_MODE, &modeid);
+         /*fprintf (stderr, "%d %d\n", st->submodeID, modeid);*/
       }
       /*fprintf (stderr, "%f %f\n", ratio, low_qual);*/
    }
@@ -1086,6 +1079,9 @@ void sb_encoder_ctl(void *state, int request, void *ptr)
          for (i=0;i<st->frame_size;i++)
             e[2*i]=2*st->exc[i];
       }
+      break;
+   case SPEEX_GET_RELATIVE_QUALITY:
+      (*(float*)ptr)=st->relative_quality;
       break;
    default:
       fprintf(stderr, "Unknown nb_ctl request: %d\n", request);
