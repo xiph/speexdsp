@@ -127,6 +127,18 @@ static void *process_header(ogg_packet *op, int pf_enabled, int *frame_size, int
       return NULL;
    }
    mode = speex_mode_list[header->mode];
+   
+   if (mode->bitstream_version < header->mode_bitstream_version)
+   {
+      fprintf (stderr, "The file was encoded with a newer version of Speex. You need to upgrade in order to play it.\n");
+      return NULL;
+   }
+   if (mode->bitstream_version > header->mode_bitstream_version) 
+   {
+      fprintf (stderr, "The file was encoded with an older version of Speex. You would need to downgrade the version in order to play it.\n");
+      return NULL;
+   }
+   
    st = speex_decoder_init(mode);
    speex_decoder_ctl(st, SPEEX_SET_PF, &pf_enabled);
    speex_decoder_ctl(st, SPEEX_GET_FRAME_SIZE, frame_size);
