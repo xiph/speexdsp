@@ -25,6 +25,7 @@
 #include "speex.h"
 #include <ogg/ogg.h>
 #include "wav_io.h"
+#include "speex_header.h"
 
 /*Write an Ogg page to a file pointer*/
 int oe_write_page(ogg_page *page, FILE *fp)
@@ -86,6 +87,8 @@ int main(int argc, char **argv)
    ogg_packet 		 op;
    int bytes_written, ret, result;
    int id=0;
+   SpeexHeader header;
+   char *comments = "Encoded with Speex " VERSION;
 
    /*Process command-line options*/
    while(1)
@@ -188,13 +191,21 @@ int main(int argc, char **argv)
       narrowband=1;
    if (narrowband)
    {
+      if (!rate)
+         rate = 8000;
       if (lbr)
          mode=&speex_nb_lbr_mode;
       else
          mode=&speex_nb_mode;
    }
    if (wideband)
+   {
+      if (!rate)
+         rate = 16000;
       mode=&speex_wb_mode;
+   }
+
+   speex_init_header(&header, rate, 1, mode);
 
    /*Initialize Speex encoder*/
    st = speex_encoder_init(mode);
@@ -215,20 +226,29 @@ int main(int argc, char **argv)
    /*Write header (format will change)*/
    {
 
-      if (narrowband)
+      /*if (narrowband)
       if (lbr)
          op.packet = (unsigned char *)"speex narrow-lbr";
       else
          op.packet = (unsigned char *)"speex narrowband";
       if (wideband)
-         op.packet = (unsigned char *)"speex wideband**";
-      op.bytes = 16;
+      op.packet = (unsigned char *)"speex wideband**";*/
+      op.packet = (unsigned char *)&header;
+      op.bytes = sizeof(header);
       op.b_o_s = 1;
       op.e_o_s = 0;
       op.granulepos = 0;
       op.packetno = 0;
       ogg_stream_packetin(&os, &op);
-
+      
+      op.packet = (unsigned char *)comments;
+      op.bytes = strlen((char*)op.packet);
+      op.b_o_s = 0;
+      op.e_o_s = 0;
+      op.granulepos = 0;
+      op.packetno = 0;
+      ogg_stream_packetin(&os, &op);
+      
       while((result = ogg_stream_flush(&os, &og)))
       {
          if(!result) break;

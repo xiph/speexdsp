@@ -35,6 +35,7 @@
 
 #include <string.h>
 #include "wav_io.h"
+#include "speex_header.h"
 
 #define MAX_FRAME_SIZE 2000
 
@@ -113,6 +114,29 @@ void version()
    fprintf (stderr, "Speex decoder version " VERSION "\n");
 }
 
+static void *process_header(ogg_packet *op, int pf_enabled, int *frame_size, int *rate)
+{
+   void *st;
+   SpeexMode *mode;
+   SpeexHeader *header;
+   
+   header = speex_packet_to_header((char*)op->packet, op->bytes);
+   if (!header)
+   {
+      fprintf (stderr, "Cannot read header\n");
+      return NULL;
+   }
+   mode = speex_mode_list[header->mode];
+   st = speex_decoder_init(mode);
+   speex_decoder_ctl(st, SPEEX_SET_PF, &pf_enabled);
+   speex_decoder_ctl(st, SPEEX_GET_FRAME_SIZE, frame_size);
+   
+   *rate = header->rate;
+
+   free(header);
+   return st;
+}
+
 int main(int argc, char **argv)
 {
    int c;
@@ -122,10 +146,9 @@ int main(int argc, char **argv)
    short out[MAX_FRAME_SIZE];
    float output[MAX_FRAME_SIZE];
    int frame_size=0;
-   SpeexMode *mode=NULL;
    void *st=NULL;
    SpeexBits bits;
-   int first = 1;
+   int packet_count=0;
    struct option long_options[] =
    {
       {"help", no_argument, NULL, 0},
@@ -232,34 +255,19 @@ int main(int argc, char **argv)
          while (ogg_stream_packetout(&os, &op)==1)
          {
             /*If first packet, process as Speex header*/
-            if (first)
+            if (packet_count==0)
             {
                int rate;
-               if (strncmp((char *)op.packet, "speex wideband**", 12)==0)
-               {
-                  rate=16000;
-                  mode = &speex_wb_mode;
-               } else if (strncmp((char *)op.packet, "speex narrowband", 12)==0)
-               {
-                  rate=8000;
-                  mode = &speex_nb_mode;
-               } else if (strncmp((char *)op.packet, "speex narrow-lbr", 12)==0)
-               {
-                  rate=8000;
-                  mode = &speex_nb_lbr_mode;
-               } else {
-                  fprintf (stderr, "This Ogg file is not a Speex bitstream\n");
+               st = process_header(&op, pf_enabled, &frame_size, &rate);
+               if (!st)
                   exit(1);
-               }
-               /*Initialize Speex decoder*/
-               st = speex_decoder_init(mode);
-               speex_decoder_ctl(st, SPEEX_SET_PF, &pf_enabled);
-               speex_decoder_ctl(st, SPEEX_GET_FRAME_SIZE, &frame_size);
-
                fout = out_file_open(outFile, rate);
 
-               first=0;
+            } else if (packet_count==1){
+               fwrite(op.packet, 1, op.bytes, stderr);
+               fprintf (stderr, "\n");
             } else {
+
                /*End of stream condition*/
                if (strncmp((char *)op.packet, "END OF STREAM", 13)==0)
                   break;
@@ -281,6 +289,7 @@ int main(int argc, char **argv)
                   out[i]=output[i];
                fwrite(out, sizeof(short), frame_size, fout);
             }
+            packet_count++;
          }
       }
       if (feof(fin))
@@ -288,7 +297,8 @@ int main(int argc, char **argv)
 
    }
 
-   speex_decoder_destroy(st);
+   if (st)
+      speex_decoder_destroy(st);
    speex_bits_destroy(&bits);
    ogg_stream_clear(&os);
  
