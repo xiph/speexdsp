@@ -486,16 +486,16 @@ CombFilterMem *mem
    {
       fact += step;
 
-      new_exc[i] = exc[i] + GAIN_SCALING_1*comb_gain * fact * (
-                                         (float)pitch_gain[0]*exc[i-pitch+1] +
-                                         (float)pitch_gain[1]*exc[i-pitch] +
-                                         (float)pitch_gain[2]*exc[i-pitch-1]
-                                         )
-      + GAIN_SCALING_1*comb_gain * (1-fact) * (
-                                         (float)mem->last_pitch_gain[0]*exc[i-mem->last_pitch+1] +
-                                         (float)mem->last_pitch_gain[1]*exc[i-mem->last_pitch] +
-                                         (float)mem->last_pitch_gain[2]*exc[i-mem->last_pitch-1]
-                                         );
+      new_exc[i] = exc[i] + comb_gain * fact * SHL(
+                                         MULT16_32_Q15(SHL(pitch_gain[0],7),exc[i-pitch+1]) +
+                                         MULT16_32_Q15(SHL(pitch_gain[1],7),exc[i-pitch]) +
+                                         MULT16_32_Q15(SHL(pitch_gain[2],7),exc[i-pitch-1])
+                                         ,2)
+      + comb_gain * (1-fact) * SHL(
+                                         MULT16_32_Q15(SHL(mem->last_pitch_gain[0],7),exc[i-mem->last_pitch+1]) +
+                                         MULT16_32_Q15(SHL(mem->last_pitch_gain[1],7),exc[i-mem->last_pitch]) +
+                                         MULT16_32_Q15(SHL(mem->last_pitch_gain[2],7),exc[i-mem->last_pitch-1])
+                                         ,2);
    }
 
    mem->last_pitch_gain[0] = pitch_gain[0];
