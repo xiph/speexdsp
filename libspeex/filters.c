@@ -447,6 +447,12 @@ void comb_filter_mem_init (CombFilterMem *mem)
    mem->smooth_gain=1;
 }
 
+#ifdef FIXED_POINT
+#define COMB_STEP 32767
+#else
+#define COMB_STEP 1.0
+#endif
+
 void comb_filter(
 spx_sig_t *exc,          /*decoded excitation*/
 spx_sig_t *new_exc,      /*enhanced excitation*/
@@ -462,8 +468,9 @@ CombFilterMem *mem
    int i;
    spx_word16_t exc_energy=0, new_exc_energy=0;
    float gain;
-   float step;
-   float fact;
+   spx_word16_t step;
+   spx_word16_t fact;
+   spx_word16_t cgain;
 
    /*Compute excitation amplitude prior to enhancement*/
    exc_energy = compute_rms(exc, nsf);
@@ -479,23 +486,30 @@ CombFilterMem *mem
       if (g<.5)
          comb_gain*=2*g;
    }
-   step = 1.0/nsf;
+   step = DIV32(COMB_STEP, nsf);
    fact=0;
+
+#ifdef FIXED_POINT
+   cgain = comb_gain*32768;
+#else
+   cgain = comb_gain;
+#endif
+
    /*Apply pitch comb-filter (filter out noise between pitch harmonics)*/
    for (i=0;i<nsf;i++)
    {
-      fact += step;
+      spx_word32_t exc1, exc2;
 
-      new_exc[i] = exc[i] + comb_gain * fact * SHL(
-                                         MULT16_32_Q15(SHL(pitch_gain[0],7),exc[i-pitch+1]) +
-                                         MULT16_32_Q15(SHL(pitch_gain[1],7),exc[i-pitch]) +
-                                         MULT16_32_Q15(SHL(pitch_gain[2],7),exc[i-pitch-1])
-                                         ,2)
-      + comb_gain * (1-fact) * SHL(
-                                         MULT16_32_Q15(SHL(mem->last_pitch_gain[0],7),exc[i-mem->last_pitch+1]) +
-                                         MULT16_32_Q15(SHL(mem->last_pitch_gain[1],7),exc[i-mem->last_pitch]) +
-                                         MULT16_32_Q15(SHL(mem->last_pitch_gain[2],7),exc[i-mem->last_pitch-1])
-                                         ,2);
+      fact += step;
+      
+      exc1 = SHL(MULT16_32_Q15(SHL(pitch_gain[0],7),exc[i-pitch+1]) +
+                 MULT16_32_Q15(SHL(pitch_gain[1],7),exc[i-pitch]) +
+                 MULT16_32_Q15(SHL(pitch_gain[2],7),exc[i-pitch-1]) , 2);
+      exc2 = SHL(MULT16_32_Q15(SHL(mem->last_pitch_gain[0],7),exc[i-mem->last_pitch+1]) +
+                 MULT16_32_Q15(SHL(mem->last_pitch_gain[1],7),exc[i-mem->last_pitch]) +
+                 MULT16_32_Q15(SHL(mem->last_pitch_gain[2],7),exc[i-mem->last_pitch-1]),2);
+
+      new_exc[i] = exc[i] + MULT16_32_Q15(cgain,MULT16_32_Q15(fact,exc1)  + MULT16_32_Q15(SUB16(COMB_STEP,fact), exc2));
    }
 
    mem->last_pitch_gain[0] = pitch_gain[0];
