@@ -437,14 +437,13 @@ void sb_encode(void *state, float *in, SpeexBits *bits)
       /* Compute energy of low-band and high-band excitation */
       for (i=0;i<st->subframeSize;i++)
          eh+=sqr(exc[i]);
-      for (i=0;i<st->subframeSize;i++)
-         el+=sqr(((EncState*)st->st_low)->exc[offset+i]);
 
       if (!SUBMODE(innovation_quant)) {/* 1 for spectral folding excitation, 0 for stochastic */
          float g;
          /*speex_bits_pack(bits, 1, 1);*/
+         for (i=0;i<st->subframeSize;i++)
+            el+=sqr(((EncState*)st->st_low)->innov[offset+i]);
 
-#if 1
          /* Gain to use if we want to use the low-band excitation for high-band */
          g=eh/(.01+el);
          g=sqrt(g);
@@ -452,7 +451,7 @@ void sb_encode(void *state, float *in, SpeexBits *bits)
          g *= filter_ratio;
          /* Gain quantization */
          {
-            int quant = (int) floor(.5 + 9.4 * log(10*(g+.0001)));
+            int quant = (int) floor(.5 + 27 + 8.0 * log((g+.0001)));
             if (quant<0)
                quant=0;
             if (quant>31)
@@ -463,57 +462,18 @@ void sb_encode(void *state, float *in, SpeexBits *bits)
          /*printf ("folding gain: %f\n", g);*/
          g /= filter_ratio;
 
-#if 0
-         {
-            float noise_gain;
-            float *noise;
-            float *alias;
-            static int init=0;
-            if (!init)
-            {
-               srand48(0);
-               init=1;
-            }
-            noise_gain = 3*sqrt(el/st->subframeSize);
-            noise = PUSH(st->stack, st->subframeSize);
-
-            for (i=0;i<st->subframeSize;i++)
-               noise[i]=noise_gain*(drand48()-.5);
-
-            alias = ((EncState*)st->st_low)->exc+offset;
-            /* Too lazy to do the memory properly */
-            exc[0]=.5*.35*g*(alias[0]+noise[0]);
-            for (i=1;i<st->subframeSize;i++)
-            {
-               exc[i]=.7*.5*g* (.8*(noise[i]+.8*noise[i-1]) + alias[i]-.8*alias[i-1]);
-            }
-            POP(st->stack);
-         }
-#else
-         /* High-band excitation using the low-band excitation and a gain */
-         /*FIXME: Should we replace the excitation in the encoder of just in the decoder?*/
-         /*                  for (i=0;i<st->subframeSize;i++)
-            exc[i]=g*((EncState*)st->st_low)->exc[offset+i];
-         */
-#endif
-
-#endif
-         /* Update the input signal using the non-coded memory */
-         /* FIXME: is that right? */
-         /*syn_filt_mem(exc, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, st->mem_sp);*/
-
-         /* FIXME: Update perceptually weighted signal in case we switch to the
-            other mode */
       } else {
          float gc, scale, scale_1;
          float *innov;
 
+         for (i=0;i<st->subframeSize;i++)
+            el+=sqr(((EncState*)st->st_low)->exc[offset+i]);
          /*speex_bits_pack(bits, 0, 1);*/
          innov = PUSH(st->stack, st->subframeSize);
 
 
          gc = sqrt(1+eh)*filter_ratio/sqrt((1+el)*st->subframeSize);
-
+         printf ("gain_ratio: %f\n", gc);
          {
             int qgc = (int)floor(.5+3.7*(log(gc)+2));
             if (qgc<0)
@@ -786,7 +746,7 @@ void sb_decode(void *state, SpeexBits *bits, float *out, int lost)
    
    for (sub=0;sub<st->nbSubframes;sub++)
    {
-      float *exc, *sp, tmp, filter_ratio, gain, el=0;
+      float *exc, *sp, tmp, filter_ratio, el=0;
       int offset;
       
       offset = st->subframeSize*sub;
@@ -807,6 +767,8 @@ void sb_decode(void *state, SpeexBits *bits, float *out, int lost)
       /* LSP to LPC */
       lsp_to_lpc(st->interp_qlsp, st->interp_qlpc, st->lpcSize, st->stack);
 
+      /* Calculate reponse ratio between the low and high filter in the middle
+         of the band (4000 Hz) */
       {
          float rl=0, rh=0;
          tmp=1;
@@ -820,10 +782,6 @@ void sb_decode(void *state, SpeexBits *bits, float *out, int lost)
          rh=1/(fabs(rh)+.01);
          filter_ratio=fabs(.01+rh)/(.01+fabs(rl));
       }
-
-      for (i=0;i<st->subframeSize;i++)
-         el+=sqr(((DecState*)st->st_low)->exc[offset+i]);
-      gain=(1+sqrt(el/st->subframeSize))/filter_ratio;
       
       for (i=0;i<st->subframeSize;i++)
          exc[i]=0;
@@ -831,18 +789,24 @@ void sb_decode(void *state, SpeexBits *bits, float *out, int lost)
       {
          float g;
          int quant;
+
+         for (i=0;i<st->subframeSize;i++)
+            el+=sqr(((DecState*)st->st_low)->innov[offset+i]);
          quant = speex_bits_unpack_unsigned(bits, 5);
-         g= .1*exp(quant/9.4);
+         g= exp(((float)quant-27)/8.0);
          
          /*printf ("unquant folding gain: %f\n", g);*/
          g /= filter_ratio;
          
          /* High-band excitation using the low-band excitation and a gain */
          for (i=0;i<st->subframeSize;i++)
-            exc[i]=.6*g*((DecState*)st->st_low)->exc[offset+i];
+            exc[i]=.8*g*((DecState*)st->st_low)->innov[offset+i];
       } else {
          float gc, scale;
          int qgc = speex_bits_unpack_unsigned(bits, 4);
+         for (i=0;i<st->subframeSize;i++)
+            el+=sqr(((DecState*)st->st_low)->exc[offset+i]);
+
 
          gc = exp((1/3.7)*qgc-2);
 

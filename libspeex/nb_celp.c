@@ -88,6 +88,8 @@ void *nb_encoder_init(SpeexMode *m)
    st->exc2Buf = speex_alloc(st->bufSize*sizeof(float));
    st->exc2 = st->exc2Buf + st->bufSize - st->windowSize;
 
+   st->innov = speex_alloc(st->frameSize*sizeof(float));
+
    /* Asymetric "pseudo-Hamming" window */
    {
       int part1, part2;
@@ -153,6 +155,7 @@ void nb_encoder_destroy(void *state)
    speex_free(st->excBuf);
    speex_free(st->swBuf);
    speex_free(st->exc2Buf);
+   speex_free(st->innov);
    speex_free(st->stack);
 
    speex_free(st->window);
@@ -284,6 +287,7 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
                ol_pitch = nol_pitch[i];
             }
          }
+         /*ol_pitch_coef = sqrt(ol_pitch_coef);*/
          /*printf ("ol_pitch: %d %f\n", ol_pitch, ol_pitch_coef);*/
       }
       /*Compute "real" excitation*/
@@ -551,7 +555,8 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
       {
          float *innov;
          float ener=0, ener_1;
-         innov=PUSH(st->stack, st->subframeSize);
+         /*innov=PUSH(st->stack, st->subframeSize);*/
+         innov = st->innov+sub*st->subframeSize;
          for (i=0;i<st->subframeSize;i++)
             innov[i]=0;
          syn_filt_zero(target, st->bw_lpc1, res, st->subframeSize, st->lpcSize);
@@ -608,13 +613,14 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
             SUBMODE(innovation_quant)(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2, 
                                       SUBMODE(innovation_params), st->lpcSize, st->subframeSize, 
                                       innov, bits, st->stack, st->complexity);
-            
             for (i=0;i<st->subframeSize;i++)
-               exc[i] += innov[i]*ener;
+               innov[i]*=ener;
+            for (i=0;i<st->subframeSize;i++)
+               exc[i] += innov[i];
          } else {
             fprintf(stderr, "No fixed codebook\n");
          }
-         POP(st->stack);
+         /*POP(st->stack);*/
          for (i=0;i<st->subframeSize;i++)
             target[i]*=ener;
 
@@ -705,6 +711,7 @@ void *nb_decoder_init(SpeexMode *m)
       st->inBuf[i]=0;
    for (i=0;i<st->bufSize;i++)
       st->excBuf[i]=0;
+   st->innov = speex_alloc(st->frameSize*sizeof(float));
 
    st->interp_qlpc = speex_alloc((st->lpcSize+1)*sizeof(float));
    st->qlsp = speex_alloc(st->lpcSize*sizeof(float));
@@ -724,6 +731,7 @@ void nb_decoder_destroy(void *state)
    st=state;
    speex_free(st->inBuf);
    speex_free(st->excBuf);
+   speex_free(st->innov);
    speex_free(st->interp_qlpc);
    speex_free(st->qlsp);
    speex_free(st->old_qlsp);
@@ -934,7 +942,8 @@ void nb_decode(void *state, SpeexBits *bits, float *out, int lost)
          float ener;
          float *innov;
          
-         innov = PUSH(st->stack, st->subframeSize);
+         /*innov = PUSH(st->stack, st->subframeSize);*/
+         innov = st->innov+sub*st->subframeSize;
          for (i=0;i<st->subframeSize;i++)
             innov[i]=0;
 
@@ -964,9 +973,11 @@ void nb_decode(void *state, SpeexBits *bits, float *out, int lost)
             ener*=pow(.8,st->count_lost);
 
          for (i=0;i<st->subframeSize;i++)
-            exc[i]+=ener*innov[i];
+            innov[i]*=ener;
+         for (i=0;i<st->subframeSize;i++)
+            exc[i]+=innov[i];
 
-         POP(st->stack);
+         /*POP(st->stack);*/
       }
 
       for (i=0;i<st->subframeSize;i++)

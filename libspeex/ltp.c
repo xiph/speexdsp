@@ -444,8 +444,8 @@ int complexity
 )
 {
    int i;
-   if (pitch_coef>.9)
-      pitch_coef=.9;
+   if (pitch_coef>.98)
+      pitch_coef=.98;
    for (i=0;i<nsf;i++)
    {
       exc[i]=exc[i-start]*pitch_coef;
@@ -469,8 +469,8 @@ int lost)
 {
    int i;
    /*pitch_coef=.9;*/
-   if (pitch_coef>.9)
-      pitch_coef=.9;
+   if (pitch_coef>.98)
+      pitch_coef=.98;
    for (i=0;i<nsf;i++)
    {
       exc[i]=exc[i-start]*pitch_coef;

@@ -56,6 +56,7 @@ typedef struct EncState {
    float *exc2;           /* "Pitch enhanced" excitation */
    float *swBuf;          /* Weighted signal buffer */
    float *sw;             /* Start of weighted signal frame */
+   float *innov;          /* Innovation for the frame */
    float *window;         /* Temporary (Hanning) window */
    float *buf2;           /* 2nd temporary buffer */
    float *autocorr;       /* auto-correlation */
@@ -106,6 +107,7 @@ typedef struct DecState {
    float *frame;          /* Start of original frame */
    float *excBuf;         /* Excitation buffer */
    float *exc;            /* Start of excitation frame */
+   float *innov;          /* Innovation for the frame */
    float *qlsp;           /* Quantized LSPs for current frame */
    float *old_qlsp;       /* Quantized LSPs for previous frame */
    float *interp_qlsp;    /* Interpolated quantized LSPs */
