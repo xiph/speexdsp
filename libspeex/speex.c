@@ -135,6 +135,7 @@ void encoder_init(EncState *st, SpeexMode *mode)
 
    st->pi_gain = calloc(st->nbSubframes, sizeof(float));
 
+   st->pitch = calloc(st->nbSubframes, sizeof(int));
 }
 
 void encoder_destroy(EncState *st)
@@ -168,6 +169,7 @@ void encoder_destroy(EncState *st)
    free(st->mem_sp);
    free(st->mem_sw);
    free(st->pi_gain);
+   free(st->pitch);
 }
 
 
@@ -347,17 +349,10 @@ void encode(EncState *st, float *in, FrameBits *bits)
          exc[i]=0;
 
       /* Long-term prediction */
-#if 1
       pitch = st->ltp_quant(target, sw, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2,
                     exc, st->ltp_params, st->min_pitch, st->max_pitch, 
                     st->lpcSize, st->subframeSize, bits, st->stack, exc2);
-#else
-      {
-         float gain[3];
-         int pitch;
-         closed_loop_fractional_pitch(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2,                                      exc, st->os_filt, st->os_filt_ord2, st->os_fact, 35, 290,                                      &gain[0], &pitch, st->lpcSize,                                      st->subframeSize, st->stack);
-      }
-#endif
+      st->pitch[sub]=pitch;
 
       /* Update target for adaptive codebook contribution */
       residue_zero(exc, st->bw_lpc1, res, st->subframeSize, st->lpcSize);
@@ -371,6 +366,7 @@ void encode(EncState *st, float *in, FrameBits *bits)
       for (i=0;i<st->subframeSize;i++)
          enoise += target[i]*target[i];
       snr = 10*log10((esig+1)/(enoise+1));
+      /*st->pitch[sub]=(int)snr;*/
 #ifdef DEBUG
       printf ("pitch SNR = %f\n", snr);
 #endif

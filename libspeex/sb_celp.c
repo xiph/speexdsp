@@ -441,7 +441,8 @@ void sb_encode(SBEncState *st, float *in, FrameBits *bits)
             eh+=sqr(exc[i]);
          for (i=0;i<st->subframeSize;i++)
             el+=sqr(st->st_low.exc[offset+i]);
-
+         if (st->st_low.pitch[sub]>8 || (rand()%5)==0)
+         {
          for (i=0;i<st->subframeSize;i++)
          {
             float p=(.1+exc[i])*filter_ratio/(1+sqrt(el/st->subframeSize));
@@ -450,7 +451,7 @@ void sb_encode(SBEncState *st, float *in, FrameBits *bits)
             printf ("%f ", p);
          }
          printf ("\n");
-
+         }
          /* Gain to use if we want to use the low-band excitation for high-band */
          g=eh/(.01+el);
          g=sqrt(g);

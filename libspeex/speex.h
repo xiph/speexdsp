@@ -36,6 +36,7 @@ typedef struct EncState {
    int    max_pitch;      /* Maximum pitch value allowed */
    int    ol_pitch;       /* Open-loop pitch */
    int    ol_voiced;      /* Open-loop voiced/non-voiced decision */
+   int   *pitch;
    float  gamma1;         /* Perceptual filter: A(z/gamma1) */
    float  gamma2;         /* Perceptual filter: A(z/gamma2) */
    float  lag_factor;     /* Lag windowing gaussian width */
