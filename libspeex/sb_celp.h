@@ -113,6 +113,7 @@ typedef struct SBDecState {
    int    lpcSize;
    int    first;
    int    sampling_rate;
+   int    lpc_enh_enabled;
 
    void  *stack;
    float *x0d, *x1d;

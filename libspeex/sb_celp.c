@@ -715,7 +715,10 @@ void *sb_decoder_init(SpeexMode *m)
    st->interp_qlpc = (float*)speex_alloc((st->lpcSize+1)*sizeof(float));
 
    st->pi_gain = (float*)speex_alloc(st->nbSubframes*sizeof(float));
-   st->mem_sp = (float*)speex_alloc(st->lpcSize*sizeof(float));
+   st->mem_sp = (float*)speex_alloc(2*st->lpcSize*sizeof(float));
+   
+   st->lpc_enh_enabled=0;
+
    return st;
 }
 
@@ -751,13 +754,58 @@ void sb_decoder_destroy(void *state)
 static void sb_decode_lost(SBDecState *st, float *out, void *stack)
 {
    int i;
+   float *awk1, *awk2, *awk3;
    for (i=0;i<st->frame_size;i++)
       st->exc[i]*=0.8;
    
    st->first=1;
    
+   awk1=PUSH(stack, st->lpcSize+1, float);
+   awk2=PUSH(stack, st->lpcSize+1, float);
+   awk3=PUSH(stack, st->lpcSize+1, float);
+   
+   if (st->lpc_enh_enabled)
+   {
+      float r=.9;
+      
+      float k1,k2,k3;
+      k1=SUBMODE(lpc_enh_k1);
+      k2=SUBMODE(lpc_enh_k2);
+      k3=(1-(1-r*k1)/(1-r*k2))/r;
+      k3=k1-k2;
+      if (!st->lpc_enh_enabled)
+      {
+         k1=k2;
+         k3=0;
+      }
+      bw_lpc(k1, st->interp_qlpc, awk1, st->lpcSize);
+      bw_lpc(k2, st->interp_qlpc, awk2, st->lpcSize);
+      bw_lpc(k3, st->interp_qlpc, awk3, st->lpcSize);
+      /*fprintf (stderr, "%f %f %f\n", k1, k2, k3);*/
+   }
+   
+   
    /* Final signal synthesis from excitation */
-   iir_mem2(st->exc, st->interp_qlpc, st->high, st->frame_size, st->lpcSize, st->mem_sp);
+   for (i=0;i<st->frame_size;i++)
+      st->exc[i] *= .9;
+   for (i=0;i<st->frame_size;i++)
+      st->high[i]=st->exc[i];
+   if (st->lpc_enh_enabled)
+   {
+      /* Use enhanced LPC filter */
+      filter_mem2(st->high, awk2, awk1, st->high, st->frame_size, st->lpcSize, 
+                  st->mem_sp+st->lpcSize);
+      filter_mem2(st->high, awk3, st->interp_qlpc, st->high, st->frame_size, st->lpcSize, 
+                  st->mem_sp);
+   } else {
+      /* Use regular filter */
+      for (i=0;i<st->lpcSize;i++)
+         st->mem_sp[st->lpcSize+i] = 0;
+      iir_mem2(st->high, st->interp_qlpc, st->high, st->frame_size, st->lpcSize, 
+               st->mem_sp);
+   }
+   
+   /*iir_mem2(st->exc, st->interp_qlpc, st->high, st->frame_size, st->lpcSize, st->mem_sp);*/
    
    /* Reconstruct the original */
    fir_mem_up(st->x0d, h0, st->y0, st->full_frame_size, QMF_ORDER, st->g0_mem, stack);
@@ -777,6 +825,7 @@ int sb_decode(void *state, SpeexBits *bits, float *out)
    int ret;
    void *stack;
    float *low_pi_gain, *low_exc, *low_innov;
+   float *awk1, *awk2, *awk3;
 
    st = (SBDecState*)state;
    stack=st->stack;
@@ -848,6 +897,10 @@ int sb_decode(void *state, SpeexBits *bits, float *out)
          st->old_qlsp[i] = st->qlsp[i];
    }
    
+   awk1=PUSH(stack, st->lpcSize+1, float);
+   awk2=PUSH(stack, st->lpcSize+1, float);
+   awk3=PUSH(stack, st->lpcSize+1, float);
+
    for (sub=0;sub<st->nbSubframes;sub++)
    {
       float *exc, *sp, tmp, filter_ratio, el=0;
@@ -871,6 +924,28 @@ int sb_decode(void *state, SpeexBits *bits, float *out)
 
       /* LSP to LPC */
       lsp_to_lpc(st->interp_qlsp, st->interp_qlpc, st->lpcSize, stack);
+
+
+      if (st->lpc_enh_enabled)
+      {
+         float r=.9;
+         
+         float k1,k2,k3;
+         k1=SUBMODE(lpc_enh_k1);
+         k2=SUBMODE(lpc_enh_k2);
+         k3=(1-(1-r*k1)/(1-r*k2))/r;
+         k3=k1-k2;
+         if (!st->lpc_enh_enabled)
+         {
+            k1=k2;
+            k3=0;
+         }
+         bw_lpc(k1, st->interp_qlpc, awk1, st->lpcSize);
+         bw_lpc(k2, st->interp_qlpc, awk2, st->lpcSize);
+         bw_lpc(k3, st->interp_qlpc, awk3, st->lpcSize);
+         /*fprintf (stderr, "%f %f %f\n", k1, k2, k3);*/
+      }
+
 
       /* Calculate reponse ratio between the low and high filter in the middle
          of the band (4000 Hz) */
@@ -938,7 +1013,24 @@ int sb_decode(void *state, SpeexBits *bits, float *out)
          }
 
       }
-      iir_mem2(exc, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, st->mem_sp);
+
+      for (i=0;i<st->subframeSize;i++)
+         sp[i]=exc[i];
+      if (st->lpc_enh_enabled)
+      {
+         /* Use enhanced LPC filter */
+         filter_mem2(sp, awk2, awk1, sp, st->subframeSize, st->lpcSize, 
+                     st->mem_sp+st->lpcSize);
+         filter_mem2(sp, awk3, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, 
+                     st->mem_sp);
+      } else {
+         /* Use regular filter */
+         for (i=0;i<st->lpcSize;i++)
+            st->mem_sp[st->lpcSize+i] = 0;
+         iir_mem2(sp, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, 
+                     st->mem_sp);
+      }
+      /*iir_mem2(exc, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, st->mem_sp);*/
 
    }
 
@@ -1114,6 +1206,7 @@ void sb_decoder_ctl(void *state, int request, void *ptr)
       break;
    case SPEEX_SET_ENH:
       speex_decoder_ctl(st->st_low, request, ptr);
+      st->lpc_enh_enabled = *((int*)ptr);
       break;
    case SPEEX_GET_BITRATE:
       speex_decoder_ctl(st->st_low, request, ptr);

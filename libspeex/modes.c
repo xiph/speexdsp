@@ -362,7 +362,7 @@ static SpeexSubmode wb_submode1 = {
    NULL,
    NULL,
 
-   0, 0, -1,
+   .75, .75, -1,
    36
 };
 
@@ -384,7 +384,7 @@ static SpeexSubmode wb_submode2 = {
    split_cb_shape_sign_unquant,
    &split_cb_high_lbr,
 
-   0, 0, -1,
+   .85, .6, -1,
    112
 };
 
@@ -406,7 +406,7 @@ static SpeexSubmode wb_submode3 = {
    split_cb_shape_sign_unquant,
    &split_cb_high,
 
-   0, 0, -1,
+   .75, .7, -1,
    192
 };
 
@@ -427,7 +427,7 @@ static SpeexSubmode wb_submode4 = {
    split_cb_shape_sign_unquant,
    &split_cb_high,
 
-   0, 0, -1,
+   .75, .75, -1,
    352
 };
 
