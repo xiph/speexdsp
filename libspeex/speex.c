@@ -41,7 +41,6 @@
 
 #define MAX_IN_SAMPLES 640
 
-const SpeexMode *speex_mode_list[SPEEX_NB_MODES] = {&speex_nb_mode, &speex_wb_mode, &speex_uwb_mode};
 
 
 void *speex_encoder_init(const SpeexMode *mode)
