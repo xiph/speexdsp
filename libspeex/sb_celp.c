@@ -101,6 +101,7 @@ void sb_encoder_init(SBEncState *st, SpeexMode *mode)
    st->g1_mem=calloc(32, sizeof(float));
 
    st->buf=calloc(st->windowSize, sizeof(float));
+   st->exc=calloc(2*st->frame_size, sizeof(float));
    st->window=calloc(st->windowSize, sizeof(float));
    for (i=0;i<st->windowSize;i++)
       st->window[i]=.5*(1-cos(2*M_PI*i/st->windowSize));
@@ -172,11 +173,13 @@ void sb_encode(SBEncState *st, float *in, FrameBits *bits)
    }
    /* Encode the narrowband part*/
    encode(&st->st_low, st->x0d, bits);
+
    /* High-band buffering / sync with low band */
    for (i=0;i<st->frame_size;i++)
    {
-      st->high[i]=st->high[(st->frame_size)+i];
-      st->high[(st->frame_size)+i]=st->x1d[i];
+      st->exc[i]=st->exc[st->frame_size+i];
+      st->high[i]=st->high[st->frame_size+i];
+      st->high[st->frame_size+i]=st->x1d[i];
    }
    
    /* Start encoding the high-band */
@@ -241,7 +244,22 @@ void sb_encode(SBEncState *st, float *in, FrameBits *bits)
          st->interp_lsp[i] = cos(st->interp_lsp[i]);
       lsp_to_lpc(st->interp_lsp, st->interp_lpc, st->lpcSize,st->stack);
 
+      for (i=0;i<st->lpcSize;i++)
+         st->interp_qlsp[i] = cos(st->interp_qlsp[i]);
+      lsp_to_lpc(st->interp_qlsp, st->interp_qlpc, st->lpcSize, st->stack);
       
+      residue(sp, st->interp_qlpc, exc, st->subframeSize, st->lpcSize);
+      {
+         float el=0,eh=0,g;
+         for (i=0;i<st->subframeSize;i++)
+            eh+=sqr(exc[i]);
+         for (i=0;i<st->subframeSize;i++)
+            el+=sqr(st->st_low.exc[offset+i]);
+         g=eh/(.01+el);
+         for (i=0;i<st->subframeSize;i++)
+            exc[i]=g*st->st_low.exc[offset+i];
+      }
+      syn_filt(exc, st->interp_qlpc, sp, st->subframeSize, st->lpcSize);
    }
 
    /* Up-sample coded low-band and high-band*/
