@@ -1,10 +1,17 @@
 /*---------------------------------------------------------------------------*\
-
+Original Copyright
 	FILE........: AK2LSPD.H
 	TYPE........: Turbo C header file
 	COMPANY.....: Voicetronix
 	AUTHOR......: James Whitehall
 	DATE CREATED: 21/11/95
+
+Modified by Jean-Marc Valin
+
+    This file contains functions for converting Linear Prediction
+    Coefficients (LPC) to Line Spectral Pair (LSP) and back. Note that the
+    LSP coefficients are not in radians format but in the x domain of the
+    unit circle.
 
 \*---------------------------------------------------------------------------*/
 /* Speex License:

@@ -1,18 +1,19 @@
 /*---------------------------------------------------------------------------*\
-
+Original copyright
 	FILE........: AKSLSPD.C
 	TYPE........: Turbo C
 	COMPANY.....: Voicetronix
 	AUTHOR......: David Rowe
 	DATE CREATED: 24/2/93
 
+Modified by Jean-Marc Valin
 
-    This file contains functions for LPC to LSP conversion and
-    LSP to LPC conversion. Note that the LSP coefficients are not in
-    radians format but in the x domain of the unit circle.
+   This file contains functions for converting Linear Prediction
+   Coefficients (LPC) to Line Spectral Pair (LSP) and back. Note that the
+   LSP coefficients are not in radians format but in the x domain of the
+   unit circle.
 
-\*---------------------------------------------------------------------------*/
-/* Speex License:
+   Speex License:
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Lesser General Public
