@@ -31,6 +31,7 @@
 #include "vq.h"
 #include <string.h>
 #include "ltp.h"
+#include <stdlib.h>
 
 #ifndef M_PI
 #define M_PI           3.14159265358979323846  /* pi */
@@ -445,12 +446,13 @@ void sb_encode(void *state, float *in, SpeexBits *bits)
          }
          /*printf ("folding gain: %f\n", g);*/
          g /= filter_ratio;
+
+#if 0
          {
             float noise_gain;
             float *noise;
             float *alias;
             static int init=0;
-            float tmp=1;
             if (!init)
             {
                srand48(0);
@@ -461,10 +463,7 @@ void sb_encode(void *state, float *in, SpeexBits *bits)
 
             for (i=0;i<st->subframeSize;i++)
                noise[i]=noise_gain*(drand48()-.5);
-            /* High-band excitation using the low-band excitation and a gain */
-            /*for (i=0;i<st->subframeSize;i++)
-              exc[i]=g*((EncState*)st->st_low)->exc[offset+i];*/
-#if 1
+
             alias = ((EncState*)st->st_low)->exc+offset;
             /* Too lazy to do the memory properly */
             exc[0]=.5*.35*g*(alias[0]+noise[0]);
@@ -472,12 +471,14 @@ void sb_encode(void *state, float *in, SpeexBits *bits)
             {
                exc[i]=.7*.5*g* (.8*(noise[i]+.8*noise[i-1]) + alias[i]-.8*alias[i-1]);
             }
-#else
-            for (i=0;i<st->subframeSize;i++)
-               exc[i]=.7*g*noise[i] + .7*g*((EncState*)st->st_low)->exc[offset+i];
-#endif
             POP(st->stack);
          }
+#else
+         /* High-band excitation using the low-band excitation and a gain */
+         for (i=0;i<st->subframeSize;i++)
+            exc[i]=g*((EncState*)st->st_low)->exc[offset+i];
+#endif
+
 #endif
          /* Update the input signal using the non-coded memory */
          /* FIXME: is that right? */
