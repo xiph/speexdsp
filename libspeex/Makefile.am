@@ -4,6 +4,8 @@
 
 EXTRA_DIST=testenc.c testenc_wb.c testenc_uwb.c testdenoise.c testecho.c
 
+INCLUDES = -I$(top_srcdir)/include
+
 lib_LTLIBRARIES = libspeex.la
 
 if DISABLE_GLOBAL_POINTERS
@@ -48,17 +50,6 @@ libspeex_la_SOURCES = nb_celp.c \
 	lbr_48k_tables.c \
 	jitter.c \
 	mdf.c
-
-
-include_HEADERS =  speex.h \
-	speex_bits.h \
-	speex_header.h \
-	speex_callbacks.h \
-	speex_stereo.h \
-	speex_preprocess.h \
-	speex_jitter.h \
-	speex_echo.h \
-	speex_noglobals.h
 
 noinst_HEADERS = lsp.h \
 	nb_celp.h \

@@ -36,9 +36,9 @@
 #define NULL 0
 #endif
 
-#include "speex.h"
-#include "speex_bits.h"
-#include "speex_jitter.h"
+#include <speex/speex.h>
+#include <speex/speex_bits.h>
+#include <speex/speex_jitter.h>
 #include <stdio.h>
 
 #define LATE_BINS 4

@@ -40,8 +40,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "speex.h"
-#include "ogg/ogg.h"
+#include <speex/speex.h>
+#include <ogg/ogg.h>
 
 #if defined WIN32 || defined _WIN32
 #include <windows.h>
@@ -77,9 +77,9 @@
 
 #include <string.h>
 #include "wav_io.h"
-#include "speex_header.h"
-#include "speex_stereo.h"
-#include "speex_callbacks.h"
+#include <speex/speex_header.h>
+#include <speex/speex_stereo.h>
+#include <speex/speex_callbacks.h>
 #include "misc.h"
 
 #define MAX_FRAME_SIZE 2000

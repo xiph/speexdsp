@@ -1,11 +1,11 @@
-#include "speex_echo.h"
+#include <speex/speex_echo.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
-#include "speex_preprocess.h"
+#include <speex/speex_preprocess.h>
 
 #define NN 160
 

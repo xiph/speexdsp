@@ -39,10 +39,10 @@
 #include "filters.h"
 #include "stack_alloc.h"
 #include "vq.h"
-#include "speex_bits.h"
+#include <speex/speex_bits.h>
 #include "vbr.h"
 #include "misc.h"
-#include "speex_callbacks.h"
+#include <speex/speex_callbacks.h>
 
 #include <stdio.h>
 

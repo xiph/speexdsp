@@ -29,8 +29,8 @@
    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "speex_stereo.h"
-#include "speex_callbacks.h"
+#include <speex/speex_stereo.h>
+#include <speex/speex_callbacks.h>
 #include "vq.h"
 #include <math.h>
 

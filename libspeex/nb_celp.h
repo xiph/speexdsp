@@ -37,8 +37,8 @@
 #define NB_CELP_H
 
 #include "modes.h"
-#include "speex_bits.h"
-#include "speex_callbacks.h"
+#include <speex/speex_bits.h>
+#include <speex/speex_callbacks.h>
 #include "vbr.h"
 #include "filters.h"
 

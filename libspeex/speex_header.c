@@ -31,9 +31,9 @@
 
 */
 
-#include "speex_header.h"
+#include <speex/speex_header.h>
 #include "misc.h"
-#include "speex.h"
+#include <speex/speex.h>
 
 #ifndef NULL
 #define NULL 0

@@ -5,7 +5,7 @@
 # Disable automatic dependency tracking if using other tools than gcc and gmake
 #AUTOMAKE_OPTIONS = no-dependencies
 
-INCLUDES = -I$(top_srcdir)/libspeex $(OGG_INCLUDES)
+INCLUDES = -I$(top_srcdir)/include -I$(top_srcdir)/libspeex $(OGG_INCLUDES)
 
 mandir = $(prefix)/share/man
 man_MANS = speexenc.1 speexdec.1

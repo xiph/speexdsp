@@ -32,7 +32,7 @@
 */
 
 #include <math.h>
-#include "speex_preprocess.h"
+#include <speex/speex_preprocess.h>
 #include "misc.h"
 #include "smallft.h"
 

@@ -32,7 +32,7 @@
 
 */
 
-#include "speex_bits.h"
+#include <speex/speex_bits.h>
 #include "misc.h"
 
 /** Maximum size of the bit-stream (for fixed-size allocation) */

@@ -1,6 +1,6 @@
 dnl Process this file with autoconf to produce a configure script. -*-m4-*-
 
-AC_INIT(libspeex/speex.h)
+AC_INIT(libspeex/speex.c)
 
 SPEEX_MAJOR_VERSION=1
 SPEEX_MINOR_VERSION=1
@@ -20,6 +20,8 @@ AC_SUBST(SPEEX_LT_AGE)
 # For automake.
 VERSION=$SPEEX_VERSION
 PACKAGE=speex
+
+AC_SUBST(SPEEX_VERSION)
 
 AM_INIT_AUTOMAKE($PACKAGE, $VERSION, no-define)
 AM_MAINTAINER_MODE
@@ -95,6 +97,7 @@ AM_CONDITIONAL(DISABLE_GLOBAL_POINTERS, [test "x$noglobals" = "xyes"])
 dnl Output the makefiles and version.h.
 
 AC_OUTPUT([Makefile libspeex/Makefile src/Makefile doc/Makefile Speex.spec
+           include/Makefile include/speex/Makefile speex.pc
            win32/Makefile win32/libspeex/Makefile win32/speexenc/Makefile
            win32/speexdec/Makefile ])
 

@@ -35,7 +35,7 @@
 */
 
 #include "misc.h"
-#include "speex_echo.h"
+#include <speex/speex_echo.h>
 #include "smallft.h"
 #include <math.h>
 /*#include <stdio.h>*/

@@ -1,5 +1,5 @@
 /* Copyright (C) 2002 Jean-Marc Valin & David Rowe
-   File: cb_search.c
+   File: cb_search.h
    Overlapped codebook search
 
    Redistribution and use in source and binary forms, with or without
@@ -33,7 +33,7 @@
 #ifndef CB_SEARCH_H
 #define CB_SEARCH_H
 
-#include "speex_bits.h"
+#include <speex/speex_bits.h>
 #include "misc.h"
 
 typedef struct split_cb_params {
