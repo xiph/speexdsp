@@ -46,8 +46,6 @@
 #define NULL 0
 #endif
 
-#ifdef SPEEX_DISABLE_GLOBAL_POINTERS
-
 /* Extern declarations for all codebooks we use here */
 extern const signed char gain_cdbk_nb[];
 extern const signed char gain_cdbk_lbr[];
@@ -219,7 +217,7 @@ sb_mode_new (
    int     defaultSubmode, /**< Default sub-mode to use when encoding */
    int     low_quality_map[], /**< Mode corresponding to each quality setting */
    int     quality_map[], /**< Mode corresponding to each quality setting */
-   float   (*vbr_thresh)[],
+   float   (*vbr_thresh)[11],
    int     nb_modes
 		   )
 {
@@ -1085,10 +1083,10 @@ const SpeexMode * speex_mode_new_byID (int id)
 void speex_mode_free_byID (SpeexMode * mode, int id)
 {
   switch (id) {
-  case 0: return speex_nb_mode_free(mode); break;
-  case 1: return speex_wb_mode_free(mode); break;
-  case 2: return speex_uwb_mode_free(mode); break;
-  default: return;
+  case 0: speex_nb_mode_free(mode); break;
+  case 1: speex_wb_mode_free(mode); break;
+  case 2:  speex_uwb_mode_free(mode); break;
+  default: break;
   }
 }
 
@@ -1128,5 +1126,3 @@ int speex_mode_query(const SpeexMode *mode, int request, void *ptr)
   
   return mode->query(mode->mode, request, ptr);
 }
-
-#endif /* SPEEX_DISABLE_GLOBAL_POINTERS */
