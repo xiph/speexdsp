@@ -123,20 +123,20 @@ Free software/open-source
  and royalty-free
 \layout Itemize
 
-Integration of wideband
-\begin_inset LatexCommand \index{wideband}
+Integration of narrowband
+\begin_inset LatexCommand \index{narrowband}
 
 \end_inset 
 
- and narrowband
-\begin_inset LatexCommand \index{narrowband}
+ and wideband
+\begin_inset LatexCommand \index{wideband}
 
 \end_inset 
 
  in the same bit-stream
 \layout Itemize
 
-Wide range of bit-rates available
+Wide range of bit-rates available (from 2 kbps to 44 kbps)
 \layout Itemize
 
 Dynamic bit-rate switching and Variable Bit-Rate
@@ -889,8 +889,9 @@ collapsed false
 
 
 \begin_inset  Tabular
-<lyxtabular version="3" rows="12" columns="10">
+<lyxtabular version="3" rows="12" columns="11">
 <features>
+<column alignment="center" valignment="top" leftline="true" width="0pt">
 <column alignment="center" valignment="top" leftline="true" width="0pt">
 <column alignment="center" valignment="top" leftline="true" width="0pt">
 <column alignment="center" valignment="top" leftline="true" width="0pt">
@@ -982,6 +983,14 @@ Update rate
 7
 \end_inset 
 </cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+8
+\end_inset 
+</cell>
 </row>
 <row topline="true">
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
@@ -1041,6 +1050,14 @@ frame
 \end_inset 
 </cell>
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+1
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
 \begin_inset Text
 
 \layout Standard
@@ -1146,6 +1163,14 @@ frame
 4
 \end_inset 
 </cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+4
+\end_inset 
+</cell>
 </row>
 <row topline="true">
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
@@ -1226,6 +1251,14 @@ frame
 \layout Standard
 
 30
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+18
 \end_inset 
 </cell>
 </row>
@@ -1310,6 +1343,14 @@ frame
 0
 \end_inset 
 </cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+7
+\end_inset 
+</cell>
 </row>
 <row topline="true">
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
@@ -1392,6 +1433,14 @@ frame
 0
 \end_inset 
 </cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+4
+\end_inset 
+</cell>
 </row>
 <row topline="true">
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
@@ -1451,6 +1500,14 @@ frame
 \end_inset 
 </cell>
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+5
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
 \begin_inset Text
 
 \layout Standard
@@ -1556,6 +1613,14 @@ sub-frame
 7
 \end_inset 
 </cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+0
+\end_inset 
+</cell>
 </row>
 <row topline="true">
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
@@ -1636,6 +1701,14 @@ sub-frame
 \layout Standard
 
 7
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+0
 \end_inset 
 </cell>
 </row>
@@ -1720,6 +1793,14 @@ sub-frame
 3
 \end_inset 
 </cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+0
+\end_inset 
+</cell>
 </row>
 <row topline="true" bottomline="true">
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
@@ -1802,6 +1883,14 @@ sub-frame
 96
 \end_inset 
 </cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+10
+\end_inset 
+</cell>
 </row>
 <row topline="true" bottomline="true">
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
@@ -1882,6 +1971,14 @@ frame
 \layout Standard
 
 492
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+79
 \end_inset 
 </cell>
 </row>
@@ -2276,7 +2373,7 @@ Completely transparent for voice, good quality music
 
 \layout Standard
 
-N/A
+3,950
 \end_inset 
 </cell>
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
@@ -2284,7 +2381,7 @@ N/A
 
 \layout Standard
 
-N/A
+-
 \end_inset 
 </cell>
 <cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
@@ -2292,7 +2389,7 @@ N/A
 
 \layout Standard
 
-reserved
+Very noticeable artifacts/noise, good intelligibility
 \end_inset 
 </cell>
 </row>
