@@ -185,6 +185,15 @@ extern "C" {
 /** Number of defined modes in Speex */
 #define SPEEX_NB_MODES 3
 
+/** modeID for the defined narrowband mode */
+#define SPEEX_MODEID_NB 0
+
+/** modeID for the defined wideband mode */
+#define SPEEX_MODEID_WB 1
+
+/** modeID for the defined ultra-wideband mode */
+#define SPEEX_MODEID_UWB 2
+
 struct SpeexMode;
 
 
