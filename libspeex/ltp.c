@@ -40,7 +40,7 @@
 
 #ifdef FIXED_POINT
 
-static spx_word32_t inner_prod2(spx_word16_t *x, spx_word16_t *y, int len)
+static spx_word32_t inner_prod(spx_word16_t *x, spx_word16_t *y, int len)
 {
    int i;
    spx_word32_t sum=0;
@@ -54,22 +54,6 @@ static spx_word32_t inner_prod2(spx_word16_t *x, spx_word16_t *y, int len)
       sum += SHR(part,6);
    }
    return sum;
-}
-
-
-static float inner_prod(spx_sig_t *x, spx_sig_t *y, int len)
-{
-   int i;
-   float sum1=0,sum2=0,sum3=0,sum4=0;
-   for (i=0;i<len;)
-   {
-      sum1 += x[i]*y[i];
-      sum2 += x[i+1]*y[i+1];
-      sum3 += x[i+2]*y[i+2];
-      sum4 += x[i+3]*y[i+3];
-      i+=4;
-   }
-   return sum1+sum2+sum3+sum4;
 }
 
 void open_loop_nbest_pitch(spx_sig_t *sw, int start, int end, int len, int *pitch, float *gain, int N, char *stack)
@@ -118,8 +102,8 @@ void open_loop_nbest_pitch(spx_sig_t *sw, int start, int end, int len, int *pitc
    }
 
 
-   energy[0]=inner_prod2(swn-start, swn-start, len);
-   e0=inner_prod2(swn, swn, len);
+   energy[0]=inner_prod(swn-start, swn-start, len);
+   e0=inner_prod(swn, swn, len);
    for (i=start;i<=end;i++)
    {
       /* Update energy for next pitch*/
@@ -134,7 +118,7 @@ void open_loop_nbest_pitch(spx_sig_t *sw, int start, int end, int len, int *pitc
    for (i=start;i<=end;i++)
    {
       /* Compute correlation*/
-      corr[i-start]=inner_prod2(swn, swn-i, len);
+      corr[i-start]=inner_prod(swn, swn-i, len);
       score[i-start]=1.*corr[i-start]*corr[i-start]/(energy[i-start]+1.);
    }
    for (i=start;i<=end;i++)
@@ -349,13 +333,75 @@ int cdbk_offset
       }
    }
 
-   for (i=0;i<3;i++)
-      corr[i]=inner_prod(x[i],target,nsf);
-   
-   for (i=0;i<3;i++)
-      for (j=0;j<=i;j++)
-         A[i][j]=A[j][i]=inner_prod(x[i],x[j],nsf);
-   
+#ifdef FIXED_POINT
+   {
+      spx_word16_t *y[3];
+      spx_word16_t *t;
+
+      spx_sig_t max_val=1;
+      int sig_shift;
+      
+      y[0] = PUSH(stack, nsf, spx_word16_t);
+      y[1] = PUSH(stack, nsf, spx_word16_t);
+      y[2] = PUSH(stack, nsf, spx_word16_t);
+      t = PUSH(stack, nsf, spx_word16_t);
+      for (j=0;j<3;j++)
+      {
+         for (i=0;i<nsf;i++)
+         {
+            spx_sig_t tmp = x[j][i];
+            if (tmp<0)
+               tmp = -tmp;
+            if (tmp > max_val)
+               max_val = tmp;
+         }
+      }
+      for (i=0;i<nsf;i++)
+      {
+         spx_sig_t tmp = target[i];
+         if (tmp<0)
+            tmp = -tmp;
+         if (tmp > max_val)
+            max_val = tmp;
+      }
+
+      sig_shift=0;
+      while (max_val>16384)
+      {
+         sig_shift++;
+         max_val >>= 1;
+      }
+
+      for (j=0;j<3;j++)
+      {
+         for (i=0;i<nsf;i++)
+         {
+            y[j][i] = SHR(x[j][i],sig_shift);
+         }
+      }     
+      for (i=0;i<nsf;i++)
+      {
+         t[i] = SHR(target[i],sig_shift);
+      }
+
+      for (i=0;i<3;i++)
+         corr[i]=inner_prod(y[i],t,nsf);
+      
+      for (i=0;i<3;i++)
+         for (j=0;j<=i;j++)
+            A[i][j]=A[j][i]=inner_prod(y[i],y[j],nsf);
+   }
+#else
+   {
+      for (i=0;i<3;i++)
+         corr[i]=inner_prod(x[i],target,nsf);
+      
+      for (i=0;i<3;i++)
+         for (j=0;j<=i;j++)
+            A[i][j]=A[j][i]=inner_prod(x[i],x[j],nsf);
+   }
+#endif
+
    {
       float C[9];
       signed char *ptr=gain_cdbk;

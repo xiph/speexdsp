@@ -49,6 +49,34 @@ void bw_lpc(float gamma, spx_coef_t *lpc_in, spx_coef_t *lpc_out, int order)
 
 #ifdef FIXED_POINT
 
+int normalize16(spx_sig_t *x, spx_word16_t *y, int max_scale, int len)
+{
+   int i;
+   spx_sig_t max_val=1;
+   int sig_shift;
+   
+   for (i=0;i<len;i++)
+   {
+      spx_sig_t tmp = x[i];
+      if (tmp<0)
+         tmp = -tmp;
+      if (tmp > max_val)
+         max_val = tmp;
+   }
+
+   sig_shift=0;
+   while (max_val>max_scale)
+   {
+      sig_shift++;
+      max_val >>= 1;
+   }
+
+   for (i=0;i<len;i++)
+      y[i] = SHR(x[i], sig_shift);
+   
+   return sig_shift;
+}
+
 spx_word16_t compute_rms(spx_sig_t *x, int len)
 {
    int i;
