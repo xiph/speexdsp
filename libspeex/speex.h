@@ -30,52 +30,105 @@ extern "C" {
 #endif
 
 /* Values allowed for *ctl() requests */
-#define SPEEX_SET_ENH 0 /**< Set enhancement on/off (decoder only) */
-#define SPEEX_GET_ENH 1 /**< Get enhancement state (decoder only) */
+
+/** Set enhancement on/off (decoder only) */
+#define SPEEX_SET_ENH 0
+/** Get enhancement state (decoder only) */
+#define SPEEX_GET_ENH 1
+
 /*Would be SPEEX_SET_FRAME_SIZE, but it's (currently) invalid*/
-#define SPEEX_GET_FRAME_SIZE 3 /**< Obtain frame size used by encoder/decoder */
-#define SPEEX_SET_QUALITY 4 /**< Set quality value */
-#define SPEEX_GET_QUALITY 5 /**< Get current quality setting */
-#define SPEEX_SET_MODE 6 /**< Set sub-mode to use */
-#define SPEEX_GET_MODE 7 /**< Get current sub-mode in use */
-#define SPEEX_SET_LOW_MODE 8 /**< Set low-band sub-mode to use (wideband only)*/
-#define SPEEX_GET_LOW_MODE 9 /**< Get current low-band mode in use (wideband only)*/
+/** Obtain frame size used by encoder/decoder */
+#define SPEEX_GET_FRAME_SIZE 3
+
+/** Set quality value */
+#define SPEEX_SET_QUALITY 4
+/** Get current quality setting */
+#define SPEEX_GET_QUALITY 5
+
+/** Set sub-mode to use */
+#define SPEEX_SET_MODE 6
+/** Get current sub-mode in use */
+#define SPEEX_GET_MODE 7
+
+/** Set low-band sub-mode to use (wideband only)*/
+#define SPEEX_SET_LOW_MODE 8
+/** Get current low-band mode in use (wideband only)*/
+#define SPEEX_GET_LOW_MODE 9
+
+/** Set high-band sub-mode to use (wideband only)*/
 #define SPEEX_SET_HIGH_MODE 10
+/** Get current high-band mode in use (wideband only)*/
 #define SPEEX_GET_HIGH_MODE 11
+
+/** Set VBR on (1) or off (0) */
 #define SPEEX_SET_VBR 12
+/** Get VBR status (1 for on, 0 for off) */
 #define SPEEX_GET_VBR 13
+
+/** Set quality value for VBR encoding (0-10) */
 #define SPEEX_SET_VBR_QUALITY 14
+/** Get current quality value for VBR encoding (0-10) */
 #define SPEEX_GET_VBR_QUALITY 15
+
+/** Set complexity of the encoder (0-10) */
 #define SPEEX_SET_COMPLEXITY 16
+/** Get current complexity of the encoder (0-10) */
 #define SPEEX_GET_COMPLEXITY 17
+
 /*Would be SPEEX_SET_FRAME_SIZE, but it's (currently) invalid*/
+/** Get current bit-rate used by the encoder or decoder */
 #define SPEEX_GET_BITRATE 19
 
 
 /* Preserving compatibility:*/
+/** Equivalent to SPEEX_SET_ENH */
 #define SPEEX_SET_PF 0
+/** Equivalent to SPEEX_GET_ENH */
 #define SPEEX_GET_PF 1
 
 
 /* Values allowed for mode queries */
+/** Query the frame size of a mode */
 #define SPEEX_MODE_FRAME_SIZE 0
+
+/** Query the size of an encoded frame for a particular sub-mode */
 #define SPEEX_SUBMODE_BITS_PER_FRAME 1
 
 
+/** Number of defined modes in Speex */
 #define SPEEX_NB_MODES 2
 
 struct SpeexMode;
 
+
 /* Prototypes for mode function pointers */
+
+/** Encoder state initialization function */
 typedef void *(*encoder_init_func)(struct SpeexMode *mode);
+
+/** Encoder state destruction function */
 typedef void (*encoder_destroy_func)(void *st);
+
+/** Main encoding function */
 typedef void (*encode_func)(void *state, float *in, SpeexBits *bits);
-typedef void *(*decoder_init_func)(struct SpeexMode *mode);
-typedef void (*decoder_destroy_func)(void *st);
-typedef int  (*decode_func)(void *state, SpeexBits *bits, float *out);
+
+/** Function for controlling the encoder options */
 typedef void (*encoder_ctl_func)(void *state, int request, void *ptr);
+
+/** Decoder state initialization function */
+typedef void *(*decoder_init_func)(struct SpeexMode *mode);
+
+/** Decoder state destruction function */
+typedef void (*decoder_destroy_func)(void *st);
+
+/** Main decoding function */
+typedef int  (*decode_func)(void *state, SpeexBits *bits, float *out);
+
+/** Function for controlling the decoder options */
 typedef void (*decoder_ctl_func)(void *state, int request, void *ptr);
 
+
+/** Query function for a mode */
 typedef void (*mode_query_func)(void *mode, int request, void *ptr);
 
 /** Struct defining a Speex mode */ 
@@ -166,7 +219,7 @@ void *speex_decoder_init(SpeexMode *mode);
 
 /** Frees all resources associated to an existing decoder state.
  *
- * @param decoder state to be destroyed
+ * @param state State to be destroyed
  */
 void speex_decoder_destroy(void *state);
 

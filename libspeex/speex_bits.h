@@ -27,6 +27,7 @@
 extern "C" {
 #endif
 
+/** Maximum size of the bit-stream (for fixed-size allocation) */
 #define MAX_BYTES_PER_FRAME 1000
 
 /** Bit-packing data structure representing (part of) a bit-stream. */
@@ -50,7 +51,7 @@ void speex_bits_destroy(SpeexBits *bits);
 /** Resets bits to initial value (just after initialization, erasing content)*/
 void speex_bits_reset(SpeexBits *bits);
 
-/** Rewind the bit-stream to beginning (ready for read) without erasing content*/
+/** Rewind the bit-stream to the beginning (ready for read) without erasing the content */
 void speex_bits_rewind(SpeexBits *bits);
 
 /** Initializes the bit-stream from the data in an area of memory */
@@ -66,6 +67,7 @@ void speex_bits_read_whole_bytes(SpeexBits *bits, char *bytes, int len);
 /** Write the content of a bit-stream to an area of memory */
 int speex_bits_write(SpeexBits *bits, char *bytes, int max_len);
 
+/** Like speex_bits_write, but writes only the complete bytes in the stream. Also removes the written bytes from the stream */
 int speex_bits_write_whole_bytes(SpeexBits *bits, char *bytes, int max_len);
 
 /** Append bits to the bit-stream
@@ -75,16 +77,44 @@ int speex_bits_write_whole_bytes(SpeexBits *bits, char *bytes, int max_len);
  */
 void speex_bits_pack(SpeexBits *bits, int data, int nbBits);
 
+/** Interpret the next bits in the bit-stream as a signed integer
+ *
+ * @param bits Bit-stream to operate on
+ * @param nbBits Number of bits to interpret
+ * @return A signed integer represented by the bits read
+ */
 int speex_bits_unpack_signed(SpeexBits *bits, int nbBits);
 
+/** Interpret the next bits in the bit-stream as an unsigned integer
+ *
+ * @param bits Bit-stream to operate on
+ * @param nbBits Number of bits to interpret
+ * @return An unsigned integer represented by the bits read
+ */
 unsigned int speex_bits_unpack_unsigned(SpeexBits *bits, int nbBits);
 
+/** Returns the number of bytes in the bit-stream, including the last one even if it is not "full"
+ *
+ * @param bits Bit-stream to operate on
+ * @return Number of bytes in the stream
+ */
 int speex_bits_nbytes(SpeexBits *bits);
 
+/** Same as speex_bits_unpack_unsigned, but without modifying the cursor position */
 unsigned int speex_bits_peek_unsigned(SpeexBits *bits, int nbBits);
 
+/** Get the value of the next bit in the stream, without modifying the
+ * "cursor" position 
+ * 
+ * @param bits Bit-stream to operate on
+ */
 int speex_bits_peek(SpeexBits *bits);
 
+/** Advances the position of the "bit cursor" in the stream 
+ *
+ * @param bits Bit-stream to operate on
+ * @param n Number of bits to advance
+ * */
 void speex_bits_advance(SpeexBits *bits, int n);
 
 #ifdef __cplusplus

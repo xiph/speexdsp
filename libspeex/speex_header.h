@@ -29,8 +29,11 @@ extern "C" {
 #endif
 
 struct SpeexMode;
+
+/** Maximum number of characters for encoding the Speex version number in the header */
 #define SPEEX_HEADER_VERSION_LENGTH 20
 
+/** Current version of the Speex header */
 #define SPEEX_HEADER_VERSION -1
 
 /** Speex header info for file-based formats */
