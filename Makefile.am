@@ -3,6 +3,6 @@
 # Disable automatic dependency tracking if using other tools than gcc and gmake
 #AUTOMAKE_OPTIONS = no-dependencies
 
-EXTRA_DIST = 
+EXTRA_DIST = Speex.spec Speex.spec.in
 
 SUBDIRS = libspeex src
