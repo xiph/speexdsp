@@ -48,7 +48,7 @@ typedef spx_word16_t spx_coef_t;
 typedef spx_word16_t spx_lsp_t;
 typedef spx_word32_t spx_sig_t;
 
-#define LPC_SCALING  8192.
+#define LPC_SCALING  8192
 #define SIG_SCALING  16384
 #define LSP_SCALING  8192.
 
@@ -109,9 +109,22 @@ static inline spx_word32_t MULT16_16(spx_word16_t x, spx_word16_t y) {
 #endif
 
 #define MULT16_32_Q11(a,b) ADD32(MULT16_16((a),SHR((b),11)), SHR(MULT16_16((a),((b)&0x000007ff)),11))
+#define MULT16_32_Q12(a,b) ADD32(MULT16_16((a),SHR((b),12)), SHR(MULT16_16((a),((b)&0x00000fff)),11))
 #define MULT16_32_Q13(a,b) ADD32(MULT16_16((a),SHR((b),13)), SHR(MULT16_16((a),((b)&0x00001fff)),13))
 #define MULT16_32_Q14(a,b) ADD32(MULT16_16((a),SHR((b),14)), SHR(MULT16_16((a),((b)&0x00003fff)),14))
+
+#ifdef ARM_ASM
+static inline spx_word32_t MULT16_32_Q15(spx_word16_t x, spx_word32_t y) {
+  int res;
+  asm volatile("smulwb  %0,%1,%2;\n"
+              : "=&r"(res)
+               : "%r"(y<<1),"r"(x));
+  return(res);
+}
+
+#else
 #define MULT16_32_Q15(a,b) ADD32(MULT16_16((a),SHR((b),15)), SHR(MULT16_16((a),((b)&0x00007fff)),15))
+#endif
 
 #define MULT16_16_Q13(a,b) (SHR(MULT16_16((a),(b)),13))
 #define MULT16_16_Q14(a,b) (SHR(MULT16_16((a),(b)),14))

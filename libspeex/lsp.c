@@ -506,8 +506,45 @@ void lsp_to_lpc(spx_lsp_t *freq,spx_coef_t *ak,int lpcrdr, char *stack)
 }
 #endif
 
-/*Added by JMV
-  Makes sure the LSPs are stable*/
+
+#ifdef FIXED_POINT
+
+/*Makes sure the LSPs are stable*/
+void lsp_enforce_margin(spx_lsp_t *lsp, int len, float margin)
+{
+   int i;
+   spx_word16_t m = LSP_SCALING*margin;
+   spx_word16_t m2 = (LSP_SCALING*M_PI)-LSP_SCALING*margin;
+  
+   if (lsp[0]<m)
+      lsp[0]=m;
+   if (lsp[len-1]>m2)
+      lsp[len-1]=m2;
+   for (i=1;i<len-1;i++)
+   {
+      if (lsp[i]<lsp[i-1]+m)
+         lsp[i]=lsp[i-1]+m;
+
+      if (lsp[i]>lsp[i+1]-m)
+         lsp[i]= SHR(lsp[i],1) + SHR(lsp[i+1]-m,1);
+   }
+}
+
+
+void lsp_interpolate(spx_lsp_t *old_lsp, spx_lsp_t *new_lsp, spx_lsp_t *interp_lsp, int len, int subframe, int nb_subframes)
+{
+   int i;
+   spx_word16_t tmp = DIV32_16(SHL(1 + subframe,14),nb_subframes);
+   spx_word16_t tmp2 = 16384-tmp;
+   for (i=0;i<len;i++)
+   {
+      interp_lsp[i] = MULT16_16_P14(tmp2,old_lsp[i]) + MULT16_16_P14(tmp,new_lsp[i]);
+   }
+}
+
+#else
+
+/*Makes sure the LSPs are stable*/
 void lsp_enforce_margin(spx_lsp_t *lsp, int len, float margin)
 {
    int i;
@@ -525,21 +562,6 @@ void lsp_enforce_margin(spx_lsp_t *lsp, int len, float margin)
    }
 }
 
-#ifdef FIXED_POINT
-
-
-void lsp_interpolate(spx_lsp_t *old_lsp, spx_lsp_t *new_lsp, spx_lsp_t *interp_lsp, int len, int subframe, int nb_subframes)
-{
-   int i;
-   spx_word16_t tmp = DIV32_16(SHL(1 + subframe,14),nb_subframes);
-   spx_word16_t tmp2 = 16384-tmp;
-   for (i=0;i<len;i++)
-   {
-      interp_lsp[i] = MULT16_16_P14(tmp2,old_lsp[i]) + MULT16_16_P14(tmp,new_lsp[i]);
-   }
-}
-
-#else
 
 void lsp_interpolate(spx_lsp_t *old_lsp, spx_lsp_t *new_lsp, spx_lsp_t *interp_lsp, int len, int subframe, int nb_subframes)
 {

@@ -194,7 +194,7 @@ int nb_encode(void *state, short *in, SpeexBits *bits)
    int i, sub, roots;
    int ol_pitch;
    float ol_pitch_coef;
-   float ol_gain;
+   spx_word32_t ol_gain;
    spx_sig_t *res, *target;
    spx_mem_t *mem;
    char *stack;
@@ -270,8 +270,7 @@ int nb_encode(void *state, short *in, SpeexBits *bits)
          for (i=0;i<st->lpcSize;i++)
             st->interp_lsp[i] = st->lsp[i];
       else
-         for (i=0;i<st->lpcSize;i++)
-            st->interp_lsp[i] = .375*st->old_lsp[i] + .625*st->lsp[i];
+         lsp_interpolate(st->old_lsp, st->lsp, st->interp_lsp, st->lpcSize, st->nbSubframes, st->nbSubframes<<1);
 
       lsp_enforce_margin(st->interp_lsp, st->lpcSize, .002);
 
