@@ -195,47 +195,44 @@ void filter_mem2(const spx_sig_t *x, const spx_coef_t *num, const spx_coef_t *de
 
    for (i=0;i<N;i++)
    {
-      int deadm, deadn, deadd, deadidx, x1, y1, dead1, dead2, dead3, dead4, dead5;
+      int deadm, deadn, deadd, deadidx, x1, y1, dead1, dead2, dead3, dead4, dead5, dead6;
       xi=SATURATE(x[i],805306368);
       yi = SATURATE(ADD32(xi, SHL(mem[0],2)),805306368);
       nyi = -yi;
       y[i] = yi;
       __asm__ __volatile__ (
+            "\tldrsh %6, [%1], #2\n"
+            "\tsmull %8, %9, %4, %6\n"
+            
             ".filterloop: \n"
             "\tldrsh %6, [%1], #2\n"
             "\tsmull %8, %9, %4, %6\n"
+            ".filterloop: \n"
+            "\tldrsh %6, [%2], #2\n"
             "\tldr %10, [%0, #4]\n"
             "\tmov %8, %8, lsr #15\n"
+            "\tsmull %7, %11, %5, %6\n"
             "\tadd %8, %8, %9, lsl #17\n"
-            "\tadd %10, %10, %8\n"
-
-            "\tldrsh %6, [%2], #2\n"
-            "\tsmull %8, %9, %5, %6\n"
-            "\tmov %8, %8, lsr #15\n"
-            "\tadd %8, %8, %9, lsl #17\n"
-            "\tadd %10, %10, %8\n"
-
-            "\tstr %10, [%0], #4 \n"
-            "\tsubs %3, %3, #1\n"
-            "\t bne .filterloop\n"
-            
-            
             "\tldrsh %6, [%1], #2\n"
+            "\tadd %10, %10, %8\n"
             "\tsmull %8, %9, %4, %6\n"
+            "\tadd %10, %10, %7, lsr #15\n"
+            "\tsubs %3, %3, #1\n"
+            "\tadd %10, %10, %11, lsl #17\n"
+            "\tstr %10, [%0], #4 \n"
+            "\t bne .filterloop\n"
+
             "\tmov %8, %8, lsr #15\n"
             "\tadd %10, %8, %9, lsl #17\n"
-
             "\tldrsh %6, [%2], #2\n"
             "\tsmull %8, %9, %5, %6\n"
-            "\tmov %8, %8, lsr #15\n"
-            "\tadd %8, %8, %9, lsl #17\n"
-            "\tadd %10, %10, %8\n"
-
+            "\tadd %10, %10, %8, lsr #15\n"
+            "\tadd %10, %10, %9, lsl #17\n"
             "\tstr %10, [%0], #4 \n"
 
          : "=r" (deadm), "=r" (deadn), "=r" (deadd), "=r" (deadidx),
            "=r" (xi), "=r" (nyi), "=r" (dead1), "=r" (dead2),
-           "=r" (dead3), "=r" (dead4), "=r" (dead5)
+           "=r" (dead3), "=r" (dead4), "=r" (dead5), "=r" (dead6)
          : "0" (mem), "1" (num+1), "2" (den+1), "3" (ord-1), "4" (xi), "5" (nyi)
          : "cc", "memory");
    
