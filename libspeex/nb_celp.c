@@ -1070,6 +1070,7 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
             }
          }
 
+         /* FIXME: Check for overflow */
          m = speex_bits_unpack_unsigned(bits, 4);
          if (m==15) /* We found a terminator */
          {
@@ -1084,13 +1085,13 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
             int ret = st->user_callback.func(bits, state, st->user_callback.data);
             if (ret)
                return ret;
-         } else if (m>7) /* Invalid mode */
+         } else if (m>8) /* Invalid mode */
          {
             speex_warning("Invalid mode encountered: corrupted stream?");
             return -2;
          }
       
-      } while (m>7);
+      } while (m>8);
 
       /* Get the sub-mode that was used */
       st->submodeID = m;

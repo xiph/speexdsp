@@ -547,8 +547,8 @@ int complexity
 )
 {
    int i;
-   if (pitch_coef>.9)
-      pitch_coef=.9;
+   if (pitch_coef>.99)
+      pitch_coef=.99;
    for (i=0;i<nsf;i++)
    {
       exc[i]=exc[i-start]*pitch_coef;
@@ -574,8 +574,8 @@ float last_pitch_gain)
 {
    int i;
    /*pitch_coef=.9;*/
-   if (pitch_coef>.9)
-      pitch_coef=.9;
+   if (pitch_coef>.99)
+      pitch_coef=.99;
    for (i=0;i<nsf;i++)
    {
       exc[i]=exc[i-start]*pitch_coef;

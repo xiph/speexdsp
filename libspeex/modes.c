@@ -56,6 +56,7 @@ extern float exc_5_64_table[];
 extern float exc_8_128_table[];
 extern float exc_10_32_table[];
 extern float exc_10_16_table[];
+extern float exc_20_32_table[];
 extern float hexc_10_32_table[];
 
 static int nb_mode_query(void *mode, int request, void *ptr);
@@ -91,10 +92,19 @@ static ltp_params ltp_params_med = {
 
 /* Split-VQ innovation parameters for very low bit-rate narrowband */
 static split_cb_params split_cb_nb_vlbr = {
-   10,               /*subvect_size*/
-   4,               /*nb_subvect*/
-   exc_10_16_table, /*shape_cb*/
+   20,               /*subvect_size*/
+   2,               /*nb_subvect*/
+   exc_10_32_table, /*shape_cb*/
    4,               /*shape_bits*/
+   0,
+};
+
+/* Split-VQ innovation parameters for very low bit-rate narrowband */
+static split_cb_params split_cb_nb_ulbr = {
+   20,               /*subvect_size*/
+   2,               /*nb_subvect*/
+   exc_20_32_table, /*shape_cb*/
+   5,               /*shape_bits*/
    0,
 };
 
@@ -173,6 +183,28 @@ static SpeexSubmode nb_submode1 = {
    NULL,
    .7, .7, -1,
    43
+};
+
+/* 3.95 kbps very low bit-rate mode */
+static SpeexSubmode nb_submode8 = {
+   0,
+   1,
+   0,
+   0,
+   /*LSP quantization*/
+   lsp_quant_lbr,
+   lsp_unquant_lbr,
+   /*No pitch quantization*/
+   forced_pitch_quant,
+   forced_pitch_unquant,
+   NULL,
+   /*Innovation quantization*/
+   split_cb_search_shape_sign,
+   split_cb_shape_sign_unquant,
+   &split_cb_nb_ulbr,
+
+   0.7, 0.5, .65,
+   79
 };
 
 /* 5.95 kbps very low bit-rate mode */
@@ -322,9 +354,9 @@ static SpeexNBMode nb_mode = {
    1.0001, /*lpc_floor*/
    0.0,    /*preemph*/
    {NULL, &nb_submode1, &nb_submode2, &nb_submode3, &nb_submode4, &nb_submode5, &nb_submode6, &nb_submode7,
-   NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL},
+   &nb_submode8, NULL, NULL, NULL, NULL, NULL, NULL, NULL},
    5,
-   {1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 7}
+   {1, 8, 2, 3, 3, 4, 4, 5, 5, 6, 7}
 };
 
 
