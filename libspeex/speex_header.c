@@ -26,13 +26,17 @@
 #include <stdlib.h>
 
 #define ENDIAN_SWITCH(x) {x=le_int(x);}
+
+
 /*
 typedef struct SpeexHeader {
+   char speex_string[8];
    char speex_version[SPEEX_HEADER_VERSION_LENGTH];
    int speex_header_version;
    int header_size;
    int rate;
    int mode;
+   int mode_bitstream_version;
    int nb_channels;
    int bitrate;
    int frame_size;
@@ -55,13 +59,14 @@ void speex_init_header(SpeexHeader *header, int rate, int nb_channels, SpeexMode
    
    header->rate = rate;
    header->mode = m->modeID;
+   header->mode_bitstream_version = m->bitstream_version;
    if (m->modeID<0)
       fprintf (stderr, "This mode is meant to be used alone\n");
    header->nb_channels = nb_channels;
    header->bitrate = nb_channels * m->bitrate;
    header->frame_size = m->frame_size;
    header->vbr = m->vbr;
-
+   
    header->reserved1 = 0;
    header->reserved2 = 0;
    header->reserved3 = 0;
@@ -80,6 +85,7 @@ char *speex_header_to_packet(SpeexHeader *header, int *size)
    ENDIAN_SWITCH(le_header->header_size);
    ENDIAN_SWITCH(le_header->rate);
    ENDIAN_SWITCH(le_header->mode);
+   ENDIAN_SWITCH(le_header->mode_bitstream_version);
    ENDIAN_SWITCH(le_header->nb_channels);
    ENDIAN_SWITCH(le_header->bitrate);
    ENDIAN_SWITCH(le_header->frame_size);
@@ -114,6 +120,7 @@ SpeexHeader *speex_packet_to_header(char *packet, int size)
    ENDIAN_SWITCH(le_header->header_size);
    ENDIAN_SWITCH(le_header->rate);
    ENDIAN_SWITCH(le_header->mode);
+   ENDIAN_SWITCH(le_header->mode_bitstream_version);
    ENDIAN_SWITCH(le_header->nb_channels);
    ENDIAN_SWITCH(le_header->bitrate);
    ENDIAN_SWITCH(le_header->frame_size);

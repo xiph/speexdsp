@@ -34,6 +34,7 @@ typedef struct SpeexHeader {
    int header_size;
    int rate;
    int mode;
+   int mode_bitstream_version;
    int nb_channels;
    int bitrate;
    int frame_size;

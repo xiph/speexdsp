@@ -20,8 +20,8 @@ int main(int argc, char **argv)
 
    for (i=0;i<FRAME_SIZE;i++)
       bak2[i]=0;
-   st = speex_encoder_init(&speex_nb_mode);
-   dec = speex_decoder_init(&speex_nb_mode);
+   st = speex_encoder_init(&speex_nb_lbr_mode);
+   dec = speex_decoder_init(&speex_nb_lbr_mode);
 
    pf=0;
    speex_decoder_ctl(dec, SPEEX_SET_PF, &pf);
@@ -66,7 +66,7 @@ int main(int argc, char **argv)
       }
       speex_bits_rewind(&bits);
       
-      speex_decode(dec, &bits, input, 0);
+      /*speex_decode(dec, &bits, input, 0);*/
 
       /* Save the bits here */
       for (i=0;i<FRAME_SIZE;i++)

@@ -203,6 +203,7 @@ static SpeexNBMode low_sb_mode = {
 SpeexMode low_wb_mode = {
    &low_sb_mode,
    -1,
+   -1,
    &nb_encoder_init,
    &nb_encoder_destroy,
    &nb_encode,
@@ -218,6 +219,7 @@ SpeexMode low_wb_mode = {
 
 SpeexMode speex_nb_mode = {
    &nb_mode,
+   0,
    0,
    &nb_encoder_init,
    &nb_encoder_destroy,
@@ -235,6 +237,7 @@ SpeexMode speex_nb_mode = {
 SpeexMode speex_nb_lbr_mode = {
    &nb_lbr_mode,
    1,
+   0,
    &nb_encoder_init,
    &nb_encoder_destroy,
    &nb_encode,
@@ -274,6 +277,7 @@ static SpeexSBMode sb_wb_mode = {
 SpeexMode speex_wb_mode = {
    &sb_wb_mode,
    2,
+   0,
    &sb_encoder_init,
    &sb_encoder_destroy,
    &sb_encode,
