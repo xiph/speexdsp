@@ -24,6 +24,7 @@
 
 #include "speex.h"
 #include <ogg/ogg.h>
+#include "wav_io.h"
 
 /*Write an Ogg page to a file pointer*/
 int oe_write_page(ogg_page *page, FILE *fp)
@@ -77,6 +78,7 @@ int main(int argc, char **argv)
       {"version", no_argument, NULL, 0},
       {0, 0, 0, 0}
    };
+   int rate, chan, fmt, size;
 
    ogg_stream_state os;
    ogg_page 		 og;
@@ -136,27 +138,18 @@ int main(int argc, char **argv)
    inFile=argv[optind];
    outFile=argv[optind+1];
 
+   if (wideband && narrowband)
+   {
+      fprintf (stderr,"Cannot specify both wideband and narrowband at the same time\n");
+      exit(1);
+   };
+
    /*Initialize Ogg stream struct*/
    if (ogg_stream_init(&os, 0)==-1)
    {
       fprintf(stderr,"Stream init failed\n");
       exit(1);
    }
-
-   if (wideband && narrowband)
-   {
-      fprintf (stderr,"Cannot specify both wideband and narrowband at the same time\n");
-      exit(1);
-   };
-   if (!wideband)
-      narrowband=1;
-   if (narrowband)
-      mode=&speex_nb_mode;
-   if (wideband)
-      mode=&speex_wb_mode;
-
-   /*Initialize Speex encoder*/
-   st = speex_encoder_init(mode);
 
    if (strcmp(inFile, "-")==0)
       fin=stdin;
@@ -169,6 +162,35 @@ int main(int argc, char **argv)
          exit(1);
       }
    }
+
+   rate=0;
+   if (strcmp(inFile+strlen(inFile)-4,".wav")==0)
+      if (read_wav_header(fin, &rate, &chan, &fmt, &size)==-1)
+         exit(1);
+   /*fprintf (stderr, "wave info: %d %d %d %d\n", rate, chan, fmt, size);*/
+
+   if (rate==16000)
+   {
+      wideband=1;
+      if (narrowband)
+         fprintf (stderr,"Warning: encoding a wideband file in narrowband\n");
+   } else if (rate==8000)
+   {
+      narrowband=1;
+      if (wideband)
+         fprintf (stderr,"Warning: encoding a narrowband file in wideband\n");
+   }
+
+   if (!wideband)
+      narrowband=1;
+   if (narrowband)
+      mode=&speex_nb_mode;
+   if (wideband)
+      mode=&speex_wb_mode;
+
+   /*Initialize Speex encoder*/
+   st = speex_encoder_init(mode);
+
    if (strcmp(outFile,"-")==0)
       fout=stdout;
    else 
@@ -180,6 +202,7 @@ int main(int argc, char **argv)
          exit(1);
       }
    }
+
 
    /*Write header (format will change)*/
    {

@@ -95,8 +95,13 @@ void lsp_quant_nb(float *lsp, float *qlsp, int order, SpeexBits *bits)
    quant_weight[order-1] = 1/(qlsp[order-1]-qlsp[order-2]);
    for (i=1;i<order-1;i++)
    {
+#if 1
+      tmp1 = 1/((.15+qlsp[i]-qlsp[i-1])*(.15+qlsp[i]-qlsp[i-1]));
+      tmp2 = 1/((.15+qlsp[i+1]-qlsp[i])*(.15+qlsp[i+1]-qlsp[i]));
+#else
       tmp1 = 1/(qlsp[i]-qlsp[i-1]);
       tmp2 = 1/(qlsp[i+1]-qlsp[i]);
+#endif
       quant_weight[i] = tmp1 > tmp2 ? tmp1 : tmp2;
    }
    id = lsp_quant(qlsp, cdbk_nb, NB_CDBK_SIZE, order);
