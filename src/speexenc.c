@@ -39,7 +39,7 @@ int oe_write_page(ogg_page *page, FILE *fp)
 }
 
 #define MAX_FRAME_SIZE 2000
-#define MAX_FRAME_BYTES 1000
+#define MAX_FRAME_BYTES 2000
 
 void usage()
 {
@@ -144,6 +144,10 @@ int main(int argc, char **argv)
          } else if (strcmp(long_options[option_index].name,"nframes")==0)
          {
             nframes = atoi (optarg);
+            if (nframes<1)
+               nframes=1;
+            if (nframes>10)
+               nframes=10;
          } else if (strcmp(long_options[option_index].name,"comp")==0)
          {
             complexity = atoi (optarg);
