@@ -400,7 +400,7 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
          /*VAD only case*/
          int mode;
          if (st->relative_quality<2.0)
-            mode=0;
+            mode=1;
          else
             mode=st->submodeSelect;
          /*speex_encoder_ctl(state, SPEEX_SET_MODE, &mode);*/

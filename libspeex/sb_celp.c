@@ -145,7 +145,7 @@ void *sb_encoder_init(SpeexMode *m)
    st->bufSize=mode->bufSize;
 
    st->submodes=mode->submodes;
-   st->submodeID=mode->defaultSubmode;
+   st->submodeSelect = st->submodeID=mode->defaultSubmode;
    
    {
       /* FIXME: Should do this without explicit reference to a mode */
@@ -220,6 +220,7 @@ void *sb_encoder_init(SpeexMode *m)
 
    st->vbr_quality = 8;
    st->vbr_enabled = 0;
+   st->vad_enabled = 0;
    st->relative_quality=0;
 
    st->complexity=2;
@@ -349,7 +350,7 @@ void sb_encode(void *state, float *in, SpeexBits *bits)
       st->lsp[i] = acos(st->lsp[i]);
 
    /* VBR code */
-   if (st->vbr_enabled){
+   if (st->vbr_enabled || st->vad_enabled){
       float e_low=0, e_high=0;
       float ratio;
       for (i=0;i<st->frame_size;i++)
@@ -364,10 +365,11 @@ void sb_encode(void *state, float *in, SpeexBits *bits)
       if (ratio>2)
          ratio=2;
       /*if (ratio>-2)*/
-      st->relative_quality+=1.0*(ratio+2);
+      if (st->vbr_enabled) 
       {
          int modeid;
          modeid = mode->nb_modes-1;
+         st->relative_quality+=1.0*(ratio+2);
          while (modeid)
          {
             int v1;
@@ -385,6 +387,16 @@ void sb_encode(void *state, float *in, SpeexBits *bits)
          /*fprintf (stderr, "%f %d\n", low_qual, modeid);*/
          speex_encoder_ctl(state, SPEEX_SET_HIGH_MODE, &modeid);
          /*fprintf (stderr, "%d %d\n", st->submodeID, modeid);*/
+      } else {
+         /* VAD only */
+         int modeid;
+         if (st->relative_quality<2.0)
+            modeid=1;
+         else
+            modeid=st->submodeSelect;
+         /*speex_encoder_ctl(state, SPEEX_SET_MODE, &mode);*/
+         st->submodeID=modeid;
+
       }
       /*fprintf (stderr, "%f %f\n", ratio, low_qual);*/
    }
@@ -1059,7 +1071,7 @@ void sb_encoder_ctl(void *state, int request, void *ptr)
       (*(int*)ptr) = st->full_frame_size;
       break;
    case SPEEX_SET_HIGH_MODE:
-      st->submodeID = (*(int*)ptr);
+      st->submodeSelect = st->submodeID = (*(int*)ptr);
       break;
    case SPEEX_SET_LOW_MODE:
       speex_encoder_ctl(st->st_low, SPEEX_SET_MODE, ptr);
@@ -1073,6 +1085,13 @@ void sb_encoder_ctl(void *state, int request, void *ptr)
       break;
    case SPEEX_GET_VBR:
       (*(int*)ptr) = st->vbr_enabled;
+      break;
+   case SPEEX_SET_VAD:
+      st->vad_enabled = (*(int*)ptr);
+      speex_encoder_ctl(st->st_low, SPEEX_SET_VAD, ptr);
+      break;
+   case SPEEX_GET_VAD:
+      (*(int*)ptr) = st->vad_enabled;
       break;
    case SPEEX_SET_VBR_QUALITY:
       {
@@ -1096,7 +1115,7 @@ void sb_encoder_ctl(void *state, int request, void *ptr)
             quality = 0;
          if (quality > 10)
             quality = 10;
-         st->submodeID = ((SpeexSBMode*)(st->mode->mode))->quality_map[quality];
+         st->submodeSelect = st->submodeID = ((SpeexSBMode*)(st->mode->mode))->quality_map[quality];
          nb_qual = ((SpeexSBMode*)(st->mode->mode))->low_quality_map[quality];
          speex_encoder_ctl(st->st_low, SPEEX_SET_MODE, &nb_qual);
       }
