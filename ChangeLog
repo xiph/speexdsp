@@ -1,4 +1,7 @@
 2004-02-18 Jean-Marc Valin <jean-marc.valin@usherbrooke.ca>
+	Patch for compiling with mingw32 sent by j@thing.net 
+
+2004-02-18 Jean-Marc Valin <jean-marc.valin@usherbrooke.ca>
 	Integrated IRIX patch (getopt stuff) from Michael Pruett <michael@68k.org> 
 
 2004-02-18 Jean-Marc Valin <jean-marc.valin@usherbrooke.ca>
