@@ -412,6 +412,9 @@ void sb_encode(void *state, float *in, SpeexBits *bits)
       for (i=0;i<st->lpcSize;i++)
          st->interp_qlsp[i] = (1-tmp)*st->old_qlsp[i] + tmp*st->qlsp[i];
 
+      lsp_enforce_margin(st->interp_lsp, st->lpcSize, .002);
+      lsp_enforce_margin(st->interp_qlsp, st->lpcSize, .002);
+
       /* Compute interpolated LPCs (quantized and unquantized) */
       for (i=0;i<st->lpcSize;i++)
          st->interp_lsp[i] = cos(st->interp_lsp[i]);
@@ -759,6 +762,8 @@ void sb_decode(void *state, SpeexBits *bits, float *out, int lost)
       for (i=0;i<st->lpcSize;i++)
          st->interp_qlsp[i] = cos(st->interp_qlsp[i]);
 
+      lsp_enforce_margin(st->interp_qlsp, st->lpcSize, .002);
+
       /* LSP to LPC */
       lsp_to_lpc(st->interp_qlsp, st->interp_qlpc, st->lpcSize, st->stack);
 
@@ -792,7 +797,6 @@ void sb_decode(void *state, SpeexBits *bits, float *out, int lost)
          /*printf ("unquant folding gain: %f\n", g);*/
          g /= filter_ratio;
          
-         g *= .8;
          /* High-band excitation using the low-band excitation and a gain */
          for (i=0;i<st->subframeSize;i++)
             exc[i]=g*((DecState*)st->st_low)->exc[offset+i];
