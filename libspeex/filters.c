@@ -345,7 +345,7 @@ void residue_percep_zero(const spx_sig_t *xx, const spx_coef_t *ak, const spx_co
    fir_mem2(y, awk2, y, N, ord, mem);
 }
 
-void qmf_decomp(const short *xx, const spx_word16_t *aa, spx_sig_t *y1, spx_sig_t *y2, int N, int M, spx_word16_t *mem, char *stack)
+void qmf_decomp(const spx_word16_t *xx, const spx_word16_t *aa, spx_sig_t *y1, spx_sig_t *y2, int N, int M, spx_word16_t *mem, char *stack)
 {
    int i,j,k,M2;
    spx_word16_t *a;

@@ -173,7 +173,7 @@ typedef void *(*encoder_init_func)(const struct SpeexMode *mode);
 typedef void (*encoder_destroy_func)(void *st);
 
 /** Main encoding function */
-typedef int (*encode_func)(void *state, short *in, SpeexBits *bits);
+typedef int (*encode_func)(void *state, void *in, SpeexBits *bits);
 
 /** Function for controlling the encoder options */
 typedef int (*encoder_ctl_func)(void *state, int request, void *ptr);
@@ -185,7 +185,7 @@ typedef void *(*decoder_init_func)(const struct SpeexMode *mode);
 typedef void (*decoder_destroy_func)(void *st);
 
 /** Main decoding function */
-typedef int  (*decode_func)(void *state, SpeexBits *bits, short *out);
+typedef int  (*decode_func)(void *state, SpeexBits *bits, void *out);
 
 /** Function for controlling the decoder options */
 typedef int (*decoder_ctl_func)(void *state, int request, void *ptr);
@@ -259,7 +259,15 @@ void speex_encoder_destroy(void *state);
  @param in Frame that will be encoded with a +-2^16 range
  @param bits Bit-stream where the data will be written
  */
-int speex_encode(void *state, short *in, SpeexBits *bits);
+int speex_encode(void *state, float *in, SpeexBits *bits);
+
+/** Uses an existing encoder state to encode one frame of speech pointed to by
+    "in". The encoded bit-stream is saved in "bits".
+ @param state Encoder state
+ @param in Frame that will be encoded with a +-2^16 range
+ @param bits Bit-stream where the data will be written
+ */
+int speex_encode_int(void *state, short *in, SpeexBits *bits);
 
 /** Used like the ioctl function to control the encoder parameters
  *
@@ -295,7 +303,17 @@ void speex_decoder_destroy(void *state);
  * @param out Where to write the decoded frame
  * @return return status (0 for no error, -1 for end of stream, -2 other)
  */
-int speex_decode(void *state, SpeexBits *bits, short *out);
+int speex_decode(void *state, SpeexBits *bits, float *out);
+
+/** Uses an existing decoder state to decode one frame of speech from
+ * bit-stream bits. The output speech is saved written to out.
+ *
+ * @param state Decoder state
+ * @param bits Bit-stream from which to decode the frame (NULL if the packet was lost)
+ * @param out Where to write the decoded frame
+ * @return return status (0 for no error, -1 for end of stream, -2 other)
+ */
+int speex_decode_int(void *state, SpeexBits *bits, short *out);
 
 /** Used like the ioctl function to control the encoder parameters
  *

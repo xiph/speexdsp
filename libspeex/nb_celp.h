@@ -183,7 +183,7 @@ void *nb_encoder_init(const SpeexMode *m);
 void nb_encoder_destroy(void *state);
 
 /** Encodes one frame*/
-int nb_encode(void *state, short *in, SpeexBits *bits);
+int nb_encode(void *state, void *in, SpeexBits *bits);
 
 
 /** Initializes decoder state*/
@@ -193,7 +193,7 @@ void *nb_decoder_init(const SpeexMode *m);
 void nb_decoder_destroy(void *state);
 
 /** Decodes one frame*/
-int nb_decode(void *state, SpeexBits *bits, short *out);
+int nb_decode(void *state, SpeexBits *bits, void *out);
 
 /** ioctl-like function for controlling a narrowband encoder */
 int nb_encoder_ctl(void *state, int request, void *ptr);

@@ -116,7 +116,7 @@ void vbr_init(VBRState *vbr)
 
 */
 
-float vbr_analysis(VBRState *vbr, short *sig, int len, int pitch, float pitch_coef)
+float vbr_analysis(VBRState *vbr, spx_word16_t *sig, int len, int pitch, float pitch_coef)
 {
    int i;
    float ener=0, ener1=0, ener2=0;

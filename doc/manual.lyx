@@ -5515,7 +5515,7 @@ Ogg Speex
 
  files (I prefer to call them just Speex files).
  One difference with Vorbis however, is that Speex is less tied with Ogg.
- Actually, if you just do Voice of IP (VoIP), you don't need Ogg at all.
+ Actually, if you just do Voice over IP (VoIP), you don't need Ogg at all.
 \layout Subsection*
 
 What's the extension for Speex?
@@ -5664,7 +5664,11 @@ What is your (Jean-Marc) relationship with the University of Sherbrooke
  and how does Speex fit into that?
 \layout Standard
 
-Currently (2003/03/09), I'm doing a Ph.D.
+Currently (2004/04/06), I'm doing my 
+\emph on 
+Ph.D.
+
+\emph default 
  at the University of Sherbrooke in mobile robotics.
  Although I did my master with the Sherbrooke speech coding group (in speech
  enhancement, not coding), I am not associated with them anymore.
@@ -5672,8 +5676,8 @@ Currently (2003/03/09), I'm doing a Ph.D.
 \series bold 
 not
 \series default 
- be understood that they or the University of Sherbrooke endorse the Speex
- project in any way.
+ be understood that they or the University of Sherbrooke have anything to
+ do with the Speex project.
  Furthermore, Speex does not make use of any code or proprietary technology
  developed in the Sherbrooke speech coding group.
  

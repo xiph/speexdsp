@@ -147,7 +147,7 @@ static const float h1[64] = {
 };
 #endif
 
-static void mix_and_saturate(spx_word32_t *y0, spx_word32_t *y1, short *out, int len)
+static void mix_and_saturate(spx_word32_t *y0, spx_word32_t *y1, spx_word16_t *out, int len)
 {
    int i;
    for (i=0;i<len;i++)
@@ -279,7 +279,7 @@ void sb_encoder_destroy(void *state)
 }
 
 
-int sb_encode(void *state, short *in, SpeexBits *bits)
+int sb_encode(void *state, void *vin, SpeexBits *bits)
 {
    SBEncState *st;
    int i, roots, sub;
@@ -290,13 +290,14 @@ int sb_encode(void *state, short *in, SpeexBits *bits)
    spx_sig_t *low_exc, *low_innov;
    SpeexSBMode *mode;
    int dtx;
+   spx_word16_t *in = vin;
 
    st = (SBEncState*)state;
    stack=st->stack;
    mode = (SpeexSBMode*)(st->mode->mode);
 
    {
-      short *low = PUSH(stack, st->frame_size, short);
+      spx_word16_t *low = PUSH(stack, st->frame_size, spx_word16_t);
 
       /* Compute the two sub-bands by filtering with h0 and h1*/
       qmf_decomp(in, h0, st->x0d, st->x1d, st->full_frame_size, QMF_ORDER, st->h0_mem, stack);
@@ -305,7 +306,7 @@ int sb_encode(void *state, short *in, SpeexBits *bits)
          low[i] = PSHR(st->x0d[i],SIG_SHIFT);
       
       /* Encode the narrowband part*/
-      speex_encode(st->st_low, low, bits);
+      speex_encode_native(st->st_low, low, bits);
 
       for (i=0;i<st->frame_size;i++)
          st->x0d[i] = SHL(low[i],SIG_SHIFT);
@@ -777,7 +778,7 @@ void sb_decoder_destroy(void *state)
    speex_free(state);
 }
 
-static void sb_decode_lost(SBDecState *st, short *out, int dtx, char *stack)
+static void sb_decode_lost(SBDecState *st, spx_word16_t *out, int dtx, char *stack)
 {
    int i;
    spx_coef_t *awk1, *awk2, *awk3;
@@ -857,7 +858,7 @@ static void sb_decode_lost(SBDecState *st, short *out, int dtx, char *stack)
    return;
 }
 
-int sb_decode(void *state, SpeexBits *bits, short *out)
+int sb_decode(void *state, SpeexBits *bits, void *vout)
 {
    int i, sub;
    SBDecState *st;
@@ -869,17 +870,18 @@ int sb_decode(void *state, SpeexBits *bits, short *out)
    spx_coef_t *awk1, *awk2, *awk3;
    int dtx;
    SpeexSBMode *mode;
-
+   spx_word16_t *out = vout;
+   
    st = (SBDecState*)state;
    stack=st->stack;
    mode = (SpeexSBMode*)(st->mode->mode);
 
    {
-      short *low;
-      low = PUSH(stack, st->frame_size, short);
+      spx_word16_t *low;
+      low = PUSH(stack, st->frame_size, spx_word16_t);
       
       /* Decode the low-band */
-      ret = speex_decode(st->st_low, bits, low);
+      ret = speex_decode_native(st->st_low, bits, low);
       
       for (i=0;i<st->frame_size;i++)
          st->x0d[i] = low[i]*SIG_SCALING;

@@ -130,7 +130,7 @@ void speex_jitter_get(SpeexJitter *jitter, short *out)
    /* Handle frame interpolation (receiving too fast) */
    if (jitter->interp_frame)
    {
-      speex_decode(jitter->dec, NULL, out);
+      speex_decode_int(jitter->dec, NULL, out);
       jitter->interp_frame = 0;
       return;
    }
@@ -166,7 +166,7 @@ void speex_jitter_get(SpeexJitter *jitter, short *out)
       if (jitter->valid_bits)
       {
          /* Try decoding last received packet */
-         ret = speex_decode(jitter->dec, &jitter->current_packet, out);
+         ret = speex_decode_int(jitter->dec, &jitter->current_packet, out);
          if (ret == 0)
             return;
          else
@@ -174,13 +174,13 @@ void speex_jitter_get(SpeexJitter *jitter, short *out)
       }
 
       /*Packet is late or lost*/
-      speex_decode(jitter->dec, NULL, out);
+      speex_decode_int(jitter->dec, NULL, out);
    } else {
       /* Found the right packet */
       speex_bits_read_from(&jitter->current_packet, jitter->buf[i], jitter->len[i]);
       jitter->len[i]=-1;
       /* Decode packet */
-      ret = speex_decode(jitter->dec, &jitter->current_packet, out);
+      ret = speex_decode_int(jitter->dec, &jitter->current_packet, out);
       if (ret == 0)
       {
          jitter->valid_bits = 1;

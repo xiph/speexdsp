@@ -624,9 +624,9 @@ int main(int argc, char **argv)
                   int ret;
                   /*Decode frame*/
                   if (!lost)
-                     ret = speex_decode(st, &bits, output);
+                     ret = speex_decode_int(st, &bits, output);
                   else
-                     ret = speex_decode(st, NULL, output);
+                     ret = speex_decode_int(st, NULL, output);
 
                   /*for (i=0;i<frame_size*channels;i++)
                     printf ("%d\n", (int)output[i]);*/
@@ -644,7 +644,7 @@ int main(int argc, char **argv)
                      break;
                   }
                   if (channels==2)
-                     speex_decode_stereo(output, frame_size, &stereo);
+                     speex_decode_stereo_int(output, frame_size, &stereo);
 
                   if (print_bitrate) {
                      int tmp;

@@ -82,7 +82,7 @@ int main(int argc, char **argv)
          in_float[i]=in_short[i];
       speex_bits_reset(&bits);
 
-      speex_encode(st, in_short, &bits);
+      speex_encode_int(st, in_short, &bits);
       nbBits = speex_bits_write(&bits, cbits, 200);
       bitCount+=bits.nbBits;
 
@@ -90,7 +90,7 @@ int main(int argc, char **argv)
          fwrite(cbits, 1, nbBits, fbits);
       speex_bits_rewind(&bits);
 
-      speex_decode(dec, &bits, out_short);
+      speex_decode_int(dec, &bits, out_short);
       speex_bits_reset(&bits);
 
       fwrite(&out_short[skip_group_delay], sizeof(short), FRAME_SIZE-skip_group_delay, fout);

@@ -573,19 +573,6 @@ int main(int argc, char **argv)
       ogg_stream_packetin(&os, &op);
       free(op.packet);
 
-      while((result = ogg_stream_flush(&os, &og)))
-      {
-         if(!result) break;
-         ret = oe_write_page(&og, fout);
-         if(ret != og.header_len + og.body_len)
-         {
-            fprintf (stderr,"Error: failed writing header to output stream\n");
-            exit(1);
-         }
-         else
-            bytes_written += ret;
-      }
-
       op.packet = (unsigned char *)comments;
       op.bytes = comments_length;
       op.b_o_s = 0;
@@ -674,12 +661,12 @@ int main(int argc, char **argv)
       id++;
       /*Encode current frame*/
       if (chan==2)
-         speex_encode_stereo(input, frame_size, &bits);
+         speex_encode_stereo_int(input, frame_size, &bits);
 
       if (preprocess)
          speex_preprocess(preprocess, input, NULL);
 
-      speex_encode(st, input, &bits);
+      speex_encode_int(st, input, &bits);
       
       if (print_bitrate) {
          int tmp;
