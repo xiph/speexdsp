@@ -51,11 +51,11 @@ int main(int argc, char **argv)
    speex_encoder_ctl(st, SPEEX_SET_VBR, &tmp);
    tmp=8;
    speex_encoder_ctl(st, SPEEX_SET_QUALITY, &tmp);
-   tmp=5;
+   tmp=2;
    speex_encoder_ctl(st, SPEEX_SET_COMPLEXITY, &tmp);
    tmp=3;
    speex_encoder_ctl(st, SPEEX_SET_HIGH_MODE, &tmp);
-   tmp=7;
+   tmp=6;
    speex_encoder_ctl(st, SPEEX_SET_LOW_MODE, &tmp);
 
 

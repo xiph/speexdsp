@@ -530,13 +530,10 @@ int sb_encode(void *state, short *in, SpeexBits *bits)
       st->pi_gain[sub] /= LPC_SCALING;
 
       rl = low_pi_gain[sub];
-      rl=1/(fabs(rl)+.01);
-      rh=1/(fabs(rh)+.01);
-      /* Compute ratio, will help predict the gain */
 #ifdef FIXED_POINT
-      filter_ratio=128*fabs(.01+rh)/(.01+fabs(rl));
+      filter_ratio=DIV32_16((spx_word32_t)(32768*(rl+.01)),(spx_word16_t)(256*(.01+rh)));
 #else
-      filter_ratio=fabs(.01+rh)/(.01+fabs(rl));
+      filter_ratio=(rl+.01)/(rh+.01);
 #endif
       /* Compute "real excitation" */
       fir_mem2(sp, st->interp_qlpc, exc, st->subframeSize, st->lpcSize, st->mem_sp2);
