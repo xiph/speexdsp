@@ -305,7 +305,7 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
       filter_mem2(st->frame, st->bw_lpc1, st->bw_lpc2, st->sw, st->frameSize, st->lpcSize, st->mem_sw_whole);
 
       /*Open-loop pitch*/
-      {
+      if (SUBMODE(lbr_pitch) != -1 || st->vbr_enabled || SUBMODE(forced_pitch_gain)) {
          int nol_pitch[4];
          float nol_pitch_coef[4];
          open_loop_nbest_pitch(st->sw, st->min_pitch, st->max_pitch, st->frameSize, 
@@ -325,6 +325,9 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
          }
          /*ol_pitch_coef = sqrt(ol_pitch_coef);*/
          /*printf ("ol_pitch: %d %f\n", ol_pitch, ol_pitch_coef);*/
+      } else {
+         ol_pitch=0;
+         ol_pitch_coef=0;
       }
       /*Compute "real" excitation*/
       fir_mem2(st->frame, st->interp_lpc, st->exc, st->frameSize, st->lpcSize, st->mem_exc);
