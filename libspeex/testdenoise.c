@@ -24,7 +24,7 @@ int main()
       vad = speex_denoise(st, x);
       for (i=0;i<NN;i++)
          out[i]=x[i];
-      /*fprintf (stderr, "%d\n", vad);*/
+      fprintf (stderr, "%d\n", vad);
       fwrite(out, sizeof(short), NN, stdout);
    }
    speex_denoise_state_destroy(st);

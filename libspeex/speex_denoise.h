@@ -60,6 +60,8 @@ typedef struct SpeexDenoiseState {
    float *inbuf;             /**< Input buffer (overlapped analysis) */
    float *outbuf;            /**< Output buffer (for overlap and add) */
 
+   float  speech_prob;
+   int    last_speech;
    float  loudness;          /**< loudness estimate */
    float  loudness2;          /**< loudness estimate */
    int    nb_adapt;          /**< Number of frames used for adaptation so far */

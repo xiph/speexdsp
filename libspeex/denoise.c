@@ -152,6 +152,8 @@ SpeexDenoiseState *speex_denoise_state_init(int frame_size)
       st->loudness_weight[i] *= st->loudness_weight[i];
    }
 
+   st->speech_prob = 0;
+   st->last_speech = 1000;
    st->loudness = pow(6000,LOUDNESS_EXP);
    st->loudness2 = 6000;
    st->nb_loudness_adapt = 0;
@@ -381,6 +383,31 @@ int speex_denoise(SpeexDenoiseState *st, float *x)
    }
 
    /*fprintf (stderr, "%f %f ", mean_prior, mean_post);*/
+   {
+      float p0, p1;
+      float x = sqrt(mean_post);
+      p1 = .0005+.6*exp(-.5*(x-.4)*(x-.4)*11)+.1*exp(-1.2*x);
+      if (x<1.5)
+         p0=.1*exp(2*(x-1.5));
+      else
+         p0=.02+.1*exp(-.2*(x-1.5));
+      
+      /*fprintf (stderr, "%f %f ", p0, p1);*/
+      p0 *= .99*st->speech_prob + .01*(1-st->speech_prob);
+      p1 *= .01*st->speech_prob + .99*(1-st->speech_prob);
+      
+      st->speech_prob = p0/(p1+p0);
+      if (st->speech_prob>.5 || (st->last_speech < 15 && st->speech_prob>.2))
+      {
+         is_speech = 1;
+         st->last_speech = 0;
+      } else {
+         st->last_speech++;
+         if (st->last_speech<15)
+            is_speech = 1;
+      }
+      /*fprintf (stderr, "%f ", st->speech_prob);*/
+   }
    if (mean_prior>1 && mean_post > 1)
    {
       is_speech=1;
