@@ -499,7 +499,7 @@ float pitch_coef,               /* Voicing (pitch) coefficient */
 void *par,
 int   nsf,                      /* Number of samples in subframe */
 int *pitch_val,
-float *gain_val,
+spx_word16_t *gain_val,
 SpeexBits *bits,
 char *stack,
 int count_lost,
@@ -530,9 +530,6 @@ int cdbk_offset
    sgain[0] = 32+(spx_word16_t)gain_cdbk[gain_index*3];
    sgain[1] = 32+(spx_word16_t)gain_cdbk[gain_index*3+1];
    sgain[2] = 32+(spx_word16_t)gain_cdbk[gain_index*3+2];
-   gain[0] = 0.015625*sgain[0];
-   gain[1] = 0.015625*sgain[1];
-   gain[2] = 0.015625*sgain[2];
 #else
    gain[0] = 0.015625*gain_cdbk[gain_index*3]+.5;
    gain[1] = 0.015625*gain_cdbk[gain_index*3+1]+.5;
@@ -542,6 +539,11 @@ int cdbk_offset
    if (count_lost && pitch > subframe_offset)
    {
       float gain_sum;
+#ifdef FIXED_POINT
+      gain[0] = 0.015625*sgain[0];
+      gain[1] = 0.015625*sgain[1];
+      gain[2] = 0.015625*sgain[2];
+#endif
       if (1) {
 	 float tmp = count_lost < 4 ? last_pitch_gain : 0.4 * last_pitch_gain;
          if (tmp>.95)
@@ -575,10 +577,9 @@ int cdbk_offset
    }
 
    *pitch_val = pitch;
-   /**gain_val = gain[0]+gain[1]+gain[2];*/
-   gain_val[0]=gain[0];
-   gain_val[1]=gain[1];
-   gain_val[2]=gain[2];
+   gain_val[0]=sgain[0];
+   gain_val[1]=sgain[1];
+   gain_val[2]=sgain[2];
 
    {
       spx_sig_t *e[3];
@@ -675,7 +676,7 @@ float pitch_coef,               /* Voicing (pitch) coefficient */
 void *par,
 int   nsf,                      /* Number of samples in subframe */
 int *pitch_val,
-float *gain_val,
+spx_word16_t *gain_val,
 SpeexBits *bits,
 char *stack,
 int count_lost,
@@ -694,5 +695,5 @@ int cdbk_offset
    }
    *pitch_val = start;
    gain_val[0]=gain_val[2]=0;
-   gain_val[1] = pitch_coef;
+   gain_val[1] = GAIN_SCALING*pitch_coef;
 }

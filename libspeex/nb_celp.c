@@ -1082,7 +1082,7 @@ static void nb_decode_lost(DecState *st, short *out, char *stack)
       {
          float innov_gain=0;
          for (i=0;i<st->frameSize;i++)
-            innov_gain += st->innov[i]*st->innov[i];
+            innov_gain += 1.0*st->innov[i]*st->innov[i];
          innov_gain=sqrt(innov_gain/st->frameSize);
       for (i=0;i<st->subframeSize;i++)
       {
@@ -1137,17 +1137,17 @@ int nb_decode(void *state, SpeexBits *bits, short *out)
    DecState *st;
    int i, sub;
    int pitch;
-   float pitch_gain[3];
+   spx_word16_t pitch_gain[3];
    spx_word32_t ol_gain=0;
    int ol_pitch=0;
    float ol_pitch_coef=0;
    int best_pitch=40;
-   float best_pitch_gain=0;
+   spx_word16_t best_pitch_gain=0;
    int wideband;
    int m;
    char *stack;
    spx_coef_t *awk1, *awk2, *awk3;
-   float pitch_average=0;
+   spx_word16_t pitch_average=0;
 #ifdef EPIC_48K
    int pitch_half[2];
    int ol_pitch_id=0;
@@ -1385,7 +1385,7 @@ int nb_decode(void *state, SpeexBits *bits, short *out)
    {
       int offset;
       spx_sig_t *sp, *exc;
-      float tmp;
+      spx_word16_t tmp;
 
 #ifdef EPIC_48K
       if (st->lbr_48k)
@@ -1509,25 +1509,13 @@ int nb_decode(void *state, SpeexBits *bits, short *out)
                exc[i]*=fact;
          }
 
-         tmp = ABS(pitch_gain[1]);
-         if (pitch_gain[0]>0)
-            tmp += pitch_gain[0];
-         else
-            tmp -= .5*pitch_gain[0];
-         if (pitch_gain[2]>0)
-            tmp += pitch_gain[2];
-         else
-            tmp -= .5*pitch_gain[2];
-
+         tmp = gain_3tap_to_1tap(pitch_gain);
 
          pitch_average += tmp;
          if (tmp>best_pitch_gain)
          {
             best_pitch = pitch;
 	    best_pitch_gain = tmp;
-	    /*            best_pitch_gain = tmp*.9;
-	                if (best_pitch_gain>.85)
-                        best_pitch_gain=.85;*/
          }
       } else {
          speex_error("No pitch prediction, what's wrong");
@@ -1666,7 +1654,7 @@ int nb_decode(void *state, SpeexBits *bits, short *out)
    st->first = 0;
    st->count_lost=0;
    st->last_pitch = best_pitch;
-   st->last_pitch_gain = .25*pitch_average;
+   st->last_pitch_gain = .25*GAIN_SCALING_1*pitch_average;
    st->pitch_gain_buf[st->pitch_gain_buf_idx++] = st->last_pitch_gain;
    if (st->pitch_gain_buf_idx > 2) /* rollover */
       st->pitch_gain_buf_idx = 0;

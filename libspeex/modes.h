@@ -61,7 +61,7 @@ typedef int (*ltp_quant_func)(spx_sig_t *, spx_sig_t *, spx_coef_t *, spx_coef_t
 
 /** Long-term un-quantize */
 typedef void (*ltp_unquant_func)(spx_sig_t *, int, int, float, void *, int, int *,
-                                 float *, SpeexBits*, char*, int, int, float, int);
+                                 spx_word16_t *, SpeexBits*, char*, int, int, float, int);
 
 
 /** Innovation quantization function */

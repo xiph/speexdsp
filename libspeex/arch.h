@@ -51,6 +51,8 @@ typedef spx_word32_t spx_sig_t;
 #define SIG_SCALING  16384
 #define LSP_SCALING  8192.
 #define GAMMA_SCALING 32768.
+#define GAIN_SCALING 64
+#define GAIN_SCALING_1 0.015625
 
 #define LPC_SHIFT    13
 #define SIG_SHIFT    14
@@ -181,6 +183,8 @@ typedef float spx_word64_t;
 #define SIG_SCALING  1.
 #define LSP_SCALING  1.
 #define GAMMA_SCALING 1.
+#define GAIN_SCALING 1.
+#define GAIN_SCALING_1 1.
 
 #define LPC_SHIFT    0
 #define SIG_SHIFT    0

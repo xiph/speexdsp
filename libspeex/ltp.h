@@ -39,6 +39,11 @@ typedef struct ltp_params {
    int     pitch_bits;
 } ltp_params;
 
+#ifdef FIXED_POINT
+#define gain_3tap_to_1tap(g) (ABS(g[1]) + (g[0]>0 ? g[0] : -SHR(g[0],1)) + (g[2]>0 ? g[2] : -SHR(g[2],1)))
+#else
+#define gain_3tap_to_1tap(g) (ABS(g[1]) + (g[0]>0 ? g[0] : -.5*g[0]) + (g[2]>0 ? g[2] : -.5*g[2]))
+#endif
 
 void open_loop_nbest_pitch(spx_sig_t *sw, int start, int end, int len, int *pitch, spx_word16_t *gain, int N, char *stack);
 
@@ -74,7 +79,7 @@ float pitch_coef,               /* Voicing (pitch) coefficient */
 void *par,
 int   nsf,                      /* Number of samples in subframe */
 int *pitch_val,
-float *gain_val,
+spx_word16_t *gain_val,
 SpeexBits *bits,
 char *stack,
 int lost,
@@ -114,7 +119,7 @@ float pitch_coef,               /* Voicing (pitch) coefficient */
 void *par,
 int   nsf,                      /* Number of samples in subframe */
 int *pitch_val,
-float *gain_val,
+spx_word16_t *gain_val,
 SpeexBits *bits,
 char *stack,
 int lost,

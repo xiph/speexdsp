@@ -50,7 +50,7 @@ void bw_lpc(spx_word16_t gamma, spx_coef_t *lpc_in, spx_coef_t *lpc_out, int ord
    }
 }
 #else
-void bw_lpc(float gamma, spx_coef_t *lpc_in, spx_coef_t *lpc_out, int order)
+void bw_lpc(spx_word16_t gamma, spx_coef_t *lpc_in, spx_coef_t *lpc_out, int order)
 {
    int i;
    float tmp=1;
@@ -94,14 +94,14 @@ void signal_div(spx_sig_t *x, spx_sig_t *y, spx_word32_t scale, int len)
 
 #else
 
-void signal_mul(spx_sig_t *x, spx_sig_t *y, float scale, int len)
+void signal_mul(spx_sig_t *x, spx_sig_t *y, spx_word32_t scale, int len)
 {
    int i;
    for (i=0;i<len;i++)
       y[i] = scale*x[i];
 }
 
-void signal_div(spx_sig_t *x, spx_sig_t *y, float scale, int len)
+void signal_div(spx_sig_t *x, spx_sig_t *y, spx_word32_t scale, int len)
 {
    int i;
    float scale_1 = 1/scale;
@@ -455,7 +455,7 @@ spx_coef_t *ak,           /*LPC filter coefs*/
 int p,               /*LPC order*/
 int nsf,             /*sub-frame size*/
 int pitch,           /*pitch period*/
-float *pitch_gain,   /*pitch gain (3-tap)*/
+spx_word16_t *spitch_gain,   /*pitch gain (3-tap)*/
 float  comb_gain,    /*gain of comb filter*/
 CombFilterMem *mem
 )
@@ -465,6 +465,12 @@ CombFilterMem *mem
    float gain;
    float step;
    float fact;
+   float pitch_gain[3];
+
+   pitch_gain[0] = GAIN_SCALING_1*spitch_gain[0];
+   pitch_gain[1] = GAIN_SCALING_1*spitch_gain[1];
+   pitch_gain[2] = GAIN_SCALING_1*spitch_gain[2];
+
    /*Compute excitation energy prior to enhancement*/
    for (i=0;i<nsf;i++)
       exc_energy+=((float)exc[i])*exc[i];
