@@ -37,7 +37,9 @@
 #include "filters.h"
 #include "speex_bits.h"
 
-
+#ifdef _USE_SSE
+#include "ltp_sse.h"
+#else
 static float inner_prod(float *x, float *y, int len)
 {
    int i;
@@ -52,6 +54,7 @@ static float inner_prod(float *x, float *y, int len)
    }
    return sum1+sum2+sum3+sum4;
 }
+#endif
 
 /*Original, non-optimized version*/
 /*static float inner_prod(float *x, float *y, int len)

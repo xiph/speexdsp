@@ -55,7 +55,9 @@ void bw_lpc(float gamma, float *lpc_in, float *lpc_out, int order)
    }
 }
 
-
+#ifdef _USE_SSE
+#include "filters_sse.h"
+#else
 void filter_mem2(float *x, float *num, float *den, float *y, int N, int ord, float *mem)
 {
    int i,j;
@@ -74,6 +76,21 @@ void filter_mem2(float *x, float *num, float *den, float *y, int N, int ord, flo
 }
 
 
+void iir_mem2(float *x, float *den, float *y, int N, int ord, float *mem)
+{
+   int i,j;
+   for (i=0;i<N;i++)
+   {
+      y[i] = x[i] + mem[0];
+      for (j=0;j<ord-1;j++)
+      {
+         mem[j] = mem[j+1] - den[j+1]*y[i];
+      }
+      mem[ord-1] = - den[ord]*y[i];
+   }
+}
+#endif
+
 void fir_mem2(float *x, float *num, float *y, int N, int ord, float *mem)
 {
    int i,j;
@@ -89,22 +106,6 @@ void fir_mem2(float *x, float *num, float *y, int N, int ord, float *mem)
       mem[ord-1] = num[ord]*xi;
    }
 }
-
-void iir_mem2(float *x, float *den, float *y, int N, int ord, float *mem)
-{
-   int i,j;
-   for (i=0;i<N;i++)
-   {
-      y[i] = x[i] + mem[0];
-      for (j=0;j<ord-1;j++)
-      {
-         mem[j] = mem[j+1] - den[j+1]*y[i];
-      }
-      mem[ord-1] = - den[ord]*y[i];
-   }
-}
-
-
 
 void syn_percep_zero(float *xx, float *ak, float *awk1, float *awk2, float *y, int N, int ord, float *stack)
 {
@@ -164,7 +165,7 @@ void qmf_decomp(float *xx, float *aa, float *y1, float *y2, int N, int M, float 
      mem[i]=xx[N-i-1];
 }
 
-
+/* By segher */
 void fir_mem_up(float *x, float *a, float *y, int N, int M, float *mem)
    /* assumptions:
       all odd x[i] are zero -- well, actually they are left out of the array now
