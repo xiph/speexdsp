@@ -26,7 +26,7 @@
 #include "cb_search.h"
 #include "mpulse.h"
 #include "sb_celp.h"
-#include "speex.h"
+#include "nb_celp.h"
 
 extern float gain_cdbk_nb[];
 extern float exc_gains_table[];

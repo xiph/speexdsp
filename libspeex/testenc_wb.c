@@ -35,7 +35,7 @@ int main(int argc, char **argv)
       bitsFile = argv[3];
       fbits = fopen(bitsFile, "w");
    }
-   frame_bits_init(&bits);
+   speex_bits_init(&bits);
    while (!feof(fin))
    {
       fread(in, sizeof(short), FRAME_SIZE, fin);
@@ -43,9 +43,9 @@ int main(int argc, char **argv)
          break;
       for (i=0;i<FRAME_SIZE;i++)
          bak[i]=input[i]=in[i];
-      frame_bits_reset(&bits);
+      speex_bits_reset(&bits);
       encode(st, input, &bits);
-      nbBits = frame_bits_write(&bits, cbits, 200);
+      nbBits = speex_bits_write(&bits, cbits, 200);
       printf ("Encoding frame in %d bits\n", nbBits*8);
       if (argc==4)
          fwrite(cbits, 1, nbBits, fbits);
@@ -59,7 +59,7 @@ int main(int argc, char **argv)
          snr = 10*log10((esig+1)/(enoise+1));
          printf ("real SNR = %f\n", snr);
       }
-      frame_bits_rewind(&bits);
+      speex_bits_rewind(&bits);
       
       decode(dec, &bits, input);
 
@@ -71,7 +71,7 @@ int main(int argc, char **argv)
          else if (input[i]<-32000)
             input[i]=-32000;
       }
-      frame_bits_reset(&bits);
+      speex_bits_reset(&bits);
       for (i=0;i<FRAME_SIZE;i++)
          in[i]=input[i];
       for (i=0;i<FRAME_SIZE;i++)

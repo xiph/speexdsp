@@ -378,7 +378,7 @@ float *stack
          quant_gain=0;
       if (quant_gain>127)
          quant_gain=127;
-      frame_bits_pack(bits,quant_gain,7);
+      speex_bits_pack(bits,quant_gain,7);
       g=exp((quant_gain/8.0)+1);
       
       for (i=0;i<nsf;i++)
@@ -404,7 +404,7 @@ float *stack
    {
       int bit1, ind=0;
       bit1=porder(tracks+i*pulses_per_track, signs+i*pulses_per_track,tr,pulses_per_track);
-      frame_bits_pack(bits,bit1,1);
+      speex_bits_pack(bits,bit1,1);
       for (j=0;j<pulses_per_track;j++)
       {
          ind*=nsf/nb_tracks;
@@ -412,7 +412,7 @@ float *stack
          /*printf ("%d ", ind);*/
       }
       
-      frame_bits_pack(bits,ind,track_ind_bits);
+      speex_bits_pack(bits,ind,track_ind_bits);
 
       /*printf ("track %d %d:", i, ind);
       for (j=0;j<pulses_per_track;j++)
@@ -457,7 +457,7 @@ float *stack
    signs = (int*)PUSH(stack,pulses_per_track);
    tr = (int*)PUSH(stack,pulses_per_track);
    
-   quant_gain=frame_bits_unpack_unsigned(bits, 7);
+   quant_gain=speex_bits_unpack_unsigned(bits, 7);
    g=exp((quant_gain/8.0)+1);
    /*Removes glitches when energy is near-zero*/
    if (g<3)
@@ -466,8 +466,8 @@ float *stack
    {
       int ind;
       int max_val=nsf/nb_tracks;
-      bit1=frame_bits_unpack_unsigned(bits, 1);
-      ind = frame_bits_unpack_unsigned(bits,track_ind_bits);
+      bit1=speex_bits_unpack_unsigned(bits, 1);
+      ind = speex_bits_unpack_unsigned(bits,track_ind_bits);
       /*printf ("unquant ind = %d\n", ind);*/
       for (j=0;j<pulses_per_track;j++)
       {

@@ -22,7 +22,7 @@
 
 #include "modes.h"
 #include "speex_bits.h"
-#include "speex.h"
+#include "nb_celp.h"
 
 /**Structure representing the full state of the encoder*/
 typedef struct SBEncState {

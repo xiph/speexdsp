@@ -178,10 +178,10 @@ int main(int argc, char **argv)
       for (i=0;i<frame_size;i++)
          input[i]=in[i];
       encode(st, input, &bits);
-      nbBytes = frame_bits_write_whole_bytes(&bits, cbits, 200);
+      nbBytes = speex_bits_write_whole_bytes(&bits, cbits, 200);
       fwrite(cbits, 1, nbBytes, fout);
    }
-   nbBytes = frame_bits_write(&bits, cbits, 200);
+   nbBytes = speex_bits_write(&bits, cbits, 200);
    fwrite(cbits, 1, nbBytes, fout);
 
    encoder_destroy(st);

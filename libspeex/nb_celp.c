@@ -20,7 +20,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
-#include "speex.h"
+#include "nb_celp.h"
 #include "lpc.h"
 #include "lsp.h"
 #include "ltp.h"

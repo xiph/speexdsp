@@ -156,7 +156,7 @@ int main(int argc, char **argv)
 
    frame_size=mode->frameSize;
 
-   frame_bits_init(&bits);
+   speex_bits_init(&bits);
    while (1)
    {
       int i, nb_read;
@@ -167,7 +167,7 @@ int main(int argc, char **argv)
          if (feof(fin))
             at_end=1;
          if (nb_read>0 && !at_end)
-            frame_bits_read_whole_bytes(&bits, cbits, nb_read);
+            speex_bits_read_whole_bytes(&bits, cbits, nb_read);
       }
       
       if (((bits.nbBits>>3)-bits.bytePtr)<2)

@@ -17,7 +17,7 @@
 */
 
 
-#include "speex.h"
+#include "nb_celp.h"
 #include "sb_celp.h"
 #include "stdlib.h"
 #include "filters.h"
@@ -447,7 +447,7 @@ void sb_encode(void *state, float *in, FrameBits *bits)
 
       if (fold) {/* 1 for spectral folding excitation, 0 for stochastic */
          float el=0,eh=0,g;
-         frame_bits_pack(bits, 1, 1);
+         speex_bits_pack(bits, 1, 1);
          /* Compute "real excitation" */
          residue_mem(sp, st->interp_qlpc, exc, st->subframeSize, st->lpcSize, st->mem_sp2);
 
@@ -469,7 +469,7 @@ void sb_encode(void *state, float *in, FrameBits *bits)
                quant=0;
             if (quant>31)
                quant=31;
-            frame_bits_pack(bits, quant, 5);
+            speex_bits_pack(bits, quant, 5);
             g= .1*exp(quant/9.4);
          }
          printf ("folding gain: %f\n", g);
@@ -490,7 +490,7 @@ void sb_encode(void *state, float *in, FrameBits *bits)
          float gc;
          float *innov;
 
-         frame_bits_pack(bits, 0, 1);
+         speex_bits_pack(bits, 0, 1);
          innov = PUSH(st->stack, st->subframeSize);
 
          for (i=0;i<st->subframeSize;i++)
@@ -746,11 +746,11 @@ void sb_decode(void *state, FrameBits *bits, float *out)
       
       for (i=0;i<st->subframeSize;i++)
          exc[i]=0;
-      if (frame_bits_unpack_unsigned(bits, 1))
+      if (speex_bits_unpack_unsigned(bits, 1))
       {
          float g;
          int quant;
-         quant = frame_bits_unpack_unsigned(bits, 5);
+         quant = speex_bits_unpack_unsigned(bits, 5);
          g= .1*exp(quant/9.4);
          
          printf ("unquant folding gain: %f\n", g);

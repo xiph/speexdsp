@@ -206,7 +206,7 @@ float *stack
    if (q>15)
       q=15;
    id = (int)q;
-   frame_bits_pack(bits, id, 4);
+   speex_bits_pack(bits, id, 4);
    exc_energy=exp(.5*q+2);
 
 
@@ -258,7 +258,7 @@ float *stack
             best_gain=g;
          }
       }
-      frame_bits_pack(bits,best_index,params->shape_bits);
+      speex_bits_pack(bits,best_index,params->shape_bits);
       
       /* Quantize gain */
       {
@@ -278,8 +278,8 @@ float *stack
          if (s)
             best_gain=-best_gain;
          best_gain *= exc_energy;
-         frame_bits_pack(bits,s,1);
-         frame_bits_pack(bits,best_id,3);
+         speex_bits_pack(bits,s,1);
+         speex_bits_pack(bits,best_id,3);
       }
       ind[i]=best_index;
       gains[i]=best_gain;
@@ -397,7 +397,7 @@ float *stack
          }
       }
       /*printf ("best index: %d/%d\n", best_index, shape_cb_size);*/
-      frame_bits_pack(bits,best_index,params->shape_bits);
+      speex_bits_pack(bits,best_index,params->shape_bits);
 
       ind[i]=best_index;
       /* Update target for next subvector */
@@ -490,7 +490,7 @@ float *stack
    if (q>15)
       q=15;
    id = (int)q;
-   frame_bits_pack(bits, id, 4);
+   speex_bits_pack(bits, id, 4);
    exc_energy=exp(.5*q+2);
 
 
@@ -658,12 +658,12 @@ float *stack
    }
    for (i=0;i<nb_subvect;i++)
    {
-      frame_bits_pack(bits, ind[i], params->shape_bits);
+      speex_bits_pack(bits, ind[i], params->shape_bits);
       if (gains[i]<0)
-         frame_bits_pack(bits, 1, 1);
+         speex_bits_pack(bits, 1, 1);
       else
-         frame_bits_pack(bits, 0, 1);
-      frame_bits_pack(bits, gain_ind[i], 3);
+         speex_bits_pack(bits, 0, 1);
+      speex_bits_pack(bits, gain_ind[i], 3);
       printf ("encode split: %d %d %f\n", i, ind[i], gains[i]);
 
    }
@@ -727,7 +727,7 @@ float *stack
    /* Decode global (average) gain */
    {
       int id;
-      id = frame_bits_unpack_unsigned(bits, 4);
+      id = speex_bits_unpack_unsigned(bits, 4);
       exc_energy=exp(.5*id+2);
    }
 
@@ -735,13 +735,13 @@ float *stack
    for (i=0;i<nb_subvect;i++)
    {
       int gain_id;
-      ind[i] = frame_bits_unpack_unsigned(bits, params->shape_bits);
-      if (frame_bits_unpack_unsigned(bits, 1))
+      ind[i] = speex_bits_unpack_unsigned(bits, params->shape_bits);
+      if (speex_bits_unpack_unsigned(bits, 1))
          sign[i]=-1;
       else
          sign[i]=1;
       
-      gain_id = frame_bits_unpack_unsigned(bits, 3);
+      gain_id = speex_bits_unpack_unsigned(bits, 3);
       gains[i]=scal_gains4[gain_id];
       gains[i] *= sign[i];
       gains[i] *= exc_energy;
@@ -786,7 +786,7 @@ float *stack
 
    /* Decode codewords and gains */
    for (i=0;i<nb_subvect;i++)
-      ind[i] = frame_bits_unpack_unsigned(bits, params->shape_bits);
+      ind[i] = speex_bits_unpack_unsigned(bits, params->shape_bits);
 
    /* Compute decoded excitation */
    for (i=0;i<nb_subvect;i++)

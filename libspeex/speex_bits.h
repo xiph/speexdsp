@@ -31,27 +31,27 @@ typedef struct FrameBits {
    int  bitPtr;
 } FrameBits;
 
-void frame_bits_init(FrameBits *bits);
+void speex_bits_init(FrameBits *bits);
 
-void frame_bits_destroy(FrameBits *bits);
+void speex_bits_destroy(FrameBits *bits);
 
-void frame_bits_reset(FrameBits *bits);
+void speex_bits_reset(FrameBits *bits);
 
-void frame_bits_rewind(FrameBits *bits);
+void speex_bits_rewind(FrameBits *bits);
 
-void frame_bits_init_from(FrameBits *bits, char *bytes, int len);
+void speex_bits_init_from(FrameBits *bits, char *bytes, int len);
 
-void frame_bits_read_whole_bytes(FrameBits *bits, char *bytes, int len);
+void speex_bits_read_whole_bytes(FrameBits *bits, char *bytes, int len);
 
-int frame_bits_write(FrameBits *bits, char *bytes, int max_len);
+int speex_bits_write(FrameBits *bits, char *bytes, int max_len);
 
-int frame_bits_write_whole_bytes(FrameBits *bits, char *bytes, int max_len);
+int speex_bits_write_whole_bytes(FrameBits *bits, char *bytes, int max_len);
 
-void frame_bits_pack(FrameBits *bits, int data, int nbBits);
+void speex_bits_pack(FrameBits *bits, int data, int nbBits);
 
-int frame_bits_unpack_signed(FrameBits *bits, int nbBits);
+int speex_bits_unpack_signed(FrameBits *bits, int nbBits);
 
-unsigned int frame_bits_unpack_unsigned(FrameBits *bits, int nbBits);
+unsigned int speex_bits_unpack_unsigned(FrameBits *bits, int nbBits);
 
 
 #endif
