@@ -28,13 +28,13 @@
 
 The Speex Codec Manual
 \newline 
-(version 1.0.3)
+(version 1.1.5)
 \layout Author
 
 Jean-Marc Valin
 \layout Standard
 \pagebreak_top 
-Copyright (c) 2002-2003 Jean-Marc Valin.
+Copyright (c) 2002-2004 Jean-Marc Valin/Xiph.org Foundation
 \layout Standard
 
 Permission is granted to copy, distribute and/or modify this document under
@@ -132,7 +132,7 @@ Integration of narrowband
 
 \end_inset 
 
- in the same bit-stream
+ using an embedded bit-stream
 \layout Itemize
 
 Wide range of bit-rates available (from 2 kbps to 44 kbps)
@@ -166,6 +166,9 @@ Ultra-wideband mode at 32 kHz (up to 48 kHz)
 \layout Itemize
 
 Intensity stereo encoding option
+\layout Itemize
+
+Fixed-point implementation (work in progress)
 \layout Standard
 
 This document is divided in the following way.
@@ -215,7 +218,7 @@ This document is divided in the following way.
  are not required.
 \layout Section
 \pagebreak_top 
-Feature description
+Codec description
 \begin_inset LatexCommand \label{sec:Feature-description}
 
 \end_inset 
@@ -223,9 +226,15 @@ Feature description
 
 \layout Standard
 
-This section explains the main Speex features, as well as some concepts
- in speech coding that help better understand the next sections.
- 
+This section describes the main features provided by Speex.
+\layout Subsection
+
+Concepts
+\layout Standard
+
+Here are some concepts in speech coding that help better understand the
+ rest of the manual.
+ Emphasis is placed on the Speex features.
 \layout Subsection*
 
 Sampling rate
@@ -438,6 +447,55 @@ look-ahead
  (16 kHz), the delay is 34 ms.
  These values don't account for the CPU time it takes to encode or decode
  the frames.
+\layout Subsection
+
+Coding
+\layout Subsection
+
+Preprocessor
+\layout Standard
+
+This part refers to the preprocessor module introduced in the 1.1.x branch.
+ The preprocessor is designed to be used on the audio 
+\emph on 
+before
+\emph default 
+ running the encoder.
+ The preprocessor provides three main functionalities:
+\layout Itemize
+
+denoising
+\layout Itemize
+
+automatic gain control (AGC)
+\layout Itemize
+
+voice activity detection (VAD)
+\layout Standard
+
+The denoiser can be used to reduce the amount of background noise present
+ in the input signal.
+ This provides higher quality speech whether or not the denoised signal
+ is encoded with Speex (or at all).
+ However, when using the denoised signal with the codec, there is an additional
+ benefit.
+ Speech codecs in general (Speex included) tend to perform poorly on noisy
+ input, which tends to amplify the noise.
+ The denoiser greatly reduces this effect.
+\layout Standard
+
+Automatic gain control (AGC) is a feature that deals with the fact that
+ the recording volume may vary by a large amount between different setups.
+ The AGC provides a way to adjust a signal to a reference volume.
+ This is useful for voice over IP because it removes the need for manual
+ adjustment of the microphone gain.
+ A secondary advantage is that by setting the microphone gain to a conservative
+ (low) level, it is easier to avoid clipping.
+\layout Standard
+
+The voice activity detector (VAD) provided by the preprocessor is more advanced
+ than the one directly provided in the codec.
+ 
 \layout Section
 \pagebreak_top 
 Command-line encoder/decoder
@@ -730,6 +788,13 @@ frame_size
 speex_encoder_ctl(enc_state,SPEEX_GET_FRAME_SIZE,&frame_size);
 \layout Standard
 
+In practice, 
+\emph on 
+frame_size
+\emph default 
+ will correspond to 20 ms when using 8, 16, or 32 kHz sampling rate.
+\layout Standard
+
 Once the initialization is done, for every input frame:
 \layout LyX-Code
 
@@ -781,7 +846,19 @@ byte_ptr
 speex_bits_nbytes(&bits)
 \family default 
 , which returns a number of bytes.
- 
+\layout Standard
+
+When using an unstable release (1.1.x), it is possible to use the 
+\emph on 
+speex_encode_int()
+\emph default 
+ function, which takes a 
+\emph on 
+(short *)
+\emph default 
+ for the audio.
+ This is usually simpler and it makes an eventual port to an FPU-less platform
+ (like ARM) easier.
 \layout Standard
 
 After you're done with the encoding, free all resources with:
@@ -895,6 +972,17 @@ output_frame
  correct signal.
 \layout Standard
 
+As for the encoder, the 1.1.x branch introduces the 
+\emph on 
+speex_decode_int()
+\emph default 
+ function which also uses a 
+\emph on 
+(short *)
+\emph default 
+ as the output for the audio.
+\layout Standard
+
 After you're done with the decoding, free all resources with:
 \layout LyX-Code
 
@@ -902,6 +990,33 @@ speex_bits_destroy(&bits);
 \layout LyX-Code
 
 speex_decoder_destroy(dec_state);
+\layout Subsection
+
+Preprocessor
+\layout Standard
+
+In order to use the Speex preprocessor, you first need to:
+\layout LyX-Code
+
+#include <speex_preprocess.h>
+\layout Standard
+
+Then, a preprocessor state can be created as:
+\layout LyX-Code
+
+SpeexPreprocessState *state = speex_preprocess_state_init(frame_size, sampling_r
+ate);
+\layout Standard
+
+It is recommended to use the same value for 
+\emph on 
+frame_size
+\emph default 
+ as is used by the encoder (20 
+\emph on 
+ms
+\emph default 
+).
 \layout Subsection
 
 Codec Options (speex_*_ctl)
