@@ -59,6 +59,12 @@ const SpeexMode * speex_mode_new_byID (int id);
 /** Free a mode, using its ID */
 void speex_mode_free_byID (SpeexMode * mode, int id);
 
+/** Instantiate a mode */
+const SpeexMode * speex_mode_new (int modeID);
+
+/** Destroy a mode */
+void speex_mode_destroy (const SpeexMode * mode);
+
 #ifdef __cplusplus
 }
 #endif

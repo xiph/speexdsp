@@ -277,12 +277,12 @@ sb_mode_free (const SpeexSBMode * sb_mode)
 }
 
 static SpeexMode *
-speex_mode_new (const void * b_mode, mode_query_func query, char * modeName,
-		int modeID, int bitstream_version, encoder_init_func enc_init,
-		encoder_destroy_func enc_destroy, encode_func enc,
-		decoder_init_func dec_init, decoder_destroy_func dec_destroy,
-		decode_func dec, encoder_ctl_func enc_ctl,
-		decoder_ctl_func dec_ctl)
+mode_new (const void * b_mode, mode_query_func query, char * modeName,
+	  int modeID, int bitstream_version, encoder_init_func enc_init,
+	  encoder_destroy_func enc_destroy, encode_func enc,
+	  decoder_init_func dec_init, decoder_destroy_func dec_destroy,
+	  decode_func dec, encoder_ctl_func enc_ctl,
+	  decoder_ctl_func dec_ctl)
 {
   SpeexMode * mode;
 
@@ -752,7 +752,7 @@ const SpeexMode * speex_nb_mode_new (void)
   _nb_mode = nb_mode();
   if (_nb_mode == NULL) return NULL;
 
-  return speex_mode_new (
+  return mode_new (
    _nb_mode,
    nb_mode_query,
    "narrowband",
@@ -966,7 +966,7 @@ const SpeexMode * speex_wb_mode_new (void)
   sb_mode = sb_wb_mode ();
   if (sb_mode == NULL) return NULL;
 
-  return speex_mode_new (
+  return mode_new (
    (const SpeexNBMode *)sb_mode,
    wb_mode_query,
    "wideband (sub-band CELP)",
@@ -1064,7 +1064,7 @@ const SpeexMode * speex_uwb_mode_new (void)
   sb_mode = sb_uwb_mode();
   if (sb_mode == NULL) return NULL;
 
-  return speex_mode_new (
+  return mode_new (
    sb_mode,
    wb_mode_query,
    "ultra-wideband (sub-band CELP)",
@@ -1100,6 +1100,26 @@ const SpeexMode * speex_mode_new_byID (int id)
 void speex_mode_free_byID (SpeexMode * mode, int id)
 {
   switch (id) {
+  case 0: speex_nb_mode_free(mode); break;
+  case 1: speex_wb_mode_free(mode); break;
+  case 2:  speex_uwb_mode_free(mode); break;
+  default: break;
+  }
+}
+
+const SpeexMode * speex_mode_new (int modeID)
+{
+  switch (modeID) {
+  case 0: return speex_nb_mode_new(); break;
+  case 1: return speex_wb_mode_new(); break;
+  case 2: return speex_uwb_mode_new(); break;
+  default: return NULL;
+  }
+}
+
+void speex_mode_destroy (const SpeexMode * mode)
+{
+  switch (mode->modeID) {
   case 0: speex_nb_mode_free(mode); break;
   case 1: speex_wb_mode_free(mode); break;
   case 2:  speex_uwb_mode_free(mode); break;
