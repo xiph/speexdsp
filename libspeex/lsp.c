@@ -484,6 +484,7 @@ void lsp_to_lpc(spx_lsp_t *freq,spx_coef_t *ak,int lpcrdr, char *stack)
     float xout1,xout2,xin1,xin2;
     float *Wp;
     float *pw,*n1,*n2,*n3,*n4=NULL;
+    float *x_freq;
     int m = lpcrdr>>1;
 
     Wp = PUSH(stack, 4*m+2, float);
@@ -501,6 +502,10 @@ void lsp_to_lpc(spx_lsp_t *freq,spx_coef_t *ak,int lpcrdr, char *stack)
     xin1 = 1.0;
     xin2 = 1.0;
 
+    x_freq=PUSH(stack, lpcrdr, float);
+    for (i=0;i<lpcrdr;i++)
+       x_freq[i] = ANGLE2X(freq[i]);
+
     /* reconstruct P(z) and Q(z) by  cascading second order
       polynomials in form 1 - 2xz(-1) +z(-2), where x is the
       LSP coefficient */
@@ -512,8 +517,8 @@ void lsp_to_lpc(spx_lsp_t *freq,spx_coef_t *ak,int lpcrdr, char *stack)
 	    n2 = n1 + 1;
 	    n3 = n2 + 1;
 	    n4 = n3 + 1;
-	    xout1 = xin1 - 2*(ANGLE2X(freq[i2])) * *n1 + *n2;
-	    xout2 = xin2 - 2*(ANGLE2X(freq[i2+1])) * *n3 + *n4;
+	    xout1 = xin1 - 2*x_freq[i2] * *n1 + *n2;
+	    xout2 = xin2 - 2*x_freq[i2+1] * *n3 + *n4;
 	    *n2 = *n1;
 	    *n4 = *n3;
 	    *n1 = xin1;
