@@ -367,9 +367,11 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
    {
       delta_qual = vbr_analysis(st->vbr, in, st->frameSize, ol_pitch, ol_pitch_coef);
       /*if (delta_qual<0)*/
-         delta_qual*=.1*(3+st->vbr_quality);
+      /*  delta_qual*=.1*(3+st->vbr_quality);*/
       if (st->vbr_enabled) 
       {
+         if (0) 
+         {
          int qual = (int)floor(st->vbr_quality+delta_qual+.5);
          if (qual<1 && delta_qual>-3.5)
             qual=1;
@@ -380,6 +382,20 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
          if (qual==10 && st->vbr_quality<10)
             qual=9;
          speex_encoder_ctl(state, SPEEX_SET_QUALITY, &qual);
+         } else {
+            int vqual, mode;
+            float level = delta_qual+7;
+            /*fprintf(stderr, "%f\n", level);*/
+            vqual = (int)floor(.5+st->vbr_quality);
+            mode = 7;
+            while (mode)
+            {
+               if (level > vbr_nb_thresh[mode][vqual])
+                  break;
+               mode--;
+            }
+            speex_encoder_ctl(state, SPEEX_SET_MODE, &mode);
+         }
       }
    }
    /*printf ("VBR quality = %f\n", vbr_qual);*/

@@ -44,6 +44,19 @@
 #define MIN_ENERGY 1000
 #define NOISE_POW .3
 
+
+float vbr_nb_thresh[8][11]={
+   {-1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0}, /* silence */
+   { 4.5,  3.5,  2.5,  1.5,  0.5,  0.0,  0.0,  0.0,  0.0,  0.0, -1.0}, /*  2 kbps */
+   { 9.5,  7.5,  6.5,  5.5,  5.0,  4.0,  4.5,  3.0,  2.0,  1.0,  0.0}, /*  6 kbps */
+   {11.0,  9.5,  8.5,  7.5,  7.0,  6.5,  6.0,  5.0,  4.0,  3.0,  1.0}, /*  8 kbps */
+   {11.0, 11.0, 11.0,  9.5,  8.5,  7.5,  6.5,  6.0,  5.0,  4.0,  2.0}, /* 11 kbps */
+   {11.0, 11.0, 11.0, 11.0,  9.5,  9.0,  8.0,  7.5,  6.5,  5.0,  3.0}, /* 15 kbps */
+   {11.0, 11.0, 11.0, 11.0, 11.0, 11.0,  9.5,  8.5,  8.0,  6.5,  4.0}, /* 18 kbps */
+   {11.0, 11.0, 11.0, 11.0, 11.0, 11.0, 11.0, 11.0,  9.5,  7.5,  5.5}  /* 24 kbps */ 
+};
+
+
 void vbr_init(VBRState *vbr)
 {
    int i;
@@ -172,7 +185,7 @@ float vbr_analysis(VBRState *vbr, float *sig, int len, int pitch, float pitch_co
          qual -= .6;
    }
    vbr->soft_pitch = .6*vbr->soft_pitch + .4*pitch_coef;
-   qual += (pitch_coef-.4) + (vbr->soft_pitch-.4);
+   qual += 1.0*((pitch_coef-.4) + (vbr->soft_pitch-.4));
 
    if (qual < vbr->last_quality)
       qual = .5*qual + .5*vbr->last_quality;
