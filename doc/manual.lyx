@@ -3871,7 +3871,7 @@ Content
 
 \layout Standard
 
-Asks decoder to set perceptual enhancement on (1) or off(1)
+Asks decoder to set perceptual enhancement off (0) or on(1)
 \end_inset 
 </cell>
 </row>
@@ -3897,7 +3897,7 @@ Asks decoder to set perceptual enhancement on (1) or off(1)
 
 \layout Standard
 
-Asks encoder to set VBR on (1) or off(1)
+Notify decoder of discontinuous transmission (DTX)
 \end_inset 
 </cell>
 </row>
@@ -4053,7 +4053,7 @@ Request acknowloedge (0=no, 1=all, 2=only for in-band data)
 
 \layout Standard
 
-reserved
+Asks encoder to set VBR off (0), on(1), VAD-only (2)
 \end_inset 
 </cell>
 </row>

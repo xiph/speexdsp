@@ -163,7 +163,7 @@ void *sb_encoder_init(SpeexMode *m)
    st->gamma1=mode->gamma1;
    st->gamma2=mode->gamma2;
    st->first=1;
-   st->stack = speex_alloc(20000*sizeof(float));
+   st->stack = speex_alloc(4000*sizeof(float));
 
    st->x0d=(float*)speex_alloc(st->frame_size*sizeof(float));
    st->x1d=(float*)speex_alloc(st->frame_size*sizeof(float));
@@ -694,7 +694,7 @@ void *sb_decoder_init(SpeexMode *m)
    st->submodeID=mode->defaultSubmode;
 
    st->first=1;
-   st->stack = speex_alloc(20000*sizeof(float));
+   st->stack = speex_alloc(2000*sizeof(float));
 
    st->x0d=(float*)speex_alloc(st->frame_size*sizeof(float));
    st->x1d=(float*)speex_alloc(st->frame_size*sizeof(float));
@@ -1052,6 +1052,20 @@ void sb_encoder_ctl(void *state, int request, void *ptr)
    case SPEEX_GET_SAMPLING_RATE:
       (*(int*)ptr)=st->sampling_rate;
       break;
+   case SPEEX_RESET_STATE:
+      {
+         int i;
+         st->first = 1;
+         for (i=0;i<st->lpcSize;i++)
+            st->lsp[i]=(M_PI*((float)(i+1)))/(st->lpcSize+1);
+         for (i=0;i<st->lpcSize;i++)
+            st->mem_sw[i]=st->mem_sp[i]=st->mem_sp2[i]=0;
+         for (i=0;i<st->bufSize;i++)
+            st->excBuf[i]=0;
+         for (i=0;i<QMF_ORDER;i++)
+            st->h0_mem[i]=st->h1_mem[i]=st->g0_mem[i]=st->g1_mem[i]=0;
+      }
+      break;
    case SPEEX_GET_PI_GAIN:
       {
          int i;
@@ -1124,6 +1138,15 @@ void sb_decoder_ctl(void *state, int request, void *ptr)
       break;
    case SPEEX_SET_USER_HANDLER:
       speex_decoder_ctl(st->st_low, SPEEX_SET_USER_HANDLER, ptr);
+      break;
+   case SPEEX_RESET_STATE:
+      {
+         int i;
+         for (i=0;i<2*st->lpcSize;i++)
+            st->mem_sp[i]=0;
+         for (i=0;i<QMF_ORDER;i++)
+            st->h0_mem[i]=st->h1_mem[i]=st->g0_mem[i]=st->g1_mem[i]=0;
+      }
       break;
    case SPEEX_GET_PI_GAIN:
       {

@@ -36,7 +36,7 @@
 #define MISC_H
 
 #ifndef VERSION
-#define VERSION "Speex-1.0beta2"
+#define VERSION "Speex-1.0beta4"
 #endif
 
 #ifndef RELEASE

@@ -96,7 +96,7 @@ void *nb_encoder_init(SpeexMode *m)
    st->submodeID=mode->defaultSubmode;
    st->pre_mem=0;
    st->pre_mem2=0;
-   st->bounded_pitch = 0;
+   st->bounded_pitch = 1;
 
    /* Allocating input buffer */
    st->inBuf = (float*)speex_alloc(st->bufSize*sizeof(float));
@@ -130,7 +130,7 @@ void *nb_encoder_init(SpeexMode *m)
 
    st->autocorr = (float*)speex_alloc((st->lpcSize+1)*sizeof(float));
 
-   st->stack = (float*)speex_alloc(20000*sizeof(float));
+   st->stack = (float*)speex_alloc(4000*sizeof(float));
 
    st->buf2 = (float*)speex_alloc(st->windowSize*sizeof(float));
 
@@ -412,6 +412,7 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
       for (i=0;i<st->lpcSize;i++)
          st->mem_sw[i]=0;
       st->first=1;
+      st->bounded_pitch = 1;
 
       /* Final signal synthesis from excitation */
       iir_mem2(st->exc, st->interp_qlpc, st->frame, st->frameSize, st->lpcSize, st->mem_sp);
@@ -774,7 +775,7 @@ void *nb_decoder_init(SpeexMode *m)
    st->pre_mem=0;
    st->lpc_enh_enabled=0;
 
-   st->stack = speex_alloc(20000*sizeof(float));
+   st->stack = speex_alloc(2000*sizeof(float));
 
    st->inBuf = (float*)speex_alloc(st->bufSize*sizeof(float));
    st->frame = st->inBuf + st->bufSize - st->windowSize;
@@ -1360,25 +1361,6 @@ void nb_encoder_ctl(void *state, int request, void *ptr)
    case SPEEX_SET_QUALITY:
       {
          int quality = (*(int*)ptr);
-         /*
-         if (quality<=0)
-            st->submodeID = 0;
-         else if (quality<=1)
-            st->submodeID = 1;
-         else if (quality<=2)
-            st->submodeID = 2;
-         else if (quality<=4)
-            st->submodeID = 3;
-         else if (quality<=6)
-            st->submodeID = 4;
-         else if (quality<=8)
-            st->submodeID = 5;
-         else if (quality<=9)
-            st->submodeID = 6;
-         else if (quality<=10)
-            st->submodeID = 7;
-         else
-         fprintf(stderr, "Unknown nb_ctl quality: %d\n", quality);*/
          if (quality < 0)
             quality = 0;
          if (quality > 10)
@@ -1419,6 +1401,19 @@ void nb_encoder_ctl(void *state, int request, void *ptr)
       break;
    case SPEEX_GET_SAMPLING_RATE:
       (*(int*)ptr)=st->sampling_rate;
+      break;
+   case SPEEX_RESET_STATE:
+      {
+         int i;
+         st->bounded_pitch = 1;
+         st->first = 1;
+         for (i=0;i<st->lpcSize;i++)
+            st->lsp[i]=(M_PI*((float)(i+1)))/(st->lpcSize+1);
+         for (i=0;i<st->lpcSize;i++)
+            st->mem_sw[i]=st->mem_sw_whole[i]=st->mem_sp[i]=st->mem_exc[i]=0;
+         for (i=0;i<st->bufSize;i++)
+            st->excBuf[i]=st->swBuf[i]=st->inBuf[i]=st->exc2Buf[i]=0;
+      }
       break;
    case SPEEX_GET_PI_GAIN:
       {
@@ -1493,6 +1488,15 @@ void nb_decoder_ctl(void *state, int request, void *ptr)
          st->user_callback.func=c->func;
          st->user_callback.data=c->data;
          st->user_callback.callback_id=c->callback_id;
+      }
+      break;
+   case SPEEX_RESET_STATE:
+      {
+         int i;
+         for (i=0;i<2*st->lpcSize;i++)
+            st->mem_sp[i]=0;
+         for (i=0;i<st->bufSize;i++)
+            st->excBuf[i]=st->inBuf[i]=0;
       }
       break;
    case SPEEX_GET_PI_GAIN:
