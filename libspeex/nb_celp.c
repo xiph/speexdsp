@@ -167,6 +167,8 @@ void *nb_encoder_init(SpeexMode *m)
    st->vbr_quality = 8;
    st->vbr_enabled = 0;
    st->vad_enabled = 0;
+   st->abr_enabled = 0;
+   st->abr_drift = 0;
 
    st->complexity=2;
    st->sampling_rate=8000;
@@ -370,6 +372,20 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
    /*VBR stuff*/
    if (st->vbr && (st->vbr_enabled||st->vad_enabled))
    {
+      
+      if (st->abr_enabled)
+      {
+         if (st->abr_drift>0)
+            st->vbr_quality -= .02;
+         else
+            st->vbr_quality += .02;
+         if (st->vbr_quality>10)
+            st->vbr_quality=10;
+         if (st->vbr_quality<0)
+            st->vbr_quality=0;
+         /*printf ("%f %f\n", st->abr_drift, st->vbr_quality);*/
+      }
+
       st->relative_quality = vbr_analysis(st->vbr, in, st->frameSize, ol_pitch, ol_pitch_coef);
       /*if (delta_qual<0)*/
       /*  delta_qual*=.1*(3+st->vbr_quality);*/
@@ -395,6 +411,13 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
          fprintf(stderr, "encode: %d %d\n",st->submodeID, mode);*/
 
          speex_encoder_ctl(state, SPEEX_SET_MODE, &mode);
+
+         if (st->abr_enabled)
+         {
+            int bitrate;
+            speex_encoder_ctl(state, SPEEX_GET_BITRATE, &bitrate);
+            st->abr_drift+=(bitrate-st->abr_enabled);
+         }
          /*fprintf(stderr, "encode: %d %d\n",st->submodeID, mode);*/
       } else {
          /*VAD only case*/
@@ -650,7 +673,9 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
          for (i=0;i<st->subframeSize;i++)
             ener+=st->buf2[i]*st->buf2[i];
          ener=sqrt(.1+ener/st->subframeSize);
-
+         /*for (i=0;i<st->subframeSize;i++)
+            printf ("%f\n", st->buf2[i]/ener);
+         */
          
          ener /= ol_gain;
 
@@ -945,7 +970,7 @@ static void nb_decode_lost(DecState *st, float *out, void *stack)
          innov_gain=sqrt(innov_gain/160);
       for (i=0;i<st->subframeSize;i++)
       {
-#if 0
+#if 1
          exc[i] = pitch_gain * exc[i - st->last_pitch] + fact*sqrt(1-pitch_gain)*st->innov[i+offset];
          /*Just so it give the same lost packets as with if 0*/
          rand();
@@ -1297,9 +1322,6 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
          /*Vocoder mode*/
          if (st->submodeID==1) 
          {
-            /*FIXME: Remove static var*/
-            /*static float mean=0, m1=0,m2=0;
-              static int offset=0;*/
             float g=ol_pitch_coef;
 
             
@@ -1458,7 +1480,7 @@ void nb_encoder_ctl(void *state, int request, void *ptr)
       {
          int i=10, rate, target;
          target = (*(int*)ptr);
-         while (i>=1)
+         while (i>=0)
          {
             speex_encoder_ctl(st, SPEEX_SET_QUALITY, &i);
             speex_encoder_ctl(st, SPEEX_GET_BITRATE, &rate);

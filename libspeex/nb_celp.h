@@ -103,6 +103,8 @@ typedef struct EncState {
    float  relative_quality; /**< Relative quality that will be needed by VBR */
    int    vbr_enabled;    /**< 1 for enabling VBR, 0 otherwise */
    int    vad_enabled;    /**< 1 for enabling VAD, 0 otherwise */
+   int    abr_enabled;    /**< 1 for enabling ABR, 0 otherwise */
+   float  abr_drift;
    int    complexity;     /**< Complexity setting (0-10 from least complex to most complex) */
    int    sampling_rate;
 

@@ -1133,7 +1133,7 @@ void sb_encoder_ctl(void *state, int request, void *ptr)
       {
          int i=10, rate, target;
          target = (*(int*)ptr);
-         while (i>=1)
+         while (i>=0)
          {
             speex_encoder_ctl(st, SPEEX_SET_QUALITY, &i);
             speex_encoder_ctl(st, SPEEX_GET_BITRATE, &rate);
