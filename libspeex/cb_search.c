@@ -96,9 +96,9 @@ SpeexBits *bits,
 char *stack,
 int   complexity,
 int   update_target
-                               )
+)
 {
-   int i,j,k,m,n,q;
+   int i,j,m,n,q;
    spx_word16_t *resp;
 #ifdef _USE_SSE
    __m128 *resp2;
@@ -108,7 +108,7 @@ int   update_target
    spx_word32_t *E;
 #endif
    spx_word16_t *t;
-   spx_sig_t *e, *r2;
+   spx_sig_t *e;
    const signed char *shape_cb;
    int shape_cb_size, subvect_size, nb_subvect;
    split_cb_params *params;
@@ -138,7 +138,6 @@ int   update_target
 #endif
    t = PUSH(stack, nsf, spx_word16_t);
    e = PUSH(stack, nsf, spx_sig_t);
-   r2 = PUSH(stack, nsf, spx_sig_t);
    
    /* FIXME: make that adaptive? */
    for (i=0;i<nsf;i++)
@@ -157,7 +156,6 @@ int   update_target
       
       speex_bits_pack(bits,best_index,params->shape_bits+have_sign);
       
-      /* New code: update only enough of the target to calculate error*/
       {
          int rind;
          spx_word16_t *res;
@@ -215,8 +213,6 @@ int   update_target
             t[n] = SUB32(t[n],g*r[q]);
 #endif
       }
-
-
    }
 
    /* Update excitation */
@@ -226,6 +222,7 @@ int   update_target
    /* Update target: only update target if necessary */
    if (update_target)
    {
+      spx_sig_t *r2 = PUSH(stack, nsf, spx_sig_t);
       syn_percep_zero(e, ak, awk1, awk2, r2, nsf,p, stack);
       for (j=0;j<nsf;j++)
          target[j]-=r2[j];
