@@ -44,12 +44,8 @@ typedef struct SpeexHeader {
 } SpeexHeader;
 */
 
-void init_header(SpeexHeader *header, int rate, int nb_channels, int mode)
+void speex_init_header(SpeexHeader *header, int rate, int nb_channels, SpeexMode *m)
 {
-   SpeexMode *m;
-   
-   m = speex_mode_list[mode];
-
    strncpy(header->speex_string, "Speex   ", 8);
    strncpy(header->speex_version, VERSION, SPEEX_HEADER_VERSION_LENGTH-1);
    header->speex_version[SPEEX_HEADER_VERSION_LENGTH-1]=0;
@@ -58,7 +54,9 @@ void init_header(SpeexHeader *header, int rate, int nb_channels, int mode)
    header->header_size = sizeof(SpeexHeader);
    
    header->rate = rate;
-   header->mode = mode;
+   header->mode = m->modeID;
+   if (m->modeID<0)
+      fprintf (stderr, "This mode is meant to be used alone\n");
    header->nb_channels = nb_channels;
    header->bitrate = nb_channels * m->bitrate;
    header->frame_size = m->frame_size;
@@ -95,10 +93,18 @@ SpeexHeader *speex_packet_to_header(char *packet, int size)
 {
    SpeexHeader *le_header;
 
+   if (strncmp(packet, "Speex   ", 8)!=0)
+   {
+      fprintf (stderr, "This doesn't look like a Speex file\n");
+      return NULL;
+   }
+
    if (sizeof(SpeexHeader) != size)
    {
       fprintf (stderr, "Speex header size mismarch\n");
+      return NULL;
    }
+   
    le_header = malloc(sizeof(SpeexHeader));
    
    memcpy(le_header, packet, sizeof(SpeexHeader));

@@ -48,6 +48,9 @@ typedef struct SpeexMode {
    /** Pointer to the low-level mode data */
    void *mode;
 
+   /*ID of the mode*/
+   int modeID;
+
    /** Pointer to encoder initialization function */
    encoder_init_func enc_init;
 

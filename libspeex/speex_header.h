@@ -22,6 +22,7 @@
 #ifndef SPEEX_HEADER_H
 #define SPEEX_HEADER_H
 
+struct SpeexMode;
 #define SPEEX_HEADER_VERSION_LENGTH 20
 
 #define SPEEX_HEADER_VERSION -1
@@ -43,7 +44,7 @@ typedef struct SpeexHeader {
    int reserved4;
 } SpeexHeader;
 
-void init_header(SpeexHeader *header, int rate, int nb_channels, int mode);
+void speex_init_header(SpeexHeader *header, int rate, int nb_channels, struct SpeexMode *m);
 
 char *speex_header_to_packet(SpeexHeader *header, int *size);
 

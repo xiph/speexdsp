@@ -261,7 +261,7 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
       syn_filt(st->exc, st->bw_lpc2, st->sw, st->frameSize, st->lpcSize);
       
       open_loop_nbest_pitch(st->sw, st->min_pitch, st->max_pitch, st->frameSize, &ol_pitch, 1, st->stack);
-      printf ("ol_pitch: %d\n", ol_pitch);
+      /*printf ("ol_pitch: %d\n", ol_pitch);*/
       if (st->lbr_pitch)
          speex_bits_pack(bits, ol_pitch-st->min_pitch, 7);
 
@@ -273,7 +273,7 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
       
       ol_gain=sqrt(1+ol_gain/st->frameSize);
 
-      printf ("ol_gain: %f\n", ol_gain);
+      /*printf ("ol_gain: %f\n", ol_gain);*/
       if (1) {
          int qe = (int)(floor(3.5*log(ol_gain)));
          if (qe<0)
@@ -426,7 +426,7 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
          pitch = st->ltp_quant(target, sw, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2,
                                exc, st->ltp_params, st->min_pitch, st->max_pitch, 
                                st->lpcSize, st->subframeSize, bits, st->stack, exc2);
-      printf ("cl_pitch: %d\n", pitch);
+      /*printf ("cl_pitch: %d\n", pitch);*/
       st->pitch[sub]=pitch;
 
       /* Update target for adaptive codebook contribution */
@@ -508,20 +508,7 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
             ener+=st->buf2[i]*st->buf2[i];
          ener=sqrt(.1+ener/st->subframeSize);
 
-         printf ("cl_ener: %f %f\n", ener, ol_gain);
-         if (0){
-            static float old_ener=1;
-            if (sub)
-               printf ("ener: %f %f\n", old_ener, ener);
-            old_ener=ener;
-         }
          ener /= ol_gain;
-         {
-            float ratio = log(ener);
-            if (ratio<-3)
-               ratio=-3;
-         printf ("ener_ratio: %f\n", ratio);
-         }
          if (0) {
             int qe = (int)(floor(7*log(ener)));
             if (qe<0)
@@ -537,10 +524,10 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
             speex_bits_pack(bits, qe, 3);
             ener=exc_gain_quant_scal[qe];
             ener=exp(ener);
-            printf ("encode gain: %d %f\n", qe, ener);
+            /*printf ("encode gain: %d %f\n", qe, ener);*/
          }
          ener*=ol_gain;
-         printf ("transmit gain: %f\n", ener);
+         /*printf ("transmit gain: %f\n", ener);*/
          ener_1 = 1/ener;
          
          for (i=0;i<st->subframeSize;i++)
@@ -737,7 +724,7 @@ void nb_decode(void *state, SpeexBits *bits, float *out, int lost)
       int qe;
       qe = speex_bits_unpack_unsigned(bits, 5);
       ol_gain = exp(qe/3.5);
-      printf ("decode_ol_gain: %f\n", ol_gain);
+      /*printf ("decode_ol_gain: %f\n", ol_gain);*/
    }
 
    /*Loop on subframes */
@@ -806,7 +793,7 @@ void nb_decode(void *state, SpeexBits *bits, float *out, int lost)
          /*ener = exp(q_energy/7.0);*/
 
          ener = ol_gain*exp(exc_gain_quant_scal[q_energy]);
-         printf ("decode_cl_gain: %f\n", ener);
+         /*printf ("decode_cl_gain: %f\n", ener);*/
 
          /*printf ("unquant_energy: %d %f\n", q_energy, ener);*/
          
