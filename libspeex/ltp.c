@@ -249,7 +249,7 @@ int  *cdbk_index
 #ifdef DEBUG
    printf ("prediction gain = %f\n",err1/(err2+1));
 #endif
-   
+
    POP(stack);
    POP(stack);
    return err2;
@@ -289,7 +289,8 @@ float *exc2
    
    best_exc=PUSH(stack,nsf);
    
-   
+   if (N>end-start+1)
+      N=end-start+1;
    open_loop_nbest_pitch(sw, start, end, nsf, nbest, gains, N, stack);
    for (i=0;i<N;i++)
    {
@@ -344,6 +345,7 @@ int lost)
    gain_cdbk=params->gain_cdbk;
 
    pitch = speex_bits_unpack_unsigned(bits, params->pitch_bits);
+   printf ("decode ltp: %d %d %d\n", start, end, pitch);
    pitch += start;
    gain_index = speex_bits_unpack_unsigned(bits, params->gain_bits);
    /*printf ("decode pitch: %d %d\n", pitch, gain_index);*/

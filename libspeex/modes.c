@@ -38,6 +38,7 @@ extern float hexc_table[];
 extern float exc_5_256_table[];
 extern float exc_5_64_table[];
 extern float exc_8_128_table[];
+extern float exc_8_32_table[];
 extern float exc_10_32_table[];
 extern float exc_10_16_table[];
 extern float hexc_10_32_table[];
@@ -108,7 +109,7 @@ static split_cb_params split_cb_nb_vlbr = {
 
 /* Split-VQ innovation parameters for low bit-rate narrowband */
 static split_cb_params split_cb_nb_lbr = {
-   10,               /*subvect_size*/
+   10,              /*subvect_size*/
    4,               /*nb_subvect*/
    exc_10_32_table, /*shape_cb*/
    5,               /*shape_bits*/

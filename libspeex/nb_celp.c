@@ -278,6 +278,8 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
    if (st->vbr)
    {
       delta_qual = vbr_analysis(st->vbr, in, st->frameSize, ol_pitch, ol_pitch_coef);
+      if (delta_qual<0)
+         delta_qual*=.1*(4+st->vbr_quality);
       if (st->vbr_enabled) 
       {
          int qual = (int)floor(st->vbr_quality+delta_qual+.5);
@@ -451,12 +453,12 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
             int pit_min, pit_max;
             int margin;
             margin = SUBMODE(lbr_pitch);
-            if (ol_pitch < st->min_pitch+margin-1)
-               ol_pitch=st->min_pitch+margin-1;
-            if (ol_pitch > st->max_pitch-margin)
-               ol_pitch=st->max_pitch-margin;
             if (margin)
             {
+               if (ol_pitch < st->min_pitch+margin-1)
+                  ol_pitch=st->min_pitch+margin-1;
+               if (ol_pitch > st->max_pitch-margin)
+                  ol_pitch=st->max_pitch-margin;
                pit_min = ol_pitch-margin+1;
                pit_max = ol_pitch+margin;
             } else {
@@ -834,12 +836,12 @@ void nb_decode(void *state, SpeexBits *bits, float *out, int lost)
             int pit_min, pit_max;
             int margin;
             margin = SUBMODE(lbr_pitch);
-            if (ol_pitch < st->min_pitch+margin-1)
-               ol_pitch=st->min_pitch+margin-1;
-            if (ol_pitch > st->max_pitch-margin)
-               ol_pitch=st->max_pitch-margin;
             if (margin)
             {
+               if (ol_pitch < st->min_pitch+margin-1)
+                  ol_pitch=st->min_pitch+margin-1;
+               if (ol_pitch > st->max_pitch-margin)
+                  ol_pitch=st->max_pitch-margin;
                pit_min = ol_pitch-margin+1;
                pit_max = ol_pitch+margin;
             } else {
