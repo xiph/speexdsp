@@ -144,7 +144,7 @@ static SpeexSubmode nb_submode1 = {
    NULL,
 
    0, 0, -1,
-   2500
+   2100
 };
 
 static SpeexSubmode nb_submode2 = {
@@ -183,7 +183,7 @@ static SpeexSubmode nb_submode3 = {
    &split_cb_nb_lbr,
 
    0.75, 0.6, .5,
-   8350
+   7950
 };
 
 static SpeexSubmode nb_submode4 = {
@@ -202,12 +202,12 @@ static SpeexSubmode nb_submode4 = {
    &split_cb_nb_med,
 
    0.72, 0.65, .3,
-   11350
+   10950
 };
 
 static SpeexSubmode nb_submode5 = {
    -1,
-   1,
+   3,
    /*LSP quantization*/
    lsp_quant_nb,
    lsp_unquant_nb,
@@ -226,7 +226,7 @@ static SpeexSubmode nb_submode5 = {
 
 static SpeexSubmode nb_submode6 = {
    -1,
-   1,
+   3,
    /*LSP quantization*/
    lsp_quant_nb,
    lsp_unquant_nb,
@@ -267,7 +267,7 @@ SpeexMode speex_nb_mode = {
    &nb_mode,
    "narrowband",
    0,
-   3,
+   4,
    &nb_encoder_init,
    &nb_encoder_destroy,
    &nb_encode,
@@ -362,7 +362,7 @@ SpeexMode speex_wb_mode = {
    &sb_wb_mode,
    "full-rate wideband (sub-band CELP)",
    1,
-   3,
+   4,
    &sb_encoder_init,
    &sb_encoder_destroy,
    &sb_encode,

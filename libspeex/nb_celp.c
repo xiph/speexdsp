@@ -32,13 +32,17 @@
 #include "vbr.h"
 #include "misc.h"
 
+extern int training_weight;
 #ifndef M_PI
 #define M_PI           3.14159265358979323846  /* pi */
 #endif
 
 #define SUBMODE(x) st->submodes[st->submodeID]->x
 
-float exc_gain_quant_scal[8]={-2.794750, -1.810660, -1.169850, -0.848119, -0.587190, -0.329818, -0.063266, 0.282826};
+float exc_gain_quant_scal3[8]={-2.794750, -1.810660, -1.169850, -0.848119, -0.587190, -0.329818, -0.063266, 0.282826};
+
+float exc_gain_quant_scal1[2]={-0.35, 0.05};
+ 
 
 #define sqr(x) ((x)*(x))
 #define min(a,b) ((a) < (b) ? (a) : (b))
@@ -540,22 +544,43 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
             ener+=st->buf2[i]*st->buf2[i];
          ener=sqrt(.1+ener/st->subframeSize);
 
+         
          ener /= ol_gain;
+
+         if (1)
+            printf ("ener: %f %f %f\n", ener, ol_gain, ol_pitch_coef);
+
          if (SUBMODE(have_subframe_gain)) 
          {
             int qe;
             ener=log(ener);
-            qe = vq_index(&ener, exc_gain_quant_scal, 1, 8);
-            speex_bits_pack(bits, qe, 3);
-            ener=exc_gain_quant_scal[qe];
+            if (SUBMODE(have_subframe_gain)==3)
+            {
+               qe = vq_index(&ener, exc_gain_quant_scal3, 1, 8);
+               speex_bits_pack(bits, qe, 3);
+               ener=exc_gain_quant_scal3[qe];
+            } else {
+               qe = vq_index(&ener, exc_gain_quant_scal1, 1, 2);
+               speex_bits_pack(bits, qe, 1);
+               ener=exc_gain_quant_scal1[qe];               
+            }
             ener=exp(ener);
             /*printf ("encode gain: %d %f\n", qe, ener);*/
          } else {
             ener=1;
          }
+
          ener*=ol_gain;
          /*printf ("transmit gain: %f\n", ener);*/
          ener_1 = 1/ener;
+
+         if (0) {
+            int start=rand()%35;
+            printf ("norm_exc: ");
+            for (i=start;i<start+5;i++)
+               printf ("%f ", ener_1*st->buf2[i]);
+            printf ("\n");
+         }
          
          for (i=0;i<st->subframeSize;i++)
             target[i]*=ener_1;
@@ -879,10 +904,14 @@ void nb_decode(void *state, SpeexBits *bits, float *out, int lost)
          for (i=0;i<st->subframeSize;i++)
             innov[i]=0;
 
-         if (SUBMODE(have_subframe_gain))
+         if (SUBMODE(have_subframe_gain)==3)
          {
             q_energy = speex_bits_unpack_unsigned(bits, 3);
-            ener = ol_gain*exp(exc_gain_quant_scal[q_energy]);
+            ener = ol_gain*exp(exc_gain_quant_scal3[q_energy]);
+         } else if (SUBMODE(have_subframe_gain)==1)
+         {
+            q_energy = speex_bits_unpack_unsigned(bits, 1);
+            ener = ol_gain*exp(exc_gain_quant_scal1[q_energy]);
          } else {
             ener = ol_gain;
          }
