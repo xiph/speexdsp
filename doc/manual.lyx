@@ -82,6 +82,14 @@ all trademarks are property of their respective owner
 \end_inset 
 
 
+\layout Standard
+\pagebreak_bottom 
+
+\begin_inset FloatList table
+
+\end_inset 
+
+
 \layout Section
 
 Introduction to Speex
@@ -413,6 +421,21 @@ W(z)=\frac{A\left(\frac{z}{\gamma _{1}}\right)}{A\left(\frac{z}{\gamma _{2}}\rig
 \end_inset 
 
 
+\layout Standard
+
+with control parameters 
+\begin_inset Formula $\gamma _{1}>\gamma _{2}$
+\end_inset 
+
+.
+ If the noise is white in the perceptually weighted domain, then in the
+ signal domain its spectral shape will be of the form
+\begin_inset Formula \[
+A_{noise}(z)=\frac{1}{W(z)}=\frac{A\left(\frac{z}{\gamma _{2}}\right)}{A\left(\frac{z}{\gamma _{1}}\right)}\]
+
+\end_inset 
+
+
 \layout Section
 
 Speex narrowband mode
@@ -533,6 +556,32 @@ global
 Bit allocation
 \layout Standard
 
+There are 7 different narrowband bit-rates defined for Speex, ranging from
+ 200 bps to 18.15 kbps, although the modes below 5.9 kbps should not be used
+ for speech.
+ The bit-allocation for each mode is detailed in table 
+\begin_inset LatexCommand \ref{cap:bits-narrowband}
+
+\end_inset 
+
+.
+ Each frame starts with the mode ID encoded with 4 bits which allows a range
+ from 0 to 15, though only the first 7 values are used (the others are reserved).
+ The parameters are listed in the table in the order they are packed in
+ the bit-stream.
+ All frame-based parameters are packed before sub-frame parameters.
+ The parameters for a certain sub-frame are all packed before the following
+ sub-frame is packed.
+\layout Standard
+
+
+\begin_inset Float table
+placement htbp
+wide true
+collapsed false
+
+\layout Standard
+
 
 \begin_inset  Tabular
 <lyxtabular version="3" rows="11" columns="9">
@@ -626,7 +675,7 @@ Update rate
 
 \layout Standard
 
-LSP
+Mode ID
 \end_inset 
 </cell>
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
@@ -1004,7 +1053,7 @@ Fine pitch
 
 \layout Standard
 
-subframe
+sub-frame
 \end_inset 
 </cell>
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
@@ -1078,7 +1127,7 @@ Pitch gain
 
 \layout Standard
 
-subframe
+sub-frame
 \end_inset 
 </cell>
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
@@ -1152,7 +1201,7 @@ Innovation gain
 
 \layout Standard
 
-subframe
+sub-frame
 \end_inset 
 </cell>
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
@@ -1226,7 +1275,7 @@ Innovation VQ
 
 \layout Standard
 
-subframe
+sub-frame
 \end_inset 
 </cell>
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
@@ -1365,6 +1414,17 @@ frame
 \end_inset 
 
 
+\layout Caption
+
+Bit allocation for narrowband modes
+\begin_inset LatexCommand \label{cap:bits-narrowband}
+
+\end_inset 
+
+
+\end_inset 
+
+
 \layout Subsection
 
 Perceptual post-filter
@@ -1439,6 +1499,365 @@ Excitation Quantization
 
 The high-band excitation is coded in the same way as for narrowband.
  
+\layout Subsection
+
+Bit allocation
+\layout Standard
+
+For the wideband mode, all the narrowband frame is packed before the high-band
+ is encoded.
+ The narrowband part of the bit-stream is as defined in table 
+\begin_inset LatexCommand \ref{cap:bits-narrowband}
+
+\end_inset 
+
+.
+ The high-band follows, as described in table 
+\begin_inset LatexCommand \ref{cap:bits-wideband}
+
+\end_inset 
+
+.
+ This also means that a wideband frame may be correctly decoded by a narrowband
+ decoder with the only caveat that is more than one frame is packed in the
+ same packet, the decoder will need to skip the high-band parts in order
+ to be in sync with the bit-stream.
+\layout Standard
+
+
+\begin_inset Float table
+placement htbp
+wide true
+collapsed false
+
+\layout Standard
+
+
+\begin_inset  Tabular
+<lyxtabular version="3" rows="6" columns="6">
+<features>
+<column alignment="center" valignment="top" leftline="true" width="0pt">
+<column alignment="center" valignment="top" leftline="true" width="0pt">
+<column alignment="center" valignment="top" leftline="true" width="0pt">
+<column alignment="center" valignment="top" leftline="true" width="0pt">
+<column alignment="center" valignment="top" leftline="true" width="0pt">
+<column alignment="center" valignment="top" leftline="true" rightline="true" width="0pt">
+<row topline="true" bottomline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Parameter
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Update rate
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+0
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+1
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+2
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+3
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Mode ID
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+frame
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+3
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+3
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+3
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+3
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+LSP
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+frame
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+0
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+12
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+12
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+12
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Excitation gain
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+sub-frame
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+0
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+5
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+4
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+4
+\end_inset 
+</cell>
+</row>
+<row topline="true" bottomline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Excitation VQ
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+sub-frame
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+0
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+0
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+20
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+40
+\end_inset 
+</cell>
+</row>
+<row topline="true" bottomline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Total
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+frame
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+3
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+35
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+111
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+191
+\end_inset 
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset 
+
+
+\layout Caption
+
+Bit allocation for high-band in wideband mode
+\begin_inset LatexCommand \label{cap:bits-wideband}
+
+\end_inset 
+
+
+\end_inset 
+
+
 \layout Section
 
 Programming with Speex (the libspeex API)
@@ -1801,8 +2220,6 @@ Speex bit-streams can be stored in Ogg files.
  In this case, the first packet of the Ogg file contains the Speex header
  (see speex_header.h for now) and the second packet contains comments.
  The next frames contain one or more (number found in header) Speex frames.
- (Note: packing more that one Speex frame in an Ogg frame is not supported
- yet)
 \layout LyX-Code
 
 \layout Section
