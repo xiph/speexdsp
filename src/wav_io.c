@@ -98,7 +98,7 @@ int read_wav_header(FILE *file, int *rate, int *channels, int *format, int *size
    *rate = itmp;
    if (*rate != 8000 && *rate != 16000 && *rate != 11025 && *rate != 22050)
    {
-      fprintf (stderr, "Only 8 kHz (narrowband) and 16 kHz (wideband) supported\n");
+      fprintf (stderr, "Only 8 kHz (narrowband) and 16 kHz (wideband) supported (plus 11.025 kHz and 22.05 kHz, but your mileage may vary)\n");
       return -1;
    }
 
