@@ -128,9 +128,11 @@ void *sb_encoder_init(SpeexMode *m)
    SBEncState *st;
    SpeexSBMode *mode;
 
-   st = (SBEncState*)speex_alloc(sizeof(SBEncState));
+   st = (SBEncState*)speex_alloc(sizeof(SBEncState)+8000*sizeof(float));
    st->mode = m;
    mode = (SpeexSBMode*)m->mode;
+
+   st->stack = ((char*)st) + sizeof(SBEncState);
 
    st->st_low = speex_encoder_init(mode->nb_mode);
    st->full_frame_size = 2*mode->frameSize;
@@ -152,60 +154,59 @@ void *sb_encoder_init(SpeexMode *m)
    st->gamma1=mode->gamma1;
    st->gamma2=mode->gamma2;
    st->first=1;
-   st->stack = (char*)speex_alloc(4000*sizeof(float));
 
-   st->x0d=(float*)speex_alloc(st->frame_size*sizeof(float));
-   st->x1d=(float*)speex_alloc(st->frame_size*sizeof(float));
-   st->high=(float*)speex_alloc(st->full_frame_size*sizeof(float));
-   st->y0=(float*)speex_alloc(st->full_frame_size*sizeof(float));
-   st->y1=(float*)speex_alloc(st->full_frame_size*sizeof(float));
+   st->x0d=PUSH(st->stack, st->frame_size, float);
+   st->x1d=PUSH(st->stack, st->frame_size, float);
+   st->high=PUSH(st->stack, st->full_frame_size, float);
+   st->y0=PUSH(st->stack, st->full_frame_size, float);
+   st->y1=PUSH(st->stack, st->full_frame_size, float);
 
-   st->h0_mem=(float*)speex_alloc(QMF_ORDER*sizeof(float));
-   st->h1_mem=(float*)speex_alloc(QMF_ORDER*sizeof(float));
-   st->g0_mem=(float*)speex_alloc(QMF_ORDER*sizeof(float));
-   st->g1_mem=(float*)speex_alloc(QMF_ORDER*sizeof(float));
+   st->h0_mem=PUSH(st->stack, QMF_ORDER, float);
+   st->h1_mem=PUSH(st->stack, QMF_ORDER, float);
+   st->g0_mem=PUSH(st->stack, QMF_ORDER, float);
+   st->g1_mem=PUSH(st->stack, QMF_ORDER, float);
 
-   st->buf=(float*)speex_alloc(st->windowSize*sizeof(float));
-   st->excBuf=(float*)speex_alloc(st->bufSize*sizeof(float));
+   st->buf=PUSH(st->stack, st->windowSize, float);
+   st->excBuf=PUSH(st->stack, st->bufSize, float);
    st->exc = st->excBuf + st->bufSize - st->windowSize;
 
-   st->res=(float*)speex_alloc(st->frame_size*sizeof(float));
-   st->sw=(float*)speex_alloc(st->frame_size*sizeof(float));
-   st->target=(float*)speex_alloc(st->frame_size*sizeof(float));
+   st->res=PUSH(st->stack, st->frame_size, float);
+   st->sw=PUSH(st->stack, st->frame_size, float);
+   st->target=PUSH(st->stack, st->frame_size, float);
    /*Asymetric "pseudo-Hamming" window*/
    {
       int part1, part2;
       part1 = st->subframeSize*7/2;
       part2 = st->subframeSize*5/2;
-      st->window = (float*)speex_alloc(st->windowSize*sizeof(float));
+      st->window = PUSH(st->stack, st->windowSize, float);
       for (i=0;i<part1;i++)
          st->window[i]=.54-.46*cos(M_PI*i/part1);
       for (i=0;i<part2;i++)
          st->window[part1+i]=.54+.46*cos(M_PI*i/part2);
    }
 
-   st->lagWindow = (float*)speex_alloc((st->lpcSize+1)*sizeof(float));
+   st->lagWindow = PUSH(st->stack, st->lpcSize+1, float);
    for (i=0;i<st->lpcSize+1;i++)
       st->lagWindow[i]=exp(-.5*sqr(2*M_PI*st->lag_factor*i));
 
-   st->rc = (float*)speex_alloc(st->lpcSize*sizeof(float));
-   st->autocorr = (float*)speex_alloc((st->lpcSize+1)*sizeof(float));
-   st->lpc = (float*)speex_alloc((st->lpcSize+1)*sizeof(float));
-   st->bw_lpc1 = (float*)speex_alloc((st->lpcSize+1)*sizeof(float));
-   st->bw_lpc2 = (float*)speex_alloc((st->lpcSize+1)*sizeof(float));
-   st->lsp = (float*)speex_alloc(st->lpcSize*sizeof(float));
-   st->qlsp = (float*)speex_alloc(st->lpcSize*sizeof(float));
-   st->old_lsp = (float*)speex_alloc(st->lpcSize*sizeof(float));
-   st->old_qlsp = (float*)speex_alloc(st->lpcSize*sizeof(float));
-   st->interp_lsp = (float*)speex_alloc(st->lpcSize*sizeof(float));
-   st->interp_qlsp = (float*)speex_alloc(st->lpcSize*sizeof(float));
-   st->interp_lpc = (float*)speex_alloc((st->lpcSize+1)*sizeof(float));
-   st->interp_qlpc = (float*)speex_alloc((st->lpcSize+1)*sizeof(float));
-   st->pi_gain = (float*)speex_alloc(st->nbSubframes*sizeof(float));
+   st->rc = PUSH(st->stack, st->lpcSize, float);
+   st->autocorr = PUSH(st->stack, st->lpcSize+1, float);
+   st->lpc = PUSH(st->stack, st->lpcSize+1, float);
+   st->bw_lpc1 = PUSH(st->stack, st->lpcSize+1, float);
+   st->bw_lpc2 = PUSH(st->stack, st->lpcSize+1, float);
+   st->lsp = PUSH(st->stack, st->lpcSize, float);
+   st->qlsp = PUSH(st->stack, st->lpcSize, float);
+   st->old_lsp = PUSH(st->stack, st->lpcSize, float);
+   st->old_qlsp = PUSH(st->stack, st->lpcSize, float);
+   st->interp_lsp = PUSH(st->stack, st->lpcSize, float);
+   st->interp_qlsp = PUSH(st->stack, st->lpcSize, float);
+   st->interp_lpc = PUSH(st->stack, st->lpcSize+1, float);
+   st->interp_qlpc = PUSH(st->stack, st->lpcSize+1, float);
+   st->pi_gain = PUSH(st->stack, st->nbSubframes, float);
 
-   st->mem_sp = (float*)speex_alloc(st->lpcSize*sizeof(float));
-   st->mem_sp2 = (float*)speex_alloc(st->lpcSize*sizeof(float));
-   st->mem_sw = (float*)speex_alloc(st->lpcSize*sizeof(float));
+   st->mem_sp = PUSH(st->stack, st->lpcSize, float);
+   st->mem_sp2 = PUSH(st->stack, st->lpcSize, float);
+   st->mem_sw = PUSH(st->stack, st->lpcSize, float);
 
    st->vbr_quality = 8;
    st->vbr_enabled = 0;
@@ -225,43 +226,6 @@ void sb_encoder_destroy(void *state)
    SBEncState *st=(SBEncState*)state;
 
    speex_encoder_destroy(st->st_low);
-   speex_free(st->x0d);
-   speex_free(st->x1d);
-   speex_free(st->high);
-   speex_free(st->y0);
-   speex_free(st->y1);
-   speex_free(st->h0_mem);
-   speex_free(st->h1_mem);
-   speex_free(st->g0_mem);
-   speex_free(st->g1_mem);
-   
-   speex_free(st->buf);
-   speex_free(st->window);
-   speex_free(st->excBuf);
-   speex_free(st->sw);
-   speex_free(st->res);
-   speex_free(st->target);
-   speex_free(st->lagWindow);
-   speex_free(st->rc);
-   speex_free(st->autocorr);
-   speex_free(st->lpc);
-   speex_free(st->bw_lpc1);
-   speex_free(st->bw_lpc2);
-   speex_free(st->lsp);
-   speex_free(st->qlsp);
-   speex_free(st->old_lsp);
-   speex_free(st->old_qlsp);
-   speex_free(st->interp_lsp);
-   speex_free(st->interp_qlsp);
-   speex_free(st->interp_lpc);
-   speex_free(st->interp_qlpc);
-
-   speex_free(st->mem_sp);
-   speex_free(st->mem_sp2);
-   speex_free(st->mem_sw);
-   speex_free(st->pi_gain);
-
-   speex_free((float*)st->stack);
 
    speex_free(st);
 }
@@ -726,9 +690,13 @@ void *sb_decoder_init(SpeexMode *m)
 {
    SBDecState *st;
    SpeexSBMode *mode;
-   st = (SBDecState*)speex_alloc(sizeof(SBDecState));
+   st = (SBDecState*)speex_alloc(sizeof(SBDecState)+4000*sizeof(float));
    st->mode = m;
    mode=(SpeexSBMode*)m->mode;
+
+   st->stack = ((char*)st) + sizeof(SBDecState);
+
+
 
    st->st_low = speex_decoder_init(mode->nb_mode);
    st->full_frame_size = 2*mode->frameSize;
@@ -743,28 +711,28 @@ void *sb_decoder_init(SpeexMode *m)
    st->submodeID=mode->defaultSubmode;
 
    st->first=1;
-   st->stack = (char*)speex_alloc(2000*sizeof(float));
 
-   st->x0d=(float*)speex_alloc(st->frame_size*sizeof(float));
-   st->x1d=(float*)speex_alloc(st->frame_size*sizeof(float));
-   st->high=(float*)speex_alloc(st->full_frame_size*sizeof(float));
-   st->y0=(float*)speex_alloc(st->full_frame_size*sizeof(float));
-   st->y1=(float*)speex_alloc(st->full_frame_size*sizeof(float));
 
-   st->h0_mem=(float*)speex_alloc(QMF_ORDER*sizeof(float));
-   st->h1_mem=(float*)speex_alloc(QMF_ORDER*sizeof(float));
-   st->g0_mem=(float*)speex_alloc(QMF_ORDER*sizeof(float));
-   st->g1_mem=(float*)speex_alloc(QMF_ORDER*sizeof(float));
+   st->x0d=PUSH(st->stack, st->frame_size, float);
+   st->x1d=PUSH(st->stack, st->frame_size, float);
+   st->high=PUSH(st->stack, st->full_frame_size, float);
+   st->y0=PUSH(st->stack, st->full_frame_size, float);
+   st->y1=PUSH(st->stack, st->full_frame_size, float);
 
-   st->exc=(float*)speex_alloc(st->frame_size*sizeof(float));
+   st->h0_mem=PUSH(st->stack, QMF_ORDER, float);
+   st->h1_mem=PUSH(st->stack, QMF_ORDER, float);
+   st->g0_mem=PUSH(st->stack, QMF_ORDER, float);
+   st->g1_mem=PUSH(st->stack, QMF_ORDER, float);
 
-   st->qlsp = (float*)speex_alloc(st->lpcSize*sizeof(float));
-   st->old_qlsp = (float*)speex_alloc(st->lpcSize*sizeof(float));
-   st->interp_qlsp = (float*)speex_alloc(st->lpcSize*sizeof(float));
-   st->interp_qlpc = (float*)speex_alloc((st->lpcSize+1)*sizeof(float));
+   st->exc=PUSH(st->stack, st->frame_size, float);
 
-   st->pi_gain = (float*)speex_alloc(st->nbSubframes*sizeof(float));
-   st->mem_sp = (float*)speex_alloc(2*st->lpcSize*sizeof(float));
+   st->qlsp = PUSH(st->stack, st->lpcSize, float);
+   st->old_qlsp = PUSH(st->stack, st->lpcSize, float);
+   st->interp_qlsp = PUSH(st->stack, st->lpcSize, float);
+   st->interp_qlpc = PUSH(st->stack, st->lpcSize+1, float);
+
+   st->pi_gain = PUSH(st->stack, st->nbSubframes, float);
+   st->mem_sp = PUSH(st->stack, 2*st->lpcSize, float);
    
    st->lpc_enh_enabled=0;
 
@@ -776,26 +744,6 @@ void sb_decoder_destroy(void *state)
    SBDecState *st;
    st = (SBDecState*)state;
    speex_decoder_destroy(st->st_low);
-   speex_free(st->x0d);
-   speex_free(st->x1d);
-   speex_free(st->high);
-   speex_free(st->y0);
-   speex_free(st->y1);
-   speex_free(st->h0_mem);
-   speex_free(st->h1_mem);
-   speex_free(st->g0_mem);
-   speex_free(st->g1_mem);
-   
-   speex_free(st->exc);
-   speex_free(st->qlsp);
-   speex_free(st->old_qlsp);
-   speex_free(st->interp_qlsp);
-   speex_free(st->interp_qlpc);
-   speex_free(st->pi_gain);
-
-   speex_free(st->mem_sp);
-
-   speex_free((float*)st->stack);
 
    speex_free(state);
 }
