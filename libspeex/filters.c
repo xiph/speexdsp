@@ -203,10 +203,6 @@ void filter_mem2(const spx_sig_t *x, const spx_coef_t *num, const spx_coef_t *de
       __asm__ __volatile__ (
             "\tldrsh %6, [%1], #2\n"
             "\tsmull %8, %9, %4, %6\n"
-            
-            ".filterloop: \n"
-            "\tldrsh %6, [%1], #2\n"
-            "\tsmull %8, %9, %4, %6\n"
             ".filterloop: \n"
             "\tldrsh %6, [%2], #2\n"
             "\tldr %10, [%0, #4]\n"
@@ -238,6 +234,48 @@ void filter_mem2(const spx_sig_t *x, const spx_coef_t *num, const spx_coef_t *de
    
    }
 }
+
+void iir_mem2(const spx_sig_t *x, const spx_coef_t *den, spx_sig_t *y, int N, int ord, spx_mem_t *mem)
+{
+   int i,j;
+   spx_sig_t xi,yi,nyi;
+
+   for (i=0;i<N;i++)
+   {
+      int deadm, deadd, deadidx, dead1, dead2, dead3, dead4, dead5, dead6;
+      xi=SATURATE(x[i],805306368);
+      yi = SATURATE(ADD32(xi, SHL(mem[0],2)),805306368);
+      nyi = -yi;
+      y[i] = yi;
+      __asm__ __volatile__ (
+            ".iirloop: \n"
+
+            "\tldrsh %4, [%1], #2\n"
+            "\tsmull %5, %6, %3, %4\n"
+            "\tldr %7, [%0, #4]\n"
+
+            "\tmov %5, %5, lsr #15\n"
+            "\tadd %5, %5, %6, lsl #17\n"
+            "\tadd %7, %7, %5\n"
+            "\tstr %7, [%0], #4 \n"
+            "\tsubs %2, %2, #1\n"
+            "\t bne .iirloop\n"
+
+            "\tldrsh %4, [%1], #2\n"
+            "\tsmull %5, %6, %3, %4\n"
+
+            "\tmov %5, %5, lsr #15\n"
+            "\tadd %7, %5, %6, lsl #17\n"
+            "\tstr %7, [%0], #4 \n"
+         : "=r" (deadm), "=r" (deadd), "=r" (deadidx), "=r" (nyi),
+           "=r" (dead1), "=r" (dead2), "=r" (dead3), "=r" (dead4),
+           "=r" (dead5), "=r" (dead6)
+         : "0" (mem), "1" (den+1), "2" (ord-1), "3" (nyi)
+         : "cc", "memory");
+   
+   }
+}
+
 #else
 void filter_mem2(const spx_sig_t *x, const spx_coef_t *num, const spx_coef_t *den, spx_sig_t *y, int N, int ord, spx_mem_t *mem)
 {
@@ -259,7 +297,6 @@ void filter_mem2(const spx_sig_t *x, const spx_coef_t *num, const spx_coef_t *de
       y[i] = yi;
    }
 }
-#endif
 
 void iir_mem2(const spx_sig_t *x, const spx_coef_t *den, spx_sig_t *y, int N, int ord, spx_mem_t *mem)
 {
@@ -281,6 +318,9 @@ void iir_mem2(const spx_sig_t *x, const spx_coef_t *den, spx_sig_t *y, int N, in
       y[i] = yi;
    }
 }
+
+#endif
+
 
 
 void fir_mem2(const spx_sig_t *x, const spx_coef_t *num, spx_sig_t *y, int N, int ord, spx_mem_t *mem)
