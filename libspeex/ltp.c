@@ -222,19 +222,18 @@ float *stack
 
 }
 
-/** Finds the best quantized 3-tap pitch predictor by analysis by synthesis */
-float pitch_search_3tap_unquant(
+void pitch_search_3tap_unquant(
 float target[],                 /* Target vector */
 float ak[],                     /* LPCs for this subframe */
 float awk1[],                   /* Weighted LPCs #1 for this subframe */
 float awk2[],                   /* Weighted LPCs #2 for this subframe */
-float exc[],                    /* Overlapping codebook */
+float exc[],                    /* Excitation */
+void *par,
 int   start,                    /* Smallest pitch value allowed */
 int   end,                      /* Largest pitch value allowed */
-float *gain,                    /* 3-tab gains of optimum entry */
-int   *pitch,                   /* Index of optimum entry */
 int   p,                        /* Number of LPC coeffs */
-int   nsf,                       /* Number of samples in subframe */
+int   nsf,                      /* Number of samples in subframe */
+FrameBits *bits,
 float *stack
 )
 {
@@ -243,7 +242,8 @@ float *stack
    float *x[3];
    float corr[3];
    float A[3][3];
-
+   int pitch;
+   float gain[3];
    tmp = PUSH(stack, 3*nsf);
    x[0]=tmp;
    x[1]=tmp+nsf;
@@ -251,15 +251,15 @@ float *stack
 
    /* Perform closed-loop 1-tap search*/
    overlap_cb_search(target, ak, awk1, awk2,
-                     &exc[-end], end-start+1, gain, pitch, p,
+                     &exc[-end], end-start+1, gain, &pitch, p,
                      nsf);
    /* Real pitch value */
-   *pitch=end-*pitch;
+   pitch=end-pitch;
    
    
    for (i=0;i<3;i++)
    {
-      residue_zero(&exc[-*pitch-1+i],awk1,x[i],nsf,p);
+      residue_zero(&exc[-pitch-1+i],awk1,x[i],nsf,p);
       syn_filt_zero(x[i],ak,x[i],nsf,p);
       syn_filt_zero(x[i],awk2,x[i],nsf,p);
    }
@@ -297,9 +297,10 @@ float *stack
    /* Put gains in right order */
    gain[0]=corr[2];gain[1]=corr[1];gain[2]=corr[0];
 
-   --*pitch;
-
-   {
+   for (i=nsf-1;i>=0;i--)
+      exc[i]=gain[0]*exc[i-pitch+1]+gain[1]*exc[i-pitch]+gain[2]*exc[i-pitch-1];
+#if 0
+   if (0){
       float tmp1=0,tmp2=0;
       for (i=0;i<nsf;i++)
          tmp1+=target[i]*target[i];
@@ -309,6 +310,7 @@ float *stack
       printf ("prediction gain = %f\n",tmp1/(tmp2+1));
       return tmp1/(tmp2+1);
    }
+#endif
    POP(stack);
 }
 

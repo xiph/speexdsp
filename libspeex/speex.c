@@ -188,7 +188,7 @@ void encode(EncState *st, float *in, FrameBits *bits)
    st->lpc[0]=1;
 
    /* LPC to LSPs (x-domain) transform */
-   roots=lpc_to_lsp (st->lpc, st->lpcSize, st->lsp, 6, 0.02, st->stack);
+   roots=lpc_to_lsp (st->lpc, st->lpcSize, st->lsp, 6, 0.01, st->stack);
    if (roots!=st->lpcSize)
    {
       fprintf (stderr, "roots!=st->lpcSize (found only %d roots)\n", roots);
@@ -296,8 +296,8 @@ void encode(EncState *st, float *in, FrameBits *bits)
 
       /* Long-term prediction */
       st->ltp_quant(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2,
-                        exc, st->ltp_params, 20, 147, st->lpcSize, st->subframeSize, 
-                        bits, st->stack);
+                    exc, st->ltp_params, st->min_pitch, st->max_pitch, 
+                    st->lpcSize, st->subframeSize, bits, st->stack);
 
       /* Update target for adaptive codebook contribution */
       residue_zero(exc, st->bw_lpc1, res, st->subframeSize, st->lpcSize);
@@ -313,11 +313,29 @@ void encode(EncState *st, float *in, FrameBits *bits)
       snr = 10*log10((esig+1)/(enoise+1));
       printf ("pitch SNR = %f\n", snr);
 
+#if 0 /*If set to 1, compute "real innovation" i.e. cheat to get perfect reconstruction*/
+      syn_filt_zero(target, st->bw_lpc1, res, st->subframeSize, st->lpcSize);
+      residue_zero(res, st->interp_qlpc, st->buf2, st->subframeSize, st->lpcSize);
+      residue_zero(st->buf2, st->bw_lpc2, st->buf2, st->subframeSize, st->lpcSize);
+      if (snr>5 && (rand()%10==0))
+      {
+         printf ("exc ");
+         for (i=0;i<st->subframeSize;i++)
+         {
+            if (i && i%8==0)
+               printf ("\nexc ");
+            printf ("%f ", st->buf2[i]);
+         }
+         printf ("\n");
+      }
+      for (i=0;i<st->subframeSize;i++)
+         exc[i]+=st->buf2[i];
+#else
       /* Perform a split-codebook search */
       st->innovation_quant(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2,
-                        st->innovation_params, st->lpcSize,
-                        st->subframeSize, exc, bits, st->stack);
-
+                           st->innovation_params, st->lpcSize,
+                           st->subframeSize, exc, bits, st->stack);
+#endif
       /* Compute weighted noise energy and SNR */
       enoise=0;
       for (i=0;i<st->subframeSize;i++)

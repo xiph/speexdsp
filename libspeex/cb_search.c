@@ -220,6 +220,7 @@ float *stack
    }
 
    {
+#if 0
       int best_vq_index=0, max_index;
       float max_gain=0, log_max, min_dist=0, *sign;
 
@@ -262,11 +263,17 @@ float *stack
          gains[i]= sign[i]*gains[i]/max_gain/(Ee[ind[i]]+.001);
 #endif  
     
+
+      POP(stack);
+#else
+      for (i=0;i<nb_subvect;i++)
+         gains[i]= gains[i]/(Ee[ind[i]]+.001);
+
+#endif
       for (i=0;i<nb_subvect;i++)
          for (j=0;j<subvect_size;j++)
             exc[subvect_size*i+j]+=gains[i]*shape_cb[ind[i]*subvect_size+j];
 
-      POP(stack);
    }
 
    /*TODO: Perform joint optimization of gains*/

@@ -27,11 +27,18 @@
 extern float gain_cdbk_nb[];
 extern float exc_gains_table[];
 extern float exc_table[];
+extern float exc_wb_table[];
 
 ltp_params ltp_params_nb = {
    gain_cdbk_nb,
    7,
    7
+};
+
+ltp_params ltp_params_wb = {
+   gain_cdbk_nb,
+   7,
+   8
 };
 
 split_cb_params split_cb_nb = {
@@ -43,6 +50,16 @@ split_cb_params split_cb_nb = {
    8                /*gain_bits*/
 };
 
+split_cb_params split_cb_wb = {
+   8,               /*subvect_size*/
+   8,               /*nb_subvect*/
+   exc_wb_table,    /*shape_cb*/
+   7,               /*shape_bits*/
+   exc_gains_table, /*gain_cb*/
+   8                /*gain_bits*/
+};
+
+
 SpeexMode nb_mode = {
    160,    /*frameSize*/
    40,     /*subframeSize*/
@@ -52,7 +69,7 @@ SpeexMode nb_mode = {
    20,     /*pitchStart*/
    140,    /*pitchEnd*/
    0.9,    /*gamma1*/
-   0.6,    /*gamma2*/
+   0.4,    /*gamma2*/
    /*LSP quantization*/
    lsp_quant_nb,
    lsp_unquant_nb,
@@ -76,16 +93,16 @@ SpeexMode wb_mode = {
    35,     /*pitchStart*/
    290,    /*pitchEnd*/
    0.9,    /*gamma1*/
-   0.2,    /*gamma2*/
+   0.6,    /*gamma2*/
    /*LSP quantization*/
    lsp_quant_wb,
    lsp_unquant_nb,
    /*Pitch quantization*/
    pitch_search_3tap,
    pitch_unquant_3tap,
-   &ltp_params_nb,
+   &ltp_params_wb,
    /*Innovation quantization*/
    split_cb_search,
    split_cb_unquant,
-   &split_cb_nb
+   &split_cb_wb
 };
