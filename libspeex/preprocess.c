@@ -589,7 +589,7 @@ static void update_noise_prob(SpeexPreprocessState *st)
          st->Smin[i] = st->Stmp[i] = st->S[i]+100.f;
    }
 
-   if (st->nb_preprocess%100==0)
+   if (st->nb_preprocess%200==0)
    {
       for (i=1;i<N-1;i++)
       {
@@ -606,13 +606,15 @@ static void update_noise_prob(SpeexPreprocessState *st)
    for (i=1;i<N-1;i++)
    {
       st->update_prob[i] *= .2f;
-      if (st->S[i] > 4*st->Smin[i])
+      if (st->S[i] > 2.5*st->Smin[i])
          st->update_prob[i] += .8f;
       /*fprintf (stderr, "%f ", st->S[i]/st->Smin[i]);*/
       /*fprintf (stderr, "%f ", st->update_prob[i]);*/
    }
 
 }
+
+#define NOISE_OVERCOMPENS 1.4
 
 int speex_preprocess(SpeexPreprocessState *st, short *x, int *echo)
 {
@@ -647,7 +649,7 @@ int speex_preprocess(SpeexPreprocessState *st, short *x, int *echo)
    /* Compute a posteriori SNR */
    for (i=1;i<N;i++)
    {
-      st->post[i] = ps[i]/(1.f+st->noise[i]+st->echo_noise[i]+st->reverb_estimate[i]) - 1.f;
+      st->post[i] = ps[i]/(1.f+NOISE_OVERCOMPENS*st->noise[i]+st->echo_noise[i]+st->reverb_estimate[i]) - 1.f;
       if (st->post[i]>100.f)
          st->post[i]=100.f;
       /*if (st->post[i]<0)
@@ -687,13 +689,13 @@ int speex_preprocess(SpeexPreprocessState *st, short *x, int *echo)
 
       /*if (gamma<min_gamma)*/
          gamma=min_gamma;
-      
+      gamma = .1;
       for (i=1;i<N;i++)
       {
          
          /* A priori SNR update */
          st->prior[i] = gamma*max(0.0f,st->post[i]) +
-         (1.f-gamma)*st->gain[i]*st->gain[i]*st->old_ps[i]/(1.f+st->noise[i]+st->echo_noise[i]+st->reverb_estimate[i]);
+         (1.f-gamma)*st->gain[i]*st->gain[i]*st->old_ps[i]/(1.f+NOISE_OVERCOMPENS*st->noise[i]+st->echo_noise[i]+st->reverb_estimate[i]);
          
          if (st->prior[i]>100.f)
             st->prior[i]=100.f;
@@ -826,10 +828,11 @@ int speex_preprocess(SpeexPreprocessState *st, short *x, int *echo)
       
       /* FIXME: add global prob (P2) */
       q = 1-Pframe*P1;
+      q = 1-P1;
       if (q>.95f)
          q=.95f;
       p=1.f/(1.f + (q/(1.f-q))*(1.f+st->prior[i])*exp(-theta));
-      
+      /*p=1;*/
 
 #if 0
       /* log-spectral magnitude estimator */
