@@ -1,3 +1,7 @@
+/* Copyright (C) 2002 Jean-Marc Valin 
+   File: speex.c
+*/
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -6,6 +10,7 @@
 #include "lpc.h"
 #include "lsp.h"
 #include "ltp.h"
+#include "quant_lsp.h"
 
 #ifndef M_PI
 #define M_PI           3.14159265358979323846  /* pi */
@@ -110,15 +115,26 @@ void encode(EncState *st, float *in, int *outSize, void *bits)
    }
    for (i=0;i<st->lpcSize;i++)
       st->lsp[i] = acos(st->lsp[i]);
+
    /*for (i=0;i<roots;i++)
       printf("%f ", st->lsp[i]);
-      printf ("\n\n");*/
+      printf ("\n");*/
+   
+   /* LSP Quantization */
+   {
+      unsigned int id;
+      id=lsp_quant_nb(st->lsp,10 );
+      lsp_unquant_nb(st->lsp,10,id);
+   }
 
-   /* Quantize LSPs */
+   /*for (i=0;i<roots;i++)
+      printf("%f ", st->lsp[i]);
+      printf ("\n");*/
 
+#if 1
    for (sub=0;sub<st->nbSubframes;sub++)
    {
-      float tmp, gain[3];
+      float tmp, tmp1,tmp2,gain[3];
       int pitch, offset;
 
       offset = st->subframeSize*sub;
@@ -157,24 +173,28 @@ void encode(EncState *st, float *in, int *outSize, void *bits)
       }
 
       /* Find pitch gain and delay */
-      pitch = three_tap_ltp(st->wframe+offset, st->subframeSize, 20, 120, gain);
+      pitch = ltp_closed_loop(st->wframe+offset, st->subframeSize, 20, 120, gain);
+      /*pitch = three_tap_ltp(st->wframe+offset, st->subframeSize, 20, 120, gain);*/
       /*pitch = open_loop_ltp(st->wframe+offset, st->subframeSize, 20, 120, gain);*/
       
       /* Quantization of pitch period and gains */
 
       /*printf ("pitch = %d, gain = %f\n",pitch,gain);*/
       printf ("pitch = %d, gain = %f %f %f\n",pitch,gain[0], gain[1], gain[2]);
-
-      tmp=0;
+      /*printf ("%f %f %f ",gain[0], gain[1], gain[2]);*/
+      
+      tmp1=0;
       for (i=0;i<st->subframeSize;i++)
-         tmp+=st->wframe[offset+i]*st->wframe[offset+i];
-      printf ("before: %f ", tmp);
+         tmp1+=st->wframe[offset+i]*st->wframe[offset+i];
+      /*printf ("before: %f ", tmp1);*/
       predictor_three_tap(st->wframe+offset, st->subframeSize, pitch, gain);
-      tmp=0;
+      
+      tmp2=0;
       for (i=0;i<st->subframeSize;i++)
-         tmp+=st->wframe[offset+i]*st->wframe[offset+i];
-      printf ("after: %f\n", tmp);
-
+         tmp2+=st->wframe[offset+i]*st->wframe[offset+i];
+      /*printf ("after: %f\n", tmp2);*/
+      printf ("pitch gain: %f\n", tmp1/(tmp2+.001));
+      
       /*Analysis by synthesis and quantization here*/
 
       inverse_three_tap(st->wframe+offset, st->subframeSize, pitch, gain);
@@ -188,7 +208,7 @@ void encode(EncState *st, float *in, int *outSize, void *bits)
       }
 
    }
-
+#endif
    printf ("\n");
    for (i=0;i<st->lpcSize;i++)
       st->old_lsp[i] = st->lsp[i];

@@ -1,3 +1,7 @@
+/* Copyright (C) 2002 Jean-Marc Valin 
+   File: speex.h
+*/
+
 #ifndef SPEEX_H
 #define SPEEX_H
 
