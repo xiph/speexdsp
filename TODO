@@ -1,5 +1,3 @@
-- VBR
-
-- VAD/DTX/comfort noise generation
-
+- VBR logic for choosing mode
+- VAD
 - Post-filter
