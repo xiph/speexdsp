@@ -95,7 +95,7 @@ void speex_bits_read_from(SpeexBits *bits, char *bytes, int len)
    int i;
    if (len > bits->buf_size)
    {
-      speex_warning_int("Packet if larger than allocated buffer: ", len);
+      speex_warning_int("Packet is larger than allocated buffer: ", len);
       if (bits->owner)
       {
          char *tmp = (char*)speex_realloc(bits->bytes, len);
@@ -138,7 +138,7 @@ void speex_bits_read_whole_bytes(SpeexBits *bits, char *bytes, int len)
 
    if ((bits->nbBits>>3)+len+1 > bits->buf_size)
    {
-      speex_warning_int("Packet if larger than allocated buffer: ", len);
+      speex_warning_int("Packet is larger than allocated buffer: ", len);
       if (bits->owner)
       {
          char *tmp = (char*)speex_realloc(bits->bytes, (bits->nbBits>>3)+len+1);
