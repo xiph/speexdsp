@@ -36,7 +36,6 @@
 
 #include "filters.h"
 #include "stack_alloc.h"
-#include <math.h>
 #include "misc.h"
 #include "math_approx.h"
 #include "ltp.h"

@@ -291,7 +291,7 @@ int cdbk_offset
 )
 {
    int i,j;
-   VARDECL(spx_sig_t *tmp);
+   VARDECL(spx_sig_t *tmp1);
    VARDECL(spx_sig_t *tmp2);
    spx_sig_t *x[3];
    spx_sig_t *e[3];
@@ -306,12 +306,12 @@ int cdbk_offset
    params = (const ltp_params*) par;
    gain_cdbk_size = 1<<params->gain_bits;
    gain_cdbk = params->gain_cdbk + 3*gain_cdbk_size*cdbk_offset;
-   ALLOC(tmp, 3*nsf, spx_sig_t);
+   ALLOC(tmp1, 3*nsf, spx_sig_t);
    ALLOC(tmp2, 3*nsf, spx_sig_t);
 
-   x[0]=tmp;
-   x[1]=tmp+nsf;
-   x[2]=tmp+2*nsf;
+   x[0]=tmp1;
+   x[1]=tmp1+nsf;
+   x[2]=tmp1+2*nsf;
    
    e[0]=tmp2;
    e[1]=tmp2+nsf;

@@ -94,7 +94,7 @@ void *nb_encoder_init(const SpeexMode *m)
    const SpeexNBMode *mode;
    int i;
 
-   mode=(SpeexNBMode *)m->mode;
+   mode=(const SpeexNBMode *)m->mode;
    st = (EncState*)speex_alloc(sizeof(EncState)+8000*sizeof(spx_sig_t));
    if (!st)
       return NULL;
@@ -932,7 +932,7 @@ void *nb_decoder_init(const SpeexMode *m)
    const SpeexNBMode *mode;
    int i;
 
-   mode=(SpeexNBMode*)m->mode;
+   mode=(const SpeexNBMode*)m->mode;
    st = (DecState *)speex_alloc(sizeof(DecState)+4000*sizeof(spx_sig_t));
    st->mode=m;
 
@@ -1723,7 +1723,7 @@ int nb_encoder_ctl(void *state, int request, void *ptr)
             quality = 0;
          if (quality > 10)
             quality = 10;
-         st->submodeSelect = st->submodeID = ((SpeexNBMode*)(st->mode->mode))->quality_map[quality];
+         st->submodeSelect = st->submodeID = ((const SpeexNBMode*)(st->mode->mode))->quality_map[quality];
       }
       break;
    case SPEEX_SET_COMPLEXITY:

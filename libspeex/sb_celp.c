@@ -190,16 +190,16 @@ static const float h1[64] = {
 };
 #endif
 
-static void mix_and_saturate(spx_word32_t *y0, spx_word32_t *y1, spx_word16_t *out, int len)
+static void mix_and_saturate(spx_word32_t *x0, spx_word32_t *x1, spx_word16_t *out, int len)
 {
    int i;
    for (i=0;i<len;i++)
    {
       spx_word32_t tmp;
 #ifdef FIXED_POINT
-      tmp=PSHR(y0[i]-y1[i],SIG_SHIFT-1);
+      tmp=PSHR(x0[i]-x1[i],SIG_SHIFT-1);
 #else
-      tmp=2*(y0[i]-y1[i]);
+      tmp=2*(x0[i]-x1[i]);
 #endif
       if (tmp>32767)
          out[i] = 32767;
@@ -218,7 +218,7 @@ void *sb_encoder_init(const SpeexMode *m)
 
    st = (SBEncState*)speex_alloc(sizeof(SBEncState)+10000*sizeof(spx_sig_t));
    st->mode = m;
-   mode = (SpeexSBMode*)m->mode;
+   mode = (const SpeexSBMode*)m->mode;
 
    st->stack = ((char*)st) + sizeof(SBEncState);
 
@@ -333,13 +333,13 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
    VARDECL(spx_word32_t *low_pi_gain);
    VARDECL(spx_sig_t *low_exc);
    VARDECL(spx_sig_t *low_innov);
-   SpeexSBMode *mode;
+   const SpeexSBMode *mode;
    int dtx;
    spx_word16_t *in = vin;
 
    st = (SBEncState*)state;
    stack=st->stack;
-   mode = (SpeexSBMode*)(st->mode->mode);
+   mode = (const SpeexSBMode*)(st->mode->mode);
 
    {
       VARDECL(spx_word16_t *low);
@@ -783,7 +783,7 @@ void *sb_decoder_init(const SpeexMode *m)
    const SpeexSBMode *mode;
    st = (SBDecState*)speex_alloc(sizeof(SBDecState)+6000*sizeof(spx_sig_t));
    st->mode = m;
-   mode=(SpeexSBMode*)m->mode;
+   mode=(const SpeexSBMode*)m->mode;
 
    st->encode_submode = 1;
 
@@ -938,12 +938,12 @@ int sb_decode(void *state, SpeexBits *bits, void *vout)
    VARDECL(spx_coef_t *awk2);
    VARDECL(spx_coef_t *awk3);
    int dtx;
-   SpeexSBMode *mode;
+   const SpeexSBMode *mode;
    spx_word16_t *out = vout;
    
    st = (SBDecState*)state;
    stack=st->stack;
-   mode = (SpeexSBMode*)(st->mode->mode);
+   mode = (const SpeexSBMode*)(st->mode->mode);
 
    {
       VARDECL(spx_word16_t *low);
@@ -1280,8 +1280,8 @@ int sb_encoder_ctl(void *state, int request, void *ptr)
             quality = 0;
          if (quality > 10)
             quality = 10;
-         st->submodeSelect = st->submodeID = ((SpeexSBMode*)(st->mode->mode))->quality_map[quality];
-         nb_qual = ((SpeexSBMode*)(st->mode->mode))->low_quality_map[quality];
+         st->submodeSelect = st->submodeID = ((const SpeexSBMode*)(st->mode->mode))->quality_map[quality];
+         nb_qual = ((const SpeexSBMode*)(st->mode->mode))->low_quality_map[quality];
          speex_encoder_ctl(st->st_low, SPEEX_SET_MODE, &nb_qual);
       }
       break;
@@ -1422,8 +1422,8 @@ int sb_decoder_ctl(void *state, int request, void *ptr)
             quality = 0;
          if (quality > 10)
             quality = 10;
-         st->submodeID = ((SpeexSBMode*)(st->mode->mode))->quality_map[quality];
-         nb_qual = ((SpeexSBMode*)(st->mode->mode))->low_quality_map[quality];
+         st->submodeID = ((const SpeexSBMode*)(st->mode->mode))->quality_map[quality];
+         nb_qual = ((const SpeexSBMode*)(st->mode->mode))->low_quality_map[quality];
          speex_decoder_ctl(st->st_low, SPEEX_SET_MODE, &nb_qual);
       }
       break;

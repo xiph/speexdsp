@@ -247,10 +247,10 @@ int speex_lib_ctl(int request, void *ptr)
          *((int*)ptr) = SPEEX_MICRO_VERSION;
          break;
       case SPEEX_LIB_GET_EXTRA_VERSION:
-         *((char**)ptr) = SPEEX_EXTRA_VERSION;
+         *((const char**)ptr) = SPEEX_EXTRA_VERSION;
          break;
       case SPEEX_LIB_GET_VERSION_STRING:
-         *((char**)ptr) = SPEEX_VERSION;
+         *((const char**)ptr) = SPEEX_VERSION;
          break;
       /*case SPEEX_LIB_SET_ALLOC_FUNC:
          break;

@@ -81,7 +81,7 @@ static void compute_weighted_codebook(const signed char *shape_cb, const spx_sig
 
 
 
-void split_cb_search_shape_sign_N1(
+static void split_cb_search_shape_sign_N1(
 spx_sig_t target[],			/* target vector */
 spx_coef_t ak[],			/* LPCs for this subframe */
 spx_coef_t awk1[],			/* Weighted LPCs for this subframe */
@@ -110,7 +110,7 @@ int   update_target
    VARDECL(spx_sig_t *e);
    const signed char *shape_cb;
    int shape_cb_size, subvect_size, nb_subvect;
-   split_cb_params *params;
+   const split_cb_params *params;
    int N=2;
    int best_index;
    spx_word32_t best_dist;
@@ -121,7 +121,7 @@ int   update_target
    if (N<1)
       N=1;
    
-   params = (split_cb_params *) par;
+   params = (const split_cb_params *) par;
    subvect_size = params->subvect_size;
    nb_subvect = params->nb_subvect;
    shape_cb_size = 1<<params->shape_bits;
@@ -272,7 +272,7 @@ int   update_target
    VARDECL(int *ind);
    const signed char *shape_cb;
    int shape_cb_size, subvect_size, nb_subvect;
-   split_cb_params *params;
+   const split_cb_params *params;
    int N=2;
    VARDECL(int *best_index);
    VARDECL(spx_word32_t *best_dist);
@@ -293,7 +293,7 @@ int   update_target
    ALLOC(oind, N, int*);
    ALLOC(nind, N, int*);
 
-   params = (split_cb_params *) par;
+   params = (const split_cb_params *) par;
    subvect_size = params->subvect_size;
    nb_subvect = params->nb_subvect;
    shape_cb_size = 1<<params->shape_bits;
@@ -537,10 +537,10 @@ char *stack
    VARDECL(int *signs);
    const signed char *shape_cb;
    int shape_cb_size, subvect_size, nb_subvect;
-   split_cb_params *params;
+   const split_cb_params *params;
    int have_sign;
 
-   params = (split_cb_params *) par;
+   params = (const split_cb_params *) par;
    subvect_size = params->subvect_size;
    nb_subvect = params->nb_subvect;
    shape_cb_size = 1<<params->shape_bits;

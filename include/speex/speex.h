@@ -241,7 +241,7 @@ typedef struct SpeexMode {
    mode_query_func query;
    
    /** The name of the mode (you should not rely on this to identify the mode)*/
-   char *modeName;
+   const char *modeName;
 
    /**ID of the mode*/
    int modeID;
@@ -395,7 +395,7 @@ extern const SpeexMode speex_nb_48k_mode;
 extern const SpeexMode * const speex_mode_list[SPEEX_NB_MODES];
 
 /** Obtain one of the modes available */
-const SpeexMode * const speex_lib_get_mode (int mode);
+const SpeexMode * speex_lib_get_mode (int mode);
 
 #ifdef __cplusplus
 }
