@@ -298,7 +298,8 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
    mode = (SpeexSBMode*)(st->mode->mode);
 
    {
-      spx_word16_t *low = PUSH(stack, st->frame_size, spx_word16_t);
+      spx_word16_t *low;
+      low = PUSH(stack, st->frame_size, spx_word16_t);
 
       /* Compute the two sub-bands by filtering with h0 and h1*/
       qmf_decomp(in, h0, st->x0d, st->x1d, st->full_frame_size, QMF_ORDER, st->h0_mem, stack);
@@ -569,13 +570,14 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
             char *tmp_stack=stack;
             float *tmp_sig;
             float g2;
-            tmp_sig = PUSH(tmp_stack, st->subframeSize, spx_sig_t);
+            tmp_sig = PUSH(stack, st->subframeSize, spx_sig_t);
             for (i=0;i<st->lpcSize;i++)
                mem[i]=st->mem_sp[i];
             iir_mem2(low_innov+offset, st->interp_qlpc, tmp_sig, st->subframeSize, st->lpcSize, mem);
             g2 = compute_rms(sp, st->subframeSize)/(.01+compute_rms(tmp_sig, st->subframeSize));
             /*fprintf (stderr, "gains: %f %f\n", g, g2);*/
             g = g2;
+            stack = tmp_stack;
          }
 #endif
 
@@ -679,18 +681,20 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
 
          if (SUBMODE(double_codebook)) {
             char *tmp_stack=stack;
-            spx_sig_t *innov2 = PUSH(tmp_stack, st->subframeSize, spx_sig_t);
+            spx_sig_t *innov2;
+            innov2 = PUSH(stack, st->subframeSize, spx_sig_t);
             for (i=0;i<st->subframeSize;i++)
                innov2[i]=0;
             for (i=0;i<st->subframeSize;i++)
                target[i]*=2.5;
             SUBMODE(innovation_quant)(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2, 
                                       SUBMODE(innovation_params), st->lpcSize, st->subframeSize, 
-                                      innov2, syn_resp, bits, tmp_stack, (st->complexity+1)>>1, 0);
+                                      innov2, syn_resp, bits, stack, (st->complexity+1)>>1, 0);
             for (i=0;i<st->subframeSize;i++)
                innov2[i]*=scale*(1/2.5)/SIG_SCALING;
             for (i=0;i<st->subframeSize;i++)
                exc[i] += innov2[i];
+            stack = tmp_stack;
          }
 
       }
@@ -1086,15 +1090,17 @@ int sb_decode(void *state, SpeexBits *bits, void *vout)
 
          if (SUBMODE(double_codebook)) {
             char *tmp_stack=stack;
-            spx_sig_t *innov2 = PUSH(tmp_stack, st->subframeSize, spx_sig_t);
+            spx_sig_t *innov2;
+            innov2 = PUSH(stack, st->subframeSize, spx_sig_t);
             for (i=0;i<st->subframeSize;i++)
                innov2[i]=0;
             SUBMODE(innovation_unquant)(innov2, SUBMODE(innovation_params), st->subframeSize, 
-                                bits, tmp_stack);
+                                bits, stack);
             for (i=0;i<st->subframeSize;i++)
                innov2[i]*=scale/(float)SIG_SCALING*(1/2.5);
             for (i=0;i<st->subframeSize;i++)
                exc[i] += innov2[i];
+            stack = tmp_stack;
          }
 
       }

@@ -337,7 +337,8 @@ void fir_mem2(const spx_sig_t *x, const spx_coef_t *num, spx_sig_t *y, int N, in
 void syn_percep_zero(const spx_sig_t *xx, const spx_coef_t *ak, const spx_coef_t *awk1, const spx_coef_t *awk2, spx_sig_t *y, int N, int ord, char *stack)
 {
    int i;
-   spx_mem_t *mem = PUSH(stack,ord, spx_mem_t);
+   spx_mem_t *mem;
+   mem = PUSH(stack,ord, spx_mem_t);
    for (i=0;i<ord;i++)
      mem[i]=0;
    iir_mem2(xx, ak, y, N, ord, mem);
@@ -349,7 +350,8 @@ void syn_percep_zero(const spx_sig_t *xx, const spx_coef_t *ak, const spx_coef_t
 void residue_percep_zero(const spx_sig_t *xx, const spx_coef_t *ak, const spx_coef_t *awk1, const spx_coef_t *awk2, spx_sig_t *y, int N, int ord, char *stack)
 {
    int i;
-   spx_mem_t *mem = PUSH(stack,ord, spx_mem_t);
+   spx_mem_t *mem;
+   mem = PUSH(stack,ord, spx_mem_t);
    for (i=0;i<ord;i++)
       mem[i]=0;
    filter_mem2(xx, ak, awk1, y, N, ord, mem);

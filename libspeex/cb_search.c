@@ -222,7 +222,8 @@ int   update_target
    /* Update target: only update target if necessary */
    if (update_target)
    {
-      spx_sig_t *r2 = PUSH(stack, nsf, spx_sig_t);
+      spx_sig_t *r2;
+      r2 = PUSH(stack, nsf, spx_sig_t);
       syn_percep_zero(e, ak, awk1, awk2, r2, nsf,p, stack);
       for (j=0;j<nsf;j++)
          target[j]-=r2[j];
@@ -593,7 +594,8 @@ int   update_target
 )
 {
    int i;
-   spx_sig_t *tmp=PUSH(stack, nsf, spx_sig_t);
+   spx_sig_t *tmp;
+   tmp = PUSH(stack, nsf, spx_sig_t);
    residue_percep_zero(target, ak, awk1, awk2, tmp, nsf, p, stack);
 
    for (i=0;i<nsf;i++)

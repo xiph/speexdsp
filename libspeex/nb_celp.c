@@ -858,17 +858,19 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
          /* In some (rare) modes, we do a second search (more bits) to reduce noise even more */
          if (SUBMODE(double_codebook)) {
             char *tmp_stack=stack;
-            spx_sig_t *innov2 = PUSH(tmp_stack, st->subframeSize, spx_sig_t);
+            spx_sig_t *innov2;
+            innov2 = PUSH(stack, st->subframeSize, spx_sig_t);
             for (i=0;i<st->subframeSize;i++)
                innov2[i]=0;
             for (i=0;i<st->subframeSize;i++)
                target[i]*=2.2;
             SUBMODE(innovation_quant)(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2, 
                                       SUBMODE(innovation_params), st->lpcSize, st->subframeSize, 
-                                      innov2, syn_resp, bits, tmp_stack, st->complexity, 0);
+                                      innov2, syn_resp, bits, stack, st->complexity, 0);
             signal_mul(innov2, innov2, (spx_word32_t) (ener*(1/2.2)), st->subframeSize);
             for (i=0;i<st->subframeSize;i++)
                exc[i] += innov2[i];
+            stack = tmp_stack;
          }
 
       }
@@ -1565,13 +1567,15 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
          if (SUBMODE(double_codebook))
          {
             char *tmp_stack=stack;
-            spx_sig_t *innov2 = PUSH(tmp_stack, st->subframeSize, spx_sig_t);
+            spx_sig_t *innov2;
+            innov2 = PUSH(stack, st->subframeSize, spx_sig_t);
             for (i=0;i<st->subframeSize;i++)
                innov2[i]=0;
-            SUBMODE(innovation_unquant)(innov2, SUBMODE(innovation_params), st->subframeSize, bits, tmp_stack);
+            SUBMODE(innovation_unquant)(innov2, SUBMODE(innovation_params), st->subframeSize, bits, stack);
             signal_mul(innov2, innov2, (spx_word32_t) (ener*(1/2.2)), st->subframeSize);
             for (i=0;i<st->subframeSize;i++)
                exc[i] += innov2[i];
+            stack = tmp_stack;
          }
 
       }
