@@ -765,7 +765,6 @@ void split_cb_nogain_unquant(
 float *exc,
 void *par,                      /* non-overlapping codebook */
 int   nsf,                      /* number of samples in subframe */
-float gain,
 FrameBits *bits,
 float *stack
 )
@@ -791,7 +790,7 @@ float *stack
    /* Compute decoded excitation */
    for (i=0;i<nb_subvect;i++)
       for (j=0;j<subvect_size;j++)
-         exc[subvect_size*i+j]+=gain*shape_cb[ind[i]*subvect_size+j];
+         exc[subvect_size*i+j]+=shape_cb[ind[i]*subvect_size+j];
 
    POP(stack);
 }

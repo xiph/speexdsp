@@ -34,40 +34,50 @@ extern float exc_table[];
 extern float exc_wb_table[];
 extern float exc_gains_wb_table[];
 extern float exc_sb_table[];
-ltp_params ltp_params_nb = {
+extern float hexc_table[];
+
+static ltp_params ltp_params_nb = {
    gain_cdbk_nb,
    7,
    7
 };
 
-ltp_params ltp_params_wb = {
+static ltp_params ltp_params_wb = {
    gain_cdbk_nb,
    7,
    8
 };
 
-split_cb_params split_cb_nb = {
+static split_cb_params split_cb_nb = {
    8,               /*subvect_size*/
    5,               /*nb_subvect*/
    exc_table,       /*shape_cb*/
    7,               /*shape_bits*/
 };
 
-split_cb_params split_cb_sb = {
+static split_cb_params split_cb_sb = {
    5,               /*subvect_size*/
    8,              /*nb_subvect*/
    exc_sb_table,    /*shape_cb*/
    7,               /*shape_bits*/
 };
 
-split_cb_params split_cb_wb = {
+static split_cb_params split_cb_wb = {
    8,               /*subvect_size*/
    10,              /*nb_subvect*/
    exc_wb_table,    /*shape_cb*/
    7,               /*shape_bits*/
 };
 
-mpulse_params mpulse_nb = {
+static split_cb_params split_cb_high = {
+   8,               /*subvect_size*/
+   5,               /*nb_subvect*/
+   hexc_table,       /*shape_cb*/
+   8,               /*shape_bits*/
+};
+
+
+static mpulse_params mpulse_nb = {
    15,     /*nb_pulse*/
    5,      /*nb_tracks*/
    4,    /*gain_coef*/
@@ -75,7 +85,7 @@ mpulse_params mpulse_nb = {
 };
 
 
-mpulse_params mpulse_sb = {
+static mpulse_params mpulse_sb = {
    15,     /*nb_pulse*/
    5,      /*nb_tracks*/
    3.8,    /*gain_coef*/
@@ -83,7 +93,7 @@ mpulse_params mpulse_sb = {
 };
 
 
-mpulse_params mpulse_wb = {
+static mpulse_params mpulse_wb = {
    24,     /*nb_pulse*/
    4,      /*nb_tracks*/
    2.2,    /*gain_coef*/
@@ -91,7 +101,7 @@ mpulse_params mpulse_wb = {
 };
 
 
-SpeexNBMode mp_nb_mode = {
+static SpeexNBMode mp_nb_mode = {
    160,    /*frameSize*/
    40,     /*subframeSize*/
    320,    /*windowSize*/
@@ -117,7 +127,7 @@ SpeexNBMode mp_nb_mode = {
    &mpulse_nb
 };
 
-SpeexNBMode low_sb_mode = {
+static SpeexNBMode low_sb_mode = {
    160,    /*frameSize*/
    40,     /*subframeSize*/
    320,    /*windowSize*/
@@ -160,7 +170,7 @@ SpeexMode low_wb_mode = {
    160
 };
 
-SpeexSBMode sb_wb_mode = {
+static SpeexSBMode sb_wb_mode = {
    &low_wb_mode,
    160,    /*frameSize*/
    40,     /*subframeSize*/
@@ -170,17 +180,16 @@ SpeexSBMode sb_wb_mode = {
    .9,    /*gamma1*/
    0.6,    /*gamma2*/
    .002,   /*lag_factor*/
-   1.00005, /*lpc_floor*/
+   1.0001, /*lpc_floor*/
    0.0,    /*preemph*/
    /*LSP quantization*/
-   lsp_quant_nb,
-   lsp_unquant_nb,
+   lsp_quant_high,
+   lsp_unquant_high,
    /*Innovation quantization*/
-   split_cb_search2,
-   split_cb_unquant,
-   &split_cb_sb
+   split_cb_search_nogain,
+   split_cb_nogain_unquant,
+   &split_cb_high
 };
-
 
 
 SpeexMode nb_mode = {

@@ -96,7 +96,6 @@ void split_cb_nogain_unquant(
 float *exc,
 void *par,                      /* non-overlapping codebook */
 int   nsf,                      /* number of samples in subframe */
-float gain,
 FrameBits *bits,
 float *stack
 );

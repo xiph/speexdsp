@@ -203,10 +203,10 @@ void *sb_encoder_init(SpeexMode *m)
    st->lpcSize=mode->lpcSize;
    st->bufSize=mode->bufSize;
 
-   st->lag_factor = .002;
-   st->lpc_floor = 1.0001;
-   st->gamma1=.9;
-   st->gamma2=.6;
+   st->lag_factor = mode->lag_factor;
+   st->lpc_floor = mode->lpc_floor;
+   st->gamma1=mode->gamma1;
+   st->gamma2=mode->gamma2;
    st->first=1;
    st->stack = calloc(10000, sizeof(float));
 
@@ -256,6 +256,10 @@ void *sb_encoder_init(SpeexMode *m)
    st->mem_sp = calloc(st->lpcSize, sizeof(float));
    st->mem_sp2 = calloc(st->lpcSize, sizeof(float));
    st->mem_sw = calloc(st->lpcSize, sizeof(float));
+
+   st->lsp_quant = mode->lsp_quant;
+   st->innovation_quant = mode->innovation_quant;
+   st->innovation_params = mode->innovation_params;
    return st;
 }
 
@@ -306,13 +310,6 @@ void sb_encoder_destroy(void *state)
    free(st);
 }
 
-extern float hexc_table[];
-split_cb_params split_cb_high = {
-   8,               /*subvect_size*/
-   5,               /*nb_subvect*/
-   hexc_table,       /*shape_cb*/
-   8,               /*shape_bits*/
-};
 
 void sb_encode(void *state, float *in, FrameBits *bits)
 {
@@ -374,7 +371,7 @@ void sb_encode(void *state, float *in, FrameBits *bits)
       st->lsp[i] = acos(st->lsp[i]);
 
    /* LSP quantization */
-   lsp_quant_high(st->lsp, st->qlsp, st->lpcSize, bits);
+   st->lsp_quant(st->lsp, st->qlsp, st->lpcSize, bits);
    
    /*printf ("high_lsp:");
    for (i=0;i<st->lpcSize;i++)
@@ -444,6 +441,7 @@ void sb_encode(void *state, float *in, FrameBits *bits)
 
       fold = filter_ratio<5;
       printf ("filter_ratio %f\n", filter_ratio);
+      fold=0;
 
       if (fold) {/* 1 for spectral folding excitation, 0 for stochastic */
          float el=0,eh=0,g;
@@ -537,8 +535,8 @@ void sb_encode(void *state, float *in, FrameBits *bits)
             innov[i]=0;
 
          print_vec(target, st->subframeSize, "\ntarget");
-         split_cb_search_nogain(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2, 
-                                &split_cb_high, st->lpcSize, st->subframeSize, 
+         st->innovation_quant(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2, 
+                                st->innovation_params, st->lpcSize, st->subframeSize, 
                                 innov, bits, st->stack);
          print_vec(target, st->subframeSize, "after");
 
@@ -643,6 +641,10 @@ void *sb_decoder_init(SpeexMode *m)
    st->mem_pf_exc1 = calloc(st->pf_order, sizeof(float));
    st->mem_pf_exc2 = calloc(st->pf_order, sizeof(float));
    st->mem_pf_sp = calloc(st->pf_order, sizeof(float));
+
+   st->lsp_unquant = mode->lsp_unquant;
+   st->innovation_unquant = mode->innovation_unquant;
+   st->innovation_params = mode->innovation_params;
    return st;
 }
 
@@ -697,7 +699,7 @@ void sb_decode(void *state, FrameBits *bits, float *out)
    for (i=0;i<st->frame_size;i++)
       st->exc[i]=0;
 
-   lsp_unquant_high(st->qlsp, st->lpcSize, bits);
+   st->lsp_unquant(st->qlsp, st->lpcSize, bits);
    
    if (st->first)
    {
@@ -761,8 +763,10 @@ void sb_decode(void *state, FrameBits *bits, float *out)
          for (i=0;i<st->subframeSize;i++)
             exc[i]=g*((DecState*)st->st_low)->exc[offset+i];
       } else {
-         split_cb_nogain_unquant(exc, &split_cb_high, st->subframeSize, gain, 
-                                 bits, st->stack);
+         st->innovation_unquant(exc, st->innovation_params, st->subframeSize, 
+                                bits, st->stack);
+         for (i=0;i<st->subframeSize;i++)
+            exc[i]*=gain;
       }
       syn_filt_mem(exc, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, st->mem_sp);
 
