@@ -31,13 +31,7 @@ Name: "{app}\libspeex\include\speex"
 [Files]
 Source: "speexdec\Release\speexdec.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "speexenc\Release\speexenc.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\doc\draft-herlein-avt-rtp-speex-00.txt"; DestDir: "{app}\doc"; Flags: ignoreversion
-Source: "..\doc\manual.lyx"; DestDir: "{app}\doc"; Flags: ignoreversion
 Source: "..\doc\manual.pdf"; DestDir: "{app}\doc"; Flags: ignoreversion
-Source: "..\doc\programming.html"; DestDir: "{app}\doc"; Flags: ignoreversion
-Source: "..\doc\rtp.txt"; DestDir: "{app}\doc"; Flags: ignoreversion
-Source: "..\doc\sampledec.c"; DestDir: "{app}\doc"; Flags: ignoreversion
-Source: "..\doc\sampleenc.c"; DestDir: "{app}\doc"; Flags: ignoreversion
 Source: "libspeex\Release\libspeex.lib"; DestDir: "{app}\libspeex"; Flags: ignoreversion
 Source: "libspeex\Release\libspeex.dll"; DestDir: "{app}\libspeex"; Flags: ignoreversion
 Source: "libspeex\Release\libspeex.exp"; DestDir: "{app}\libspeex"; Flags: ignoreversion
