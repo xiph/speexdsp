@@ -20,6 +20,9 @@
 #ifndef MISC_H
 #define MISC_H
 
+#ifndef VERSION
+#define VERSION "unknown version"
+#endif
 
 unsigned int be_int(unsigned int i);
 unsigned int le_int(unsigned int i);
