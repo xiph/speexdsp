@@ -35,7 +35,7 @@
 #include <math.h>
 #include "misc.h"
 #include "math_approx.h"
-
+#include "ltp.h"
 
 #ifdef FIXED_POINT
 void bw_lpc(spx_word16_t gamma, spx_coef_t *lpc_in, spx_coef_t *lpc_out, int order)
@@ -454,31 +454,26 @@ spx_coef_t *ak,           /*LPC filter coefs*/
 int p,               /*LPC order*/
 int nsf,             /*sub-frame size*/
 int pitch,           /*pitch period*/
-spx_word16_t *spitch_gain,   /*pitch gain (3-tap)*/
+spx_word16_t *pitch_gain,   /*pitch gain (3-tap)*/
 float  comb_gain,    /*gain of comb filter*/
 CombFilterMem *mem
 )
 {
    int i;
-   float exc_energy=0, new_exc_energy=0;
+   spx_word16_t exc_energy=0, new_exc_energy=0;
    float gain;
    float step;
    float fact;
-   float pitch_gain[3];
 
-   pitch_gain[0] = GAIN_SCALING_1*spitch_gain[0];
-   pitch_gain[1] = GAIN_SCALING_1*spitch_gain[1];
-   pitch_gain[2] = GAIN_SCALING_1*spitch_gain[2];
+   /*Compute excitation amplitude prior to enhancement*/
+   exc_energy = compute_rms(exc, nsf);
+   /*for (i=0;i<nsf;i++)
+     exc_energy+=((float)exc[i])*exc[i];*/
 
-   /*Compute excitation energy prior to enhancement*/
-   for (i=0;i<nsf;i++)
-      exc_energy+=((float)exc[i])*exc[i];
-
-   /*Some gain adjustment is pitch is too high or if unvoiced*/
+   /*Some gain adjustment if pitch is too high or if unvoiced*/
    {
       float g=0;
-      g = .5*fabs(pitch_gain[0]+pitch_gain[1]+pitch_gain[2] +
-      mem->last_pitch_gain[0] + mem->last_pitch_gain[1] + mem->last_pitch_gain[2]);
+      g = GAIN_SCALING_1*.5*(gain_3tap_to_1tap(pitch_gain)+gain_3tap_to_1tap(mem->last_pitch_gain));
       if (g>1.3)
          comb_gain*=1.3/g;
       if (g<.5)
@@ -491,15 +486,15 @@ CombFilterMem *mem
    {
       fact += step;
 
-      new_exc[i] = exc[i] + comb_gain * fact * (
-                                         pitch_gain[0]*exc[i-pitch+1] +
-                                         pitch_gain[1]*exc[i-pitch] +
-                                         pitch_gain[2]*exc[i-pitch-1]
+      new_exc[i] = exc[i] + GAIN_SCALING_1*comb_gain * fact * (
+                                         (float)pitch_gain[0]*exc[i-pitch+1] +
+                                         (float)pitch_gain[1]*exc[i-pitch] +
+                                         (float)pitch_gain[2]*exc[i-pitch-1]
                                          )
-      + comb_gain * (1-fact) * (
-                                         mem->last_pitch_gain[0]*exc[i-mem->last_pitch+1] +
-                                         mem->last_pitch_gain[1]*exc[i-mem->last_pitch] +
-                                         mem->last_pitch_gain[2]*exc[i-mem->last_pitch-1]
+      + GAIN_SCALING_1*comb_gain * (1-fact) * (
+                                         (float)mem->last_pitch_gain[0]*exc[i-mem->last_pitch+1] +
+                                         (float)mem->last_pitch_gain[1]*exc[i-mem->last_pitch] +
+                                         (float)mem->last_pitch_gain[2]*exc[i-mem->last_pitch-1]
                                          );
    }
 
@@ -508,12 +503,11 @@ CombFilterMem *mem
    mem->last_pitch_gain[2] = pitch_gain[2];
    mem->last_pitch = pitch;
 
-   /*Gain after enhancement*/
-   for (i=0;i<nsf;i++)
-      new_exc_energy+=((float)new_exc[i])*new_exc[i];
+   /*Amplitude after enhancement*/
+   new_exc_energy = compute_rms(new_exc, nsf);
 
    /*Compute scaling factor and normalize energy*/
-   gain = sqrt(exc_energy)/sqrt(.1+new_exc_energy);
+   gain = (exc_energy)/(.1+new_exc_energy);
    if (gain < .5)
       gain=.5;
    if (gain>1)
