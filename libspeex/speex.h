@@ -92,6 +92,8 @@ typedef struct DecState {
    int    max_pitch;      /* Maximum pitch value allowed */
    float  gamma1;         /* Perceptual filter: A(z/gamma1) */
    float  gamma2;         /* Perceptual filter: A(z/gamma2) */
+   float  preemph;        /* Pre-emphasis: P(z) = 1 - a*z^-1*/
+   float  pre_mem;        /* 1-element memory for pre-emphasis */
    float *stack;
    float *inBuf;          /* Input buffer (original signal) */
    float *frame;          /* Start of original frame */

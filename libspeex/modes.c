@@ -165,10 +165,10 @@ SpeexMode mp_wb_mode = {
    35,     /*pitchStart*/
    290,    /*pitchEnd*/
    0.9,    /*gamma1*/
-   -1.0,    /*gamma2*/
+   -0.2,    /*gamma2*/
    .002,   /*lag_factor*/
    1.0001,/*lpc_floor*/
-   0.7,    /*preemph*/
+   0.55,    /*preemph*/
 
    /*LSP quantization*/
    lsp_quant_wb,

@@ -57,7 +57,6 @@ int main(int argc, char **argv)
          snr = 10*log10((esig+1)/(enoise+1));
          printf ("real SNR = %f\n", snr);
       }
-
       frame_bits_rewind(&bits);
       
       decode(&dec, &bits, input);

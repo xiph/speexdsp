@@ -219,8 +219,7 @@ void encode(EncState *st, float *in, FrameBits *bits)
    printf ("QLSP ");
    for (i=0;i<st->lpcSize;i++)
       printf ("%f ", st->qlsp[i]);
-   printf ("\n");
-   return;*/
+   printf ("\n");*/
    /* Special case for first frame */
    if (st->first)
    {
@@ -426,7 +425,9 @@ void decoder_init(DecState *st, SpeexMode *mode)
    st->gamma2=mode->gamma2;
    st->min_pitch=mode->pitchStart;
    st->max_pitch=mode->pitchEnd;
+   st->preemph = mode->preemph;
 
+   st->pre_mem=0;
    st->lsp_unquant = mode->lsp_unquant;
    st->ltp_unquant = mode->ltp_unquant;
    st->ltp_params = mode->ltp_params;
@@ -480,11 +481,6 @@ void decode(DecState *st, FrameBits *bits, float *out)
          st->old_qlsp[i] = st->qlsp[i];
    }
 
-   printf ("decode LSPs: ");
-   for (i=0;i<st->lpcSize;i++)
-      printf ("%f ", st->qlsp[i]);
-   printf ("\n");
-
    /*Loop on subframes */
    for (sub=0;sub<st->nbSubframes;sub++)
    {
@@ -526,6 +522,12 @@ void decode(DecState *st, FrameBits *bits, float *out)
    /*Copy output signal*/
    for (i=0;i<st->frameSize;i++)
       out[i]=st->frame[i];
+
+   out[0] = st->frame[0] + st->preemph*st->pre_mem;
+   for (i=1;i<st->frameSize;i++)
+     out[i]=st->frame[i] + st->preemph*out[i-1];
+   st->pre_mem=out[st->frameSize-1];
+
 
    /* Store the LSPs for interpolation in the next frame */
    for (i=0;i<st->lpcSize;i++)

@@ -413,7 +413,9 @@ float *stack
    
    quant_gain=frame_bits_unpack_unsigned(bits, 7);
    g=exp((quant_gain/8.0)+1);
-
+   /*Removes glitches when energy is near-zero*/
+   if (g<3)
+      g=0;
    for (i=0;i<nb_tracks;i++)
    {
       int ind;
