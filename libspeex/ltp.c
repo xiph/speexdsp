@@ -92,7 +92,7 @@ void open_loop_nbest_pitch(spx_sig_t *sw, int start, int end, int len, int *pitc
    for (i=start;i<=end;i++)
    {
       /* Update energy for next pitch*/
-      energy[i-start+1] = energy[i-start] + SHR(MULT16_16(swn[-i-1],swn[-i-1]) - MULT16_16(swn[-i+len-1],swn[-i+len-1]),6);
+      energy[i-start+1] = energy[i-start] + SHR(MULT16_16(swn[-i-1],swn[-i-1]),6) - SHR(MULT16_16(swn[-i+len-1],swn[-i+len-1]),6);
    }
    for (i=start;i<=end;i++)
    {
@@ -106,6 +106,26 @@ void open_loop_nbest_pitch(spx_sig_t *sw, int start, int end, int len, int *pitc
       corr[i-start]=inner_prod(swn, swn-i, len);
       score[i-start]=1.*corr[i-start]*corr[i-start]/(energy[i-start]+1.);
    }
+
+   {
+      spx_word16_t *corr16;
+      spx_word16_t *ener16;
+#ifdef FIXED_POINT
+      corr16 = PUSH(stack, end-start+1, spx_word16_t);
+      ener16 = PUSH(stack, end-start+1, spx_word16_t);
+      normalize16(corr, corr16, 16384, end-start+1);
+      normalize16(energy, ener16, 16384, end-start+1);
+#else
+      corr16=corr;
+      ener16=energy;
+#endif
+      for (i=start;i<=end;i++)
+      {
+         score[i-start]=DIV32_16(MULT16_16(corr16[i-start],corr16[i-start]),ener16[i-start]+1);
+      }
+   }
+
+
    for (i=start;i<=end;i++)
    {
       if (score[i-start]>best_score[N-1])

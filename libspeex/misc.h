@@ -106,6 +106,8 @@ typedef float spx_word32_t;
 #define MULT16_16_Q14(a,b)     ((a)*(b))
 #define MULT16_16_Q15(a,b)     ((a)*(b))
 
+#define DIV32_16(a,b)     ((a)/(b))
+
 
 #endif
 
