@@ -47,9 +47,10 @@ void usage()
    fprintf (stderr, "options:\n");
    fprintf (stderr, "\t--narrowband -n    Narrowband (8 kHz) input file\n"); 
    fprintf (stderr, "\t--wideband   -w    Wideband (16 kHz) input file\n"); 
+   fprintf (stderr, "\t--lbr              Low bit-rate mode (in combination with --narrowband)\n"); 
    fprintf (stderr, "\t--help       -h    This help\n"); 
    fprintf (stderr, "\t--version    -v    Version information\n"); 
-   fprintf (stderr, "\nInput must be raw audio (no header), 16 bits\n"); 
+   fprintf (stderr, "\nInput must be raw audio (mono, no header), 16 bits or a mono wav file\n"); 
 }
 
 void version()
