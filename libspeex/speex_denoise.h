@@ -55,6 +55,9 @@ typedef struct SpeexDenoiseState {
    float *last_energy;       /**< Energy of the previous frames */
    float *last_ps;           /**< Power spectrum of the past frames */
    float *loudness_weight;   /**< */
+
+   float *echo_noise;
+
    int    last_id;           /**< */
 
    float *noise_bands;
@@ -89,7 +92,7 @@ SpeexDenoiseState *speex_denoise_state_init(int frame_size);
 void speex_denoise_state_destroy(SpeexDenoiseState *st);
 
 /** Denoise a frame */
-int speex_denoise(SpeexDenoiseState *st, float *x);
+int speex_denoise(SpeexDenoiseState *st, float *x, float *noise);
 
 #ifdef __cplusplus
 }

@@ -128,6 +128,7 @@ SpeexDenoiseState *speex_denoise_state_init(int frame_size)
    st->loudness_weight = (float*)speex_alloc(N*sizeof(float));
    st->inbuf = (float*)speex_alloc(N3*sizeof(float));
    st->outbuf = (float*)speex_alloc(N3*sizeof(float));
+   st->echo_noise = (float*)speex_alloc(N*sizeof(float));
 
    st->noise_bands = (float*)speex_alloc(NB_BANDS*sizeof(float));
    st->noise_bands2 = (float*)speex_alloc(NB_BANDS*sizeof(float));
@@ -201,6 +202,12 @@ void speex_denoise_state_destroy(SpeexDenoiseState *st)
    speex_free(st->last_energy);
    speex_free(st->last_ps);
    speex_free(st->loudness_weight);
+   speex_free(st->echo_noise);
+
+   speex_free(st->noise_bands);
+   speex_free(st->noise_bands2);
+   speex_free(st->speech_bands);
+   speex_free(st->speech_bands2);
 
    speex_free(st->inbuf);
    speex_free(st->outbuf);
@@ -210,7 +217,7 @@ void speex_denoise_state_destroy(SpeexDenoiseState *st)
    speex_free(st);
 }
 
-static void update_noise(SpeexDenoiseState *st, float *ps)
+static void update_noise(SpeexDenoiseState *st, float *ps, float *echo)
 {
    int i;
    float beta;
@@ -219,11 +226,21 @@ static void update_noise(SpeexDenoiseState *st, float *ps)
    if (beta < .05)
       beta=.05;
    
-   for (i=0;i<st->ps_size;i++)
-      st->noise[i] = (1-beta)*st->noise[i] + beta*ps[i];   
+   if (!echo)
+   {
+      for (i=0;i<st->ps_size;i++)
+         st->noise[i] = (1-beta)*st->noise[i] + beta*ps[i];   
+   } else {
+      for (i=0;i<st->ps_size;i++)
+         st->noise[i] = (1-beta)*st->noise[i] + beta*max(0,ps[i]-echo[i]); 
+#if 0
+      for (i=0;i<st->ps_size;i++)
+         st->noise[i] = 0;
+#endif
+   }
 }
 
-int speex_denoise(SpeexDenoiseState *st, float *x)
+int speex_denoise(SpeexDenoiseState *st, float *x, float *echo)
 {
    int i;
    int is_speech=0;
@@ -282,7 +299,7 @@ int speex_denoise(SpeexDenoiseState *st, float *x)
       std = sqrt(E2-E*E);
       if (std<.15 && st->last_update>20)
       {
-         update_noise(st, &st->last_ps[st->last_id*N]);
+         update_noise(st, &st->last_ps[st->last_id*N], echo);
       }
       /*fprintf (stderr, "%f\n", std);*/
    }
@@ -327,14 +344,18 @@ int speex_denoise(SpeexDenoiseState *st, float *x)
    if (st->nb_adapt<15)
       /*if (st->nb_adapt<25 && st->nb_adapt>15)*/
    {
-      update_noise(st, ps);
+      update_noise(st, ps, echo);
       st->last_update=0;
    }
+
+   if (echo)
+      for (i=1;i<N;i++)
+         st->echo_noise[i] = (.7*st->echo_noise[i] + .3* 2*echo[i]);
 
    /* Compute a posteriori SNR */
    for (i=1;i<N;i++)
    {
-      st->post[i] = ps[i]/(1+st->noise[i]) - 1;
+      st->post[i] = ps[i]/(1+st->noise[i]+st->echo_noise[i]) - 1;
       if (st->post[i]>100)
          st->post[i]=100;
       /*if (st->post[i]<0)
@@ -370,17 +391,17 @@ int speex_denoise(SpeexDenoiseState *st, float *x)
       if (min_gamma<.01)
          min_gamma = .01;
 #endif
-      /*min_gamma = .2;*/
+      min_gamma = .6;
 
       if (gamma<min_gamma)
          gamma=min_gamma;
-
+      
       for (i=1;i<N;i++)
       {
          
          /* A priori SNR update */
          st->prior[i] = gamma*max(0.0,st->post[i]) +
-         (1-gamma)*st->gain[i]*st->gain[i]*st->old_ps[i]/st->noise[i];
+         (1-gamma)*st->gain[i]*st->gain[i]*st->old_ps[i]/(1+st->noise[i]+st->echo_noise[i]);
          
          if (st->prior[i]>100)
             st->prior[i]=100;
@@ -612,7 +633,7 @@ int speex_denoise(SpeexDenoiseState *st, float *x)
 
    if (st->consec_noise>=3)
    {
-      update_noise(st, st->old_ps);
+      update_noise(st, st->old_ps, echo);
       st->last_update=0;
    } else {
       st->last_update++;
@@ -694,7 +715,7 @@ int speex_denoise(SpeexDenoiseState *st, float *x)
    }
    for (i=0;i<N;i++)
       st->gain2[i] *= 6000.0/st->loudness2;
-
+   
 #if 0
    if (!is_speech)
    {

@@ -1,7 +1,7 @@
 #include "speex_denoise.h"
 #include <stdio.h>
 
-#define NN 240
+#define NN 160
 
 int main()
 {
@@ -21,7 +21,7 @@ int main()
       for (i=0;i<NN;i++)
          x[i]=in[i];
       
-      vad = speex_denoise(st, x);
+      vad = speex_denoise(st, x, NULL);
       for (i=0;i<NN;i++)
          out[i]=x[i];
       fprintf (stderr, "%d\n", vad);

@@ -167,6 +167,8 @@ void speex_echo_cancel(SpeexEchoState *st, float *ref, float *echo, float *out, 
          Yout[j] =  st->Y[i]*st->Y[i] + st->Y[i+1]*st->Y[i+1];
       }
       Yout[0] = Yout[st->frame_size] = 0;
+      for (i=0;i<=st->frame_size;i++)
+         Yout[i] *= .08;
    }
 
    for (i=0;i<N;i++)
@@ -304,11 +306,11 @@ void speex_echo_cancel(SpeexEchoState *st, float *ref, float *echo, float *out, 
    {
       if (st->cancel_count<8*M)
       {
-         st->adapt_rate = .03;
+         st->adapt_rate = .5/M;
       } else {
-         st->adapt_rate = spectral_dist*.05;
-         if (st->adapt_rate>.03)
-            st->adapt_rate=.03;
+         st->adapt_rate = spectral_dist*(1.0/M);
+         if (st->adapt_rate>.5/M)
+            st->adapt_rate=.5/M;
          if (st->adapt_rate<0)
             st->adapt_rate=0;
       }
