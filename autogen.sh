@@ -130,12 +130,12 @@ do
 	echo "Making $dr/aclocal.m4 writable ..."
 	test -r $dr/aclocal.m4 && chmod u+w $dr/aclocal.m4
       fi
+      echo "Running aclocal $aclocalinclude ..."
+      aclocal $aclocalinclude
       if grep "^AM_PROG_LIBTOOL" configure.in >/dev/null; then
 	echo "Running libtoolize..."
 	libtoolize --force --copy
       fi
-      echo "Running aclocal $aclocalinclude ..."
-      aclocal $aclocalinclude
       if grep "^AM_CONFIG_HEADER" configure.in >/dev/null; then
 	echo "Running autoheader..."
 	autoheader
