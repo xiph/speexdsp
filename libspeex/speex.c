@@ -118,7 +118,7 @@ void encode(EncState *st, float *in, int *outSize, void *bits)
 
    for (sub=0;sub<st->nbSubframes;sub++)
    {
-      float tmp, gain;
+      float tmp, gain[3];
       int pitch, offset;
 
       offset = st->subframeSize*sub;
@@ -157,8 +157,11 @@ void encode(EncState *st, float *in, int *outSize, void *bits)
       }
 
       /* Find pitch gain and delay */
-      pitch = open_loop_ltp(st->wframe+offset, st->subframeSize, 20, 120, &gain);
-      printf ("pitch = %d, gain = %f\n",pitch,gain);
+      pitch = three_tap_ltp(st->wframe+offset, st->subframeSize, 20, 120, gain);
+      /*pitch = open_loop_ltp(st->wframe+offset, st->subframeSize, 20, 120, gain);*/
+      
+      /*printf ("pitch = %d, gain = %f\n",pitch,gain);*/
+      printf ("pitch = %d, gain = %f %f %f\n",pitch,gain[0], gain[1], gain[2]);
    }
 
    printf ("\n");
