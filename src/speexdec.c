@@ -136,7 +136,7 @@ FILE *out_file_open(char *outFile, int rate, int *channels)
          exit(1);         
       }
 
-      format=AFMT_S16_LE;
+      format=AFMT_S16_NE;
       if (ioctl(audio_fd, SNDCTL_DSP_SETFMT, &format)==-1)
       {
          perror("SNDCTL_DSP_SETFMT");
@@ -401,6 +401,7 @@ int main(int argc, char **argv)
    int channels=-1;
    int rate=0;
    int extra_headers;
+   int wav_format=0;
 
    enh_enabled = 1;
 
@@ -492,6 +493,9 @@ int main(int argc, char **argv)
       outFile=argv[optind+1];
    else
       outFile = "";
+   wav_format = strlen(outFile)>=4 && (
+                                       strcmp(outFile+strlen(outFile)-4,".wav")==0
+                                       || strcmp(inFile+strlen(inFile)-4,".WAV")==0);
    /*Open input file*/
    if (strcmp(inFile, "-")==0)
    {
@@ -611,8 +615,14 @@ int main(int argc, char **argv)
                         output[i]=-32000.0;
                   }
                   /*Convert to short and save to output file*/
-                  for (i=0;i<frame_size*channels;i++)
-                     out[i]=(short)le_short((short)floor(.5+output[i]));
+		  if (strlen(outFile)!=0)
+                  {
+                     for (i=0;i<frame_size*channels;i++)
+                        out[i]=(short)le_short((short)floor(.5+output[i]));
+		  } else {
+                     for (i=0;i<frame_size*channels;i++)
+                        out[i]=(short)floor(.5+output[i]);
+		  }
 #if defined WIN32 || defined _WIN32
                   if (strlen(outFile)==0)
                       WIN_Play_Samples (out, sizeof(short) * frame_size*channels);
@@ -631,7 +641,7 @@ int main(int argc, char **argv)
 
    }
 
-   if (strcmp(outFile+strlen(outFile)-4,".wav")==0 || strcmp(inFile+strlen(inFile)-4,".WAV")==0)
+   if (wav_format)
    {
       if (fseek(fout,4,SEEK_SET)==0)
       {
@@ -663,7 +673,7 @@ int main(int argc, char **argv)
    ogg_sync_clear(&oy);
 
 #if defined WIN32 || defined _WIN32
-   if (fout && strlen(outFile)==0)
+   if (strlen(outFile)==0)
       WIN_Audio_close ();
 #endif
 
