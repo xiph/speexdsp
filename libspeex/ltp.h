@@ -75,3 +75,13 @@ int   p,                        /* Number of LPC coeffs */
 int   nsf,                      /* Number of samples in subframe */
 float *stack
 );
+
+/*Unquantize adaptive codebook and update pitch contribution*/
+void pitch_unquant_3tap(
+float exc[],                    /* Excitation */
+int   start,                    /* Smallest pitch value allowed */
+int   end,                      /* Largest pitch value allowed */
+int   nsf,                      /* Number of samples in subframe */
+FrameBits *bits,
+float *stack
+);

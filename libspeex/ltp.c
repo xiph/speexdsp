@@ -414,3 +414,32 @@ float *stack
       printf ("prediction gain = %f\n",tmp1/(tmp2+1));
    }
 }
+
+
+void pitch_unquant_3tap(
+float exc[],                    /* Excitation */
+int   start,                    /* Smallest pitch value allowed */
+int   end,                      /* Largest pitch value allowed */
+int   nsf,                      /* Number of samples in subframe */
+FrameBits *bits,
+float *stack
+)
+{
+   int i;
+   int pitch;
+   int gain_index;
+   float gain[3];
+   pitch = frame_bits_unpack_unsigned(bits, 7);
+   pitch += start;
+   gain_index = frame_bits_unpack_unsigned(bits, 7);
+   gain[0] = gain_cdbk_nb[gain_index*12];
+   gain[1] = gain_cdbk_nb[gain_index*12+1];
+   gain[2] = gain_cdbk_nb[gain_index*12+2];
+   printf ("unquantized pitch: %d %f %f %f\n", pitch, gain[0], gain[1], gain[2]);
+
+   /*Go backward in case pitch < nsf*/
+   for(i=nsf-1;i>=0;i--)
+   {
+      exc[i]=gain[0]*exc[i-pitch+1] + gain[1]*exc[i-pitch] + gain[2]*exc[i-pitch-1];
+   }
+}

@@ -545,8 +545,10 @@ void decode(DecState *st, FrameBits *bits, float *out)
          exc[i]=0;
 
       /*Adaptive codebook contribution*/
+      pitch_unquant_3tap(exc, st->min_pitch, st->max_pitch, st->subframeSize, bits, st->stack);
 
       /*Fixed codebook contribution*/
+      frame_bits_unpack_unsigned(bits, 51);
 
       /*Compute decoded signal*/
       syn_filt_mem(exc, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, st->mem_sp);
