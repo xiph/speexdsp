@@ -40,6 +40,14 @@
 
 #define inline __inline
 
+/* Disable some pointless/stupid warnings */
+
+#pragma warning(disable: 4100) /* unreferenced formal parameter */
+#pragma warning(disable: 4127) /* conditional expression is constant */
+#pragma warning(disable: 4305) /* truncation from '...' to '...' */
+#pragma warning(disable: 4244) /* conversion from '...' to '...', possible loss of data */
+#pragma warning(disable: 4701) /* local variable may be be used without having been initialized */
+
 #else /* ! __WINS__ */
 
 /* Use only fixed point arithmetic when decoding on a device */
