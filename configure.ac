@@ -90,7 +90,10 @@ AC_ARG_ENABLE(epic-48k, [  --enable-epic-48k       enable support for Epic 4.8 k
   AC_DEFINE([EPIC_48K], , [Enable support for Epic 4.8 kbps mode])
 fi])
 
-AC_ARG_ENABLE(global-pointers, [  --disable-global-pointers  disable use of writable global data], noglobals="yes", noglobals="no")
+AC_ARG_ENABLE(global-pointers, [  --disable-global-pointers  disable writing to data segments (README.symbian)], noglobals="yes", noglobals="no")
+if test "$noglobals" = yes; then
+  AC_DEFINE([DISABLE_GLOBAL_POINTERS], , [Disable writing to data segments; see README.symbian])
+fi
 AM_CONDITIONAL(DISABLE_GLOBAL_POINTERS, [test "x$noglobals" = "xyes"])
 
 dnl Output the makefiles and version.h.
