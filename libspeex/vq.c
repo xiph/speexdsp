@@ -1,4 +1,4 @@
-/* Copyright (C) 2002 Jean-Marc Valin & David Rowe
+/* Copyright (C) 2002 Jean-Marc Valin
    File: vq.c
    Vector quantization
 
@@ -19,6 +19,7 @@
 
 #include "vq.h"
 
+/*Finds the index of the entry in a codebook that best matches the input*/
 int vq_index(float *in, float *codebook, int len, int entries)
 {
    int i,j;

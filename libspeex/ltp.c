@@ -20,7 +20,6 @@
 #include <math.h>
 #include <stdio.h>
 #include "ltp.h"
-#include "cb_search.h"
 #include "stack_alloc.h"
 #include "filters.h"
 #include "speex_bits.h"

@@ -29,32 +29,6 @@ typedef struct split_cb_params {
    int     shape_bits;
 } split_cb_params;
 
-float overlap_cb_search(
-float target[],			/* target vector */
-float ak[],			/* LPCs for this subframe */
-float awk1[],			/* Weighted LPCs for this subframe */
-float awk2[],			/* Weighted LPCs for this subframe */
-float codebook[],		/* overlapping codebook */
-int   entries,			/* number of overlapping entries to search */
-float *gain,			/* gain of optimum entry */
-int   *index,			/* index of optimum entry */
-int   p,                        /* number of LPC coeffs */
-int   nsf,                      /* number of samples in subframe */
-float *stack
-);
-
-void split_cb_search(
-float target[],			/* target vector */
-float ak[],			/* LPCs for this subframe */
-float awk1[],			/* Weighted LPCs for this subframe */
-float awk2[],			/* Weighted LPCs for this subframe */
-void *par,                      /* Codebook/search parameters*/
-int   p,                        /* number of LPC coeffs */
-int   nsf,                      /* number of samples in subframe */
-float *exc,
-SpeexBits *bits,
-float *stack
-);
 
 void split_cb_search_nogain(
 float target[],			/* target vector */
@@ -98,28 +72,6 @@ float *stack
 void split_cb_shape_sign_unquant(
 float *exc,
 void *par,                      /* non-overlapping codebook */
-int   nsf,                      /* number of samples in subframe */
-SpeexBits *bits,
-float *stack
-);
-
-void split_cb_search2(
-float target[],			/* target vector */
-float ak[],			/* LPCs for this subframe */
-float awk1[],			/* Weighted LPCs for this subframe */
-float awk2[],			/* Weighted LPCs for this subframe */
-void *par,                      /* Codebook/search parameters*/
-int   p,                        /* number of LPC coeffs */
-int   nsf,                      /* number of samples in subframe */
-float *exc,
-SpeexBits *bits,
-float *stack
-);
-
-
-void split_cb_unquant(
-float *exc,
-void  *par,                     /* Innovation parameters */
 int   nsf,                      /* number of samples in subframe */
 SpeexBits *bits,
 float *stack
