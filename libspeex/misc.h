@@ -30,5 +30,6 @@ unsigned short le_short(unsigned short s);
 
 void *speex_alloc (int size);
 void speex_free (void *ptr);
+void *speex_move (void *dest, void *src, int n);
 
 #endif

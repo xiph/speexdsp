@@ -18,7 +18,6 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <string.h>
 #include <math.h>
 #include "nb_celp.h"
 #include "lpc.h"
@@ -195,15 +194,15 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
    st=state;
    
    /* Copy new data in input buffer */
-   memmove(st->inBuf, st->inBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(float));
+   speex_move(st->inBuf, st->inBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(float));
    st->inBuf[st->bufSize-st->frameSize] = in[0] - st->preemph*st->pre_mem;
    for (i=1;i<st->frameSize;i++)
       st->inBuf[st->bufSize-st->frameSize+i] = in[i] - st->preemph*in[i-1];
    st->pre_mem = in[st->frameSize-1];
 
-   memmove(st->exc2Buf, st->exc2Buf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(float));
-   memmove(st->excBuf, st->excBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(float));
-   memmove(st->swBuf, st->swBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(float));
+   speex_move(st->exc2Buf, st->exc2Buf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(float));
+   speex_move(st->excBuf, st->excBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(float));
+   speex_move(st->swBuf, st->swBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(float));
 
    /* Window for analysis */
    for (i=0;i<st->windowSize;i++)
@@ -753,9 +752,9 @@ void nb_decode(void *state, SpeexBits *bits, float *out, int lost)
    st->submodeID = speex_bits_unpack_unsigned(bits, NB_SUBMODE_BITS);
 
    /* Shift all buffers by one frame */
-   memmove(st->inBuf, st->inBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(float));
-   memmove(st->excBuf, st->excBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(float));
-   memmove(st->exc2Buf, st->exc2Buf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(float));
+   speex_move(st->inBuf, st->inBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(float));
+   speex_move(st->excBuf, st->excBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(float));
+   speex_move(st->exc2Buf, st->exc2Buf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(float));
 
    /* Unquantize LSPs */
    SUBMODE(lsp_unquant)(st->qlsp, st->lpcSize, bits);

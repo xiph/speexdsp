@@ -19,6 +19,7 @@
 
 #include "misc.h"
 #include <stdlib.h>
+#include <string.h>
 
 unsigned int be_int(unsigned int i)
 {
@@ -72,4 +73,9 @@ void *speex_alloc (int size)
 void speex_free (void *ptr)
 {
    free(ptr);
+}
+
+void *speex_move (void *dest, void *src, int n)
+{
+   return memmove(dest,src,n);
 }

@@ -17,21 +17,20 @@
 */
 
 
+#include <stdlib.h>
+#include <math.h>
+#include <stdio.h>
 #include "nb_celp.h"
 #include "sb_celp.h"
 #include "stdlib.h"
 #include "filters.h"
-#include <math.h>
 #include "lpc.h"
 #include "lsp.h"
-#include <stdio.h>
 #include "stack_alloc.h"
 #include "cb_search.h"
 #include "quant_lsp.h"
 #include "vq.h"
-#include <string.h>
 #include "ltp.h"
-#include <stdlib.h>
 #include "misc.h"
 
 #ifndef M_PI
@@ -331,7 +330,7 @@ void sb_encode(void *state, float *in, SpeexBits *bits)
       st->high[st->windowSize-st->frame_size+i]=st->x1d[i];
 #endif
 
-   memmove(st->excBuf, st->excBuf+st->frame_size, (st->bufSize-st->frame_size)*sizeof(float));
+   speex_move(st->excBuf, st->excBuf+st->frame_size, (st->bufSize-st->frame_size)*sizeof(float));
 
    /* Start encoding the high-band */
 
