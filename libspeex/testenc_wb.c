@@ -30,7 +30,7 @@ int main(int argc, char **argv)
    speex_encoder_ctl(st, SPEEX_SET_VBR, &tmp);
    tmp=10;
    speex_encoder_ctl(st, SPEEX_SET_QUALITY, &tmp);
-   tmp=3;
+   tmp=5;
    speex_encoder_ctl(st, SPEEX_SET_COMPLEXITY, &tmp);
    tmp=3;
    speex_encoder_ctl(st, SPEEX_SET_HIGH_MODE, &tmp);
@@ -63,7 +63,7 @@ int main(int argc, char **argv)
       speex_encode(st, input, &bits);
       nbBits = speex_bits_write(&bits, cbits, 200);
       bitCount+=bits.nbBits;
-      printf ("Encoding frame in %d bits\n", nbBits*8);
+      /*printf ("Encoding frame in %d bits\n", nbBits*8);*/
       if (argc==4)
          fwrite(cbits, 1, nbBits, fbits);
       {
@@ -74,7 +74,7 @@ int main(int argc, char **argv)
             esig += bak2[i]*bak2[i];
          }
          snr = 10*log10((esig+1)/(enoise+1));
-         printf ("real SNR = %f\n", snr);
+         /*printf ("real SNR = %f\n", snr);*/
       }
       speex_bits_rewind(&bits);
       

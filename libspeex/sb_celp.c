@@ -290,7 +290,7 @@ int sb_encode(void *state, float *in, SpeexBits *bits)
 
    /* Levinson-Durbin */
    _spx_lpc(st->lpc+1, st->autocorr, st->lpcSize);
-   st->lpc[0]=1;
+   st->lpc[0]=LPC_SCALING;
 
    /* LPC to LSPs (x-domain) transform */
    roots=lpc_to_lsp (st->lpc, st->lpcSize, st->lsp, 15, 0.2, stack);
@@ -494,6 +494,9 @@ int sb_encode(void *state, float *in, SpeexBits *bits)
          tmp = -tmp;
          st->pi_gain[sub]+=st->interp_qlpc[i];
       }
+      rh /= LPC_SCALING;
+      st->pi_gain[sub] /= LPC_SCALING;
+
       rl = low_pi_gain[sub];
       rl=1/(fabs(rl)+.01);
       rh=1/(fabs(rh)+.01);
@@ -972,6 +975,9 @@ int sb_decode(void *state, SpeexBits *bits, float *out)
             tmp = -tmp;
             st->pi_gain[sub]+=st->interp_qlpc[i];
          }
+         rh /= LPC_SCALING;
+         st->pi_gain[sub] /= LPC_SCALING;
+
          rl = low_pi_gain[sub];
          rl=1/(fabs(rl)+.01);
          rh=1/(fabs(rh)+.01);

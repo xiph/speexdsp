@@ -243,7 +243,7 @@ int nb_encode(void *state, float *in, SpeexBits *bits)
 
    /* Levinson-Durbin */
    _spx_lpc(st->lpc+1, st->autocorr, st->lpcSize);
-   st->lpc[0]=8192.;
+   st->lpc[0]=LPC_SCALING;
 
    /* LPC to LSPs (x-domain) transform */
    roots=lpc_to_lsp (st->lpc, st->lpcSize, st->lsp, 15, 0.2, stack);
@@ -668,6 +668,8 @@ int nb_encode(void *state, float *in, SpeexBits *bits)
          st->pi_gain[sub] += tmp*st->interp_qlpc[i];
          tmp = -tmp;
       }
+      st->pi_gain[sub] /= LPC_SCALING;
+
 
       /* Compute bandwidth-expanded (unquantized) LPCs for perceptual weighting */
       bw_lpc(st->gamma1, st->interp_lpc, st->bw_lpc1, st->lpcSize);
@@ -1423,6 +1425,7 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
          st->pi_gain[sub] += tmp*st->interp_qlpc[i];
          tmp = -tmp;
       }
+      st->pi_gain[sub] /= LPC_SCALING;
 
       /* Reset excitation */
       for (i=0;i<st->subframeSize;i++)

@@ -197,8 +197,8 @@ int lpc_to_lsp (spx_coef_t *a,int lpcrdr,float *freq,int nb,float delta, char *s
     *px++ = 1.0;
     *qx++ = 1.0;
     for(i=1;i<=m;i++){
-	*px++ = (a[i]+a[lpcrdr+1-i])/8192.-*p++;
-	*qx++ = (a[i]-a[lpcrdr+1-i])/8192.+*q++;
+	*px++ = (a[i]+a[lpcrdr+1-i])/LPC_SCALING - *p++;
+	*qx++ = (a[i]-a[lpcrdr+1-i])/LPC_SCALING + *q++;
     }
     px = P;
     qx = Q;
