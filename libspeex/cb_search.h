@@ -20,7 +20,7 @@
 #ifndef CB_SEARCH_H
 #define CB_SEARCH_H
 
-#include "bits.h"
+#include "speex_bits.h"
 
 typedef struct split_cb_params {
    int     subvect_size;

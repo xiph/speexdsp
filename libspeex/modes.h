@@ -23,7 +23,7 @@
 #define MODES_H
 
 #include "speex_modes.h"
-#include "bits.h"
+#include "speex_bits.h"
 
 /* Quantizes LSPs */
 typedef void (*lsp_quant_func)(float *, float *, int, FrameBits *);

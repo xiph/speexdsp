@@ -1,5 +1,5 @@
 /* Copyright (C) 2002 Jean-Marc Valin 
-   File: bits.h
+   File: speex_bits.h
 
    Handles bit packing/unpacking
 

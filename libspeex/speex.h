@@ -21,7 +21,7 @@
 #define SPEEX_H
 
 #include "modes.h"
-#include "bits.h"
+#include "speex_bits.h"
 
 /**Structure representing the full state of the encoder*/
 typedef struct EncState {

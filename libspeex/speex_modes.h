@@ -26,7 +26,7 @@
 extern "C" {
 #endif
 
-#include "bits.h"
+#include "speex_bits.h"
 
 struct SpeexMode;
 

@@ -22,7 +22,7 @@
 #ifndef MPULSE_H
 #define MPULSE_H
 
-#include "bits.h"
+#include "speex_bits.h"
 
 typedef struct mpulse_params {
    int     nb_pulse;

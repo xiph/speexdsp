@@ -21,7 +21,7 @@
 #define SB_CELP_H
 
 #include "modes.h"
-#include "bits.h"
+#include "speex_bits.h"
 #include "speex.h"
 
 /**Structure representing the full state of the encoder*/

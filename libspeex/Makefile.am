@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in. -*-Makefile-*-
 
-# $Id: Makefile.am,v 1.23 2002/05/02 20:55:01 jmvalin Exp $
+# $Id: Makefile.am,v 1.24 2002/05/03 19:13:40 jmvalin Exp $
 
 # Disable automatic dependency tracking if using other tools than gcc and gmake
 #AUTOMAKE_OPTIONS = no-dependencies
@@ -37,7 +37,7 @@ libspeex_la_SOURCES = speex.c \
 
 
 include_HEADERS = speex.h \
-	bits.h \
+	speex_bits.h \
 	modes.h \
 	sb_celp.h
 

@@ -1,5 +1,5 @@
 /* Copyright (C) 2002 Jean-Marc Valin 
-   File: bits.c
+   File: speex_bits.c
 
    Handles bit packing/unpacking
 
@@ -19,7 +19,7 @@
 
 */
 
-#include "bits.h"
+#include "speex_bits.h"
 #include <stdio.h>
 #include <stdlib.h>
 

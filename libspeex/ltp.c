@@ -23,7 +23,7 @@
 #include "cb_search.h"
 #include "stack_alloc.h"
 #include "filters.h"
-#include "bits.h"
+#include "speex_bits.h"
 
 #define abs(x) ((x)<0 ? -(x) : (x))
 
