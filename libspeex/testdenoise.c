@@ -14,7 +14,7 @@ int main()
    st = speex_preprocess_state_init(NN, 8000);
    i=1;
    speex_preprocess_ctl(st, SPEEX_PREPROCESS_SET_DENOISE, &i);
-   speex_preprocess_ctl(st, SPEEX_PREPROCESS_SET_AGC, &i);
+   /*speex_preprocess_ctl(st, SPEEX_PREPROCESS_SET_AGC, &i);*/
    while (1)
    {
       int vad;

@@ -58,8 +58,6 @@ typedef struct SpeexPreprocessState {
    float *prior;             /**< A-priori SNR */
    float *post;              /**< A-posteriori SNR */
    float *min_ps;            /**< */
-   float *last_energy;       /**< Energy of the previous frames */
-   float *last_ps;           /**< Power spectrum of the past frames */
 
    float *S;                 /**< Smoothed power spectrum */
    float *Smin;              /**< See Cohen paper */
@@ -69,8 +67,6 @@ typedef struct SpeexPreprocessState {
    float *loudness_weight;   /**< */
 
    float *echo_noise;
-
-   int    last_id;           /**< */
 
    float *noise_bands;
    float *noise_bands2;

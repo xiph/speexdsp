@@ -37,9 +37,6 @@
 #include "misc.h"
 #include "smallft.h"
 
-#define STABILITY_TIME 20
-#define NB_LAST_PS 10
-
 #define max(a,b) ((a) > (b) ? (a) : (b))
 #define min(a,b) ((a) < (b) ? (a) : (b))
 
@@ -128,9 +125,6 @@ SpeexPreprocessState *speex_preprocess_state_init(int frame_size, int sampling_r
    st->gain = (float*)speex_alloc(N*sizeof(float));
    st->prior = (float*)speex_alloc(N*sizeof(float));
    st->post = (float*)speex_alloc(N*sizeof(float));
-   st->min_ps = (float*)speex_alloc(N*sizeof(float));
-   st->last_energy = (float*)speex_alloc(STABILITY_TIME*sizeof(float));
-   st->last_ps = (float*)speex_alloc(NB_LAST_PS*N*sizeof(float));
    st->loudness_weight = (float*)speex_alloc(N*sizeof(float));
    st->inbuf = (float*)speex_alloc(N3*sizeof(float));
    st->outbuf = (float*)speex_alloc(N3*sizeof(float));
@@ -197,7 +191,6 @@ SpeexPreprocessState *speex_preprocess_state_init(int frame_size, int sampling_r
    st->nb_preprocess=0;
    st->nb_min_estimate=0;
    st->last_update=0;
-   st->last_id=0;
    return st;
 }
 
@@ -212,9 +205,6 @@ void speex_preprocess_state_destroy(SpeexPreprocessState *st)
    speex_free(st->gain);
    speex_free(st->prior);
    speex_free(st->post);
-   speex_free(st->min_ps);
-   speex_free(st->last_energy);
-   speex_free(st->last_ps);
    speex_free(st->loudness_weight);
    speex_free(st->echo_noise);
 
@@ -505,7 +495,6 @@ int speex_preprocess(SpeexPreprocessState *st, float *x, float *echo)
    int is_speech=1;
    float mean_post=0;
    float mean_prior=0;
-   float energy;
    int N = st->ps_size;
    int N3 = 2*N - st->frame_size;
    int N4 = st->frame_size - N3;
@@ -569,31 +558,7 @@ int speex_preprocess(SpeexPreprocessState *st, float *x, float *echo)
       /*fprintf (stderr, "%f ", st->S[i]/st->Smin[i]);*/
       /*fprintf (stderr, "%f ", st->update_prob[i]);*/
    }
-   /*fprintf (stderr, "\n");*/
-   energy=0;
-   for (i=1;i<N;i++)
-      energy += log(100+ps[i]);
-   energy /= 160;
-   st->last_energy[st->nb_preprocess%STABILITY_TIME]=energy;
 
-   if (st->nb_preprocess>=STABILITY_TIME)
-   {
-      float E=0, E2=0;
-      float std;
-      for (i=0;i<STABILITY_TIME;i++)
-      {
-         E+=st->last_energy[i];
-         E2+=st->last_energy[i]*st->last_energy[i];
-      }
-      E2=E2/STABILITY_TIME;
-      E=E/STABILITY_TIME;
-      std = sqrt(E2-E*E);
-      if (std<.15 && st->last_update>20)
-      {
-         update_noise(st, &st->last_ps[st->last_id*N], echo);
-      }
-      /*fprintf (stderr, "%f\n", std);*/
-   }
 
    st->nb_preprocess++;
 
@@ -841,12 +806,6 @@ int speex_preprocess(SpeexPreprocessState *st, float *x, float *echo)
    /* Save old power spectrum */
    for (i=1;i<N;i++)
       st->old_ps[i] = ps[i];
-
-   for (i=1;i<N;i++)
-      st->last_ps[st->last_id*N+i] = ps[i];
-   st->last_id++;
-   if (st->last_id>=NB_LAST_PS)
-      st->last_id=0;
 
    return is_speech;
 }
