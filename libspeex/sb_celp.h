@@ -27,11 +27,37 @@
 /**Structure representing the full state of the encoder*/
 typedef struct SBEncState {
    EncState st_low;
-   int frame_size;
+   int    full_frame_size;
+   int    frame_size;
+   int    subframeSize;
+   int    nbSubframes;
+   int    windowSize;
+   int    lpcSize;
+   int    first;
+   float  lag_factor;
+   float  lpc_floor;
+
+   float *stack;
    float *x0, *x0d, *x1, *x1d;
    float *high;
    float *y0, *y1;
    float *h0_mem, *h1_mem, *g0_mem, *g1_mem;
+
+   float *exc;
+   float *buf;
+   float *window;
+   float *lagWindow;
+   float *autocorr;
+   float *rc;
+   float *lpc;
+   float *lsp;
+   float *qlsp;
+   float *old_lsp;
+   float *old_qlsp;
+   float *interp_lsp;
+   float *interp_qlsp;
+   float *interp_lpc;
+   float *interp_qlpc;
 } SBEncState;
 
 
