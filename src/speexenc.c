@@ -181,6 +181,7 @@ int main(int argc, char **argv)
    int complexity=3;
    char *comments = "Encoded with Speex " VERSION;
    int close_in=0, close_out=0;
+   int eos=0;
 
    /*Process command-line options*/
    while(1)
@@ -362,7 +363,7 @@ int main(int argc, char **argv)
       op.packet = (unsigned char *)speex_header_to_packet(&header, (int*)&(op.bytes));
       op.b_o_s = 1;
       op.e_o_s = 0;
-      op.granulepos = 0;
+      op.granulepos = -1;
       op.packetno = 0;
       ogg_stream_packetin(&os, &op);
       free(op.packet);
@@ -371,7 +372,7 @@ int main(int argc, char **argv)
       op.bytes = strlen((char*)op.packet);
       op.b_o_s = 0;
       op.e_o_s = 0;
-      op.granulepos = 0;
+      op.granulepos = -1;
       op.packetno = 1;
       ogg_stream_packetin(&os, &op);
       
@@ -408,12 +409,14 @@ int main(int argc, char **argv)
    }
 
    speex_bits_init(&bits);
+
+   if (read_samples(fin,frame_size,fmt,chan,lsb,input))
+      eos=1;
+
    /*Main encoding loop (one frame per iteration)*/
-   while (1)
+   while (!eos)
    {
       id++;
-      if (read_samples(fin,frame_size,fmt,chan,lsb,input))
-         break;
       /*Encode current frame*/
       speex_encode(st, input, &bits);
       
@@ -424,6 +427,13 @@ int main(int argc, char **argv)
          fputc (ch, stderr);
          fprintf (stderr, "Bitrate is use: %d bps     ", tmp);
       }
+
+      if (read_samples(fin,frame_size,fmt,chan,lsb,input))
+      {
+         eos=1;
+         op.e_o_s = 1;
+      }
+
       if ((id+1)%nframes!=0)
          continue;
       nbBytes = speex_bits_write(&bits, cbits, MAX_FRAME_BYTES);
@@ -431,12 +441,15 @@ int main(int argc, char **argv)
       op.packet = (unsigned char *)cbits;
       op.bytes = nbBytes;
       op.b_o_s = 0;
-      op.e_o_s = 0;
-      op.granulepos = id*frame_size;
+      if (eos)
+         op.e_o_s = 1;
+      else
+         op.e_o_s = 0;
+      op.granulepos = (id+nframes)*frame_size;
       op.packetno = 2+id/nframes;
       ogg_stream_packetin(&os, &op);
 
-      /*Write all new pages (not likely 0 or 1)*/
+      /*Write all new pages (most likely 0 or 1)*/
       while (ogg_stream_pageout(&os,&og))
       {
          ret = oe_write_page(&og, fout);
@@ -449,14 +462,22 @@ int main(int argc, char **argv)
             bytes_written += ret;
       }
    }
-   
-   op.packet = (unsigned char *)"END OF STREAM";
-   op.bytes = 13;
-   op.b_o_s = 0;
-   op.e_o_s = 1;
-   op.granulepos = -1;
-   op.packetno = 3+id/nframes;
-   ogg_stream_packetin(&os, &op);
+   if ((id+1)%nframes!=0)
+   {
+      while ((id+1)%nframes!=0)
+      {
+         id++;
+         speex_bits_pack(&bits, 0, 7);
+      }
+      nbBytes = speex_bits_write(&bits, cbits, MAX_FRAME_BYTES);
+      op.packet = (unsigned char *)cbits;
+      op.bytes = nbBytes;
+      op.b_o_s = 0;
+      op.e_o_s = 1;
+      op.granulepos = (id+nframes)*frame_size;
+      op.packetno = 2+id/nframes;
+      ogg_stream_packetin(&os, &op);
+   }
    /*Flush all pages left to be written*/
    while (ogg_stream_flush(&os, &og))
    {

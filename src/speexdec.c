@@ -217,6 +217,7 @@ int main(int argc, char **argv)
    int nframes=2;
    int print_bitrate=0;
    int close_in=0;
+   int eos=0;
 
    enh_enabled = 0;
 
@@ -323,7 +324,7 @@ int main(int argc, char **argv)
          /*Add page to the bitstream*/
          ogg_stream_pagein(&os, &og);
          /*Extract all available packets*/
-         while (ogg_stream_packetout(&os, &op)==1)
+         while (!eos && ogg_stream_packetout(&os, &op)==1)
          {
             /*If first packet, process as Speex header*/
             if (packet_count==0)
@@ -344,7 +345,8 @@ int main(int argc, char **argv)
 
                /*End of stream condition*/
                if (op.e_o_s)
-                  break;
+                  eos=1;
+
                /*Copy Ogg packet to Speex bitstream*/
                speex_bits_read_from(&bits, (char*)op.packet, op.bytes);
                for (j=0;j<nframes;j++)
