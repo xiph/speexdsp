@@ -28,7 +28,7 @@
 #define abs(x) ((x)<0 ? -(x) : (x))
 
 
-static void open_loop_nbest_pitch(float *sw, int start, int end, int len, int *pitch, int N, float *stack)
+void open_loop_nbest_pitch(float *sw, int start, int end, int len, int *pitch, int N, float *stack)
 {
    int i,j,k;
    float corr;

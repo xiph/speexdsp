@@ -111,6 +111,9 @@ void speex_decoder_ctl(void *state, int request, void *ptr);
 /** Default narrowband mode */
 extern SpeexMode speex_nb_mode;
 
+/** Low bit-rate narrowband mode */
+extern SpeexMode speex_nb_lbr_mode;
+
 /** Default wideband mode */
 extern SpeexMode speex_wb_mode;
 

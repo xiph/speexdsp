@@ -58,6 +58,7 @@ typedef struct SpeexNBMode {
    int     bufSize;
    int     pitchStart;
    int     pitchEnd;
+   int     lbr_pitch;
    float   gamma1;
    float   gamma2;
    float   lag_factor;

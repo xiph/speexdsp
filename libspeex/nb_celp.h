@@ -35,6 +35,7 @@ typedef struct EncState {
    int    bufSize;        /* Buffer size */
    int    min_pitch;      /* Minimum pitch value allowed */
    int    max_pitch;      /* Maximum pitch value allowed */
+   int    lbr_pitch;      /* Forces pitch to be within +-7 samples of open-loop pitch*/
    int    ol_pitch;       /* Open-loop pitch */
    int    ol_voiced;      /* Open-loop voiced/non-voiced decision */
    int   *pitch;
@@ -93,6 +94,7 @@ typedef struct DecState {
    int    bufSize;        /* Buffer size */
    int    min_pitch;      /* Minimum pitch value allowed */
    int    max_pitch;      /* Maximum pitch value allowed */
+   int    lbr_pitch;      /* Forces pitch to be within +-7 samples of open-loop pitch*/
    float  gamma1;         /* Perceptual filter: A(z/gamma1) */
    float  gamma2;         /* Perceptual filter: A(z/gamma2) */
    float  preemph;        /* Pre-emphasis: P(z) = 1 - a*z^-1*/

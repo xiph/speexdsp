@@ -43,6 +43,12 @@ void lsp_quant_nb(float *lsp, float *qlsp, int order, SpeexBits *bits);
 /* Decodes quantized narrowband LSPs */
 void lsp_unquant_nb(float *lsp, int order, SpeexBits *bits);
 
+/* Quantizes low bit-rate narrowband LSPs with 18 bits */
+void lsp_quant_lbr(float *lsp, float *qlsp, int order, SpeexBits *bits);
+
+/* Decodes quantized low bit-rate narrowband LSPs */
+void lsp_unquant_lbr(float *lsp, int order, SpeexBits *bits);
+
 /* Quantizes wideband LSPs with 50 bits */
 void lsp_quant_wb(float *lsp, float *qlsp, int order, SpeexBits *bits);
 

@@ -33,6 +33,7 @@ extern float gain_cdbk_nb[];
 extern float hexc_table[];
 extern float exc_5_256_table[];
 extern float exc_5_64_table[];
+extern float exc_10_32_table[];
 
 /* Post-filter parameters for narrowband */
 pf_params pf_params_nb = {
@@ -55,7 +56,23 @@ ltp_params ltp_params_nb = {
    7
 };
 
-/* Split-VQ innovation parameters */
+/* Parameters for Long-Term Prediction (LTP)*/
+ltp_params ltp_params_lbr = {
+   gain_cdbk_nb,
+   5,
+   4
+};
+
+/* Split-VQ innovation parameters for low bit-rate narrowband */
+split_cb_params split_cb_nb_lbr = {
+   10,               /*subvect_size*/
+   4,               /*nb_subvect*/
+   exc_10_32_table, /*shape_cb*/
+   5,               /*shape_bits*/
+};
+
+
+/* Split-VQ innovation parameters narrowband */
 split_cb_params split_cb_nb = {
    5,               /*subvect_size*/
    8,               /*nb_subvect*/
@@ -63,6 +80,7 @@ split_cb_params split_cb_nb = {
    6,               /*shape_bits*/
 };
 
+/* Split-VQ innovation for low-band wideband */
 split_cb_params split_cb_sb = {
    5,               /*subvect_size*/
    8,              /*nb_subvect*/
@@ -70,6 +88,7 @@ split_cb_params split_cb_sb = {
    8,               /*shape_bits*/
 };
 
+/* Split-VQ innovation for high-band wideband */
 static split_cb_params split_cb_high = {
    8,               /*subvect_size*/
    5,               /*nb_subvect*/
@@ -86,6 +105,7 @@ SpeexNBMode nb_mode = {
    640,    /*bufSize*/
    17,     /*pitchStart*/
    144,    /*pitchEnd*/
+   0,      /*lbr_pitch*/
    0.9,    /*gamma1*/
    0.6,    /*gamma2*/
    .005,   /*lag_factor*/
@@ -106,6 +126,39 @@ SpeexNBMode nb_mode = {
    &pf_params_nb
 };
 
+
+/* Default mode for narrowband */
+SpeexNBMode nb_lbr_mode = {
+   160,    /*frameSize*/
+   40,     /*subframeSize*/
+   320,    /*windowSize*/
+   10,     /*lpcSize*/
+   640,    /*bufSize*/
+   17,     /*pitchStart*/
+   144,    /*pitchEnd*/
+   1,      /*lbr_pitch*/
+   0.9,    /*gamma1*/
+   0.6,    /*gamma2*/
+   .005,   /*lag_factor*/
+   1.0001, /*lpc_floor*/
+   0.0,    /*preemph*/
+   /*LSP quantization*/
+   lsp_quant_lbr,
+   lsp_unquant_lbr,
+   /*Pitch quantization*/
+   pitch_search_3tap,
+   pitch_unquant_3tap,
+   &ltp_params_lbr,
+   /*Innovation quantization*/
+   split_cb_search_nogain2,
+   split_cb_nogain_unquant,
+   &split_cb_nb_lbr,
+   nb_post_filter,
+   &pf_params_nb
+};
+
+
+
 /* Narrowband mode used for split-band wideband CELP*/
 static SpeexNBMode low_sb_mode = {
    160,    /*frameSize*/
@@ -115,6 +168,7 @@ static SpeexNBMode low_sb_mode = {
    640,    /*bufSize*/
    17,     /*pitchStart*/
    144,    /*pitchEnd*/
+   0,      /*lbr_pitch*/
    .9,    /*gamma1*/
    0.6,    /*gamma2*/
    .002,   /*lag_factor*/
@@ -149,6 +203,18 @@ SpeexMode low_wb_mode = {
 
 SpeexMode speex_nb_mode = {
    &nb_mode,
+   &nb_encoder_init,
+   &nb_encoder_destroy,
+   &nb_encode,
+   &nb_decoder_init,
+   &nb_decoder_destroy,
+   &nb_decode,
+   &nb_encoder_ctl,
+   &nb_decoder_ctl,
+};
+
+SpeexMode speex_nb_lbr_mode = {
+   &nb_lbr_mode,
    &nb_encoder_init,
    &nb_encoder_destroy,
    &nb_encode,

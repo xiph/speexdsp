@@ -24,9 +24,17 @@
 #define SPEEX_HEADER_H
 
 typedef struct SpeexHeader {
+   char speex_version[20];
+   int speex_header_version;
    int rate;
    int mode;
    int nb_channels;
+   int byte_rate;
+   int frame_size;
 } SpeexHeader;
+
+char *speex_header_to_packet(SpeexHeader *header, int *size);
+
+SpeexHeader *speex_packet_to_header(char *packet, int size);
 
 #endif
