@@ -415,7 +415,7 @@ float last_pitch_gain)
          if (gain[2]>0)
             gain_sum += gain[2];
          else
-            gain_sum -= .5*gain[0];
+            gain_sum -= .5*gain[2];
 	 if (gain_sum > tmp) {
 	    float fact = tmp/gain_sum;
 	    for (i=0;i<3;i++)
