@@ -6,3 +6,6 @@
 EXTRA_DIST = Speex.spec Speex.spec.in
 
 SUBDIRS = libspeex @src@
+
+rpm: dist
+	rpmbuild -ta ${PACKAGE}-${VERSION}.tar.gz
