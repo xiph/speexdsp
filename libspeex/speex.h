@@ -57,6 +57,7 @@ typedef struct EncState {
    float *bw_lpc1;        /* LPCs after bandwidth expansion by gamma1 for perceptual weighting*/
    float *bw_lpc2;        /* LPCs after bandwidth expansion by gamma2 for perceptual weighting*/
    float *rc;             /* Reflection coefficients */
+   float *mem1, *mem2, *mem3, *mem4, *mem5, *mem6, *mem7;
 } EncState;
 
 typedef struct DecState {

@@ -19,6 +19,8 @@
 
 #include "filters.h"
 
+#define min(a,b) ((a) < (b) ? (a) : (b))
+
 void syn_filt(float *x, float *a, float *y, int N, int ord)
 {
    int i,j;
@@ -30,14 +32,66 @@ void syn_filt(float *x, float *a, float *y, int N, int ord)
    }
 }
 
-
-void residue(float *x, float *a, float *y, int N, int ord)
+void syn_filt_zero(float *x, float *a, float *y, int N, int ord)
 {
    int i,j;
    for (i=0;i<N;i++)
    {
       y[i]=x[i];
+      for (j=1;j<=min(ord,i);j++)
+         y[i] -= a[j]*y[i-j];
+   }
+}
+
+void syn_filt_mem(float *x, float *a, float *y, int N, int ord, float *mem)
+{
+   int i,j;
+   for (i=0;i<N;i++)
+   {
+      y[i]=x[i];
+      for (j=1;j<=min(ord,i);j++)
+         y[i] -= a[j]*y[i-j];
+      for (j=i+1;j<=ord;j++)
+         y[i] -= a[j]*mem[j-i-1];
+   }
+   for (i=0;i<ord;i++)
+      mem[i]=y[N-i-1];
+}
+
+
+void residue(float *x, float *a, float *y, int N, int ord)
+{
+   int i,j;
+   for (i=N-1;i>=0;i--)
+   {
+      y[i]=x[i];
       for (j=1;j<=ord;j++)
          y[i] += a[j]*x[i-j];
    }
+}
+
+void residue_zero(float *x, float *a, float *y, int N, int ord)
+{
+   int i,j;
+   for (i=N-1;i>=0;i--)
+   {
+      y[i]=x[i];
+      for (j=1;j<=min(ord,i);j++)
+         y[i] += a[j]*x[i-j];
+   }
+}
+
+void residue_mem(float *x, float *a, float *y, int N, int ord, float *mem)
+{
+   int i,j;
+   for (i=N-1;i>=0;i--)
+   {
+      y[i]=x[i];
+      for (j=1;j<=min(ord,i);j++)
+         y[i] += a[j]*x[i-j];
+      for (j=i+1;j<=ord;j++)
+         y[i] += a[j]*mem[j-i-1];
+   }
+   for (i=0;i<ord;i++)
+      mem[i]=x[N-i-1];
 }

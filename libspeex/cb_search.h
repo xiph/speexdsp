@@ -23,7 +23,8 @@
 void overlap_cb_search(
 float target[],			/* target vector */
 float ak[],			/* LPCs for this subframe */
-float awk[],			/* Weighted LPCs for this subframe */
+float awk1[],			/* Weighted LPCs for this subframe */
+float awk2[],			/* Weighted LPCs for this subframe */
 float codebook[],		/* overlapping codebook */
 int   entries,			/* number of overlapping entries to search */
 float *gain,			/* gain of optimum entry */

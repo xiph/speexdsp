@@ -21,8 +21,11 @@
 #define FILTERS_H
 
 void syn_filt(float *x, float *a, float *y, int N, int ord);
+void syn_filt_zero(float *x, float *a, float *y, int N, int ord);
+void syn_filt_mem(float *x, float *a, float *y, int N, int ord, float *mem);
 
 void residue(float *x, float *a, float *y, int N, int ord);
-
+void residue_zero(float *x, float *a, float *y, int N, int ord);
+void residue_mem(float *x, float *a, float *y, int N, int ord, float *mem);
 
 #endif
