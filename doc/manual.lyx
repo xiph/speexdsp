@@ -29,7 +29,7 @@
 
 The Speex Codec Manual
 \newline 
-(draft for Speex 1.0beta3)
+(draft for Speex 1.0beta4)
 \layout Author
 
 Jean-Marc Valin
@@ -255,22 +255,22 @@ Linear prediction is at the base of may speech coding techniques, including
 
 
 \begin_inset Formula \[
-y(n)=\sum _{i=1}^{N}a_{i}x(n-i)\]
+y[n]=\sum _{i=1}^{N}a_{i}x[n-i]\]
 
 \end_inset 
 
 where 
-\begin_inset Formula $y(n)$
+\begin_inset Formula $y[n]$
 \end_inset 
 
  is the linear prediction of 
-\begin_inset Formula $x(n)$
+\begin_inset Formula $x[n]$
 \end_inset 
 
 .
  The prediction error is thus given by:
 \begin_inset Formula \[
-e(n)=x(n)-y(n)=x(n)-\sum _{i=1}^{N}a_{i}x(n-i)\]
+e[n]=x[n]-y[n]=x[n]-\sum _{i=1}^{N}a_{i}x[n-i]\]
 
 \end_inset 
 
@@ -284,7 +284,7 @@ The goal of the LPC analysis is to find the best prediction coefficients
 
  which minimize the quadratic error function:
 \begin_inset Formula \[
-E=\sum _{n=0}^{L-1}\left[e(n)\right]^{2}=\sum _{n=0}^{L-1}\left[x(n)-\sum _{i=1}^{N}a_{i}x(n-i)\right]^{2}\]
+E=\sum _{n=0}^{L-1}\left[e[n]\right]^{2}=\sum _{n=0}^{L-1}\left[x[n]-\sum _{i=1}^{N}a_{i}x[n-i]\right]^{2}\]
 
 \end_inset 
 
@@ -294,7 +294,7 @@ That can be done by making all derivatives
 
  equal to zero:
 \begin_inset Formula \[
-\frac{\partial E}{\partial a_{i}}=\frac{\partial }{\partial a_{i}}\sum _{n=0}^{L-1}\left[x(n)-\sum _{i=1}^{N}a_{i}x(n-i)\right]^{2}=0\]
+\frac{\partial E}{\partial a_{i}}=\frac{\partial }{\partial a_{i}}\sum _{n=0}^{L-1}\left[x[n]-\sum _{i=1}^{N}a_{i}x[n-i]\right]^{2}=0\]
 
 \end_inset 
 
@@ -320,7 +320,7 @@ The
 \end_inset 
 
  of the signal 
-\begin_inset Formula $x(n)$
+\begin_inset Formula $x[n]$
 \end_inset 
 
 .
@@ -328,7 +328,7 @@ The
 
 
 \begin_inset Formula \[
-R(m)=\sum _{i=0}^{N-1}x(i)x(i-m)\]
+R(m)=\sum _{i=0}^{N-1}x[i]x[i-m]\]
 
 \end_inset 
 
@@ -411,7 +411,7 @@ The filter coefficients
 The linear prediction model represents each speech sample as linear combination
  of past samples, plus an error signal called the excitation (or residual).
 \begin_inset Formula \[
-x(n)=\sum _{i=1}^{N}a_{i}x(n-i)+e(n)\]
+x[n]=\sum _{i=1}^{N}a_{i}x[n-i]+e[n]\]
 
 \end_inset 
 
@@ -459,6 +459,20 @@ We usually refer to
 \end_inset 
 
  as the synthesis filter.
+ The whole process is called short-term prediction as it predicts the signal
+ 
+\begin_inset Formula $x[n]$
+\end_inset 
+
+ using a prediction using only the 
+\begin_inset Formula $N$
+\end_inset 
+
+ past samples, where 
+\begin_inset Formula $N$
+\end_inset 
+
+ is usually around 10.
 \layout Standard
 
 Because LPC coefficients have very little robustness to quantization, they
@@ -490,7 +504,7 @@ During voiced segments, the speech signal is very periodic, so it is possible
 
 
 \begin_inset Formula \[
-e(n)=\beta e(n-T)+c(n)\]
+e[n]=\beta e[n-T]+c[n]\]
 
 \end_inset 
 
@@ -552,17 +566,33 @@ Analysis-by-Synthesis and Error Weighting
 \layout Standard
 
 Most (if not all) modern audio codecs attempt to 
-\emph on 
+\begin_inset Quotes eld
+\end_inset 
+
 shape
-\emph default 
- the noise so that it is the hardest to detect with the ear.
- That means that more noise can be tolerated in parts of the spectrum that
- are louder and 
+\begin_inset Quotes erd
+\end_inset 
+
+ the noise so that it appears mostly in the frequency regions where the
+ ear cannot detect it.
+ For example, the ear is more tolerant to noise in parts of the spectrum
+ that are louder and 
 \emph on 
 vice versa
 \emph default 
 .
- That's why the error is minimized for the perceptually weighted signal
+ That's why instead of minimizing the simple quadratic error
+\begin_inset Formula \[
+E=\sum _{n}\left(x[n]-\overline{x}[n]\right)^{2}\]
+
+\end_inset 
+
+where 
+\begin_inset Formula $\overline{x}[n]$
+\end_inset 
+
+ is the encoder signal, we minimize the error for the perceptually weighted
+ signal
 \begin_inset Formula \[
 X_{w}(z)=W(z)X(z)\]
 
@@ -662,7 +692,7 @@ Minimizing the amount of information extracted from past frames (for robustness
 Dynamically-selectable codebooks (LSP, pitch and innovation)
 \layout Itemize
 
-G.728-like fixed codebooks (without backward-adaptive grains because of patent
+G.728-like fixed codebooks (without backward-adaptive gains because of patent
  issues)
 \layout Subsection
 
@@ -674,8 +704,8 @@ LPC Analysis
 
 \layout Standard
 
-An LPC analysis is first performed on a (Hamming) window that spans all
- the current frame and half a frame in advance.
+An LPC analysis is first performed on a (asymetric Hamming) window that
+ spans all the current frame and half a frame in advance.
  The LPC coefficients are then converted to Line Spectral Pair
 \begin_inset LatexCommand \index{line spectral pair}
 
@@ -696,15 +726,18 @@ The LSP's are encoded using 30 bits for higher quality modes and 18 bits
  6 bits and the error is then divided in two 5-coefficient sub-vectors.
  Each of them is quantized with 6 bits, for a total of 18 bits.
  For the higher quality modes, the remaining error on both sub-vectors is
- turther quantized with 6 bits each, for a total of 30 bits.
+ further quantized with 6 bits each, for a total of 30 bits.
 \layout Standard
 
 The perceptual weighting filter 
 \begin_inset Formula $W(z)$
 \end_inset 
 
- used by Speex is derived from the LPC analysis and corresponds to the one
- described by eq.
+ used by Speex is derived from the LPC filter 
+\begin_inset Formula $A(z)$
+\end_inset 
+
+ and corresponds to the one described by eq.
  
 \begin_inset LatexCommand \ref{eq:weighting_filter}
 
@@ -735,12 +768,13 @@ Pitch Prediction (adaptive codebook)
 \layout Standard
 
 Speex uses a 3-tap prediction for pitch.
- That is, 
-\layout Standard
+ That is, the pitch prediction signal 
+\begin_inset Formula $p[n]$
+\end_inset 
 
-
+ is obtained by the past of the excitation by:
 \begin_inset Formula \[
-e(n)=\beta _{0}e(n-T-1)+\beta _{1}e(n-T)+\beta _{2}e(n-T+1)+c(n)\]
+p[n]=\beta _{0}e[n-T-1]+\beta _{1}e[n-T]+\beta _{2}e[n-T+1]\]
 
 \end_inset 
 
@@ -756,7 +790,33 @@ where
 \end_inset 
 
  are the prediction (filter) taps.
+ It is worth noting that when the pitch is smaller than the sub-frame size,
+ we repeat the excitation at a period 
+\begin_inset Formula $T$
+\end_inset 
+
+.
+ For example, when 
+\begin_inset Formula $n-T+1$
+\end_inset 
+
+, we use 
+\begin_inset Formula $n-2T+1$
+\end_inset 
+
+ instead.
  The period and quantized gains are determined in closed loop.
+ In most modes, the pitch period is encoded with 7 bits in the 
+\begin_inset Formula $\left[17,144\right]$
+\end_inset 
+
+ range and the 
+\begin_inset Formula $\beta _{i}$
+\end_inset 
+
+ coefficients are vector-quantized using 7 bits (15 kbps narrowband and
+ above) at higher bit-rates and 5 bits at lower bit-rates (11 kbps narrowband
+ and below).
 \layout Subsection
 
 Innovation Codebook
