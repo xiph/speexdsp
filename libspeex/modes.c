@@ -715,7 +715,7 @@ static int wb_mode_query(void *mode, int request, void *ptr)
    switch (request)
    {
    case SPEEX_MODE_FRAME_SIZE:
-      *((int*)ptr)=m->frameSize;
+      *((int*)ptr)=2*m->frameSize;
       break;
    case SPEEX_SUBMODE_BITS_PER_FRAME:
       if (*((int*)ptr)==0)
