@@ -44,7 +44,6 @@
 #include <speex/speex_header.h>
 #include <speex/speex_stereo.h>
 #include "misc.h"
-#include <speex/speex_preprocess.h>
 
 #if defined WIN32 || defined _WIN32
 #include "getopt_win.h"
