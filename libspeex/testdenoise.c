@@ -1,7 +1,7 @@
 #include "speex_denoise.h"
 #include <stdio.h>
 
-#define NN 160
+#define NN 240
 
 int main()
 {

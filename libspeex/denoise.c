@@ -99,6 +99,8 @@ DenoiseState *denoise_state_init(int frame_size)
       }
    }
 
+   if (st->ps_size < 3*st->frame_size/4)
+      st->ps_size = st->ps_size * 3 / 2;
    N = st->ps_size;
    N3 = 2*N - st->frame_size;
    N4 = st->frame_size - N3;
@@ -120,6 +122,8 @@ DenoiseState *denoise_state_init(int frame_size)
    st->outbuf = (float*)speex_alloc(N3*sizeof(float));
 
    conj_window(st->window, 2*N3);
+   for (i=2*N3;i<2*st->ps_size;i++)
+      st->window[i]=1;
    for (i=N3-1;i>=0;i--)
    {
       st->window[i+N3+N4]=st->window[i+N3];
@@ -301,7 +305,7 @@ int denoise(DenoiseState *st, float *x)
 #endif
 
    /* Noise estimation always updated for the 20 first times */
-   if (st->nb_adapt<20)
+   if (st->nb_adapt<15)
    {
       update_noise(st, ps);
       st->last_update=0;
