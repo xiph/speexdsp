@@ -29,7 +29,7 @@
 
 The Speex Codec Manual
 \newline 
-(for version 1.0rc2)
+(for version 1.0rc3)
 \layout Author
 
 Jean-Marc Valin
@@ -167,3087 +167,6 @@ Ultra-wideband mode at 32 kHz (up to 48 kHz)
 \layout Itemize
 
 Intensity stereo encoding option
-\layout Standard
-
-The next two sections describe the internals of the codec and require some
- signal processing knowledge.
- If you are only interested in using Speex, you can skip to section 
-\begin_inset LatexCommand \ref{sec:Command-line-encoder/decoder}
-
-\end_inset 
-
-.
- 
-\layout Section
-\pagebreak_top 
-Introduction to CELP Coding
-\begin_inset LatexCommand \index{CELP}
-
-\end_inset 
-
-
-\layout Standard
-
-Speex is based on CELP, which stands for Code Excited Linear Prediction.
- This section attempts to introduce the principles behind CELP, so if you
- are already familiar with CELP, you can safely skip to section 
-\begin_inset LatexCommand \ref{sec:Speex-narrowband-mode}
-
-\end_inset 
-
-.
- The CELP technique is based on three ideas:
-\layout Enumerate
-
-The use of a linear prediction (LP) model to model the vocal tract
-\layout Enumerate
-
-The use of (adaptive and fixed) codebook entries as input (excitation) of
- the LP model
-\layout Enumerate
-
-The search performed in closed-loop in a 
-\begin_inset Quotes eld
-\end_inset 
-
-perceptually weighted domain
-\begin_inset Quotes erd
-\end_inset 
-
-
-\layout Standard
-
-This section describes the basic ideas behind CELP.
- Note that it's still incomplete.
-\layout Subsection
-
-Linear Prediction (LPC)
-\begin_inset LatexCommand \index{linear prediction}
-
-\end_inset 
-
-
-\layout Standard
-
-Linear prediction is at the base of may speech coding techniques, including
- CELP.
- The idea behind it is to predict the signal 
-\begin_inset Formula $x(n)$
-\end_inset 
-
- using a linear combination of its past samples:
-\layout Standard
-
-
-\begin_inset Formula \[
-y[n]=\sum _{i=1}^{N}a_{i}x[n-i]\]
-
-\end_inset 
-
-where 
-\begin_inset Formula $y[n]$
-\end_inset 
-
- is the linear prediction of 
-\begin_inset Formula $x[n]$
-\end_inset 
-
-.
- The prediction error is thus given by:
-\begin_inset Formula \[
-e[n]=x[n]-y[n]=x[n]-\sum _{i=1}^{N}a_{i}x[n-i]\]
-
-\end_inset 
-
-
-\layout Standard
-
-The goal of the LPC analysis is to find the best prediction coefficients
- 
-\begin_inset Formula $a_{i}$
-\end_inset 
-
- which minimize the quadratic error function:
-\begin_inset Formula \[
-E=\sum _{n=0}^{L-1}\left[e[n]\right]^{2}=\sum _{n=0}^{L-1}\left[x[n]-\sum _{i=1}^{N}a_{i}x[n-i]\right]^{2}\]
-
-\end_inset 
-
-That can be done by making all derivatives 
-\begin_inset Formula $\frac{\partial E}{\partial a_{i}}$
-\end_inset 
-
- equal to zero:
-\begin_inset Formula \[
-\frac{\partial E}{\partial a_{i}}=\frac{\partial }{\partial a_{i}}\sum _{n=0}^{L-1}\left[x[n]-\sum _{i=1}^{N}a_{i}x[n-i]\right]^{2}=0\]
-
-\end_inset 
-
-
-\layout Standard
-
-The 
-\begin_inset Formula $a_{i}$
-\end_inset 
-
- filter coefficients are computed using the Levinson-Durbin
-\begin_inset LatexCommand \index{Levinson-Durbin}
-
-\end_inset 
-
- algorithm, which starts from the auto-correlation
-\begin_inset LatexCommand \index{auto-correlation}
-
-\end_inset 
-
- 
-\begin_inset Formula $R(m)$
-\end_inset 
-
- of the signal 
-\begin_inset Formula $x[n]$
-\end_inset 
-
-.
-\layout Standard
-
-
-\begin_inset Formula \[
-R(m)=\sum _{i=0}^{N-1}x[i]x[i-m]\]
-
-\end_inset 
-
-
-\layout Standard
-
-For an order 
-\begin_inset Formula $N$
-\end_inset 
-
- filter, we have:
-\begin_inset Formula \[
-\mathbf{R}=\left[\begin{array}{cccc}
- R(0) & R(1) & \cdots  & R(N-1)\\
- R(1) & R(0) & \cdots  & R(N-2)\\
- \vdots  & \vdots  & \ddots  & \vdots \\
- R(N-1) & R(N-2) & \cdots  & R(0)\end{array}
-\right]\]
-
-\end_inset 
-
-
-\begin_inset Formula \[
-\mathbf{r}=\left[\begin{array}{c}
- R(1)\\
- R(2)\\
- \vdots \\
- R(N)\end{array}
-\right]\]
-
-\end_inset 
-
-
-\layout Standard
-
-The filter coefficients 
-\begin_inset Formula $a_{i}$
-\end_inset 
-
- are found by solving the system 
-\begin_inset Formula $\mathbf{Ra}=\mathbf{r}$
-\end_inset 
-
-.
- What the Levinson-Durbin algorithm does here is making the solution to
- the problem 
-\begin_inset Formula $\mathcal{O}\left(N^{2}\right)$
-\end_inset 
-
- instead of 
-\begin_inset Formula $\mathcal{O}\left(N^{3}\right)$
-\end_inset 
-
- by exploiting the fact that matrix 
-\begin_inset Formula $\mathbf{R}$
-\end_inset 
-
- is toeplitz hermitian.
- Also, it can be proved that all the roots of 
-\begin_inset Formula $A(z)$
-\end_inset 
-
- are withing the unit circle, which means that 
-\begin_inset Formula $1/A(z)$
-\end_inset 
-
- is always stable.
- This is in theory; in practice because of finite precision, there are two
- commonly used techniques to make sure we have a stable filter.
- First, we multiply 
-\begin_inset Formula $R(0)$
-\end_inset 
-
- by a number slightly above one (such as 1.0001), which is equivalent to
- adding noise to the signal.
- Also, we can apply a window the the auto-correlation, which is equivalent
- to filtering in the frequency domain, reducing sharp resonances.
-\layout Standard
-
-The linear prediction model represents each speech sample as linear combination
- of past samples, plus an error signal called the excitation (or residual).
-\begin_inset Formula \[
-x[n]=\sum _{i=1}^{N}a_{i}x[n-i]+e[n]\]
-
-\end_inset 
-
-
-\layout Standard
-
-In the 
-\emph on 
-z
-\emph default 
--domain, this can be expressed as
-\layout Standard
-
-
-\begin_inset Formula \[
-x(z)=\frac{1}{A(z)}\: e(z)\]
-
-\end_inset 
-
-
-\layout Standard
-
-where 
-\begin_inset Formula $A(z)$
-\end_inset 
-
- is defined as
-\layout Standard
-
-
-\begin_inset Formula \[
-A(z)=1-\sum _{i=1}^{N}a_{i}z^{-i}\]
-
-\end_inset 
-
-
-\layout Standard
-
-We usually refer to 
-\begin_inset Formula $A(z)$
-\end_inset 
-
- as the analysis filter and 
-\begin_inset Formula $1/A(z)$
-\end_inset 
-
- as the synthesis filter.
- The whole process is called short-term prediction as it predicts the signal
- 
-\begin_inset Formula $x[n]$
-\end_inset 
-
- using a prediction using only the 
-\begin_inset Formula $N$
-\end_inset 
-
- past samples, where 
-\begin_inset Formula $N$
-\end_inset 
-
- is usually around 10.
-\layout Standard
-
-Because LPC coefficients have very little robustness to quantization, they
- are converted to Line Spectral Pair
-\begin_inset LatexCommand \index{line spectral pair}
-
-\end_inset 
-
- (LSP) coefficients which have a much better behaviour with quantization,
- one of them being that it's easy to keep the filter stable.
- 
-\layout Subsection
-
-Pitch Prediction
-\begin_inset LatexCommand \index{pitch}
-
-\end_inset 
-
-
-\layout Standard
-
-During voiced segments, the speech signal is periodic, so it is possible
- to take advantage of that property by approximating the excitation signal
- 
-\begin_inset Formula $e[n]$
-\end_inset 
-
- by a gain times the past of the excitation:
-\layout Standard
-
-
-\begin_inset Formula \[
-e[n]\simeq p[n]=\beta e[n-T]\]
-
-\end_inset 
-
-
-\layout Standard
-
-where 
-\begin_inset Formula $T$
-\end_inset 
-
- is the pitch period, 
-\begin_inset Formula $\beta $
-\end_inset 
-
- is the pitch gain and 
-\begin_inset Formula $c(n)$
-\end_inset 
-
- is taken from the 
-\emph on 
-innovation codebook
-\emph default 
-.
- We call that long-term prediction since the excitation is predicted from
- 
-\begin_inset Formula $e[n-T]$
-\end_inset 
-
- with 
-\begin_inset Formula $T\gg N$
-\end_inset 
-
-.
-\layout Subsection
-
-Innovation Codebook
-\layout Standard
-
-The final excitation 
-\begin_inset Formula $e[n]$
-\end_inset 
-
- will be the sum of the pitch prediction and an 
-\emph on 
-innovation
-\emph default 
- signal 
-\begin_inset Formula $c[n]$
-\end_inset 
-
- taken from a fixed codebook.
-\layout Standard
-
-
-\begin_inset Formula \[
-e[n]=p[n]+c[n]=\beta e[n-T]+c[n]\]
-
-\end_inset 
-
-This is where most of the bits in a CELP codec are allocated.
- It represents the information that couldn't be obtained either from linear
- prediction or pitch prediction.
- In the 
-\emph on 
-z
-\emph default 
--domain we can represent the final signal 
-\begin_inset Formula $X(z)$
-\end_inset 
-
- as 
-\begin_inset Formula \[
-X(z)=\frac{C(z)}{A(z)\left(1-\beta z^{-T}\right)}\]
-
-\end_inset 
-
-
-\layout Subsection
-
-Analysis-by-Synthesis and Error Weighting
-\begin_inset LatexCommand \index{error weighting}
-
-\end_inset 
-
-
-\begin_inset LatexCommand \index{analysis-by-synthesis}
-
-\end_inset 
-
-
-\layout Standard
-
-Most (if not all) modern audio codecs attempt to 
-\begin_inset Quotes eld
-\end_inset 
-
-shape
-\begin_inset Quotes erd
-\end_inset 
-
- the noise so that it appears mostly in the frequency regions where the
- ear cannot detect it.
- For example, the ear is more tolerant to noise in parts of the spectrum
- that are louder and 
-\emph on 
-vice versa
-\emph default 
-.
- That's why instead of minimizing the simple quadratic error
-\begin_inset Formula \[
-E=\sum _{n}\left(x[n]-\overline{x}[n]\right)^{2}\]
-
-\end_inset 
-
-where 
-\begin_inset Formula $\overline{x}[n]$
-\end_inset 
-
- is the encoder signal, we minimize the error for the perceptually weighted
- signal
-\begin_inset Formula \[
-X_{w}(z)=W(z)X(z)\]
-
-\end_inset 
-
-where 
-\begin_inset Formula $W(z)$
-\end_inset 
-
- is the weighting filter, usually of the form
-\layout Standard
-
-
-\begin_inset Formula \begin{equation}
-W(z)=\frac{A\left(\frac{z}{\gamma _{1}}\right)}{A\left(\frac{z}{\gamma _{2}}\right)}\label{eq:weighting_filter}\end{equation}
-
-\end_inset 
-
-
-\layout Standard
-
-with control parameters 
-\begin_inset Formula $\gamma _{1}>\gamma _{2}$
-\end_inset 
-
-.
- If the noise is white in the perceptually weighted domain, then in the
- signal domain its spectral shape will be of the form
-\begin_inset Formula \[
-A_{noise}(z)=\frac{1}{W(z)}=\frac{A\left(\frac{z}{\gamma _{2}}\right)}{A\left(\frac{z}{\gamma _{1}}\right)}\]
-
-\end_inset 
-
-
-\layout Standard
-
-If a filter 
-\begin_inset Formula $A(z)$
-\end_inset 
-
- has (complex) poles at 
-\begin_inset Formula $p_{i}$
-\end_inset 
-
- in the 
-\begin_inset Formula $z$
-\end_inset 
-
--plane, the filter 
-\begin_inset Formula $A(z/\gamma )$
-\end_inset 
-
- filter will have its poles at 
-\begin_inset Formula $p_{i}^{'}=\gamma p_{i}$
-\end_inset 
-
-, making it a flatter version of 
-\begin_inset Formula $A(z)$
-\end_inset 
-
-.
-\layout Section
-\pagebreak_top 
-Speex narrowband mode
-\begin_inset LatexCommand \label{sec:Speex-narrowband-mode}
-
-\end_inset 
-
-
-\begin_inset LatexCommand \index{narrowband}
-
-\end_inset 
-
-
-\layout Standard
-
-This section looks at how Speex works for narrowband (
-\begin_inset Formula $8\: \mathrm{kHz}$
-\end_inset 
-
- sampling rate) operation.
- The frame size for this mode is 
-\begin_inset Formula $20\: \mathrm{ms}$
-\end_inset 
-
-, corresponding to 160 samples.
- Each frame is also subdivided into 4 sub-frames of 40 samples each.
-\layout Standard
-
-Also many design decisions were based on the original goals and assumptions:
-\layout Itemize
-
-Minimizing the amount of information extracted from past frames (for robustness
- to packet loss)
-\layout Itemize
-
-Dynamically-selectable codebooks (LSP, pitch and innovation)
-\layout Itemize
-
-sub-vector fixed (innovation) codebooks
-\layout Subsection
-
-LPC Analysis
-\begin_inset LatexCommand \index{linear prediction}
-
-\end_inset 
-
-
-\layout Standard
-
-An LPC analysis is first performed on a (asymetric Hamming) window that
- spans all the current frame and half a frame in advance.
- The LPC coefficients are then converted to Line Spectral Pair
-\begin_inset LatexCommand \index{line spectral pair}
-
-\end_inset 
-
- (LSP), a representation that is more robust to quantization.
- The LSP's are considered to be associated to the 
-\begin_inset Formula $4^{th}$
-\end_inset 
-
- sub-frames and the LSP's associated to the first 3 sub-frames are linearly
- interpolated using the current and previous LSP's.
-\layout Standard
-
-The LSP's are encoded using 30 bits for higher quality modes and 18 bits
- for lower quality, through the use of a multi-stage split-vector quantizer.
- For the lower quality modes, the 10 coefficients are first quantized with
- 6 bits and the error is then divided in two 5-coefficient sub-vectors.
- Each of them is quantized with 6 bits, for a total of 18 bits.
- For the higher quality modes, the remaining error on both sub-vectors is
- further quantized with 6 bits each, for a total of 30 bits.
-\layout Standard
-
-The perceptual weighting filter 
-\begin_inset Formula $W(z)$
-\end_inset 
-
- used by Speex is derived from the LPC filter 
-\begin_inset Formula $A(z)$
-\end_inset 
-
- and corresponds to the one described by eq.
- 
-\begin_inset LatexCommand \ref{eq:weighting_filter}
-
-\end_inset 
-
- with 
-\begin_inset Formula $\gamma _{1}=0.9$
-\end_inset 
-
- and 
-\begin_inset Formula $\gamma _{2}=0.6$
-\end_inset 
-
-.
- We can use the unquantized 
-\begin_inset Formula $A(z)$
-\end_inset 
-
- filter since the weighting filter is only used in the encoder.
-\layout Subsection
-
-Pitch Prediction (adaptive codebook)
-\begin_inset LatexCommand \index{pitch}
-
-\end_inset 
-
-
-\layout Standard
-
-Speex uses a 3-tap prediction for pitch.
- That is, the pitch prediction signal 
-\begin_inset Formula $p[n]$
-\end_inset 
-
- is obtained by the past of the excitation by:
-\begin_inset Formula \[
-p[n]=\beta _{0}e[n-T-1]+\beta _{1}e[n-T]+\beta _{2}e[n-T+1]\]
-
-\end_inset 
-
-
-\layout Standard
-
-where 
-\begin_inset Formula $T$
-\end_inset 
-
- is the pitch period and the 
-\begin_inset Formula $\beta _{i}$
-\end_inset 
-
- are the prediction (filter) taps.
- It is worth noting that when the pitch is smaller than the sub-frame size,
- we repeat the excitation at a period 
-\begin_inset Formula $T$
-\end_inset 
-
-.
- For example, when 
-\begin_inset Formula $n-T+1$
-\end_inset 
-
-, we use 
-\begin_inset Formula $n-2T+1$
-\end_inset 
-
- instead.
- The period and quantized gains are determined in closed loop.
- In most modes, the pitch period is encoded with 7 bits in the 
-\begin_inset Formula $\left[17,144\right]$
-\end_inset 
-
- range and the 
-\begin_inset Formula $\beta _{i}$
-\end_inset 
-
- coefficients are vector-quantized using 7 bits (15 kbps narrowband and
- above) at higher bit-rates and 5 bits at lower bit-rates (11 kbps narrowband
- and below).
-\layout Subsection
-
-Innovation Codebook
-\layout Standard
-
-In Speex, the innovation signal is quantized using shape-only vector quantizatio
-n (VQ).
- That means that the codebooks that are used represent both the shape and
- the gain at the same time.
- This save many bits that would otherwise be allocated for a separate gain
- at the price of a slight increase in complexity.
- 
-\layout Subsection
-
-Bit allocation
-\layout Standard
-
-There are 7 different narrowband bit-rates defined for Speex, ranging from
- 200 bps to 18.15 kbps, although the modes below 5.9 kbps should not be used
- for speech.
- The bit-allocation for each mode is detailed in table 
-\begin_inset LatexCommand \ref{cap:bits-narrowband}
-
-\end_inset 
-
-.
- Each frame starts with the mode ID encoded with 4 bits which allows a range
- from 0 to 15, though only the first 7 values are used (the others are reserved).
- The parameters are listed in the table in the order they are packed in
- the bit-stream.
- All frame-based parameters are packed before sub-frame parameters.
- The parameters for a certain sub-frame are all packed before the following
- sub-frame is packed.
- Note that the 
-\begin_inset Quotes eld
-\end_inset 
-
-OL
-\begin_inset Quotes erd
-\end_inset 
-
- in the parameter description means the the parameter is an open loop estimation
- based on the whole frame.
-\layout Standard
-
-
-\begin_inset Float table
-placement h
-wide true
-collapsed false
-
-\layout Standard
-
-
-\begin_inset  Tabular
-<lyxtabular version="3" rows="12" columns="11">
-<features>
-<column alignment="center" valignment="top" leftline="true" width="0pt">
-<column alignment="center" valignment="top" leftline="true" width="0pt">
-<column alignment="center" valignment="top" leftline="true" width="0pt">
-<column alignment="center" valignment="top" leftline="true" width="0pt">
-<column alignment="center" valignment="top" leftline="true" width="0pt">
-<column alignment="center" valignment="top" leftline="true" width="0pt">
-<column alignment="center" valignment="top" leftline="true" width="0pt">
-<column alignment="center" valignment="top" leftline="true" width="0pt">
-<column alignment="center" valignment="top" leftline="true" width="0pt">
-<column alignment="center" valignment="top" leftline="true" width="0pt">
-<column alignment="center" valignment="top" leftline="true" rightline="true" width="0pt">
-<row topline="true" bottomline="true">
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-Parameter
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-Update rate
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-0
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-1
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-2
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-3
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-4
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-5
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-6
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-7
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-8
-\end_inset 
-</cell>
-</row>
-<row topline="true">
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-Wideband bit
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-frame
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-1
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-1
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-1
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-1
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-1
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-1
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-1
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-1
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-1
-\end_inset 
-</cell>
-</row>
-<row topline="true">
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-Mode ID
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-frame
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-4
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-4
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-4
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-4
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-4
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-4
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-4
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-4
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-4
-\end_inset 
-</cell>
-</row>
-<row topline="true">
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-LSP
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-frame
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-0
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-18
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-18
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-18
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-18
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-30
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-30
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-30
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-18
-\end_inset 
-</cell>
-</row>
-<row topline="true">
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-OL pitch
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-frame
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-0
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-7
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-7
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-0
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-0
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-0
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-0
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-0
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-7
-\end_inset 
-</cell>
-</row>
-<row topline="true">
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-OL pitch gain
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-frame
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-0
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-4
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-0
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-0
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-0
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-0
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-0
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-0
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-4
-\end_inset 
-</cell>
-</row>
-<row topline="true">
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-OL Exc gain
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-frame
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-0
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-5
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-5
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-5
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-5
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-5
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-5
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-5
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-5
-\end_inset 
-</cell>
-</row>
-<row topline="true">
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-Fine pitch
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-sub-frame
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-0
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-0
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-0
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-7
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-7
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-7
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-7
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-7
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-0
-\end_inset 
-</cell>
-</row>
-<row topline="true">
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-Pitch gain
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-sub-frame
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-0
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-0
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-5
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-5
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-5
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-7
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-7
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-7
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-0
-\end_inset 
-</cell>
-</row>
-<row topline="true">
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-Innovation gain
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-sub-frame
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-0
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-1
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-0
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-1
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-1
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-3
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-3
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-3
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-0
-\end_inset 
-</cell>
-</row>
-<row topline="true" bottomline="true">
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-Innovation VQ
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-sub-frame
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-0
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-0
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-16
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-20
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-35
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-48
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-64
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-96
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-10
-\end_inset 
-</cell>
-</row>
-<row topline="true" bottomline="true">
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-Total
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-frame
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-5
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-43
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-119
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-160
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-220
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-300
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-364
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-492
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-79
-\end_inset 
-</cell>
-</row>
-</lyxtabular>
-
-\end_inset 
-
-
-\layout Caption
-
-Bit allocation for narrowband modes
-\begin_inset LatexCommand \label{cap:bits-narrowband}
-
-\end_inset 
-
-
-\end_inset 
-
-
-\layout Standard
-
-So far, no MOS (Mean Opinion Score
-\begin_inset LatexCommand \index{mean opinion score}
-
-\end_inset 
-
-) subjective evaluation has been performed for Speex.
- In order to give an idea of the quality achivable with it, table 
-\begin_inset LatexCommand \ref{cap:quality_vs_bps}
-
-\end_inset 
-
- presents my own subjective opinion on it.
- It sould be noted that different people will perceive the quality differently
- and that the person that designed the codec often has a bias (one way or
- another) when it comes to subjective evaluation.
- Last thing, it should be noted that for most codecs (including Speex) encoding
- quality sometimes varies depending on the input.
- Note that the complexity is only approximate (withing 0.5 mflops and using
- the lowers complexity setting).
- Decoding requires approximately 0.5 mflops
-\begin_inset LatexCommand \index{complexity}
-
-\end_inset 
-
- in most modes (1 mflops with perceptual enhancement).
-\layout Standard
-
-
-\begin_inset Float table
-placement h
-wide true
-collapsed false
-
-\layout Standard
-
-
-\begin_inset  Tabular
-<lyxtabular version="3" rows="17" columns="4">
-<features>
-<column alignment="center" valignment="top" leftline="true" width="0pt">
-<column alignment="center" valignment="top" leftline="true" width="0pt">
-<column alignment="center" valignment="top" leftline="true" width="0pt">
-<column alignment="center" valignment="top" leftline="true" rightline="true" width="0pt">
-<row topline="true" bottomline="true">
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-Mode
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-Bit-rate
-\begin_inset LatexCommand \index{bit-rate}
-
-\end_inset 
-
- (bps)
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-mflops
-\begin_inset LatexCommand \index{complexity}
-
-\end_inset 
-
-
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-Quality/description
-\end_inset 
-</cell>
-</row>
-<row topline="true">
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-0
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-250
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-N/A
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-No sound (VBR only)
-\end_inset 
-</cell>
-</row>
-<row topline="true">
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-1
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-2,150
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-6
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-Vocoder (mostly for comfort noise)
-\end_inset 
-</cell>
-</row>
-<row topline="true">
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-2
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-5,950
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-9
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-Very noticeable artifacts/noise, good intelligibility
-\end_inset 
-</cell>
-</row>
-<row topline="true">
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-3
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-8,000
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-10
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-Artifacts/noise sometimes noticeable
-\end_inset 
-</cell>
-</row>
-<row topline="true">
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-4
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-11,000
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-14
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-Artifacts usually noticeable only with headphones
-\end_inset 
-</cell>
-</row>
-<row topline="true">
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-5
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-15,000
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-11
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-Need good headphones to tell the difference
-\end_inset 
-</cell>
-</row>
-<row topline="true">
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-6
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-18,200
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-17.5
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-Hard to tell the difference even with good headphones
-\end_inset 
-</cell>
-</row>
-<row topline="true">
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-7
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-24,600
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-14.5
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-Completely transparent for voice, good quality music
-\end_inset 
-</cell>
-</row>
-<row topline="true">
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-8
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-3,950
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
--
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-Very noticeable artifacts/noise, good intelligibility
-\end_inset 
-</cell>
-</row>
-<row topline="true">
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-9
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-N/A
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-N/A
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-reserved
-\end_inset 
-</cell>
-</row>
-<row topline="true">
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-10
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-N/A
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-N/A
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-reserved
-\end_inset 
-</cell>
-</row>
-<row topline="true">
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-11
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-N/A
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-N/A
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-reserved
-\end_inset 
-</cell>
-</row>
-<row topline="true">
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-12
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-N/A
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-N/A
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-reserved
-\end_inset 
-</cell>
-</row>
-<row topline="true">
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-13
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-N/A
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-N/A
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-Application-defined, interpreted by callback or skipped
-\end_inset 
-</cell>
-</row>
-<row topline="true">
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-14
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-N/A
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-N/A
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-Speex in-band signaling
-\end_inset 
-</cell>
-</row>
-<row topline="true" bottomline="true">
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-15
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-N/A
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-N/A
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-Terminator code
-\end_inset 
-</cell>
-</row>
-</lyxtabular>
-
-\end_inset 
-
-
-\layout Caption
-
-Quality versus bit-rate
-\begin_inset LatexCommand \label{cap:quality_vs_bps}
-
-\end_inset 
-
-
-\end_inset 
-
-
-\layout Subsection
-
-Perceptual enhancement
-\begin_inset LatexCommand \index{perceptual enhancement}
-
-\end_inset 
-
-
-\layout Standard
-
-This part of the codec only applies to the decoder and can even be changed
- without affecting inter-operability.
- For that reason, the implementation provided and described here should
- only be considered as a reference implementation.
- The enhancement system is devided in two parts.
- First, the synthesis filter 
-\begin_inset Formula $S(z)=1/A(z)$
-\end_inset 
-
- is replaced by an enhanced filter
-\begin_inset Formula \[
-S'(z)=\frac{A\left(z/a_{2}\right)A\left(z/a_{3}\right)}{A\left(z\right)A\left(z/a_{1}\right)}\]
-
-\end_inset 
-
-where 
-\begin_inset Formula $a_{1}$
-\end_inset 
-
- and 
-\begin_inset Formula $a_{2}$
-\end_inset 
-
- depend on the mode in use and 
-\begin_inset Formula $a_{3}=\frac{1}{r}\left(1-\frac{1-ra_{1}}{1-ra_{2}}\right)$
-\end_inset 
-
- with 
-\begin_inset Formula $r=.9$
-\end_inset 
-
-.
- The second part of the enhancement consists of using a comb filter to enhance
- the pitch in the excitation domain.
- 
-\layout Section
-\pagebreak_top 
-Speex wideband mode (sub-band CELP)
-\begin_inset LatexCommand \index{wideband}
-
-\end_inset 
-
-
-\layout Standard
-
-For wideband, the Speex approach uses a 
-\emph on 
-q
-\emph default 
-uadrature 
-\emph on 
-m
-\emph default 
-irror 
-\emph on 
-f
-\emph default 
-ilter
-\begin_inset LatexCommand \index{quadrature mirror filter}
-
-\end_inset 
-
- (QMF) to split the band in two.
- The 16 kHz signal is thus divided into two 8 kHz signals, one representing
- the low band (0-4 kHz), the other the high band (4-8 kHz).
- The low band is encoded with the narrowband mode described in section 
-\begin_inset LatexCommand \ref{sec:Speex-narrowband-mode}
-
-\end_inset 
-
- in such a way that the resulting 
-\begin_inset Quotes eld
-\end_inset 
-
-embedded narrowband bit-stream
-\begin_inset Quotes erd
-\end_inset 
-
- can also be decoded with the narrowband decoder.
- Since the low band encoding has already been described only the high band
- encoding is described in this section.
-\layout Subsection
-
-Linear Prediction
-\layout Standard
-
-The linear prediction part used for the high-band is very similar to what
- is done for narrowband.
- The only difference is that we use only 12 bits to encode the high-band
- LSP's using a multi-stage vector quantizer (MSVQ).
- The first level quantizes the 10 coefficients with 6 bits and the error
- is then quantized using 6 bits too.
-\layout Subsection
-
-Pitch Prediction
-\layout Standard
-
-That part is easy: there's no pitch prediction for the high-band.
- There are two reasons for that.
- First, there is usually little harmonic structure in this band (above 4
- kHz).
- Second, it would be very hard to implement since the QMF folds the 4-8
- kHz band into 4-0 kHz (reversing the frequency axis), which means that
- the location of the harmonics are no longer at multiples of the fundamental
- (pitch).
-\layout Subsection
-
-Excitation Quantization
-\layout Standard
-
-The high-band excitation is coded in the same way as for narrowband.
- 
-\layout Subsection
-
-Bit allocation
-\layout Standard
-
-For the wideband mode, all the narrowband frame is packed before the high-band
- is encoded.
- The narrowband part of the bit-stream is as defined in table 
-\begin_inset LatexCommand \ref{cap:bits-narrowband}
-
-\end_inset 
-
-.
- The high-band follows, as described in table 
-\begin_inset LatexCommand \ref{cap:bits-wideband}
-
-\end_inset 
-
-.
- This also means that a wideband frame may be correctly decoded by a narrowband
- decoder with the only caveat that if more than one frame is packed in the
- same packet, the decoder will need to skip the high-band parts in order
- to sync with the bit-stream.
-\layout Standard
-
-
-\begin_inset Float table
-placement h
-wide true
-collapsed false
-
-\layout Standard
-
-
-\begin_inset  Tabular
-<lyxtabular version="3" rows="7" columns="7">
-<features>
-<column alignment="center" valignment="top" leftline="true" width="0pt">
-<column alignment="center" valignment="top" leftline="true" width="0pt">
-<column alignment="center" valignment="top" leftline="true" width="0pt">
-<column alignment="center" valignment="top" leftline="true" width="0pt">
-<column alignment="center" valignment="top" leftline="true" width="0pt">
-<column alignment="center" valignment="top" leftline="true" width="0pt">
-<column alignment="center" valignment="top" leftline="true" rightline="true" width="0pt">
-<row topline="true" bottomline="true">
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-Parameter
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-Update rate
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-0
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-1
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-2
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-3
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-4
-\end_inset 
-</cell>
-</row>
-<row topline="true">
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-Wideband bit
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-frame
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-1
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-1
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-1
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-1
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-1
-\end_inset 
-</cell>
-</row>
-<row topline="true">
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-Mode ID
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-frame
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-3
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-3
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-3
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-3
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-3
-\end_inset 
-</cell>
-</row>
-<row topline="true">
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-LSP
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-frame
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-0
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-12
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-12
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-12
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-12
-\end_inset 
-</cell>
-</row>
-<row topline="true">
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-Excitation gain
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-sub-frame
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-0
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-5
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-4
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-4
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-4
-\end_inset 
-</cell>
-</row>
-<row topline="true" bottomline="true">
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-Excitation VQ
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-sub-frame
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-0
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-0
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-20
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-40
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-80
-\end_inset 
-</cell>
-</row>
-<row topline="true" bottomline="true">
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-Total
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-frame
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-4
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-36
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-112
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-192
-\end_inset 
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\layout Standard
-
-352
-\end_inset 
-</cell>
-</row>
-</lyxtabular>
-
-\end_inset 
-
-
-\layout Caption
-
-Bit allocation for high-band in wideband mode
-\begin_inset LatexCommand \label{cap:bits-wideband}
-
-\end_inset 
-
-
-\end_inset 
-
-
-\layout Standard
-
-
-\begin_inset ERT
-status Open
-
-\layout Standard
-
-\backslash 
-clearpage
-\end_inset 
-
-
 \layout Section
 \pagebreak_top 
 Feature description
@@ -3933,7 +852,7 @@ speex_encoder_ctl
 speex_decoder_ctl
 \emph default 
  functions.
- These functions are similar the the 
+ These functions are similar to the 
 \emph on 
 ioctl
 \emph default 
@@ -5296,6 +2215,3081 @@ Ogg/Speex header packet
 \end_inset 
 
 
+\layout Section
+\pagebreak_top 
+Introduction to CELP Coding
+\begin_inset LatexCommand \index{CELP}
+
+\end_inset 
+
+
+\layout Standard
+
+The three following sections describe the internals of the codec and require
+ some signal processing knowledge.
+ If you are only interested in using Speex, they are not required.
+\layout Standard
+
+Speex is based on CELP, which stands for Code Excited Linear Prediction.
+ This section attempts to introduce the principles behind CELP, so if you
+ are already familiar with CELP, you can safely skip to section 
+\begin_inset LatexCommand \ref{sec:Speex-narrowband-mode}
+
+\end_inset 
+
+.
+ The CELP technique is based on three ideas:
+\layout Enumerate
+
+The use of a linear prediction (LP) model to model the vocal tract
+\layout Enumerate
+
+The use of (adaptive and fixed) codebook entries as input (excitation) of
+ the LP model
+\layout Enumerate
+
+The search performed in closed-loop in a 
+\begin_inset Quotes eld
+\end_inset 
+
+perceptually weighted domain
+\begin_inset Quotes erd
+\end_inset 
+
+
+\layout Standard
+
+This section describes the basic ideas behind CELP.
+ Note that it's still incomplete.
+\layout Subsection
+
+Linear Prediction (LPC)
+\begin_inset LatexCommand \index{linear prediction}
+
+\end_inset 
+
+
+\layout Standard
+
+Linear prediction is at the base of may speech coding techniques, including
+ CELP.
+ The idea behind it is to predict the signal 
+\begin_inset Formula $x(n)$
+\end_inset 
+
+ using a linear combination of its past samples:
+\layout Standard
+
+
+\begin_inset Formula \[
+y[n]=\sum _{i=1}^{N}a_{i}x[n-i]\]
+
+\end_inset 
+
+where 
+\begin_inset Formula $y[n]$
+\end_inset 
+
+ is the linear prediction of 
+\begin_inset Formula $x[n]$
+\end_inset 
+
+.
+ The prediction error is thus given by:
+\begin_inset Formula \[
+e[n]=x[n]-y[n]=x[n]-\sum _{i=1}^{N}a_{i}x[n-i]\]
+
+\end_inset 
+
+
+\layout Standard
+
+The goal of the LPC analysis is to find the best prediction coefficients
+ 
+\begin_inset Formula $a_{i}$
+\end_inset 
+
+ which minimize the quadratic error function:
+\begin_inset Formula \[
+E=\sum _{n=0}^{L-1}\left[e[n]\right]^{2}=\sum _{n=0}^{L-1}\left[x[n]-\sum _{i=1}^{N}a_{i}x[n-i]\right]^{2}\]
+
+\end_inset 
+
+That can be done by making all derivatives 
+\begin_inset Formula $\frac{\partial E}{\partial a_{i}}$
+\end_inset 
+
+ equal to zero:
+\begin_inset Formula \[
+\frac{\partial E}{\partial a_{i}}=\frac{\partial }{\partial a_{i}}\sum _{n=0}^{L-1}\left[x[n]-\sum _{i=1}^{N}a_{i}x[n-i]\right]^{2}=0\]
+
+\end_inset 
+
+
+\layout Standard
+
+The 
+\begin_inset Formula $a_{i}$
+\end_inset 
+
+ filter coefficients are computed using the Levinson-Durbin
+\begin_inset LatexCommand \index{Levinson-Durbin}
+
+\end_inset 
+
+ algorithm, which starts from the auto-correlation
+\begin_inset LatexCommand \index{auto-correlation}
+
+\end_inset 
+
+ 
+\begin_inset Formula $R(m)$
+\end_inset 
+
+ of the signal 
+\begin_inset Formula $x[n]$
+\end_inset 
+
+.
+\layout Standard
+
+
+\begin_inset Formula \[
+R(m)=\sum _{i=0}^{N-1}x[i]x[i-m]\]
+
+\end_inset 
+
+
+\layout Standard
+
+For an order 
+\begin_inset Formula $N$
+\end_inset 
+
+ filter, we have:
+\begin_inset Formula \[
+\mathbf{R}=\left[\begin{array}{cccc}
+ R(0) & R(1) & \cdots  & R(N-1)\\
+ R(1) & R(0) & \cdots  & R(N-2)\\
+ \vdots  & \vdots  & \ddots  & \vdots \\
+ R(N-1) & R(N-2) & \cdots  & R(0)\end{array}
+\right]\]
+
+\end_inset 
+
+
+\begin_inset Formula \[
+\mathbf{r}=\left[\begin{array}{c}
+ R(1)\\
+ R(2)\\
+ \vdots \\
+ R(N)\end{array}
+\right]\]
+
+\end_inset 
+
+
+\layout Standard
+
+The filter coefficients 
+\begin_inset Formula $a_{i}$
+\end_inset 
+
+ are found by solving the system 
+\begin_inset Formula $\mathbf{Ra}=\mathbf{r}$
+\end_inset 
+
+.
+ What the Levinson-Durbin algorithm does here is making the solution to
+ the problem 
+\begin_inset Formula $\mathcal{O}\left(N^{2}\right)$
+\end_inset 
+
+ instead of 
+\begin_inset Formula $\mathcal{O}\left(N^{3}\right)$
+\end_inset 
+
+ by exploiting the fact that matrix 
+\begin_inset Formula $\mathbf{R}$
+\end_inset 
+
+ is toeplitz hermitian.
+ Also, it can be proved that all the roots of 
+\begin_inset Formula $A(z)$
+\end_inset 
+
+ are within the unit circle, which means that 
+\begin_inset Formula $1/A(z)$
+\end_inset 
+
+ is always stable.
+ This is in theory; in practice because of finite precision, there are two
+ commonly used techniques to make sure we have a stable filter.
+ First, we multiply 
+\begin_inset Formula $R(0)$
+\end_inset 
+
+ by a number slightly above one (such as 1.0001), which is equivalent to
+ adding noise to the signal.
+ Also, we can apply a window to the auto-correlation, which is equivalent
+ to filtering in the frequency domain, reducing sharp resonances.
+\layout Standard
+
+The linear prediction model represents each speech sample as linear combination
+ of past samples, plus an error signal called the excitation (or residual).
+\begin_inset Formula \[
+x[n]=\sum _{i=1}^{N}a_{i}x[n-i]+e[n]\]
+
+\end_inset 
+
+
+\layout Standard
+
+In the 
+\emph on 
+z
+\emph default 
+-domain, this can be expressed as
+\layout Standard
+
+
+\begin_inset Formula \[
+x(z)=\frac{1}{A(z)}\: e(z)\]
+
+\end_inset 
+
+
+\layout Standard
+
+where 
+\begin_inset Formula $A(z)$
+\end_inset 
+
+ is defined as
+\layout Standard
+
+
+\begin_inset Formula \[
+A(z)=1-\sum _{i=1}^{N}a_{i}z^{-i}\]
+
+\end_inset 
+
+
+\layout Standard
+
+We usually refer to 
+\begin_inset Formula $A(z)$
+\end_inset 
+
+ as the analysis filter and 
+\begin_inset Formula $1/A(z)$
+\end_inset 
+
+ as the synthesis filter.
+ The whole process is called short-term prediction as it predicts the signal
+ 
+\begin_inset Formula $x[n]$
+\end_inset 
+
+ using a prediction using only the 
+\begin_inset Formula $N$
+\end_inset 
+
+ past samples, where 
+\begin_inset Formula $N$
+\end_inset 
+
+ is usually around 10.
+\layout Standard
+
+Because LPC coefficients have very little robustness to quantization, they
+ are converted to Line Spectral Pair
+\begin_inset LatexCommand \index{line spectral pair}
+
+\end_inset 
+
+ (LSP) coefficients which have a much better behaviour with quantization,
+ one of them being that it's easy to keep the filter stable.
+ 
+\layout Subsection
+
+Pitch Prediction
+\begin_inset LatexCommand \index{pitch}
+
+\end_inset 
+
+
+\layout Standard
+
+During voiced segments, the speech signal is periodic, so it is possible
+ to take advantage of that property by approximating the excitation signal
+ 
+\begin_inset Formula $e[n]$
+\end_inset 
+
+ by a gain times the past of the excitation:
+\layout Standard
+
+
+\begin_inset Formula \[
+e[n]\simeq p[n]=\beta e[n-T]\]
+
+\end_inset 
+
+
+\layout Standard
+
+where 
+\begin_inset Formula $T$
+\end_inset 
+
+ is the pitch period, 
+\begin_inset Formula $\beta $
+\end_inset 
+
+ is the pitch gain and 
+\begin_inset Formula $c(n)$
+\end_inset 
+
+ is taken from the 
+\emph on 
+innovation codebook
+\emph default 
+.
+ We call that long-term prediction since the excitation is predicted from
+ 
+\begin_inset Formula $e[n-T]$
+\end_inset 
+
+ with 
+\begin_inset Formula $T\gg N$
+\end_inset 
+
+.
+\layout Subsection
+
+Innovation Codebook
+\layout Standard
+
+The final excitation 
+\begin_inset Formula $e[n]$
+\end_inset 
+
+ will be the sum of the pitch prediction and an 
+\emph on 
+innovation
+\emph default 
+ signal 
+\begin_inset Formula $c[n]$
+\end_inset 
+
+ taken from a fixed codebook.
+\layout Standard
+
+
+\begin_inset Formula \[
+e[n]=p[n]+c[n]=\beta e[n-T]+c[n]\]
+
+\end_inset 
+
+This is where most of the bits in a CELP codec are allocated.
+ It represents the information that couldn't be obtained either from linear
+ prediction or pitch prediction.
+ In the 
+\emph on 
+z
+\emph default 
+-domain we can represent the final signal 
+\begin_inset Formula $X(z)$
+\end_inset 
+
+ as 
+\begin_inset Formula \[
+X(z)=\frac{C(z)}{A(z)\left(1-\beta z^{-T}\right)}\]
+
+\end_inset 
+
+
+\layout Subsection
+
+Analysis-by-Synthesis and Error Weighting
+\begin_inset LatexCommand \index{error weighting}
+
+\end_inset 
+
+
+\begin_inset LatexCommand \index{analysis-by-synthesis}
+
+\end_inset 
+
+
+\layout Standard
+
+Most (if not all) modern audio codecs attempt to 
+\begin_inset Quotes eld
+\end_inset 
+
+shape
+\begin_inset Quotes erd
+\end_inset 
+
+ the noise so that it appears mostly in the frequency regions where the
+ ear cannot detect it.
+ For example, the ear is more tolerant to noise in parts of the spectrum
+ that are louder and 
+\emph on 
+vice versa
+\emph default 
+.
+ That's why instead of minimizing the simple quadratic error
+\begin_inset Formula \[
+E=\sum _{n}\left(x[n]-\overline{x}[n]\right)^{2}\]
+
+\end_inset 
+
+where 
+\begin_inset Formula $\overline{x}[n]$
+\end_inset 
+
+ is the encoder signal, we minimize the error for the perceptually weighted
+ signal
+\begin_inset Formula \[
+X_{w}(z)=W(z)X(z)\]
+
+\end_inset 
+
+where 
+\begin_inset Formula $W(z)$
+\end_inset 
+
+ is the weighting filter, usually of the form
+\layout Standard
+
+
+\begin_inset Formula \begin{equation}
+W(z)=\frac{A\left(\frac{z}{\gamma _{1}}\right)}{A\left(\frac{z}{\gamma _{2}}\right)}\label{eq:weighting_filter}\end{equation}
+
+\end_inset 
+
+
+\layout Standard
+
+with control parameters 
+\begin_inset Formula $\gamma _{1}>\gamma _{2}$
+\end_inset 
+
+.
+ If the noise is white in the perceptually weighted domain, then in the
+ signal domain its spectral shape will be of the form
+\begin_inset Formula \[
+A_{noise}(z)=\frac{1}{W(z)}=\frac{A\left(\frac{z}{\gamma _{2}}\right)}{A\left(\frac{z}{\gamma _{1}}\right)}\]
+
+\end_inset 
+
+
+\layout Standard
+
+If a filter 
+\begin_inset Formula $A(z)$
+\end_inset 
+
+ has (complex) poles at 
+\begin_inset Formula $p_{i}$
+\end_inset 
+
+ in the 
+\begin_inset Formula $z$
+\end_inset 
+
+-plane, the filter 
+\begin_inset Formula $A(z/\gamma )$
+\end_inset 
+
+ filter will have its poles at 
+\begin_inset Formula $p_{i}^{'}=\gamma p_{i}$
+\end_inset 
+
+, making it a flatter version of 
+\begin_inset Formula $A(z)$
+\end_inset 
+
+.
+\layout Section
+\pagebreak_top 
+Speex narrowband mode
+\begin_inset LatexCommand \label{sec:Speex-narrowband-mode}
+
+\end_inset 
+
+
+\begin_inset LatexCommand \index{narrowband}
+
+\end_inset 
+
+
+\layout Standard
+
+This section looks at how Speex works for narrowband (
+\begin_inset Formula $8\: \mathrm{kHz}$
+\end_inset 
+
+ sampling rate) operation.
+ The frame size for this mode is 
+\begin_inset Formula $20\: \mathrm{ms}$
+\end_inset 
+
+, corresponding to 160 samples.
+ Each frame is also subdivided into 4 sub-frames of 40 samples each.
+\layout Standard
+
+Also many design decisions were based on the original goals and assumptions:
+\layout Itemize
+
+Minimizing the amount of information extracted from past frames (for robustness
+ to packet loss)
+\layout Itemize
+
+Dynamically-selectable codebooks (LSP, pitch and innovation)
+\layout Itemize
+
+sub-vector fixed (innovation) codebooks
+\layout Subsection
+
+LPC Analysis
+\begin_inset LatexCommand \index{linear prediction}
+
+\end_inset 
+
+
+\layout Standard
+
+An LPC analysis is first performed on a (asymetric Hamming) window that
+ spans all the current frame and half a frame in advance.
+ The LPC coefficients are then converted to Line Spectral Pair
+\begin_inset LatexCommand \index{line spectral pair}
+
+\end_inset 
+
+ (LSP), a representation that is more robust to quantization.
+ The LSP's are considered to be associated to the 
+\begin_inset Formula $4^{th}$
+\end_inset 
+
+ sub-frames and the LSP's associated to the first 3 sub-frames are linearly
+ interpolated using the current and previous LSP's.
+\layout Standard
+
+The LSP's are encoded using 30 bits for higher quality modes and 18 bits
+ for lower quality, through the use of a multi-stage split-vector quantizer.
+ For the lower quality modes, the 10 coefficients are first quantized with
+ 6 bits and the error is then divided in two 5-coefficient sub-vectors.
+ Each of them is quantized with 6 bits, for a total of 18 bits.
+ For the higher quality modes, the remaining error on both sub-vectors is
+ further quantized with 6 bits each, for a total of 30 bits.
+\layout Standard
+
+The perceptual weighting filter 
+\begin_inset Formula $W(z)$
+\end_inset 
+
+ used by Speex is derived from the LPC filter 
+\begin_inset Formula $A(z)$
+\end_inset 
+
+ and corresponds to the one described by eq.
+ 
+\begin_inset LatexCommand \ref{eq:weighting_filter}
+
+\end_inset 
+
+ with 
+\begin_inset Formula $\gamma _{1}=0.9$
+\end_inset 
+
+ and 
+\begin_inset Formula $\gamma _{2}=0.6$
+\end_inset 
+
+.
+ We can use the unquantized 
+\begin_inset Formula $A(z)$
+\end_inset 
+
+ filter since the weighting filter is only used in the encoder.
+\layout Subsection
+
+Pitch Prediction (adaptive codebook)
+\begin_inset LatexCommand \index{pitch}
+
+\end_inset 
+
+
+\layout Standard
+
+Speex uses a 3-tap prediction for pitch.
+ That is, the pitch prediction signal 
+\begin_inset Formula $p[n]$
+\end_inset 
+
+ is obtained by the past of the excitation by:
+\begin_inset Formula \[
+p[n]=\beta _{0}e[n-T-1]+\beta _{1}e[n-T]+\beta _{2}e[n-T+1]\]
+
+\end_inset 
+
+
+\layout Standard
+
+where 
+\begin_inset Formula $T$
+\end_inset 
+
+ is the pitch period and the 
+\begin_inset Formula $\beta _{i}$
+\end_inset 
+
+ are the prediction (filter) taps.
+ It is worth noting that when the pitch is smaller than the sub-frame size,
+ we repeat the excitation at a period 
+\begin_inset Formula $T$
+\end_inset 
+
+.
+ For example, when 
+\begin_inset Formula $n-T+1$
+\end_inset 
+
+, we use 
+\begin_inset Formula $n-2T+1$
+\end_inset 
+
+ instead.
+ The period and quantized gains are determined in closed loop.
+ In most modes, the pitch period is encoded with 7 bits in the 
+\begin_inset Formula $\left[17,144\right]$
+\end_inset 
+
+ range and the 
+\begin_inset Formula $\beta _{i}$
+\end_inset 
+
+ coefficients are vector-quantized using 7 bits (15 kbps narrowband and
+ above) at higher bit-rates and 5 bits at lower bit-rates (11 kbps narrowband
+ and below).
+\layout Subsection
+
+Innovation Codebook
+\layout Standard
+
+In Speex, the innovation signal is quantized using shape-only vector quantizatio
+n (VQ).
+ That means that the codebooks that are used represent both the shape and
+ the gain at the same time.
+ This save many bits that would otherwise be allocated for a separate gain
+ at the price of a slight increase in complexity.
+ 
+\layout Subsection
+
+Bit allocation
+\layout Standard
+
+There are 7 different narrowband bit-rates defined for Speex, ranging from
+ 200 bps to 18.15 kbps, although the modes below 5.9 kbps should not be used
+ for speech.
+ The bit-allocation for each mode is detailed in table 
+\begin_inset LatexCommand \ref{cap:bits-narrowband}
+
+\end_inset 
+
+.
+ Each frame starts with the mode ID encoded with 4 bits which allows a range
+ from 0 to 15, though only the first 7 values are used (the others are reserved).
+ The parameters are listed in the table in the order they are packed in
+ the bit-stream.
+ All frame-based parameters are packed before sub-frame parameters.
+ The parameters for a certain sub-frame are all packed before the following
+ sub-frame is packed.
+ Note that the 
+\begin_inset Quotes eld
+\end_inset 
+
+OL
+\begin_inset Quotes erd
+\end_inset 
+
+ in the parameter description means that the parameter is an open loop estimatio
+n based on the whole frame.
+\layout Standard
+
+
+\begin_inset Float table
+placement h
+wide true
+collapsed false
+
+\layout Standard
+
+
+\begin_inset  Tabular
+<lyxtabular version="3" rows="12" columns="11">
+<features>
+<column alignment="center" valignment="top" leftline="true" width="0pt">
+<column alignment="center" valignment="top" leftline="true" width="0pt">
+<column alignment="center" valignment="top" leftline="true" width="0pt">
+<column alignment="center" valignment="top" leftline="true" width="0pt">
+<column alignment="center" valignment="top" leftline="true" width="0pt">
+<column alignment="center" valignment="top" leftline="true" width="0pt">
+<column alignment="center" valignment="top" leftline="true" width="0pt">
+<column alignment="center" valignment="top" leftline="true" width="0pt">
+<column alignment="center" valignment="top" leftline="true" width="0pt">
+<column alignment="center" valignment="top" leftline="true" width="0pt">
+<column alignment="center" valignment="top" leftline="true" rightline="true" width="0pt">
+<row topline="true" bottomline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Parameter
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Update rate
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+0
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+1
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+2
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+3
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+4
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+5
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+6
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+7
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+8
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Wideband bit
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+frame
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+1
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+1
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+1
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+1
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+1
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+1
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+1
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+1
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+1
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Mode ID
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+frame
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+4
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+4
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+4
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+4
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+4
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+4
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+4
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+4
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+4
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+LSP
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+frame
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+0
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+18
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+18
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+18
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+18
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+30
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+30
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+30
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+18
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+OL pitch
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+frame
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+0
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+7
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+7
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+0
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+0
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+0
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+0
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+0
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+7
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+OL pitch gain
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+frame
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+0
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+4
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+0
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+0
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+0
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+0
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+0
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+0
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+4
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+OL Exc gain
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+frame
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+0
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+5
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+5
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+5
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+5
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+5
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+5
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+5
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+5
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Fine pitch
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+sub-frame
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+0
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+0
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+0
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+7
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+7
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+7
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+7
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+7
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+0
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Pitch gain
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+sub-frame
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+0
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+0
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+5
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+5
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+5
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+7
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+7
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+7
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+0
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Innovation gain
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+sub-frame
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+0
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+1
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+0
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+1
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+1
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+3
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+3
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+3
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+0
+\end_inset 
+</cell>
+</row>
+<row topline="true" bottomline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Innovation VQ
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+sub-frame
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+0
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+0
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+16
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+20
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+35
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+48
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+64
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+96
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+10
+\end_inset 
+</cell>
+</row>
+<row topline="true" bottomline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Total
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+frame
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+5
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+43
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+119
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+160
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+220
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+300
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+364
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+492
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+79
+\end_inset 
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset 
+
+
+\layout Caption
+
+Bit allocation for narrowband modes
+\begin_inset LatexCommand \label{cap:bits-narrowband}
+
+\end_inset 
+
+
+\end_inset 
+
+
+\layout Standard
+
+So far, no MOS (Mean Opinion Score
+\begin_inset LatexCommand \index{mean opinion score}
+
+\end_inset 
+
+) subjective evaluation has been performed for Speex.
+ In order to give an idea of the quality achivable with it, table 
+\begin_inset LatexCommand \ref{cap:quality_vs_bps}
+
+\end_inset 
+
+ presents my own subjective opinion on it.
+ It sould be noted that different people will perceive the quality differently
+ and that the person that designed the codec often has a bias (one way or
+ another) when it comes to subjective evaluation.
+ Last thing, it should be noted that for most codecs (including Speex) encoding
+ quality sometimes varies depending on the input.
+ Note that the complexity is only approximate (within 0.5 mflops and using
+ the lowers complexity setting).
+ Decoding requires approximately 0.5 mflops
+\begin_inset LatexCommand \index{complexity}
+
+\end_inset 
+
+ in most modes (1 mflops with perceptual enhancement).
+\layout Standard
+
+
+\begin_inset Float table
+placement h
+wide true
+collapsed false
+
+\layout Standard
+
+
+\begin_inset  Tabular
+<lyxtabular version="3" rows="17" columns="4">
+<features>
+<column alignment="center" valignment="top" leftline="true" width="0pt">
+<column alignment="center" valignment="top" leftline="true" width="0pt">
+<column alignment="center" valignment="top" leftline="true" width="0pt">
+<column alignment="center" valignment="top" leftline="true" rightline="true" width="0pt">
+<row topline="true" bottomline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Mode
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Bit-rate
+\begin_inset LatexCommand \index{bit-rate}
+
+\end_inset 
+
+ (bps)
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+mflops
+\begin_inset LatexCommand \index{complexity}
+
+\end_inset 
+
+
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Quality/description
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+0
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+250
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+N/A
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+No sound (VBR only)
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+1
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+2,150
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+6
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Vocoder (mostly for comfort noise)
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+2
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+5,950
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+9
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Very noticeable artifacts/noise, good intelligibility
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+3
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+8,000
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+10
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Artifacts/noise sometimes noticeable
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+4
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+11,000
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+14
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Artifacts usually noticeable only with headphones
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+5
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+15,000
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+11
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Need good headphones to tell the difference
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+6
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+18,200
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+17.5
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Hard to tell the difference even with good headphones
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+7
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+24,600
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+14.5
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Completely transparent for voice, good quality music
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+8
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+3,950
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+-
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Very noticeable artifacts/noise, good intelligibility
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+9
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+N/A
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+N/A
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+reserved
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+10
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+N/A
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+N/A
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+reserved
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+11
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+N/A
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+N/A
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+reserved
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+12
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+N/A
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+N/A
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+reserved
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+13
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+N/A
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+N/A
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Application-defined, interpreted by callback or skipped
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+14
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+N/A
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+N/A
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Speex in-band signaling
+\end_inset 
+</cell>
+</row>
+<row topline="true" bottomline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+15
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+N/A
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+N/A
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Terminator code
+\end_inset 
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset 
+
+
+\layout Caption
+
+Quality versus bit-rate
+\begin_inset LatexCommand \label{cap:quality_vs_bps}
+
+\end_inset 
+
+
+\end_inset 
+
+
+\layout Subsection
+
+Perceptual enhancement
+\begin_inset LatexCommand \index{perceptual enhancement}
+
+\end_inset 
+
+
+\layout Standard
+
+This part of the codec only applies to the decoder and can even be changed
+ without affecting inter-operability.
+ For that reason, the implementation provided and described here should
+ only be considered as a reference implementation.
+ The enhancement system is devided in two parts.
+ First, the synthesis filter 
+\begin_inset Formula $S(z)=1/A(z)$
+\end_inset 
+
+ is replaced by an enhanced filter
+\begin_inset Formula \[
+S'(z)=\frac{A\left(z/a_{2}\right)A\left(z/a_{3}\right)}{A\left(z\right)A\left(z/a_{1}\right)}\]
+
+\end_inset 
+
+where 
+\begin_inset Formula $a_{1}$
+\end_inset 
+
+ and 
+\begin_inset Formula $a_{2}$
+\end_inset 
+
+ depend on the mode in use and 
+\begin_inset Formula $a_{3}=\frac{1}{r}\left(1-\frac{1-ra_{1}}{1-ra_{2}}\right)$
+\end_inset 
+
+ with 
+\begin_inset Formula $r=.9$
+\end_inset 
+
+.
+ The second part of the enhancement consists of using a comb filter to enhance
+ the pitch in the excitation domain.
+ 
+\layout Section
+\pagebreak_top 
+Speex wideband mode (sub-band CELP)
+\begin_inset LatexCommand \index{wideband}
+
+\end_inset 
+
+
+\layout Standard
+
+For wideband, the Speex approach uses a 
+\emph on 
+q
+\emph default 
+uadrature 
+\emph on 
+m
+\emph default 
+irror 
+\emph on 
+f
+\emph default 
+ilter
+\begin_inset LatexCommand \index{quadrature mirror filter}
+
+\end_inset 
+
+ (QMF) to split the band in two.
+ The 16 kHz signal is thus divided into two 8 kHz signals, one representing
+ the low band (0-4 kHz), the other the high band (4-8 kHz).
+ The low band is encoded with the narrowband mode described in section 
+\begin_inset LatexCommand \ref{sec:Speex-narrowband-mode}
+
+\end_inset 
+
+ in such a way that the resulting 
+\begin_inset Quotes eld
+\end_inset 
+
+embedded narrowband bit-stream
+\begin_inset Quotes erd
+\end_inset 
+
+ can also be decoded with the narrowband decoder.
+ Since the low band encoding has already been described only the high band
+ encoding is described in this section.
+\layout Subsection
+
+Linear Prediction
+\layout Standard
+
+The linear prediction part used for the high-band is very similar to what
+ is done for narrowband.
+ The only difference is that we use only 12 bits to encode the high-band
+ LSP's using a multi-stage vector quantizer (MSVQ).
+ The first level quantizes the 10 coefficients with 6 bits and the error
+ is then quantized using 6 bits too.
+\layout Subsection
+
+Pitch Prediction
+\layout Standard
+
+That part is easy: there's no pitch prediction for the high-band.
+ There are two reasons for that.
+ First, there is usually little harmonic structure in this band (above 4
+ kHz).
+ Second, it would be very hard to implement since the QMF folds the 4-8
+ kHz band into 4-0 kHz (reversing the frequency axis), which means that
+ the location of the harmonics are no longer at multiples of the fundamental
+ (pitch).
+\layout Subsection
+
+Excitation Quantization
+\layout Standard
+
+The high-band excitation is coded in the same way as for narrowband.
+ 
+\layout Subsection
+
+Bit allocation
+\layout Standard
+
+For the wideband mode, all the narrowband frame is packed before the high-band
+ is encoded.
+ The narrowband part of the bit-stream is as defined in table 
+\begin_inset LatexCommand \ref{cap:bits-narrowband}
+
+\end_inset 
+
+.
+ The high-band follows, as described in table 
+\begin_inset LatexCommand \ref{cap:bits-wideband}
+
+\end_inset 
+
+.
+ This also means that a wideband frame may be correctly decoded by a narrowband
+ decoder with the only caveat that if more than one frame is packed in the
+ same packet, the decoder will need to skip the high-band parts in order
+ to sync with the bit-stream.
+\layout Standard
+
+
+\begin_inset Float table
+placement h
+wide true
+collapsed false
+
+\layout Standard
+
+
+\begin_inset  Tabular
+<lyxtabular version="3" rows="7" columns="7">
+<features>
+<column alignment="center" valignment="top" leftline="true" width="0pt">
+<column alignment="center" valignment="top" leftline="true" width="0pt">
+<column alignment="center" valignment="top" leftline="true" width="0pt">
+<column alignment="center" valignment="top" leftline="true" width="0pt">
+<column alignment="center" valignment="top" leftline="true" width="0pt">
+<column alignment="center" valignment="top" leftline="true" width="0pt">
+<column alignment="center" valignment="top" leftline="true" rightline="true" width="0pt">
+<row topline="true" bottomline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Parameter
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Update rate
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+0
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+1
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+2
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+3
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+4
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Wideband bit
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+frame
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+1
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+1
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+1
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+1
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+1
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Mode ID
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+frame
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+3
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+3
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+3
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+3
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+3
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+LSP
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+frame
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+0
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+12
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+12
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+12
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+12
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Excitation gain
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+sub-frame
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+0
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+5
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+4
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+4
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+4
+\end_inset 
+</cell>
+</row>
+<row topline="true" bottomline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Excitation VQ
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+sub-frame
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+0
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+0
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+20
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+40
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+80
+\end_inset 
+</cell>
+</row>
+<row topline="true" bottomline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Total
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+frame
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+4
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+36
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+112
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+192
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+352
+\end_inset 
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset 
+
+
+\layout Caption
+
+Bit allocation for high-band in wideband mode
+\begin_inset LatexCommand \label{cap:bits-wideband}
+
+\end_inset 
+
+
+\end_inset 
+
+
+\layout Standard
+
+
+\begin_inset ERT
+status Open
+
+\layout Standard
+
+\backslash 
+clearpage
+\end_inset 
+
+
 \layout Standard
 
 
@@ -5558,6 +5552,47 @@ d as a sum of unit pulses, thus making the codebook search much more efficient.
  This technique was invented at the University of Sherbrooke and is now
  one of the most widely used form of CELP.
  Unfortunately, since it is patented, it cannot be used in Speex.
+\layout Section
+\pagebreak_top 
+Sample code
+\layout Subsection
+
+sampleenc.c
+\layout Standard
+
+
+\begin_inset Include \verbatiminput{sampleenc.c}
+
+\end_inset 
+
+
+\layout Subsection
+
+sampledec.c
+\layout Standard
+
+
+\begin_inset Include \verbatiminput{sampledec.c}
+
+\end_inset 
+
+
+\layout Section
+\pagebreak_top 
+IETF RTP Profile
+\begin_inset LatexCommand \label{sec:IETF-draft}
+
+\end_inset 
+
+
+\layout Standard
+
+
+\begin_inset Include \verbatiminput{draft-herlein-speex-rtp-profile-07.txt}
+
+\end_inset 
+
+
 \layout Section
 \pagebreak_top 
 GNU Free Documentation License
