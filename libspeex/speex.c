@@ -303,17 +303,19 @@ void encode(EncState *st, float *in, FrameBits *bits)
 
       /* Perform adaptive codebook search (3-tap pitch predictor) */
       pitch = st->ol_pitch;
+#if 0 /* 1 for fractional pitch, 0 for integer pitch */
       closed_loop_fractional_pitch(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2,
                                    exc, st->os_filt, st->os_filt_ord2, st->os_fact, 20, 147, 
                                    &gain[0], &pitch, st->lpcSize,
                                    st->subframeSize, st->stack);
-      /*pitch_search_3tap(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2,
+#else
+      pitch_search_3tap(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2,
                         exc, 20, 147, &gain[0], &pitch, &pitch_gain_index, st->lpcSize,
                         st->subframeSize);
       for (i=0;i<st->subframeSize;i++)
         exc[i]=gain[0]*exc[i-pitch]+gain[1]*exc[i-pitch-1]+gain[2]*exc[i-pitch-2];
       printf ("3-tap pitch = %d, gains = [%f %f %f]\n",pitch, gain[0], gain[1], gain[2]);
-      */
+#endif
       /* Update target for adaptive codebook contribution */
       residue_zero(exc, st->bw_lpc1, res, st->subframeSize, st->lpcSize);
       syn_filt_zero(res, st->interp_qlpc, res, st->subframeSize, st->lpcSize);
@@ -326,7 +328,7 @@ void encode(EncState *st, float *in, FrameBits *bits)
          enoise += target[i]*target[i];
       snr = 10*log10((esig+1)/(enoise+1));
       printf ("pitch SNR = %f\n", snr);
-#if 0
+#if 0 /* 1 for stochastic excitation, 0 for split-VQ*/
       for(j=0;j<1;j++){
          /*float stoc2[1080];*/
          float *stoc2 = PUSH(st->stack,1080);
@@ -369,7 +371,7 @@ void encode(EncState *st, float *in, FrameBits *bits)
 #if 1 /* Code to calculate the exact excitation after pitch prediction  */
       for (i=0;i<st->subframeSize;i++)
          st->buf2[i]=target[i];
-#if 0
+#if 0 /* 0 for fractional pitch, 1 for integer */
       pitch_search_3tap(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2,
                                 exc, 20, 147, &gain[0], &pitch, &pitch_gain_index, st->lpcSize,
                         st->subframeSize);

@@ -32,6 +32,7 @@
 #include <stdlib.h>
 #include <cb_search.h>
 #include "filters.h"
+#include <math.h>
 
 #define min(a,b) ((a) < (b) ? (a) : (b))
 
@@ -144,6 +145,7 @@ float *exc
    int i,j;
    float resp[64][8], E[64];
    float t[40], r[40], e[40];
+   float gains[5];
    for (i=0;i<40;i++)
       t[i]=target[i];
    for (i=0;i<64;i++)
@@ -170,7 +172,26 @@ float *exc
             best_gain=corr/(.001+E[j]);
          }
       }
-      printf ("search: %d %f %f\n", best_index, best_gain, best_score);
+
+      if (1) { /* Simulating scalar quantization of the gain*/
+         float sign=1;
+         printf("before: %f\n", best_gain);
+         if (best_gain<0)
+            sign=-1;
+         best_gain = abs(best_gain)+.1;
+         best_gain = log(best_gain);
+         if (best_gain>8)
+            best_gain=8;
+         if (best_gain<0)
+            best_gain=0;
+         /*best_gain=.25*rint(4*best_gain);*/
+         best_gain=.25*floor(4*best_gain+.5);
+         best_gain=sign*exp(best_gain);
+         printf("after: %f\n", best_gain);
+      }
+      gains[i]=best_gain;
+
+      printf ("search: %d %f %f %f\n", best_index, best_gain, best_gain*best_gain*E[best_index], best_score);
       for (j=0;j<40;j++)
          e[j]=0;
       for (j=0;j<8;j++)
@@ -181,11 +202,16 @@ float *exc
       for (j=0;j<40;j++)
          t[j]-=r[j];
 
+      /*FIXME: Should move that out of the loop if we are to vector-quantize the gains*/
       for (j=0;j<40;j++)
          exc[j]+=e[j];
    }
 
-
+   for (i=0;i<5;i++)
+      printf ("%f ", gains[i]);
+   printf ("cbgains: \n");
+   /*TODO: Perform joint optimization of gains and quantization with prediction*/
+   
    for (i=0;i<40;i++)
       target[i]=t[i];
 }
