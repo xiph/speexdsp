@@ -28,7 +28,7 @@
 
 The Speex Codec Manual
 \newline 
-(version 1.0.2)
+(version 1.0.3)
 \layout Author
 
 Jean-Marc Valin
@@ -869,7 +869,7 @@ Again, once the decoder initialization is done, for every input frame:
 speex_bits_read_from(&bits, input_bytes, nbBytes);
 \layout LyX-Code
 
-speex_decode(st, &bits, output_frame);
+speex_decode(dec_state, &bits, output_frame);
 \layout Standard
 
 where input_bytes is a 
