@@ -114,3 +114,49 @@ int read_wav_header(FILE *file, int *rate, int *channels, int *format, int *size
 
    return 1;
 }
+
+
+
+void write_wav_header(FILE *file, int rate, int channels, int format, int size)
+{
+   char ch[5];
+   int itmp;
+   short stmp;
+
+   ch[4]=0;
+
+   fprintf (file, "RIFF");
+
+   itmp = 0x7fffffff;
+   fwrite(&itmp, 4, 1, file);
+
+   fprintf (file, "WAVEfmt ");
+
+   itmp = 16;
+   fwrite(&itmp, 4, 1, file);
+
+   stmp = 1;
+   fwrite(&stmp, 2, 1, file);
+
+   stmp = channels;
+   fwrite(&stmp, 2, 1, file);
+
+   itmp = rate;
+   fwrite(&itmp, 4, 1, file);
+
+   itmp = rate*channels*2;
+   fwrite(&itmp, 4, 1, file);
+
+   stmp = 2*channels;
+   fwrite(&stmp, 2, 1, file);
+
+   stmp = 16;
+   fwrite(&stmp, 2, 1, file);
+
+   fprintf (file, "data");
+
+   itmp = 0x7fffffff;
+   fwrite(&itmp, 4, 1, file);
+
+
+}

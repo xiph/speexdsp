@@ -19,3 +19,5 @@
 #include <stdio.h>
 
 int read_wav_header(FILE *file, int *rate, int *channels, int *format, int *size);
+
+void write_wav_header(FILE *file, int rate, int channels, int format, int size);
