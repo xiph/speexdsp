@@ -176,6 +176,7 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
 
    st=state;
 
+   /* First, transmit the sub-mode we use for this frame */
    speex_bits_pack(bits, st->submodeID, NB_SUBMODE_BITS);
 
    /* Copy new data in input buffer */
@@ -225,14 +226,7 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
    for (i=0;i<st->lpcSize;i++)
      st->qlsp[i]=st->lsp[i];
 #endif
-   /*printf ("LSP ");
-   for (i=0;i<st->lpcSize;i++)
-      printf ("%f ", st->lsp[i]);
-   printf ("\n");
-   printf ("QLSP ");
-   for (i=0;i<st->lpcSize;i++)
-      printf ("%f ", st->qlsp[i]);
-   printf ("\n");*/
+
    /* Special case for first frame */
    if (st->first)
    {
@@ -243,7 +237,7 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
    }
 
 
-   /* Whole frame analysis */
+   /* Whole frame analysis (some open-loop estimations) */
    {
       for (i=0;i<st->lpcSize;i++)
          st->interp_lsp[i] = .5*st->old_lsp[i] + .5*st->lsp[i];
@@ -269,13 +263,15 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
          ol_pitch = 0;
 
       residue(st->frame, st->interp_lpc, st->exc, st->frameSize, st->lpcSize);
-      
+
+      /* Compute open-loop excitation gain */
       ol_gain=0;
       for (i=0;i<st->frameSize;i++)
          ol_gain += st->exc[i]*st->exc[i];
       
       ol_gain=sqrt(1+ol_gain/st->frameSize);
 
+      /* Quantize open-loop gain */
       /*printf ("ol_gain: %f\n", ol_gain);*/
       if (1) {
          int qe = (int)(floor(3.5*log(ol_gain)));
@@ -321,22 +317,10 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
       for (i=0;i<st->lpcSize;i++)
          st->interp_qlsp[i] = (1-tmp)*st->old_qlsp[i] + tmp*st->qlsp[i];
 
+      /* Make sure the filters are stable */
       lsp_enforce_margin(st->interp_lsp, st->lpcSize, .002);
       lsp_enforce_margin(st->interp_qlsp, st->lpcSize, .002);
 
-      if (0) {
-         float *h=PUSH(st->stack, 8);
-         for (i=0;i<8;i++)
-            h[i]=0;
-         h[0]=1;
-         
-         residue_zero(h, st->bw_lpc1, h, 8, st->lpcSize);
-         syn_filt_zero(h, st->interp_qlpc, h, 8, st->lpcSize);
-         syn_filt_zero(h, st->bw_lpc2, h, 8, st->lpcSize);
-         print_vec(h, 8, "lpc_resp");
-         POP(st->stack);
-      }
-      
       /* Compute interpolated LPCs (quantized and unquantized) */
       for (i=0;i<st->lpcSize;i++)
          st->interp_lsp[i] = cos(st->interp_lsp[i]);
@@ -346,6 +330,7 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
          st->interp_qlsp[i] = cos(st->interp_qlsp[i]);
       lsp_to_lpc(st->interp_qlsp, st->interp_qlpc, st->lpcSize, st->stack);
 
+      /* Compute analysis filter gain at w=pi (for use in SB-CELP) */
       tmp=1;
       st->pi_gain[sub]=0;
       for (i=0;i<=st->lpcSize;i++)
@@ -366,18 +351,7 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
          for (i=2;i<=st->lpcSize;i++)
             st->bw_lpc2[i]=0;
       }
-#ifdef DEBUG
-      printf ("\nlpc0 ");
-      for (i=0;i<=st->lpcSize;i++)
-         printf ("%f ", st->interp_lpc[i]);
-      printf ("\nlpc1 ");
-      for (i=0;i<=st->lpcSize;i++)
-         printf ("%f ", st->bw_lpc1[i]);
-      printf ("\nlpc2 ");
-      for (i=0;i<=st->lpcSize;i++)
-         printf ("%f ", st->bw_lpc2[i]);
-      printf ("\n\n");
-#endif
+
       /* Reset excitation */
       for (i=0;i<st->subframeSize;i++)
          exc[i]=0;
@@ -414,11 +388,13 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
       for (i=0;i<st->subframeSize;i++)
          exc[i]=exc2[i]=0;
 
+      /* If we have a long-term predictor (not all sub-modes have one) */
       if (SUBMODE(ltp_params))
       {
          /* Long-term prediction */
          if (SUBMODE(lbr_pitch) != -1)
          {
+            /* Low bit-rate pitch handling */
             int pit_min, pit_max;
             int margin;
             margin = SUBMODE(lbr_pitch);
@@ -431,10 +407,12 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
             pitch = SUBMODE(ltp_quant)(target, sw, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2,
                                        exc, SUBMODE(ltp_params), pit_min, pit_max, 
                                        st->lpcSize, st->subframeSize, bits, st->stack, exc2);
-         } else
+         } else {
+            /* Normal pitch handling */
             pitch = SUBMODE(ltp_quant)(target, sw, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2,
                                        exc, SUBMODE(ltp_params), st->min_pitch, st->max_pitch, 
                                        st->lpcSize, st->subframeSize, bits, st->stack, exc2);
+         }
          /*printf ("cl_pitch: %d\n", pitch);*/
          st->pitch[sub]=pitch;
       }
@@ -497,14 +475,7 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
       for (i=0;i<st->subframeSize;i++)
          exc[i]+=st->buf2[i];
 #else
-      if (0)
-      {
-      /* Perform innovation search */
-      SUBMODE(innovation_quant)(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2,
-                           SUBMODE(innovation_params), st->lpcSize,
-                           st->subframeSize, exc, bits, st->stack);
-      }
-      else
+      /* Quantization of innovation */
       {
          float *innov;
          float ener=0, ener_1;
@@ -540,6 +511,7 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
          
          if (SUBMODE(innovation_quant))
          {
+            /* Normal quantization */
             SUBMODE(innovation_quant)(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2, 
                                       SUBMODE(innovation_params), st->lpcSize, st->subframeSize, 
                                       innov, bits, st->stack);
@@ -547,6 +519,8 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
             for (i=0;i<st->subframeSize;i++)
                exc[i] += innov[i]*ener;
          } else {
+            /* This is the "real" (cheating) excitation in the encoder but the decoder will
+               use white noise */
             for (i=0;i<st->subframeSize;i++)
                exc[i] += st->buf2[i];
          }
@@ -708,23 +682,29 @@ void nb_decode(void *state, SpeexBits *bits, float *out, int lost)
    float best_pitch_gain=-1;
    st=state;
 
+   /* Get the sub-mode that was used */
    st->submodeID = speex_bits_unpack_unsigned(bits, NB_SUBMODE_BITS);
 
+   /* Shift all buffers by one frame */
    memmove(st->inBuf, st->inBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(float));
    memmove(st->excBuf, st->excBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(float));
    memmove(st->exc2Buf, st->exc2Buf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(float));
 
-
+   /* Unquantize LSPs */
    SUBMODE(lsp_unquant)(st->qlsp, st->lpcSize, bits);
+
+   /* Handle first frame and lost-packet case */
    if (st->first || st->count_lost)
    {
       for (i=0;i<st->lpcSize;i++)
          st->old_qlsp[i] = st->qlsp[i];
    }
 
+   /* Get open-loop pitch estimation for low bit-rate pitch coding */
    if (SUBMODE(lbr_pitch) && SUBMODE(ltp_params))
       ol_pitch = st->min_pitch+speex_bits_unpack_unsigned(bits, 7);
    
+   /* Get global excitation gain */
    {
       int qe;
       qe = speex_bits_unpack_unsigned(bits, 5);
@@ -761,6 +741,7 @@ void nb_decode(void *state, SpeexBits *bits, float *out, int lost)
       lsp_to_lpc(st->interp_qlsp, st->interp_qlpc, st->lpcSize, st->stack);
 
 
+      /* Compute analysis filter at w=pi */
       tmp=1;
       st->pi_gain[sub]=0;
       for (i=0;i<=st->lpcSize;i++)
@@ -794,6 +775,7 @@ void nb_decode(void *state, SpeexBits *bits, float *out, int lost)
          
          if (!lost)
          {
+            /* If the frame was not lost... */
             tmp = fabs(pitch_gain[0])+fabs(pitch_gain[1])+fabs(pitch_gain[2]);
             tmp = fabs(pitch_gain[0]+pitch_gain[1]+pitch_gain[2]);
             if (tmp>best_pitch_gain)
@@ -808,6 +790,7 @@ void nb_decode(void *state, SpeexBits *bits, float *out, int lost)
                   best_pitch_gain=.85;
             }
          } else {
+            /* What to do with pitch if we lost the frame */
             for (i=0;i<st->subframeSize;i++)
                exc[i]=0;
             /*printf ("best_pitch: %d %f\n", st->last_pitch, st->last_pitch_gain);*/
@@ -816,6 +799,7 @@ void nb_decode(void *state, SpeexBits *bits, float *out, int lost)
          }
       }
       
+      /* Unquantize the innovation */
       {
          int q_energy;
          float ener;
@@ -856,23 +840,15 @@ void nb_decode(void *state, SpeexBits *bits, float *out, int lost)
 
       for (i=0;i<st->subframeSize;i++)
          exc2[i]=exc[i];
-#if 0
-      /*Compute decoded signal*/
-      syn_filt_mem(exc, st->interp_qlpc, exc2, st->subframeSize, st->lpcSize, st->mem_sp);
 
-      if (st->pf_enabled)
-         st->post_filter_func(exc2, sp, st->interp_qlpc, st->lpcSize, st->subframeSize,
-                              pitch, pitch_gain, st->post_filter_params, st->mem_pf, st->stack);
-#else
+      /* Apply post-filter */
       if (st->pf_enabled && SUBMODE(post_filter_func))
          SUBMODE(post_filter_func)(exc, exc2, st->interp_qlpc, st->lpcSize, st->subframeSize,
                               pitch, pitch_gain, SUBMODE(post_filter_params), st->mem_pf, 
                               st->mem_pf2, st->stack);
       
+      /* Apply synthesis filter */
       syn_filt_mem(exc2, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, st->mem_sp);
-
-
-#endif
 
    }
    

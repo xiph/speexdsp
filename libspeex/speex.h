@@ -28,7 +28,7 @@
 extern "C" {
 #endif
 
-/*values for *ctl() requests*/
+/* Values allowed for *ctl() requests */
 #define SPEEX_SET_PF 0
 #define SPEEX_GET_PF 1
 /*Would be SPEEX_SET_FRAME_SIZE, but it's (currently) invalid*/
@@ -48,6 +48,7 @@ extern "C" {
 
 struct SpeexMode;
 
+/* Prototypes for mode function pointers */
 typedef void *(*encoder_init_func)(struct SpeexMode *mode);
 typedef void (*encoder_destroy_func)(void *st);
 typedef void (*encode_func)(void *state, float *in, SpeexBits *bits);
@@ -120,6 +121,7 @@ void speex_encoder_destroy(void *state);
     "in". The encoded bit-stream is saved in "bits".*/
 void speex_encode(void *state, float *in, SpeexBits *bits);
 
+/** Used like the ioctl function to control the encoder parameters */
 void speex_encoder_ctl(void *state, int request, void *ptr);
 
 
@@ -136,6 +138,7 @@ void speex_decoder_destroy(void *state);
     bits. The output speech is saved written to out. */
 void speex_decode(void *state, SpeexBits *bits, float *out, int lost);
 
+/** Used like the ioctl function to control the encoder parameters */
 void speex_decoder_ctl(void *state, int request, void *ptr);
 
 
@@ -146,6 +149,7 @@ extern SpeexMode speex_nb_mode;
 /** Default wideband mode */
 extern SpeexMode speex_wb_mode;
 
+/** List of all modes availavle */
 extern SpeexMode *speex_mode_list[SPEEX_NB_MODES];
 
 #ifdef __cplusplus
