@@ -451,11 +451,11 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
    }
 
    /* Filter response */
-   res = PUSH(stack, st->subframeSize);
+   res = PUSH(stack, st->subframeSize, float);
    /* Target signal */
-   target = PUSH(stack, st->subframeSize);
-   syn_resp = PUSH(stack, st->subframeSize);
-   mem = PUSH(stack, st->lpcSize);
+   target = PUSH(stack, st->subframeSize, float);
+   syn_resp = PUSH(stack, st->subframeSize, float);
+   mem = PUSH(stack, st->lpcSize, float);
 
    /* Loop on sub-frames */
    for (sub=0;sub<st->nbSubframes;sub++)
@@ -672,7 +672,7 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
          /* In some (rare) modes, we do a second search (more bits) to reduce noise even more */
          if (SUBMODE(double_codebook)) {
             float *tmp_stack=stack;
-            float *innov2 = PUSH(tmp_stack, st->subframeSize);
+            float *innov2 = PUSH(tmp_stack, st->subframeSize, float);
             for (i=0;i<st->subframeSize;i++)
                innov2[i]=0;
             for (i=0;i<st->subframeSize;i++)
@@ -813,9 +813,9 @@ static void nb_decode_lost(DecState *st, float *out, float *stack)
    speex_move(st->inBuf, st->inBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(float));
    speex_move(st->excBuf, st->excBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(float));
 
-   awk1=PUSH(stack, (st->lpcSize+1));
-   awk2=PUSH(stack, (st->lpcSize+1));
-   awk3=PUSH(stack, (st->lpcSize+1));
+   awk1=PUSH(stack, (st->lpcSize+1), float);
+   awk2=PUSH(stack, (st->lpcSize+1), float);
+   awk3=PUSH(stack, (st->lpcSize+1), float);
 
    for (sub=0;sub<st->nbSubframes;sub++)
    {
@@ -1008,9 +1008,9 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
       /*printf ("decode_ol_gain: %f\n", ol_gain);*/
    }
 
-   awk1=PUSH(stack, st->lpcSize+1);
-   awk2=PUSH(stack, st->lpcSize+1);
-   awk3=PUSH(stack, st->lpcSize+1);
+   awk1=PUSH(stack, st->lpcSize+1, float);
+   awk2=PUSH(stack, st->lpcSize+1, float);
+   awk3=PUSH(stack, st->lpcSize+1, float);
 
    /*Loop on subframes */
    for (sub=0;sub<st->nbSubframes;sub++)
@@ -1157,7 +1157,7 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
          if (SUBMODE(double_codebook))
          {
             float *tmp_stack=stack;
-            float *innov2 = PUSH(tmp_stack, st->subframeSize);
+            float *innov2 = PUSH(tmp_stack, st->subframeSize, float);
             for (i=0;i<st->subframeSize;i++)
                innov2[i]=0;
             SUBMODE(innovation_unquant)(innov2, SUBMODE(innovation_params), st->subframeSize, bits, tmp_stack);

@@ -98,15 +98,14 @@ int   complexity
    shape_cb_size = 1<<params->shape_bits;
    shape_cb = params->shape_cb;
    have_sign = params->have_sign;
-   resp = PUSH(stack, shape_cb_size*subvect_size);
-   t = PUSH(stack, nsf);
-   e = PUSH(stack, nsf);
-   r2 = PUSH(stack, nsf);
-   E = PUSH(stack, shape_cb_size);
-   /*FIXME: This breaks if sizeof(int) != sizeof(float) */
-   ind = (int*)PUSH(stack, nb_subvect);
+   resp = PUSH(stack, shape_cb_size*subvect_size, float);
+   t = PUSH(stack, nsf, float);
+   e = PUSH(stack, nsf, float);
+   r2 = PUSH(stack, nsf, float);
+   E = PUSH(stack, shape_cb_size, float);
+   ind = PUSH(stack, nb_subvect, int);
 
-   tmp = PUSH(stack, 2*N*nsf);
+   tmp = PUSH(stack, 2*N*nsf, float);
    for (i=0;i<N;i++)
    {
       ot[i]=tmp;
@@ -115,14 +114,12 @@ int   complexity
       tmp += nsf;
    }
 
-   /*FIXME: This breaks if sizeof(int) != sizeof(float) */
-   best_index = (int*)PUSH(stack, N);
-   best_dist = PUSH(stack, N);
-   ndist = PUSH(stack, N);
-   odist = PUSH(stack, N);
+   best_index = PUSH(stack, N, int);
+   best_dist = PUSH(stack, N, float);
+   ndist = PUSH(stack, N, float);
+   odist = PUSH(stack, N, float);
    
-   /*FIXME: This breaks if sizeof(int) != sizeof(float) */
-   itmp = (int*)PUSH(stack, 2*N*nb_subvect);
+   itmp = PUSH(stack, 2*N*nb_subvect, int);
    for (i=0;i<N;i++)
    {
       nind[i]=itmp;
@@ -343,9 +340,8 @@ float *stack
    shape_cb = params->shape_cb;
    have_sign = params->have_sign;
 
-   /*FIXME: This breaks if sizeof(int) != sizeof(float) */
-   ind = (int*)PUSH(stack, nb_subvect);
-   signs = (int*)PUSH(stack, nb_subvect);
+   ind = PUSH(stack, nb_subvect, int);
+   signs = PUSH(stack, nb_subvect, int);
 
    /* Decode codewords and gains */
    for (i=0;i<nb_subvect;i++)
@@ -383,7 +379,7 @@ int   complexity
 )
 {
    int i;
-   float *tmp=PUSH(stack, nsf);
+   float *tmp=PUSH(stack, nsf, float);
    residue_percep_zero(target, ak, awk1, awk2, tmp, nsf, p, stack);
 
    for (i=0;i<nsf;i++)

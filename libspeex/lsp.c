@@ -78,7 +78,7 @@ float cheb_poly_eva(float *coef,float x,int m,float *stack)
     int m2=m>>1;
 
     /* Allocate memory for chebyshev series formulation */
-    T=PUSH(stack, m2+1);
+    T=PUSH(stack, m2+1, float);
 
     /* Initialise values */
     T[0]=1;
@@ -139,8 +139,8 @@ int lpc_to_lsp (float *a,int lpcrdr,float *freq,int nb,float delta, float *stack
 
 
     /* Allocate memory space for polynomials */
-    Q = PUSH(stack, (m+1));
-    P = PUSH(stack, (m+1));
+    Q = PUSH(stack, (m+1), float);
+    P = PUSH(stack, (m+1), float);
 
     /* determine P'(z)'s and Q'(z)'s coefficients where
       P'(z) = P(z)/(1 + z^(-1)) and Q'(z) = Q(z)/(1-z^(-1)) */
@@ -260,7 +260,7 @@ void lsp_to_lpc(float *freq,float *ak,int lpcrdr, float *stack)
     float *pw,*n1,*n2,*n3,*n4=NULL;
     int m = lpcrdr/2;
 
-    Wp = PUSH(stack, 4*m+2);
+    Wp = PUSH(stack, 4*m+2, float);
     pw = Wp;
 
     /* initialise contents of array */

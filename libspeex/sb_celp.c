@@ -373,9 +373,9 @@ void sb_encode(void *state, float *in, SpeexBits *bits)
          st->old_qlsp[i] = st->qlsp[i];
    }
    
-   mem=PUSH(stack, st->lpcSize);
-   syn_resp=PUSH(stack, st->subframeSize);
-   innov = PUSH(stack, st->subframeSize);
+   mem=PUSH(stack, st->lpcSize, float);
+   syn_resp=PUSH(stack, st->subframeSize, float);
+   innov = PUSH(stack, st->subframeSize, float);
 
    for (sub=0;sub<st->nbSubframes;sub++)
    {
@@ -519,23 +519,6 @@ void sb_encode(void *state, float *in, SpeexBits *bits)
             mem[i]=st->mem_sw[i];
          filter_mem2(sp, st->bw_lpc1, st->bw_lpc2, sw, st->subframeSize, st->lpcSize, mem);
 
-#if 0
-         /*for (i=0;i<st->lpcSize;i++)
-            mem[i]=st->mem_sp[i];
-         residue_mem(exc, st->bw_lpc1, res, st->subframeSize, st->lpcSize, mem);
-         for (i=0;i<st->lpcSize;i++)
-            mem[i]=st->mem_sw[i];
-            syn_filt_mem(res, st->bw_lpc2, res, st->subframeSize, st->lpcSize, mem);*/
-         
-         /* Compute weighted signal */
-         for (i=0;i<st->lpcSize;i++)
-            mem[i]=st->mem_sp[i];
-         residue_mem(sp, st->bw_lpc1, sw, st->subframeSize, st->lpcSize, mem);
-         for (i=0;i<st->lpcSize;i++)
-            mem[i]=st->mem_sw[i];
-         syn_filt_mem(sw, st->bw_lpc2, sw, st->subframeSize, st->lpcSize, mem);
-#endif
-
          /* Compute target signal */
          for (i=0;i<st->subframeSize;i++)
             target[i]=sw[i]-res[i];
@@ -562,7 +545,7 @@ void sb_encode(void *state, float *in, SpeexBits *bits)
 
          if (SUBMODE(double_codebook)) {
             float *tmp_stack=stack;
-            float *innov2 = PUSH(tmp_stack, st->subframeSize);
+            float *innov2 = PUSH(tmp_stack, st->subframeSize, float);
             for (i=0;i<st->subframeSize;i++)
                innov2[i]=0;
             for (i=0;i<st->subframeSize;i++)
@@ -588,7 +571,7 @@ void sb_encode(void *state, float *in, SpeexBits *bits)
          }
 
       }
-#if 1
+
          /*Keep the previous memory*/
          for (i=0;i<st->lpcSize;i++)
             mem[i]=st->mem_sp[i];
@@ -596,12 +579,7 @@ void sb_encode(void *state, float *in, SpeexBits *bits)
          iir_mem2(exc, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, st->mem_sp);
          
          /* Compute weighted signal again, from synthesized speech (not sure it's the right thing) */
-         /*residue_mem(sp, st->bw_lpc1, sw, st->subframeSize, st->lpcSize, mem);
-         syn_filt_mem(sw, st->bw_lpc2, sw, st->subframeSize, st->lpcSize, st->mem_sw);
-         */
          filter_mem2(sp, st->bw_lpc1, st->bw_lpc2, sw, st->subframeSize, st->lpcSize, st->mem_sw);
-#endif
-      
    }
 
 
@@ -866,7 +844,7 @@ int sb_decode(void *state, SpeexBits *bits, float *out)
 
          if (SUBMODE(double_codebook)) {
             float *tmp_stack=stack;
-            float *innov2 = PUSH(tmp_stack, st->subframeSize);
+            float *innov2 = PUSH(tmp_stack, st->subframeSize, float);
             for (i=0;i<st->subframeSize;i++)
                innov2[i]=0;
             SUBMODE(innovation_unquant)(innov2, SUBMODE(innovation_params), st->subframeSize, 

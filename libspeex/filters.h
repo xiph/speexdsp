@@ -34,6 +34,7 @@
 #define FILTERS_H
 
 void qmf_decomp(float *xx, float *aa, float *y1, float *y2, int N, int M, float *mem);
+void fir_mem_up(float *x, float *a, float *y, int N, int M, float *mem);
 
 void print_vec(float *vec, int len, char *name);
 

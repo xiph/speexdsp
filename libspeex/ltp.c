@@ -77,10 +77,10 @@ void open_loop_nbest_pitch(float *sw, int start, int end, int len, int *pitch, f
    float e0;
    float *corr, *energy, *score;
 
-   best_score = PUSH(stack,N);
-   corr = PUSH(stack,end-start+1);
-   energy = PUSH(stack,end-start+2);
-   score = PUSH(stack,end-start+1);
+   best_score = PUSH(stack,N, float);
+   corr = PUSH(stack,end-start+1, float);
+   energy = PUSH(stack,end-start+2, float);
+   score = PUSH(stack,end-start+1, float);
    for (i=0;i<N;i++)
    {
         best_score[i]=-1;
@@ -173,8 +173,8 @@ int  *cdbk_index
    params = (ltp_params*) par;
    gain_cdbk=params->gain_cdbk;
    gain_cdbk_size=1<<params->gain_bits;
-   tmp = PUSH(stack, 3*nsf);
-   tmp2 = PUSH(stack, 3*nsf);
+   tmp = PUSH(stack, 3*nsf, float);
+   tmp2 = PUSH(stack, 3*nsf, float);
 
    x[0]=tmp;
    x[1]=tmp+nsf;
@@ -358,8 +358,8 @@ int complexity
    if (N>10)
       N=10;
    /*FIXME: This breaks if sizeof(int) != sizeof(float) */
-   nbest=(int*)PUSH(stack, N);
-   gains = PUSH(stack, N);
+   nbest=(int*)PUSH(stack, N, float);
+   gains = PUSH(stack, N, float);
    params = (ltp_params*) par;
 
    if (N==0 || end<start)
@@ -371,7 +371,7 @@ int complexity
       return start;
    }
    
-   best_exc=PUSH(stack,nsf);
+   best_exc=PUSH(stack,nsf, float);
    
    if (N>end-start+1)
       N=end-start+1;
@@ -460,7 +460,7 @@ int lost)
    {
       float *e[3];
       float *tmp2;
-      tmp2=PUSH(stack, 3*nsf);
+      tmp2=PUSH(stack, 3*nsf, float);
       e[0]=tmp2;
       e[1]=tmp2+nsf;
       e[2]=tmp2+2*nsf;

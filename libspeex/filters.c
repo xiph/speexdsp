@@ -110,7 +110,7 @@ void fir_mem2(float *x, float *num, float *y, int N, int ord, float *mem)
 void syn_percep_zero(float *xx, float *ak, float *awk1, float *awk2, float *y, int N, int ord, float *stack)
 {
    int i;
-   float *mem = PUSH(stack,ord);
+   float *mem = PUSH(stack,ord, float);
    for (i=0;i<ord;i++)
       mem[i]=0;
    filter_mem2(xx, awk1, ak, y, N, ord, mem);
@@ -122,7 +122,7 @@ void syn_percep_zero(float *xx, float *ak, float *awk1, float *awk2, float *y, i
 void residue_percep_zero(float *xx, float *ak, float *awk1, float *awk2, float *y, int N, int ord, float *stack)
 {
    int i;
-   float *mem = PUSH(stack,ord);
+   float *mem = PUSH(stack,ord, float);
    for (i=0;i<ord;i++)
       mem[i]=0;
    filter_mem2(xx, ak, awk1, y, N, ord, mem);
@@ -172,7 +172,8 @@ void fir_mem_up(float *x, float *a, float *y, int N, int M, float *mem)
       N and M are multiples of 4 */
 {
    int i, j;
-   float xx[N+M-1];
+   /*FIXME: Make that dynamic*/
+   float xx[384];
 
    for (i = 0; i < N/2; i++)
       xx[2*i] = x[N/2-1-i];
