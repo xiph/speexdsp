@@ -90,6 +90,7 @@ void encoder_init(EncState *st)
    st->interp_qlpc = malloc((st->lpcSize+1)*sizeof(float));
    st->bw_lpc1 = malloc((st->lpcSize+1)*sizeof(float));
    st->bw_lpc2 = malloc((st->lpcSize+1)*sizeof(float));
+   st->bw_az = malloc((st->lpcSize*2+1)*sizeof(float));
 
    st->lsp = malloc(st->lpcSize*sizeof(float));
    st->qlsp = malloc(st->lpcSize*sizeof(float));
@@ -126,6 +127,7 @@ void encoder_destroy(EncState *st)
 
    free(st->bw_lpc1);
    free(st->bw_lpc2);
+   free(st->bw_az);
    free(st->autocorr);
    free(st->lagWindow);
    free(st->lsp);
@@ -135,6 +137,14 @@ void encoder_destroy(EncState *st)
    free(st->old_qlsp);
    free(st->interp_qlsp);
    free(st->rc);
+
+   free(st->mem1);
+   free(st->mem2);
+   free(st->mem3);
+   free(st->mem4);
+   free(st->mem5);
+   free(st->mem6);
+   free(st->mem7);
 }
 
 void encode(EncState *st, float *in, int *outSize, void *bits)
@@ -235,10 +245,6 @@ void encode(EncState *st, float *in, int *outSize, void *bits)
       }
       /* Compute residue */
       /*residue(sp, st->interp_qlpc, res, st->subframeSize, st->lpcSize);*/
-
-      /* Compute weighted signal */
-      residue_mem(sp, st->bw_lpc1, sw, st->subframeSize, st->lpcSize, st->mem1);
-      /*syn_filt_mem(sw, st->bw_lpc2, sw, st->subframeSize, st->lpcSize, st->mem2);*/
       
       /* Reset excitation */
       for (i=0;i<st->subframeSize;i++)
@@ -246,15 +252,23 @@ void encode(EncState *st, float *in, int *outSize, void *bits)
 
       /* Compute zero response of A(z/g1) / ( A(z/g2) * Aq(z) ) */
       residue(exc, st->bw_lpc1, exc, st->subframeSize, st->lpcSize);
-      /*syn_filt_mem(exc, st->bw_lpc2, exc, st->subframeSize, st->lpcSize, st->mem3);*/
+      syn_filt_mem(exc, st->interp_qlpc, res, st->subframeSize, st->lpcSize, st->mem3);
+      syn_filt_mem(exc, st->bw_lpc2, exc, st->subframeSize, st->lpcSize, st->mem4);
+
+
+      /* Compute weighted signal */
+      residue_mem(sp, st->bw_lpc1, sw, st->subframeSize, st->lpcSize, st->mem1);
       for (i=0;i<st->lpcSize;i++)
-        st->mem4[i]=sw[-i-1];
-      syn_filt_mem(exc, st->interp_qlpc, res, st->subframeSize, st->lpcSize, st->mem4);
+        st->mem3[i]=sw[st->subframeSize-i-1];
+      syn_filt_mem(sw, st->bw_lpc2, sw, st->subframeSize, st->lpcSize, st->mem2);
+      for (i=0;i<st->lpcSize;i++)
+        st->mem4[i]=sw[st->subframeSize-i-1];
+
 
       /* Compute target signal */
       for (i=0;i<st->subframeSize;i++)
          target[i]=sw[i]-res[i];
-#if 0
+#if 1
       /* Perform adaptive codebook search (pitch prediction) */
       overlap_cb_search(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2,
                         &exc[-120], 100, &gain[0], &pitch, st->lpcSize,
@@ -267,6 +281,7 @@ void encode(EncState *st, float *in, int *outSize, void *bits)
       /* Perform stochastic codebook search */
 
       residue_zero(target, st->interp_qlpc, exc, st->subframeSize, st->lpcSize);
+      residue_zero(target, st->bw_lpc2, exc, st->subframeSize, st->lpcSize);
       syn_filt_zero(exc, st->bw_lpc1, exc, st->subframeSize, st->lpcSize);
 
       /* Final signal synthesis from excitation */

@@ -56,8 +56,10 @@ typedef struct EncState {
    float *interp_qlpc;    /* Interpolated quantized LPCs */
    float *bw_lpc1;        /* LPCs after bandwidth expansion by gamma1 for perceptual weighting*/
    float *bw_lpc2;        /* LPCs after bandwidth expansion by gamma2 for perceptual weighting*/
+   float *bw_az;          /* Convolution of bw_lpc2 and interp_qlpc */
    float *rc;             /* Reflection coefficients */
    float *mem1, *mem2, *mem3, *mem4, *mem5, *mem6, *mem7;
+   float *dmem1, *dmem2;
 } EncState;
 
 typedef struct DecState {

@@ -48,7 +48,7 @@ int   nsf                       /* number of samples in subframe */
   float *impulse;		/* excitation vector containing one impulse */
   float d,e,g,score;		/* codebook searching variables */
   float bscore;			/* score of "best" vector so far */
-  int i,j,k;			/* loop variables */
+  int i,k;			/* loop variables */
 
   /* Initialise */
   
@@ -67,21 +67,17 @@ int   nsf                       /* number of samples in subframe */
   /* Calculate impulse response of  A(z/g2) / ( A(z)*(z/g1) ) */
   residue_zero(impulse, awk1, h, nsf, p);
   syn_filt_zero(h, ak, h, nsf, p);
-  /*syn_filt_zero(h, awk2, h, nsf,p);*/
+  syn_filt_zero(h, awk2, h, nsf,p);
   
   /* Calculate codebook zero-response */
   residue_zero(&codebook[entries-1],awk1,resp,nsf,p);
   syn_filt_zero(resp,ak,resp,nsf,p);
-  /*syn_filt_zero(resp,awk2,resp,nsf,p);*/
+  syn_filt_zero(resp,awk2,resp,nsf,p);
     
   /* Search codebook backwards using end correction for synthesis */
   
   for(k=entries-1; k>=0; k--) {
 
-     /* residue_zero(&codebook[k],awk1,resp,nsf,p);
-  syn_filt_zero(resp,ak,resp,nsf,p);
-  syn_filt_zero(resp,awk2,resp,nsf,p);
-     */
     d = 0.0; e = 0.0;
     for(i=0; i<nsf; i++) {
       d += target[i]*resp[i];
@@ -89,7 +85,7 @@ int   nsf                       /* number of samples in subframe */
     }
     g = d/e;
     score = g*d;
-    printf ("score: %f %f %f %f\n", target[0],d,e,score);
+    /*printf ("score: %f %f %f %f\n", target[0],d,e,score);*/
     if (score >= bscore) {
       bscore = score;
       *gain = g;

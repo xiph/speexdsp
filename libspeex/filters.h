@@ -20,12 +20,22 @@
 #ifndef FILTERS_H
 #define FILTERS_H
 
+/* Synthesis filter using the past of y[n] (negative indices) as memory */
 void syn_filt(float *x, float *a, float *y, int N, int ord);
+
+/* Synthesis filter using zero memory */
 void syn_filt_zero(float *x, float *a, float *y, int N, int ord);
+
+/* Synthesis filter using memory */
 void syn_filt_mem(float *x, float *a, float *y, int N, int ord, float *mem);
 
+/* Analysis (FIR) filter using the past of x[n] (negative indices) as memory */
 void residue(float *x, float *a, float *y, int N, int ord);
+
+/* Analysis (FIR) filter using zero memory */
 void residue_zero(float *x, float *a, float *y, int N, int ord);
+
+/* Analysis (FIR) filter using memory */
 void residue_mem(float *x, float *a, float *y, int N, int ord, float *mem);
 
 #endif
