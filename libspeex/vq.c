@@ -59,7 +59,8 @@ int vq_index(float *in, float *codebook, int len, int entries)
 /*Finds the indices of the n-best entries in a codebook*/
 void vq_nbest(float *in, float *codebook, int len, int entries, float *E, int N, int *nbest, float *best_dist)
 {
-   int i,j,k;
+   int i,j,k,used;
+   used = 0;
    for (i=0;i<entries;i++)
    {
       float dist=.5*E[i];
@@ -67,21 +68,14 @@ void vq_nbest(float *in, float *codebook, int len, int entries, float *E, int N,
          dist -= in[j]**codebook++;
       if (i<N || dist<best_dist[N-1])
       {
-
-         for (j=0;j<N;j++)
+         for (k=N-1; (k >= 1) && (k > used || dist < best_dist[k-1]); k--)
          {
-            if (j >= i || dist < best_dist[j])
-            {
-               for (k=N-1;k>j;k--)
-               {
-                  best_dist[k]=best_dist[k-1];
-                  nbest[k] = nbest[k-1];
-               }
-               best_dist[j]=dist;
-               nbest[j]=i;
-               break;
-            }
+            best_dist[k]=best_dist[k-1];
+            nbest[k] = nbest[k-1];
          }
+         best_dist[k]=dist;
+         nbest[k]=i;
+         used++;
       }
    }
 }
@@ -89,7 +83,8 @@ void vq_nbest(float *in, float *codebook, int len, int entries, float *E, int N,
 /*Finds the indices of the n-best entries in a codebook with sign*/
 void vq_nbest_sign(float *in, float *codebook, int len, int entries, float *E, int N, int *nbest, float *best_dist)
 {
-   int i,j,k, sign;
+   int i,j,k, sign, used;
+   used=0;
    for (i=0;i<entries;i++)
    {
       float dist=0;
@@ -106,23 +101,16 @@ void vq_nbest_sign(float *in, float *codebook, int len, int entries, float *E, i
       dist += .5*E[i];
       if (i<N || dist<best_dist[N-1])
       {
-
-         for (j=0;j<N;j++)
+         for (k=N-1; (k >= 1) && (k > used || dist < best_dist[k-1]); k--)
          {
-            if (j >= i || dist < best_dist[j])
-            {
-               for (k=N-1;k>j;k--)
-               {
-                  best_dist[k]=best_dist[k-1];
-                  nbest[k] = nbest[k-1];
-               }
-               best_dist[j]=dist;
-               nbest[j]=i;
-               if (sign)
-                  nbest[j]+=entries;
-               break;
-            }
+            best_dist[k]=best_dist[k-1];
+            nbest[k] = nbest[k-1];
          }
+         best_dist[k]=dist;
+         nbest[k]=i;
+         used++;
+         if (sign)
+            nbest[k]+=entries;
       }
    }
 }
