@@ -695,7 +695,6 @@ int speex_mode_query(const SpeexMode *mode, int request, void *ptr)
    return mode->query(mode->mode, request, ptr);
 }
 
-#if 0
 const SpeexMode * const speex_lib_get_mode (int mode)
 {
 #ifdef EPIC_48K
@@ -706,4 +705,3 @@ const SpeexMode * const speex_lib_get_mode (int mode)
 
   return speex_mode_list[mode];
 }
-#endif
