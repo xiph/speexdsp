@@ -28,7 +28,7 @@
 
 The Speex Codec Manual
 \newline 
-(version 1.0)
+(version 1.0.2)
 \layout Author
 
 Jean-Marc Valin
@@ -1143,7 +1143,10 @@ Sometimes it is desirable to pack more than one frame per packet (or other
 \end_inset 
 
 .
- 
+ Note that as of version 1.0.2, calling speex_bits_write automatically inserts
+ the terminator so as to fill the last byte.
+ This doesn't involves any overhead and makes sure Speex can always detect
+ when there is no more frame in a packet.
 \layout Standard
 
 It is also possible to send in-band 
@@ -5460,8 +5463,29 @@ First of all, it's not clear whether GSM-FR is covered by a Philips patent
 Under what license is Speex released?
 \layout Standard
 
-As of version 1.0 beta 1, Speex is released under Xiph's BSD-like license.
+As of version 1.0 beta 1, Speex is released under Xiph's version of the (revised)
+ BSD license (see Appendix 
+\begin_inset LatexCommand \ref{sec:Speex-License}
+
+\end_inset 
+
+).
  This license is the most permissive of the open-source licenses.
+\layout Subsection*
+
+Am I allowed to use Speex in commercial software?
+\layout Standard
+
+Yes.
+ As long as you comply with the license.
+ This basically means you have to keep the copyright notice and you can't
+ use our name to promote your product without authorization.
+ For more details, see license in Appendix 
+\begin_inset LatexCommand \ref{sec:Speex-License}
+
+\end_inset 
+
+.
 \layout Subsection*
 
 Ogg
@@ -5757,12 +5781,52 @@ IETF RTP Profile
 \layout Standard
 
 
-\begin_inset Include \verbatiminput{draft-herlein-speex-rtp-profile-00.txt}
+\begin_inset Include \verbatiminput{draft-herlein-speex-rtp-profile-01.txt}
 preview false
 
 \end_inset 
 
 
+\layout Section
+\pagebreak_top 
+Speex License
+\begin_inset LatexCommand \label{sec:Speex-License}
+
+\end_inset 
+
+
+\layout Standard
+
+Redistribution and use in source and binary forms, with or without modification,
+ are permitted provided that the following conditions are met:
+\layout Itemize
+
+Redistributions of source code must retain the above copyright notice, this
+ list of conditions and the following disclaimer.
+\layout Itemize
+
+Redistributions in binary form must reproduce the above copyright notice,
+ this list of conditions and the following disclaimer in the documentation
+ and/or other materials provided with the distribution.
+\layout Itemize
+
+Neither the name of the Xiph.org Foundation nor the names of its contributors
+ may be used to endorse or promote products derived from this software without
+ specific prior written permission.
+\layout Standard
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS ``AS
+ IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+ TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ PURPOSE ARE DISCLAIMED.
+ IN NO EVENT SHALL THE FOUNDATION OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+ INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
+ USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ 
 \layout Section
 \pagebreak_top 
 GNU Free Documentation License
