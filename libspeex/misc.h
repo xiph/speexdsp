@@ -71,11 +71,11 @@ void *speex_move (void *dest, void *src, int n);
 void speex_memcpy_bytes(char *dst, char *src, int nbytes);
 void speex_memset_bytes(char *dst, char src, int nbytes);
 
-void speex_error(char *str);
+void speex_error(const char *str);
 
-void speex_warning(char *str);
+void speex_warning(const char *str);
 
-void speex_warning_int(char *str, int val);
+void speex_warning_int(const char *str, int val);
 
 void speex_rand_vec(float std, spx_sig_t *data, int len);
 

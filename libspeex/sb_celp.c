@@ -525,7 +525,7 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
       fir_mem_up(st->high, h1, st->y1, st->full_frame_size, QMF_ORDER, st->g1_mem, stack);
 
       for (i=0;i<st->full_frame_size;i++)
-         in[i]=2*(st->y0[i]-st->y1[i]) / SIG_SCALING;
+         in[i]=SHR(st->y0[i]-st->y1[i], SIG_SHIFT-1);
 #endif
 
       if (dtx)
@@ -761,7 +761,7 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
    fir_mem_up(st->high, h1, st->y1, st->full_frame_size, QMF_ORDER, st->g1_mem, stack);
 
    for (i=0;i<st->full_frame_size;i++)
-      in[i]=2*(st->y0[i]-st->y1[i]) / SIG_SCALING;
+      in[i]=SHR(st->y0[i]-st->y1[i], SIG_SHIFT-1);
 #endif
    for (i=0;i<st->lpcSize;i++)
       st->old_lsp[i] = st->lsp[i];
@@ -953,7 +953,7 @@ int sb_decode(void *state, SpeexBits *bits, void *vout)
       ret = speex_decode_native(st->st_low, bits, low);
       
       for (i=0;i<st->frame_size;i++)
-         st->x0d[i] = low[i]*SIG_SCALING;
+         st->x0d[i] = SHL((spx_sig_t)low[i], SIG_SHIFT);
    }
 
    speex_decoder_ctl(st->st_low, SPEEX_GET_DTX_STATUS, &dtx);

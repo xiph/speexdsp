@@ -69,7 +69,7 @@ typedef struct SpeexHeader {
 void speex_init_header(SpeexHeader *header, int rate, int nb_channels, const SpeexMode *m)
 {
    int i;
-   char *h="Speex   ";
+   const char *h="Speex   ";
    /*
    strncpy(header->speex_string, "Speex   ", 8);
    strncpy(header->speex_version, SPEEX_VERSION, SPEEX_HEADER_VERSION_LENGTH-1);
@@ -129,7 +129,7 @@ SpeexHeader *speex_packet_to_header(char *packet, int size)
 {
    int i;
    SpeexHeader *le_header;
-   char *h = "Speex   ";
+   const char *h = "Speex   ";
    for (i=0;i<8;i++)
       if (packet[i]!=h[i])
       {

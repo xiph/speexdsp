@@ -1293,7 +1293,7 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
       float lsp_dist=0, fact;
       for (i=0;i<st->lpcSize;i++)
          lsp_dist += fabs(st->old_qlsp[i] - st->qlsp[i]);
-      lsp_dist /= LSP_SCALING*LSP_SCALING;
+      lsp_dist /= LSP_SCALING;
       fact = .6*exp(-.2*lsp_dist);
       for (i=0;i<2*st->lpcSize;i++)
          st->mem_sp[i] = (spx_mem_t)(st->mem_sp[i]*fact);

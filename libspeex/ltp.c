@@ -302,8 +302,8 @@ int cdbk_offset
    spx_word16_t gain[3];
    spx_word64_t err;
 
-   ltp_params *params;
-   params = (ltp_params*) par;
+   const ltp_params *params;
+   params = (const ltp_params*) par;
    gain_cdbk_size = 1<<params->gain_bits;
    gain_cdbk = params->gain_cdbk + 3*gain_cdbk_size*cdbk_offset;
    ALLOC(tmp, 3*nsf, spx_sig_t);
@@ -540,7 +540,7 @@ int cdbk_offset
    int best_pitch=0;
    spx_word64_t err, best_err=-1;
    int N;
-   ltp_params *params;
+   const ltp_params *params;
    VARDECL(int *nbest);
 
    N=complexity;
@@ -550,7 +550,7 @@ int cdbk_offset
       N=1;
 
    ALLOC(nbest, N, int);
-   params = (ltp_params*) par;
+   params = (const ltp_params*) par;
 
    if (end<start)
    {
@@ -622,9 +622,9 @@ int cdbk_offset
    spx_word16_t gain[3];
    const signed char *gain_cdbk;
    int gain_cdbk_size;
-   ltp_params *params;
+   const ltp_params *params;
 
-   params = (ltp_params*) par;
+   params = (const ltp_params*) par;
    gain_cdbk_size = 1<<params->gain_bits;
    gain_cdbk = params->gain_cdbk + 3*gain_cdbk_size*cdbk_offset;
 

@@ -163,18 +163,18 @@ void *speex_move (void *dest, void *src, int n)
    return memmove(dest,src,n);
 }
 
-void speex_error(char *str)
+void speex_error(const char *str)
 {
    fprintf (stderr, "Fatal error: %s\n", str);
    exit(1);
 }
 
-void speex_warning(char *str)
+void speex_warning(const char *str)
 {
    fprintf (stderr, "warning: %s\n", str);
 }
 
-void speex_warning_int(char *str, int val)
+void speex_warning_int(const char *str, int val)
 {
    fprintf (stderr, "warning: %s %d\n", str, val);
 }
