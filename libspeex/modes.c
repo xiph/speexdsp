@@ -468,20 +468,7 @@ void speex_decoder_destroy(void *state)
 
 int speex_decode(void *state, SpeexBits *bits, float *out)
 {
-   int m = speex_bits_peek_unsigned(bits, 5);
-   if (m==15)
-   {
-      return -1;
-   } else if (m==14)
-   {
-      int req_size = speex_bits_unpack_unsigned(bits, 6);
-      speex_bits_advance(bits, 8*req_size);
-   } else if (m>7)
-   {
-      return -2;
-   }
-   (*((SpeexMode**)state))->dec(state, bits, out);
-   return 0;
+   return (*((SpeexMode**)state))->dec(state, bits, out);
 }
 
 

@@ -714,20 +714,27 @@ static void sb_decode_lost(SBDecState *st, float *out)
    return;
 }
 
-void sb_decode(void *state, SpeexBits *bits, float *out)
+int sb_decode(void *state, SpeexBits *bits, float *out)
 {
    int i, sub;
    SBDecState *st;
    int wideband;
+   int ret;
 
    st = state;
    /* Decode the low-band */
-   nb_decode(st->st_low, bits, st->x0d);
+   ret = nb_decode(st->st_low, bits, st->x0d);
+
+   /* If error decoding the narrowband part, propagate error */
+   if (ret!=0)
+   {
+      return ret;
+   }
 
    if (!bits)
    {
       sb_decode_lost(st, out);
-      return;
+      return 0;
    }
 
    /*Check "wideband bit"*/
@@ -771,7 +778,7 @@ void sb_decode(void *state, SpeexBits *bits, float *out)
       for (i=0;i<st->full_frame_size;i++)
          out[i]=2*(st->y0[i]-st->y1[i]);
 
-      return;
+      return 0;
 
    }
 
@@ -895,6 +902,7 @@ void sb_decode(void *state, SpeexBits *bits, float *out)
 
    st->first=0;
 
+   return 0;
 }
 
 

@@ -127,7 +127,7 @@ void *sb_decoder_init(SpeexMode *m);
 void sb_decoder_destroy(void *state);
 
 /**Decodes one frame*/
-void sb_decode(void *state, SpeexBits *bits, float *out);
+int sb_decode(void *state, SpeexBits *bits, float *out);
 
 void sb_encoder_ctl(void *state, int request, void *ptr);
 

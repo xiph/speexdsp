@@ -72,7 +72,7 @@ typedef void (*encoder_destroy_func)(void *st);
 typedef void (*encode_func)(void *state, float *in, SpeexBits *bits);
 typedef void *(*decoder_init_func)(struct SpeexMode *mode);
 typedef void (*decoder_destroy_func)(void *st);
-typedef void (*decode_func)(void *state, SpeexBits *bits, float *out);
+typedef int  (*decode_func)(void *state, SpeexBits *bits, float *out);
 typedef void (*encoder_ctl_func)(void *state, int request, void *ptr);
 typedef void (*decoder_ctl_func)(void *state, int request, void *ptr);
 

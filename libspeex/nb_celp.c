@@ -317,6 +317,8 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
             qual=0;
          if (qual>10)
             qual=10;
+         if (qual==10 && st->vbr_quality<10)
+            qual=9;
          speex_encoder_ctl(state, SPEEX_SET_QUALITY, &qual);
       }
    }
@@ -824,7 +826,7 @@ static void nb_decode_lost(DecState *st, float *out)
 }
 
 
-void nb_decode(void *state, SpeexBits *bits, float *out)
+int nb_decode(void *state, SpeexBits *bits, float *out)
 {
    DecState *st;
    int i, sub;
@@ -836,13 +838,27 @@ void nb_decode(void *state, SpeexBits *bits, float *out)
    int best_pitch=40;
    float best_pitch_gain=-1;
    int wideband;
+   int m;
 
    st=state;
 
    if (!bits)
    {
       nb_decode_lost(st, out);
-      return;
+      return 0;
+   }
+
+   m = speex_bits_peek_unsigned(bits, 5);
+   if (m==15)
+   {
+      return -1;
+   } else if (m==14)
+   {
+      int req_size = speex_bits_unpack_unsigned(bits, 6);
+      speex_bits_advance(bits, 8*req_size);
+   } else if (m>7)
+   {
+      return -2;
    }
 
    wideband = speex_bits_unpack_unsigned(bits, 1);
@@ -884,7 +900,7 @@ void nb_decode(void *state, SpeexBits *bits, float *out)
          out[i]=st->frame[i] + st->preemph*out[i-1];
       st->pre_mem=out[st->frameSize-1];
       st->count_lost=0;
-      return;
+      return 0;
    }
 
    /* Unquantize LSPs */
@@ -1099,6 +1115,8 @@ void nb_decode(void *state, SpeexBits *bits, float *out)
    st->count_lost=0;
    st->last_pitch = best_pitch;
    st->last_pitch_gain = best_pitch_gain;
+
+   return 0;
 }
 
 void nb_encoder_ctl(void *state, int request, void *ptr)

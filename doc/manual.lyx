@@ -129,10 +129,10 @@ All this led us to the choice of CELP as the encoding technique to use for
  
 \layout Standard
 
-Strenghts & features
+The main characteristics can be summerized as follows:
 \layout Itemize
 
-Open-source, IPR-free
+Free software/open-source, royalty-free
 \layout Itemize
 
 Integration of wideband and narrowband in the same bit-stream
@@ -142,6 +142,9 @@ Wide range of bit-rates available
 \layout Itemize
 
 Dynamic bit-rate switching and variable bit-rate (VBR)
+\layout Itemize
+
+Voice Activity Detection (VAD, integrated with VBR)
 \layout Itemize
 
 Variable complexity
