@@ -559,12 +559,9 @@ float *stack
 #ifdef DEBUG
    printf ("unquantized pitch: %d %f %f %f\n", pitch, gain[0], gain[1], gain[2]);
 #endif
-   /*FIXME: backward or forward? (ie recursive or not?)*/
-   /*for(i=0;i<nsf;i++)*/
-   for (i=nsf-1;i>=0;i--)
-   {
-      exc[i]=gain[0]*exc[i-pitch+1] + gain[1]*exc[i-pitch] + gain[2]*exc[i-pitch-1];
-   }
+
+   for(i=0;i<nsf;i++)
+      exc[i]=0;
 
    {
       float *e[3];

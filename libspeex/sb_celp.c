@@ -460,8 +460,8 @@ void sb_encode(void *state, float *in, FrameBits *bits)
          g=eh/(.01+el);
          g=sqrt(g);
 
-         /* FIXME: Should encode the gain here */
          g *= filter_ratio;
+         /* Gain quantization */
          {
             int quant = (int) floor(.5 + 9.4 * log(10*(g+.0001)));
             if (quant<0)
@@ -479,7 +479,11 @@ void sb_encode(void *state, float *in, FrameBits *bits)
             exc[i]=g*((EncState*)st->st_low)->exc[offset+i];
 #endif
          /* Update the input signal using the non-coded memory */
+         /* FIXME: is that right? */
          syn_filt_mem(exc, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, mem);
+
+         /* FIXME: Update perceptually weighted signal in case we switch to the
+            other mode */
       } else {
          float el=0;
          float gc;
