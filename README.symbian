@@ -5,37 +5,6 @@ Conrad Parker and Colin Ward, CSIRO Australia, July 2004
 Introduction
 ------------
 
-Some minor modifications to libspeex and applications using the libspeex API
-are required due to the following limitation imposed on DLLs in Symbian OS:
-
-    The Symbian OS architecture does not allow DLLs to have a data
-    segment (initialised or uninitialised). 
-
-    -- Coding Idioms for Symbian OS, Oct 2002 [1]
-
-This file (README.symbian) outlines how to build libspeex for Symbian OS,
-and how to develop applications using the modified libspeex API.
-
-Note that these modifications have been implemented in a portable manner so
-that they may also be used on other platforms with similar restrictions,
-and may be safely tested on more forgiving platforms such as Unix/Linux.
-
-
-libspeex build modifications
-----------------------------
-
-The modifications required for libspeex on Symbian OS are fully contained in
-the file libspeex/modes_noglobals.c. This file should be built instead of
-libspeex/modes.c.
-
-Additionally, the header file include/speex/speex_noglobals.h should be
-installed into the system include directory, along with the other
-speex_* headers.
-
-When building in a GNU environment, this behaviour can be configured by:
-
-  ./configure --disable-global-pointers
-
 The symbian/ directory contains the following files for Symbian's abuild tool:
 
   bld.inf    Component definition file
@@ -43,78 +12,31 @@ The symbian/ directory contains the following files for Symbian's abuild tool:
   config.h   Configuration options for both emulator and device builds
 
 
-Developing applications for libspeex modified for Symbian OS
-------------------------------------------------------------
+Developing applications for libspeex for Symbian OS
+---------------------------------------------------
 
-The only part of the libspeex API which has been modified for Symbian OS,
-and thus affects user code which links against libspeex, is the removal of
-statically defined SpeexMode structures: speex_nb_mode, speex_wb_mode,
-speex_uwb_mode, and the array speex_mode_list[]. All other aspects of
-application development using the libspeex API remain unchanged.
-
-
-  1. applications must additionally include the header:
-
-+    #include <speex_noglobals.h>
-
-
-  2. any references to the statically defined SpeexMode structures must be
-     replaced by a call to a constructor for that mode; and the
-     constructed mode must later be free'd appropriately.
+     Any references to the statically defined SpeexMode structures must be
+     replaced by a call to a speex_lib_get_mode () for that mode.
 
      * References to the statically defined array speex_mode_list[modeID]
-     must be replaced by a call to speex_mode_new (modeID):
+     must be replaced by a call to speex_lib_get_mode (modeID):
 
 -      mode = speex_mode_list[modeID];
-+      mode = speex_mode_new (modeID);
-
-     and later free'd:
-
-+      speex_mode_destroy (mode, modeID);
++      mode = speex_lib_get_mode (modeID);
 
      * References to the statically defined mode structures must be replaced:
 
        SpeexMode * mode1, * mode2, * mode3;
 
 -      mode1 = &speex_nb_mode;
-+      mode1 = speex_mode_new (SPEEX_MODEID_NB);
++      mode1 = speex_lib_get_mode (SPEEX_MODEID_NB);
 
 -      mode2 = &speex_wb_mode;
-+      mode2 = speex_mode_new (SPEEX_MODEID_WB);
++      mode2 = speex_lib_get_mode (SPEEX_MODEID_WB);
 
 -      mode3 = &speex_uwb_mode;
-+      mode3 = speex_mode_new (SPEEX_MODEID_UWB);
-
-     Constructed modes must be destroyed after use:
-
-+      speex_mode_destroy (mode1);
-+      speex_mode_destroy (mode2);
-+      speex_mode_destroy (mode3);
++      mode3 = speex_lib_get_mode (SPEEX_MODEID_UWB);
 
      Note that the constants SPEEX_MODEID_NB, SPEEX_MODEID_WB and
      SPEEX_MODEID_UWB were introduced in libspeex 1.1.6, and are
      defined in <speex/speex.h>.
-
-  3. It is fairly easy to conditionally build an application for either
-     usage of the libspeex API. For example using GNU Autoconf, you can
-     check for the existence of a symbol such as speex_mode_new in
-     configure.ac. The following example is from libfishsound[2]:
-
-    dnl Test for libspeex SPEEX_DISABLE_GLOBAL_POINTERS API
-    dnl If so, we need to use a different API to access available modes,
-    dnl and free them after use.
-    AC_CHECK_LIB(speex, speex_mode_new, DISABLE_GLOBAL_POINTERS="yes",
-      DISABLE_GLOBAL_POINTERS="no")
-    if test "x$DISABLE_GLOBAL_POINTERS" = xyes ; then
-      AC_DEFINE(SPEEX_DISABLE_GLOBAL_POINTERS, ,
-       [Define if libspeex uses SPEEX_DISABLE_GLOBAL_POINTERS API])
-    fi
-
-
-References
-----------
-
-[1] http://www.symbian.com/developer/techlib/papers/coding_idioms/2002_10_09_codingSymbianOS.pdf
-
-[2] http://www.annodex.net/software/libfishsound/
-
