@@ -735,8 +735,8 @@ float *stack
             }
             
             {
-               int best_index2, best_sign2, sign2;
-               float  best_dist2;
+               int best_index2=0, best_sign2=0, sign2;
+               float  best_dist2=0;
                x=t+subvect_size*(i+1);
                for (j=0;j<shape_cb_size;j++)
                {

@@ -567,6 +567,16 @@ void sb_encode(void *state, float *in, SpeexBits *bits)
          for (i=0;i<st->subframeSize;i++)
             exc[i] += innov[i]*scale;
 
+         if (0) {
+            float en=0;
+            for (i=0;i<st->subframeSize;i++)
+               en+=exc[i]*exc[i];
+            en=sqrt(eh/(1+en));
+            for (i=0;i<st->subframeSize;i++)
+               exc[i]*=en;
+            printf ("correction high: %f\n", en);
+         }
+
          POP(st->stack);
       }
 #if 1

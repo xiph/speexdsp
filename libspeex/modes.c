@@ -44,7 +44,7 @@ pf_params pf_params_nb = {
 /* Post-filter parameters for wideband */
 pf_params pf_params_sb = {
    0.65,      /* formant enhancement numerator */
-   0.67,      /* formant enhancement denominator */
+   0.68,      /* formant enhancement denominator */
    0.3       /* pitch enhancement factor */
 };
 
@@ -132,7 +132,7 @@ static SpeexNBMode low_sb_mode = {
    split_cb_nogain_unquant,
    &split_cb_sb,
    nb_post_filter,
-   &pf_params_nb
+   &pf_params_sb
 };
 
 SpeexMode low_wb_mode = {
