@@ -104,7 +104,11 @@ extern "C" {
 
 #define SPEEX_RESET_STATE 26
 
-#define SPEEX_GET_RELATIVE_QUALITY 27
+#define SPEEX_GET_RELATIVE_QUALITY 29
+
+#define SPEEX_SET_VAD 30
+#define SPEEX_GET_VAD 31
+
 
    /* Used internally, not to be used in applications */
 #define SPEEX_GET_PI_GAIN 100

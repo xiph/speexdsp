@@ -41,7 +41,7 @@
 
 #define sqr(x) ((x)*(x))
 
-#define MIN_ENERGY 1000
+#define MIN_ENERGY 6000
 #define NOISE_POW .3
 
 
@@ -147,8 +147,13 @@ float vbr_analysis(VBRState *vbr, float *sig, int len, int pitch, float pitch_co
    vbr->average_energy = (1-vbr->energy_alpha)*vbr->average_energy + vbr->energy_alpha*ener;
    vbr->noise_level=vbr->noise_accum/vbr->noise_accum_count;
    pow_ener = pow(ener,NOISE_POW);
+   if (vbr->noise_accum_count<.06 && ener>MIN_ENERGY)
+      vbr->noise_accum = .05*pow_ener;
+
    if ((voicing<.3 && non_st < .2 && pow_ener < 1.2*vbr->noise_level)
-       || (voicing<.2 && non_st < .1))
+       || (voicing<.3 && non_st < .05 && pow_ener < 1.5*vbr->noise_level)
+       || (voicing<.4 && non_st < .05 && pow_ener < 1.2*vbr->noise_level)
+       || (voicing<0 && non_st < .05))
    {
       float tmp;
       va = 0;
@@ -165,6 +170,12 @@ float vbr_analysis(VBRState *vbr, float *sig, int len, int pitch, float pitch_co
    } else {
       va = 1;
       vbr->consec_noise=0;
+   }
+
+   if (pow_ener < vbr->noise_level && ener>MIN_ENERGY)
+   {
+      vbr->noise_accum = .95*vbr->noise_accum + .05*pow_ener;
+      vbr->noise_accum_count = .95*vbr->noise_accum_count + .05;      
    }
 
    /* Checking for very low absolute energy */
@@ -219,23 +230,28 @@ float vbr_analysis(VBRState *vbr, float *sig, int len, int pitch, float pitch_co
    if (vbr->consec_noise>=12)
       qual-=1.3;
    */
+   if (vbr->consec_noise>=3)
+      qual=4;
+
    if (vbr->consec_noise)
-      qual-=.8*log(2.0 + vbr->consec_noise);
+      qual -= 1.0 * (log(3.0 + vbr->consec_noise)-log(3));
    if (qual<0)
       qual=0;
    
    if (ener<60000)
    {
-      if (vbr->consec_noise)
-         qual-=0.8*log(2.0 + vbr->consec_noise);
-      if (ener<10000&&vbr->consec_noise)
-         qual-=0.8*log(2.0 + vbr->consec_noise);
+      if (vbr->consec_noise>2)
+         qual-=0.5*(log(3.0 + vbr->consec_noise)-log(3));
+      if (ener<10000&&vbr->consec_noise>2)
+         qual-=0.5*(log(3.0 + vbr->consec_noise)-log(3));
       if (qual<0)
          qual=0;
       qual += .3*log(ener/60000.0);
    }
    if (qual<-1)
       qual=-1;
+
+   /*printf ("%f %f %f %f %d\n", qual, voicing, non_st, pow_ener/(.01+vbr->noise_level), va);*/
 
    vbr->last_pitch_coef = pitch_coef;
    vbr->last_quality = qual;

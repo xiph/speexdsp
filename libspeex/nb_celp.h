@@ -102,11 +102,13 @@ typedef struct EncState {
    float  vbr_quality;    /**< Quality setting for VBR encoding */
    float  relative_quality; /**< Relative quality that will be needed by VBR */
    int    vbr_enabled;    /**< 1 for enabling VBR, 0 otherwise */
+   int    vad_enabled;    /**< 1 for enabling VAD, 0 otherwise */
    int    complexity;     /**< Complexity setting (0-10 from least complex to most complex) */
    int    sampling_rate;
 
    SpeexSubmode **submodes; /**< Sub-mode data */
    int    submodeID;      /**< Activated sub-mode */
+   int    submodeSelect;  /**< Mode chosen by the user (may differ from submodeID if VAD is on) */
 } EncState;
 
 /**Structure representing the full state of the narrowband decoder*/

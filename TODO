@@ -2,14 +2,13 @@ Features
 *Average bit-rate VBR
 -Add maximum/minimum bit-rate control for VBR
 *Add "VAD-only" VBR (constant bit-rate or comfort noise)
-*Add encoder/decoder reset function
 -Get the encoder to use the rate of packet loss (more conservative pitch gains)
-*No transmission when constant noise/silence
+-No transmission when constant noise/silence
 
-Codec
-*Improve perceptual enhancement (including wideband)
--Improve VAD
--Improve narrowband vocoder
+Long-term quality improvements
+-Improve perceptual enhancement (including wideband)
+-Improve VAD and VBR
+-Packet-loss concealment
 
 Standards
 *Complete Speex RTP profile
@@ -17,3 +16,9 @@ Standards
 -MS ACM wrapper
 
 *required for 1.0
+
+ideas:
+peelable stream (double codebook, higher bands, stereo)
+DTX in Ogg? (painful)
+LPC from spectral domain
+Masking curve from Vorbis

@@ -144,6 +144,7 @@ void usage()
    printf (" --quality n        Encoding quality (0-10), default 3\n"); 
    printf (" --bitrate n        Encoding bit-rate (use bit-rate n or lower)\n"); 
    printf (" --vbr              Enable variable bit-rate (VBR)\n"); 
+   printf (" --vad              Enable voice activity detection (VAD)\n"); 
    printf (" --comp n           Set encoding complexity (0-10), default 3\n"); 
    printf (" --nframes n        Number of frames per Ogg packet (1-10), default 1\n"); 
    printf (" --comment          Add the given string as an extra comment. This may be\n");
@@ -177,6 +178,7 @@ int main(int argc, char **argv)
    float input[MAX_FRAME_SIZE];
    int frame_size;
    int vbr_enabled=0;
+   int vad_enabled=0;
    int nbBytes;
    SpeexMode *mode=NULL;
    void *st;
@@ -188,6 +190,7 @@ int main(int argc, char **argv)
       {"ultra-wideband", no_argument, NULL, 0},
       {"narrowband", no_argument, NULL, 0},
       {"vbr", no_argument, NULL, 0},
+      {"vad", no_argument, NULL, 0},
       {"quality", required_argument, NULL, 0},
       {"bitrate", required_argument, NULL, 0},
       {"nframes", required_argument, NULL, 0},
@@ -253,6 +256,9 @@ int main(int argc, char **argv)
          } else if (strcmp(long_options[option_index].name,"vbr")==0)
          {
             vbr_enabled=1;
+         } else if (strcmp(long_options[option_index].name,"vad")==0)
+         {
+            vad_enabled=1;
          } else if (strcmp(long_options[option_index].name,"quality")==0)
          {
             quality = atoi (optarg);
@@ -533,6 +539,12 @@ int main(int argc, char **argv)
       int tmp;
       tmp=1;
       speex_encoder_ctl(st, SPEEX_SET_VBR, &tmp);
+   }
+   if (vad_enabled)
+   {
+      int tmp;
+      tmp=1;
+      speex_encoder_ctl(st, SPEEX_SET_VAD, &tmp);
    }
    if (quality >= 0)
    {

@@ -93,7 +93,7 @@ void *nb_encoder_init(SpeexMode *m)
    st->preemph = mode->preemph;
   
    st->submodes=mode->submodes;
-   st->submodeID=mode->defaultSubmode;
+   st->submodeID=st->submodeSelect=mode->defaultSubmode;
    st->pre_mem=0;
    st->pre_mem2=0;
    st->bounded_pitch = 1;
@@ -162,14 +162,12 @@ void *nb_encoder_init(SpeexMode *m)
 
    st->pitch = (int*)speex_alloc(st->nbSubframes*sizeof(int));
 
-   if (1) {
-      st->vbr = (VBRState*)speex_alloc(sizeof(VBRState));
-      vbr_init(st->vbr);
-      st->vbr_quality = 8;
-      st->vbr_enabled = 0;
-   } else {
-      st->vbr = 0;
-   }
+   st->vbr = (VBRState*)speex_alloc(sizeof(VBRState));
+   vbr_init(st->vbr);
+   st->vbr_quality = 8;
+   st->vbr_enabled = 0;
+   st->vad_enabled = 0;
+
    st->complexity=2;
    st->sampling_rate=8000;
 
@@ -320,7 +318,7 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
 
 
       /*Open-loop pitch*/
-      if (!st->submodes[st->submodeID] || st->vbr_enabled || SUBMODE(forced_pitch_gain) ||
+      if (!st->submodes[st->submodeID] || st->vbr_enabled || st->vad_enabled || SUBMODE(forced_pitch_gain) ||
           SUBMODE(lbr_pitch) != -1)
       {
          int nol_pitch[6];
@@ -369,8 +367,8 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
       ol_gain=sqrt(1+ol_gain/st->frameSize);
    }
 
-   /*Experimental VBR stuff*/
-   if (st->vbr)
+   /*VBR stuff*/
+   if (st->vbr && (st->vbr_enabled||st->vad_enabled))
    {
       st->relative_quality = vbr_analysis(st->vbr, in, st->frameSize, ol_pitch, ol_pitch_coef);
       /*if (delta_qual<0)*/
@@ -399,8 +397,17 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
          speex_encoder_ctl(state, SPEEX_SET_MODE, &mode);
          /*fprintf(stderr, "encode: %d %d\n",st->submodeID, mode);*/
       } else {
-         st->relative_quality = -1;
-      }
+         /*VAD only case*/
+         int mode;
+         if (st->relative_quality<2.0)
+            mode=0;
+         else
+            mode=st->submodeSelect;
+         /*speex_encoder_ctl(state, SPEEX_SET_MODE, &mode);*/
+         st->submodeID=mode;
+      } 
+   } else {
+      st->relative_quality = -1;
    }
    /*printf ("VBR quality = %f\n", vbr_qual);*/
 
@@ -1405,7 +1412,7 @@ void nb_encoder_ctl(void *state, int request, void *ptr)
       break;
    case SPEEX_SET_LOW_MODE:
    case SPEEX_SET_MODE:
-      st->submodeID = (*(int*)ptr);
+      st->submodeSelect = st->submodeID = (*(int*)ptr);
       break;
    case SPEEX_GET_LOW_MODE:
    case SPEEX_GET_MODE:
@@ -1416,6 +1423,12 @@ void nb_encoder_ctl(void *state, int request, void *ptr)
       break;
    case SPEEX_GET_VBR:
       (*(int*)ptr) = st->vbr_enabled;
+      break;
+   case SPEEX_SET_VAD:
+      st->vad_enabled = (*(int*)ptr);
+      break;
+   case SPEEX_GET_VAD:
+      (*(int*)ptr) = st->vad_enabled;
       break;
    case SPEEX_SET_VBR_QUALITY:
       st->vbr_quality = (*(float*)ptr);
@@ -1430,7 +1443,7 @@ void nb_encoder_ctl(void *state, int request, void *ptr)
             quality = 0;
          if (quality > 10)
             quality = 10;
-         st->submodeID = ((SpeexNBMode*)(st->mode->mode))->quality_map[quality];
+         st->submodeSelect = st->submodeID = ((SpeexNBMode*)(st->mode->mode))->quality_map[quality];
       }
       break;
    case SPEEX_SET_COMPLEXITY:
