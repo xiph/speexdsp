@@ -203,7 +203,7 @@ void encode(EncState *st, float *in, int *outSize, void *bits)
    for (sub=0;sub<st->nbSubframes;sub++)
    {
       float tmp, tmp1,tmp2,gain[3];
-      int pitch, offset;
+      int pitch, offset, pitch_gain_index;
       float *sp, *sw, *res, *exc, *target;
       
       /* Offset relative to start of frame */
@@ -278,7 +278,7 @@ void encode(EncState *st, float *in, int *outSize, void *bits)
 
       /* Perform adaptive codebook search (3-tap pitch predictor) */
       pitch_search_3tap(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2,
-                        exc, 20, 147, &gain[0], &pitch, st->lpcSize,
+                        exc, 20, 147, &gain[0], &pitch, &pitch_gain_index, st->lpcSize,
                         st->subframeSize);
       for (i=0;i<st->subframeSize;i++)
         exc[i]=gain[0]*exc[i-pitch]+gain[1]*exc[i-pitch-1]+gain[2]*exc[i-pitch-2];
@@ -308,6 +308,34 @@ void encode(EncState *st, float *in, int *outSize, void *bits)
 
 
 #else
+
+#if 0 /* Code to calculate the exact excitation after pitch prediction  */
+      for (i=0;i<st->subframeSize;i++)
+         st->buf2[i]=target[i];
+      pitch_search_3tap(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2,
+                        exc, 20, 147, &gain[0], &pitch, &pitch_gain_index, st->lpcSize,
+                        st->subframeSize);
+      for (i=0;i<st->subframeSize;i++)
+        exc[i]=gain[0]*exc[i-pitch]+gain[1]*exc[i-pitch-1]+gain[2]*exc[i-pitch-2];
+      printf ("3-tap pitch = %d, gains = [%f %f %f]\n",pitch, gain[0], gain[1], gain[2]);
+
+      /* Update target for adaptive codebook contribution */
+      residue_zero(exc, st->bw_lpc1, res, st->subframeSize, st->lpcSize);
+      syn_filt_zero(res, st->interp_qlpc, res, st->subframeSize, st->lpcSize);
+      syn_filt_zero(res, st->bw_lpc2, res, st->subframeSize, st->lpcSize);
+      for (i=0;i<st->subframeSize;i++)
+        target[i]-=res[i];
+      syn_filt_zero(target, st->bw_lpc1, res, st->subframeSize, st->lpcSize);
+      residue_zero(res, st->interp_qlpc, exc, st->subframeSize, st->lpcSize);
+      residue_zero(exc, st->bw_lpc2, exc, st->subframeSize, st->lpcSize);
+      for (i=0;i<st->subframeSize;i++)
+         printf ("%f ", exc[i]);
+      printf ("\n");
+      
+      for (i=0;i<st->subframeSize;i++)
+         target[i]=st->buf2[i];
+#endif
+
       /* We're cheating to get perfect reconstruction */
       syn_filt_zero(target, st->bw_lpc1, res, st->subframeSize, st->lpcSize);
       residue_zero(res, st->interp_qlpc, exc, st->subframeSize, st->lpcSize);

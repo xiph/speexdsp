@@ -21,14 +21,24 @@
 extern float gain_cdbk_nb[];
 
 
-/** Computes a 3-tap pitch predictor */
-int three_tap_ltp(float *x, int len, int start, int end, float *gain);
-
-/** Finds the best 3-tap pitch predictor from a codebook*/
-int ltp_closed_loop(float *x, int len, int start, int end, float *gain);
+/** Finds the best quantized 3-tap pitch predictor by analysis by synthesis */
+float pitch_search_3tap(
+float target[],                 /* Target vector */
+float ak[],                     /* LPCs for this subframe */
+float awk1[],                   /* Weighted LPCs #1 for this subframe */
+float awk2[],                   /* Weighted LPCs #2 for this subframe */
+float exc[],                    /* Overlapping codebook */
+int   start,                    /* Smallest pitch value allowed */
+int   end,                      /* Largest pitch value allowed */
+float *gain,                    /* 3-tab gains of optimum entry */
+int   *pitch,                   /* Best pitch delay */
+int   *gain_index,              /* Index of optimum gain */
+int   p,                        /* Number of LPC coeffs */
+int   nsf                       /* Number of samples in subframe */
+);
 
 /** Finds the best quantized 3-tap pitch predictor by analysis by synthesis */
-void pitch_search_3tap(
+float pitch_search_3tap_unquant(
 float target[],                 /* Target vector */
 float ak[],                     /* LPCs for this subframe */
 float awk1[],                   /* Weighted LPCs #1 for this subframe */

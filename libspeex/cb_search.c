@@ -81,7 +81,7 @@ int   nsf                       /* number of samples in subframe */
     d = 0.0; e = 0.0;
     for(i=0; i<nsf; i++) {
       d += target[i]*resp[i];
-      e += resp[i]*resp[i]+1;
+      e += resp[i]*resp[i];
     }
     g = d/(e+.1);
     score = g*d;
