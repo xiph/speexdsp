@@ -68,11 +68,11 @@ static spx_word16_t cos_32(spx_word16_t x)
    if (x<12868)
    {
       x2 = MULT16_16_Q13(x,x);
-      return C1 + MULT16_16_Q13(x2, C2 + MULT16_16_Q13(C3, x2));
+      return ADD32(C1, MULT16_16_Q13(x2, ADD32(C2, MULT16_16_Q13(C3, x2))));
    } else {
       x = 25736-x;
       x2 = MULT16_16_Q13(x,x);
-      return -C1 - MULT16_16_Q13(x2, C2 + MULT16_16_Q13(C3, x2));
+      return SUB32(-C1, MULT16_16_Q13(x2, ADD32(C2, MULT16_16_Q13(C3, x2))));
    }
 }
 
@@ -137,12 +137,12 @@ static spx_word32_t cheb_poly_eva(spx_word32_t *coef,spx_word16_t x,int m,char *
 
     /* Evaluate Chebyshev series formulation using iterative approach  */
     /* Evaluate polynomial and return value also free memory space */
-    sum = coefn[m2] + MULT16_16_P14(coefn[m2-1],x);
+    sum = ADD32(coefn[m2], MULT16_16_P14(coefn[m2-1],x));
     /*x *= 2;*/
     for(i=2;i<=m2;i++)
     {
        T[i] = MULT16_16_Q13(x,T[i-1]) - T[i-2];
-       sum += MULT16_16_P14(coefn[m2-i],T[i]);
+       sum = ADD32(sum, MULT16_16_P14(coefn[m2-i],T[i]));
        /*printf ("%f ", sum);*/
     }
     
@@ -385,7 +385,7 @@ void lsp_to_lpc(spx_lsp_t *freq,spx_coef_t *ak,int lpcrdr, char *stack)
     spx_word32_t *Wp;
     spx_word32_t *pw,*n1,*n2,*n3,*n4=NULL;
     spx_word16_t *freqn;
-    int m = lpcrdr/2;
+    int m = lpcrdr>>1;
     
     freqn = PUSH(stack, lpcrdr, spx_word16_t);
     for (i=0;i<lpcrdr;i++)
@@ -418,8 +418,8 @@ void lsp_to_lpc(spx_lsp_t *freq,spx_coef_t *ak,int lpcrdr, char *stack)
 	    n2 = n1 + 1;
 	    n3 = n2 + 1;
 	    n4 = n3 + 1;
-	    xout1 = xin1 - MULT16_32_Q14(freqn[i2],*n1) + *n2;
-            xout2 = xin2 - MULT16_32_Q14(freqn[i2+1],*n3) + *n4;
+	    xout1 = ADD32(SUB32(xin1, MULT16_32_Q14(freqn[i2],*n1)), *n2);
+            xout2 = ADD32(SUB32(xin2, MULT16_32_Q14(freqn[i2+1],*n3)), *n4);
 	    *n2 = *n1;
 	    *n4 = *n3;
 	    *n1 = xin1;
@@ -435,7 +435,7 @@ void lsp_to_lpc(spx_lsp_t *freq,spx_coef_t *ak,int lpcrdr, char *stack)
         else if (xout1 + xout2 < -256*32767)
            ak[j] = -32768;
         else
-           ak[j] = ((128+xout1 + xout2)>>8);
+           ak[j] = PSHR(ADD32(xout1,xout2),8);
 	*(n4+1) = xin1;
 	*(n4+2) = xin2;
 

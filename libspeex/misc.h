@@ -55,9 +55,24 @@ typedef spx_word32_t spx_sig_t;
 #define LPC_SHIFT    13
 #define SIG_SHIFT    14
 
+#ifdef COUNT_MIPS
+extern long long spx_mips;
+#endif
+
 #define PSHR(a,shift) (((a)+(1<<((shift)-1))) >> (shift))
 #define SHR(a,shift) ((a) >> (shift))
 #define SHL(a,shift) ((a) << (shift))
+
+#ifdef COUNT_MIPS
+/*Modified to count operations*/
+#define ADD16(a,b) (spx_mips++,(a)+(b))
+#define SUB16(a,b) (spx_mips++,(a)-(b))
+#define ADD32(a,b) (spx_mips++,(a)+(b))
+#define SUB32(a,b) (spx_mips++,(a)-(b))
+#define MULT16_16_16(a,b)     (spx_mips++,((short)(a))*((short)(b)))
+#define MULT16_16(a,b)     (spx_mips++,((int)(a))*((short)(b)))
+
+#else
 
 #define ADD16(a,b) ((a)+(b))
 #define SUB16(a,b) ((a)-(b))
@@ -66,9 +81,10 @@ typedef spx_word32_t spx_sig_t;
 
 /* result fits in 16 bits */
 #define MULT16_16_16(a,b)     (((short)(a))*((short)(b)))
-
 /* Kludge: just making sure results are on 32 bits */
 #define MULT16_16(a,b)     (((int)(a))*((short)(b)))
+
+#endif
 
 #define MULT16_32_Q11(a,b) ADD32(MULT16_16((a),SHR((b),11)), SHR(MULT16_16((a),((b)&0x000007ff)),11))
 #define MULT16_32_Q13(a,b) ADD32(MULT16_16((a),SHR((b),13)), SHR(MULT16_16((a),((b)&0x00001fff)),13))

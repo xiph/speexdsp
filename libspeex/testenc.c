@@ -3,6 +3,10 @@
 #include <stdlib.h>
 #include "speex_callbacks.h"
 
+#ifdef COUNT_MIPS
+extern long long spx_mips;
+#endif
+
 #define FRAME_SIZE 160
 #include <math.h>
 int main(int argc, char **argv)
@@ -119,6 +123,10 @@ int main(int argc, char **argv)
    snr = 10 * log10( sigpow / errpow );
    seg_snr /= snr_frames;
    fprintf(stderr,"SNR = %f\nsegmental SNR = %f\n",snr, seg_snr);
+
+#ifdef COUNT_MIPS
+   printf ("Total: %f MIPS\n", (float)(1e-6*50*spx_mips/snr_frames));
+#endif
    
    return 1;
 }

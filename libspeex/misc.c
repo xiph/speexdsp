@@ -46,6 +46,11 @@ void print_vec(float *vec, int len, char *name)
 }
 #endif
 
+#ifdef COUNT_MIPS
+long long spx_mips=0;
+#endif
+
+
 unsigned int be_int(unsigned int i)
 {
    unsigned int ret=i;
