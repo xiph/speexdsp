@@ -58,7 +58,6 @@ typedef struct SpeexEchoState {
    float *power;
    float *power_1;
    float *grad;
-   float *old_grad;
 
    struct drft_lookup *fft_lookup;
 
@@ -74,6 +73,9 @@ void speex_echo_state_destroy(SpeexEchoState *st);
 
 /** Performs echo cancellation a frame */
 void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, int *Y);
+
+/** Reset the echo canceller state */
+void speex_echo_reset(SpeexEchoState *st);
 
 #ifdef __cplusplus
 }

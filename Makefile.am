@@ -2,7 +2,7 @@
 
 # To disable automatic dependency tracking if using other tools than
 # gcc and gmake, add the option 'no-dependencies'
-AUTOMAKE_OPTIONS = foreign 1.6 dist-zip
+AUTOMAKE_OPTIONS = 1.6
 
 m4datadir = $(datadir)/aclocal
 m4data_DATA = speex.m4

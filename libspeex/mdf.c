@@ -75,13 +75,26 @@ SpeexEchoState *speex_echo_state_init(int frame_size, int filter_length)
    st->power = (float*)speex_alloc((frame_size+1)*sizeof(float));
    st->power_1 = (float*)speex_alloc((frame_size+1)*sizeof(float));
    st->grad = (float*)speex_alloc(N*M*sizeof(float));
-   st->old_grad = (float*)speex_alloc(N*M*sizeof(float));
    
    for (i=0;i<N*M;i++)
    {
       st->W[i] = 0;
    }
    return st;
+}
+
+void speex_echo_reset(SpeexEchoState *st)
+{
+   int i, M, N;
+   st->cancel_count=0;
+   st->adapt_rate = .01f;
+   N = st->window_size;
+   M = st->M;
+   for (i=0;i<N*M;i++)
+   {
+      st->W[i] = 0;
+      st->X[i] = 0;
+   }
 }
 
 /** Destroys an echo canceller state */
@@ -102,7 +115,6 @@ void speex_echo_state_destroy(SpeexEchoState *st)
    speex_free(st->power);
    speex_free(st->power_1);
    speex_free(st->grad);
-   speex_free(st->old_grad);
 
    speex_free(st);
 }
@@ -291,7 +303,6 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
 
       for (i=0;i<N;i++)
       {
-         st->old_grad[j*N+i] = st->PHI[i];
          st->grad[j*N+i] = st->PHI[i];
       }
 

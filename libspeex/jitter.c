@@ -85,10 +85,6 @@ void speex_jitter_put(SpeexJitter *jitter, char *packet, int len, int timestamp)
    {
       jitter->reset_state=0;
       jitter->pointer_timestamp = timestamp-jitter->frame_time * jitter->buffer_size;
-      jitter->drift_average = 0;
-      jitter->late_ratio = 0;
-      jitter->early_ratio = 0;
-      jitter->ontime_ratio = 0;
       for (i=0;i<MAX_MARGIN;i++)
       {
          jitter->shortterm_margin[i] = 0;
@@ -178,7 +174,7 @@ void speex_jitter_put(SpeexJitter *jitter, char *packet, int len, int timestamp)
    /*fprintf (stderr, "margin : %d %d %f %f %f %f\n", arrival_margin, jitter->buffer_size, 100*jitter->loss_rate, 100*jitter->late_ratio, 100*jitter->ontime_ratio, 100*jitter->early_ratio);*/
 }
 
-void speex_jitter_get(SpeexJitter *jitter, short *out)
+void speex_jitter_get(SpeexJitter *jitter, short *out, int *current_timestamp)
 {
    int i;
    int ret;
@@ -223,7 +219,8 @@ void speex_jitter_get(SpeexJitter *jitter, short *out)
       jitter->longterm_margin[0] = 0;            
       /*fprintf (stderr, "interpolate frame\n");*/
       speex_decode_int(jitter->dec, NULL, out);
-      jitter->drift_average += jitter->frame_time;
+      if (current_timestamp)
+         *current_timestamp = jitter->pointer_timestamp;
       return;
    }
    
@@ -243,9 +240,10 @@ void speex_jitter_get(SpeexJitter *jitter, short *out)
       jitter->longterm_margin[MAX_MARGIN-1] = 0;      
       /*fprintf (stderr, "drop frame\n");*/
       jitter->pointer_timestamp += jitter->frame_time;
-      jitter->drift_average -= jitter->frame_time;
    }
 
+   if (current_timestamp)
+      *current_timestamp = jitter->pointer_timestamp;
 
    /* Send zeros while we fill in the buffer */
    if (jitter->pointer_timestamp<0)
