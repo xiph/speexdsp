@@ -237,14 +237,14 @@ int main(int argc, char **argv)
          op.packet = (unsigned char *)"speex narrowband";
       if (wideband)
       op.packet = (unsigned char *)"speex wideband**";*/
-      op.packet = (unsigned char *)&header;
-      op.bytes = sizeof(header);
+      op.packet = (unsigned char *)speex_header_to_packet(&header, (int*)&(op.bytes));
       op.b_o_s = 1;
       op.e_o_s = 0;
       op.granulepos = 0;
       op.packetno = 0;
       ogg_stream_packetin(&os, &op);
-      
+      free(op.packet);
+
       op.packet = (unsigned char *)comments;
       op.bytes = strlen((char*)op.packet);
       op.b_o_s = 0;
