@@ -30,10 +30,10 @@ struct drft_lookup{
   int *splitcache;
 };
 
-extern void drft_forward(struct drft_lookup *l,float *data);
-extern void drft_backward(struct drft_lookup *l,float *data);
-extern void drft_init(struct drft_lookup *l,int n);
-extern void drft_clear(struct drft_lookup *l);
+extern void spx_drft_forward(struct drft_lookup *l,float *data);
+extern void spx_drft_backward(struct drft_lookup *l,float *data);
+extern void spx_drft_init(struct drft_lookup *l,int n);
+extern void spx_drft_clear(struct drft_lookup *l);
 
 #ifdef __cplusplus
 }

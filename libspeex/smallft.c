@@ -1230,17 +1230,17 @@ static void drftb1(int n, float *c, float *ch, float *wa, int *ifac){
   for(i=0;i<n;i++)c[i]=ch[i];
 }
 
-void drft_forward(struct drft_lookup *l,float *data){
+void spx_drft_forward(struct drft_lookup *l,float *data){
   if(l->n==1)return;
   drftf1(l->n,data,l->trigcache,l->trigcache+l->n,l->splitcache);
 }
 
-void drft_backward(struct drft_lookup *l,float *data){
+void spx_drft_backward(struct drft_lookup *l,float *data){
   if (l->n==1)return;
   drftb1(l->n,data,l->trigcache,l->trigcache+l->n,l->splitcache);
 }
 
-void drft_init(struct drft_lookup *l,int n)
+void spx_drft_init(struct drft_lookup *l,int n)
 {
   l->n=n;
   l->trigcache=(float*)speex_alloc(3*n*sizeof(*l->trigcache));
@@ -1248,7 +1248,7 @@ void drft_init(struct drft_lookup *l,int n)
   fdrffti(n, l->trigcache, l->splitcache);
 }
 
-void drft_clear(struct drft_lookup *l)
+void spx_drft_clear(struct drft_lookup *l)
 {
   if(l)
   {

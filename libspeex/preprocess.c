@@ -226,7 +226,7 @@ SpeexPreprocessState *speex_preprocess_state_init(int frame_size, int sampling_r
    st->nb_loudness_adapt = 0;
 
    st->fft_lookup = (struct drft_lookup*)speex_alloc(sizeof(struct drft_lookup));
-   drft_init(st->fft_lookup,2*N);
+   spx_drft_init(st->fft_lookup,2*N);
 
    st->nb_adapt=0;
    st->consec_noise=0;
@@ -263,7 +263,7 @@ void speex_preprocess_state_destroy(SpeexPreprocessState *st)
    speex_free(st->inbuf);
    speex_free(st->outbuf);
 
-   drft_clear(st->fft_lookup);
+   spx_drft_clear(st->fft_lookup);
    speex_free(st->fft_lookup);
 
    speex_free(st);
@@ -570,7 +570,7 @@ static void preprocess_analysis(SpeexPreprocessState *st, short *x)
       st->frame[i] *= st->window[i];
 
    /* Perform FFT */
-   drft_forward(st->fft_lookup, st->frame);
+   spx_drft_forward(st->fft_lookup, st->frame);
 
    /* Power spectrum */
    ps[0]=1;
@@ -899,7 +899,7 @@ int speex_preprocess(SpeexPreprocessState *st, short *x, int *echo)
    st->frame[2*N-1]=0;
 
    /* Inverse FFT with 1/N scaling */
-   drft_backward(st->fft_lookup, st->frame);
+   spx_drft_backward(st->fft_lookup, st->frame);
 
    for (i=0;i<2*N;i++)
       st->frame[i] *= scale;

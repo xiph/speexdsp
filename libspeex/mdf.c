@@ -60,7 +60,7 @@ SpeexEchoState *speex_echo_state_init(int frame_size, int filter_length)
    st->adapt_rate = .01f;
 
    st->fft_lookup = (struct drft_lookup*)speex_alloc(sizeof(struct drft_lookup));
-   drft_init(st->fft_lookup, N);
+   spx_drft_init(st->fft_lookup, N);
    
    st->x = (float*)speex_alloc(N*sizeof(float));
    st->d = (float*)speex_alloc(N*sizeof(float));
@@ -100,7 +100,7 @@ void speex_echo_reset(SpeexEchoState *st)
 /** Destroys an echo canceller state */
 void speex_echo_state_destroy(SpeexEchoState *st)
 {
-   drft_clear(st->fft_lookup);
+   spx_drft_clear(st->fft_lookup);
    speex_free(st->fft_lookup);
    speex_free(st->x);
    speex_free(st->d);
@@ -151,7 +151,7 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
       st->X[(M-1)*N+i]=st->x[i];
 
    /* Convert x (echo input) to frequency domain */
-   drft_forward(st->fft_lookup, &st->X[(M-1)*N]);
+   spx_drft_forward(st->fft_lookup, &st->X[(M-1)*N]);
 
    /* Compute filter response Y */
    for (i=1;i<N-1;i+=2)
@@ -174,7 +174,7 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
    /* Transform d (reference signal) to frequency domain */
    for (i=0;i<N;i++)
       st->D[i]=st->d[i];
-   drft_forward(st->fft_lookup, st->D);
+   spx_drft_forward(st->fft_lookup, st->D);
 
    /* Copy spectrum of Y to Yout for use in an echo post-filter */
    if (Yout)
@@ -192,7 +192,7 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
       st->y[i] = st->Y[i];
    
    /* Convery Y (filter response) to time domain */
-   drft_backward(st->fft_lookup, st->y);
+   spx_drft_backward(st->fft_lookup, st->y);
    for (i=0;i<N;i++)
       st->y[i] *= scale;
 
@@ -226,7 +226,7 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
    }
    
    /* Convert error to frequency domain */
-   drft_forward(st->fft_lookup, st->E);
+   spx_drft_forward(st->fft_lookup, st->E);
 
    /* Compute input power in each frequency bin */
    {
@@ -339,14 +339,14 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
    {
       if (st->cancel_count%M == j)
       {
-         drft_backward(st->fft_lookup, &st->W[j*N]);
+         spx_drft_backward(st->fft_lookup, &st->W[j*N]);
          for (i=0;i<N;i++)
             st->W[j*N+i]*=scale;
          for (i=st->frame_size;i<N;i++)
          {
             st->W[j*N+i]=0;
          }
-         drft_forward(st->fft_lookup, &st->W[j*N]);
+         spx_drft_forward(st->fft_lookup, &st->W[j*N]);
       }
 
    }
