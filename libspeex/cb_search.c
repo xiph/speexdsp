@@ -36,8 +36,6 @@
 #include "vq.h"
 #include "misc.h"
 
-#include <math.h>
-
 void split_cb_search_shape_sign(
 float target[],			/* target vector */
 float ak[],			/* LPCs for this subframe */
