@@ -285,13 +285,13 @@ void usage()
 
 void version()
 {
-   printf ("speexdec (Speex decoder) version " VERSION " (compiled " __DATE__ ")\n");
+   printf ("speexdec (Speex decoder) version " SPEEX_VERSION " (compiled " __DATE__ ")\n");
    printf ("Copyright (C) 2002-2003 Jean-Marc Valin\n");
 }
 
 void version_short()
 {
-   printf ("speexdec version " VERSION "\n");
+   printf ("speexdec version " SPEEX_VERSION "\n");
    printf ("Copyright (C) 2002-2003 Jean-Marc Valin\n");
 }
 

@@ -143,13 +143,13 @@ static int read_samples(FILE *fin,int frame_size, int bits, int channels, int ls
 
 void version()
 {
-   printf ("speexenc (Speex encoder) version " VERSION " (compiled " __DATE__ ")\n");
+   printf ("speexenc (Speex encoder) version " SPEEX_VERSION " (compiled " __DATE__ ")\n");
    printf ("Copyright (C) 2002-2003 Jean-Marc Valin\n");
 }
 
 void version_short()
 {
-   printf ("speexenc version " VERSION "\n");
+   printf ("speexenc version " SPEEX_VERSION "\n");
    printf ("Copyright (C) 2002-2003 Jean-Marc Valin\n");
 }
 
@@ -268,7 +268,7 @@ int main(int argc, char **argv)
    SpeexHeader header;
    int nframes=1;
    int complexity=3;
-   char *vendor_string = "Encoded with Speex " VERSION;
+   char *vendor_string = "Encoded with Speex " SPEEX_VERSION;
    char *comments;
    int comments_length;
    int close_in=0, close_out=0;
