@@ -48,24 +48,6 @@ float *stack,
 float *exc2
 );
 
-/** Finds the best quantized 3-tap pitch predictor by analysis by synthesis */
-int pitch_search_3tap_unquant(
-float target[],                 /* Target vector */
-float *sw,
-float ak[],                     /* LPCs for this subframe */
-float awk1[],                   /* Weighted LPCs #1 for this subframe */
-float awk2[],                   /* Weighted LPCs #2 for this subframe */
-float exc[],                    /* Excitation */
-void *par,
-int   start,                    /* Smallest pitch value allowed */
-int   end,                      /* Largest pitch value allowed */
-int   p,                        /* Number of LPC coeffs */
-int   nsf,                      /* Number of samples in subframe */
-SpeexBits *bits,
-float *stack,
-float *exc2
-);
-
 /*Unquantize adaptive codebook and update pitch contribution*/
 void pitch_unquant_3tap(
 float exc[],                    /* Excitation */
