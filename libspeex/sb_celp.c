@@ -265,7 +265,7 @@ void sb_encode(void *state, float *in, SpeexBits *bits)
 {
    SBEncState *st;
    int i, roots, sub;
-   float *stack;
+   void *stack;
    float *mem, *innov, *syn_resp;
 
    st = state;
@@ -675,7 +675,7 @@ void sb_decoder_destroy(void *state)
    speex_free(state);
 }
 
-static void sb_decode_lost(SBDecState *st, float *out, float *stack)
+static void sb_decode_lost(SBDecState *st, float *out, void *stack)
 {
    int i;
    for (i=0;i<st->frame_size;i++)
@@ -702,7 +702,7 @@ int sb_decode(void *state, SpeexBits *bits, float *out)
    SBDecState *st;
    int wideband;
    int ret;
-   float *stack;
+   void *stack;
 
    st = state;
    stack=st->stack;

@@ -220,7 +220,7 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
    float ol_gain;
    float delta_qual=0;
    float *res, *target, *mem;
-   float *stack;
+   void *stack;
    float *syn_resp;
 
    st=state;
@@ -804,7 +804,7 @@ void nb_decoder_destroy(void *state)
    speex_free(state);
 }
 
-static void nb_decode_lost(DecState *st, float *out, float *stack)
+static void nb_decode_lost(DecState *st, float *out, void *stack)
 {
    int i, sub;
    float *awk1, *awk2, *awk3;
@@ -899,7 +899,7 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
    float best_pitch_gain=-1;
    int wideband;
    int m;
-   float *stack;
+   void *stack;
    float *awk1, *awk2, *awk3;
    st=state;
    stack=st->stack;

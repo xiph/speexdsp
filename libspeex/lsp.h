@@ -47,8 +47,8 @@ Modified by Jean-Marc Valin
 #ifndef __AK2LSPD__
 #define __AK2LSPD__
 
-int lpc_to_lsp (float *a, int lpcrdr, float *freq, int nb, float delta, float *stack);
-void lsp_to_lpc(float *freq, float *ak, int lpcrdr, float *stack);
+int lpc_to_lsp (float *a, int lpcrdr, float *freq, int nb, float delta, void *stack);
+void lsp_to_lpc(float *freq, float *ak, int lpcrdr, void *stack);
 
 /*Added by JMV*/
 void lsp_enforce_margin(float *lsp, int len, float margin);

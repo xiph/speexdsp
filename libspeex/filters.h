@@ -50,9 +50,9 @@ void bw_lpc(float gamma, float *lpc_in, float *lpc_out, int order);
 /* FIR filter */
 void fir_decim_mem(float *x, float *a, float *y, int N, int M, float *mem);
 
-void syn_percep_zero(float *x, float *ak, float *awk1, float *awk2, float *y, int N, int ord, float *stack);
+void syn_percep_zero(float *x, float *ak, float *awk1, float *awk2, float *y, int N, int ord, void *stack);
 
-void residue_percep_zero(float *xx, float *ak, float *awk1, float *awk2, float *y, int N, int ord, float *stack);
+void residue_percep_zero(float *xx, float *ak, float *awk1, float *awk2, float *y, int N, int ord, void *stack);
 
 void comb_filter(
 float *exc,          /*decoded excitation*/

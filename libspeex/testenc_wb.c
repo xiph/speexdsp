@@ -99,6 +99,7 @@ int main(int argc, char **argv)
    fprintf (stderr, "Total encoded size: %d bits\n", bitCount);
    speex_encoder_destroy(st);
    speex_decoder_destroy(dec);
+   speex_bits_destroy(&bits);
    fclose(fin);
    fclose(fout);
    return 1;

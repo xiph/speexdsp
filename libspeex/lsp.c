@@ -111,7 +111,7 @@ float cheb_poly_eva(float *coef,float x,int m,float *stack)
 \*---------------------------------------------------------------------------*/
 
 
-int lpc_to_lsp (float *a,int lpcrdr,float *freq,int nb,float delta, float *stack)
+int lpc_to_lsp (float *a,int lpcrdr,float *freq,int nb,float delta, void *stack)
 /*  float *a 		     	lpc coefficients			*/
 /*  int lpcrdr			order of LPC coefficients (10) 		*/
 /*  float *freq 	      	LSP frequencies in the x domain       	*/
@@ -247,7 +247,7 @@ int lpc_to_lsp (float *a,int lpcrdr,float *freq,int nb,float delta, float *stack
 \*---------------------------------------------------------------------------*/
 
 
-void lsp_to_lpc(float *freq,float *ak,int lpcrdr, float *stack)
+void lsp_to_lpc(float *freq,float *ak,int lpcrdr, void *stack)
 /*  float *freq 	array of LSP frequencies in the x domain	*/
 /*  float *ak 		array of LPC coefficients 			*/
 /*  int lpcrdr  	order of LPC coefficients 			*/

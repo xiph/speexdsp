@@ -107,7 +107,7 @@ void fir_mem2(float *x, float *num, float *y, int N, int ord, float *mem)
    }
 }
 
-void syn_percep_zero(float *xx, float *ak, float *awk1, float *awk2, float *y, int N, int ord, float *stack)
+void syn_percep_zero(float *xx, float *ak, float *awk1, float *awk2, float *y, int N, int ord, void *stack)
 {
    int i;
    float *mem = PUSH(stack,ord, float);
@@ -119,7 +119,7 @@ void syn_percep_zero(float *xx, float *ak, float *awk1, float *awk2, float *y, i
    iir_mem2(y, awk2, y, N, ord, mem);
 }
 
-void residue_percep_zero(float *xx, float *ak, float *awk1, float *awk2, float *y, int N, int ord, float *stack)
+void residue_percep_zero(float *xx, float *ak, float *awk1, float *awk2, float *y, int N, int ord, void *stack)
 {
    int i;
    float *mem = PUSH(stack,ord, float);

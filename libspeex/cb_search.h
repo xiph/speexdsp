@@ -55,7 +55,7 @@ int   nsf,                      /* number of samples in subframe */
 float *exc,
 float *r,
 SpeexBits *bits,
-float *stack,
+void *stack,
 int   complexity
 );
 
@@ -64,7 +64,7 @@ float *exc,
 void *par,                      /* non-overlapping codebook */
 int   nsf,                      /* number of samples in subframe */
 SpeexBits *bits,
-float *stack
+void *stack
 );
 
 
@@ -79,7 +79,7 @@ int   nsf,                      /* number of samples in subframe */
 float *exc,
 float *r,
 SpeexBits *bits,
-float *stack,
+void *stack,
 int   complexity
 );
 
@@ -89,7 +89,7 @@ float *exc,
 void *par,                      /* non-overlapping codebook */
 int   nsf,                      /* number of samples in subframe */
 SpeexBits *bits,
-float *stack
+void *stack
 );
 
 #endif
