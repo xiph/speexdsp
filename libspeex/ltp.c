@@ -275,7 +275,7 @@ float *exc2
 )
 {
    int i,j;
-   int cdbk_index, pitch, best_gain_index=0;
+   int cdbk_index, pitch=0, best_gain_index=0;
    float *best_exc;
    int best_pitch=0;
    float err, best_err=-1;
@@ -345,7 +345,6 @@ int lost)
    gain_cdbk=params->gain_cdbk;
 
    pitch = speex_bits_unpack_unsigned(bits, params->pitch_bits);
-   printf ("decode ltp: %d %d %d\n", start, end, pitch);
    pitch += start;
    gain_index = speex_bits_unpack_unsigned(bits, params->gain_bits);
    /*printf ("decode pitch: %d %d\n", pitch, gain_index);*/

@@ -74,12 +74,16 @@ void lpc_flat(float gamma, float *lpc_in, float *lpc_out, int order)
    float re[10], im[10], conv[10];
    float alpha;
    alpha = 1/(4-4*gamma);
-   poly_roots(lpc_in, re, im, conv, 10, 20, 7);
+   poly_roots(lpc_in, re, im, conv, 10, 30, 7);
    for (i=0;i<order;i++)
    {
       float fact,tmp;
       float radius = sqrt(re[i]*re[i]+im[i]*im[i]);
+      /*if (radius>1)
+        fprintf(stderr, "radius = %f\n", radius);*/
       tmp=1-radius;
+      if (tmp<0)
+         tmp=0;
       if (tmp>2-2*gamma)
          fact = tmp;
       else
