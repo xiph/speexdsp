@@ -39,10 +39,12 @@ typedef struct SpeexStereoState {
    float e_ratio;
 } SpeexStereoState;
 
-#define SPEEX_DEFAULT_STEREO_STATE {1,2}
+#define SPEEX_STEREO_STATE_INIT {1,.5}
 
-void encode_stereo(float *data, int frame_size, SpeexBits *bits);
+void speex_encode_stereo(float *data, int frame_size, SpeexBits *bits);
 
-void decode_stereo(float *data, int frame_size, SpeexStereoState *stereo);
+void speex_decode_stereo(float *data, int frame_size, SpeexStereoState *stereo);
+
+int speex_std_stereo_request_handler(SpeexBits *bits, void *state, void *data);
 
 #endif

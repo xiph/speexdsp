@@ -60,6 +60,8 @@
 #include <string.h>
 #include "wav_io.h"
 #include "speex_header.h"
+#include "speex_stereo.h"
+#include "speex_callbacks.h"
 #include "misc.h"
 
 #define MAX_FRAME_SIZE 2000
@@ -91,7 +93,7 @@ static void print_comments(char *comments, int length)
    }
 }
 
-FILE *out_file_open(char *outFile, int rate)
+FILE *out_file_open(char *outFile, int rate, int *channels)
 {
    FILE *fout=NULL;
    /*Open output file*/
@@ -110,6 +112,8 @@ FILE *out_file_open(char *outFile, int rate)
       }
       
       stereo=0;
+      if (*channels=2)
+         stereo=1;
       if (ioctl(audio_fd, SNDCTL_DSP_STEREO, &stereo)==-1)
       {
          perror("SNDCTL_DSP_STEREO");
@@ -118,8 +122,10 @@ FILE *out_file_open(char *outFile, int rate)
       }
       if (stereo!=0)
       {
+         if (*channels==1)
+            fprintf (stderr, "Cannot set mono mode, will decode in stereo\n");
+         *channels=2;
          fprintf (stderr, "Cannot set mono mode\n");
-         exit(1);
       }
 
       if (ioctl(audio_fd, SNDCTL_DSP_SPEED, &rate)==-1)
@@ -160,7 +166,7 @@ FILE *out_file_open(char *outFile, int rate)
             exit(1);
          }
          if (strcmp(outFile+strlen(outFile)-4,".wav")==0 || strcmp(outFile+strlen(outFile)-4,".WAV")==0)
-            write_wav_header(fout, rate, 1, 0, 0);
+            write_wav_header(fout, rate, *channels, 0, 0);
       }
    }
    return fout;
@@ -190,6 +196,8 @@ void usage()
    printf (" --no-enh              Disable perceptual enhancement (default FOR NOW)\n");
    printf (" --force-nb            Force decoding in narrowband, even for wideband\n");
    printf (" --force-wb            Force decoding in wideband, even for narrowband\n");
+   printf (" --mono                Force decoding in mono\n");
+   printf (" --stereo              Force decoding in stereo\n");
    printf (" --packet-loss n       Simulate n %% random packet loss\n");
    printf (" -V                    Verbose mode (show bit-rate)\n"); 
    printf (" -h, --help            This help\n");
@@ -207,13 +215,14 @@ void version()
    printf ("Speex decoder version " VERSION " (compiled " __DATE__ ")\n");
 }
 
-static void *process_header(ogg_packet *op, int enh_enabled, int *frame_size, int *rate, int *nframes, int forceMode)
+static void *process_header(ogg_packet *op, int enh_enabled, int *frame_size, int *rate, int *nframes, int forceMode, int *channels, SpeexStereoState *stereo)
 {
    void *st;
    SpeexMode *mode;
    SpeexHeader *header;
    int modeID;
-   
+   SpeexCallback callback;
+      
    header = speex_packet_to_header((char*)op->packet, op->bytes);
    if (!header)
    {
@@ -246,6 +255,11 @@ static void *process_header(ogg_packet *op, int enh_enabled, int *frame_size, in
    st = speex_decoder_init(mode);
    speex_decoder_ctl(st, SPEEX_SET_ENH, &enh_enabled);
    speex_decoder_ctl(st, SPEEX_GET_FRAME_SIZE, frame_size);
+
+   callback.callback_id = SPEEX_INBAND_STEREO;
+   callback.func = speex_std_stereo_request_handler;
+   callback.data = stereo;
+   speex_decoder_ctl(st, SPEEX_SET_HANDLER, &callback);
    
    /* FIXME: need to adjust in case the forceMode option is set */
    *rate = header->rate;
@@ -254,6 +268,9 @@ static void *process_header(ogg_packet *op, int enh_enabled, int *frame_size, in
    if (header->mode==0 && forceMode==1)
       *rate*=2;
    *nframes = header->frames_per_packet;
+
+   if (*channels==-1)
+      *channels = header->nb_channels;
    
    fprintf (stderr, "Decoding %d Hz audio using %s mode", 
             *rate, mode->modeName);
@@ -292,6 +309,8 @@ int main(int argc, char **argv)
       {"no-pf", no_argument, NULL, 0},
       {"force-nb", no_argument, NULL, 0},
       {"force-wb", no_argument, NULL, 0},
+      {"mono", no_argument, NULL, 0},
+      {"stereo", no_argument, NULL, 0},
       {"packet-loss", required_argument, NULL, 0},
       {0, 0, 0, 0}
    };
@@ -307,6 +326,8 @@ int main(int argc, char **argv)
    int forceMode=-1;
    int audio_size=0;
    float loss_percent=-1;
+   SpeexStereoState stereo = SPEEX_STEREO_STATE_INIT;
+   int channels=-1;
 
    enh_enabled = 0;
 
@@ -349,6 +370,12 @@ int main(int argc, char **argv)
          } else if (strcmp(long_options[option_index].name,"force-wb")==0)
          {
             forceMode=1;
+         } else if (strcmp(long_options[option_index].name,"mono")==0)
+         {
+            channels=1;
+         } else if (strcmp(long_options[option_index].name,"stereo")==0)
+         {
+            channels=2;
          } else if (strcmp(long_options[option_index].name,"packet-loss")==0)
          {
             loss_percent = atof(optarg);
@@ -437,12 +464,12 @@ int main(int argc, char **argv)
             if (packet_count==0)
             {
                int rate;
-               st = process_header(&op, enh_enabled, &frame_size, &rate, &nframes, forceMode);
+               st = process_header(&op, enh_enabled, &frame_size, &rate, &nframes, forceMode, &channels, &stereo);
                if (!nframes)
                   nframes=1;
                if (!st)
                   exit(1);
-               fout = out_file_open(outFile, rate);
+               fout = out_file_open(outFile, rate, &channels);
 
             } else if (packet_count==1){
                print_comments((char*)op.packet, op.bytes);
@@ -471,6 +498,9 @@ int main(int argc, char **argv)
                   else
                      speex_decode(st, NULL, output);
 
+                  if (channels==2)
+                     speex_decode_stereo(output, frame_size, &stereo);
+
                   if (print_bitrate) {
                      int tmp;
                      char ch=13;
@@ -479,7 +509,7 @@ int main(int argc, char **argv)
                      fprintf (stderr, "Bitrate is use: %d bps     ", tmp);
                   }
                   /*PCM saturation (just in case)*/
-                  for (i=0;i<frame_size;i++)
+                  for (i=0;i<frame_size*channels;i++)
                   {
                      if (output[i]>32000.0)
                         output[i]=32000.0;
@@ -487,15 +517,17 @@ int main(int argc, char **argv)
                         output[i]=-32000.0;
                   }
                   /*Convert to short and save to output file*/
-                  for (i=0;i<frame_size;i++)
+                  for (i=0;i<frame_size*channels;i++)
                      out[i]=(short)le_short((short)output[i]);
 #if defined WIN32 || defined _WIN32
                   if (strlen(outFile)==0)
-                      WIN_Play_Samples (out, sizeof(short) * frame_size);
+                      WIN_Play_Samples (out, sizeof(short) * frame_size*channels);
                   else
 #endif
-                  fwrite(out, sizeof(short), frame_size, fout);
-                  audio_size+=sizeof(short)*frame_size;
+                  fwrite(out, sizeof(short), frame_size*channels, fout);
+                  
+                  /*FIXME: Not sure we should multiply by channels here*/
+                  audio_size+=sizeof(short)*frame_size*channels;
                }
             }
             packet_count++;

@@ -42,6 +42,7 @@
 #include <ogg/ogg.h>
 #include "wav_io.h"
 #include "speex_header.h"
+#include "speex_stereo.h"
 #include "misc.h"
 
 #if defined WIN32 || defined _WIN32
@@ -441,6 +442,7 @@ int main(int argc, char **argv)
    speex_init_header(&header, rate, 1, mode);
    header.frames_per_packet=nframes;
    header.vbr=vbr_enabled;
+   header.nb_channels = chan;
 
    fprintf (stderr, "Encoding %d Hz audio using %s mode\n", 
             header.rate, mode->modeName);
