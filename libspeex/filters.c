@@ -50,7 +50,7 @@ void bw_lpc(float gamma, spx_coef_t *lpc_in, spx_coef_t *lpc_out, int order)
 #ifdef FIXED_POINT
 
 
-int fixed_point_on = 0;
+int fixed_point_on = 1;
 
 #define MUL_16_32_R15(a,bh,bl) ((a)*(bh) + ((a)*(bl)>>15))
 

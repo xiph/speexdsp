@@ -215,7 +215,7 @@ int nb_encode(void *state, float *in, SpeexBits *bits)
    /* Copy new data in input buffer */
    speex_move(st->inBuf, st->inBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(float));
    for (i=0;i<st->frameSize;i++)
-      st->inBuf[st->bufSize-st->frameSize+i] = in[i];
+      st->inBuf[st->bufSize-st->frameSize+i] = SIG_SCALING*in[i];
 
    /* Move signals 1 frame towards the past */
    speex_move(st->exc2Buf, st->exc2Buf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(float));
@@ -225,7 +225,7 @@ int nb_encode(void *state, float *in, SpeexBits *bits)
 
    /* Window for analysis */
    for (i=0;i<st->windowSize;i++)
-      st->buf2[i] = st->frame[i] * st->window[i];
+      st->buf2[i] = st->frame[i] * st->window[i] / SIG_SCALING;
 
    /* Compute auto-correlation */
    _spx_autocorr(st->buf2, st->autocorr, st->lpcSize+1, st->windowSize);
@@ -346,9 +346,9 @@ int nb_encode(void *state, float *in, SpeexBits *bits)
       {
          float ol1=0,ol2=0;
          for (i=0;i<st->frameSize>>1;i++)
-            ol1 += st->exc[i]*st->exc[i];
+            ol1 += st->exc[i]*st->exc[i] / (SIG_SCALING*SIG_SCALING);
          for (i=st->frameSize>>1;i<st->frameSize;i++)
-            ol2 += st->exc[i]*st->exc[i];
+            ol2 += st->exc[i]*st->exc[i] / (SIG_SCALING*SIG_SCALING);
 
          ol_gain=ol1;
          if (ol2>ol1)
@@ -361,7 +361,7 @@ int nb_encode(void *state, float *in, SpeexBits *bits)
 #endif
       ol_gain=0;
       for (i=0;i<st->frameSize;i++)
-         ol_gain += st->exc[i]*st->exc[i];
+         ol_gain += st->exc[i]*st->exc[i] / (SIG_SCALING*SIG_SCALING);
       
       ol_gain=sqrt(1+ol_gain/st->frameSize);
 #ifdef EPIC_48K
@@ -678,7 +678,7 @@ int nb_encode(void *state, float *in, SpeexBits *bits)
       /* Compute impulse response of A(z/g1) / ( A(z)*A(z/g2) )*/
       for (i=0;i<st->subframeSize;i++)
          exc[i]=0;
-      exc[0]=1;
+      exc[0]=SIG_SCALING;
       syn_percep_zero(exc, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2, syn_resp, st->subframeSize, st->lpcSize, stack);
 
       /* Reset excitation */
@@ -779,7 +779,7 @@ int nb_encode(void *state, float *in, SpeexBits *bits)
          
          residue_percep_zero(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2, st->buf2, st->subframeSize, st->lpcSize, stack);
          for (i=0;i<st->subframeSize;i++)
-            ener+=st->buf2[i]*st->buf2[i];
+            ener+=st->buf2[i]*st->buf2[i] / (SIG_SCALING*SIG_SCALING);
          ener=sqrt(.1+ener/st->subframeSize);
          /*for (i=0;i<st->subframeSize;i++)
             printf ("%f\n", st->buf2[i]/ener);
@@ -815,8 +815,12 @@ int nb_encode(void *state, float *in, SpeexBits *bits)
 
          /* Normalize innovation */
          for (i=0;i<st->subframeSize;i++)
-            target[i]*=ener_1;
+            target[i]*=ener_1/SIG_SCALING;
          
+         FLOAT_SIGNAL;
+         for (i=0;i<st->subframeSize;i++)
+            syn_resp[i]/=SIG_SCALING;
+
          /* Quantize innovation */
          if (SUBMODE(innovation_quant))
          {
@@ -827,7 +831,7 @@ int nb_encode(void *state, float *in, SpeexBits *bits)
             
             /* De-normalize innovation and update excitation */
             for (i=0;i<st->subframeSize;i++)
-               innov[i]*=ener;
+               innov[i]*=ener*SIG_SCALING;
             for (i=0;i<st->subframeSize;i++)
                exc[i] += innov[i];
          } else {
@@ -846,13 +850,17 @@ int nb_encode(void *state, float *in, SpeexBits *bits)
                                       SUBMODE(innovation_params), st->lpcSize, st->subframeSize, 
                                       innov2, syn_resp, bits, tmp_stack, st->complexity);
             for (i=0;i<st->subframeSize;i++)
-               innov2[i]*=ener*(1/2.2);
+               innov2[i]*=ener*(1/2.2)*SIG_SCALING;
             for (i=0;i<st->subframeSize;i++)
                exc[i] += innov2[i];
          }
 
+         FIXED_SIGNAL;
          for (i=0;i<st->subframeSize;i++)
-            target[i]*=ener;
+            syn_resp[i]*=SIG_SCALING;
+
+         for (i=0;i<st->subframeSize;i++)
+            target[i]*=ener*SIG_SCALING;
 
       }
 
@@ -902,7 +910,7 @@ int nb_encode(void *state, float *in, SpeexBits *bits)
 
    /* Replace input by synthesized speech */
    for (i=0;i<st->frameSize;i++)
-     in[i]=st->frame[i];
+     in[i]=st->frame[i]/SIG_SCALING;
 
    if (SUBMODE(innovation_quant) == noise_codebook_quant || st->submodeID==0)
       st->bounded_pitch = 1;
@@ -1591,7 +1599,6 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
       if (st->lpc_enh_enabled && SUBMODE(comb_gain)>0)
          comb_filter(exc, sp, st->interp_qlpc, st->lpcSize, st->subframeSize,
                               pitch, pitch_gain, SUBMODE(comb_gain), st->comb_mem);
-      FIXED_SIGNAL;
 
       if (st->lpc_enh_enabled)
       {
@@ -1607,8 +1614,6 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
          iir_mem2(sp, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, 
                      st->mem_sp);
       }
-
-      FLOAT_SIGNAL;
    }
    
    /*Copy output signal*/

@@ -204,7 +204,7 @@ int cdbk_offset
             x[i][j+1]=x[i+1][j];
          x[i][0]=0;
          for (j=0;j<nsf;j++)
-            x[i][j]+=e[i][0]*r[j];
+            x[i][j]+=e[i][0]*r[j]/SIG_SCALING;
       }
    }
 
