@@ -34,6 +34,7 @@
 #include "stack_alloc.h"
 #include <math.h>
 #include "misc.h"
+#include "math_approx.h"
 
 void bw_lpc(float gamma, spx_coef_t *lpc_in, spx_coef_t *lpc_out, int order)
 {
@@ -45,6 +46,7 @@ void bw_lpc(float gamma, spx_coef_t *lpc_in, spx_coef_t *lpc_out, int order)
       tmp *= gamma;
    }
 }
+
 
 
 #ifdef FIXED_POINT
@@ -116,7 +118,7 @@ spx_word16_t compute_rms(spx_sig_t *x, int len)
    }
    
    /*FIXME: remove division*/
-   return (1<<(sig_shift+3))*sqrt(1+sum/len)/(float)SIG_SCALING;
+   return SHR(SHL((spx_word32_t)sqroot(1+sum/len),(sig_shift+3)),SIG_SHIFT);
 }
 
 
