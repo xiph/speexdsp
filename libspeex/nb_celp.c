@@ -204,6 +204,8 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
    speex_move(st->excBuf, st->excBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(float));
    speex_move(st->swBuf, st->swBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(float));
 
+
+
    /* Window for analysis */
    for (i=0;i<st->windowSize;i++)
       st->buf2[i] = st->frame[i] * st->window[i];
@@ -279,7 +281,7 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
    {
       delta_qual = vbr_analysis(st->vbr, in, st->frameSize, ol_pitch, ol_pitch_coef);
       if (delta_qual<0)
-         delta_qual*=.1*(4+st->vbr_quality);
+         delta_qual*=.1*(3+st->vbr_quality);
       if (st->vbr_enabled) 
       {
          int qual = (int)floor(st->vbr_quality+delta_qual+.5);
@@ -295,6 +297,29 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
    /* First, transmit the sub-mode we use for this frame */
    speex_bits_pack(bits, st->submodeID, NB_SUBMODE_BITS);
 
+
+   /* If null mode (no transmission), just set a couple things to zero*/
+   if (st->submodes[st->submodeID] == NULL)
+   {
+      fprintf (stderr, "Null mode\n");
+      for (i=0;i<st->frameSize;i++)
+         st->exc[i]=st->exc2[i]=st->sw[i]=0;
+
+      for (i=0;i<st->lpcSize;i++)
+         st->mem_sw[i]=0;
+      st->first=1;
+
+      /* Final signal synthesis from excitation */
+      syn_filt_mem(st->exc, st->interp_qlpc, st->frame, st->subframeSize, st->lpcSize, st->mem_sp);
+
+      in[0] = st->frame[0] + st->preemph*st->pre_mem2;
+      for (i=1;i<st->frameSize;i++)
+         in[i]=st->frame[i] + st->preemph*in[i-1];
+      st->pre_mem2=in[st->frameSize-1];
+
+      return;
+
+   }
 
    /*Quantize LSPs*/
 #if 1 /*0 for unquantized*/
@@ -413,7 +438,7 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
       for (i=0;i<st->subframeSize;i++)
          exc2[i]=0;
 
-      /* Compute zero response of A(z/g1) / ( A(z/g2) * Aq(z) ) */
+      /* Compute zero response of A(z/g1) / ( A(z/g2) * A(z) ) */
       for (i=0;i<st->lpcSize;i++)
          mem[i]=st->mem_sp[i];
       syn_filt_mem(exc, st->interp_qlpc, exc, st->subframeSize, st->lpcSize, mem);
@@ -502,46 +527,6 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
 #endif
 
 
-#if 0 /*If set to 1, compute "real innovation" i.e. cheat to get perfect reconstruction*/
-      syn_filt_zero(target, st->bw_lpc1, res, st->subframeSize, st->lpcSize);
-      residue_zero(res, st->interp_qlpc, st->buf2, st->subframeSize, st->lpcSize);
-      residue_zero(st->buf2, st->bw_lpc2, st->buf2, st->subframeSize, st->lpcSize);
-      /*if (1||(snr>9 && (rand()%6==0)))
-      {
-         float ener=0;
-         printf ("exc ");
-         for (i=0;i<st->subframeSize;i++)
-         {
-            ener+=st->buf2[i]*st->buf2[i];
-            if (i && i%5==0)
-               printf ("\nexc ");
-            printf ("%f ", st->buf2[i]);
-         }
-         printf ("\n");
-      printf ("innovation_energy = %f\n", ener);
-      }*/
-      if (rand()%5==0 && snr>5)
-      {
-         float ener=0, sign=1;
-         if (rand()%2)
-            sign=-1;
-         for (i=0;i<st->subframeSize;i++)
-         {
-            ener+=st->buf2[i]*st->buf2[i];
-         }
-         ener=sign/sqrt(.01+ener/st->subframeSize);
-         for (i=0;i<st->subframeSize;i++)
-         {
-            if (i%10==0)
-               printf ("\nexc ");
-            printf ("%f ", ener*st->buf2[i]);
-         }
-         printf ("\n");
-      }
-
-      for (i=0;i<st->subframeSize;i++)
-         exc[i]+=st->buf2[i];
-#else
       /* Quantization of innovation */
       {
          float *innov;
@@ -596,7 +581,7 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
             target[i]*=ener;
 
       }
-#endif
+
       /* Compute weighted noise energy and SNR */
       enoise=0;
       for (i=0;i<st->subframeSize;i++)
@@ -616,25 +601,9 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
       residue_mem(sp, st->bw_lpc1, sw, st->subframeSize, st->lpcSize, mem);
       syn_filt_mem(sw, st->bw_lpc2, sw, st->subframeSize, st->lpcSize, st->mem_sw);
 
-#if 0
-      /*for (i=0;i<st->subframeSize;i++)
-        exc2[i]=.75*exc[i]+.2*exc[i-pitch]+.05*exc[i-2*pitch];*/
-      {
-         float max_exc=0;
-         for (i=0;i<st->subframeSize;i++)
-            if (fabs(exc[i])>max_exc)
-               max_exc=fabs(exc[i]);
-         max_exc=1/(max_exc+.01);
-         for (i=0;i<st->subframeSize;i++)
-         {
-            float xx=max_exc*exc[i];
-            exc2[i]=exc[i]*(1-exp(-100*xx*xx));
-         }
-      }
-#else
       for (i=0;i<st->subframeSize;i++)
          exc2[i]=exc[i];
-#endif
+
       POP(st->stack);
       POP(st->stack);
       POP(st->stack);
@@ -747,6 +716,24 @@ void nb_decode(void *state, SpeexBits *bits, float *out, int lost)
    /* Shift all buffers by one frame */
    speex_move(st->inBuf, st->inBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(float));
    speex_move(st->excBuf, st->excBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(float));
+
+   /* If null mode (no transmission), just set a couple things to zero*/
+   if (st->submodes[st->submodeID] == NULL)
+   {
+      for (i=0;i<st->frameSize;i++)
+         st->exc[i]=0;
+      st->first=1;
+      
+      /* Final signal synthesis from excitation */
+      syn_filt_mem(st->exc, st->interp_qlpc, st->frame, st->subframeSize, st->lpcSize, st->mem_sp);
+
+      out[0] = st->frame[0] + st->preemph*st->pre_mem;
+      for (i=1;i<st->frameSize;i++)
+         out[i]=st->frame[i] + st->preemph*out[i-1];
+      st->pre_mem=out[st->frameSize-1];
+      st->count_lost=0;
+      return;
+   }
 
    /* Unquantize LSPs */
    SUBMODE(lsp_unquant)(st->qlsp, st->lpcSize, bits);
@@ -941,9 +928,6 @@ void nb_decode(void *state, SpeexBits *bits, float *out, int lost)
    }
    
    /*Copy output signal*/
-   for (i=0;i<st->frameSize;i++)
-      out[i]=st->frame[i];
-
    out[0] = st->frame[0] + st->preemph*st->pre_mem;
    for (i=1;i<st->frameSize;i++)
      out[i]=st->frame[i] + st->preemph*out[i-1];
@@ -998,7 +982,7 @@ void nb_encoder_ctl(void *state, int request, void *ptr)
       {
          int quality = (*(int*)ptr);
          if (quality<=0)
-            st->submodeID = 1;
+            st->submodeID = 0;
          else if (quality<=1)
             st->submodeID = 1;
          else if (quality<=2)
@@ -1022,7 +1006,10 @@ void nb_encoder_ctl(void *state, int request, void *ptr)
       (*(int*)ptr) = st->complexity;
       break;
    case SPEEX_GET_BITRATE:
-      (*(int*)ptr) = SUBMODE(bitrate);
+      if (st->submodes[st->submodeID])
+         (*(int*)ptr) = SUBMODE(bitrate);
+      else
+         (*(int*)ptr) = 200;
       break;
    default:
       fprintf(stderr, "Unknown nb_ctl request: %d\n", request);
@@ -1045,7 +1032,10 @@ void nb_decoder_ctl(void *state, int request, void *ptr)
       (*(int*)ptr) = st->frameSize;
       break;
    case SPEEX_GET_BITRATE:
-      (*(int*)ptr) = SUBMODE(bitrate);
+      if (st->submodes[st->submodeID])
+         (*(int*)ptr) = SUBMODE(bitrate);
+      else
+         (*(int*)ptr) = 200;
       break;
    default:
       fprintf(stderr, "Unknown nb_ctl request: %d\n", request);

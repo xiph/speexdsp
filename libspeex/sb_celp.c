@@ -321,6 +321,41 @@ void sb_encode(void *state, float *in, SpeexBits *bits)
    for (i=0;i<st->lpcSize;i++)
       st->lsp[i] = acos(st->lsp[i]);
 
+   /* If null mode (no transmission), just set a couple things to zero*/
+   if (st->submodes[st->submodeID] == NULL)
+   {
+      fprintf (stderr, "Null mode\n");
+      for (i=0;i<st->frame_size;i++)
+         st->exc[i]=st->sw[i]=0;
+
+      for (i=0;i<st->lpcSize;i++)
+         st->mem_sw[i]=0;
+      st->first=1;
+
+      /* Final signal synthesis from excitation */
+      syn_filt_mem(st->exc, st->interp_qlpc, st->high, st->subframeSize, st->lpcSize, st->mem_sp);
+
+#ifndef RELEASE
+      /* Up-sample coded low-band and high-band*/
+      for (i=0;i<st->frame_size;i++)
+      {
+         st->x0[(i<<1)]=st->x0d[i];
+         st->x1[(i<<1)]=st->high[i];
+         st->x0[(i<<1)+1]=0;
+         st->x1[(i<<1)+1]=0;
+      }
+      /* Reconstruct the original */
+      fir_mem(st->x0, h0, st->y0, st->full_frame_size, QMF_ORDER, st->g0_mem);
+      fir_mem(st->x1, h1, st->y1, st->full_frame_size, QMF_ORDER, st->g1_mem);
+      for (i=0;i<st->full_frame_size;i++)
+         in[i]=2*(st->y0[i]-st->y1[i]);
+#endif
+
+      return;
+
+   }
+
+
    /* LSP quantization */
    SUBMODE(lsp_quant)(st->lsp, st->qlsp, st->lpcSize, bits);
    
@@ -700,6 +735,37 @@ void sb_decode(void *state, SpeexBits *bits, float *out, int lost)
    for (i=0;i<st->frame_size;i++)
       st->exc[i]=0;
 
+   /* If null mode (no transmission), just set a couple things to zero*/
+   if (st->submodes[st->submodeID] == NULL)
+   {
+      fprintf (stderr, "Null mode\n");
+      for (i=0;i<st->frame_size;i++)
+         st->exc[i]=0;
+
+      st->first=1;
+
+      /* Final signal synthesis from excitation */
+      syn_filt_mem(st->exc, st->interp_qlpc, st->high, st->subframeSize, st->lpcSize, st->mem_sp);
+
+      /* Up-sample coded low-band and high-band*/
+      for (i=0;i<st->frame_size;i++)
+      {
+         st->x0[(i<<1)]=st->x0d[i];
+         st->x1[(i<<1)]=st->high[i];
+         st->x0[(i<<1)+1]=0;
+         st->x1[(i<<1)+1]=0;
+      }
+      /* Reconstruct the original */
+      fir_mem(st->x0, h0, st->y0, st->full_frame_size, QMF_ORDER, st->g0_mem);
+      fir_mem(st->x1, h1, st->y1, st->full_frame_size, QMF_ORDER, st->g1_mem);
+      for (i=0;i<st->full_frame_size;i++)
+         out[i]=2*(st->y0[i]-st->y1[i]);
+
+      return;
+
+   }
+
+
    SUBMODE(lsp_unquant)(st->qlsp, st->lpcSize, bits);
    
    if (st->first)
@@ -839,19 +905,19 @@ void sb_encoder_ctl(void *state, int request, void *ptr)
          switch (quality)
          {
          case 0:
+            nb_mode=0;
+            st->submodeID = 0;
+            break;
+         case 1:
             nb_mode=1;
             st->submodeID = 1;
             break;
-         case 1:
+         case 2:
             nb_mode=2;
             st->submodeID = 1;
             break;
-         case 2:
-            nb_mode=3;
-            st->submodeID = 1;
-            break;
          case 3:
-            nb_mode=4;
+            nb_mode=3;
             st->submodeID = 1;
             break;
          case 4:
@@ -888,7 +954,10 @@ void sb_encoder_ctl(void *state, int request, void *ptr)
       break;
    case SPEEX_GET_BITRATE:
       speex_encoder_ctl(st->st_low, request, ptr);
-      (*(int*)ptr) += SUBMODE(bitrate);
+      if (st->submodes[st->submodeID])
+         (*(int*)ptr) += SUBMODE(bitrate);
+      else
+         (*(int*)ptr) += 150;
       break;
    default:
       fprintf(stderr, "Unknown nb_ctl request: %d\n", request);
@@ -910,7 +979,10 @@ void sb_decoder_ctl(void *state, int request, void *ptr)
       break;
    case SPEEX_GET_BITRATE:
       speex_decoder_ctl(st->st_low, request, ptr);
-      (*(int*)ptr) += SUBMODE(bitrate);
+      if (st->submodes[st->submodeID])
+         (*(int*)ptr) += SUBMODE(bitrate);
+      else
+         (*(int*)ptr) += 150;
       break;
    default:
       fprintf(stderr, "Unknown sb_ctl request: %d\n", request);
