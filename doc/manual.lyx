@@ -877,7 +877,7 @@ That's about it for the encoder.
 Decoding
 \layout Standard
 
-In order to encode speech using Speex, you first need to:
+In order to decode speech using Speex, you first need to:
 \layout LyX-Code
 
 #include <speex/speex.h>
@@ -889,7 +889,7 @@ You also need to declare a Speex bit-packing struct
 SpeexBits bits;
 \layout Standard
 
-and a Speex encoder state
+and a Speex decoder state
 \layout LyX-Code
 
 void *dec_state;
