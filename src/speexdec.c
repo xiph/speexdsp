@@ -175,7 +175,12 @@ static void *process_header(ogg_packet *op, int enh_enabled, int *frame_size, in
    speex_decoder_ctl(st, SPEEX_SET_ENH, &enh_enabled);
    speex_decoder_ctl(st, SPEEX_GET_FRAME_SIZE, frame_size);
    
+   /* FIXME: need to adjust in case the forceMode option is set */
    *rate = header->rate;
+   if (header->mode==1 && forceMode==0)
+      *rate/=2;
+   if (header->mode==0 && forceMode==1)
+      *rate*=2;
    *nframes = header->frames_per_packet;
    
    fprintf (stderr, "Decoding %d Hz audio using %s mode", 
