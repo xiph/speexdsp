@@ -177,6 +177,7 @@ void usage()
    printf (" --no-enh              Disable perceptual enhancement (default FOR NOW)\n");
    printf (" --force-nb            Force decoding in narrowband, even for wideband\n");
    printf (" --force-wb            Force decoding in wideband, even for narrowband\n");
+   printf (" --packet-loss n       Simulate n % random packet loss\n");
    printf (" -V                    Verbose mode (show bit-rate)\n"); 
    printf (" -h, --help            This help\n");
    printf (" -v, --version         Version information\n");
@@ -274,6 +275,7 @@ int main(int argc, char **argv)
       {"no-pf", no_argument, NULL, 0},
       {"force-nb", no_argument, NULL, 0},
       {"force-wb", no_argument, NULL, 0},
+      {"packet-loss", required_argument, NULL, 0},
       {0, 0, 0, 0}
    };
    ogg_sync_state oy;
@@ -287,6 +289,8 @@ int main(int argc, char **argv)
    int eos=0;
    int forceMode=-1;
    int audio_size=0;
+   float loss_percent=-1;
+
    enh_enabled = 0;
 
    /*Process options*/
@@ -328,6 +332,9 @@ int main(int argc, char **argv)
          } else if (strcmp(long_options[option_index].name,"force-wb")==0)
          {
             forceMode=1;
+         } else if (strcmp(long_options[option_index].name,"packet-loss")==0)
+         {
+            loss_percent = atof(optarg);
          }
          break;
       case 'h':
@@ -428,6 +435,10 @@ int main(int argc, char **argv)
                fprintf (stderr, "\n");
                */
             } else {
+               
+               int lost=0;
+               if (loss_percent>0 && 100*((float)rand())/RAND_MAX<loss_percent)
+                  lost=1;
 
                /*End of stream condition*/
                if (op.e_o_s)
@@ -438,8 +449,11 @@ int main(int argc, char **argv)
                for (j=0;j<nframes;j++)
                {
                   /*Decode frame*/
-                  speex_decode(st, &bits, output);
-               
+                  if (!lost)
+                     speex_decode(st, &bits, output);
+                  else
+                     speex_decode(st, NULL, output);
+
                   if (print_bitrate) {
                      int tmp;
                      char ch=13;

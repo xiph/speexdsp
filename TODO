@@ -1,4 +1,9 @@
+Codec
 - Better VBR logic for choosing mode
 - Wideband VBR
 - Improve VAD
 - Improve narrowband vocoder
+Bit-stream
+API
+- Add bit-stream request handling and encoder/decoder pairing
+- Add callbacks for user-defined inf

@@ -799,8 +799,8 @@ static void nb_decode_lost(DecState *st, float *out)
         
       for (i=0;i<st->subframeSize;i++)
       {
-         exc[i]=.7*st->last_pitch_gain*exc[i-st->last_pitch] + 
-         .5*st->innov[i+offset];
+         exc[i]=st->last_pitch_gain*exc[i-st->last_pitch] + 
+         .8*st->innov[i+offset];
       }
 
       for (i=0;i<st->subframeSize;i++)
@@ -1012,16 +1012,14 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
          SUBMODE(ltp_unquant)(exc, pit_min, pit_max, ol_pitch_coef, SUBMODE(ltp_params), 
                               st->subframeSize, &pitch, &pitch_gain[0], bits, st->stack, st->count_lost);
          
-         
-         /* If the frame was not lost... */
-         tmp = fabs(pitch_gain[0]+pitch_gain[1]+pitch_gain[2]);
+         tmp = (pitch_gain[0]+pitch_gain[1]+pitch_gain[2]);
          if (tmp>best_pitch_gain)
          {
             best_pitch = pitch;
-            while (best_pitch+pitch<st->max_pitch)
+            /*while (best_pitch+pitch<st->max_pitch)
             {
                best_pitch+=pitch;
-            }
+               }*/
             best_pitch_gain = tmp*.9;
             if (best_pitch_gain>.85)
                best_pitch_gain=.85;

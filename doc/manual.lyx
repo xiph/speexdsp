@@ -1960,7 +1960,7 @@ N/A
 
 \layout Standard
 
-reserved
+DTMF and TTY
 \end_inset 
 </cell>
 </row>
@@ -2090,7 +2090,7 @@ N/A
 
 \layout Standard
 
-Application-defined, Speex should never see it
+Application-defined, interpreted by callback or skipped
 \end_inset 
 </cell>
 </row>
@@ -2116,7 +2116,7 @@ N/A
 
 \layout Standard
 
-In-band signaling, Speex will skip it
+Speex in-band signaling
 \end_inset 
 </cell>
 </row>
