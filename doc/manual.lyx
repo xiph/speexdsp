@@ -29,7 +29,7 @@
 
 The Speex Codec Manual
 \newline 
-(draft for Speex 1.0beta2)
+(draft for Speex 1.0beta3)
 \layout Author
 
 Jean-Marc Valin
@@ -96,8 +96,12 @@ all trademarks are property of their respective owner
 Introduction to Speex
 \layout Standard
 
-The Speex project has been started because there was a need for a speech
- codec that was open-source and free from software patents.
+The Speex project (
+\family typewriter 
+http://www.speex.org/
+\family default 
+) has been started because there was a need for a speech codec that was
+ open-source and free from software patents.
  These are essential conditions for being used by any open-source software.
  There is already Vorbis that does general audio, but it is not really suitable
  for speech.
@@ -121,8 +125,12 @@ Designing for VoIP instead of cell phone use means that Speex must be robust
  without compromising too much on the efficiency of the codec.
 \layout Standard
 
-All this led us to the choice of CELP as the encoding technique to use for
- Speex.
+All this led us to the choice of CELP
+\begin_inset LatexCommand \index{CELP}
+
+\end_inset 
+
+ as the encoding technique to use for Speex.
  One of the main reasons is that CELP has long proved that it could do the
  job and scale well to both low bit-rates (think DoD CELP @ 4.8 kbps) and
  high bit-rates (think G.728 @ 16 kbps).
@@ -132,25 +140,65 @@ All this led us to the choice of CELP as the encoding technique to use for
 The main characteristics can be summerized as follows:
 \layout Itemize
 
-Free software/open-source, patent and royalty-free
+Free software/open-source
+\begin_inset LatexCommand \index{open-source}
+
+\end_inset 
+
+, patent
+\begin_inset LatexCommand \index{patent}
+
+\end_inset 
+
+ and royalty-free
 \layout Itemize
 
-Integration of wideband and narrowband in the same bit-stream
+Integration of wideband
+\begin_inset LatexCommand \index{wideband}
+
+\end_inset 
+
+ and narrowband
+\begin_inset LatexCommand \index{narrowband}
+
+\end_inset 
+
+ in the same bit-stream
 \layout Itemize
 
 Wide range of bit-rates available
 \layout Itemize
 
-Dynamic bit-rate switching and variable bit-rate (VBR)
+Dynamic bit-rate switching and Variable Bit-Rate
+\begin_inset LatexCommand \index{variable bit-rate}
+
+\end_inset 
+
+ (VBR)
 \layout Itemize
 
-Voice Activity Detection (VAD, integrated with VBR)
+Voice Activity Detection
+\begin_inset LatexCommand \index{voice activity detection}
+
+\end_inset 
+
+ (VAD, integrated with VBR)
 \layout Itemize
 
 Variable complexity
+\begin_inset LatexCommand \index{complexity}
+
+\end_inset 
+
+
 \layout Section
 \pagebreak_top 
 Introduction to CELP Coding
+\begin_inset LatexCommand \index{CELP}
+
+\end_inset 
+
+
 \layout Standard
 
 Speex is based on CELP, which stands for Code Excited Linear Prediction.
@@ -182,7 +230,146 @@ perceptually weighted domain
 
 \layout Subsection
 
-Linear Prediction
+Linear Prediction (LPC)
+\begin_inset LatexCommand \index{linear prediction}
+
+\end_inset 
+
+
+\layout Standard
+
+
+\begin_inset Formula \[
+y(n)=\sum _{i=1}^{N}a_{i}x(n-i)\]
+
+\end_inset 
+
+
+\begin_inset Formula \[
+e(n)=x(n)-y(n)=x(n)-\sum _{i=1}^{N}a_{i}x(n-i)\]
+
+\end_inset 
+
+
+\begin_inset Formula \[
+E=\sum _{n=0}^{L-1}\left[e(n)\right]^{2}=\sum _{n=0}^{L-1}\left[x(n)-\sum _{i=1}^{N}a_{i}x(n-i)\right]^{2}\]
+
+\end_inset 
+
+
+\begin_inset Formula \[
+\frac{\partial E}{\partial a_{i}}=\frac{\partial }{\partial a_{i}}\sum _{n=0}^{L-1}\left[x(n)-\sum _{i=1}^{N}a_{i}x(n-i)\right]^{2}=0\]
+
+\end_inset 
+
+
+\layout Standard
+
+The 
+\begin_inset Formula $a_{i}$
+\end_inset 
+
+ filter coefficients are computed using the Levinson-Durbin
+\begin_inset LatexCommand \index{Levinson-Durbin}
+
+\end_inset 
+
+ algorithm, which starts from the auto-correlation
+\begin_inset LatexCommand \index{auto-correlation}
+
+\end_inset 
+
+ 
+\begin_inset Formula $R(m)$
+\end_inset 
+
+ of the signal 
+\begin_inset Formula $x(n)$
+\end_inset 
+
+.
+\layout Standard
+
+
+\begin_inset Formula \[
+R(m)=\sum _{i=0}^{N-1}x(i)x(i-m)\]
+
+\end_inset 
+
+
+\layout Standard
+
+For an order 
+\begin_inset Formula $N$
+\end_inset 
+
+ filter, we have:
+\begin_inset Formula \[
+\mathbf{R}=\left[\begin{array}{cccc}
+ R(0) & R(1) & \cdots  & R(N-1)\\
+ R(1) & R(0) & \cdots  & R(N-2)\\
+ \vdots  & \vdots  & \ddots  & \vdots \\
+ R(N-1) & R(N-2) & \cdots  & R(0)\end{array}
+\right]\]
+
+\end_inset 
+
+
+\begin_inset Formula \[
+\mathbf{r}=\left[\begin{array}{c}
+ R(1)\\
+ R(2)\\
+ \vdots \\
+ R(N)\end{array}
+\right]\]
+
+\end_inset 
+
+
+\layout Standard
+
+The filter coefficients 
+\begin_inset Formula $a_{i}$
+\end_inset 
+
+ are found by solving the system 
+\begin_inset Formula $\mathbf{Ra}=\mathbf{r}$
+\end_inset 
+
+.
+ What the Levinson-Durbin algorithm does here is making the solution to
+ the problem 
+\begin_inset Formula $\mathcal{O}\left(N^{2}\right)$
+\end_inset 
+
+ instead of 
+\begin_inset Formula $\mathcal{O}\left(N^{3}\right)$
+\end_inset 
+
+ by exploiting the fact that matrix 
+\begin_inset Formula $\mathbf{R}$
+\end_inset 
+
+ is toeplitz hermitian.
+ Also, it can be proved that all the roots of 
+\begin_inset Formula $A(z)$
+\end_inset 
+
+ are withing the unit circle, which means that 
+\begin_inset Formula $1/A(z)$
+\end_inset 
+
+ is always stable.
+ This is in theory; in practice because of finite precision, there are two
+ commonly used techniques to make sure we have a stable filter.
+ First, we multiply 
+\begin_inset Formula $R(0)$
+\end_inset 
+
+ by a number slightly above one (such as 1.0001), which is equivalent to
+ adding noise to the signal.
+ Also, we can apply a window the the auto-correlation, which is equivalent
+ to filtering in the frequency domain, reducing sharp resonances.
 \layout Standard
 
 The linear prediction model represents each speech sample as linear combination
@@ -238,112 +425,23 @@ We usually refer to
  as the synthesis filter.
 \layout Standard
 
-The 
-\begin_inset Formula $A(z)$
-\end_inset 
-
- filter is computed using the Levinson-Durbin algorithm, which starts from
- the auto-correlation 
-\begin_inset Formula $R(m)$
-\end_inset 
-
- of the signal 
-\begin_inset Formula $x(n)$
-\end_inset 
-
-.
-\layout Standard
-
-
-\begin_inset Formula \[
-r(m)=\sum _{i=0}^{N-1}x(i)x(i-m)\]
-
-\end_inset 
-
-
-\layout Standard
-
-For an order 
-\begin_inset Formula $N$
-\end_inset 
-
- filter, we have:
-\begin_inset Formula \[
-\mathbf{R}=\left[\begin{array}{cccc}
- r(0) & r(1) & \cdots  & r(N-1)\\
- r(1) & r(0) & \cdots  & r(N-2)\\
- \vdots  & \vdots  & \ddots  & \vdots \\
- r(N-1) & r(N-2) & \cdots  & r(0)\end{array}
-\right]\]
-
-\end_inset 
-
-
-\begin_inset Formula \[
-\mathbf{r}=\left[\begin{array}{c}
- r(1)\\
- r(2)\\
- \vdots \\
- R(N)\end{array}
-\right]\]
-
-\end_inset 
-
-
-\layout Standard
-
-The filter coefficients 
-\begin_inset Formula $a_{i}$
-\end_inset 
-
- are found by solving the system 
-\begin_inset Formula $\mathbf{Ra}=\mathbf{r}$
-\end_inset 
-
-.
- What the Levinson-Durbin algorithm does here is making the solution to
- the problem 
-\begin_inset Formula $\mathcal{O}\left(N^{2}\right)$
-\end_inset 
-
- instead of 
-\begin_inset Formula $\mathcal{O}\left(N^{3}\right)$
-\end_inset 
-
- by exploiting the fact that matrix 
-\begin_inset Formula $\mathbf{R}$
-\end_inset 
-
- is toeplitz hermitian.
- Also, it can be proved that all the roots of 
-\begin_inset Formula $A(z)$
-\end_inset 
-
- are withing the unit circle, which means that 
-\begin_inset Formula $1/A(z)$
-\end_inset 
-
- is always stable.
- This is in theory; in practice because of finite precision, there are two
- commonly used techniques to make sure we have a stable filter.
- First, we multiply 
-\begin_inset Formula $r(0)$
-\end_inset 
-
- by a number slightly above one (such as 1.0001), which is equivalent to
- adding noise to the signal.
- Also, we can apply a window the the auto-correlation, which is equivalent
- to filtering in the frequency domain, reducing sharp resonances.
-\layout Standard
-
 Because LPC coefficients have very little robustness to quantization, they
- are converted to Line Spectral Pair (LSP) coefficients which have a much
- better behaviour with quantization, one of them being that it's easy to
- keep the filter stable.
+ are converted to Line Spectral Pair
+\begin_inset LatexCommand \index{line spectral pair}
+
+\end_inset 
+
+ (LSP) coefficients which have a much better behaviour with quantization,
+ one of them being that it's easy to keep the filter stable.
  
 \layout Subsection
 
 Pitch Prediction
+\begin_inset LatexCommand \index{pitch}
+
+\end_inset 
+
+
 \layout Standard
 
 During voiced segments, the speech signal is very periodic, so it is possible
@@ -405,6 +503,16 @@ This is where most of the bits in a CELP codec are allocated.
 \layout Subsection
 
 Analysis-by-Synthesis and Error Weighting
+\begin_inset LatexCommand \index{error weighting}
+
+\end_inset 
+
+
+\begin_inset LatexCommand \index{analysis-by-synthesis}
+
+\end_inset 
+
+
 \layout Standard
 
 Most (if not all) modern audio codecs attempt to 
@@ -488,6 +596,11 @@ Speex narrowband mode
 \end_inset 
 
 
+\begin_inset LatexCommand \index{narrowband}
+
+\end_inset 
+
+
 \layout Standard
 
 This section looks at how Speex works for narrowband (
@@ -518,12 +631,21 @@ G.728-like fixed codebooks (without backward-adaptive grains because of patent
 \layout Subsection
 
 LPC Analysis
+\begin_inset LatexCommand \index{linear prediction}
+
+\end_inset 
+
+
 \layout Standard
 
 An LPC analysis is first performed on a (Hamming) window that spans all
  the current frame and half a frame in advance.
- The LPC coefficients are then converted to Line Spectral Pair (LSP), a
- representation that is more robust to quantization.
+ The LPC coefficients are then converted to Line Spectral Pair
+\begin_inset LatexCommand \index{line spectral pair}
+
+\end_inset 
+
+ (LSP), a representation that is more robust to quantization.
  The LSP's are considered to be associated to the 
 \begin_inset Formula $4^{th}$
 \end_inset 
@@ -569,6 +691,11 @@ The perceptual weighting filter
 \layout Subsection
 
 Pitch Prediction (adaptive codebook)
+\begin_inset LatexCommand \index{pitch}
+
+\end_inset 
+
+
 \layout Standard
 
 Speex uses a 3-tap prediction for pitch.
@@ -1674,8 +1801,12 @@ Bit allocation for narrowband modes
 
 \layout Standard
 
-So far, no MOS (mean opinion score) subjective evaluation has been performed
- for Speex.
+So far, no MOS (Mean Opinion Score
+\begin_inset LatexCommand \index{mean opinion score}
+
+\end_inset 
+
+) subjective evaluation has been performed for Speex.
  In order to give an idea of the quality achivable with it, table 
 \begin_inset LatexCommand \ref{cap:quality_vs_bps}
 
@@ -1689,8 +1820,12 @@ So far, no MOS (mean opinion score) subjective evaluation has been performed
  quality sometimes varies depending on the input.
  Note that the complexity is only approximate (withing 0.5 mflops and using
  the lowers complexity setting).
- Decoding requires approximately 0.5 mflops in most modes (1 mflops with
- perceptual enhancement).
+ Decoding requires approximately 0.5 mflops
+\begin_inset LatexCommand \index{complexity}
+
+\end_inset 
+
+ in most modes (1 mflops with perceptual enhancement).
 \layout Standard
 
 
@@ -1723,7 +1858,12 @@ Mode
 
 \layout Standard
 
-Bitrate (bps)
+Bit-rate
+\begin_inset LatexCommand \index{bit-rate}
+
+\end_inset 
+
+ (bps)
 \end_inset 
 </cell>
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
@@ -1732,6 +1872,11 @@ Bitrate (bps)
 \layout Standard
 
 mflops
+\begin_inset LatexCommand \index{complexity}
+
+\end_inset 
+
+
 \end_inset 
 </cell>
 <cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
@@ -2306,6 +2451,11 @@ Quality versus bit-rate
 \layout Subsection
 
 Perceptual enhancement
+\begin_inset LatexCommand \index{perceptual enhancement}
+
+\end_inset 
+
+
 \layout Standard
 
 This part of the codec only applies to the decoder and can even be changed
@@ -2346,6 +2496,11 @@ where
 \layout Section
 \pagebreak_top 
 Speex wideband mode (sub-band CELP)
+\begin_inset LatexCommand \index{wideband}
+
+\end_inset 
+
+
 \layout Standard
 
 For wideband, the Speex approach uses a 
@@ -2360,7 +2515,12 @@ irror
 \emph on 
 f
 \emph default 
-ilter (QMF) to split the band in two.
+ilter
+\begin_inset LatexCommand \index{quadrature mirror filter}
+
+\end_inset 
+
+ (QMF) to split the band in two.
  The 16 kHz signal is thus divided into two 8 kHz signals, one representing
  the low band (0-4 kHz), the other the high band (4-8 kHz).
  The low band is encoded with the narrowband mode described in section 
@@ -2895,6 +3055,11 @@ speexdec
 
 \emph on 
 speexenc
+\begin_inset LatexCommand \index{speexenc}
+
+\end_inset 
+
+
 \layout Standard
 
 The encoder takes the following options:
@@ -2939,6 +3104,11 @@ n Set encoding speed/quality tradeoff.
 
 \emph on 
 speexdec
+\begin_inset LatexCommand \index{speexdec}
+
+\end_inset 
+
+
 \layout Standard
 
 The decoder takes the following options:
@@ -2965,7 +3135,17 @@ n Simulate n % random packet loss
 (-v) Print version information
 \layout Section
 \pagebreak_top 
-Programming with Speex (the libspeex API)
+Programming with Speex (the libspeex
+\begin_inset LatexCommand \index{libspeex}
+
+\end_inset 
+
+ API
+\begin_inset LatexCommand \index{API}
+
+\end_inset 
+
+)
 \layout Subsection
 
 Encoding
@@ -3345,6 +3525,11 @@ ptr
 \layout Subsection
 
 Packing and in-band signalling
+\begin_inset LatexCommand \index{in-band signalling}
+
+\end_inset 
+
+
 \layout Standard
 
 Sometimes it is desirable to pack more than one frame per packet (or other
@@ -3877,6 +4062,11 @@ Finally, applications may define custom in-band messages using mode 13.
 \layout Section
 \pagebreak_top 
 Formats and standards
+\begin_inset LatexCommand \index{standards}
+
+\end_inset 
+
+
 \layout Standard
 
 Speex can encode speech in both narrowband and wideband and provides different
@@ -3920,7 +4110,12 @@ For encoders, at least one narrowband or wideband mode MUST be supported.
  some modes.
 \layout Subsection
 
-RTP Payload Format
+RTP
+\begin_inset LatexCommand \index{RTP}
+
+\end_inset 
+
+ Payload Format
 \layout Standard
 
 This is a work in progress.
@@ -3934,7 +4129,12 @@ Since Speex encoded frames already contain mode information, they can be
  
 \layout Subsection
 
-Ogg file format
+Ogg
+\begin_inset LatexCommand \index{Ogg}
+
+\end_inset 
+
+ file format
 \layout Standard
 
 Speex bit-streams can be stored in Ogg files.
@@ -4493,7 +4693,17 @@ clearpage
 FAQ
 \layout Subsection*
 
-Vorbis is open-source and patent-free, why do we need Speex?
+Vorbis is open-source
+\begin_inset LatexCommand \index{open-source}
+
+\end_inset 
+
+ and patent-free
+\begin_inset LatexCommand \index{patent}
+
+\end_inset 
+
+, why do we need Speex?
 \layout Standard
 
 Vorbis is a great project but its goals are not the same as Speex.
@@ -4503,7 +4713,17 @@ Vorbis is a great project but its goals are not the same as Speex.
  typically 2-4 times higher compression at equal quality.
 \layout Subsection*
 
-Ogg, Speex, Vorbis, what's the difference?
+Ogg
+\begin_inset LatexCommand \index{Ogg}
+
+\end_inset 
+
+, Speex, Vorbis
+\begin_inset LatexCommand \index{Vorbis}
+
+\end_inset 
+
+, what's the difference?
 \layout Standard
 
 Ogg is a 
@@ -4531,7 +4751,12 @@ Ogg Speex
  Actually, if what you do is Voice of IP (VoIP), you don't need Ogg at all.
 \layout Subsection*
 
-Can I use Speex for compressing music?
+Can I use Speex for compressing music
+\begin_inset LatexCommand \index{music}
+
+\end_inset 
+
+?
 \layout Standard
 
 Just like Vorbis is not really adapted to speech, Speex is really not adapted
@@ -4622,7 +4847,12 @@ There are many possible causes for that.
  causing clipping when saving as 16-bit PCM.
 \layout Subsection*
 
-Can Speex pass DTMF?
+Can Speex pass DTMF
+\begin_inset LatexCommand \index{DTMF}
+
+\end_inset 
+
+?
 \layout Standard
 
 I guess it all depends on the bit-rate used.
@@ -4657,7 +4887,12 @@ not
  
 \layout Subsection*
 
-CELP, ACELP, what's the difference?
+CELP, ACELP
+\begin_inset LatexCommand \index{ACELP}
+
+\end_inset 
+
+, what's the difference?
 \layout Standard
 
 CELP stands for 
@@ -5113,4 +5348,12 @@ n.
  If the Document does not specify a version number of this License, you
  may choose any version ever published (not as a draft) by the Free Software
  Foundation.
+\layout Standard
+
+
+\begin_inset LatexCommand \printindex{}
+
+\end_inset 
+
+
 \the_end
