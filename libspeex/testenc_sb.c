@@ -56,6 +56,7 @@ int main(int argc, char **argv)
          }
          snr = 10*log10((esig+1)/(enoise+1));
       }
+
       frame_bits_rewind(&bits);
       
       sb_decode(&dec, &bits, input);

@@ -359,7 +359,6 @@ float *stack
       syn_filt_zero(resp, awk2, resp, nsf, p);
 
       f=((.1+(xcorr(resp,target,nsf)))/(.1+xcorr(resp,resp,nsf)));
-      printf ("gain correction %f\n", f);
       /*for (i=0;i<nsf;i++)
         e[i]*=f;*/
       g *= f;

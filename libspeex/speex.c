@@ -140,7 +140,7 @@ void encoder_destroy(EncState *st)
    free(st->inBuf);
    free(st->excBuf);
    free(st->swBuf);
-   
+   free(st->os_filt);
    free(st->stack);
 
    free(st->window);
@@ -148,7 +148,7 @@ void encoder_destroy(EncState *st)
    free(st->lpc);
    free(st->interp_lpc);
    free(st->interp_qlpc);
-
+   
    free(st->bw_lpc1);
    free(st->bw_lpc2);
    free(st->autocorr);

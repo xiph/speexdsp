@@ -24,6 +24,7 @@
 
 #include "modes.h"
 #include "speex.h"
+#include "sb_celp.h"
 
 #define MAX_FRAME_SIZE 2000
 #define MAX_FRAME_BYTES 1000
@@ -57,6 +58,7 @@ int main(int argc, char **argv)
    int i,nbBytes;
    SpeexMode *mode=NULL;
    EncState st;
+   SBEncState sb_st;
    FrameBits bits;
    char cbits[MAX_FRAME_BYTES];
    struct option long_options[] =
@@ -127,10 +129,16 @@ int main(int argc, char **argv)
    if (!wideband)
       narrowband=1;
    if (narrowband)
+   {
       mode=&mp_nb_mode;
-   if (wideband)
-      mode=&mp_wb_mode;
+      encoder_init(&st, mode);
 
+   }
+   if (wideband)
+   {
+      mode=&mp_sb_mode;
+      sb_encoder_init(&sb_st, mode);
+   }
    if (strcmp(inFile, "-")==0)
       fin=stdin;
    else 
@@ -156,7 +164,7 @@ int main(int argc, char **argv)
 
    /*Temporary header*/
    {
-      char *header;
+      char *header="";
       if (narrowband)
          header="spexn";
       if (wideband)
@@ -167,8 +175,9 @@ int main(int argc, char **argv)
       }
    }
 
-   encoder_init(&st, mode);
    frame_size=mode->frameSize;
+   if (wideband)
+      frame_size*=2;
 
    while (1)
    {
@@ -177,13 +186,19 @@ int main(int argc, char **argv)
          break;
       for (i=0;i<frame_size;i++)
          input[i]=in[i];
-      encode(&st, input, &bits);
+      if (narrowband)
+         encode(&st, input, &bits);
+      if (wideband)
+         sb_encode(&sb_st, input, &bits);
       nbBytes = frame_bits_write_whole_bytes(&bits, cbits, 200);
       fwrite(cbits, 1, nbBytes, fout);
    }
    nbBytes = frame_bits_write(&bits, cbits, 200);
    fwrite(cbits, 1, nbBytes, fout);
-   encoder_destroy(&st);
+   if (narrowband)
+      encoder_destroy(&st);
+   if (wideband)
+      sb_encoder_destroy(&sb_st);
    exit(0);
    return 1;
 }
