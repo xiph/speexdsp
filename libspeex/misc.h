@@ -111,6 +111,22 @@ static inline spx_word32_t MULT16_16(spx_word16_t x, spx_word16_t y) {
 
 #endif
 
+#ifdef ARM_ASM
+
+static inline spx_word32_t MAC16_16(spx_word32_t a, spx_word16_t x, spx_word32_t y) {
+  int res;
+  asm volatile("smlabb  %0,%1,%2,%3;\n"
+              : "=&r"(res)
+               : "%r"(x),"r"(y),"r"(a));
+  return(res);
+}
+
+#else
+
+#define MAC16_16(c,a,b)     (ADD32((c),MULT16_16((a),(b))))
+
+#endif
+
 #define MULT16_32_Q11(a,b) ADD32(MULT16_16((a),SHR((b),11)), SHR(MULT16_16((a),((b)&0x000007ff)),11))
 #define MULT16_32_Q12(a,b) ADD32(MULT16_16((a),SHR((b),12)), SHR(MULT16_16((a),((b)&0x00000fff)),11))
 #define MULT16_32_Q13(a,b) ADD32(MULT16_16((a),SHR((b),13)), SHR(MULT16_16((a),((b)&0x00001fff)),13))
@@ -124,9 +140,17 @@ static inline spx_word32_t MULT16_32_Q15(spx_word16_t x, spx_word32_t y) {
                : "%r"(y<<1),"r"(x));
   return(res);
 }
+static inline spx_word32_t MAC16_32_Q15(spx_word32_t a, spx_word16_t x, spx_word32_t y) {
+  int res;
+  asm volatile("smlawb  %0,%1,%2,%3;\n"
+              : "=&r"(res)
+               : "%r"(y<<1),"r"(x),"r"(a));
+  return(res);
+}
 
 #else
 #define MULT16_32_Q15(a,b) ADD32(MULT16_16((a),SHR((b),15)), SHR(MULT16_16((a),((b)&0x00007fff)),15))
+#define MAC16_32_Q15(c,a,b) ADD32(c,ADD32(MULT16_16((a),SHR((b),15)), SHR(MULT16_16((a),((b)&0x00007fff)),15)))
 #endif
 
 
@@ -171,11 +195,14 @@ typedef float spx_word64_t;
 #define ADD64(a,b) ((a)+(b))
 #define MULT16_16_16(a,b)     ((a)*(b))
 #define MULT16_16(a,b)     ((a)*(b))
+#define MAC16_16(c,a,b)     ((c)+(a)*(b))
 
 #define MULT16_32_Q11(a,b)     ((a)*(b))
 #define MULT16_32_Q13(a,b)     ((a)*(b))
 #define MULT16_32_Q14(a,b)     ((a)*(b))
 #define MULT16_32_Q15(a,b)     ((a)*(b))
+
+#define MAC16_32_Q15(c,a,b)     ((c)+(a)*(b))
 
 #define MULT16_16_Q13(a,b)     ((a)*(b))
 #define MULT16_16_Q14(a,b)     ((a)*(b))

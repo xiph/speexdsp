@@ -189,17 +189,18 @@ spx_word16_t compute_rms(spx_sig_t *x, int len)
 void filter_mem2(spx_sig_t *x, spx_coef_t *num, spx_coef_t *den, spx_sig_t *y, int N, int ord, spx_mem_t *mem)
 {
    int i,j;
-   int xi,yi;
+   spx_sig_t xi,yi,nyi;
 
    for (i=0;i<N;i++)
    {
       int xh,xl,yh,yl;
       xi=x[i];
       yi = xi + (mem[0]<<2);
+      nyi = -yi;
       xh = xi>>15; xl=xi&0x00007fff; yh = yi>>15; yl=yi&0x00007fff; 
       for (j=0;j<ord-1;j++)
       {
-         mem[j] = SUB32(ADD32(mem[j+1],  MULT16_32_Q15(num[j+1],xi)), MULT16_32_Q15(den[j+1],yi));
+         mem[j] = MAC16_32_Q15(MAC16_32_Q15(mem[j+1], num[j+1],xi), den[j+1],nyi);
       }
       mem[ord-1] = SUB32(MULT16_32_Q15(num[ord],xi), MULT16_32_Q15(den[ord],yi));
       y[i] = yi;
@@ -209,17 +210,18 @@ void filter_mem2(spx_sig_t *x, spx_coef_t *num, spx_coef_t *den, spx_sig_t *y, i
 void iir_mem2(spx_sig_t *x, spx_coef_t *den, spx_sig_t *y, int N, int ord, spx_mem_t *mem)
 {
    int i,j;
-   int xi,yi;
+   spx_word32_t xi,yi,nyi;
 
    for (i=0;i<N;i++)
    {
       int yh,yl;
       xi=x[i];
       yi = xi + (mem[0]<<2);
+      nyi = -yi;
       yh = yi>>15; yl=yi&0x00007fff; 
       for (j=0;j<ord-1;j++)
       {
-         mem[j] = SUB32(mem[j+1], MULT16_32_Q15(den[j+1],yi));
+         mem[j] = MAC16_32_Q15(mem[j+1],den[j+1],nyi);
       }
       mem[ord-1] = - MULT16_32_Q15(den[ord],yi);
       y[i] = yi;
@@ -230,7 +232,7 @@ void iir_mem2(spx_sig_t *x, spx_coef_t *den, spx_sig_t *y, int N, int ord, spx_m
 void fir_mem2(spx_sig_t *x, spx_coef_t *num, spx_sig_t *y, int N, int ord, spx_mem_t *mem)
 {
    int i,j;
-   int xi,yi;
+   spx_word32_t xi,yi;
 
    for (i=0;i<N;i++)
    {
@@ -240,7 +242,7 @@ void fir_mem2(spx_sig_t *x, spx_coef_t *num, spx_sig_t *y, int N, int ord, spx_m
       xh = xi>>15; xl=xi&0x00007fff;
       for (j=0;j<ord-1;j++)
       {
-         mem[j] = ADD32(mem[j+1], MULT16_32_Q15(num[j+1],xi));
+         mem[j] = MAC16_32_Q15(mem[j+1], num[j+1],xi);
       }
       mem[ord-1] = MULT16_32_Q15(num[ord],xi);
       y[i] = yi;

@@ -48,10 +48,10 @@ static spx_word32_t inner_prod(spx_word16_t *x, spx_word16_t *y, int len)
    for (i=0;i<len;i+=4)
    {
       spx_word32_t part=0;
-      part = ADD32(part,MULT16_16(x[i],y[i]));
-      part = ADD32(part,MULT16_16(x[i+1],y[i+1]));
-      part = ADD32(part,MULT16_16(x[i+2],y[i+2]));
-      part = ADD32(part,MULT16_16(x[i+3],y[i+3]));
+      part = MAC16_16(part,x[i],y[i]);
+      part = MAC16_16(part,x[i+1],y[i+1]);
+      part = MAC16_16(part,x[i+2],y[i+2]);
+      part = MAC16_16(part,x[i+3],y[i+3]);
       sum = ADD32(sum,SHR(part,6));
    }
    return sum;

@@ -63,13 +63,14 @@ void vq_nbest(spx_word16_t *in, spx_word16_t *codebook, int len, int entries, sp
    used = 0;
    for (i=0;i<entries;i++)
    {
-#ifdef FIXED_POINT
-      spx_word32_t dist=SHR(E[i],1);
-#else
-      spx_word32_t dist=.5*E[i];
-#endif
+      spx_word32_t dist=0;
       for (j=0;j<len;j++)
-         dist = SUB32(dist,MULT16_16(in[j],*codebook++));
+         dist = MAC16_16(dist,in[j],*codebook++);
+#ifdef FIXED_POINT
+      dist=SUB32(SHR(E[i],1),dist);
+#else
+      dist=.5*E[i]-dist;
+#endif
       if (i<N || dist<best_dist[N-1])
       {
          for (k=N-1; (k >= 1) && (k > used || dist < best_dist[k-1]); k--)
@@ -93,14 +94,14 @@ void vq_nbest_sign(spx_word16_t *in, spx_word16_t *codebook, int len, int entrie
    {
       spx_word32_t dist=0;
       for (j=0;j<len;j++)
-         dist = SUB32(dist,MULT16_16(in[j],*codebook++));
+         dist = MAC16_16(dist,in[j],*codebook++);
       if (dist>0)
       {
-         sign=1;
+         sign=0;
          dist=-dist;
       } else
       {
-         sign=0;
+         sign=1;
       }
 #ifdef FIXED_POINT
       dist = ADD32(dist,SHR(E[i],1));
