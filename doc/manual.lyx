@@ -99,8 +99,8 @@ Introduction to Speex
 Speex has been designed with the following goals in mind:
 \layout Itemize
 
-No use of patented algorithms (implies that we can't use patented algorithms
- such as ACELP)
+No use of patented algorithms (e.g.
+ no ACELP)
 \layout Itemize
 
 Optimized for speech, not music
@@ -144,14 +144,14 @@ Minimizing the amount of information extracted from past frames (for robustness
 Dynamically-selectable codebooks (LSP, pitch and innovation)
 \layout Itemize
 
-G.728-like fixed codebooks (without backward-adaptive grains) because of
- patent issues
+G.728-like fixed codebooks (without backward-adaptive grains because of patent
+ issues)
 \layout Section
 
 Introduction to CELP Coding
 \layout Standard
 
-Speex is based on the CELP, which stands for Code Excited Linear Prediction.
+Speex is based on CELP, which stands for Code Excited Linear Prediction.
  This section attempts to introduce the principles behind CELP, so if you
  are already familiar with CELP, you can safely skip to section 
 \begin_inset LatexCommand \ref{sec:Speex-narrowband-mode}
@@ -338,7 +338,11 @@ Pitch Prediction
 \layout Standard
 
 During voiced segments, the speech signal is very periodic, so it is possible
- to take advantage of that.
+ to take advantage of that by expressing the excitation signal 
+\begin_inset Formula $e(n)$
+\end_inset 
+
+ as
 \layout Standard
 
 
@@ -354,11 +358,19 @@ where
 \begin_inset Formula $T$
 \end_inset 
 
- is the pitch period and 
+ is the pitch period, 
 \begin_inset Formula $\beta $
 \end_inset 
 
- is the pitch gain.
+ is the pitch gain and 
+\begin_inset Formula $c(n)$
+\end_inset 
+
+ is taken from the 
+\emph on 
+innovation codebook
+\emph default 
+.
  In the 
 \emph on 
 z
@@ -372,15 +384,7 @@ e(z)=\frac{1}{1-\beta z^{-T}}\: c(z)\]
 
 \end_inset 
 
-where 
-\begin_inset Formula $c(n)$
-\end_inset 
 
- is taken from the 
-\emph on 
-innovation codebook
-\emph default 
-.
 \layout Subsection
 
 Innovation Codebook
@@ -2183,10 +2187,10 @@ speexdec
 The decoder takes the following options:
 \layout Description
 
---pf enable post-filter (default)
+--pf enable post-filter
 \layout Description
 
---nopf disable post-filter
+--nopf disable post-filter (default)
 \layout Description
 
 --help\SpecialChar ~
@@ -2554,6 +2558,7 @@ Since Speex encoded frames already contain mode information, they can be
  sent without any other information in an RTP packet.
  If more than one frame is transmitted, no byte padding is performed at
  the end of frames, except the last one.
+ 
 \layout Subsection
 
 Ogg file format
@@ -3019,9 +3024,28 @@ Ogg/Speex header packet
 \end_inset 
 
 
-\layout LyX-Code
+\layout Standard
 
-\layout LyX-Code
+The speex_string field must contain the 
+\begin_inset Quotes eld
+\end_inset 
+
+
+\family typewriter 
+Speex
+\family default 
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+
+\begin_inset Quotes eld
+\end_inset 
+
+ (with 3 spaces), which identifies the bit-stream.
+ The next field, speex_version contains the version of Speex that encoded
+ the file.
+ 
+\layout Standard
 
 
 \begin_inset ERT
