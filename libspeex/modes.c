@@ -71,10 +71,10 @@ mpulse_params mpulse_nb = {
 
 
 mpulse_params mpulse_sb = {
-   24,     /*nb_pulse*/
-   4,      /*nb_tracks*/
-   2.2,    /*gain_coef*/
-   20
+   50,     /*nb_pulse*/
+   10,      /*nb_tracks*/
+   2.5,    /*gain_coef*/
+   10
 };
 
 
@@ -202,7 +202,7 @@ SpeexMode mp_sb_mode = {
    17,     /*pitchStart*/
    144,    /*pitchEnd*/
    0.9,    /*gamma1*/
-   0.6,    /*gamma2*/
+   0.4,    /*gamma2*/
    .002,   /*lag_factor*/
    1.0001, /*lpc_floor*/
    0.0,    /*preemph*/

@@ -157,7 +157,7 @@ void sb_encoder_init(SBEncState *st, SpeexMode *mode)
    st->subframeSize = 40;
    st->nbSubframes = 4;
    st->windowSize = mode->windowSize;
-   st->lpcSize=12;
+   st->lpcSize=8;
 
    st->lag_factor = .002;
    st->lpc_floor = 1.0001;
@@ -353,16 +353,12 @@ void sb_encode(SBEncState *st, float *in, FrameBits *bits)
 
       bw_lpc(st->gamma1, st->interp_lpc, st->bw_lpc1, st->lpcSize);
       bw_lpc(st->gamma2, st->interp_lpc, st->bw_lpc2, st->lpcSize);
-#if 0
+#if 1 /* 1 for spectral folding excitation, 0 for stochastic */
       for (i=0;i<st->lpcSize;i++)
          mem[i]=st->mem_sp[i];
-      residue_mem(sp, st->interp_qlpc, exc, st->subframeSize, st->lpcSize, mem);
-      if (1) {
+      residue_mem(sp, st->interp_qlpc, exc, st->subframeSize, st->lpcSize, st->mem_sp);
+      {
          float el=0,eh=0,g;
-         printf ("exc0");
-         for (i=0;i<st->subframeSize;i++)
-            printf (" %f", exc[i]);
-         printf ("\n");
          for (i=0;i<st->subframeSize;i++)
             eh+=sqr(exc[i]);
          for (i=0;i<st->subframeSize;i++)
@@ -371,11 +367,9 @@ void sb_encode(SBEncState *st, float *in, FrameBits *bits)
          g=sqrt(g);
          for (i=0;i<st->subframeSize;i++)
             exc[i]=g*st->st_low.exc[offset+i];
-         printf ("exc1");
-         for (i=0;i<st->subframeSize;i++)
-            printf (" %f", exc[i]);
-         printf ("\n");
       }
+      syn_filt_mem(exc, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, mem);
+
 #else
       /* Reset excitation */
       for (i=0;i<st->subframeSize;i++)
@@ -403,28 +397,20 @@ void sb_encode(SBEncState *st, float *in, FrameBits *bits)
       /* Compute target signal */
       for (i=0;i<st->subframeSize;i++)
          target[i]=sw[i]-res[i];
-      if (0)
       {
-         syn_filt_zero(target, st->bw_lpc1, exc, st->subframeSize, st->lpcSize);
-         residue_zero(exc, st->interp_qlpc, exc, st->subframeSize, st->lpcSize);
-         residue_zero(exc, st->bw_lpc2, exc, st->subframeSize, st->lpcSize);
-         printf ("exca");
-         for (i=0;i<st->subframeSize;i++)
-            printf (" %f", exc[i]);
-         printf ("\n");
-      } else {
-         int ind,k,N=1;
+         int ind;
          float gain;
-         for (i=0;i<st->subframeSize;i++)
-            exc[i]=0;
-#if 1
+#if 0
          overlap_cb_search(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2,
                            &stoc[0], 512, &gain, &ind, st->lpcSize,
                            st->subframeSize);
          for (i=0;i<st->subframeSize;i++)
             exc[i]=gain*stoc[ind+i];
 #else
-for (k=0;k<N;k++)
+         int k,N=2;
+         for (i=0;i<st->subframeSize;i++)
+            exc[i]=0;
+         for (k=0;k<N;k++)
          {
             int of=k*st->subframeSize/N;
          overlap_cb_search(target+of, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2,
@@ -445,25 +431,17 @@ for (k=0;k<N;k++)
 
 #endif
       }
-#endif
 
-      printf ("sp");
-      for (i=0;i<st->subframeSize;i++)
-         printf (" %f", sp[i]);
-      printf("\n");
-      printf ("lpc");
-      for (i=0;i<st->lpcSize;i++)
-         printf (" %f", st->interp_lpc[i]);
-      printf("\n");
       /*Keep the previous memory*/
       for (i=0;i<st->lpcSize;i++)
          mem[i]=st->mem_sp[i];
       /* Final signal synthesis from excitation */
       syn_filt_mem(exc, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, st->mem_sp);
-
+       
       /* Compute weighted signal again, from synthesized speech (not sure it's the right thing) */
       residue_mem(sp, st->bw_lpc1, sw, st->subframeSize, st->lpcSize, mem);
       syn_filt_mem(sw, st->bw_lpc2, sw, st->subframeSize, st->lpcSize, st->mem_sw);
+#endif
 
       POP(st->stack);
    }

@@ -29,8 +29,6 @@
 #include "filters.h"
 #include "stack_alloc.h"
 
-extern float stoc[];
-extern float exc_table[][8];
 #ifndef M_PI
 #define M_PI           3.14159265358979323846  /* pi */
 #endif
@@ -163,6 +161,7 @@ void encoder_destroy(EncState *st)
    free(st->mem_sp);
    free(st->mem_sw);
 }
+
 
 void encode(EncState *st, float *in, FrameBits *bits)
 {
