@@ -56,6 +56,16 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
+
+#elif defined HAVE_SYS_AUDIOIO_H
+#include <sys/types.h>
+#include <fcntl.h>
+#include <sys/ioctl.h>
+#include <sys/audioio.h>
+#ifndef AUDIO_ENCODING_SLINEAR
+#define AUDIO_ENCODING_SLINEAR AUDIO_ENCODING_LINEAR /* Solaris */
+#endif
+
 #endif
 
 #include <string.h>
@@ -164,6 +174,31 @@ FILE *out_file_open(char *outFile, int rate, int *channels)
       {
          perror("SNDCTL_DSP_SPEED");
          close(audio_fd);
+         exit(1);
+      }
+      fout = fdopen(audio_fd, "w");
+#elif defined HAVE_SYS_AUDIOIO_H
+      audio_info_t info;
+      int audio_df;
+      
+      audio_fd = open("/dev/audio", O_WRONLY);
+      if (audio_fd<0)
+      {
+         perror("Cannot open /dev/audio");
+         exit(1);
+      }
+
+      AUDIO_INITINFO(&info);
+#ifdef AUMODE_PLAY    /* NetBSD/OpenBSD */
+      info.mode = AUMODE_PLAY;
+#endif
+      info.play.encoding = AUDIO_ENCODING_SLINEAR;
+      info.play.precision = 16;
+      info.play.channels = *channels;
+      
+      if (ioctl(audio_fd, AUDIO_SETINFO, &info) < 0)
+      {
+         perror ("AUDIO_SETINFO");
          exit(1);
       }
       fout = fdopen(audio_fd, "w");
