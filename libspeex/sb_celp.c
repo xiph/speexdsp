@@ -563,10 +563,7 @@ int sb_encode(void *state, short *in, SpeexBits *bits)
             if (quant>31)
                quant=31;
             speex_bits_pack(bits, quant, 5);
-            g= .1*exp(quant/9.4);
          }
-         /*printf ("folding gain: %f\n", g);*/
-         g /= filter_ratio;
 
       } else {
          float gc, scale, scale_1;
@@ -618,11 +615,8 @@ int sb_encode(void *state, short *in, SpeexBits *bits)
          for (i=0;i<st->subframeSize;i++)
            exc[i]=0;
 
-#ifdef FIXED_POINT
-         signal_div(target, target, .5+scale, st->subframeSize);
-#else
-         signal_div(target, target, scale, st->subframeSize);
-#endif
+         signal_div(target, target, SIG_SCALING*scale, st->subframeSize);
+
          /* Reset excitation */
          for (i=0;i<st->subframeSize;i++)
             innov[i]=0;
@@ -633,11 +627,8 @@ int sb_encode(void *state, short *in, SpeexBits *bits)
                                    innov, syn_resp, bits, stack, (st->complexity+1)>>1);
          /*print_vec(target, st->subframeSize, "after");*/
 
-#ifdef FIXED_POINT
-         signal_mul(innov, innov, .5+scale, st->subframeSize);
-#else
-         signal_mul(innov, innov, scale, st->subframeSize);
-#endif
+         signal_mul(innov, innov, SIG_SCALING*scale, st->subframeSize);
+
          for (i=0;i<st->subframeSize;i++)
             exc[i] += innov[i];
 
@@ -659,14 +650,14 @@ int sb_encode(void *state, short *in, SpeexBits *bits)
 
       }
 
-         /*Keep the previous memory*/
-         for (i=0;i<st->lpcSize;i++)
-            mem[i]=st->mem_sp[i];
-         /* Final signal synthesis from excitation */
-         iir_mem2(exc, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, st->mem_sp);
-         
-         /* Compute weighted signal again, from synthesized speech (not sure it's the right thing) */
-         filter_mem2(sp, st->bw_lpc1, st->bw_lpc2, sw, st->subframeSize, st->lpcSize, st->mem_sw);
+      /*Keep the previous memory*/
+      for (i=0;i<st->lpcSize;i++)
+         mem[i]=st->mem_sp[i];
+      /* Final signal synthesis from excitation */
+      iir_mem2(exc, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, st->mem_sp);
+      
+      /* Compute weighted signal again, from synthesized speech (not sure it's the right thing) */
+      filter_mem2(sp, st->bw_lpc1, st->bw_lpc2, sw, st->subframeSize, st->lpcSize, st->mem_sw);
    }
 
 
@@ -1048,11 +1039,7 @@ int sb_decode(void *state, SpeexBits *bits, short *out)
          SUBMODE(innovation_unquant)(exc, SUBMODE(innovation_params), st->subframeSize, 
                                 bits, stack);
 
-#ifdef FIXED_POINT
-         signal_mul(exc,exc,.5+scale,st->subframeSize);
-#else
-         signal_mul(exc,exc,scale,st->subframeSize);
-#endif
+         signal_mul(exc,exc,SIG_SCALING*scale,st->subframeSize);
 
          if (SUBMODE(double_codebook)) {
             char *tmp_stack=stack;

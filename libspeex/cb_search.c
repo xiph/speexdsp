@@ -143,7 +143,7 @@ int   complexity
       {
          spx_word32_t resj=0;
          for (k=0;k<=j;k++)
-            resj = ADD32(resj,MULT16_32_Q11(shape[k],r[j-k]));
+            resj = MAC16_32_Q11(resj,shape[k],r[j-k]);
 #ifndef FIXED_POINT
          resj *= 0.03125;
 #endif

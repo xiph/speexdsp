@@ -333,7 +333,7 @@ int lpc_to_lsp (spx_coef_t *a,int lpcrdr,spx_lsp_t *freq,int nb,float delta, cha
 		psumm=psuml;
 		for(k=0;k<=nb;k++){
 #ifdef FIXED_POINT
-		    xm = PSHR(ADD16(xl,xr),1);        	/* bisect the interval 	*/
+		    xm = ADD16(PSHR(xl,1),PSHR(xr,1));        	/* bisect the interval 	*/
 #else
                     xm = .5*(xl+xr);        	/* bisect the interval 	*/
 #endif
