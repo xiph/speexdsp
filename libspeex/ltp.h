@@ -76,7 +76,9 @@ int *pitch_val,
 float *gain_val,
 SpeexBits *bits,
 void *stack,
-int lost
+int lost,
+int subframe_offset,
+float last_pitch_gain
 );
 
 float pitch_gain_search_3tap(
@@ -130,4 +132,7 @@ int *pitch_val,
 float *gain_val,
 SpeexBits *bits,
 void *stack,
-int lost);
+int lost,
+int subframe_offset,
+float last_pitch_gain
+);

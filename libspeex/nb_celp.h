@@ -123,6 +123,7 @@ typedef struct DecState {
    int    min_pitch;      /**< Minimum pitch value allowed */
    int    max_pitch;      /**< Maximum pitch value allowed */
    int    sampling_rate;
+   int    last_ol_gain;   /**< Open-loop gain for previous frame */
 
 
    float  gamma1;         /**< Perceptual filter: A(z/gamma1) */
@@ -143,6 +144,8 @@ typedef struct DecState {
    float *pi_gain;        /**< Gain of LPC filter at theta=pi (fe/2) */
    int    last_pitch;     /**< Pitch of last correctly decoded frame */
    float  last_pitch_gain; /**< Pitch gain of last correctly decoded frame */
+   float  pitch_gain_buf[3];  /**< Pitch gain of last decoded frames */
+   int    pitch_gain_buf_idx; /**< Tail of the buffer */
 
    SpeexSubmode **submodes; /**< Sub-mode data */
    int    submodeID;      /**< Activated sub-mode */

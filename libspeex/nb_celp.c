@@ -795,7 +795,11 @@ void *nb_decoder_init(SpeexMode *m)
    st->pi_gain = (float*)speex_alloc(st->nbSubframes*sizeof(float));
    st->last_pitch = 40;
    st->count_lost=0;
+   st->pitch_gain_buf[0] = st->pitch_gain_buf[1] = st->pitch_gain_buf[2] = 0;
+   st->pitch_gain_buf_idx = 0;
+
    st->sampling_rate=8000;
+   st->last_ol_gain = 0;
 
    st->user_callback.func = &speex_default_user_handler;
    st->user_callback.data = NULL;
@@ -823,11 +827,37 @@ void nb_decoder_destroy(void *state)
    speex_free(state);
 }
 
+/* 2.5 branches*/
+#define median3(a, b, c)	((a) < (b) ? ((b) < (c) ? (b) : ((a) < (c) ? (c) : (a))) : ((c) < (b) ? (b) : ((c) < (a) ? (c) : (a))))
+
+/*static float pitch_gain_pattern[4] = { 0.95, 0.9, 0.8, 0.4 };
+ */
 static void nb_decode_lost(DecState *st, float *out, void *stack)
 {
    int i, sub;
    float *awk1, *awk2, *awk3;
-   /*float exc_ener=0,g;*/
+   float pitch_gain, fact, gain_med;
+
+   /*if (st->count_lost < 4)
+      fact = pitch_gain_pattern[st->count_lost];
+   else
+      fact = 0.2;
+   */
+   fact = exp(-.04*st->count_lost*st->count_lost);
+   gain_med = median3(st->pitch_gain_buf[0], st->pitch_gain_buf[1], st->pitch_gain_buf[2]);
+   if (gain_med < st->last_pitch_gain)
+      st->last_pitch_gain = gain_med;
+   
+   pitch_gain = st->last_pitch_gain;
+   if (pitch_gain>.95)
+      pitch_gain=.95;
+
+   pitch_gain *= fact;
+   
+#ifdef DEBUG
+   printf ("recovered unquantized pitch: %d, gain: %f (fact=%f, buf=[%f %f %f], med=%f)\n", st->last_pitch, pitch_gain, fact, st->pitch_gain_buf[0], st->pitch_gain_buf[1], st->pitch_gain_buf[2], gain_med);
+#endif
+
    /* Shift all buffers by one frame */
    speex_move(st->inBuf, st->inBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(float));
    speex_move(st->excBuf, st->excBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(float));
@@ -865,17 +895,31 @@ static void nb_decode_lost(DecState *st, float *out, void *stack)
          bw_lpc(k1, st->interp_qlpc, awk1, st->lpcSize);
          bw_lpc(k2, st->interp_qlpc, awk2, st->lpcSize);
          bw_lpc(k3, st->interp_qlpc, awk3, st->lpcSize);
-         
       }
         
       /* Make up a plausible excitation */
       /* THIS CAN BE IMPROVED */
+      /*if (pitch_gain>.95)
+        pitch_gain=.95;*/
+      /*printf ("%f\n", pitch_gain);*/
+      {
+         float innov_gain=0;
+         for (i=0;i<st->frameSize;i++)
+            innov_gain += st->innov[i]*st->innov[i];
+         innov_gain=sqrt(innov_gain/160);
       for (i=0;i<st->subframeSize;i++)
       {
-         exc[i]=st->last_pitch_gain*exc[i-st->last_pitch] + 
-         .8*st->innov[i+offset];
+#if 0
+         exc[i] = pitch_gain * exc[i - st->last_pitch] + fact*sqrt(1-pitch_gain)*st->innov[i+offset];
+         /*Just so it give the same lost packets as with if 0*/
+         rand();
+#else
+         /*exc[i]=pitch_gain*exc[i-st->last_pitch] +  fact*st->innov[i+offset];*/
+         exc[i]=pitch_gain*exc[i-st->last_pitch] + 
+         fact*sqrt(1-pitch_gain)*3*innov_gain*((((float)rand())/RAND_MAX)-.5);
+#endif
       }
-
+      }
       for (i=0;i<st->subframeSize;i++)
          sp[i]=exc[i];
       
@@ -891,8 +935,7 @@ static void nb_decode_lost(DecState *st, float *out, void *stack)
             st->mem_sp[st->lpcSize+i] = 0;
          iir_mem2(sp, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, 
                      st->mem_sp);
-      }
-  
+      }      
    }
 
    out[0] = st->frame[0] + st->preemph*st->pre_mem;
@@ -902,8 +945,10 @@ static void nb_decode_lost(DecState *st, float *out, void *stack)
    
    st->first = 0;
    st->count_lost++;
+   st->pitch_gain_buf[st->pitch_gain_buf_idx++] = pitch_gain;
+   if (st->pitch_gain_buf_idx > 2) /* rollover */
+      st->pitch_gain_buf_idx = 0;
 }
-
 
 int nb_decode(void *state, SpeexBits *bits, float *out)
 {
@@ -915,11 +960,13 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
    int ol_pitch=0;
    float ol_pitch_coef=0;
    int best_pitch=40;
-   float best_pitch_gain=-1;
+   float best_pitch_gain=0;
    int wideband;
    int m;
    void *stack;
    float *awk1, *awk2, *awk3;
+   float pitch_average=0;
+
    st=(DecState*)state;
    stack=st->stack;
 
@@ -937,8 +984,7 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
       {
          int submode;
          int advance;
-         submode = speex_bits_unpack_unsigned(bits, SB_SUBMODE_BITS);
-         advance = submode;
+         advance = submode = speex_bits_unpack_unsigned(bits, SB_SUBMODE_BITS);
          speex_mode_query(&speex_wb_mode, SPEEX_SUBMODE_BITS_PER_FRAME, &advance);
          advance -= (SB_SUBMODE_BITS+1);
          speex_bits_advance(bits, advance);
@@ -997,6 +1043,18 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
 
    /* Unquantize LSPs */
    SUBMODE(lsp_unquant)(st->qlsp, st->lpcSize, bits);
+
+   /*Damp memory if a frame was lost and the LSP changed too much*/
+   if (st->count_lost)
+   {
+      float lsp_dist=0, fact;
+      for (i=0;i<st->lpcSize;i++)
+         lsp_dist += fabs(st->old_qlsp[i] - st->qlsp[i]);
+      fact = .6*exp(-.2*lsp_dist);
+      for (i=0;i<2*st->lpcSize;i++)
+         st->mem_sp[i] *= fact;
+   }
+
 
    /* Handle first frame and lost-packet case */
    if (st->first || st->count_lost)
@@ -1103,14 +1161,22 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
             margin = SUBMODE(lbr_pitch);
             if (margin)
             {
+/* GT - need optimization?
                if (ol_pitch < st->min_pitch+margin-1)
                   ol_pitch=st->min_pitch+margin-1;
                if (ol_pitch > st->max_pitch-margin)
                   ol_pitch=st->max_pitch-margin;
                pit_min = ol_pitch-margin+1;
                pit_max = ol_pitch+margin;
+*/
+               pit_min = ol_pitch-margin+1;
+               if (pit_min < st->min_pitch)
+		  pit_min = st->min_pitch;
+               pit_max = ol_pitch+margin;
+               if (pit_max > st->max_pitch)
+		  pit_max = st->max_pitch;
             } else {
-               pit_min=pit_max=ol_pitch;
+               pit_min = pit_max = ol_pitch;
             }
          } else {
             pit_min = st->min_pitch;
@@ -1119,15 +1185,36 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
 
          /* Pitch synthesis */
          SUBMODE(ltp_unquant)(exc, pit_min, pit_max, ol_pitch_coef, SUBMODE(ltp_params), 
-                              st->subframeSize, &pitch, &pitch_gain[0], bits, stack, st->count_lost);
+                              st->subframeSize, &pitch, &pitch_gain[0], bits, stack, st->count_lost, offset, st->last_pitch_gain);
          
-         tmp = (pitch_gain[0]+pitch_gain[1]+pitch_gain[2]);
+         /* If we had lost frames, check energy of last received frame */
+         if (st->count_lost && ol_gain < st->last_ol_gain)
+         {
+            float fact = ol_gain/(st->last_ol_gain+1);
+            for (i=0;i<st->subframeSize;i++)
+               exc[i]*=fact;
+         }
+
+         tmp = fabs(pitch_gain[0]+pitch_gain[1]+pitch_gain[2]);
+         tmp = fabs(pitch_gain[1]);
+         if (pitch_gain[0]>0)
+            tmp += pitch_gain[0];
+         else
+            tmp -= .5*pitch_gain[0];
+         if (pitch_gain[2]>0)
+            tmp += pitch_gain[2];
+         else
+            tmp -= .5*pitch_gain[0];
+
+
+         pitch_average += tmp;
          if (tmp>best_pitch_gain)
          {
             best_pitch = pitch;
-            best_pitch_gain = tmp*.9;
-            if (best_pitch_gain>.85)
-               best_pitch_gain=.85;
+	    best_pitch_gain = tmp;
+	    /*            best_pitch_gain = tmp*.9;
+	                if (best_pitch_gain>.85)
+                        best_pitch_gain=.85;*/
          }
       } else {
          fprintf (stderr, "No pitch prediction, what's wrong\n");
@@ -1226,7 +1313,17 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
    st->first = 0;
    st->count_lost=0;
    st->last_pitch = best_pitch;
-   st->last_pitch_gain = best_pitch_gain;
+   st->last_pitch_gain = .25*pitch_average;
+   st->pitch_gain_buf[st->pitch_gain_buf_idx++] = st->last_pitch_gain;
+   if (st->pitch_gain_buf_idx > 2) /* rollover */
+      st->pitch_gain_buf_idx = 0;
+
+   st->last_ol_gain = ol_gain;
+
+
+#ifdef DEBUG
+printf ("last pitch: {%d, %f} buf=[%f %f %f]\n", st->last_pitch, st->last_pitch_gain, st->pitch_gain_buf[0], st->pitch_gain_buf[1], st->pitch_gain_buf[2]);
+#endif
 
    return 0;
 }

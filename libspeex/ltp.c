@@ -358,7 +358,7 @@ int complexity
    float *best_exc;
    int best_pitch=0;
    float err, best_err=-1;
-   int N=3;
+   int N;
    ltp_params *params;
    int *nbest;
    float *gains;
@@ -412,7 +412,6 @@ int complexity
    return pitch;
 }
 
-
 void pitch_unquant_3tap(
 float exc[],                    /* Excitation */
 int   start,                    /* Smallest pitch value allowed */
@@ -424,7 +423,9 @@ int *pitch_val,
 float *gain_val,
 SpeexBits *bits,
 void *stack,
-int lost)
+int count_lost,
+int subframe_offset,
+float last_pitch_gain)
 {
    int i;
    int pitch;
@@ -442,16 +443,44 @@ int lost)
    gain[0] = gain_cdbk[gain_index*12];
    gain[1] = gain_cdbk[gain_index*12+1];
    gain[2] = gain_cdbk[gain_index*12+2];
-   if (lost)
+
+   if (count_lost && pitch > subframe_offset)
    {
       float gain_sum;
+
+      if (1) {
+	 float tmp = count_lost < 4 ? last_pitch_gain : 0.4 * last_pitch_gain;
+         if (tmp>.95)
+            tmp=.95;
+         gain_sum = fabs(gain[1]);
+         if (gain[0]>0)
+            gain_sum += gain[0];
+         else
+            gain_sum -= .5*gain[0];
+         if (gain[2]>0)
+            gain_sum += gain[2];
+         else
+            gain_sum -= .5*gain[0];
+	 if (gain_sum > tmp) {
+	    float fact = tmp/gain_sum;
+	    for (i=0;i<3;i++)
+	       gain[i]*=fact;
+
+#ifdef DEBUG
+	 printf ("recovered unquantized pitch: %d, gain: [%f %f %f] (fact=%f)\n", pitch, gain[0], gain[1], gain[2], fact);
+#endif
+	 }
+
+      }
+
+      if (0) {
       gain_sum = fabs(gain[0])+fabs(gain[1])+fabs(gain[2]);
-      if (gain_sum>.95)
-      {
+	 if (gain_sum>.95) {
          float fact = .95/gain_sum;
          for (i=0;i<3;i++)
             gain[i]*=fact;
       }
+   }
    }
 
    *pitch_val = pitch;
@@ -463,8 +492,6 @@ int lost)
 #ifdef DEBUG
    printf ("unquantized pitch: %d %f %f %f\n", pitch, gain[0], gain[1], gain[2]);
 #endif
-   for(i=0;i<nsf;i++)
-      exc[i]=0;
 
    {
       float *e[3];
@@ -555,7 +582,9 @@ int *pitch_val,
 float *gain_val,
 SpeexBits *bits,
 void *stack,
-int lost)
+int count_lost,
+int subframe_offset,
+float last_pitch_gain)
 {
    int i;
    /*pitch_coef=.9;*/

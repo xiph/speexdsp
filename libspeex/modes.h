@@ -61,7 +61,7 @@ typedef int (*ltp_quant_func)(float *, float *, float *, float *,
 
 /** Long-term un-quantize */
 typedef void (*ltp_unquant_func)(float *, int, int, float, void *, int, int *,
-                                 float *, SpeexBits*, void*, int);
+                                 float *, SpeexBits*, void*, int, int, float);
 
 
 /** Innovation quantization function */
