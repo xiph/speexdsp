@@ -183,7 +183,7 @@ int   complexity
                float *res;
                float sign=1;
                rind = best_index[k];
-               if (rind>shape_cb_size)
+               if (rind>=shape_cb_size)
                {
                   sign=-1;
                   rind-=shape_cb_size;
@@ -215,7 +215,7 @@ int   complexity
                   int rind;
                   float sign=1;
                   rind = best_index[k];
-                  if (rind>shape_cb_size)
+                  if (rind>=shape_cb_size)
                   {
                      sign=-1;
                      rind-=shape_cb_size;
@@ -283,7 +283,7 @@ int   complexity
       int rind;
       float sign=1;
       rind = ind[i];
-      if (rind>shape_cb_size)
+      if (rind>=shape_cb_size)
       {
          sign=-1;
          rind-=shape_cb_size;
