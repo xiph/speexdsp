@@ -62,8 +62,8 @@ AC_OUTPUT([Makefile libspeex/Makefile src/Makefile doc/Makefile Speex.spec
            win32/speexdec/Makefile ])
 
 if test "x$src" = "x"; then 
-echo "You don't seem to have libogg installed. Only the Speex library (libspeex) will be built (no encoder/decoder executable)"
-echo "You can download libogg from http://www.ogg.org/ogg/index.html"
+echo "You don't seem to have the development package for libogg (libogg-devel) installed. Only the Speex library (libspeex) will be built (no encoder/decoder executable)"
+echo "You can download libogg from http://www.vorbis.com/download.psp"
 fi
 
 echo "Type \"make; make install\" to compile and install Speex";
