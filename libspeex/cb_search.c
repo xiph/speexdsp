@@ -67,12 +67,12 @@ int   nsf                       /* number of samples in subframe */
   /* Calculate impulse response of  A(z/g2) / ( A(z)*(z/g1) ) */
   residue_zero(impulse, awk1, h, nsf, p);
   syn_filt_zero(h, ak, h, nsf, p);
-  syn_filt_zero(h, awk2, h, nsf,p);
+  /*syn_filt_zero(h, awk2, h, nsf,p);*/
   
   /* Calculate codebook zero-response */
   residue_zero(&codebook[entries-1],awk1,resp,nsf,p);
   syn_filt_zero(resp,ak,resp,nsf,p);
-  syn_filt_zero(resp,awk2,resp,nsf,p);
+  /*syn_filt_zero(resp,awk2,resp,nsf,p);*/
     
   /* Search codebook backwards using end correction for synthesis */
   

@@ -238,38 +238,34 @@ void encode(EncState *st, float *in, int *outSize, void *bits)
 
       /* Compute weighted signal */
       residue_mem(sp, st->bw_lpc1, sw, st->subframeSize, st->lpcSize, st->mem1);
-
-      /*syn_filt(sw, st->bw_lpc2, sw, st->subframeSize, st->lpcSize);*/
+      /*syn_filt_mem(sw, st->bw_lpc2, sw, st->subframeSize, st->lpcSize, st->mem2);*/
       
       /* Reset excitation */
       for (i=0;i<st->subframeSize;i++)
          exc[i]=0;
 
       /* Compute zero response of A(z/g1) / ( A(z/g2) * Aq(z) ) */
-      residue_mem(exc, st->bw_lpc1, exc, st->subframeSize, st->lpcSize, st->mem2);
-      syn_filt_mem(exc, st->bw_lpc2, exc, st->subframeSize, st->lpcSize, st->mem3);
+      residue(exc, st->bw_lpc1, exc, st->subframeSize, st->lpcSize);
+      /*syn_filt_mem(exc, st->bw_lpc2, exc, st->subframeSize, st->lpcSize, st->mem3);*/
+      for (i=0;i<st->lpcSize;i++)
+        st->mem4[i]=sw[-i-1];
       syn_filt_mem(exc, st->interp_qlpc, res, st->subframeSize, st->lpcSize, st->mem4);
 
       /* Compute target signal */
       for (i=0;i<st->subframeSize;i++)
          target[i]=sw[i]-res[i];
-
-      if (1) {
-         float gain;
-         int index;
-         /* Perform adaptive codebook search (pitch prediction) */
-         overlap_cb_search(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2,
-                           &exc[-120], 100, &gain, &index, st->lpcSize,
-                           st->subframeSize);
-         printf ("gain = %f, pitch = %d\n",gain, 120-index);
-      }
+#if 0
+      /* Perform adaptive codebook search (pitch prediction) */
+      overlap_cb_search(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2,
+                        &exc[-120], 100, &gain[0], &pitch, st->lpcSize,
+                        st->subframeSize);
+      printf ("gain = %f, pitch = %d\n",gain[0], 120-pitch);
+#endif
 
       /* Update target for adaptive codebook contribution */
-      
+
       /* Perform stochastic codebook search */
 
-      /* I'm cheating! Computing excitation directly from target */
-      residue_zero(target, st->bw_lpc2, exc, st->subframeSize, st->lpcSize);
       residue_zero(target, st->interp_qlpc, exc, st->subframeSize, st->lpcSize);
       syn_filt_zero(exc, st->bw_lpc1, exc, st->subframeSize, st->lpcSize);
 
