@@ -58,7 +58,7 @@ static spx_word32_t inner_prod(const spx_word16_t *x, const spx_word16_t *y, int
    return sum;
 }
 
-static void pitch_xcorr(const float *_x, const float *_y, float *corr, int len, int nb_pitch, char *stack)
+static void pitch_xcorr(const spx_word16_t *_x, const spx_word16_t *_y, spx_word32_t *corr, int len, int nb_pitch, char *stack)
 {
    int i;
    for (i=0;i<nb_pitch;i++)
