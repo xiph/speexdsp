@@ -75,10 +75,10 @@ float *stack)
    formant_den =   voiced_fact    * params->formant_enh_den 
                  + (1-voiced_fact)* params->formant_enh_num;
 
-   /*Short-term post-filter: A(z/g1)/A(z/.g1)*/
-   bw_lpc (formant_num, ak, awk, p);
+   /*Short-term post-filter using "flatified" versions of ak*/
+   lpc_flat (formant_num, ak, awk, p);
    residue_mem(new_exc, awk, tmp_exc, nsf, p, mem);
-   bw_lpc (formant_den, ak, awk, p);
+   lpc_flat (formant_den, ak, awk, p);
    syn_filt_mem(tmp_exc, awk, new_exc, nsf, p, mem2);
 
    /*Gain after enhancement*/

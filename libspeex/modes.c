@@ -45,14 +45,21 @@ extern float hexc_10_32_table[];
 static pf_params pf_params_nb = {
    0.65,      /* formant enhancement numerator */
    0.7,      /* formant enhancement denominator */
+   0.2       /* pitch enhancement factor */
+};
+
+/* Post-filter parameters for narrowband */
+static pf_params pf_params_med = {
+   0.65,      /* formant enhancement numerator */
+   0.72,      /* formant enhancement denominator */
    0.4       /* pitch enhancement factor */
 };
 
 /* Post-filter parameters for low bit-rate narrowband */
 static pf_params pf_params_lbr = {
    0.65,      /* formant enhancement numerator */
-   0.72,      /* formant enhancement denominator */
-   0.4       /* pitch enhancement factor */
+   0.75,      /* formant enhancement denominator */
+   0.6       /* pitch enhancement factor */
 };
 
 /* Post-filter parameters for wideband */
@@ -213,7 +220,7 @@ static SpeexSubmode nb_submode4 = {
    split_cb_nogain_unquant,
    &split_cb_nb_med,
    nb_post_filter,
-   &pf_params_nb
+   &pf_params_med
 };
 
 static SpeexSubmode nb_submode5 = {

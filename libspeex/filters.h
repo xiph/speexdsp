@@ -25,6 +25,11 @@ void print_vec(float *vec, int len, char *name);
 /* Apply bandwidth expansion on LPC coef */
 void bw_lpc(float gamma, float *lpc_in, float *lpc_out, int order);
 
+void poly(float *re, float *im, float *p, int ord);
+
+/*LPC polynomial "flatifier"*/
+void lpc_flat(float gamma, float *lpc_in, float *lpc_out, int order);
+
 /* Synthesis filter using the past of y[n] (negative indices) as memory */
 void syn_filt(float *x, float *a, float *y, int N, int ord);
 

@@ -19,8 +19,12 @@
 
 #include "filters.h"
 #include <stdio.h>
+#include "roots.h"
+#include <math.h>
 
 #define min(a,b) ((a) < (b) ? (a) : (b))
+
+#define MAX_ORD 20
 
 void print_vec(float *vec, int len, char *name)
 {
@@ -40,6 +44,51 @@ void bw_lpc(float gamma, float *lpc_in, float *lpc_out, int order)
       lpc_out[i] = tmp * lpc_in[i];
       tmp *= gamma;
    }
+}
+
+void poly(float *re, float *im, float *p, int ord)
+{
+   int i,j;
+
+   float p_re[MAX_ORD], p_im[MAX_ORD];
+   for(i=0;i<ord+1;i++)
+      p_re[i]=p_im[i]=0;
+   p_re[0]=1;
+   for (i=0;i<ord;i++)
+   {
+      for (j=i;j>=0;j--)
+      {
+         /* complex version of: p[j+1] -= p[j]*root[i] */
+         p_re[j+1] -= p_re[j]*re[i] - p_im[j]*im[i];
+         p_im[j+1] -= p_re[j]*im[i] + p_im[j]*re[i];
+      }
+   }
+   for (i=0;i<ord+1;i++)
+      p[i]=p_re[i];
+}
+
+/*LPC polynomial "flatifier"*/
+void lpc_flat(float gamma, float *lpc_in, float *lpc_out, int order)
+{
+   int i;
+   float re[10], im[10], conv[10];
+   float alpha;
+   alpha = 1/(4-4*gamma);
+   poly_roots(lpc_in, re, im, conv, 10, 20, 7);
+   for (i=0;i<order;i++)
+   {
+      float fact,tmp;
+      float radius = sqrt(re[i]*re[i]+im[i]*im[i]);
+      tmp=1-radius;
+      if (tmp>2-2*gamma)
+         fact = tmp;
+      else
+         fact = alpha*tmp*tmp-gamma+1;
+      fact = (1-fact)/(radius+.001);
+      re[i]*=fact;
+      im[i]*=fact;
+   }
+   poly(re, im, lpc_out, order);
 }
 
 void syn_filt(float *x, float *a, float *y, int N, int ord)
