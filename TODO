@@ -1,0 +1,13 @@
+- Improve stochastic codebook
+
+- Define bit-stream, multiple modes
+
+- VBR
+
+- VAD & comfort noise generation
+
+- Implement decoder
+
+- Implement wideband codec
+
+- Search for not patented algorithms
