@@ -112,7 +112,7 @@ int main(int argc, char **argv)
             s += (float)in_short[i] * in_short[i];
             e += ((float)in_short[i]-out_short[i]) * ((float)in_short[i]-out_short[i]);
         }
-	seg_snr += 10*log10((s+1)/(e+1));
+	seg_snr += 10*log10((s+160)/(e+160));
 	sigpow += s;
 	errpow += e;
 	snr_frames++;

@@ -36,8 +36,13 @@
 #include "misc.h"
 
 spx_word16_t compute_rms(spx_sig_t *x, int len);
+void signal_mul(spx_sig_t *x, spx_sig_t *y, spx_word16_t scale, int len);
+void signal_div(spx_sig_t *x, spx_sig_t *y, spx_word16_t scale, int len);
+
 #ifdef FIXED_POINT
+
 int normalize16(spx_sig_t *x, spx_word16_t *y, int max_scale, int len);
+
 #endif
 
 typedef struct CombFilterMem {

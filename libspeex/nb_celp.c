@@ -341,18 +341,18 @@ int nb_encode(void *state, short *in, SpeexBits *bits)
       if (st->lbr_48k)
       {
          float ol1=0,ol2=0;
-         
+         float ol_gain2;
          ol1 = compute_rms(st->exc, st->frameSize>>1);
          ol2 = compute_rms(st->exc+(st->frameSize>>1), st->frameSize>>1);
          ol1 *= ol1*(st->frameSize>>1);
          ol2 *= ol2*(st->frameSize>>1);
 
-         ol_gain=ol1;
+         ol_gain2=ol1;
          if (ol2>ol1)
-            ol_gain=ol2;
-         ol_gain = sqrt(2*ol_gain*(ol1+ol2))*1.3*(1-.5*ol_pitch_coef*ol_pitch_coef);
+            ol_gain2=ol2;
+         ol_gain2 = sqrt(2*ol_gain2*(ol1+ol2))*1.3*(1-.5*ol_pitch_coef*ol_pitch_coef);
       
-      ol_gain=sqrt(1+ol_gain/st->frameSize);
+         ol_gain=sqrt(1+ol_gain2/st->frameSize);
 
       } else {
 #endif
@@ -803,8 +803,7 @@ int nb_encode(void *state, short *in, SpeexBits *bits)
          ener_1 = 1/ener;
 
          /* Normalize innovation */
-         for (i=0;i<st->subframeSize;i++)
-            target[i]*=ener_1;
+         signal_div(target, target, ener, st->subframeSize);
          
          /* Quantize innovation */
          if (SUBMODE(innovation_quant))
@@ -815,8 +814,8 @@ int nb_encode(void *state, short *in, SpeexBits *bits)
                                       innov, syn_resp, bits, stack, st->complexity);
             
             /* De-normalize innovation and update excitation */
-            for (i=0;i<st->subframeSize;i++)
-               innov[i]*=ener;
+            signal_mul(innov, innov, ener, st->subframeSize);
+
             for (i=0;i<st->subframeSize;i++)
                exc[i] += innov[i];
          } else {
@@ -840,9 +839,7 @@ int nb_encode(void *state, short *in, SpeexBits *bits)
                exc[i] += innov2[i];
          }
 
-         for (i=0;i<st->subframeSize;i++)
-            target[i]*=ener;
-
+         signal_mul(target, target, ener, st->subframeSize);
       }
 
       /*Keep the previous memory*/
@@ -1543,8 +1540,7 @@ int nb_decode(void *state, SpeexBits *bits, short *out)
          }
 
          /* De-normalize innovation and update excitation */
-         for (i=0;i<st->subframeSize;i++)
-            innov[i]*=ener;
+         signal_mul(innov, innov, ener, st->subframeSize);
 
          /*Vocoder mode*/
          if (st->submodeID==1) 
