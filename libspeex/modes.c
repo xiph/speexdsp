@@ -39,6 +39,7 @@ extern float exc_5_256_table[];
 extern float exc_5_64_table[];
 extern float exc_8_128_table[];
 extern float exc_10_32_table[];
+extern float exc_10_16_table[];
 extern float hexc_10_32_table[];
 
 /* Post-filter parameters for narrowband */
@@ -77,6 +78,13 @@ static ltp_params ltp_params_nb = {
 };
 
 /* Parameters for Long-Term Prediction (LTP)*/
+static ltp_params ltp_params_vlbr = {
+   gain_cdbk_lbr,
+   5,
+   0
+};
+
+/* Parameters for Long-Term Prediction (LTP)*/
 static ltp_params ltp_params_lbr = {
    gain_cdbk_lbr,
    5,
@@ -94,7 +102,7 @@ static ltp_params ltp_params_med = {
 static split_cb_params split_cb_nb_vlbr = {
    10,               /*subvect_size*/
    4,               /*nb_subvect*/
-   exc_10_32_table, /*shape_cb*/
+   exc_10_16_table, /*shape_cb*/
    4,               /*shape_bits*/
 };
 
@@ -175,15 +183,15 @@ static SpeexSubmode nb_submode2 = {
    lsp_quant_lbr,
    lsp_unquant_lbr,
    /*No pitch quantization*/
-   NULL,
-   NULL,
-   NULL,
+   pitch_search_3tap,
+   pitch_unquant_3tap,
+   &ltp_params_vlbr,
    /*Innovation quantization*/
    split_cb_search_nogain2,
    split_cb_nogain_unquant,
    &split_cb_nb_vlbr,
-   NULL,
-   NULL
+   nb_post_filter,
+   &pf_params_lbr
 };
 
 

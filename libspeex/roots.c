@@ -97,6 +97,7 @@ poly_roots(
 	/* Copy polynomial coefficients to working storage */
 	for (j = 0; j <= n; j++)
 		h[2 + j] = *a++;						/* Note reversal of coefficients */
+        /*JMV: No more reversal of coef*/
 
 	t = 1;
 	K = pow(10.0, (double)(fig));				/* Relative accuracy */
