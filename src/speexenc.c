@@ -44,6 +44,7 @@
 #include "speex_header.h"
 #include "speex_stereo.h"
 #include "misc.h"
+#include "speex_preprocess.h"
 
 #if defined WIN32 || defined _WIN32
 #include "getopt_win.h"
@@ -175,6 +176,8 @@ void usage()
    printf (" --dtx              Enable file-based discontinuous transmission (DTX)\n"); 
    printf (" --comp n           Set encoding complexity (0-10), default 3\n"); 
    printf (" --nframes n        Number of frames per Ogg packet (1-10), default 1\n"); 
+   printf (" --denoise          Denoise the input before encoding\n"); 
+   printf (" --agc              Apply adaptive gain control (AGC) before encoding\n"); 
    printf (" --comment          Add the given string as an extra comment. This may be\n");
    printf ("                     used multiple times.\n");
    printf (" --author           Author of this track.\n");
@@ -227,6 +230,8 @@ int main(int argc, char **argv)
       {"bitrate", required_argument, NULL, 0},
       {"nframes", required_argument, NULL, 0},
       {"comp", required_argument, NULL, 0},
+      {"denoise", no_argument, NULL, 0},
+      {"agc", no_argument, NULL, 0},
       {"help", no_argument, NULL, 0},
       {"le", no_argument, NULL, 0},
       {"be", no_argument, NULL, 0},
@@ -266,6 +271,8 @@ int main(int argc, char **argv)
    char first_bytes[12];
    int wave_input=0;
    int tmp;
+   SpeexPreprocessState *preprocess = NULL;
+   int denoise_enabled=0, agc_enabled=0;
 
    comment_init(&comments, &comments_length, vendor_string);
 
@@ -323,6 +330,12 @@ int main(int argc, char **argv)
          } else if (strcmp(long_options[option_index].name,"comp")==0)
          {
             complexity = atoi (optarg);
+         } else if (strcmp(long_options[option_index].name,"denoise")==0)
+         {
+            denoise_enabled=1;
+         } else if (strcmp(long_options[option_index].name,"agc")==0)
+         {
+            agc_enabled=1;
          } else if (strcmp(long_options[option_index].name,"help")==0)
          {
             usage();
@@ -622,6 +635,13 @@ int main(int argc, char **argv)
       speex_encoder_ctl(st, SPEEX_SET_ABR, &abr_enabled);
    }
 
+   if (denoise_enabled || agc_enabled)
+   {
+      preprocess = speex_preprocess_state_init(frame_size, rate);
+      speex_preprocess_ctl(preprocess, SPEEX_PREPROCESS_SET_DENOISE, &denoise_enabled);
+      speex_preprocess_ctl(preprocess, SPEEX_PREPROCESS_SET_AGC, &agc_enabled);
+   }
+
    speex_bits_init(&bits);
 
    if (!wave_input)
@@ -639,6 +659,10 @@ int main(int argc, char **argv)
       /*Encode current frame*/
       if (chan==2)
          speex_encode_stereo(input, frame_size, &bits);
+      
+      if (preprocess)
+         speex_preprocess(preprocess, input, NULL);
+
       speex_encode(st, input, &bits);
       
       if (print_bitrate) {
