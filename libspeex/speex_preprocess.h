@@ -60,6 +60,12 @@ typedef struct SpeexPreprocessState {
    float *min_ps;            /**< */
    float *last_energy;       /**< Energy of the previous frames */
    float *last_ps;           /**< Power spectrum of the past frames */
+
+   float *S;                 /**< Smoothed power spectrum */
+   float *Smin;              /**< See Cohen paper */
+   float *Stmp;              /**< See Cohen paper */
+   float *update_prob;       /**< Propability of speech presence for noise update */
+
    float *loudness_weight;   /**< */
 
    float *echo_noise;
