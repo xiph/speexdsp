@@ -135,7 +135,27 @@ void speex_bits_flush(SpeexBits *bits)
 void speex_bits_read_whole_bytes(SpeexBits *bits, char *bytes, int len)
 {
    int i,pos;
-   /*FIXME: check for overflow*/
+
+   if ((bits->nbBits>>3)+len+1 > bits->buf_size)
+   {
+      speex_warning_int("Packet if larger than allocated buffer: ", len);
+      if (bits->owner)
+      {
+         char *tmp = speex_realloc(bits->bytes, (bits->nbBits>>3)+len+1);
+         if (tmp)
+         {
+            bits->buf_size=(bits->nbBits>>3)+len+1;
+            bits->bytes=tmp;
+         } else {
+            len=bits->buf_size-(bits->nbBits>>3)-1;
+            speex_warning("Could not resize input buffer: truncating input");
+         }
+      } else {
+         speex_warning("Do not own input buffer: truncating input");
+         len=bits->buf_size;
+      }
+   }
+
    speex_bits_flush(bits);
    pos=bits->nbBits>>3;
    for (i=0;i<len;i++)
@@ -175,8 +195,31 @@ int speex_bits_write_whole_bytes(SpeexBits *bits, char *bytes, int max_len)
 
 void speex_bits_pack(SpeexBits *bits, int data, int nbBits)
 {
+   int i;
    unsigned int d=data;
-   /*FIXME: check for overflow*/
+
+   if (bits->bytePtr+((nbBits+bits->bitPtr)>>3) >= bits->buf_size)
+   {
+      speex_warning("Buffer too small to pack bits");
+      if (bits->owner)
+      {
+         char *tmp = speex_realloc(bits->bytes, ((bits->buf_size+5)*3)>>1);
+         if (tmp)
+         {
+            for (i=bits->buf_size;i<(((bits->buf_size+5)*3)>>1);i++)
+               tmp[i]=0;
+            bits->buf_size=((bits->buf_size+5)*3)>>1;
+            bits->bytes=tmp;
+         } else {
+            speex_warning("Could not resize input buffer: not packing");
+            return;
+         }
+      } else {
+         speex_warning("Do not own input buffer: not packing");
+         return;
+      }
+   }
+
    while(nbBits)
    {
       int bit;
