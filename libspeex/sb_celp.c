@@ -411,17 +411,17 @@ void sb_encode(void *state, float *in, SpeexBits *bits)
          st->interp_lsp[i] = (1-tmp)*st->old_lsp[i] + tmp*st->lsp[i];
       for (i=0;i<st->lpcSize;i++)
          st->interp_qlsp[i] = (1-tmp)*st->old_qlsp[i] + tmp*st->qlsp[i];
+      
+      /* Compute interpolated LPCs (quantized and unquantized) */
+      for (i=0;i<st->lpcSize;i++)
+         st->interp_lsp[i] = cos(st->interp_lsp[i]);
+      for (i=0;i<st->lpcSize;i++)
+         st->interp_qlsp[i] = cos(st->interp_qlsp[i]);
 
       lsp_enforce_margin(st->interp_lsp, st->lpcSize, .002);
       lsp_enforce_margin(st->interp_qlsp, st->lpcSize, .002);
 
-      /* Compute interpolated LPCs (quantized and unquantized) */
-      for (i=0;i<st->lpcSize;i++)
-         st->interp_lsp[i] = cos(st->interp_lsp[i]);
       lsp_to_lpc(st->interp_lsp, st->interp_lpc, st->lpcSize,st->stack);
-
-      for (i=0;i<st->lpcSize;i++)
-         st->interp_qlsp[i] = cos(st->interp_qlsp[i]);
       lsp_to_lpc(st->interp_qlsp, st->interp_qlpc, st->lpcSize, st->stack);
 
       bw_lpc(st->gamma1, st->interp_lpc, st->bw_lpc1, st->lpcSize);
