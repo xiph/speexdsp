@@ -57,7 +57,7 @@ make DESTDIR=$RPM_BUILD_ROOT install
 %doc AUTHORS ChangeLog NEWS README TODO
 /usr/share/man/man1/speexenc.1*
 /usr/share/man/man1/speexdec.1*
-/usr/share/doc/manual.pdf
+%doc doc/manual.pdf
 %attr(755,root,root) %{_bindir}/speex*
 %attr(755,root,root) %{_libdir}/libspeex*.so
 

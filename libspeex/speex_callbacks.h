@@ -33,15 +33,24 @@ extern "C" {
 
 /* Describes all the in-band requests */
 
-#define SPEEX_INBAND_ENH_REQUEST        0
-#define SPEEX_INBAND_VBR_REQUEST        1
+/*These are 1-bit requests*/
+#define SPEEX_INBAND_ENH_REQUEST         0
+#define SPEEX_INBAND_VBR_REQUEST         1
+
+/*These are 4-bit requests*/
 #define SPEEX_INBAND_MODE_REQUEST        2
 #define SPEEX_INBAND_LOW_MODE_REQUEST    3
 #define SPEEX_INBAND_HIGH_MODE_REQUEST   4
 #define SPEEX_INBAND_VBR_QUALITY_REQUEST 5
+#define SPEEX_INBAND_ACKNOWLEDGE_REQUEST 6
 
+/*These are 8-bit requests*/
 /** Send a character in-band */
 #define SPEEX_INBAND_CHAR                8
+
+#define SPEEX_INBAND_MAX_BITRATE         10
+
+#define SPEEX_INBAND_ACKNOWLEDGE         12
 
 /** Callback function type */
 typedef int (*speex_callback_func)(SpeexBits *bits, void *state, void *data);
