@@ -91,6 +91,7 @@ static split_cb_params split_cb_nb_vlbr = {
    4,               /*nb_subvect*/
    exc_10_16_table, /*shape_cb*/
    4,               /*shape_bits*/
+   0,
 };
 
 /* Split-VQ innovation parameters for low bit-rate narrowband */
@@ -99,6 +100,7 @@ static split_cb_params split_cb_nb_lbr = {
    4,               /*nb_subvect*/
    exc_10_32_table, /*shape_cb*/
    5,               /*shape_bits*/
+   0,
 };
 
 
@@ -108,6 +110,7 @@ static split_cb_params split_cb_nb = {
    8,               /*nb_subvect*/
    exc_5_64_table, /*shape_cb*/
    6,               /*shape_bits*/
+   0,
 };
 
 /* Split-VQ innovation parameters narrowband */
@@ -116,6 +119,7 @@ static split_cb_params split_cb_nb_med = {
    5,               /*nb_subvect*/
    exc_8_128_table, /*shape_cb*/
    7,               /*shape_bits*/
+   0,
 };
 
 /* Split-VQ innovation for low-band wideband */
@@ -124,6 +128,7 @@ static split_cb_params split_cb_sb = {
    8,              /*nb_subvect*/
    exc_5_256_table,    /*shape_cb*/
    8,               /*shape_bits*/
+   0,
 };
 
 /* Split-VQ innovation for high-band wideband */
@@ -132,6 +137,7 @@ static split_cb_params split_cb_high = {
    5,               /*nb_subvect*/
    hexc_table,       /*shape_cb*/
    7,               /*shape_bits*/
+   1,
 };
 
 
@@ -141,6 +147,7 @@ static split_cb_params split_cb_high_lbr = {
    4,               /*nb_subvect*/
    hexc_10_32_table,       /*shape_cb*/
    5,               /*shape_bits*/
+   0,
 };
 
 /* 2150 bps "vocoder-like" mode for comfort noise */
@@ -178,8 +185,8 @@ static SpeexSubmode nb_submode2 = {
    pitch_unquant_3tap,
    &ltp_params_vlbr,
    /*Innovation quantization*/
-   split_cb_search_nogain,
-   split_cb_nogain_unquant,
+   split_cb_search_shape_sign,
+   split_cb_shape_sign_unquant,
    &split_cb_nb_vlbr,
 
    0.75, 0.6, .6,
@@ -200,8 +207,8 @@ static SpeexSubmode nb_submode3 = {
    pitch_unquant_3tap,
    &ltp_params_lbr,
    /*Innovation quantization*/
-   split_cb_search_nogain,
-   split_cb_nogain_unquant,
+   split_cb_search_shape_sign,
+   split_cb_shape_sign_unquant,
    &split_cb_nb_lbr,
 
    0.75, 0.6, .5,
@@ -222,8 +229,8 @@ static SpeexSubmode nb_submode4 = {
    pitch_unquant_3tap,
    &ltp_params_med,
    /*Innovation quantization*/
-   split_cb_search_nogain,
-   split_cb_nogain_unquant,
+   split_cb_search_shape_sign,
+   split_cb_shape_sign_unquant,
    &split_cb_nb_med,
 
    0.72, 0.65, .3,
@@ -244,8 +251,8 @@ static SpeexSubmode nb_submode5 = {
    pitch_unquant_3tap,
    &ltp_params_nb,
    /*Innovation quantization*/
-   split_cb_search_nogain,
-   split_cb_nogain_unquant,
+   split_cb_search_shape_sign,
+   split_cb_shape_sign_unquant,
    &split_cb_nb,
 
    0.7, 0.65, .2,
@@ -266,8 +273,8 @@ static SpeexSubmode nb_submode6 = {
    pitch_unquant_3tap,
    &ltp_params_nb,
    /*Innovation quantization*/
-   split_cb_search_nogain,
-   split_cb_nogain_unquant,
+   split_cb_search_shape_sign,
+   split_cb_shape_sign_unquant,
    &split_cb_sb,
 
    0.68, 0.65, .1,
@@ -288,8 +295,8 @@ static SpeexSubmode nb_submode7 = {
    pitch_unquant_3tap,
    &ltp_params_nb,
    /*Innovation quantization*/
-   split_cb_search_nogain,
-   split_cb_nogain_unquant,
+   split_cb_search_shape_sign,
+   split_cb_shape_sign_unquant,
    &split_cb_nb,
 
    0.65, 0.65, 0,
@@ -367,8 +374,8 @@ static SpeexSubmode wb_submode2 = {
    NULL,
    NULL,
    /*Innovation quantization*/
-   split_cb_search_nogain,
-   split_cb_nogain_unquant,
+   split_cb_search_shape_sign,
+   split_cb_shape_sign_unquant,
    &split_cb_high_lbr,
 
    0, 0, -1,
