@@ -392,7 +392,7 @@ int speex_denoise(SpeexDenoiseState *st, float *x)
       else
          p0=.02+.1*exp(-.2*(x-1.5));
       
-      p1 *= 2;
+      p1 *= 1.0;
       /*fprintf (stderr, "%f %f ", p0, p1);*/
       p0 *= .99*st->speech_prob + .01*(1-st->speech_prob);
       p1 *= .01*st->speech_prob + .99*(1-st->speech_prob);
@@ -407,11 +407,7 @@ int speex_denoise(SpeexDenoiseState *st, float *x)
          if (st->last_speech<10)
             is_speech = 1;
       }
-      fprintf (stderr, "%f ", st->speech_prob);
-   }
-   if (mean_prior>1 && mean_post > 1)
-   {
-      is_speech=1;
+      /*fprintf (stderr, "%f ", st->speech_prob);*/
    }
 
    if (st->consec_noise>=3)
