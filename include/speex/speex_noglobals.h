@@ -40,6 +40,8 @@
 /* See README.symbian in the Speex source distribution for information
  * on using this API */
 
+typedef struct SpeexMode SpeexMode;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
