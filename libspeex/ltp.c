@@ -613,7 +613,7 @@ int cdbk_offset
 #endif
       }
 
-#ifndef FIXED_POINT
+#ifdef FIXED_POINT
       {
          spx_word16_t sgain[3];
          sgain[0] = 64*gain[0];
