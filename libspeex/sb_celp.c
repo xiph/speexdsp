@@ -346,7 +346,7 @@ void sb_encode(void *state, float *in, SpeexBits *bits)
       st->lsp[i] = acos(st->lsp[i]);
 
    /* VBR code */
-   if (0){
+   if (st->vbr_enabled){
       float e_low=0, e_high=0;
       float ratio;
       float low_qual;
@@ -389,8 +389,9 @@ void sb_encode(void *state, float *in, SpeexBits *bits)
                break;
             mode--;
          }
-         fprintf (stderr, "%f %d\n", low_qual, mode);
+         /*fprintf (stderr, "%f %d\n", low_qual, mode);*/
          speex_encoder_ctl(state, SPEEX_SET_HIGH_MODE, &mode);
+         /*fprintf (stderr, "%d %d\n", st->submodeID, mode);*/
       }
       /*fprintf (stderr, "%f %f\n", ratio, low_qual);*/
    }
@@ -763,7 +764,7 @@ static void sb_decode_lost(SBDecState *st, float *out, void *stack)
    st->first=1;
    
    /* Final signal synthesis from excitation */
-   iir_mem2(st->exc, st->interp_qlpc, st->high, st->subframeSize, st->lpcSize, st->mem_sp);
+   iir_mem2(st->exc, st->interp_qlpc, st->high, st->frame_size, st->lpcSize, st->mem_sp);
    
    /* Reconstruct the original */
    fir_mem_up(st->x0d, h0, st->y0, st->full_frame_size, QMF_ORDER, st->g0_mem, stack);
@@ -827,7 +828,7 @@ int sb_decode(void *state, SpeexBits *bits, float *out)
       st->first=1;
 
       /* Final signal synthesis from excitation */
-      iir_mem2(st->exc, st->interp_qlpc, st->high, st->subframeSize, st->lpcSize, st->mem_sp);
+      iir_mem2(st->exc, st->interp_qlpc, st->high, st->frame_size, st->lpcSize, st->mem_sp);
 
       fir_mem_up(st->x0d, h0, st->y0, st->full_frame_size, QMF_ORDER, st->g0_mem, stack);
       fir_mem_up(st->high, h1, st->y1, st->full_frame_size, QMF_ORDER, st->g1_mem, stack);
@@ -982,7 +983,11 @@ void sb_encoder_ctl(void *state, int request, void *ptr)
       speex_encoder_ctl(st, SPEEX_SET_QUALITY, ptr);
       break;
    case SPEEX_SET_VBR:
+      st->vbr_enabled = (*(int*)ptr);
       speex_encoder_ctl(st->st_low, SPEEX_SET_VBR, ptr);
+      break;
+   case SPEEX_GET_VBR:
+      (*(int*)ptr) = st->vbr_enabled;
       break;
    case SPEEX_SET_VBR_QUALITY:
       {
@@ -1036,10 +1041,12 @@ void sb_encoder_ctl(void *state, int request, void *ptr)
       break;
    case SPEEX_GET_BITRATE:
       speex_encoder_ctl(st->st_low, request, ptr);
+      /*fprintf (stderr, "before: %d\n", (*(int*)ptr));*/
       if (st->submodes[st->submodeID])
          (*(int*)ptr) += st->sampling_rate*SUBMODE(bits_per_frame)/st->full_frame_size;
       else
          (*(int*)ptr) += st->sampling_rate*(SB_SUBMODE_BITS+1)/st->full_frame_size;
+      /*fprintf (stderr, "after: %d\n", (*(int*)ptr));*/
       break;
    case SPEEX_SET_SAMPLING_RATE:
       {
