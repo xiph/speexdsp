@@ -924,6 +924,9 @@ void sb_encoder_ctl(void *state, int request, void *ptr)
    case SPEEX_SET_LOW_MODE:
       speex_encoder_ctl(st->st_low, SPEEX_SET_MODE, ptr);
       break;
+   case SPEEX_SET_MODE:
+      speex_encoder_ctl(st, SPEEX_SET_QUALITY, ptr);
+      break;
    case SPEEX_SET_VBR:
       speex_encoder_ctl(st->st_low, SPEEX_SET_VBR, ptr);
       break;
@@ -944,60 +947,13 @@ void sb_encoder_ctl(void *state, int request, void *ptr)
       {
          int nb_qual;
          int quality = (*(int*)ptr);
-         /*FIXME: Cleanup needed, should be a mode property*/
-         switch (quality)
-         {
-         case 0:
-            nb_qual=0;
-            st->submodeID = 0;
-            break;
-         case 1:
-            nb_qual=1;
-            st->submodeID = 1;
-            break;
-         case 2:
-            nb_qual=2;
-            st->submodeID = 1;
-            break;
-         case 3:
-            nb_qual=3;
-            st->submodeID = 1;
-            break;
-         case 4:
-            nb_qual=5;
-            st->submodeID = 1;
-            break;
-         case 5:
-            nb_qual=7;
-            st->submodeID = 1;
-            break;
-         case 6:
-            nb_qual=8;
-            st->submodeID = 2;
-            break;
-         case 7:
-            nb_qual=9;
-            st->submodeID = 2;
-            break;
-         case 8:
-            nb_qual=9;
-            st->submodeID = 3;
-            break;
-         case 9:
-            nb_qual=10;
-            st->submodeID = 3;
-            break;
-         case 10:
-            nb_qual=10;
-            st->submodeID = 4;
-            break;
-         default:
-            fprintf(stderr, "Unknown sb_ctl quality: %d\n", quality);
-         }
-         /*FIXME: This is a kludge*/
-         if (st->full_frame_size == 640)
-            st->submodeID = 1;
-         speex_encoder_ctl(st->st_low, SPEEX_SET_QUALITY, &nb_qual);
+         if (quality < 0)
+            quality = 0;
+         if (quality > 10)
+            quality = 10;
+         st->submodeID = ((SpeexSBMode*)(st->mode->mode))->quality_map[quality];
+         nb_qual = ((SpeexSBMode*)(st->mode->mode))->low_quality_map[quality];
+         speex_encoder_ctl(st->st_low, SPEEX_SET_MODE, &nb_qual);
       }
       break;
    case SPEEX_SET_COMPLEXITY:
@@ -1008,6 +964,20 @@ void sb_encoder_ctl(void *state, int request, void *ptr)
       break;
    case SPEEX_GET_COMPLEXITY:
       (*(int*)ptr) = st->complexity;
+      break;
+   case SPEEX_SET_BITRATE:
+      {
+         int i=10, rate, target;
+         target = (*(int*)ptr);
+         while (i>=1)
+         {
+            speex_encoder_ctl(st, SPEEX_SET_QUALITY, &i);
+            speex_encoder_ctl(st, SPEEX_GET_BITRATE, &rate);
+            if (rate <= target)
+               break;
+            i--;
+         }
+      }
       break;
    case SPEEX_GET_BITRATE:
       speex_encoder_ctl(st->st_low, request, ptr);

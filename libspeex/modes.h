@@ -116,7 +116,7 @@ typedef struct SpeexNBMode {
 
    SpeexSubmode *submodes[NB_SUBMODES]; /**< Sub-mode data for the mode */
    int     defaultSubmode; /**< Default sub-mode to use when encoding */
-
+   int     quality_map[11]; /**< Mode corresponding to each quality setting */
 } SpeexNBMode;
 
 
@@ -135,6 +135,8 @@ typedef struct SpeexSBMode {
 
    SpeexSubmode *submodes[SB_SUBMODES]; /**< Sub-mode data for the mode */
    int     defaultSubmode; /**< Default sub-mode to use when encoding */
+   int     low_quality_map[11]; /**< Mode corresponding to each quality setting */
+   int     quality_map[11]; /**< Mode corresponding to each quality setting */
 
 } SpeexSBMode;
 

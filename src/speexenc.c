@@ -116,6 +116,12 @@ void version()
    printf ("Copyright (C) 2002 Jean-Marc Valin\n");
 }
 
+void version_short()
+{
+   printf ("speexenc version " VERSION "\n");
+   printf ("Copyright (C) 2002 Jean-Marc Valin\n");
+}
+
 void usage()
 {
    printf ("Usage: speexenc [options] input_file output_file\n");
@@ -136,22 +142,24 @@ void usage()
    printf (" -w, --wideband     Wideband (16 kHz) input file\n"); 
    printf (" -u, --ultra-wideband \"Ultra-wideband\" (32 kHz) input file\n"); 
    printf (" --quality n        Encoding quality (0-10), default 3\n"); 
+   printf (" --bitrate n        Encoding bit-rate (use bit-rate n or lower)\n"); 
    printf (" --vbr              Enable variable bit-rate (VBR)\n"); 
    printf (" --comp n           Set encoding complexity (0-10), default 3\n"); 
    printf (" --nframes n        Number of frames per Ogg packet (1-10), default 1\n"); 
-   printf (" --comment          Add the given string as an extra comment. This may be\n                     used multiple times.\n");
+   printf (" --comment          Add the given string as an extra comment. This may be\n");
+   printf ("                     used multiple times.\n");
    printf (" --author           Author of this track.\n");
    printf (" --title            Title for this track.\n");
    printf (" -h, --help         This help\n"); 
    printf (" -v, --version      Version information\n"); 
    printf (" -V                 Verbose mode (show bit-rate)\n"); 
    printf ("Raw input options:\n");
-   printf (" --rate             Sampling rate for raw input\n"); 
+   printf (" --rate n           Sampling rate for raw input\n"); 
+   printf (" --stereo           Consider raw input as stereo\n"); 
    printf (" --le               Raw input is little-endian\n"); 
    printf (" --be               Raw input is big-endian\n"); 
    printf (" --8bit             Raw input is 8-bit unsigned\n"); 
    printf (" --16bit            Raw input is 16-bit signed\n"); 
-   printf (" --stereo           Consider raw input as stereo\n"); 
    printf ("Default raw PCM input is 16-bit, little-endian, mono\n"); 
    printf ("\n");
    printf ("More information is available from the Speex site: http://www.speex.org\n");
@@ -181,6 +189,7 @@ int main(int argc, char **argv)
       {"narrowband", no_argument, NULL, 0},
       {"vbr", no_argument, NULL, 0},
       {"quality", required_argument, NULL, 0},
+      {"bitrate", required_argument, NULL, 0},
       {"nframes", required_argument, NULL, 0},
       {"comp", required_argument, NULL, 0},
       {"help", no_argument, NULL, 0},
@@ -191,6 +200,7 @@ int main(int argc, char **argv)
       {"stereo", no_argument, NULL, 0},
       {"rate", required_argument, NULL, 0},
       {"version", no_argument, NULL, 0},
+      {"version-short", no_argument, NULL, 0},
       {"comment", required_argument, NULL, 0},
       {"author", required_argument, NULL, 0},
       {"title", required_argument, NULL, 0},
@@ -216,6 +226,7 @@ int main(int argc, char **argv)
    int comments_length;
    int close_in=0, close_out=0;
    int eos=0;
+   int bitrate=0;
 
    comment_init(&comments, &comments_length, vendor_string);
 
@@ -246,6 +257,9 @@ int main(int argc, char **argv)
          {
             quality = atoi (optarg);
             vbr_quality=atof(optarg);
+         } else if (strcmp(long_options[option_index].name,"bitrate")==0)
+         {
+            bitrate = atoi (optarg);
          } else if (strcmp(long_options[option_index].name,"nframes")==0)
          {
             nframes = atoi (optarg);
@@ -263,6 +277,10 @@ int main(int argc, char **argv)
          } else if (strcmp(long_options[option_index].name,"version")==0)
          {
             version();
+            exit(0);
+         } else if (strcmp(long_options[option_index].name,"version-short")==0)
+         {
+            version_short();
             exit(0);
          } else if (strcmp(long_options[option_index].name,"le")==0)
          {
@@ -522,6 +540,12 @@ int main(int argc, char **argv)
          speex_encoder_ctl(st, SPEEX_SET_VBR_QUALITY, &vbr_quality);
       else
          speex_encoder_ctl(st, SPEEX_SET_QUALITY, &quality);
+   }
+   if (bitrate)
+   {
+      if (quality >= 0 && vbr_enabled)
+         fprintf (stderr, "--bitrate option is overriding --quality\n");
+      speex_encoder_ctl(st, SPEEX_SET_BITRATE, &bitrate);
    }
 
    speex_bits_init(&bits);

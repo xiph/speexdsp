@@ -1252,6 +1252,7 @@ void nb_encoder_ctl(void *state, int request, void *ptr)
    case SPEEX_SET_QUALITY:
       {
          int quality = (*(int*)ptr);
+         /*
          if (quality<=0)
             st->submodeID = 0;
          else if (quality<=1)
@@ -1269,7 +1270,12 @@ void nb_encoder_ctl(void *state, int request, void *ptr)
          else if (quality<=10)
             st->submodeID = 7;
          else
-            fprintf(stderr, "Unknown nb_ctl quality: %d\n", quality);
+         fprintf(stderr, "Unknown nb_ctl quality: %d\n", quality);*/
+         if (quality < 0)
+            quality = 0;
+         if (quality > 10)
+            quality = 10;
+         st->submodeID = ((SpeexNBMode*)(st->mode->mode))->quality_map[quality];
       }
       break;
    case SPEEX_SET_COMPLEXITY:
@@ -1279,6 +1285,20 @@ void nb_encoder_ctl(void *state, int request, void *ptr)
       break;
    case SPEEX_GET_COMPLEXITY:
       (*(int*)ptr) = st->complexity;
+      break;
+   case SPEEX_SET_BITRATE:
+      {
+         int i=10, rate, target;
+         target = (*(int*)ptr);
+         while (i>=1)
+         {
+            speex_encoder_ctl(st, SPEEX_SET_QUALITY, &i);
+            speex_encoder_ctl(st, SPEEX_GET_BITRATE, &rate);
+            if (rate <= target)
+               break;
+            i--;
+         }
+      }
       break;
    case SPEEX_GET_BITRATE:
       if (st->submodes[st->submodeID])

@@ -191,6 +191,12 @@ Variable complexity
 \end_inset 
 
 
+\layout Itemize
+
+Ultra-wideband mode at 32 kHz (up to 48 kHz)
+\layout Itemize
+
+Intensity stereo encoding option
 \layout Section
 \pagebreak_top 
 Introduction to CELP Coding
@@ -3074,8 +3080,24 @@ The encoder takes the following options:
 (-w) Tell Speex to treat the input as wideband (16 kHz)
 \layout Description
 
+--ultra-wideband\SpecialChar ~
+(-u) Tell Speex to treat the input as 
+\begin_inset Quotes eld
+\end_inset 
+
+ultra-wideband
+\begin_inset Quotes erd
+\end_inset 
+
+ (32 kHz)
+\layout Description
+
 --quality\SpecialChar ~
-n Set the encoding quality (0-10)
+n Set the encoding quality (0-10), default is 3
+\layout Description
+
+--bitrate\SpecialChar ~
+n Encoding bit-rate (use bit-rate n or lower) 
 \layout Description
 
 --vbr Enable VBR (Variable Bit-Rate), disabled by default
@@ -3099,6 +3121,44 @@ n Set encoding speed/quality tradeoff.
 
 --version\SpecialChar ~
 (-v) Print version information
+\layout Subsubsection*
+
+Speex comments
+\layout Description
+
+--comment Add the given string as an extra comment.
+ This may be used multiple times.
+ 
+\layout Description
+
+--author Author of this track.
+ 
+\layout Description
+
+--title Title for this track.
+ 
+\layout Subsubsection*
+
+Raw input options
+\layout Description
+
+--rate\SpecialChar ~
+n Sampling rate for raw input
+\layout Description
+
+--stereo Consider raw input as stereo 
+\layout Description
+
+--le Raw input is little-endian 
+\layout Description
+
+--be Raw input is big-endian 
+\layout Description
+
+--8bit Raw input is 8-bit unsigned 
+\layout Description
+
+--16bit Raw input is 16-bit signed 
 \layout Subsection
 
 
@@ -3118,6 +3178,21 @@ The decoder takes the following options:
 \layout Description
 
 --no-enh disable post-filter (default)
+\layout Description
+
+--force-nb Force decoding in narrowband 
+\layout Description
+
+--force-wb Force decoding in wideband 
+\layout Description
+
+--force-uwb Force decoding in ultra-wideband 
+\layout Description
+
+--mono Force decoding in mono 
+\layout Description
+
+--stereo Force decoding in stereo 
 \layout Description
 
 --packet-loss\SpecialChar ~
@@ -3476,7 +3551,19 @@ SPEEX_SET_COMPLEXITY* Set the CPU resources allowed for the encoder
 SPEEX_GET_COMPLEXITY* Get the CPU resources allowed for the encoder
 \layout Description
 
+SPEEX_SET_BITRATE* Set the bit-rate to use to the closest value not exceeding
+ the parameter (integer in bps)
+\layout Description
+
 SPEEX_GET_BITRATE Get the current bit-rate in use (integer in bps)
+\layout Description
+
+SPEEX_SET_SAMPLING_RATE Set real sampling rate (is used to determine real
+ bit-rate)
+\layout Description
+
+SPEEX_GET_SAMPLING_RATE Get real sampling rate (is used to determine real
+ bit-rate)
 \layout Description
 
 * applies only to the encoder
@@ -3878,7 +3965,7 @@ Transmit (8-bit) character to the other end
 
 \layout Standard
 
-reserved
+Intensity stereo information
 \end_inset 
 </cell>
 </row>

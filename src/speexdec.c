@@ -221,6 +221,12 @@ void version()
    printf ("Copyright (C) 2002 Jean-Marc Valin\n");
 }
 
+void version_short()
+{
+   printf ("speexdec version " VERSION "\n");
+   printf ("Copyright (C) 2002 Jean-Marc Valin\n");
+}
+
 static void *process_header(ogg_packet *op, int enh_enabled, int *frame_size, int *rate, int *nframes, int forceMode, int *channels, SpeexStereoState *stereo)
 {
    void *st;
@@ -315,6 +321,7 @@ int main(int argc, char **argv)
    {
       {"help", no_argument, NULL, 0},
       {"version", no_argument, NULL, 0},
+      {"version-short", no_argument, NULL, 0},
       {"enh", no_argument, NULL, 0},
       {"no-enh", no_argument, NULL, 0},
       {"pf", no_argument, NULL, 0},
@@ -362,6 +369,10 @@ int main(int argc, char **argv)
          } else if (strcmp(long_options[option_index].name,"version")==0)
          {
             version();
+            exit(0);
+         } else if (strcmp(long_options[option_index].name,"version-short")==0)
+         {
+            version_short();
             exit(0);
          } else if (strcmp(long_options[option_index].name,"enh")==0)
          {
