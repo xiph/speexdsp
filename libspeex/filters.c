@@ -77,6 +77,17 @@ void lpc_flat(float g1, float g2, float *lpc_in, float *lpc_out1, float *lpc_out
    poly_roots(lpc_in, re, im, conv, 10, 20, 4);
    for (i=0;i<order;i++)
    {
+      float radius = sqrt(re[i]*re[i]+im[i]*im[i]);
+      if (!(re[i]>-2 && re[i]<2 && im[i]>-2 && im[i]<2 && radius<2))
+         re[i]=im[i]=0;
+      if (radius>1)
+      {
+         re[i]/=radius;
+         im[i]/=radius;
+      }
+   }
+   for (i=0;i<order;i++)
+   {
       re1[i]=re[i];
       im1[i]=im[i];
    }
@@ -85,17 +96,6 @@ void lpc_flat(float g1, float g2, float *lpc_in, float *lpc_out1, float *lpc_out
    {
       float fact,tmp;
       float radius = sqrt(re[i]*re[i]+im[i]*im[i]);
-      if (radius>1)
-      {
-         re[i]=im[i]=1;
-         radius=1;
-      }
-      if (!(radius<1))
-      {
-         re[i]=im[i]=0;
-         radius=0;
-         /*fprintf(stderr, "radius = %f\n", radius);*/
-      }
       tmp=1-radius;
       if (tmp>2-2*g1)
          fact = tmp;
@@ -104,6 +104,7 @@ void lpc_flat(float g1, float g2, float *lpc_in, float *lpc_out1, float *lpc_out
       fact = (1-fact)/(radius+.001);
       re[i]*=fact;
       im[i]*=fact;
+      
    }
    poly(re, im, lpc_out1, order);
    for (i=0;i<order;i++)
@@ -116,17 +117,6 @@ void lpc_flat(float g1, float g2, float *lpc_in, float *lpc_out1, float *lpc_out
    {
       float fact,tmp;
       float radius = sqrt(re[i]*re[i]+im[i]*im[i]);
-      if (radius>1)
-      {
-         re[i]=im[i]=1;
-         radius=1;
-      }
-      if (!(radius<1))
-      {
-         re[i]=im[i]=0;
-         radius=0;
-         /*fprintf(stderr, "radius = %f\n", radius);*/
-      }
       tmp=1-radius;
       if (tmp>2-2*g2)
          fact = tmp;
