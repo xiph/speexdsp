@@ -489,16 +489,12 @@ static void speex_compute_agc(SpeexPreprocessState *st, float mean_prior)
    
 }
 
-int speex_preprocess(SpeexPreprocessState *st, float *x, float *echo)
+static void preprocess_analysis(SpeexPreprocessState *st, float *x)
 {
    int i;
-   int is_speech=1;
-   float mean_post=0;
-   float mean_prior=0;
    int N = st->ps_size;
    int N3 = 2*N - st->frame_size;
    int N4 = st->frame_size - N3;
-   float scale=.5/N;
    float *ps=st->ps;
 
    /* 'Build' input frame */
@@ -518,18 +514,21 @@ int speex_preprocess(SpeexPreprocessState *st, float *x, float *echo)
    /* Perform FFT */
    drft_forward(st->fft_lookup, st->frame);
 
-   /************************************************************** 
-    *  Denoise in spectral domain using Ephraim-Malah algorithm  *
-    **************************************************************/
-
    /* Power spectrum */
    ps[0]=1;
    for (i=1;i<N;i++)
       ps[i]=1+st->frame[2*i-1]*st->frame[2*i-1] + st->frame[2*i]*st->frame[2*i];
 
-   for (i=1;i<N-1;i++)
-      st->S[i] = 100+ .8*st->S[i] + .05*ps[i-1]+.1*ps[i]+.05*ps[i+1];
+}
 
+static void update_noise_prob(SpeexPreprocessState *st)
+{
+   int i;
+   int N = st->ps_size;
+   
+   for (i=1;i<N-1;i++)
+      st->S[i] = 100+ .8*st->S[i] + .05*st->ps[i-1]+.1*st->ps[i]+.05*st->ps[i+1];
+   
    if (st->nb_preprocess<1)
    {
       for (i=1;i<N-1;i++)
@@ -558,12 +557,28 @@ int speex_preprocess(SpeexPreprocessState *st, float *x, float *echo)
       /*fprintf (stderr, "%f ", st->S[i]/st->Smin[i]);*/
       /*fprintf (stderr, "%f ", st->update_prob[i]);*/
    }
+}
 
+int speex_preprocess(SpeexPreprocessState *st, float *x, float *echo)
+{
+   int i;
+   int is_speech=1;
+   float mean_post=0;
+   float mean_prior=0;
+   int N = st->ps_size;
+   int N3 = 2*N - st->frame_size;
+   int N4 = st->frame_size - N3;
+   float scale=.5/N;
+   float *ps=st->ps;
+
+   preprocess_analysis(st, x);
+
+   update_noise_prob(st);
 
    st->nb_preprocess++;
 
    /* Noise estimation always updated for the 20 first times */
-   if (st->nb_adapt<20)
+   if (st->nb_adapt<10)
       /*if (st->nb_adapt<25 && st->nb_adapt>15)*/
    {
       update_noise(st, ps, echo);
@@ -808,6 +823,35 @@ int speex_preprocess(SpeexPreprocessState *st, float *x, float *echo)
       st->old_ps[i] = ps[i];
 
    return is_speech;
+}
+
+void speex_preprocess_estimate_update(SpeexPreprocessState *st, float *x, float *noise)
+{
+   int i;
+   int N = st->ps_size;
+   int N3 = 2*N - st->frame_size;
+
+   float *ps=st->ps;
+
+   preprocess_analysis(st, x);
+
+   update_noise_prob(st);
+
+   st->nb_preprocess++;
+   
+   for (i=1;i<N-1;i++)
+   {
+      if (st->update_prob[i]<.5)
+         st->noise[i] = .90*st->noise[i] + .1*ps[i];
+   }
+
+   for (i=0;i<N3;i++)
+      st->outbuf[i] = x[st->frame_size-N3+i]*st->window[st->frame_size+i];
+
+   /* Save old power spectrum */
+   for (i=1;i<N;i++)
+      st->old_ps[i] = ps[i];
+
 }
 
 

@@ -102,6 +102,9 @@ void speex_preprocess_state_destroy(SpeexPreprocessState *st);
 /** Preprocess a frame */
 int speex_preprocess(SpeexPreprocessState *st, float *x, float *noise);
 
+/** Preprocess a frame */
+void speex_preprocess_estimate_update(SpeexPreprocessState *st, float *x, float *noise);
+
 /** Used like the ioctl function to control the preprocessor parameters */
 int speex_preprocess_ctl(SpeexPreprocessState *st, int request, void *ptr);
 
