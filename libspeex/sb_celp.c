@@ -527,6 +527,9 @@ void sb_encode(SBEncState *st, float *in, FrameBits *bits)
          overlap_cb_search(target+of, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2,
                            &stoc[0], 64, &gains[k], &index[k], st->lpcSize,
                            st->subframeSize/N);
+
+         frame_bits_pack(bits,index[k],6);
+
          for (i=0;i<st->subframeSize;i++)
             res[i]=0;
          for (i=0;i<st->subframeSize/N;i++)
@@ -553,14 +556,13 @@ void sb_encode(SBEncState *st, float *in, FrameBits *bits)
             int best_ind;
             int of=k*st->subframeSize/N;
             gains[k]*=g;
-#if 1
+
             if (gains[k]<0)
             {
                sign=1;
                gains[k] = -gains[k];
             }
-            quant = (1+gains[k])*filter_ratio/(1+sqrt(el/st->subframeSize));
-            printf ("quant_high_gain: %f\n", (float)log(quant));
+            quant = log((1+gains[k])*filter_ratio/(1+sqrt(el/st->subframeSize)));
             min_dist = sqr(quant-quant_high_gain2[0]);
             best_ind=0;
             for (i=1;i<8;i++)
@@ -573,10 +575,14 @@ void sb_encode(SBEncState *st, float *in, FrameBits *bits)
                }
             }
             quant=quant_high_gain2[best_ind];
-            gains[k]=quant*(1+sqrt(el/st->subframeSize))/filter_ratio;
+
+            frame_bits_pack(bits,sign,1);
+            frame_bits_pack(bits,best_ind,3);
+
+            gains[k]=exp(quant)*(1+sqrt(el/st->subframeSize))/filter_ratio;
             if (sign)
                gains[k] = -gains[k];
-#endif
+
             for (i=0;i<st->subframeSize/N;i++)
                exc[of+i]=gains[k]*stoc[index[k]+i];
          }
