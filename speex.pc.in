@@ -1,4 +1,4 @@
-# libogg pkg-config source file
+# libspeex pkg-config source file
 
 prefix=@prefix@
 exec_prefix=@exec_prefix@

@@ -45,6 +45,8 @@
 #define NULL 0
 #endif
 
+#define MAX_IN_SAMPLES 640
+
 SpeexMode *speex_mode_list[SPEEX_NB_MODES] = {&speex_nb_mode, &speex_wb_mode, &speex_uwb_mode};
 
 /* Extern declarations for all codebooks we use here */
@@ -572,6 +574,17 @@ int speex_encode(void *state, float *in, SpeexBits *bits)
    return (*((SpeexMode**)state))->enc(state, in, bits);
 }
 
+int speex_encode_int(void *state, short *in, SpeexBits *bits)
+{
+   int i;
+   int N;
+   float float_in[MAX_IN_SAMPLES];
+   speex_encoder_ctl(state, SPEEX_GET_FRAME_SIZE, &N);
+   for (i=0;i<N;i++)
+      float_in[i] = in[i];
+   return (*((SpeexMode**)state))->enc(state, float_in, bits);
+}
+
 void speex_decoder_destroy(void *state)
 {
    (*((SpeexMode**)state))->dec_destroy(state);
@@ -582,6 +595,25 @@ int speex_decode(void *state, SpeexBits *bits, float *out)
    return (*((SpeexMode**)state))->dec(state, bits, out);
 }
 
+int speex_decode_int(void *state, SpeexBits *bits, short *out)
+{
+   int i;
+   int N;
+   float float_out[MAX_IN_SAMPLES];
+   int ret;
+   speex_decoder_ctl(state, SPEEX_GET_FRAME_SIZE, &N);
+   ret = (*((SpeexMode**)state))->dec(state, bits, float_out);
+   for (i=0;i<N;i++)
+   {
+      if (float_out[i]>32767.f)
+         out[i] = 32767;
+      else if (float_out[i]<-32768.f)
+         out[i] = -32768;
+      else
+         out[i] = (short)floor(.5+float_out[i]);
+   }
+   return ret;
+}
 
 int speex_encoder_ctl(void *state, int request, void *ptr)
 {
