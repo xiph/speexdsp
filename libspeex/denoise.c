@@ -424,12 +424,13 @@ int denoise(DenoiseState *st, float *x)
 
    if ((mean_prior>3&&mean_prior>3))
    {
+      float loudness=0;
+      float rate;
       st->nb_loudness_adapt++;
-      float rate=2.0/(1+st->nb_loudness_adapt);
+      rate=2.0/(1+st->nb_loudness_adapt);
       if (rate < .01)
          rate = .01;
 
-      float loudness=0;
       for (i=2;i<N;i++)
       {
          loudness += scale*st->ps[i] * st->gain2[i] * st->gain2[i] * st->loudness_weight[i];

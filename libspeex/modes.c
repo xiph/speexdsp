@@ -594,7 +594,7 @@ static SpeexSubmode nb_48k_submode = {
    split_cb_shape_sign_unquant,
    &split_cb_nb_48k,
 
-   0.8, 0.6, .7,
+   0.7, 0.5, .55,
    144
 };
 
