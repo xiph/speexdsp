@@ -12,6 +12,7 @@ typedef struct EncState {
    int    windowSize;
    float *buf2;
    float *autocorr;
+   float *lagWindow;
    float *lpc;
    float *lsp;
    float *rc;
