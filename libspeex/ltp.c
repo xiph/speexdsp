@@ -24,26 +24,56 @@
 #include "filters.h"
 #include "speex_bits.h"
 
-#define abs(x) ((x)<0 ? -(x) : (x))
+
+static float inner_prod(float *x, float *y, int len)
+{
+   int i;
+   float sum1=0,sum2=0,sum3=0,sum4=0;
+   for (i=0;i<len;)
+   {
+      sum1 += x[i]*y[i];
+      sum2 += x[i+1]*y[i+1];
+      sum3 += x[i+2]*y[i+2];
+      sum4 += x[i+3]*y[i+3];
+      i+=4;
+   }
+   return sum1+sum2+sum3+sum4;
+}
+
+/*Original, non-optimized version*/
+/*static float inner_prod(float *x, float *y, int len)
+{
+   int i;
+   float sum=0;
+   for (i=0;i<len;i++)
+      sum += x[i]*y[i];
+   return sum;
+}
+*/
 
 
 void open_loop_nbest_pitch(float *sw, int start, int end, int len, int *pitch, float *gain, int N, float *stack)
 {
    int i,j,k;
-   float corr;
+   float corr=0;
    float energy;
-   float score, *best_score;
+   float score=0, *best_score;
    float e0;
 
    best_score = PUSH(stack,N);
    for (i=0;i<N;i++)
         best_score[i]=-1;
-   energy=xcorr(sw-start, sw-start, len);
-   e0=xcorr(sw, sw, len);
+   energy=inner_prod(sw-start, sw-start, len);
+   e0=inner_prod(sw, sw, len);
    for (i=start;i<=end;i++)
    {
-      corr=xcorr(sw, sw-i, len);
-      score=corr*corr/(energy+1);
+      if (0&&score < .3*best_score[N-1])
+         score = .9*best_score[N-1];
+      else
+      {
+         corr=inner_prod(sw, sw-i, len);
+         score=corr*corr/(energy+1);
+      }
       if (score>best_score[N-1])
       {
          float g1, g;
@@ -146,11 +176,11 @@ int  *cdbk_index
    }
 
    for (i=0;i<3;i++)
-      corr[i]=xcorr(x[i],target,nsf);
+      corr[i]=inner_prod(x[i],target,nsf);
    
    for (i=0;i<3;i++)
       for (j=0;j<=i;j++)
-         A[i][j]=A[j][i]=xcorr(x[i],x[j],nsf);
+         A[i][j]=A[j][i]=inner_prod(x[i],x[j],nsf);
    
    {
       int j;

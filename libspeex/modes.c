@@ -294,7 +294,7 @@ static SpeexNBMode nb_mode = {
    144,    /*pitchEnd*/
    0.9,    /*gamma1*/
    0.6,    /*gamma2*/
-   .005,   /*lag_factor*/
+   .01,   /*lag_factor*/
    1.0001, /*lpc_floor*/
    0.0,    /*preemph*/
    {NULL, &nb_submode1, &nb_submode2, &nb_submode3, &nb_submode4, &nb_submode5, &nb_submode6, &nb_submode7,

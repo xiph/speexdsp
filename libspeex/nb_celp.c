@@ -207,10 +207,10 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
       st->inBuf[st->bufSize-st->frameSize+i] = in[i] - st->preemph*in[i-1];
    st->pre_mem = in[st->frameSize-1];
 
+   /* Move signals 1 frame towards the past */
    speex_move(st->exc2Buf, st->exc2Buf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(float));
    speex_move(st->excBuf, st->excBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(float));
    speex_move(st->swBuf, st->swBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(float));
-
 
 
    /* Window for analysis */
@@ -222,6 +222,7 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
 
    st->autocorr[0] += 10;        /* prevents NANs */
    st->autocorr[0] *= st->lpc_floor; /* Noise floor in auto-correlation domain */
+
    /* Lag windowing: equivalent to filtering in the power-spectrum domain */
    for (i=0;i<st->lpcSize+1;i++)
       st->autocorr[i] *= st->lagWindow[i];
@@ -231,14 +232,14 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
    st->lpc[0]=1;
 
    /* LPC to LSPs (x-domain) transform */
-   roots=lpc_to_lsp (st->lpc, st->lpcSize, st->lsp, 6, 0.002, st->stack);
+   roots=lpc_to_lsp (st->lpc, st->lpcSize, st->lsp, 10, 0.01, st->stack);
    if (roots!=st->lpcSize)
    {
       fprintf (stderr, "roots!=st->lpcSize (found only %d roots)\n", roots);
       exit(1);
    }
 
-   /* x-domain to angle domain*/
+   /* LSP x-domain to angle domain*/
    for (i=0;i<st->lpcSize;i++)
       st->lsp[i] = acos(st->lsp[i]);
    /*print_vec(st->lsp, 10, "LSP:");*/

@@ -303,7 +303,7 @@ void sb_encode(void *state, float *in, SpeexBits *bits)
    st->lpc[0]=1;
 
    /* LPC to LSPs (x-domain) transform */
-   roots=lpc_to_lsp (st->lpc, st->lpcSize, st->lsp, 6, 0.002, st->stack);
+   roots=lpc_to_lsp (st->lpc, st->lpcSize, st->lsp, 6, 0.01, st->stack);
    if (roots!=st->lpcSize)
    {
       fprintf (stderr, "roots!=st->lpcSize (found only %d roots)\n", roots);

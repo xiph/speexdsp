@@ -157,15 +157,6 @@ void pole_zero_mem(float *x, float *num, float *den, float *y, int N, int ord, f
    POP(stack);
 }
 
-float xcorr(float *x, float *y, int len)
-{
-   int i;
-   float sum=0;
-   for (i=0;i<len;i++)
-      sum += x[i]*y[i];
-   return sum;
-}
-
 
 /*
 void fir_mem(float *x, float *a, float *y, int N, int M, float *mem)
