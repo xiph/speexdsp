@@ -133,11 +133,12 @@ void version()
    fprintf (stderr, "Speex decoder version " VERSION "\n");
 }
 
-static void *process_header(ogg_packet *op, int enh_enabled, int *frame_size, int *rate, int *nframes)
+static void *process_header(ogg_packet *op, int enh_enabled, int *frame_size, int *rate, int *nframes, int forceMode)
 {
    void *st;
    SpeexMode *mode;
    SpeexHeader *header;
+   int modeID;
    
    header = speex_packet_to_header((char*)op->packet, op->bytes);
    if (!header)
@@ -152,7 +153,10 @@ static void *process_header(ogg_packet *op, int enh_enabled, int *frame_size, in
       return NULL;
    }
       
-   mode = speex_mode_list[header->mode];
+   modeID = header->mode;
+   if (forceMode!=-1)
+      modeID = forceMode;
+   mode = speex_mode_list[modeID];
    
    if (mode->bitstream_version < header->mode_bitstream_version)
    {
@@ -207,6 +211,8 @@ int main(int argc, char **argv)
       {"no-enh", no_argument, NULL, 0},
       {"pf", no_argument, NULL, 0},
       {"no-pf", no_argument, NULL, 0},
+      {"force-nb", no_argument, NULL, 0},
+      {"force-wb", no_argument, NULL, 0},
       {0, 0, 0, 0}
    };
    ogg_sync_state oy;
@@ -218,6 +224,7 @@ int main(int argc, char **argv)
    int print_bitrate=0;
    int close_in=0;
    int eos=0;
+   int forceMode=-1;
 
    enh_enabled = 0;
 
@@ -254,6 +261,12 @@ int main(int argc, char **argv)
          {
             fprintf (stderr, "--no-pf is deprecated, use --no-enh instead\n");
             enh_enabled=0;
+         } else if (strcmp(long_options[option_index].name,"force-nb")==0)
+         {
+            forceMode=0;
+         } else if (strcmp(long_options[option_index].name,"force-wb")==0)
+         {
+            forceMode=1;
          }
          break;
       case 'h':
@@ -330,7 +343,7 @@ int main(int argc, char **argv)
             if (packet_count==0)
             {
                int rate;
-               st = process_header(&op, enh_enabled, &frame_size, &rate, &nframes);
+               st = process_header(&op, enh_enabled, &frame_size, &rate, &nframes, forceMode);
                if (!nframes)
                   nframes=1;
                if (!st)
