@@ -37,6 +37,37 @@ extern float stoc[];
 
 #define sqr(x) ((x)*(x))
 
+float quant_high_gain[16]={
+   -2.387860,
+   -1.504710,
+   -0.988013,
+   -0.610249,
+   -0.310298,
+   -0.050495,
+   0.188963,
+   0.413744,
+   0.628971,
+   0.840555,
+   1.055630,
+   1.283410,
+   1.544990,
+   1.855790,
+   2.281910,
+   3.002660
+};
+
+
+float quant_high_gain2[8] = {
+   -1.51541,
+   -0.70324,
+   -0.17024,
+   0.26748,
+   0.67232,
+   1.08402,
+   1.56110,
+   2.25160,
+};
+
 #if 0
 #define QMF_ORDER 32
 static float h0[32] = {
@@ -458,8 +489,6 @@ void sb_encode(SBEncState *st, float *in, FrameBits *bits)
       for (i=0;i<st->subframeSize;i++)
          target[i]=sw[i]-res[i];
       {
-         int ind;
-         float gain;
 #if 0
          
          float el=0,eh=0,g;
@@ -479,7 +508,7 @@ void sb_encode(SBEncState *st, float *in, FrameBits *bits)
             exc[i]*=g;
          
 #else
-         int k,N=2;
+         int k,N=4;
          float el=0,eh=0,g;
          int *index;
          float *gains;
@@ -496,7 +525,7 @@ void sb_encode(SBEncState *st, float *in, FrameBits *bits)
          {
             int of=k*st->subframeSize/N;
          overlap_cb_search(target+of, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2,
-                           &stoc[0], 128, &gains[k], &index[k], st->lpcSize,
+                           &stoc[0], 64, &gains[k], &index[k], st->lpcSize,
                            st->subframeSize/N);
          for (i=0;i<st->subframeSize;i++)
             res[i]=0;
@@ -520,7 +549,8 @@ void sb_encode(SBEncState *st, float *in, FrameBits *bits)
          for (k=0;k<N;k++)
          {
             int sign=0;
-            float quant;
+            float quant, dist, min_dist;
+            int best_ind;
             int of=k*st->subframeSize/N;
             gains[k]*=g;
 #if 1
@@ -530,14 +560,22 @@ void sb_encode(SBEncState *st, float *in, FrameBits *bits)
                gains[k] = -gains[k];
             }
             quant = (1+gains[k])*filter_ratio/(1+sqrt(el/st->subframeSize));
-            if (quant>10)
-              quant=10;
-            if (quant<.0001)
-              quant=.1;
+            printf ("quant_high_gain: %f\n", (float)log(quant));
+            min_dist = sqr(quant-quant_high_gain2[0]);
+            best_ind=0;
+            for (i=1;i<8;i++)
+            {
+               dist = sqr(quant-quant_high_gain2[i]);
+               if (dist<min_dist)
+               {
+                  best_ind=i;
+                  min_dist=dist;
+               }
+            }
+            quant=quant_high_gain2[best_ind];
             gains[k]=quant*(1+sqrt(el/st->subframeSize))/filter_ratio;
             if (sign)
                gains[k] = -gains[k];
-            printf ("quant_high_gain: %f\n", quant);
 #endif
             for (i=0;i<st->subframeSize/N;i++)
                exc[of+i]=gains[k]*stoc[index[k]+i];
