@@ -47,6 +47,7 @@
 #endif
 
 #define SQRT_M_PI_2 0.88623
+#define LOUDNESS_EXP 3.5
 
 static void conj_window(float *w, int len)
 {
@@ -146,6 +147,10 @@ DenoiseState *denoise_state_init(int frame_size)
       st->loudness_weight[i] = .35-.35*ff/16000+.73*exp(-.5*(ff-3800)*(ff-3800)/9e5);
       st->loudness_weight[i] *= st->loudness_weight[i];
    }
+
+   st->loudness = pow(6000,LOUDNESS_EXP);
+   st->loudness2 = 6000;
+   st->nb_loudness_adapt = 0;
 
    drft_init(&st->fft_lookup,2*N);
 
@@ -365,6 +370,7 @@ int denoise(DenoiseState *st, float *x)
    if (mean_prior<.23 && mean_post < .5 && st->nb_adapt>=20)
    {
       st->consec_noise++;
+      /*fprintf (stderr, "noise\n");*/
    } else {
       st->consec_noise=0;
    }
@@ -412,15 +418,31 @@ int denoise(DenoiseState *st, float *x)
    }
    st->gain2[N-1]=0;
 
+   if ((mean_prior>3&&mean_prior>3))
    {
+      st->nb_loudness_adapt++;
+      float rate=2.0/(1+st->nb_loudness_adapt);
+      if (rate < .01)
+         rate = .01;
+
       float loudness=0;
       for (i=2;i<N;i++)
       {
          loudness += scale*st->ps[i] * st->gain2[i] * st->gain2[i] * st->loudness_weight[i];
       }
       loudness=sqrt(loudness);
-      fprintf (stderr, "%f\n", loudness);
+      /*if (loudness < 2*pow(st->loudness, 1.0/LOUDNESS_EXP) &&
+        loudness*2 > pow(st->loudness, 1.0/LOUDNESS_EXP))*/
+      st->loudness = (1-rate)*st->loudness + (rate)*pow(loudness, LOUDNESS_EXP);
+      
+      st->loudness2 = (1-rate)*st->loudness2 + rate*pow(st->loudness, 1.0/LOUDNESS_EXP);
+
+      loudness = pow(st->loudness, 1.0/LOUDNESS_EXP);
+
+      /*fprintf (stderr, "%f %f %f\n", loudness, st->loudness2, rate);*/
    }
+   for (i=0;i<N;i++)
+      st->gain2[i] *= 6000.0/st->loudness2;
 
    /* Apply computed gain */
    for (i=1;i<N;i++)

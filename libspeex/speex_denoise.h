@@ -55,17 +55,20 @@ typedef struct DenoiseState {
    float *last_energy;       /**< Energy of the previous frames */
    float *last_ps;           /**< Power spectrum of the past frames */
    float *loudness_weight;   /**< */
-   int   last_id;            /**< */
+   int    last_id;           /**< */
 
    float *inbuf;             /**< Input buffer (overlapped analysis) */
    float *outbuf;            /**< Output buffer (for overlap and add) */
 
-   int nb_adapt;             /**< Number of frames used for adaptation so far */
-   int consec_noise;         /**< */
-   int nb_denoise;           /**< Number of frames processed so far */
-   int nb_min_estimate;      /**< */
-   int last_update;          /**< */
-   float min_ener;           /**< */
+   float  loudness;          /**< loudness estimate */
+   float  loudness2;          /**< loudness estimate */
+   int    nb_adapt;          /**< Number of frames used for adaptation so far */
+   int    nb_loudness_adapt; /**< Number of frames used for loudness adaptation so far */
+   int    consec_noise;      /**< Number of consecutive noise frames */
+   int    nb_denoise;        /**< Number of frames processed so far */
+   int    nb_min_estimate;   /**< */
+   int    last_update;       /**< */
+   float  min_ener;          /**< */
    drft_lookup fft_lookup;   /**< */
 
 } DenoiseState;
