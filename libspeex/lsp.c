@@ -315,7 +315,7 @@ void lsp_enforce_margin(float *lsp, int len, float margin)
    if (lsp[0]<margin)
       lsp[0]=margin;
    if (lsp[len-1]>M_PI-margin)
-      lsp[len]=margin;
+      lsp[len-1]=M_PI-margin;
    for (i=1;i<len-1;i++)
    {
       if (lsp[i]<lsp[i-1]+margin)
