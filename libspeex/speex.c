@@ -36,10 +36,16 @@
 #define sqr(x) ((x)*(x))
 #define min(a,b) ((a) < (b) ? (a) : (b))
 
-void encoder_init(EncState *st, SpeexMode *mode)
+void *nb_encoder_init(SpeexMode *m)
 {
+   EncState *st;
+   SpeexNBMode *mode;
    int i;
    float tmp;
+
+   mode=m->mode;
+   st = malloc(sizeof(EncState));
+   st->mode=m;
    /* Codec parameters, should eventually have several "modes"*/
    st->frameSize = mode->frameSize;
    st->windowSize = mode->windowSize;
@@ -136,10 +142,12 @@ void encoder_init(EncState *st, SpeexMode *mode)
    st->pi_gain = calloc(st->nbSubframes, sizeof(float));
 
    st->pitch = calloc(st->nbSubframes, sizeof(int));
+   return st;
 }
 
-void encoder_destroy(EncState *st)
+void nb_encoder_destroy(void *state)
 {
+   EncState *st=state;
    /* Free all allocated memory */
    free(st->inBuf);
    free(st->excBuf);
@@ -170,14 +178,18 @@ void encoder_destroy(EncState *st)
    free(st->mem_sw);
    free(st->pi_gain);
    free(st->pitch);
+   
+   free(st);
 }
 
 
-void encode(EncState *st, float *in, FrameBits *bits)
+void nb_encode(void *state, float *in, FrameBits *bits)
 {
+   EncState *st;
    int i, sub, roots;
    float error;
-
+   
+   st=state;
    /* Copy new data in input buffer */
    memmove(st->inBuf, st->inBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(float));
    st->inBuf[st->bufSize-st->frameSize] = in[0] - st->preemph*st->pre_mem;
@@ -458,9 +470,16 @@ void encode(EncState *st, float *in, FrameBits *bits)
 }
 
 
-void decoder_init(DecState *st, SpeexMode *mode)
+void *nb_decoder_init(SpeexMode *m)
 {
+   DecState *st;
+   SpeexNBMode *mode;
    int i;
+
+   mode=m->mode;
+   st = malloc(sizeof(DecState));
+   st->mode=m;
+
    st->first=1;
    /* Codec parameters, should eventually have several "modes"*/
    st->frameSize = mode->frameSize;
@@ -501,11 +520,14 @@ void decoder_init(DecState *st, SpeexMode *mode)
    st->mem_sp = calloc(st->lpcSize, sizeof(float));
 
    st->pi_gain = calloc(st->nbSubframes, sizeof(float));
-
+   
+   return st;
 }
 
-void decoder_destroy(DecState *st)
+void nb_decoder_destroy(void *state)
 {
+   DecState *st;
+   st=state;
    free(st->inBuf);
    free(st->excBuf);
    free(st->interp_qlpc);
@@ -515,11 +537,16 @@ void decoder_destroy(DecState *st)
    free(st->stack);
    free(st->mem_sp);
    free(st->pi_gain);
+   
+   free(state);
 }
 
-void decode(DecState *st, FrameBits *bits, float *out)
+void nb_decode(void *state, FrameBits *bits, float *out)
 {
+   DecState *st;
    int i, sub;
+
+   st=state;
 
    memmove(st->inBuf, st->inBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(float));
    memmove(st->excBuf, st->excBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(float));

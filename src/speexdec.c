@@ -22,9 +22,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "modes.h"
-#include "speex.h"
-#include "sb_celp.h"
+#include "speex_modes.h"
 
 #define MAX_FRAME_SIZE 2000
 #define MAX_FRAME_BYTES 1000
@@ -52,10 +50,10 @@ int main(int argc, char **argv)
    float output[MAX_FRAME_SIZE];
    int frame_size;
    SpeexMode *mode=NULL;
-   DecState st;
-   SBDecState sb_st;
+   void *st;
    FrameBits bits;
    char cbits[MAX_FRAME_BYTES];
+
    int at_end=0;
    int narrowband=0, wideband=0;
    struct option long_options[] =
@@ -140,24 +138,23 @@ int main(int argc, char **argv)
       header[5]=0;
       if (strcmp(header,"spexn")==0)
       {
-         mode=&mp_nb_mode;
-         decoder_init(&st, mode);
+         mode=&nb_mode;
          narrowband=1;
       } else if (strcmp(header,"spexw")==0)
       {
-         mode=&mp_sb_mode;
-         sb_decoder_init(&sb_st, mode);
+         mode=&wb_mode;
          wideband=1;
       } else 
       {
          fprintf (stderr, "This does not look like a Speex " VERSION " file\n");
          exit(1);
       }
+
    }
 
+   st = decoder_init(mode);
+
    frame_size=mode->frameSize;
-   if (wideband)
-      frame_size*=2;
 
    frame_bits_init(&bits);
    while (1)
@@ -176,10 +173,8 @@ int main(int argc, char **argv)
       if (((bits.nbBits>>3)-bits.bytePtr)<2)
          break;
       
-      if (narrowband)
-         decode(&st, &bits, output);
-      if (wideband)
-         sb_decode(&sb_st, &bits, output);
+      decode(st, &bits, output);
+
       for (i=0;i<frame_size;i++)
       {
          if (output[i]>32000)
@@ -191,10 +186,9 @@ int main(int argc, char **argv)
          out[i]=output[i];
       fwrite(out, sizeof(short), frame_size, fout);
    }
-   if (narrowband)
-      decoder_destroy(&st);
-   if (wideband)
-      sb_decoder_destroy(&sb_st);
+
+   decoder_destroy(st);
+
    exit(0);
    return 1;
 }

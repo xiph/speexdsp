@@ -26,7 +26,8 @@
 
 /**Structure representing the full state of the encoder*/
 typedef struct SBEncState {
-   EncState st_low;
+   SpeexMode *mode;
+   void *st_low;
    int    full_frame_size;     /* Length of full-band frames*/
    int    frame_size;          /* Length of high-band frames*/
    int    subframeSize;        /* Length of high-band sub-frames*/
@@ -76,7 +77,8 @@ typedef struct SBEncState {
 
 /**Structure representing the full state of the decoder*/
 typedef struct SBDecState {
-   DecState st_low;
+   SpeexMode *mode;
+   void *st_low;
    int    full_frame_size;
    int    frame_size;
    int    subframeSize;
@@ -111,23 +113,23 @@ typedef struct SBDecState {
 
 
 /**Initializes encoder state*/
-void sb_encoder_init(SBEncState *st, SpeexMode *mode);
+void *sb_encoder_init(SpeexMode *m);
 
 /**De-allocates encoder state resources*/
-void sb_encoder_destroy(SBEncState *st);
+void sb_encoder_destroy(void *state);
 
 /**Encodes one frame*/
-void sb_encode(SBEncState *st, float *in, FrameBits *bits);
+void sb_encode(void *state, float *in, FrameBits *bits);
 
 
 /**Initializes decoder state*/
-void sb_decoder_init(SBDecState *st, SpeexMode *mode);
+void *sb_decoder_init(SpeexMode *m);
 
 /**De-allocates decoder state resources*/
-void sb_decoder_destroy(SBDecState *st);
+void sb_decoder_destroy(void *state);
 
 /**Decodes one frame*/
-void sb_decode(SBDecState *st, FrameBits *bits, float *out);
+void sb_decode(void *state, FrameBits *bits, float *out);
 
 
 #endif

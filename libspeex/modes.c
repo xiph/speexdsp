@@ -25,7 +25,8 @@
 #include "quant_lsp.h"
 #include "cb_search.h"
 #include "mpulse.h"
-
+#include "sb_celp.h"
+#include "speex.h"
 
 extern float gain_cdbk_nb[];
 extern float exc_gains_table[];
@@ -90,33 +91,7 @@ mpulse_params mpulse_wb = {
 };
 
 
-SpeexMode nb_mode = {
-   160,    /*frameSize*/
-   40,     /*subframeSize*/
-   320,    /*windowSize*/
-   10,     /*lpcSize*/
-   640,    /*bufSize*/
-   17,     /*pitchStart*/
-   144,    /*pitchEnd*/
-   0.9,    /*gamma1*/
-   0.6,    /*gamma2*/
-   .005,   /*lag_factor*/
-   1.0001, /*lpc_floor*/
-   0.0,    /*preemph*/
-   /*LSP quantization*/
-   lsp_quant_nb,
-   lsp_unquant_nb,
-   /*Pitch quantization*/
-   pitch_search_3tap,
-   pitch_unquant_3tap,
-   &ltp_params_nb,
-   /*Innovation quantization*/
-   split_cb_search,
-   split_cb_unquant,
-   &split_cb_nb
-};
-
-SpeexMode mp_nb_mode = {
+SpeexNBMode mp_nb_mode = {
    160,    /*frameSize*/
    40,     /*subframeSize*/
    320,    /*windowSize*/
@@ -142,62 +117,7 @@ SpeexMode mp_nb_mode = {
    &mpulse_nb
 };
 
-SpeexMode wb_mode = {
-   320,    /*frameSize*/
-   80,     /*subframeSize*/
-   640,    /*windowSize*/
-   16,     /*lpcSize*/
-   1280,   /*bufSize*/
-   35,     /*pitchStart*/
-   290,    /*pitchEnd*/
-   0.9,    /*gamma1*/
-   -1.0,    /*gamma2*/
-   .002,   /*lag_factor*/
-   1.0001, /*lpc_floor*/
-   0.7,    /*preemph*/
-
-   /*LSP quantization*/
-   lsp_quant_wb,
-   lsp_unquant_wb,
-   /*Pitch quantization*/
-   pitch_search_3tap,
-   pitch_unquant_3tap,
-   &ltp_params_wb,
-   /*Innovation quantization*/
-   split_cb_search,
-   split_cb_unquant,
-   &split_cb_wb
-};
-
-SpeexMode mp_wb_mode = {
-   320,    /*frameSize*/
-   80,     /*subframeSize*/
-   640,    /*windowSize*/
-   16,     /*lpcSize*/
-   1280,   /*bufSize*/
-   35,     /*pitchStart*/
-   290,    /*pitchEnd*/
-   0.9,    /*gamma1*/
-   -0.2,    /*gamma2*/
-   .002,   /*lag_factor*/
-   1.0001,/*lpc_floor*/
-   0.55,    /*preemph*/
-
-   /*LSP quantization*/
-   lsp_quant_wb,
-   lsp_unquant_wb,
-   /*Pitch quantization*/
-   pitch_search_3tap,
-   pitch_unquant_3tap,
-   &ltp_params_wb,
-   /*Innovation quantization*/
-   mpulse_search,
-   mpulse_unquant,
-   &mpulse_wb
-};
-
-
-SpeexMode mp_sb_mode = {
+SpeexNBMode low_sb_mode = {
    160,    /*frameSize*/
    40,     /*subframeSize*/
    320,    /*windowSize*/
@@ -229,3 +149,90 @@ SpeexMode mp_sb_mode = {
 #endif
 };
 
+
+SpeexSBMode sb_wb_mode = {
+   &low_wb_mode,
+   160,    /*frameSize*/
+   40,     /*subframeSize*/
+   320,    /*windowSize*/
+   8,     /*lpcSize*/
+   640,    /*bufSize*/
+   .9,    /*gamma1*/
+   0.6,    /*gamma2*/
+   .002,   /*lag_factor*/
+   1.00005, /*lpc_floor*/
+   0.0,    /*preemph*/
+   /*LSP quantization*/
+   lsp_quant_nb,
+   lsp_unquant_nb,
+   /*Innovation quantization*/
+   split_cb_search2,
+   split_cb_unquant,
+   &split_cb_sb
+};
+
+SpeexMode low_wb_mode = {
+   &low_sb_mode,
+   &nb_encoder_init,
+   &nb_encoder_destroy,
+   &nb_encode,
+   &nb_decoder_init,
+   &nb_decoder_destroy,
+   &nb_decode,
+   160
+};
+
+SpeexMode nb_mode = {
+   &mp_nb_mode,
+   &nb_encoder_init,
+   &nb_encoder_destroy,
+   &nb_encode,
+   &nb_decoder_init,
+   &nb_decoder_destroy,
+   &nb_decode,
+   160
+};
+
+SpeexMode wb_mode = {
+   &sb_wb_mode,
+   &sb_encoder_init,
+   &sb_encoder_destroy,
+   &sb_encode,
+   &sb_decoder_init,
+   &sb_decoder_destroy,
+   &sb_decode,
+   320
+};
+
+
+
+
+void *encoder_init(SpeexMode *mode)
+{
+   return mode->enc_init(mode);
+}
+
+void *decoder_init(SpeexMode *mode)
+{
+   return mode->dec_init(mode);
+}
+
+void encoder_destroy(void *state)
+{
+   (*((SpeexMode**)state))->enc_destroy(state);
+}
+
+void encode(void *state, float *in, FrameBits *bits)
+{
+   (*((SpeexMode**)state))->enc(state, in, bits);
+}
+
+void decoder_destroy(void *state)
+{
+   (*((SpeexMode**)state))->dec_destroy(state);
+}
+
+void decode(void *state, FrameBits *bits, float *out)
+{
+   (*((SpeexMode**)state))->dec(state, bits, out);
+}

@@ -23,11 +23,16 @@
 #ifndef VBR_H
 #define VBR_H
 
-/*
+
 typedef struct VBRState {
-   
+   float speech_alpha;
+   float noise_alpha;
+   float noise_threshold;
+   float speech_energy;
+   float last_energy;
+   float accum_sum;
 } VBRState;
-*/
+
 
 void vbr_analysis(float *sig, int len);
 

@@ -25,6 +25,7 @@
 
 /**Structure representing the full state of the encoder*/
 typedef struct EncState {
+   SpeexMode *mode;
    int    first;          /* Is this the first frame? */
    int    frameSize;      /* Size of frames */
    int    subframeSize;   /* Size of sub-frames */
@@ -85,6 +86,7 @@ typedef struct EncState {
 } EncState;
 
 typedef struct DecState {
+   SpeexMode *mode;
    int    first;          /* Is this the first frame? */
    int    frameSize;      /* Size of frames */
    int    subframeSize;   /* Size of sub-frames */
@@ -118,23 +120,23 @@ typedef struct DecState {
 } DecState;
 
 /**Initializes encoder state*/
-void encoder_init(EncState *st, SpeexMode *mode);
+void *nb_encoder_init(SpeexMode *m);
 
 /**De-allocates encoder state resources*/
-void encoder_destroy(EncState *st);
+void nb_encoder_destroy(void *state);
 
 /**Encodes one frame*/
-void encode(EncState *st, float *in, FrameBits *bits);
+void nb_encode(void *state, float *in, FrameBits *bits);
 
 
 /**Initializes decoder state*/
-void decoder_init(DecState *st, SpeexMode *mode);
+void *nb_decoder_init(SpeexMode *m);
 
 /**De-allocates decoder state resources*/
-void decoder_destroy(DecState *st);
+void nb_decoder_destroy(void *state);
 
 /**Decodes one frame*/
-void decode(DecState *st, FrameBits *bits, float *out);
+void nb_decode(void *state, FrameBits *bits, float *out);
 
 
 

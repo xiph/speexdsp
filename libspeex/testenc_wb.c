@@ -1,4 +1,4 @@
-#include "speex.h"
+#include "speex_modes.h"
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -13,14 +13,14 @@ int main(int argc, char **argv)
    char cbits[200];
    int nbBits;
    int i;
-   EncState st;
-   DecState dec;
+   void *st;
+   void *dec;
    FrameBits bits;
 
    for (i=0;i<FRAME_SIZE;i++)
       bak2[i]=0;
-   encoder_init(&st, &mp_wb_mode);
-   decoder_init(&dec, &mp_wb_mode);
+   st = encoder_init(&wb_mode);
+   dec = decoder_init(&wb_mode);
    if (argc != 4 && argc != 3)
    {
       fprintf (stderr, "Usage: encode [in file] [out file] [bits file]\nargc = %d", argc);
@@ -39,10 +39,12 @@ int main(int argc, char **argv)
    while (!feof(fin))
    {
       fread(in, sizeof(short), FRAME_SIZE, fin);
+      if (feof(fin))
+         break;
       for (i=0;i<FRAME_SIZE;i++)
          bak[i]=input[i]=in[i];
       frame_bits_reset(&bits);
-      encode(&st, input, &bits);
+      encode(st, input, &bits);
       nbBits = frame_bits_write(&bits, cbits, 200);
       printf ("Encoding frame in %d bits\n", nbBits*8);
       if (argc==4)
@@ -62,6 +64,13 @@ int main(int argc, char **argv)
       /*decode(&dec, &bits, input);*/
 
       /* Save the bits here */
+      for (i=0;i<FRAME_SIZE;i++)
+      {
+         if (input[i]>32000)
+            input[i]=32000;
+         else if (input[i]<-32000)
+            input[i]=-32000;
+      }
       frame_bits_reset(&bits);
       for (i=0;i<FRAME_SIZE;i++)
          in[i]=input[i];
@@ -70,7 +79,7 @@ int main(int argc, char **argv)
       fwrite(in, sizeof(short), FRAME_SIZE, fout);
    }
    
-   encoder_destroy(&st);
-   decoder_destroy(&dec);
+   encoder_destroy(st);
+   decoder_destroy(dec);
    return 1;
 }

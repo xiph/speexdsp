@@ -22,6 +22,7 @@
 #ifndef MODES_H
 #define MODES_H
 
+#include "speex_modes.h"
 #include "bits.h"
 
 /* Quantizes LSPs */
@@ -46,7 +47,7 @@ typedef void (*innovation_quant_func)(float *, float *, float *, float *, void *
 typedef void (*innovation_unquant_func)(float *, void *, int, FrameBits*, float *);
 
 /*Struct defining the encoding/decoding mode*/
-typedef struct SpeexMode {
+typedef struct SpeexNBMode {
    int     frameSize;
    int     subframeSize;
    int     windowSize;
@@ -72,12 +73,34 @@ typedef struct SpeexMode {
    innovation_unquant_func innovation_unquant;
    void             *innovation_params;
 
-} SpeexMode;
+} SpeexNBMode;
 
-extern SpeexMode nb_mode;
-extern SpeexMode wb_mode;
-extern SpeexMode mp_nb_mode;
-extern SpeexMode mp_wb_mode;
-extern SpeexMode mp_sb_mode;
+
+/*Struct defining the encoding/decoding mode*/
+typedef struct SpeexSBMode {
+   SpeexMode *nb_mode;
+   int     frameSize;
+   int     subframeSize;
+   int     windowSize;
+   int     lpcSize;
+   int     bufSize;
+   float   gamma1;
+   float   gamma2;
+   float   lag_factor;
+   float   lpc_floor;
+   float   preemph;
+   /*LSP functions*/
+   lsp_quant_func    lsp_quant;
+   lsp_unquant_func  lsp_unquant;
+
+   /*Quantization of innovation */
+   innovation_quant_func innovation_quant;
+   innovation_unquant_func innovation_unquant;
+   void             *innovation_params;
+
+} SpeexSBMode;
+
+
+
 
 #endif

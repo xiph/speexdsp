@@ -184,17 +184,24 @@ static float h1[64] = {
 };
 #endif
 
-void sb_encoder_init(SBEncState *st, SpeexMode *mode)
+void *sb_encoder_init(SpeexMode *m)
 {
    int i;
-   encoder_init(&st->st_low, mode);
-   st->full_frame_size = 2*st->st_low.frameSize;
-   st->frame_size = st->st_low.frameSize;
-   st->subframeSize = st->st_low.subframeSize;
-   st->nbSubframes = st->st_low.nbSubframes;
+   SBEncState *st;
+   SpeexSBMode *mode;
+
+   st = malloc(sizeof(SBEncState));
+   st->mode = m;
+   mode = m->mode;
+
+   st->st_low = nb_encoder_init(mode->nb_mode);
+   st->full_frame_size = 2*mode->frameSize;
+   st->frame_size = mode->frameSize;
+   st->subframeSize = mode->subframeSize;
+   st->nbSubframes = mode->frameSize/mode->subframeSize;
    st->windowSize = mode->windowSize;
-   st->lpcSize=8;
-   st->bufSize=st->st_low.bufSize;
+   st->lpcSize=mode->lpcSize;
+   st->bufSize=mode->bufSize;
 
    st->lag_factor = .002;
    st->lpc_floor = 1.0001;
@@ -249,12 +256,14 @@ void sb_encoder_init(SBEncState *st, SpeexMode *mode)
    st->mem_sp = calloc(st->lpcSize, sizeof(float));
    st->mem_sp2 = calloc(st->lpcSize, sizeof(float));
    st->mem_sw = calloc(st->lpcSize, sizeof(float));
-
+   return st;
 }
 
-void sb_encoder_destroy(SBEncState *st)
+void sb_encoder_destroy(void *state)
 {
-   encoder_destroy(&st->st_low);
+   SBEncState *st=state;
+
+   nb_encoder_destroy(st->st_low);
    free(st->x0);
    free(st->x0d);
    free(st->x1);
@@ -293,7 +302,8 @@ void sb_encoder_destroy(SBEncState *st)
    free(st->mem_sw);
 
    free(st->stack);
-   
+
+   free(st);
 }
 
 extern float hexc_table[];
@@ -304,9 +314,13 @@ split_cb_params split_cb_high = {
    8,               /*shape_bits*/
 };
 
-void sb_encode(SBEncState *st, float *in, FrameBits *bits)
+void sb_encode(void *state, float *in, FrameBits *bits)
 {
+   SBEncState *st;
    int i, roots, sub;
+
+   st = state;
+
    /* Compute the two sub-bands by filtering with h0 and h1*/
    fir_mem(in, h0, st->x0, st->full_frame_size, QMF_ORDER, st->h0_mem);
    fir_mem(in, h1, st->x1, st->full_frame_size, QMF_ORDER, st->h1_mem);
@@ -317,7 +331,7 @@ void sb_encode(SBEncState *st, float *in, FrameBits *bits)
       st->x1d[i]=st->x1[i<<1];
    }
    /* Encode the narrowband part*/
-   encode(&st->st_low, st->x0d, bits);
+   nb_encode(st->st_low, st->x0d, bits);
 
    /* High-band buffering / sync with low band */
    for (i=0;i<st->frame_size;i++)
@@ -421,7 +435,7 @@ void sb_encode(SBEncState *st, float *in, FrameBits *bits)
          rh += tmp*st->interp_qlpc[i];
          tmp = -tmp;
       }
-      rl = st->st_low.pi_gain[sub];
+      rl = ((EncState*)st->st_low)->pi_gain[sub];
       rl=1/(fabs(rl)+.01);
       rh=1/(fabs(rh)+.01);
       /* Compute ratio, will help predict the gain */
@@ -435,37 +449,20 @@ void sb_encode(SBEncState *st, float *in, FrameBits *bits)
             mem[i]=st->mem_sp[i];
          /* Compute "real excitation" */
          residue_mem(sp, st->interp_qlpc, exc, st->subframeSize, st->lpcSize, st->mem_sp);
-         printf ("high_exc:");
-         for (i=0;i<st->subframeSize;i++)
-            printf (" %f", exc[i]);
-         printf ("\nlow_exc:");
-         for (i=0;i<st->subframeSize;i++)
-            printf (" %f", st->st_low.exc[offset+i]);
-         printf ("\n");
+
 #if 1
          /* Compute energy of low-band and high-band excitation */
          for (i=0;i<st->subframeSize;i++)
             eh+=sqr(exc[i]);
          for (i=0;i<st->subframeSize;i++)
-            el+=sqr(st->st_low.exc[offset+i]);
-         if (st->st_low.pitch[sub]>8 || (rand()%5)==0)
-         {
-         for (i=0;i<st->subframeSize;i++)
-         {
-            float p=(.1+exc[i])*filter_ratio/(1+sqrt(el/st->subframeSize));
-            if (i%8==0)
-               printf ("\nhexc: ");
-            printf ("%f ", p);
-         }
-         printf ("\n");
-         }
+            el+=sqr(((EncState*)st->st_low)->exc[offset+i]);
          /* Gain to use if we want to use the low-band excitation for high-band */
          g=eh/(.01+el);
          g=sqrt(g);
 
          /* High-band excitation using the low-band excitation and a gain */
          for (i=0;i<st->subframeSize;i++)
-            exc[i]=g*st->st_low.exc[offset+i];
+            exc[i]=g*((EncState*)st->st_low)->exc[offset+i];
 
          /* FIXME: Should encode the gain here */
 #endif
@@ -479,7 +476,7 @@ void sb_encode(SBEncState *st, float *in, FrameBits *bits)
          innov = PUSH(st->stack, st->subframeSize);
 
          for (i=0;i<st->subframeSize;i++)
-            el+=sqr(st->st_low.exc[offset+i]);
+            el+=sqr(((EncState*)st->st_low)->exc[offset+i]);
 
          gc = (.01+filter_ratio)/(1+sqrt(el/st->subframeSize));
 
@@ -574,13 +571,18 @@ void sb_encode(SBEncState *st, float *in, FrameBits *bits)
 
 
 
-void sb_decoder_init(SBDecState *st, SpeexMode *mode)
+void *sb_decoder_init(SpeexMode *m)
 {
    int i;
+   SBDecState *st;
+   SpeexSBMode *mode;
+   st = malloc(sizeof(SBDecState));
+   st->mode = m;
+   mode=m->mode;
 
-   decoder_init(&st->st_low, mode);
-   st->full_frame_size = 2*st->st_low.frameSize;
-   st->frame_size = st->st_low.frameSize;
+   st->st_low = nb_decoder_init(mode->nb_mode);
+   st->full_frame_size = 2*mode->frameSize;
+   st->frame_size = mode->frameSize;
    st->subframeSize = 40;
    st->nbSubframes = 4;
    st->lpcSize=8;
@@ -621,11 +623,14 @@ void sb_decoder_init(SBDecState *st, SpeexMode *mode)
    st->mem_pf_exc1 = calloc(st->pf_order, sizeof(float));
    st->mem_pf_exc2 = calloc(st->pf_order, sizeof(float));
    st->mem_pf_sp = calloc(st->pf_order, sizeof(float));
+   return st;
 }
 
-void sb_decoder_destroy(SBDecState *st)
+void sb_decoder_destroy(void *state)
 {
-   decoder_destroy(&st->st_low);
+   SBDecState *st;
+   st = state;
+   nb_decoder_destroy(st->st_low);
    free(st->x0);
    free(st->x0d);
    free(st->x1);
@@ -655,16 +660,19 @@ void sb_decoder_destroy(SBDecState *st)
    free(st->mem_pf_sp);
 
    free(st->stack);
-   
+
+   free(state);
 }
 
 
-void sb_decode(SBDecState *st, FrameBits *bits, float *out)
+void sb_decode(void *state, FrameBits *bits, float *out)
 {
    int i, sub;
-
+   SBDecState *st;
+   
+   st = state;
    /* Decode the low-band */
-   decode(&st->st_low, bits, st->x0d);
+   nb_decode(st->st_low, bits, st->x0d);
 
    for (i=0;i<st->frame_size;i++)
       st->exc[i]=0;
@@ -706,14 +714,14 @@ void sb_decode(SBDecState *st, FrameBits *bits, float *out)
             rh += tmp*st->interp_qlpc[i];
             tmp = -tmp;
          }
-         rl = st->st_low.pi_gain[sub];
+         rl = ((DecState*)st->st_low)->pi_gain[sub];
          rl=1/(fabs(rl)+.01);
          rh=1/(fabs(rh)+.01);
          filter_ratio=fabs(.01+rh)/(.01+fabs(rl));
       }
 
       for (i=0;i<st->subframeSize;i++)
-         el+=sqr(st->st_low.exc[offset+i]);
+         el+=sqr(((DecState*)st->st_low)->exc[offset+i]);
       gain=(1+sqrt(el/st->subframeSize))/filter_ratio;
       
       for (i=0;i<st->subframeSize;i++)
@@ -740,7 +748,7 @@ void sb_decode(SBDecState *st, FrameBits *bits, float *out)
       out[i]=2*(st->y0[i]-st->y1[i]);
 
 
-   if (0)
+   if (1)
    {
       float tmp=1, e1=0, e2=0, g;
       for (i=0;i<st->full_frame_size;i++)

@@ -471,7 +471,7 @@ float *exc2
    float *best_exc;
    int best_pitch=0;
    float err, best_err=-1;
-   int N=2;
+   int N=1;
    ltp_params *params;
    params = (ltp_params*) par;
 
