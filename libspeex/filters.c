@@ -35,10 +35,6 @@
 #include <stdio.h>
 #include <math.h>
 
-#define min(a,b) ((a) < (b) ? (a) : (b))
-
-#define MAX_ORD 20
-
 void print_vec(float *vec, int len, char *name)
 {
    int i;

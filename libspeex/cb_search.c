@@ -148,14 +148,16 @@ int   complexity
 
       res = resp+i*subvect_size;
       shape = shape_cb+i*subvect_size;
-      /* Compute codeword response */
 
+      /* Compute codeword response using convolution with impulse response */
       for(j=0;j<subvect_size;j++)
       {
          res[j]=0;
          for (k=0;k<=j;k++)
             res[j] += shape[k]*r[j-k];
       }
+      
+      /* Compute codeword energy */
       E[i]=0;
       for(j=0;j<subvect_size;j++)
          E[i]+=res[j]*res[j];
@@ -221,8 +223,6 @@ int   complexity
             {
 
                /*previous target (we don't care what happened before*/
-               for (m=0;m<(i+1)*subvect_size;m++)
-                  t[m]=ct[m];
                for (m=(i+1)*subvect_size;m<nsf;m++)
                   t[m]=ct[m];
                /* New code: update the rest of the target only if it's worth it */
@@ -251,13 +251,13 @@ int   complexity
                   {
                      for (n=N-1;n>m;n--)
                      {
-                        for (q=0;q<nsf;q++)
+                        for (q=(i+1)*subvect_size;q<nsf;q++)
                            nt[n][q]=nt[n-1][q];
                         for (q=0;q<nb_subvect;q++)
                            nind[n][q]=nind[n-1][q];
                         ndist[n]=ndist[n-1];
                      }
-                     for (q=0;q<nsf;q++)
+                     for (q=(i+1)*subvect_size;q<nsf;q++)
                         nt[m][q]=t[q];
                      for (q=0;q<nb_subvect;q++)
                         nind[m][q]=oind[j][q];

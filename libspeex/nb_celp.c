@@ -259,12 +259,14 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
 
    /* LPC to LSPs (x-domain) transform */
    roots=lpc_to_lsp (st->lpc, st->lpcSize, st->lsp, 15, 0.2, stack);
+   /* Check if we found all the roots */
    if (roots==st->lpcSize)
    {
       /* LSP x-domain to angle domain*/
       for (i=0;i<st->lpcSize;i++)
          st->lsp[i] = acos(st->lsp[i]);
    } else {
+      /* Search again if we can afford it */
       if (st->complexity>1)
          roots = lpc_to_lsp (st->lpc, st->lpcSize, st->lsp, 11, 0.05, stack);
       if (roots==st->lpcSize) 
@@ -517,6 +519,7 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
             st->bw_lpc2[i]=0;
       }
 
+      /* Compute impulse response of A(z/g1) / ( A(z)*A(z/g2) )*/
       for (i=0;i<st->subframeSize;i++)
          exc[i]=0;
       exc[0]=1;
@@ -549,7 +552,7 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
       for (i=0;i<st->subframeSize;i++)
          exc[i]=exc2[i]=0;
 
-      /* If we have a long-term predictor (not all sub-modes have one) */
+      /* If we have a long-term predictor (otherwise, something's wrong) */
       if (SUBMODE(ltp_quant))
       {
          int pit_min, pit_max;
@@ -575,14 +578,16 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
             pit_max = st->max_pitch;
          }
          
+         /* Force pitch to use only the current frame if needed */
          if (st->bounded_pitch && pit_max>offset)
             pit_max=offset;
+
+         /* Perform pitch search */
          pitch = SUBMODE(ltp_quant)(target, sw, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2,
                                     exc, SUBMODE(ltp_params), pit_min, pit_max, ol_pitch_coef,
                                     st->lpcSize, st->subframeSize, bits, stack, 
                                     exc2, syn_resp, st->complexity);
 
-         /*printf ("cl_pitch: %d\n", pitch);*/
          st->pitch[sub]=pitch;
       } else {
          fprintf (stderr, "No pitch prediction, what's wrong\n");
@@ -591,7 +596,7 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
       /* Update target for adaptive codebook contribution */
       syn_percep_zero(exc, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2, res, st->subframeSize, st->lpcSize, stack);
       for (i=0;i<st->subframeSize;i++)
-        target[i]-=res[i];
+         target[i]-=res[i];
 
 
       /* Quantization of innovation */
@@ -611,9 +616,7 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
          
          ener /= ol_gain;
 
-         if (0)
-            printf ("ener: %f %f %f\n", ener, ol_gain, ol_pitch_coef);
-
+         /* Calculate gain correction for the sub-frame (if any) */
          if (SUBMODE(have_subframe_gain)) 
          {
             int qe;
@@ -629,13 +632,12 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
                ener=exc_gain_quant_scal1[qe];               
             }
             ener=exp(ener);
-            /*printf ("encode gain: %d %f\n", qe, ener);*/
          } else {
             ener=1;
          }
 
          ener*=ol_gain;
-         /*printf ("transmit gain: %f\n", ener);*/
+
          ener_1 = 1/ener;
 
          if (0) {
@@ -646,15 +648,19 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
             printf ("\n");
          }
          
+         /* Normalize innovation */
          for (i=0;i<st->subframeSize;i++)
             target[i]*=ener_1;
          
+         /* Quantize innovation */
          if (SUBMODE(innovation_quant))
          {
-            /* Normal quantization */
+            /* Codebook search */
             SUBMODE(innovation_quant)(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2, 
                                       SUBMODE(innovation_params), st->lpcSize, st->subframeSize, 
                                       innov, syn_resp, bits, stack, st->complexity);
+            
+            /* De-normalize innovation and update excitation */
             for (i=0;i<st->subframeSize;i++)
                innov[i]*=ener;
             for (i=0;i<st->subframeSize;i++)
@@ -663,6 +669,7 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
             fprintf(stderr, "No fixed codebook\n");
          }
 
+         /* In some (rare) modes, we do a second search (more bits) to reduce noise even more */
          if (SUBMODE(double_codebook)) {
             float *tmp_stack=stack;
             float *innov2 = PUSH(tmp_stack, st->subframeSize);
@@ -822,6 +829,7 @@ static void nb_decode_lost(DecState *st, float *out, float *stack)
       exc=st->exc+offset;
       /* Excitation after post-filter*/
 
+      /* Calculate perceptually enhanced LPC filter */
       if (st->lpc_enh_enabled)
       {
          float r=.9;
@@ -841,6 +849,8 @@ static void nb_decode_lost(DecState *st, float *out, float *stack)
          
       }
         
+      /* Make up a plausible excitation */
+      /* THIS CAN BE IMPROVED */
       for (i=0;i<st->subframeSize;i++)
       {
          exc[i]=st->last_pitch_gain*exc[i-st->last_pitch] + 
@@ -850,6 +860,7 @@ static void nb_decode_lost(DecState *st, float *out, float *stack)
       for (i=0;i<st->subframeSize;i++)
          sp[i]=exc[i];
       
+      /* Signal synthesis */
       if (st->lpc_enh_enabled)
       {
          filter_mem2(sp, awk2, awk1, sp, st->subframeSize, st->lpcSize, 
@@ -893,15 +904,17 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
    st=state;
    stack=st->stack;
 
+   /* If bits is NULL, consider the packet to be lost (what could we do anyway) */
    if (!bits)
    {
       nb_decode_lost(st, out, stack);
       return 0;
    }
 
+   /* Search for next narrwoband block (handle requests, skip wideband blocks) */
    do {
       wideband = speex_bits_unpack_unsigned(bits, 1);
-      if (wideband)
+      if (wideband) /* Skip wideband block (for compatibility) */
       {
          int submode;
          int advance;
@@ -918,20 +931,20 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
       }
 
       m = speex_bits_unpack_unsigned(bits, 4);
-      if (m==15)
+      if (m==15) /* We found a terminator */
       {
          return -1;
-      } else if (m==14)
+      } else if (m==14) /* Speex in-band request */
       {
          int ret = speex_inband_handler(bits, st->speex_callbacks, state);
          if (ret)
             return ret;
-      } else if (m==13)
+      } else if (m==13) /* User in-band request */
       {
          int ret = st->user_callback.func(bits, state, st->user_callback.data);
          if (ret)
             return ret;
-      } else if (m>7)
+      } else if (m>7) /* Invalid mode */
       {
          return -2;
       }
@@ -1018,6 +1031,7 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
       for (i=0;i<st->lpcSize;i++)
          st->interp_qlsp[i] = (1-tmp)*st->old_qlsp[i] + tmp*st->qlsp[i];
 
+      /* Make sure the LSP's are stable */
       lsp_enforce_margin(st->interp_qlsp, st->lpcSize, .002);
 
 
@@ -1110,6 +1124,7 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
          for (i=0;i<st->subframeSize;i++)
             innov[i]=0;
 
+         /* Decode sub-frame gain correction */
          if (SUBMODE(have_subframe_gain)==3)
          {
             q_energy = speex_bits_unpack_unsigned(bits, 3);
@@ -1132,11 +1147,13 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
             fprintf(stderr, "No fixed codebook\n");
          }
 
+         /* De-normalize innovation and update excitation */
          for (i=0;i<st->subframeSize;i++)
             innov[i]*=ener;
          for (i=0;i<st->subframeSize;i++)
             exc[i]+=innov[i];
 
+         /* Decode second codebook (only for some modes) */
          if (SUBMODE(double_codebook))
          {
             float *tmp_stack=stack;
@@ -1155,16 +1172,19 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
       for (i=0;i<st->subframeSize;i++)
          sp[i]=exc[i];
 
+      /* Signal synthesis */
       if (st->lpc_enh_enabled && SUBMODE(comb_gain>0))
          comb_filter(exc, sp, st->interp_qlpc, st->lpcSize, st->subframeSize,
                               pitch, pitch_gain, .5);
       if (st->lpc_enh_enabled)
       {
+         /* Use enhanced LPC filter */
          filter_mem2(sp, awk2, awk1, sp, st->subframeSize, st->lpcSize, 
                      st->mem_sp+st->lpcSize);
          filter_mem2(sp, awk3, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, 
                      st->mem_sp);
       } else {
+         /* Use regular filter */
          for (i=0;i<st->lpcSize;i++)
             st->mem_sp[st->lpcSize+i] = 0;
          iir_mem2(sp, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, 
