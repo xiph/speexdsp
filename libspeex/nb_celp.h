@@ -17,8 +17,8 @@
 
 */
 
-#ifndef SPEEX_H
-#define SPEEX_H
+#ifndef NB_CELP_H
+#define NB_CELP_H
 
 #include "modes.h"
 #include "speex_bits.h"

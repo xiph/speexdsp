@@ -715,7 +715,7 @@ void nb_decode(void *state, SpeexBits *bits, float *out, int lost)
    int pitch;
    float pitch_gain[3];
    float ol_gain;
-   int ol_pitch;
+   int ol_pitch=0;
    st=state;
 
    memmove(st->inBuf, st->inBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(float));

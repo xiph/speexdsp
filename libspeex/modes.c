@@ -28,6 +28,9 @@
 #include "nb_celp.h"
 #include "post_filter.h"
 
+
+SpeexMode *speex_mode_list[] = {&speex_nb_mode, &speex_nb_lbr_mode, &speex_wb_mode};
+
 /* Extern declarations for all codebooks we use here */
 extern float gain_cdbk_nb[];
 extern float gain_cdbk_lbr[];
@@ -207,6 +210,9 @@ SpeexMode low_wb_mode = {
    &nb_decode,
    &nb_encoder_ctl,
    &nb_decoder_ctl,
+   160,
+   17950,
+   0
 };
 
 SpeexMode speex_nb_mode = {
@@ -219,6 +225,9 @@ SpeexMode speex_nb_mode = {
    &nb_decode,
    &nb_encoder_ctl,
    &nb_decoder_ctl,
+   160,
+   14750,
+   0
 };
 
 SpeexMode speex_nb_lbr_mode = {
@@ -231,6 +240,9 @@ SpeexMode speex_nb_lbr_mode = {
    &nb_decode,
    &nb_encoder_ctl,
    &nb_decoder_ctl,
+   160,
+   7900,
+   0
 };
 
 /* Split-band wideband CELP mode*/
@@ -266,7 +278,14 @@ SpeexMode speex_wb_mode = {
    &sb_decode,
    &sb_encoder_ctl,
    &sb_decoder_ctl,
+   320,
+   27350,
+   0
 };
+
+
+
+
 
 
 

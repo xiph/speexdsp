@@ -19,8 +19,8 @@
 
 */
 
-#ifndef SPEEX_MODES_H
-#define SPEEX_MODES_H
+#ifndef SPEEX_H
+#define SPEEX_H
 
 #include "speex_bits.h"
 
@@ -31,7 +31,6 @@ extern "C" {
 #define SPEEX_SET_PF 0
 #define SPEEX_GET_PF 1
 #define SPEEX_GET_FRAME_SIZE 3
-
 
 struct SpeexMode;
 
@@ -72,6 +71,15 @@ typedef struct SpeexMode {
 
    /** ioctl-like requests for decoder */
    decoder_ctl_func dec_ctl;
+
+   /** Frame size used for the mode*/
+   int frame_size;
+   
+   /** Bit-rate for the mode (highest in case of VBR) */
+   int bitrate;
+
+   /** VBR info (currently 0 for constant bit-rate and 1 for VBR) */
+   int vbr;
 
 } SpeexMode;
 
@@ -117,6 +125,7 @@ extern SpeexMode speex_nb_lbr_mode;
 /** Default wideband mode */
 extern SpeexMode speex_wb_mode;
 
+extern SpeexMode *speex_mode_list[];
 
 #ifdef __cplusplus
 }
