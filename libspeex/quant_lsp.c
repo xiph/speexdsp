@@ -253,3 +253,33 @@ void lsp_unquant_wb(float *lsp, int order, FrameBits *bits)
       lsp[i+12] += lsp_cdbk_wb42[id*4+i];
 
 }
+
+extern float high_lsp_cdbk[];
+extern float high_lsp_cdbk2[];
+
+
+void lsp_quant_high(float *lsp, float *qlsp, int order, FrameBits *bits)
+{
+   int i;
+   float tmp1, tmp2;
+   int id;
+   for (i=0;i<order;i++)
+      qlsp[i]=lsp[i];
+
+   quant_weight[0] = 1/(qlsp[1]-qlsp[0]);
+   quant_weight[order-1] = 1/(qlsp[order-1]-qlsp[order-2]);
+   for (i=1;i<order-1;i++)
+   {
+      tmp1 = 1/(qlsp[i]-qlsp[i-1]);
+      tmp2 = 1/(qlsp[i+1]-qlsp[i]);
+      quant_weight[i] = tmp1 > tmp2 ? tmp1 : tmp2;
+   }
+   id = lsp_quant(qlsp, high_lsp_cdbk, 64, order);
+   frame_bits_pack(bits, id, 6);
+
+   id = lsp_weight_quant(qlsp, quant_weight, high_lsp_cdbk2, 64, order);
+   frame_bits_pack(bits, id, 6);
+
+   for (i=0;i<order;i++)
+      qlsp[i]=lsp[i]-qlsp[i];
+}

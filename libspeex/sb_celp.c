@@ -27,6 +27,7 @@
 #include <stdio.h>
 #include "stack_alloc.h"
 #include "cb_search.h"
+#include "quant_lsp.h"
 
 #ifndef M_PI
 #define M_PI           3.14159265358979323846  /* pi */
@@ -340,10 +341,18 @@ void sb_encode(SBEncState *st, float *in, FrameBits *bits)
    /* x-domain to angle domain*/
    for (i=0;i<st->lpcSize;i++)
       st->lsp[i] = acos(st->lsp[i]);
+
+   /* LSP quantization */
+   lsp_quant_high(st->lsp, st->qlsp, st->lpcSize, bits);
    
-   /* FIXME: Need to really quantize the LSPs*/
+   /*printf ("high_lsp:");
    for (i=0;i<st->lpcSize;i++)
-      st->qlsp[i]=st->lsp[i];
+      printf (" %f", st->lsp[i]);
+      printf ("\n");
+   for (i=0;i<st->lpcSize;i++)
+   st->qlsp[i]=st->lsp[i];
+   */
+
    if (st->first)
    {
       for (i=0;i<st->lpcSize;i++)

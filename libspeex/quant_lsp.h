@@ -49,4 +49,7 @@ void lsp_quant_wb(float *lsp, float *qlsp, int order, FrameBits *bits);
 /* Decodes quantized wideband LSPs */
 void lsp_unquant_wb(float *lsp, int order, FrameBits *bits);
 
+/* Quantizes high-band LSPs with 12 bits */
+void lsp_quant_high(float *lsp, float *qlsp, int order, FrameBits *bits);
+
 #endif
