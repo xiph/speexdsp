@@ -25,7 +25,74 @@
 #include "speex.h"
 #include "ogg/ogg.h"
 
+#ifdef HAVE_SYS_SOUNDCARD_H
+#include <sys/soundcard.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#endif
+
+#include <string.h>
+
 #define MAX_FRAME_SIZE 2000
+
+FILE *out_file_open(char *outFile, int rate)
+{
+   FILE *fout;
+   /*Open output file*/
+   if (strlen(outFile)==0)
+   {
+#ifdef HAVE_SYS_SOUNDCARD_H
+      int audio_fd, format, stereo;
+      audio_fd=open("/dev/dsp", O_WRONLY);
+      
+      format=AFMT_S16_LE;
+      if (ioctl(audio_fd, SNDCTL_DSP_SETFMT, &format)==-1)
+      {
+         perror("SNDCTL_DSP_SETFMT");
+         close(audio_fd);
+         exit(1);
+      }
+      
+      stereo=0;
+      if (ioctl(audio_fd, SNDCTL_DSP_STEREO, &stereo)==-1)
+      {
+         perror("SNDCTL_DSP_STEREO");
+         close(audio_fd);
+         exit(1);
+      }
+      if (stereo!=0)
+      {
+         fprintf (stderr, "Cannot set mono mode\n");
+         exit(1);
+      }
+
+      if (ioctl(audio_fd, SNDCTL_DSP_SPEED, &rate)==-1)
+      {
+         perror("SNDCTL_DSP_SPEED");
+         close(audio_fd);
+         exit(1);
+      }
+      fout = fdopen(audio_fd, "w");
+#else
+      fprintf (stderr, "No soundcard support\n");
+      exit(1);
+#endif
+   } else {
+      if (strcmp(outFile,"-")==0)
+         fout=stdout;
+      else 
+      {
+         fout = fopen(outFile, "w");
+         if (!fout)
+         {
+            perror(outFile);
+            exit(1);
+         }
+      }
+   }
+   return fout;
+}
 
 void usage()
 {
@@ -111,14 +178,17 @@ int main(int argc, char **argv)
          break;
       }
    }
-   if (argc-optind!=2)
+   if (argc-optind!=2 && argc-optind!=1)
    {
       usage();
       exit(1);
    }
    inFile=argv[optind];
-   outFile=argv[optind+1];
-   
+
+   if (argc-optind==2)
+      outFile=argv[optind+1];
+   else
+      outFile = "";
    /*Open input file*/
    if (strcmp(inFile, "-")==0)
       fin=stdin;
@@ -132,18 +202,6 @@ int main(int argc, char **argv)
       }
    }
 
-   /*Open output file*/
-   if (strcmp(outFile,"-")==0)
-      fout=stdout;
-   else 
-   {
-      fout = fopen(outFile, "w");
-      if (!fout)
-      {
-         perror(outFile);
-         exit(1);
-      }
-   }
 
    /*Init Ogg data struct*/
    ogg_sync_init(&oy);
@@ -172,11 +230,14 @@ int main(int argc, char **argv)
             /*If first packet, process as Speex header*/
             if (first)
             {
+               int rate;
                if (strncmp((char *)op.packet, "speex wideband**", 12)==0)
                {
+                  rate=16000;
                   mode = &speex_wb_mode;
                } else if (strncmp((char *)op.packet, "speex narrowband", 12)==0)
                {
+                  rate=8000;
                   mode = &speex_nb_mode;
                } else {
                   fprintf (stderr, "This Ogg file is not a Speex bitstream\n");
@@ -186,6 +247,9 @@ int main(int argc, char **argv)
                st = speex_decoder_init(mode);
                speex_decoder_ctl(st, SPEEX_SET_PF, &pf_enabled);
                speex_decoder_ctl(st, SPEEX_GET_FRAME_SIZE, &frame_size);
+
+               fout = out_file_open(outFile, rate);
+
                first=0;
             } else {
                /*End of stream condition*/
