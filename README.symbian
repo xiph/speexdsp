@@ -32,6 +32,10 @@ Additionally, the header file include/speex/speex_noglobals.h should be
 installed into the system include directory, along with the other
 speex_* headers.
 
+When building in a GNU environment, this behaviour can be configured by:
+
+  ./configure --disable-global-pointers
+
 
 Developing applications for libspeex modified for Symbian OS
 ------------------------------------------------------------
