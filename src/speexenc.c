@@ -604,13 +604,13 @@ The comment header is decoded as follows:
   If you have troubles, please write to ymnk@jcraft.com.
  */
 
-#define readint(buf, base) ((buf[base+3]<<24)&0xff000000| \
-                           (buf[base+2]<<16)&0xff0000| \
-                           (buf[base+1]<<8)&0xff00| \
-  	           	    buf[base]&0xff)
-#define writeint(buf, base, val) do{ buf[base+3]=(val>>24)&0xff; \
-                                     buf[base+2]=(val>>16)&0xff; \
-                                     buf[base+1]=(val>>8)&0xff; \
+#define readint(buf, base) (((buf[base+3]<<24)&0xff000000)| \
+                           ((buf[base+2]<<16)&0xff0000)| \
+                           ((buf[base+1]<<8)&0xff00)| \
+  	           	    (buf[base]&0xff))
+#define writeint(buf, base, val) do{ buf[base+3]=((val)>>24)&0xff; \
+                                     buf[base+2]=((val)>>16)&0xff; \
+                                     buf[base+1]=((val)>>8)&0xff; \
                                      buf[base]=(val)&0xff; \
                                  }while(0)
 
