@@ -2527,6 +2527,9 @@ SPEEX_SET_COMPLEXITY* Set the CPU resources allowed for the encoder
 SPEEX_GET_COMPLEXITY* Get the CPU resources allowed for the encoder
 \layout Description
 
+SPEEX_GET_BITRATE Get the current bit-rate in use (in bps)
+\layout Description
+
 * applies only to the encoder
 \layout Description
 
