@@ -69,6 +69,15 @@ mpulse_params mpulse_nb = {
    10
 };
 
+
+mpulse_params mpulse_sb = {
+   24,     /*nb_pulse*/
+   4,      /*nb_tracks*/
+   2.2,    /*gain_coef*/
+   20
+};
+
+
 mpulse_params mpulse_wb = {
    24,     /*nb_pulse*/
    4,      /*nb_tracks*/
@@ -181,4 +190,31 @@ SpeexMode mp_wb_mode = {
    mpulse_search,
    mpulse_unquant,
    &mpulse_wb
+};
+
+
+SpeexMode mp_sb_mode = {
+   160,    /*frameSize*/
+   40,     /*subframeSize*/
+   320,    /*windowSize*/
+   10,     /*lpcSize*/
+   640,    /*bufSize*/
+   17,     /*pitchStart*/
+   144,    /*pitchEnd*/
+   0.9,    /*gamma1*/
+   0.6,    /*gamma2*/
+   .005,   /*lag_factor*/
+   1.0001, /*lpc_floor*/
+   0.0,    /*preemph*/
+   /*LSP quantization*/
+   lsp_quant_nb,
+   lsp_unquant_nb,
+   /*Pitch quantization*/
+   pitch_search_3tap,
+   pitch_unquant_3tap,
+   &ltp_params_nb,
+   /*Innovation quantization*/
+   mpulse_search,
+   mpulse_unquant,
+   &mpulse_sb
 };

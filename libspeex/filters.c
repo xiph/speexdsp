@@ -115,3 +115,18 @@ float xcorr(float *x, float *y, int len)
       sum += x[i]*y[i];
    return sum;
 }
+
+void fir_mem(float *x, float *a, float *y, int N, int M, float *mem)
+{
+   int i,j;
+   for (i=0;i<N;i++)
+   {
+      y[i]=0;
+      for (j=0;j<=min(M-1,i);j++)
+         y[i] += a[j]*x[i-j];
+      for (j=i+1;j<=M-1;j++)
+         y[i] += a[j]*mem[j-i-1];
+   }
+   for (i=0;i<M-1;i++)
+      mem[i]=x[N-i-1];
+}
