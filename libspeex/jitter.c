@@ -130,7 +130,7 @@ void speex_jitter_put(SpeexJitter *jitter, char *packet, int len, int timestamp)
             i=j;
          }
       }
-      fprintf (stderr, "Buffer is full, discarding earliest frame %d (currently at %d)\n", timestamp, jitter->pointer_timestamp);
+      /*fprintf (stderr, "Buffer is full, discarding earliest frame %d (currently at %d)\n", timestamp, jitter->pointer_timestamp);*/
       /*No place left in the buffer*/
       
       /*skip some frame(s) */
@@ -146,10 +146,10 @@ void speex_jitter_put(SpeexJitter *jitter, char *packet, int len, int timestamp)
    jitter->len[i]=len;
    
    /* Don't count late packets when adjusting the synchro (we're taking care of them elsewhere) */
-   if (timestamp <= jitter->pointer_timestamp)
+   /*if (timestamp <= jitter->pointer_timestamp)
    {
       fprintf (stderr, "frame for timestamp %d arrived too late (at time %d)\n", timestamp, jitter->pointer_timestamp);
-   }
+   }*/
 
    /* Adjust the buffer size depending on network conditions */
    arrival_margin = (timestamp - jitter->pointer_timestamp - jitter->frame_time);
@@ -218,7 +218,7 @@ void speex_jitter_get(SpeexJitter *jitter, short *out)
       }
       jitter->shortterm_margin[0] = 0;
       jitter->longterm_margin[0] = 0;            
-      fprintf (stderr, "interpolate frame\n");
+      /*fprintf (stderr, "interpolate frame\n");*/
       speex_decode_int(jitter->dec, NULL, out);
       jitter->drift_average += jitter->frame_time;
       return;
@@ -238,7 +238,7 @@ void speex_jitter_get(SpeexJitter *jitter, short *out)
       }
       jitter->shortterm_margin[MAX_MARGIN-1] = 0;
       jitter->longterm_margin[MAX_MARGIN-1] = 0;      
-      fprintf (stderr, "drop frame\n");
+      /*fprintf (stderr, "drop frame\n");*/
       jitter->pointer_timestamp += jitter->frame_time;
       jitter->drift_average -= jitter->frame_time;
    }
@@ -275,7 +275,7 @@ void speex_jitter_get(SpeexJitter *jitter, short *out)
          }
       }
 
-      fprintf (stderr, "lost/late frame %d\n", jitter->pointer_timestamp);
+      /*fprintf (stderr, "lost/late frame %d\n", jitter->pointer_timestamp);*/
       /*Packet is late or lost*/
       speex_decode_int(jitter->dec, NULL, out);
       jitter->lost_count++;
