@@ -363,7 +363,7 @@ void sb_encode(SBEncState *st, float *in, FrameBits *bits)
    
    for (sub=0;sub<st->nbSubframes;sub++)
    {
-      float *exc, *sp, *mem, *res, *target, *sw, tmp;
+      float *exc, *sp, *mem, *res, *target, *sw, tmp, filter_ratio;
       int offset;
       
       offset = st->subframeSize*sub;
@@ -393,16 +393,27 @@ void sb_encode(SBEncState *st, float *in, FrameBits *bits)
 
       bw_lpc(st->gamma1, st->interp_lpc, st->bw_lpc1, st->lpcSize);
       bw_lpc(st->gamma2, st->interp_lpc, st->bw_lpc2, st->lpcSize);
+
+      {
+         float tmp, rl=0, rh=0;
+         tmp=1;
+         for (i=0;i<=st->lpcSize;i++)
+         {
+            rh += tmp*st->interp_lpc[i];
+            tmp = -tmp;
+         }
+         rl = st->st_low.pi_gain[sub];
+         rl=1/(fabs(rl)+.001);
+         rh=1/(fabs(rh)+.001);
+         filter_ratio=fabs(.001+rh)/(.001+fabs(rl));
+         printf ("filter_ratio: %f\n", filter_ratio);
+      }
 #if 0 /* 1 for spectral folding excitation, 0 for stochastic */
       for (i=0;i<st->lpcSize;i++)
          mem[i]=st->mem_sp[i];
       residue_mem(sp, st->interp_qlpc, exc, st->subframeSize, st->lpcSize, st->mem_sp);
       {
          float el=0,eh=0,g;
-         printf ("exca");
-         for (i=0;i<st->subframeSize;i++)
-            printf (" %f", exc[i]);
-         printf ("\n");
          for (i=0;i<st->subframeSize;i++)
             eh+=sqr(exc[i]);
          /*for (i=0;i<st->subframeSize;i++)
@@ -410,15 +421,12 @@ void sb_encode(SBEncState *st, float *in, FrameBits *bits)
          for (i=0;i<st->subframeSize;i++)
            el+=sqr(st->st_low.exc[offset+i]);
          g=eh/(.01+el);
+         printf ("ratio: %f\n", g);
          g=sqrt(g);
          for (i=0;i<st->subframeSize;i++)
            exc[i]=g*st->st_low.exc[offset+i];
          /*for (i=0;i<st->subframeSize;i++)
            exc[i]=g*st->exc_alias[offset+i];*/
-         printf ("excb");
-         for (i=0;i<st->subframeSize;i++)
-            printf (" %f", exc[i]);
-         printf ("\n");
       }
       syn_filt_mem(exc, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, mem);
 
@@ -473,6 +481,10 @@ void sb_encode(SBEncState *st, float *in, FrameBits *bits)
 #else
          int k,N=2;
          float el=0,eh=0,g;
+         int *index;
+         float *gains;
+         gains = PUSH(st->stack, N);
+         index = (int*) PUSH(st->stack, N);
          residue_mem(sp, st->interp_qlpc, exc, st->subframeSize, st->lpcSize, st->mem_sp2);
          
          for (i=0;i<st->subframeSize;i++)
@@ -484,26 +496,56 @@ void sb_encode(SBEncState *st, float *in, FrameBits *bits)
          {
             int of=k*st->subframeSize/N;
          overlap_cb_search(target+of, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2,
-                           &stoc[0], 512, &gain, &ind, st->lpcSize,
+                           &stoc[0], 128, &gains[k], &index[k], st->lpcSize,
                            st->subframeSize/N);
          for (i=0;i<st->subframeSize;i++)
             res[i]=0;
          for (i=0;i<st->subframeSize/N;i++)
-            res[of+i]=gain*stoc[ind+i];
+            res[of+i]=gains[k]*stoc[index[k]+i];
          residue_zero(res, st->bw_lpc1, res, st->subframeSize, st->lpcSize);
          syn_filt_zero(res, st->interp_qlpc, res, st->subframeSize, st->lpcSize);
          syn_filt_zero(res, st->bw_lpc2, res, st->subframeSize, st->lpcSize);
          for (i=0;i<st->subframeSize;i++)
             target[i]-=res[i];
          for (i=0;i<st->subframeSize/N;i++)
-            exc[of+i]+=gain*stoc[ind+i];
+            exc[of+i]+=gains[k]*stoc[index[k]+i];
          }
          for (i=0;i<st->subframeSize;i++)
             el+=sqr(exc[i]);
          g=sqrt(eh/(el+.001));
-         for (i=0;i<st->subframeSize;i++)
-            exc[i]*=g;
 
+         for (i=0;i<st->subframeSize;i++)
+            el+=sqr(st->st_low.exc[offset+i]);
+
+         for (k=0;k<N;k++)
+         {
+            int sign=0;
+            float quant;
+            int of=k*st->subframeSize/N;
+            gains[k]*=g;
+#if 1
+            if (gains[k]<0)
+            {
+               sign=1;
+               gains[k] = -gains[k];
+            }
+            quant = (1+gains[k])*filter_ratio/(1+sqrt(el/st->subframeSize));
+            if (quant>10)
+              quant=10;
+            if (quant<.0001)
+              quant=.1;
+            gains[k]=quant*(1+sqrt(el/st->subframeSize))/filter_ratio;
+            if (sign)
+               gains[k] = -gains[k];
+            printf ("quant_high_gain: %f\n", quant);
+#endif
+            for (i=0;i<st->subframeSize/N;i++)
+               exc[of+i]=gains[k]*stoc[index[k]+i];
+         }
+         /*for (i=0;i<st->subframeSize;i++)
+           exc[i]*=g;*/
+         POP(st->stack);
+         POP(st->stack);
 #endif
       }
 

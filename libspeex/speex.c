@@ -129,6 +129,9 @@ void encoder_init(EncState *st, SpeexMode *mode)
    
    st->mem_sp = calloc(st->lpcSize, sizeof(float));
    st->mem_sw = calloc(st->lpcSize, sizeof(float));
+
+   st->pi_gain = calloc(st->nbSubframes, sizeof(float));
+
 }
 
 void encoder_destroy(EncState *st)
@@ -160,6 +163,7 @@ void encoder_destroy(EncState *st)
 
    free(st->mem_sp);
    free(st->mem_sw);
+   free(st->pi_gain);
 }
 
 
@@ -264,6 +268,15 @@ void encode(EncState *st, float *in, FrameBits *bits)
       for (i=0;i<st->lpcSize;i++)
          st->interp_qlsp[i] = cos(st->interp_qlsp[i]);
       lsp_to_lpc(st->interp_qlsp, st->interp_qlpc, st->lpcSize, st->stack);
+
+      tmp=1;
+      st->pi_gain[sub]=0;
+      for (i=0;i<=st->lpcSize;i++)
+      {
+         st->pi_gain[sub] += tmp*st->interp_lpc[i];
+         tmp = -tmp;
+      }
+     
 
       /* Compute bandwidth-expanded (unquantized) LPCs for perceptual weighting */
       bw_lpc(st->gamma1, st->interp_lpc, st->bw_lpc1, st->lpcSize);

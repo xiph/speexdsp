@@ -72,6 +72,7 @@ typedef struct EncState {
    float *rc;             /* Reflection coefficients */
    float *mem_sp, *mem_sw;
    float *dmem1, *dmem2;
+   float *pi_gain;
 
    lsp_quant_func    lsp_quant;
    ltp_quant_func    ltp_quant;
