@@ -29,7 +29,7 @@
 
 The Speex Codec Manual
 \newline 
-(draft for Speex 0.7.0)
+(draft for Speex 0.8.0)
 \layout Author
 
 Jean-Marc Valin
@@ -127,6 +127,24 @@ All this led us to the choice of CELP as the encoding technique to use for
  job and scale well to both low bit-rates (think DoD CELP @ 4.8 kbps) and
  high bit-rates (think G.728 @ 16 kbps).
  
+\layout Standard
+
+Strenghts & features
+\layout Itemize
+
+Open-source, IPR-free
+\layout Itemize
+
+Integration of wideband and narrowband in the same bit-stream
+\layout Itemize
+
+Wide range of bit-rates available
+\layout Itemize
+
+Dynamic bit-rate switching and variable bit-rate (VBR)
+\layout Itemize
+
+Variable complexity
 \layout Section
 \pagebreak_top 
 Introduction to CELP Coding
@@ -425,6 +443,33 @@ A_{noise}(z)=\frac{1}{W(z)}=\frac{A\left(\frac{z}{\gamma _{2}}\right)}{A\left(\f
 \end_inset 
 
 
+\layout Standard
+
+If a filter 
+\begin_inset Formula $A(z)$
+\end_inset 
+
+ has (complex) poles at 
+\begin_inset Formula $p_{i}$
+\end_inset 
+
+ in the 
+\begin_inset Formula $z$
+\end_inset 
+
+-plane, the filter 
+\begin_inset Formula $A(z/\gamma )$
+\end_inset 
+
+ filter will have its poles at 
+\begin_inset Formula $p_{i}^{'}=\gamma p_{i}$
+\end_inset 
+
+, making it a flatter version of 
+\begin_inset Formula $A(z)$
+\end_inset 
+
+.
 \layout Section
 \pagebreak_top 
 Speex narrowband mode
@@ -575,6 +620,16 @@ There are 7 different narrowband bit-rates defined for Speex, ranging from
  All frame-based parameters are packed before sub-frame parameters.
  The parameters for a certain sub-frame are all packed before the following
  sub-frame is packed.
+ Note that the 
+\begin_inset Quotes eld
+\end_inset 
+
+OL
+\begin_inset Quotes erd
+\end_inset 
+
+ in the parameter description means the the parameter is an open loop estimation
+ based on the whole frame.
 \layout Standard
 
 
@@ -587,8 +642,9 @@ collapsed false
 
 
 \begin_inset  Tabular
-<lyxtabular version="3" rows="12" columns="9">
+<lyxtabular version="3" rows="12" columns="10">
 <features>
+<column alignment="center" valignment="top" leftline="true" width="0pt">
 <column alignment="center" valignment="top" leftline="true" width="0pt">
 <column alignment="center" valignment="top" leftline="true" width="0pt">
 <column alignment="center" valignment="top" leftline="true" width="0pt">
@@ -671,6 +727,14 @@ Update rate
 6
 \end_inset 
 </cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+7
+\end_inset 
+</cell>
 </row>
 <row topline="true">
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
@@ -730,6 +794,14 @@ frame
 \end_inset 
 </cell>
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+1
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
 \begin_inset Text
 
 \layout Standard
@@ -819,6 +891,14 @@ frame
 4
 \end_inset 
 </cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+4
+\end_inset 
+</cell>
 </row>
 <row topline="true">
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
@@ -878,6 +958,14 @@ frame
 \end_inset 
 </cell>
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+30
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
 \begin_inset Text
 
 \layout Standard
@@ -967,6 +1055,14 @@ frame
 0
 \end_inset 
 </cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+0
+\end_inset 
+</cell>
 </row>
 <row topline="true">
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
@@ -1026,6 +1122,14 @@ frame
 \end_inset 
 </cell>
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+0
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
 \begin_inset Text
 
 \layout Standard
@@ -1115,6 +1219,14 @@ frame
 5
 \end_inset 
 </cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+5
+\end_inset 
+</cell>
 </row>
 <row topline="true">
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
@@ -1174,6 +1286,14 @@ sub-frame
 \end_inset 
 </cell>
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+7
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
 \begin_inset Text
 
 \layout Standard
@@ -1263,6 +1383,14 @@ sub-frame
 7
 \end_inset 
 </cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+7
+\end_inset 
+</cell>
 </row>
 <row topline="true">
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
@@ -1322,6 +1450,14 @@ sub-frame
 \end_inset 
 </cell>
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+3
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
 \begin_inset Text
 
 \layout Standard
@@ -1411,6 +1547,14 @@ sub-frame
 64
 \end_inset 
 </cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+96
+\end_inset 
+</cell>
 </row>
 <row topline="true" bottomline="true">
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
@@ -1485,6 +1629,14 @@ frame
 364
 \end_inset 
 </cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+492
+\end_inset 
+</cell>
 </row>
 </lyxtabular>
 
@@ -1529,7 +1681,7 @@ collapsed false
 
 
 \begin_inset  Tabular
-<lyxtabular version="3" rows="8" columns="3">
+<lyxtabular version="3" rows="17" columns="3">
 <features>
 <column alignment="center" valignment="top" leftline="true" width="0pt">
 <column alignment="center" valignment="top" leftline="true" width="0pt">
@@ -1556,7 +1708,7 @@ Bitrate (bps)
 
 \layout Standard
 
-Quality
+Quality/description
 \end_inset 
 </cell>
 </row>
@@ -1716,7 +1868,7 @@ Need good headphones to tell the difference
 \end_inset 
 </cell>
 </row>
-<row topline="true" bottomline="true">
+<row topline="true">
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
@@ -1739,6 +1891,240 @@ Need good headphones to tell the difference
 \layout Standard
 
 Hard to tell the difference even with good headphones
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+7
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+24,600
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Completely transparent for voice, good quality music
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+8
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+N/A
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+reserved
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+9
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+N/A
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+reserved
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+10
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+N/A
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+reserved
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+11
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+N/A
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+reserved
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+12
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+N/A
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+reserved
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+13
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+N/A
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Application-defined
+\end_inset 
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+14
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+N/A
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+In-band signaling
+\end_inset 
+</cell>
+</row>
+<row topline="true" bottomline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+15
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+N/A
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+Terminator code
 \end_inset 
 </cell>
 </row>
@@ -1796,7 +2182,7 @@ where
 
 .
  The second part of the enhancement consists of using a comb filter to enhance
- the pitch in the excitation.
+ the pitch in the excitation domain.
  
 \layout Section
 \pagebreak_top 
@@ -1898,8 +2284,9 @@ collapsed false
 
 
 \begin_inset  Tabular
-<lyxtabular version="3" rows="7" columns="6">
+<lyxtabular version="3" rows="7" columns="7">
 <features>
+<column alignment="center" valignment="top" leftline="true" width="0pt">
 <column alignment="center" valignment="top" leftline="true" width="0pt">
 <column alignment="center" valignment="top" leftline="true" width="0pt">
 <column alignment="center" valignment="top" leftline="true" width="0pt">
@@ -1955,6 +2342,14 @@ Update rate
 3
 \end_inset 
 </cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+4
+\end_inset 
+</cell>
 </row>
 <row topline="true">
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
@@ -1971,6 +2366,14 @@ Wideband bit
 \layout Standard
 
 frame
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+1
 \end_inset 
 </cell>
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
@@ -2055,6 +2458,14 @@ frame
 3
 \end_inset 
 </cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+3
+\end_inset 
+</cell>
 </row>
 <row topline="true">
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
@@ -2079,6 +2490,14 @@ frame
 \layout Standard
 
 0
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+12
 \end_inset 
 </cell>
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
@@ -2155,6 +2574,14 @@ sub-frame
 4
 \end_inset 
 </cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+4
+\end_inset 
+</cell>
 </row>
 <row topline="true" bottomline="true">
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
@@ -2205,6 +2632,14 @@ sub-frame
 40
 \end_inset 
 </cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+80
+\end_inset 
+</cell>
 </row>
 <row topline="true" bottomline="true">
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
@@ -2253,6 +2688,14 @@ frame
 \layout Standard
 
 192
+\end_inset 
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\layout Standard
+
+352
 \end_inset 
 </cell>
 </row>
