@@ -179,9 +179,9 @@ void usage()
    printf (" --denoise          Denoise the input before encoding\n"); 
    printf (" --agc              Apply adaptive gain control (AGC) before encoding\n"); 
    printf (" --comment          Add the given string as an extra comment. This may be\n");
-   printf ("                     used multiple times.\n");
-   printf (" --author           Author of this track.\n");
-   printf (" --title            Title for this track.\n");
+   printf ("                     used multiple times\n");
+   printf (" --author           Author of this track\n");
+   printf (" --title            Title for this track\n");
    printf (" -h, --help         This help\n"); 
    printf (" -v, --version      Version information\n"); 
    printf (" -V                 Verbose mode (show bit-rate)\n"); 
