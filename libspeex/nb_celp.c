@@ -110,7 +110,6 @@ void *nb_encoder_init(const SpeexMode *m)
    st->nbSubframes=mode->frameSize/mode->subframeSize;
    st->subframeSize=mode->subframeSize;
    st->lpcSize = mode->lpcSize;
-   st->bufSize = mode->bufSize;
    st->gamma1=mode->gamma1;
    st->gamma2=mode->gamma2;
    st->min_pitch=mode->pitchStart;
@@ -128,16 +127,16 @@ void *nb_encoder_init(const SpeexMode *m)
 #endif
 
    /* Allocating input buffer */
-   st->inBuf = PUSH(st->stack, st->bufSize, spx_sig_t);
-   st->frame = st->inBuf + st->bufSize - st->windowSize;
+   st->inBuf = PUSH(st->stack, st->windowSize, spx_sig_t);
+   st->frame = st->inBuf;
    /* Allocating excitation buffer */
-   st->excBuf = PUSH(st->stack, st->bufSize, spx_sig_t);
-   st->exc = st->excBuf + st->bufSize - st->windowSize;
-   st->swBuf = PUSH(st->stack, st->bufSize, spx_sig_t);
-   st->sw = st->swBuf + st->bufSize - st->windowSize;
+   st->excBuf = PUSH(st->stack, mode->frameSize+mode->pitchEnd+1, spx_sig_t);
+   st->exc = st->excBuf + mode->pitchEnd + 1;
+   st->swBuf = PUSH(st->stack, mode->frameSize+mode->pitchEnd+1, spx_sig_t);
+   st->sw = st->swBuf + mode->pitchEnd + 1;
 
-   st->exc2Buf = PUSH(st->stack, st->bufSize, spx_sig_t);
-   st->exc2 = st->exc2Buf + st->bufSize - st->windowSize;
+   /*st->exc2Buf = PUSH(st->stack, st->bufSize, spx_sig_t);
+   st->exc2 = st->exc2Buf + st->bufSize - st->windowSize;*/
 
    st->innov = PUSH(st->stack, st->frameSize, spx_sig_t);
 
@@ -158,8 +157,6 @@ void *nb_encoder_init(const SpeexMode *m)
       st->lagWindow[i]=16384*exp(-.5*sqr(2*M_PI*st->lag_factor*i));
 
    st->autocorr = PUSH(st->stack, st->lpcSize+1, spx_word16_t);
-
-   st->buf2 = PUSH(st->stack, st->windowSize, spx_sig_t);
 
    st->lpc = PUSH(st->stack, st->lpcSize+1, spx_coef_t);
    st->interp_lpc = PUSH(st->stack, st->lpcSize+1, spx_coef_t);
@@ -241,14 +238,15 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
    stack=st->stack;
 
    /* Copy new data in input buffer */
-   speex_move(st->inBuf, st->inBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(spx_sig_t));
+   speex_move(st->inBuf, st->inBuf+st->frameSize, (st->windowSize-st->frameSize)*sizeof(spx_sig_t));
    for (i=0;i<st->frameSize;i++)
-      st->inBuf[st->bufSize-st->frameSize+i] = SHL((int)in[i], SIG_SHIFT);
+      st->inBuf[st->windowSize-st->frameSize+i] = SHL((int)in[i], SIG_SHIFT);
 
    /* Move signals 1 frame towards the past */
-   speex_move(st->exc2Buf, st->exc2Buf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(spx_sig_t));
-   speex_move(st->excBuf, st->excBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(spx_sig_t));
-   speex_move(st->swBuf, st->swBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(spx_sig_t));
+   /*speex_move(st->exc2Buf, st->exc2Buf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(spx_sig_t));*/
+   //mode->frameSize+mode->pitchEnd+1;
+   speex_move(st->excBuf, st->excBuf+st->frameSize, (st->max_pitch+1)*sizeof(spx_sig_t));
+   speex_move(st->swBuf, st->swBuf+st->frameSize, (st->max_pitch+1)*sizeof(spx_sig_t));
 
 
    {
@@ -510,7 +508,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
    if (st->submodes[st->submodeID] == NULL)
    {
       for (i=0;i<st->frameSize;i++)
-         st->exc[i]=st->exc2[i]=st->sw[i]=VERY_SMALL;
+         st->exc[i]/*=st->exc2[i]*/=st->sw[i]=VERY_SMALL;
 
       for (i=0;i<st->lpcSize;i++)
          st->mem_sw[i]=0;
@@ -636,7 +634,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
    for (sub=0;sub<st->nbSubframes;sub++)
    {
       int   offset;
-      spx_sig_t *sp, *sw, *exc, *exc2;
+      spx_sig_t *sp, *sw, *exc/*, *exc2*/;
       int pitch;
       int response_bound = st->subframeSize;
 #ifdef EPIC_48K
@@ -658,7 +656,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
       /* Weighted signal */
       sw=st->sw+offset;
 
-      exc2=st->exc2+offset;
+      /*exc2=st->exc2+offset;*/
 
 
       /* LSP interpolation (quantized and unquantized) */
@@ -713,8 +711,8 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
       /* Reset excitation */
       for (i=0;i<st->subframeSize;i++)
          exc[i]=VERY_SMALL;
-      for (i=0;i<st->subframeSize;i++)
-         exc2[i]=VERY_SMALL;
+      /*for (i=0;i<st->subframeSize;i++)
+      exc2[i]=VERY_SMALL;*/
 
       /* Compute zero response of A(z/g1) / ( A(z/g2) * A(z) ) */
       for (i=0;i<st->lpcSize;i++)
@@ -747,7 +745,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
          target[i]=sw[i]-res[i];
 
       for (i=0;i<st->subframeSize;i++)
-         exc[i]=exc2[i]=0;
+         exc[i]=/*exc2[i]=*/0;
 
       /* If we have a long-term predictor (otherwise, something's wrong) */
       if (SUBMODE(ltp_quant))
@@ -785,7 +783,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
             pitch = SUBMODE(ltp_quant)(target, sw, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2,
                                        exc, SUBMODE(ltp_params), pit_min, pit_max, ol_pitch_coef,
                                        st->lpcSize, st->subframeSize, bits, stack, 
-                                       exc2, syn_resp, st->complexity, ol_pitch_id);
+                                       exc, syn_resp, st->complexity, ol_pitch_id);
          } else {
 #endif
 
@@ -793,7 +791,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
          pitch = SUBMODE(ltp_quant)(target, sw, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2,
                                     exc, SUBMODE(ltp_params), pit_min, pit_max, ol_pitch_coef,
                                     st->lpcSize, st->subframeSize, bits, stack, 
-                                    exc2, syn_resp, st->complexity, 0);
+                                    exc, syn_resp, st->complexity, 0);
 #ifdef EPIC_48K
          }
 #endif
@@ -909,8 +907,8 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
       if (st->complexity!=0)
          filter_mem2(sp, st->bw_lpc1, st->bw_lpc2, sw, st->subframeSize, st->lpcSize, st->mem_sw);
       
-      for (i=0;i<st->subframeSize;i++)
-         exc2[i]=exc[i];
+      /*for (i=0;i<st->subframeSize;i++)
+      exc2[i]=exc[i];*/
    }
 
    /* Store the LSPs for interpolation in the next frame */
@@ -973,11 +971,9 @@ void *nb_decoder_init(const SpeexMode *m)
    st->first=1;
    /* Codec parameters, should eventually have several "modes"*/
    st->frameSize = mode->frameSize;
-   st->windowSize = st->frameSize*3/2;
    st->nbSubframes=mode->frameSize/mode->subframeSize;
    st->subframeSize=mode->subframeSize;
    st->lpcSize = mode->lpcSize;
-   st->bufSize = mode->bufSize;
    st->min_pitch=mode->pitchStart;
    st->max_pitch=mode->pitchEnd;
 
@@ -987,13 +983,13 @@ void *nb_decoder_init(const SpeexMode *m)
    st->lpc_enh_enabled=0;
 
 
-   st->inBuf = PUSH(st->stack, st->bufSize, spx_sig_t);
-   st->frame = st->inBuf + st->bufSize - st->windowSize;
-   st->excBuf = PUSH(st->stack, st->bufSize, spx_sig_t);
-   st->exc = st->excBuf + st->bufSize - st->windowSize;
-   for (i=0;i<st->bufSize;i++)
+   st->inBuf = PUSH(st->stack, st->frameSize, spx_sig_t);
+   st->frame = st->inBuf;
+   st->excBuf = PUSH(st->stack, st->frameSize + st->max_pitch + 1, spx_sig_t);
+   st->exc = st->excBuf + st->max_pitch + 1;
+   for (i=0;i<st->frameSize;i++)
       st->inBuf[i]=0;
-   for (i=0;i<st->bufSize;i++)
+   for (i=0;i<st->frameSize + st->max_pitch + 1;i++)
       st->excBuf[i]=0;
    st->innov = PUSH(st->stack, st->frameSize, spx_sig_t);
 
@@ -1057,8 +1053,8 @@ static void nb_decode_lost(DecState *st, spx_word16_t *out, char *stack)
    pitch_gain *= fact;
 
    /* Shift all buffers by one frame */
-   speex_move(st->inBuf, st->inBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(spx_sig_t));
-   speex_move(st->excBuf, st->excBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(spx_sig_t));
+   /*speex_move(st->inBuf, st->inBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(spx_sig_t));*/
+   speex_move(st->excBuf, st->excBuf+st->frameSize, (st->max_pitch + 1)*sizeof(spx_sig_t));
 
    awk1=PUSH(stack, (st->lpcSize+1), spx_coef_t);
    awk2=PUSH(stack, (st->lpcSize+1), spx_coef_t);
@@ -1270,8 +1266,8 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
    }
 
    /* Shift all buffers by one frame */
-   speex_move(st->inBuf, st->inBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(spx_sig_t));
-   speex_move(st->excBuf, st->excBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(spx_sig_t));
+   /*speex_move(st->inBuf, st->inBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(spx_sig_t));*/
+   speex_move(st->excBuf, st->excBuf+st->frameSize, (st->max_pitch + 1)*sizeof(spx_sig_t));
 
    /* If null mode (no transmission), just set a couple things to zero*/
    if (st->submodes[st->submodeID] == NULL)
@@ -1794,8 +1790,10 @@ int nb_encoder_ctl(void *state, int request, void *ptr)
             st->lsp[i]=(M_PI*((float)(i+1)))/(st->lpcSize+1);
          for (i=0;i<st->lpcSize;i++)
             st->mem_sw[i]=st->mem_sw_whole[i]=st->mem_sp[i]=st->mem_exc[i]=0;
-         for (i=0;i<st->bufSize;i++)
-            st->excBuf[i]=st->swBuf[i]=st->inBuf[i]=st->exc2Buf[i]=0;
+         for (i=0;i<st->frameSize+st->max_pitch+1;i++)
+            st->excBuf[i]=st->swBuf[i]=0;
+         for (i=0;i<st->windowSize;i++)
+            st->inBuf[i]=0;
       }
       break;
    case SPEEX_SET_SUBMODE_ENCODING:
@@ -1897,8 +1895,10 @@ int nb_decoder_ctl(void *state, int request, void *ptr)
          int i;
          for (i=0;i<2*st->lpcSize;i++)
             st->mem_sp[i]=0;
-         for (i=0;i<st->bufSize;i++)
-            st->excBuf[i]=st->inBuf[i]=0;
+         for (i=0;i<st->frameSize + st->max_pitch + 1;i++)
+            st->excBuf[i]=0;
+         for (i=0;i<st->frameSize;i++)
+            st->inBuf[i] = 0;
       }
       break;
    case SPEEX_SET_SUBMODE_ENCODING:

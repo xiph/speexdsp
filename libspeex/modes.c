@@ -375,7 +375,6 @@ static const SpeexNBMode nb_mode = {
    160,    /*frameSize*/
    40,     /*subframeSize*/
    10,     /*lpcSize*/
-   640,    /*bufSize*/
    17,     /*pitchStart*/
    144,    /*pitchEnd*/
 #ifdef FIXED_POINT

@@ -105,7 +105,6 @@ typedef struct SpeexNBMode {
    int     frameSize;      /**< Size of frames used for encoding */
    int     subframeSize;   /**< Size of sub-frames used for encoding */
    int     lpcSize;        /**< Order of LPC filter */
-   int     bufSize;        /**< Size of signal buffer to use in encoder */
    int     pitchStart;     /**< Smallest pitch value allowed */
    int     pitchEnd;       /**< Largest pitch value allowed */
 

@@ -51,7 +51,6 @@ typedef struct EncState {
    int    nbSubframes;    /**< Number of sub-frames */
    int    windowSize;     /**< Analysis (LPC) window length */
    int    lpcSize;        /**< LPC order */
-   int    bufSize;        /**< Buffer size */
    int    min_pitch;      /**< Minimum pitch value allowed */
    int    max_pitch;      /**< Maximum pitch value allowed */
 
@@ -80,7 +79,6 @@ typedef struct EncState {
    spx_sig_t *sw;             /**< Start of weighted signal frame */
    spx_sig_t *innov;          /**< Innovation for the frame */
    spx_word16_t *window;         /**< Temporary (Hanning) window */
-   spx_sig_t *buf2;           /**< 2nd temporary buffer */
    spx_word16_t *autocorr;       /**< auto-correlation */
    spx_word16_t *lagWindow;      /**< Window applied to auto-correlation */
    spx_coef_t *lpc;            /**< LPCs for current frame */
@@ -128,9 +126,7 @@ typedef struct DecState {
    int    frameSize;      /**< Size of frames */
    int    subframeSize;   /**< Size of sub-frames */
    int    nbSubframes;    /**< Number of sub-frames */
-   int    windowSize;     /**< Analysis (LPC) window length */
    int    lpcSize;        /**< LPC order */
-   int    bufSize;        /**< Buffer size */
    int    min_pitch;      /**< Minimum pitch value allowed */
    int    max_pitch;      /**< Maximum pitch value allowed */
    int    sampling_rate;
