@@ -26,7 +26,7 @@
 #include "filters.h"
 #include <math.h>
 
-#define MAX_PULSE 30
+#define MAX_PULSE 60
 #define MAX_POS  100
 
 int porder(int *p, int *s, int *o, int len)
@@ -216,7 +216,7 @@ float *stack
    int i,j, nb_pulse;
    float *resp, *resp2, *energy, *t, *e, *pulses;
    float te=0,ee=0;
-   float g;
+   float g, gain_coef;
    int nb_tracks, track_ind_bits;
    int *tracks, *signs, *tr, *nb;
    mpulse_params *params;
@@ -227,6 +227,7 @@ float *stack
    nb_tracks=params->nb_tracks;
    pulses_per_track=nb_pulse/nb_tracks;
    track_ind_bits=params->track_ind_bits;
+   gain_coef=params->gain_coef;
 
    tracks = (int*)PUSH(stack,nb_pulse);
    signs = (int*)PUSH(stack,nb_pulse);
@@ -251,7 +252,7 @@ float *stack
       ee+=e[i]*e[i];
    }
    /*Compute global gain (coef found from linear regression and tweaking)*/
-   g=2.2/sqrt(nb_pulse)*exp(0.18163*log(te+1)+0.17293*log(ee+1));
+   g=gain_coef/sqrt(nb_pulse)*exp(0.18163*log(te+1)+0.17293*log(ee+1));
    
    e[0]=1;
    for (i=1;i<nsf;i++)
@@ -291,37 +292,43 @@ float *stack
          float dist;
          float *base=t+j;
          /*Fill any track until it's full*/
-         /*if (nb[j%nb_tracks]==pulses_per_track)
-              continue;*/
+         if (nb[j%nb_tracks]==pulses_per_track)
+              continue;
          /*Constrain search in alternating tracks*/
          /*FIXME: Should get rid of this, it's *really* slow*/
-         if ((i%nb_tracks) != (j%nb_tracks))
-           continue;
+         /*if ((i%nb_tracks) != (j%nb_tracks))
+           continue;*/
          /*Try for positive sign*/
-         dist=energy[j];
-         for (k=0;k<nsf-j;k++)
+         if (pulses[j]>=0)
          {
-            float tmp=(base[k]-resp2[k]);
-            dist+=tmp*tmp;
-         }
-         if (dist<best_score || j==0)
-         {
-            best_score=dist;
-            best_gain=g;
-            best_ind=j;
+            dist=energy[j];
+            for (k=0;k<nsf-j;k++)
+            {
+               float tmp=(base[k]-resp2[k]);
+               dist+=tmp*tmp;
+            }
+            if (dist<best_score || j==0)
+            {
+               best_score=dist;
+               best_gain=g;
+               best_ind=j;
+            }
          }
          /*Try again for negative sign*/
-         dist=energy[j];
-         for (k=0;k<nsf-j;k++)
+         if (pulses[j]<=0)
          {
-            float tmp=(base[k]+resp2[k]);
-            dist+=tmp*tmp;
-         }
-            if (dist<best_score || j==0)
-         {
-            best_score=dist;
-            best_gain=-g;
-            best_ind=j;
+            dist=energy[j];
+            for (k=0;k<nsf-j;k++)
+            {
+               float tmp=(base[k]+resp2[k]);
+               dist+=tmp*tmp;
+            }
+            if (dist<best_score)
+            {
+               best_score=dist;
+               best_gain=-g;
+               best_ind=j;
+            }
          }
       }
 #ifdef DEBUG
@@ -352,6 +359,7 @@ float *stack
       syn_filt_zero(resp, awk2, resp, nsf, p);
 
       f=((.1+(xcorr(resp,target,nsf)))/(.1+xcorr(resp,resp,nsf)));
+      printf ("gain correction %f\n", f);
       /*for (i=0;i<nsf;i++)
         e[i]*=f;*/
       g *= f;

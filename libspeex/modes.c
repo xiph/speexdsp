@@ -32,6 +32,7 @@ extern float exc_gains_table[];
 extern float exc_table[];
 extern float exc_wb_table[];
 extern float exc_gains_wb_table[];
+extern float exc_sb_table[];
 ltp_params ltp_params_nb = {
    gain_cdbk_nb,
    7,
@@ -49,8 +50,13 @@ split_cb_params split_cb_nb = {
    5,               /*nb_subvect*/
    exc_table,       /*shape_cb*/
    7,               /*shape_bits*/
-   exc_gains_table, /*gain_cb*/
-   8                /*gain_bits*/
+};
+
+split_cb_params split_cb_sb = {
+   5,               /*subvect_size*/
+   8,              /*nb_subvect*/
+   exc_sb_table,    /*shape_cb*/
+   7,               /*shape_bits*/
 };
 
 split_cb_params split_cb_wb = {
@@ -58,8 +64,6 @@ split_cb_params split_cb_wb = {
    10,              /*nb_subvect*/
    exc_wb_table,    /*shape_cb*/
    7,               /*shape_bits*/
-   exc_gains_wb_table, /*gain_cb*/
-   8                /*gain_bits*/
 };
 
 mpulse_params mpulse_nb = {
@@ -160,7 +164,7 @@ SpeexMode wb_mode = {
    pitch_unquant_3tap,
    &ltp_params_wb,
    /*Innovation quantization*/
-   split_cb_search_wb,
+   split_cb_search,
    split_cb_unquant,
    &split_cb_wb
 };
@@ -202,7 +206,7 @@ SpeexMode mp_sb_mode = {
    17,     /*pitchStart*/
    144,    /*pitchEnd*/
    0.9,    /*gamma1*/
-   0.4,    /*gamma2*/
+   0.6,    /*gamma2*/
    .002,   /*lag_factor*/
    1.0001, /*lpc_floor*/
    0.0,    /*preemph*/
@@ -214,7 +218,13 @@ SpeexMode mp_sb_mode = {
    pitch_unquant_3tap,
    &ltp_params_nb,
    /*Innovation quantization*/
+#if 1
+   split_cb_search,
+   split_cb_unquant,
+   &split_cb_sb
+#else
    mpulse_search,
    mpulse_unquant,
    &mpulse_sb
+#endif
 };

@@ -182,6 +182,7 @@ void sb_encoder_init(SBEncState *st, SpeexMode *mode)
    st->buf=calloc(st->windowSize, sizeof(float));
    st->excBuf=calloc(2*st->frame_size, sizeof(float));
    st->exc=st->excBuf+st->frame_size;
+   st->exc_alias=calloc(st->frame_size, sizeof(float));
 
    st->res=calloc(st->frame_size, sizeof(float));
    st->sw=calloc(st->frame_size, sizeof(float));
@@ -189,6 +190,10 @@ void sb_encoder_init(SBEncState *st, SpeexMode *mode)
    st->window=calloc(st->windowSize, sizeof(float));
    for (i=0;i<st->windowSize;i++)
       st->window[i]=.5*(1-cos(2*M_PI*i/st->windowSize));
+
+   st->exc_window=calloc(st->frame_size, sizeof(float));
+   for (i=0;i<st->frame_size;i++)
+      st->exc_window[i]=.5*(1-cos(2*M_PI*i/st->frame_size));
 
    st->lagWindow = malloc((st->lpcSize+1)*sizeof(float));
    for (i=0;i<st->lpcSize+1;i++)
@@ -209,7 +214,9 @@ void sb_encoder_init(SBEncState *st, SpeexMode *mode)
    st->interp_qlpc = malloc((st->lpcSize+1)*sizeof(float));
 
    st->mem_sp = calloc(st->lpcSize, sizeof(float));
+   st->mem_sp2 = calloc(st->lpcSize, sizeof(float));
    st->mem_sw = calloc(st->lpcSize, sizeof(float));
+   st->mem_exc = calloc(st->lpcSize, sizeof(float));
 
 }
 
@@ -306,6 +313,30 @@ void sb_encode(SBEncState *st, float *in, FrameBits *bits)
       exit(1);
    }
 
+   {
+      for (i=0;i<st->frame_size;i++)
+         st->buf[i] = st->st_low.exc[i] * st->exc_window[i];
+      
+      /* Compute auto-correlation */
+      autocorr(st->buf, st->autocorr, st->lpcSize+1, st->frame_size);
+      
+      st->autocorr[0] += 1;        /* prevents NANs */
+      st->autocorr[0] *= st->lpc_floor; /* Noise floor in auto-correlation domain */
+      /* Lag windowing: equivalent to filtering in the power-spectrum domain */
+      for (i=0;i<st->lpcSize+1;i++)
+         st->autocorr[i] *= st->lagWindow[i];
+      
+      /* Levinson-Durbin */
+      wld(st->lpc+1, st->autocorr, st->rc, st->lpcSize);
+      st->lpc[0]=1;
+      printf ("exc_lpc: ");
+      for(i=0;i<=st->lpcSize;i++)
+         printf ("%f ", st->lpc[i]);
+      printf ("\n");
+      residue_mem(st->st_low.exc, st->lpc, st->exc_alias, st->frame_size, st->lpcSize, st->mem_exc);
+   }
+
+
    /* x-domain to angle domain*/
    for (i=0;i<st->lpcSize;i++)
       st->lsp[i] = acos(st->lsp[i]);
@@ -353,20 +384,32 @@ void sb_encode(SBEncState *st, float *in, FrameBits *bits)
 
       bw_lpc(st->gamma1, st->interp_lpc, st->bw_lpc1, st->lpcSize);
       bw_lpc(st->gamma2, st->interp_lpc, st->bw_lpc2, st->lpcSize);
-#if 1 /* 1 for spectral folding excitation, 0 for stochastic */
+#if 0 /* 1 for spectral folding excitation, 0 for stochastic */
       for (i=0;i<st->lpcSize;i++)
          mem[i]=st->mem_sp[i];
       residue_mem(sp, st->interp_qlpc, exc, st->subframeSize, st->lpcSize, st->mem_sp);
       {
          float el=0,eh=0,g;
+         printf ("exca");
+         for (i=0;i<st->subframeSize;i++)
+            printf (" %f", exc[i]);
+         printf ("\n");
          for (i=0;i<st->subframeSize;i++)
             eh+=sqr(exc[i]);
+         /*for (i=0;i<st->subframeSize;i++)
+            el+=sqr(st->exc_alias[offset+i]);*/
          for (i=0;i<st->subframeSize;i++)
-            el+=sqr(st->st_low.exc[offset+i]);
+           el+=sqr(st->st_low.exc[offset+i]);
          g=eh/(.01+el);
          g=sqrt(g);
          for (i=0;i<st->subframeSize;i++)
-            exc[i]=g*st->st_low.exc[offset+i];
+           exc[i]=g*st->st_low.exc[offset+i];
+         /*for (i=0;i<st->subframeSize;i++)
+           exc[i]=g*st->exc_alias[offset+i];*/
+         printf ("excb");
+         for (i=0;i<st->subframeSize;i++)
+            printf (" %f", exc[i]);
+         printf ("\n");
       }
       syn_filt_mem(exc, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, mem);
 
@@ -401,13 +444,31 @@ void sb_encode(SBEncState *st, float *in, FrameBits *bits)
          int ind;
          float gain;
 #if 0
+         
+         float el=0,eh=0,g;
+         residue_mem(sp, st->interp_qlpc, exc, st->subframeSize, st->lpcSize, st->mem_sp2);
+         
+         for (i=0;i<st->subframeSize;i++)
+            eh+=sqr(exc[i]);
          overlap_cb_search(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2,
                            &stoc[0], 512, &gain, &ind, st->lpcSize,
                            st->subframeSize);
          for (i=0;i<st->subframeSize;i++)
             exc[i]=gain*stoc[ind+i];
+         for (i=0;i<st->subframeSize;i++)
+            el+=sqr(exc[i]);
+         g=sqrt(eh/(el+.001));
+         for (i=0;i<st->subframeSize;i++)
+            exc[i]*=g;
+         
 #else
          int k,N=2;
+         float el=0,eh=0,g;
+         residue_mem(sp, st->interp_qlpc, exc, st->subframeSize, st->lpcSize, st->mem_sp2);
+         
+         for (i=0;i<st->subframeSize;i++)
+            eh+=sqr(exc[i]);
+
          for (i=0;i<st->subframeSize;i++)
             exc[i]=0;
          for (k=0;k<N;k++)
@@ -428,6 +489,11 @@ void sb_encode(SBEncState *st, float *in, FrameBits *bits)
          for (i=0;i<st->subframeSize/N;i++)
             exc[of+i]+=gain*stoc[ind+i];
          }
+         for (i=0;i<st->subframeSize;i++)
+            el+=sqr(exc[i]);
+         g=sqrt(eh/(el+.001));
+         for (i=0;i<st->subframeSize;i++)
+            exc[i]*=g;
 
 #endif
       }

@@ -27,8 +27,6 @@ typedef struct split_cb_params {
    int     nb_subvect;
    float  *shape_cb;
    int     shape_bits;
-   float  *gain_cb;
-   int     gain_bits;
 } split_cb_params;
 
 float overlap_cb_search(

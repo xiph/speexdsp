@@ -47,11 +47,13 @@ typedef struct SBEncState {
 
    float *excBuf;
    float *exc;
+   float *exc_alias;
    float *buf;
    float *res;
    float *sw;
    float *target;
    float *window;
+   float *exc_window;
    float *lagWindow;
    float *autocorr;
    float *rc;
@@ -68,7 +70,9 @@ typedef struct SBEncState {
    float *bw_lpc2;
 
    float *mem_sp;
+   float *mem_sp2;
    float *mem_sw;
+   float *mem_exc;
 } SBEncState;
 
 

@@ -354,16 +354,19 @@ void encode(EncState *st, float *in, FrameBits *bits)
       syn_filt_zero(target, st->bw_lpc1, res, st->subframeSize, st->lpcSize);
       residue_zero(res, st->interp_qlpc, st->buf2, st->subframeSize, st->lpcSize);
       residue_zero(st->buf2, st->bw_lpc2, st->buf2, st->subframeSize, st->lpcSize);
-      if (1||(snr>9 && (rand()%10==0)))
+      if (1||(snr>9 && (rand()%6==0)))
       {
+         float ener=0;
          printf ("exc ");
          for (i=0;i<st->subframeSize;i++)
          {
-            if (0&&i && i%8==0)
+            ener+=st->buf2[i]*st->buf2[i];
+            if (i && i%5==0)
                printf ("\nexc ");
             printf ("%f ", st->buf2[i]);
          }
          printf ("\n");
+      printf ("innovation_energy = %f\n", ener);
       }
       for (i=0;i<st->subframeSize;i++)
          exc[i]+=st->buf2[i];

@@ -27,7 +27,7 @@
 typedef struct mpulse_params {
    int     nb_pulse;
    int     nb_tracks;
-   int     gain_coef;
+   float     gain_coef;
    int     track_ind_bits;
 } mpulse_params;
 
