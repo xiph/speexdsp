@@ -447,7 +447,7 @@ int main(int argc, char **argv)
    {
       if (rate>48000)
       {
-         fprintf (stderr, "Bit-rate too high: %d Hz, try down-sampling\n", rate);
+         fprintf (stderr, "Sampling rate too high: %d Hz, try down-sampling\n", rate);
          exit(1);
       } else if (rate>25000)
       {
@@ -468,7 +468,7 @@ int main(int argc, char **argv)
             fprintf (stderr, "WARNING: Trying to encode in %s at %d Hz. I'll do it but I suggest you try narrowband instead\n", mode->modeName , rate);
          }
       } else {
-         fprintf (stderr, "Bit-rate too low: %d Hz\n", rate);
+         fprintf (stderr, "Sampling rate too low: %d Hz\n", rate);
          exit(1);
       }
    } else if (!mode)
