@@ -4446,7 +4446,7 @@ n.
 
 One of the cause could be scaling of the input speech.
  Speex expects signals to have a 
-\begin_inset Formula $\pm 2^{16}$
+\begin_inset Formula $\pm 2^{15}$
 \end_inset 
 
  (signed short) dynamic range.
@@ -4474,7 +4474,7 @@ There are many possible causes for that.
  for more than one audio stream (channel), which produces strange effects
  with the filter memories.
  If the input speech has an amplitude close to 
-\begin_inset Formula $2^{16}$
+\begin_inset Formula $\pm 2^{15}$
 \end_inset 
 
 , it is possible that at decoding, the amplitude be a bit higher than that,

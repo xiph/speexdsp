@@ -1,8 +1,13 @@
-Codec
-- Better VBR logic for choosing mode
-- Wideband VBR
-- Improve VAD
-- Improve narrowband vocoder
+Standards
+-Complete Speex RTP profile
 
-Bit-stream
-- support for TTY/DTMF
+Features
+-Support for intensity stereo
+-Support for 32 kHz sampling rate
+-Explicit encoding of DTMF/TTY?
+
+Codec
+-Better VBR logic for choosing mode
+-Wideband VBR
+-Improve VAD
+-Improve narrowband vocoder
