@@ -27,6 +27,9 @@ void vbr_init(VBRState *vbr)
    vbr->last_energy=1;
    vbr->accum_sum=0;
    vbr->energy_alpha=.1;
+   vbr->soft_pitch=0;
+   vbr->last_pitch_coef=0;
+   vbr->last_quality=0;
 }
 
 
@@ -54,7 +57,7 @@ void vbr_init(VBRState *vbr)
   non-stationary (harder to notice high-frequency noise)???
 
 */
-float vbr_analysis(VBRState *vbr, float *sig, int len)
+float vbr_analysis(VBRState *vbr, float *sig, int len, int pitch, float pitch_coef)
 {
    int i;
    float ener=0, ener1=0, ener2=0;
@@ -100,8 +103,19 @@ float vbr_analysis(VBRState *vbr, float *sig, int len)
       if (ener < .3*vbr->last_energy)
          qual -= .6;
    }
-   vbr->last_energy = ener;
+   vbr->soft_pitch = .6*vbr->soft_pitch + .4*pitch_coef;
+   qual += (pitch_coef-.4) + (vbr->soft_pitch-.4);
 
+   if (qual < vbr->last_quality)
+      qual = .5*qual + .5*vbr->last_quality;
+   if (qual<-3)
+      qual=-3;
+   if (qual>3)
+      qual=3;
+
+   vbr->last_energy = ener;
+   vbr->last_pitch_coef = pitch_coef;
+   vbr->last_quality = qual;
    return qual;
 }
 

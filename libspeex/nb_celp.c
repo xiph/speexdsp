@@ -122,7 +122,6 @@ void *nb_encoder_init(SpeexMode *m)
    st->rc = malloc(st->lpcSize*sizeof(float));
    st->first = 1;
 
-   st->st_pitch = st->lt_pitch = 0;
    st->mem_sp = calloc(st->lpcSize, sizeof(float));
    st->mem_sw = calloc(st->lpcSize, sizeof(float));
 
@@ -186,6 +185,7 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
    int i, sub, roots;
    float error;
    int ol_pitch;
+   float ol_pitch_coef;
    float ol_gain;
    float vbr_qual=0;
 
@@ -259,9 +259,7 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
       
       /*Open-loop pitch*/
       open_loop_nbest_pitch(st->sw, st->min_pitch, st->max_pitch, st->frameSize, 
-                            &ol_pitch, &st->st_pitch, 1, st->stack);
-      st->lt_pitch = .6*st->lt_pitch + .4*st->st_pitch;
-      printf ("st_pitch = %f\n", st->st_pitch);
+                            &ol_pitch, &ol_pitch_coef, 1, st->stack);
 
       /*Compute "real" excitation*/
       residue(st->frame, st->interp_lpc, st->exc, st->frameSize, st->lpcSize);
@@ -276,9 +274,9 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
 
    /*Experimental VBR stuff*/
    if (st->vbr)
-      vbr_qual = vbr_analysis(st->vbr, in, st->frameSize);
+      vbr_qual = vbr_analysis(st->vbr, in, st->frameSize, ol_pitch, ol_pitch_coef);
    if (0) {
-      int qual = (int)floor(8+1*vbr_qual+.5);
+      int qual = (int)floor(3.2+1*vbr_qual+.5);
       if (qual<0)
          qual=0;
       if (qual>10)

@@ -29,11 +29,14 @@ typedef struct VBRState {
    float average_energy;
    float last_energy;
    float accum_sum;
+   float last_pitch_coef;
+   float soft_pitch;
+   float last_quality;
 } VBRState;
 
 void vbr_init(VBRState *vbr);
 
-float vbr_analysis(VBRState *vbr, float *sig, int len);
+float vbr_analysis(VBRState *vbr, float *sig, int len, int pitch, float pitch_coef);
 
 void vbr_destroy(VBRState *vbr);
 
