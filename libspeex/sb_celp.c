@@ -158,8 +158,6 @@ void *sb_encoder_init(SpeexMode *m)
    st->first=1;
    st->stack = speex_alloc(10000*sizeof(float));
 
-   st->x0=speex_alloc(st->full_frame_size*sizeof(float));
-   st->x1=speex_alloc(st->full_frame_size*sizeof(float));
    st->x0d=speex_alloc(st->frame_size*sizeof(float));
    st->x1d=speex_alloc(st->frame_size*sizeof(float));
    st->high=speex_alloc(st->full_frame_size*sizeof(float));
@@ -222,9 +220,7 @@ void sb_encoder_destroy(void *state)
    SBEncState *st=state;
 
    nb_encoder_destroy(st->st_low);
-   speex_free(st->x0);
    speex_free(st->x0d);
-   speex_free(st->x1);
    speex_free(st->x1d);
    speex_free(st->high);
    speex_free(st->y0);
@@ -276,19 +272,8 @@ void sb_encode(void *state, float *in, SpeexBits *bits)
    stack=st->stack;
 
    /* Compute the two sub-bands by filtering with h0 and h1*/
-#if 0
-   fir_mem(in, h0, st->x0, st->full_frame_size, QMF_ORDER, st->h0_mem);
-   fir_mem(in, h1, st->x1, st->full_frame_size, QMF_ORDER, st->h1_mem);
-   
-   /* Down-sample x0 and x1 */
-   for (i=0;i<st->frame_size;i++)
-      st->x1d[i]=st->x1[i<<1];
-
-   for (i=0;i<st->frame_size;i++)
-      st->x0d[i]=st->x0[i<<1];
-#else
    qmf_decomp(in, h0, st->x0d, st->x1d, st->full_frame_size, QMF_ORDER, st->h0_mem);
-#endif
+
    /* Encode the narrowband part*/
    nb_encode(st->st_low, st->x0d, bits);
 
@@ -355,17 +340,11 @@ void sb_encode(void *state, float *in, SpeexBits *bits)
       iir_mem2(st->exc, st->interp_qlpc, st->high, st->subframeSize, st->lpcSize, st->mem_sp);
 
 #ifndef RELEASE
-      /* Up-sample coded low-band and high-band*/
-      for (i=0;i<st->frame_size;i++)
-      {
-         st->x0[(i<<1)]=st->x0d[i];
-         st->x1[(i<<1)]=st->high[i];
-         st->x0[(i<<1)+1]=0;
-         st->x1[(i<<1)+1]=0;
-      }
+
       /* Reconstruct the original */
-      fir_decim_mem(st->x0, h0, st->y0, st->full_frame_size, QMF_ORDER, st->g0_mem);
-      fir_decim_mem(st->x1, h1, st->y1, st->full_frame_size, QMF_ORDER, st->g1_mem);
+      fir_mem_up(st->x0d, h0, st->y0, st->full_frame_size, QMF_ORDER, st->g0_mem);
+      fir_mem_up(st->high, h1, st->y1, st->full_frame_size, QMF_ORDER, st->g1_mem);
+
       for (i=0;i<st->full_frame_size;i++)
          in[i]=2*(st->y0[i]-st->y1[i]);
 #endif
@@ -627,17 +606,11 @@ void sb_encode(void *state, float *in, SpeexBits *bits)
 
 
 #ifndef RELEASE
-   /* Up-sample coded low-band and high-band*/
-   for (i=0;i<st->frame_size;i++)
-   {
-      st->x0[(i<<1)]=st->x0d[i];
-      st->x1[(i<<1)]=st->high[i];
-      st->x0[(i<<1)+1]=0;
-      st->x1[(i<<1)+1]=0;
-   }
+
    /* Reconstruct the original */
-   fir_decim_mem(st->x0, h0, st->y0, st->full_frame_size, QMF_ORDER, st->g0_mem);
-   fir_decim_mem(st->x1, h1, st->y1, st->full_frame_size, QMF_ORDER, st->g1_mem);
+   fir_mem_up(st->x0d, h0, st->y0, st->full_frame_size, QMF_ORDER, st->g0_mem);
+   fir_mem_up(st->high, h1, st->y1, st->full_frame_size, QMF_ORDER, st->g1_mem);
+
    for (i=0;i<st->full_frame_size;i++)
       in[i]=2*(st->y0[i]-st->y1[i]);
 #endif
@@ -674,8 +647,6 @@ void *sb_decoder_init(SpeexMode *m)
    st->first=1;
    st->stack = speex_alloc(10000*sizeof(float));
 
-   st->x0=speex_alloc(st->full_frame_size*sizeof(float));
-   st->x1=speex_alloc(st->full_frame_size*sizeof(float));
    st->x0d=speex_alloc(st->frame_size*sizeof(float));
    st->x1d=speex_alloc(st->frame_size*sizeof(float));
    st->high=speex_alloc(st->full_frame_size*sizeof(float));
@@ -703,9 +674,7 @@ void sb_decoder_destroy(void *state)
    SBDecState *st;
    st = state;
    nb_decoder_destroy(st->st_low);
-   speex_free(st->x0);
    speex_free(st->x0d);
-   speex_free(st->x1);
    speex_free(st->x1d);
    speex_free(st->high);
    speex_free(st->y0);
@@ -739,17 +708,10 @@ static void sb_decode_lost(SBDecState *st, float *out, float *stack)
    /* Final signal synthesis from excitation */
    iir_mem2(st->exc, st->interp_qlpc, st->high, st->subframeSize, st->lpcSize, st->mem_sp);
    
-   /* Up-sample coded low-band and high-band*/
-   for (i=0;i<st->frame_size;i++)
-   {
-      st->x0[(i<<1)]=st->x0d[i];
-      st->x1[(i<<1)]=st->high[i];
-      st->x0[(i<<1)+1]=0;
-      st->x1[(i<<1)+1]=0;
-   }
    /* Reconstruct the original */
-   fir_decim_mem(st->x0, h0, st->y0, st->full_frame_size, QMF_ORDER, st->g0_mem);
-   fir_decim_mem(st->x1, h1, st->y1, st->full_frame_size, QMF_ORDER, st->g1_mem);
+   fir_mem_up(st->x0d, h0, st->y0, st->full_frame_size, QMF_ORDER, st->g0_mem);
+   fir_mem_up(st->high, h1, st->y1, st->full_frame_size, QMF_ORDER, st->g1_mem);
+
    for (i=0;i<st->full_frame_size;i++)
       out[i]=2*(st->y0[i]-st->y1[i]);
    
@@ -809,17 +771,9 @@ int sb_decode(void *state, SpeexBits *bits, float *out)
       /* Final signal synthesis from excitation */
       iir_mem2(st->exc, st->interp_qlpc, st->high, st->subframeSize, st->lpcSize, st->mem_sp);
 
-      /* Up-sample coded low-band and high-band*/
-      for (i=0;i<st->frame_size;i++)
-      {
-         st->x0[(i<<1)]=st->x0d[i];
-         st->x1[(i<<1)]=st->high[i];
-         st->x0[(i<<1)+1]=0;
-         st->x1[(i<<1)+1]=0;
-      }
-      /* Reconstruct the original */
-      fir_decim_mem(st->x0, h0, st->y0, st->full_frame_size, QMF_ORDER, st->g0_mem);
-      fir_decim_mem(st->x1, h1, st->y1, st->full_frame_size, QMF_ORDER, st->g1_mem);
+      fir_mem_up(st->x0d, h0, st->y0, st->full_frame_size, QMF_ORDER, st->g0_mem);
+      fir_mem_up(st->high, h1, st->y1, st->full_frame_size, QMF_ORDER, st->g1_mem);
+
       for (i=0;i<st->full_frame_size;i++)
          out[i]=2*(st->y0[i]-st->y1[i]);
 
@@ -928,17 +882,9 @@ int sb_decode(void *state, SpeexBits *bits, float *out)
 
    }
 
-   /* Up-sample coded low-band and high-band*/
-   for (i=0;i<st->frame_size;i++)
-   {
-      st->x0[(i<<1)]=st->x0d[i];
-      st->x1[(i<<1)]=st->high[i];
-      st->x0[(i<<1)+1]=0;
-      st->x1[(i<<1)+1]=0;
-   }
-   /* Reconstruct the original */
-   fir_decim_mem(st->x0, h0, st->y0, st->full_frame_size, QMF_ORDER, st->g0_mem);
-   fir_decim_mem(st->x1, h1, st->y1, st->full_frame_size, QMF_ORDER, st->g1_mem);
+   fir_mem_up(st->x0d, h0, st->y0, st->full_frame_size, QMF_ORDER, st->g0_mem);
+   fir_mem_up(st->high, h1, st->y1, st->full_frame_size, QMF_ORDER, st->g1_mem);
+
    for (i=0;i<st->full_frame_size;i++)
       out[i]=2*(st->y0[i]-st->y1[i]);
 

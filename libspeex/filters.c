@@ -73,6 +73,7 @@ void filter_mem2(float *x, float *num, float *den, float *y, int N, int ord, flo
    }
 }
 
+
 void fir_mem2(float *x, float *num, float *y, int N, int ord, float *mem)
 {
    int i,j;
@@ -163,31 +164,59 @@ void qmf_decomp(float *xx, float *aa, float *y1, float *y2, int N, int M, float 
      mem[i]=xx[N-i-1];
 }
 
-void fir_decim_mem(float *xx, float *aa, float *y, int N, int M, float *mem)
+
+void fir_mem_up(float *x, float *a, float *y, int N, int M, float *mem)
+   /* assumptions:
+      all odd x[i] are zero -- well, actually they are left out of the array now
+      N and M are multiples of 4 */
 {
-   int i,j,M2;
-   float a[MAX_FILTER];
-   float x[MAX_SIGNAL];
-   M2=M>>1;
-   for (i=0;i<M;i++)
-      a[M-i-1]=aa[i];
-   for (i=0;i<M-1;i++)
-      x[i]=mem[M-i-2];
-   for (i=0;i<N;i++)
-      x[i+M-1]=xx[i];
-   for (i=0;i<N;i++)
-   {
-      y[i]=0;
-      for (j=1;j<M;j+=2)
-         y[i]+=a[j]*x[i+j];
-      i++;
-      y[i]=0;
-      for (j=0;j<M;j+=2)
-         y[i]+=a[j]*x[i+j];
+   int i, j;
+   float xx[N+M-1];
+
+   for (i = 0; i < N/2; i++)
+      xx[2*i] = x[N/2-1-i];
+   for (i = 0; i < M - 1; i += 2)
+      xx[N+i] = mem[i+1];
+
+   for (i = 0; i < N; i += 4) {
+      float y0, y1, y2, y3;
+      float x0;
+
+      y0 = y1 = y2 = y3 = 0.f;
+      x0 = xx[N-4-i];
+
+      for (j = 0; j < M; j += 4) {
+         float x1;
+         float a0, a1;
+
+         a0 = a[j];
+         a1 = a[j+1];
+         x1 = xx[N-2+j-i];
+
+         y0 += a0 * x1;
+         y1 += a1 * x1;
+         y2 += a0 * x0;
+         y3 += a1 * x0;
+
+         a0 = a[j+2];
+         a1 = a[j+3];
+         x0 = xx[N+j-i];
+
+         y0 += a0 * x0;
+         y1 += a1 * x0;
+         y2 += a0 * x1;
+         y3 += a1 * x1;
+      }
+      y[i] = y0;
+      y[i+1] = y1;
+      y[i+2] = y2;
+      y[i+3] = y3;
    }
-   for (i=0;i<M-1;i++)
-     mem[i]=xx[N-i-1];
+
+   for (i = 0; i < M - 1; i += 2)
+      mem[i+1] = xx[i];
 }
+
 
 void comb_filter(
 float *exc,          /*decoded excitation*/

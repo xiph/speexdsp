@@ -58,7 +58,7 @@ typedef struct SBEncState {
    float  gamma2;              /**< Perceptual weighting coef 2 */
 
    float *stack;               /**< Temporary allocation stack */
-   float *x0, *x0d, *x1, *x1d; /**< QMF filter signals*/
+   float *x0d, *x1d; /**< QMF filter signals*/
    float *high;                /**< High-band signal (buffer) */
    float *y0, *y1;             /**< QMF synthesis signals */
    float *h0_mem, *h1_mem, *g0_mem, *g1_mem; /**< QMF memories */
@@ -108,7 +108,7 @@ typedef struct SBDecState {
    int    first;
 
    float *stack;
-   float *x0, *x0d, *x1, *x1d;
+   float *x0d, *x1d;
    float *high;
    float *y0, *y1;
    float *h0_mem, *h1_mem, *g0_mem, *g1_mem;
