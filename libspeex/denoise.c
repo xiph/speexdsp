@@ -441,6 +441,7 @@ static void speex_compute_agc(SpeexDenoiseState *st, float mean_prior)
    int i;
    int N = st->ps_size;
    float scale=.5/N;
+   float agc_gain;
 
    /** BEGIN AGC */
    if ((mean_prior>3&&mean_prior>3))
@@ -449,8 +450,12 @@ static void speex_compute_agc(SpeexDenoiseState *st, float mean_prior)
       float rate;
       st->nb_loudness_adapt++;
       rate=2.0/(1+st->nb_loudness_adapt);
-      if (rate < .01)
-         rate = .01;
+      if (rate < .005)
+         rate = .005;
+      if (rate < .1 && pow(loudness, LOUDNESS_EXP) > st->loudness)
+         rate = .1;
+      if (rate < .5 && pow(loudness, LOUDNESS_EXP) > 5*st->loudness)
+         rate = .5;
 
       for (i=2;i<N;i++)
       {
@@ -467,8 +472,11 @@ static void speex_compute_agc(SpeexDenoiseState *st, float mean_prior)
 
       /*fprintf (stderr, "%f %f %f\n", loudness, st->loudness2, rate);*/
    }
+   
+   agc_gain = 6000.0/st->loudness2;
+
    for (i=0;i<N;i++)
-      st->gain2[i] *= 6000.0/st->loudness2;
+      st->gain2[i] *= agc_gain;
    
 
    /** END AGC */
@@ -745,7 +753,23 @@ int speex_denoise(SpeexDenoiseState *st, float *x, float *echo)
    drft_backward(&st->fft_lookup, st->frame);
 
    for (i=0;i<2*N;i++)
-      st->frame[i] *= scale*st->window[i];
+      st->frame[i] *= scale;
+
+   {
+      float max_sample=0;
+      for (i=0;i<2*N;i++)
+         if (fabs(st->frame[i])>max_sample)
+            max_sample = fabs(st->frame[i]);
+      if (max_sample>30000)
+      {
+         float damp = 30000./max_sample;
+         for (i=0;i<2*N;i++)
+            st->frame[i] *= damp;
+      }
+   }
+
+   for (i=0;i<2*N;i++)
+      st->frame[i] *= st->window[i];
 
    /* Perform overlap and add */
    for (i=0;i<N3;i++)
