@@ -282,8 +282,8 @@ void lsp_quant_high(float *lsp, float *qlsp, int order, SpeexBits *bits)
    for (i=0;i<order;i++)
       qlsp[i]*=2;
 
-   id = lsp_weight_quant(qlsp, quant_weight, high_lsp_cdbk2, 128, order);
-   speex_bits_pack(bits, id, 7);
+   id = lsp_weight_quant(qlsp, quant_weight, high_lsp_cdbk2, 64, order);
+   speex_bits_pack(bits, id, 6);
 
    for (i=0;i<order;i++)
       qlsp[i]*=0.0019531;
@@ -305,7 +305,7 @@ void lsp_unquant_high(float *lsp, int order, SpeexBits *bits)
       lsp[i] += 0.0039062*high_lsp_cdbk[id*order+i];
 
 
-   id=speex_bits_unpack_unsigned(bits, 7);
+   id=speex_bits_unpack_unsigned(bits, 6);
    for (i=0;i<order;i++)
       lsp[i] += 0.0019531*high_lsp_cdbk2[id*order+i];
 }
