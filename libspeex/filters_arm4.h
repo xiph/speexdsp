@@ -58,7 +58,7 @@ int normalize16(const spx_sig_t *x, spx_word16_t *y, int max_scale, int len)
    : "=r" (dead1), "=r" (max_val), "=r" (dead3), "=r" (dead4),
    "=r" (dead5), "=r" (dead6)
    : "0" (x), "2" (len)
-   : "cc", "memory");
+   : "cc");
 
    sig_shift=0;
    while (max_val>max_scale)
@@ -108,6 +108,117 @@ void filter_mem2(const spx_sig_t *x, const spx_coef_t *num, const spx_coef_t *de
       __asm__ __volatile__ (
             "\tldrsh %6, [%1], #2\n"
             "\tsmull %8, %9, %4, %6\n"
+#ifdef SHORTCUTS
+            "\tldrsh %6, [%2], #2\n"
+            "\tldr %10, [%0, #4]\n"
+            "\tmov %8, %8, lsr #15\n"
+            "\tsmull %7, %11, %5, %6\n"
+            "\tldrsh %6, [%1], #2\n"
+            "\tadd %8, %8, %9, lsl #17\n"
+            "\tadd %10, %10, %8\n"
+            "\tsmull %8, %9, %4, %6\n"
+            "\tadd %10, %10, %7, lsr #15\n"
+            "\tadd %10, %10, %11, lsl #17\n"
+            "\tstr %10, [%0], #4 \n"
+
+            "\tldrsh %6, [%2], #2\n"
+            "\tldr %10, [%0, #4]\n"
+            "\tmov %8, %8, lsr #15\n"
+            "\tsmull %7, %11, %5, %6\n"
+            "\tldrsh %6, [%1], #2\n"
+            "\tadd %8, %8, %9, lsl #17\n"
+            "\tadd %10, %10, %8\n"
+            "\tsmull %8, %9, %4, %6\n"
+            "\tadd %10, %10, %7, lsr #15\n"
+            "\tadd %10, %10, %11, lsl #17\n"
+            "\tstr %10, [%0], #4 \n"
+
+            "\tldrsh %6, [%2], #2\n"
+            "\tldr %10, [%0, #4]\n"
+            "\tmov %8, %8, lsr #15\n"
+            "\tsmull %7, %11, %5, %6\n"
+            "\tldrsh %6, [%1], #2\n"
+            "\tadd %8, %8, %9, lsl #17\n"
+            "\tadd %10, %10, %8\n"
+            "\tsmull %8, %9, %4, %6\n"
+            "\tadd %10, %10, %7, lsr #15\n"
+            "\tadd %10, %10, %11, lsl #17\n"
+            "\tstr %10, [%0], #4 \n"
+
+            "\tldrsh %6, [%2], #2\n"
+            "\tldr %10, [%0, #4]\n"
+            "\tmov %8, %8, lsr #15\n"
+            "\tsmull %7, %11, %5, %6\n"
+            "\tldrsh %6, [%1], #2\n"
+            "\tadd %8, %8, %9, lsl #17\n"
+            "\tadd %10, %10, %8\n"
+            "\tsmull %8, %9, %4, %6\n"
+            "\tadd %10, %10, %7, lsr #15\n"
+            "\tadd %10, %10, %11, lsl #17\n"
+            "\tstr %10, [%0], #4 \n"
+
+            "\tldrsh %6, [%2], #2\n"
+            "\tldr %10, [%0, #4]\n"
+            "\tmov %8, %8, lsr #15\n"
+            "\tsmull %7, %11, %5, %6\n"
+            "\tldrsh %6, [%1], #2\n"
+            "\tadd %8, %8, %9, lsl #17\n"
+            "\tadd %10, %10, %8\n"
+            "\tsmull %8, %9, %4, %6\n"
+            "\tadd %10, %10, %7, lsr #15\n"
+            "\tadd %10, %10, %11, lsl #17\n"
+            "\tstr %10, [%0], #4 \n"
+
+            "\tldrsh %6, [%2], #2\n"
+            "\tldr %10, [%0, #4]\n"
+            "\tmov %8, %8, lsr #15\n"
+            "\tsmull %7, %11, %5, %6\n"
+            "\tldrsh %6, [%1], #2\n"
+            "\tadd %8, %8, %9, lsl #17\n"
+            "\tadd %10, %10, %8\n"
+            "\tsmull %8, %9, %4, %6\n"
+            "\tadd %10, %10, %7, lsr #15\n"
+            "\tadd %10, %10, %11, lsl #17\n"
+            "\tstr %10, [%0], #4 \n"
+
+            "\tldrsh %6, [%2], #2\n"
+            "\tldr %10, [%0, #4]\n"
+            "\tmov %8, %8, lsr #15\n"
+            "\tsmull %7, %11, %5, %6\n"
+            "\tldrsh %6, [%1], #2\n"
+            "\tadd %8, %8, %9, lsl #17\n"
+            "\tadd %10, %10, %8\n"
+            "\tsmull %8, %9, %4, %6\n"
+            "\tadd %10, %10, %7, lsr #15\n"
+            "\tadd %10, %10, %11, lsl #17\n"
+            "\tstr %10, [%0], #4 \n"
+
+            "\tldrsh %6, [%2], #2\n"
+            "\tldr %10, [%0, #4]\n"
+            "\tmov %8, %8, lsr #15\n"
+            "\tsmull %7, %11, %5, %6\n"
+            "\tldrsh %6, [%1], #2\n"
+            "\tadd %8, %8, %9, lsl #17\n"
+            "\tadd %10, %10, %8\n"
+            "\tsmull %8, %9, %4, %6\n"
+            "\tadd %10, %10, %7, lsr #15\n"
+            "\tadd %10, %10, %11, lsl #17\n"
+            "\tstr %10, [%0], #4 \n"
+
+            "\tldrsh %6, [%2], #2\n"
+            "\tldr %10, [%0, #4]\n"
+            "\tmov %8, %8, lsr #15\n"
+            "\tsmull %7, %11, %5, %6\n"
+            "\tldrsh %6, [%1], #2\n"
+            "\tadd %8, %8, %9, lsl #17\n"
+            "\tadd %10, %10, %8\n"
+            "\tsmull %8, %9, %4, %6\n"
+            "\tadd %10, %10, %7, lsr #15\n"
+            "\tadd %10, %10, %11, lsl #17\n"
+            "\tstr %10, [%0], #4 \n"
+
+
+#else
             ".filterloop%=: \n"
             "\tldrsh %6, [%2], #2\n"
             "\tldr %10, [%0, #4]\n"
@@ -122,7 +233,7 @@ void filter_mem2(const spx_sig_t *x, const spx_coef_t *num, const spx_coef_t *de
             "\tadd %10, %10, %11, lsl #17\n"
             "\tstr %10, [%0], #4 \n"
             "\t bne .filterloop%=\n"
-
+#endif
             "\tmov %8, %8, lsr #15\n"
             "\tadd %10, %8, %9, lsl #17\n"
             "\tldrsh %6, [%2], #2\n"
@@ -156,6 +267,87 @@ void iir_mem2(const spx_sig_t *x, const spx_coef_t *den, spx_sig_t *y, int N, in
             "\tldrsh %4, [%1], #2\n"
             "\tsmull %5, %6, %3, %4\n"
 
+#if SHORTCUTS
+                        
+            "\tldrsh %4, [%1], #2\n"
+            "\tmov %5, %5, lsr #15\n"
+            "\tldr %7, [%0, #4]\n"
+            "\tadd %8, %5, %6, lsl #17\n"
+            "\tsmull %5, %6, %3, %4\n"
+            "\tadd %7, %7, %8\n"
+            "\tstr %7, [%0], #4 \n"
+
+                 
+            "\tldrsh %4, [%1], #2\n"
+            "\tmov %5, %5, lsr #15\n"
+            "\tldr %9, [%0, #4]\n"
+            "\tadd %8, %5, %6, lsl #17\n"
+            "\tsmull %5, %6, %3, %4\n"
+            "\tadd %9, %9, %8\n"
+            "\tstr %9, [%0], #4 \n"
+
+            "\tldrsh %4, [%1], #2\n"
+            "\tmov %5, %5, lsr #15\n"
+            "\tldr %7, [%0, #4]\n"
+            "\tadd %8, %5, %6, lsl #17\n"
+            "\tsmull %5, %6, %3, %4\n"
+            "\tadd %7, %7, %8\n"
+            "\tstr %7, [%0], #4 \n"
+
+            
+            "\tldrsh %4, [%1], #2\n"
+            "\tmov %5, %5, lsr #15\n"
+            "\tldr %9, [%0, #4]\n"
+            "\tadd %8, %5, %6, lsl #17\n"
+            "\tsmull %5, %6, %3, %4\n"
+            "\tadd %9, %9, %8\n"
+            "\tstr %9, [%0], #4 \n"
+
+            "\tldrsh %4, [%1], #2\n"
+            "\tmov %5, %5, lsr #15\n"
+            "\tldr %7, [%0, #4]\n"
+            "\tadd %8, %5, %6, lsl #17\n"
+            "\tsmull %5, %6, %3, %4\n"
+            "\tadd %7, %7, %8\n"
+            "\tstr %7, [%0], #4 \n"
+
+            
+            "\tldrsh %4, [%1], #2\n"
+            "\tmov %5, %5, lsr #15\n"
+            "\tldr %9, [%0, #4]\n"
+            "\tadd %8, %5, %6, lsl #17\n"
+            "\tsmull %5, %6, %3, %4\n"
+            "\tadd %9, %9, %8\n"
+            "\tstr %9, [%0], #4 \n"
+
+            "\tldrsh %4, [%1], #2\n"
+            "\tmov %5, %5, lsr #15\n"
+            "\tldr %7, [%0, #4]\n"
+            "\tadd %8, %5, %6, lsl #17\n"
+            "\tsmull %5, %6, %3, %4\n"
+            "\tadd %7, %7, %8\n"
+            "\tstr %7, [%0], #4 \n"
+
+            
+            "\tldrsh %4, [%1], #2\n"
+            "\tmov %5, %5, lsr #15\n"
+            "\tldr %9, [%0, #4]\n"
+            "\tadd %8, %5, %6, lsl #17\n"
+            "\tsmull %5, %6, %3, %4\n"
+            "\tadd %9, %9, %8\n"
+            "\tstr %9, [%0], #4 \n"
+
+            "\tldrsh %4, [%1], #2\n"
+            "\tmov %5, %5, lsr #15\n"
+            "\tldr %7, [%0, #4]\n"
+            "\tadd %8, %5, %6, lsl #17\n"
+            "\tsmull %5, %6, %3, %4\n"
+            "\tadd %7, %7, %8\n"
+            "\tstr %7, [%0], #4 \n"
+
+            
+            
+#else
             ".iirloop%=: \n"
             "\tldr %7, [%0, #4]\n"
 
@@ -167,7 +359,8 @@ void iir_mem2(const spx_sig_t *x, const spx_coef_t *den, spx_sig_t *y, int N, in
             "\tstr %7, [%0], #4 \n"
             "\tsubs %2, %2, #1\n"
             "\t bne .iirloop%=\n"
-
+            
+#endif
             "\tmov %5, %5, lsr #15\n"
             "\tadd %7, %5, %6, lsl #17\n"
             "\tstr %7, [%0], #4 \n"
