@@ -17,7 +17,7 @@ int main(int argc, char **argv)
    void *dec;
    SpeexBits bits;
    int pf;
-   int bitCount;
+   int bitCount=0;
 
    for (i=0;i<FRAME_SIZE;i++)
       bak2[i]=0;

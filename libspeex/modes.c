@@ -42,56 +42,49 @@ extern float exc_10_32_table[];
 extern float hexc_10_32_table[];
 
 /* Post-filter parameters for narrowband */
-pf_params pf_params_nb = {
+static pf_params pf_params_nb = {
    0.65,      /* formant enhancement numerator */
    0.7,      /* formant enhancement denominator */
    0.4       /* pitch enhancement factor */
 };
 
 /* Post-filter parameters for low bit-rate narrowband */
-pf_params pf_params_lbr = {
+static pf_params pf_params_lbr = {
    0.65,      /* formant enhancement numerator */
    0.72,      /* formant enhancement denominator */
    0.4       /* pitch enhancement factor */
 };
 
 /* Post-filter parameters for wideband */
-pf_params pf_params_sb = {
+static pf_params pf_params_sb = {
    0.65,      /* formant enhancement numerator */
    0.68,      /* formant enhancement denominator */
    0.2       /* pitch enhancement factor */
 };
 
-/* Post-filter parameters for wideband */
-pf_params pf_params_sb_lbr = {
-   0.65,      /* formant enhancement numerator */
-   0.7,      /* formant enhancement denominator */
-   0.4       /* pitch enhancement factor */
-};
-
 /* Parameters for Long-Term Prediction (LTP)*/
-ltp_params ltp_params_nb = {
+static ltp_params ltp_params_nb = {
    gain_cdbk_nb,
    7,
    7
 };
 
 /* Parameters for Long-Term Prediction (LTP)*/
-ltp_params ltp_params_lbr = {
+static ltp_params ltp_params_lbr = {
    gain_cdbk_lbr,
    5,
    7
 };
 
 /* Parameters for Long-Term Prediction (LTP)*/
-ltp_params ltp_params_med = {
+static ltp_params ltp_params_med = {
    gain_cdbk_lbr,
    5,
    7
 };
 
 /* Split-VQ innovation parameters for very low bit-rate narrowband */
-split_cb_params split_cb_nb_vlbr = {
+static split_cb_params split_cb_nb_vlbr = {
    10,               /*subvect_size*/
    4,               /*nb_subvect*/
    exc_10_32_table, /*shape_cb*/
@@ -99,7 +92,7 @@ split_cb_params split_cb_nb_vlbr = {
 };
 
 /* Split-VQ innovation parameters for low bit-rate narrowband */
-split_cb_params split_cb_nb_lbr = {
+static split_cb_params split_cb_nb_lbr = {
    10,               /*subvect_size*/
    4,               /*nb_subvect*/
    exc_10_32_table, /*shape_cb*/
@@ -108,7 +101,7 @@ split_cb_params split_cb_nb_lbr = {
 
 
 /* Split-VQ innovation parameters narrowband */
-split_cb_params split_cb_nb = {
+static split_cb_params split_cb_nb = {
    5,               /*subvect_size*/
    8,               /*nb_subvect*/
    exc_5_64_table, /*shape_cb*/
@@ -116,7 +109,7 @@ split_cb_params split_cb_nb = {
 };
 
 /* Split-VQ innovation parameters narrowband */
-split_cb_params split_cb_nb_med = {
+static split_cb_params split_cb_nb_med = {
    8,               /*subvect_size*/
    5,               /*nb_subvect*/
    exc_8_128_table, /*shape_cb*/
@@ -124,7 +117,7 @@ split_cb_params split_cb_nb_med = {
 };
 
 /* Split-VQ innovation for low-band wideband */
-split_cb_params split_cb_sb = {
+static split_cb_params split_cb_sb = {
    5,               /*subvect_size*/
    8,              /*nb_subvect*/
    exc_5_256_table,    /*shape_cb*/
@@ -149,7 +142,7 @@ static split_cb_params split_cb_high_lbr = {
 };
 
 
-SpeexSubmode nb_submode1 = {
+static SpeexSubmode nb_submode1 = {
    0,
    1,
    /* LSP quantization */
@@ -168,7 +161,7 @@ SpeexSubmode nb_submode1 = {
    NULL
 };
 
-SpeexSubmode nb_submode2 = {
+static SpeexSubmode nb_submode2 = {
    0,
    0,
    /*LSP quantization*/
@@ -187,7 +180,7 @@ SpeexSubmode nb_submode2 = {
 };
 
 
-SpeexSubmode nb_submode3 = {
+static SpeexSubmode nb_submode3 = {
    -1,
    1,
    /*LSP quantization*/
@@ -205,7 +198,7 @@ SpeexSubmode nb_submode3 = {
    &pf_params_lbr
 };
 
-SpeexSubmode nb_submode4 = {
+static SpeexSubmode nb_submode4 = {
    -1,
    1,
    /*LSP quantization*/
@@ -223,7 +216,7 @@ SpeexSubmode nb_submode4 = {
    &pf_params_nb
 };
 
-SpeexSubmode nb_submode5 = {
+static SpeexSubmode nb_submode5 = {
    -1,
    1,
    /*LSP quantization*/
@@ -241,7 +234,7 @@ SpeexSubmode nb_submode5 = {
    &pf_params_nb
 };
 
-SpeexSubmode nb_submode6 = {
+static SpeexSubmode nb_submode6 = {
    -1,
    1,
    /*LSP quantization*/
@@ -261,7 +254,7 @@ SpeexSubmode nb_submode6 = {
 
 
 /* Default mode for narrowband */
-SpeexNBMode nb_mode = {
+static SpeexNBMode nb_mode = {
    160,    /*frameSize*/
    40,     /*subframeSize*/
    10,     /*lpcSize*/
@@ -297,7 +290,7 @@ SpeexMode speex_nb_mode = {
    0
 };
 
-SpeexSubmode wb_submode1 = {
+static SpeexSubmode wb_submode1 = {
    0,
    1,
    /*LSP quantization*/
@@ -317,7 +310,7 @@ SpeexSubmode wb_submode1 = {
 };
 
 
-SpeexSubmode wb_submode2 = {
+static SpeexSubmode wb_submode2 = {
    0,
    1,
    /*LSP quantization*/
@@ -336,7 +329,7 @@ SpeexSubmode wb_submode2 = {
 };
 
 
-SpeexSubmode wb_submode3 = {
+static SpeexSubmode wb_submode3 = {
    0,
    1,
    /*LSP quantization*/
