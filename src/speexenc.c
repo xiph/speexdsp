@@ -62,6 +62,7 @@ void usage()
    fprintf (stderr, "  --quality n        Encoding quality setting from 0 to 10\n"); 
    fprintf (stderr, "  --lbr              Low bit-rate mode (equivalent to --quality 3)\n"); 
    fprintf (stderr, "  --vbr              Enable variable bit-rate (VBR)\n"); 
+   fprintf (stderr, "  --nframes n        Number of frames per Ogg packet\n"); 
    fprintf (stderr, "  --help       -h    This help\n"); 
    fprintf (stderr, "  --version    -v    Version information\n"); 
    fprintf (stderr, "\n");  
@@ -84,7 +85,7 @@ int main(int argc, char **argv)
    short in[MAX_FRAME_SIZE];
    float input[MAX_FRAME_SIZE];
    int frame_size;
-   int vbr_enabled;
+   int vbr_enabled=0;
    int i,nbBytes;
    SpeexMode *mode=NULL;
    void *st;
@@ -110,6 +111,7 @@ int main(int argc, char **argv)
    int bytes_written, ret, result;
    int id=0;
    SpeexHeader header;
+   int nframes=1;
    char *comments = "Encoded with Speex " VERSION;
 
    /*Process command-line options*/
@@ -134,6 +136,9 @@ int main(int argc, char **argv)
          else if (strcmp(long_options[option_index].name,"quality")==0)
          {
             quality = atoi (optarg);
+         } else if (strcmp(long_options[option_index].name,"nframes")==0)
+         {
+            nframes = atoi (optarg);
          } else if (strcmp(long_options[option_index].name,"help")==0)
          {
             usage();
@@ -231,6 +236,7 @@ int main(int argc, char **argv)
    }
 
    speex_init_header(&header, rate, 1, mode);
+   header.frames_per_packet=nframes;
 
    fprintf (stderr, "Encoding %d Hz audio using %s mode\n", 
             header.rate, mode->modeName);
@@ -316,16 +322,16 @@ int main(int argc, char **argv)
       /*Encode current frame*/
       speex_encode(st, input, &bits);
 
-      /*if (id%5!=0)
-        continue;*/
-      nbBytes = speex_bits_write(&bits, cbits, 500);
+      if (id%nframes!=0)
+         continue;
+      nbBytes = speex_bits_write(&bits, cbits, MAX_FRAME_BYTES);
       speex_bits_reset(&bits);
       op.packet = (unsigned char *)cbits;
       op.bytes = nbBytes;
       op.b_o_s = 0;
       op.e_o_s = 0;
-      op.granulepos = id;
-      op.packetno = id;
+      op.granulepos = id*frame_size;
+      op.packetno = id/nframes;
       ogg_stream_packetin(&os, &op);
 
       /*Write all new pages (not likely 0 or 1)*/

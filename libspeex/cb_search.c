@@ -335,14 +335,14 @@ float *stack
    float *t, *r, *e, *E;
    /*FIXME: Should make this dynamic*/
    float *tmp, *ot[20], *nt[20];
-   float *ndist;
+   float *ndist, *odist;
    int *itmp, *nind[20], *oind[20];
 
    int *ind;
    float *shape_cb;
    int shape_cb_size, subvect_size, nb_subvect;
    split_cb_params *params;
-   int N=4;
+   int N=2;
    int *best_index;
    float *best_dist;
 
@@ -370,6 +370,7 @@ float *stack
    best_index = (int*)PUSH(stack, N);
    best_dist = PUSH(stack, N);
    ndist = PUSH(stack, N);
+   odist = PUSH(stack, N);
    
    itmp = (int*)PUSH(stack, 2*N*nb_subvect);
    for (i=0;i<N;i++)
@@ -415,6 +416,8 @@ float *stack
          E[i]+=res[j]*res[j];
    }
 
+   for (j=0;j<N;j++)
+      odist[j]=0;
    /*For all subvectors*/
    for (i=0;i<nb_subvect;i++)
    {
@@ -433,8 +436,10 @@ float *stack
          for (k=0;k<N;k++)
          {
             float err=0;
+            /*previous target*/
             for (m=0;m<nsf;m++)
                t[m]=ot[j][m];
+            /*update target*/
             for (m=0;m<subvect_size;m++)
             {
                float g=shape_cb[best_index[k]*subvect_size+m];
@@ -442,8 +447,11 @@ float *stack
                   t[n] -= g*r[q];
             }
             
-            for (m=0;m<(i+1)*subvect_size;m++)
+            /*compute error (distance)*/
+            err=odist[j];
+            for (m=i*subvect_size;m<(i+1)*subvect_size;m++)
                err += t[m]*t[m];
+            /*update n-best list*/
             if (err<ndist[N-1] || ndist[N-1]<-.5)
             {
                for (m=0;m<N;m++)
@@ -473,15 +481,18 @@ float *stack
            break;
       }
 
+      /*opdate old-new data*/
       for (j=0;j<N;j++)
          for (m=0;m<nsf;m++)
             ot[j][m]=nt[j][m];
       for (j=0;j<N;j++)
          for (m=0;m<nb_subvect;m++)
             oind[j][m]=nind[j][m];
-
+      for (j=0;j<N;j++)
+         odist[j]=ndist[j];
    }
 
+   /*save indices*/
    for (i=0;i<nb_subvect;i++)
    {
       ind[i]=nind[0][i];
@@ -504,6 +515,7 @@ float *stack
    for (j=0;j<nsf;j++)
       target[j]-=r[j];
 
+   POP(stack);
    POP(stack);
    POP(stack);
    POP(stack);

@@ -41,10 +41,10 @@ typedef struct SpeexHeader {
    int bitrate;
    int frame_size;
    int vbr;
+   int frames_per_packet;
    int reserved1;
    int reserved2;
    int reserved3;
-   int reserved4;
 } SpeexHeader;
 */
 
@@ -67,10 +67,10 @@ void speex_init_header(SpeexHeader *header, int rate, int nb_channels, SpeexMode
    header->frame_size = m->frame_size;
    header->vbr = m->vbr;
    
+   header->frames_per_packet = 0;
    header->reserved1 = 0;
    header->reserved2 = 0;
    header->reserved3 = 0;
-   header->reserved4 = 0;
 }
 
 char *speex_header_to_packet(SpeexHeader *header, int *size)
@@ -90,6 +90,7 @@ char *speex_header_to_packet(SpeexHeader *header, int *size)
    ENDIAN_SWITCH(le_header->bitrate);
    ENDIAN_SWITCH(le_header->frame_size);
    ENDIAN_SWITCH(le_header->vbr);
+   ENDIAN_SWITCH(le_header->frames_per_packet);
 
    *size = sizeof(SpeexHeader);
    return (char *)le_header;
@@ -125,6 +126,7 @@ SpeexHeader *speex_packet_to_header(char *packet, int size)
    ENDIAN_SWITCH(le_header->bitrate);
    ENDIAN_SWITCH(le_header->frame_size);
    ENDIAN_SWITCH(le_header->vbr);
+   ENDIAN_SWITCH(le_header->frames_per_packet);
 
    return le_header;
 

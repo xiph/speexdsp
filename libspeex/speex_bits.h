@@ -64,6 +64,8 @@ int speex_bits_unpack_signed(SpeexBits *bits, int nbBits);
 
 unsigned int speex_bits_unpack_unsigned(SpeexBits *bits, int nbBits);
 
+int speex_bits_nbytes(SpeexBits *bits);
+
 #ifdef __cplusplus
 }
 #endif

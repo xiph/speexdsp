@@ -130,7 +130,7 @@ void version()
    fprintf (stderr, "Speex decoder version " VERSION "\n");
 }
 
-static void *process_header(ogg_packet *op, int pf_enabled, int *frame_size, int *rate)
+static void *process_header(ogg_packet *op, int pf_enabled, int *frame_size, int *rate, int *nframes)
 {
    void *st;
    SpeexMode *mode;
@@ -167,7 +167,8 @@ static void *process_header(ogg_packet *op, int pf_enabled, int *frame_size, int
    speex_decoder_ctl(st, SPEEX_GET_FRAME_SIZE, frame_size);
    
    *rate = header->rate;
-
+   *nframes = header->frames_per_packet;
+   
    fprintf (stderr, "Decoding %d Hz audio using %s mode\n", 
             *rate, mode->modeName);
 
@@ -203,6 +204,7 @@ int main(int argc, char **argv)
    ogg_packet     op;
    ogg_stream_state os;
    int pf_enabled;
+   int nframes=2;
 
    pf_enabled = 0;
 
@@ -281,7 +283,7 @@ int main(int argc, char **argv)
    while (1)
    {
       char *data;
-      int i, nb_read;
+      int i, j, nb_read;
       /*Get the ogg buffer for writing*/
       data = ogg_sync_buffer(&oy, 200);
       /*Read bitstream from input file*/
@@ -300,7 +302,9 @@ int main(int argc, char **argv)
             if (packet_count==0)
             {
                int rate;
-               st = process_header(&op, pf_enabled, &frame_size, &rate);
+               st = process_header(&op, pf_enabled, &frame_size, &rate, &nframes);
+               if (!nframes)
+                  nframes=1;
                if (!st)
                   exit(1);
                fout = out_file_open(outFile, rate);
@@ -314,28 +318,13 @@ int main(int argc, char **argv)
                /*End of stream condition*/
                if (strncmp((char *)op.packet, "END OF STREAM", 13)==0)
                   break;
-
-               /* Put 0 here only to simulate packet loss */
-               if (1)
+               /*Copy Ogg packet to Speex bitstream*/
+               speex_bits_read_from(&bits, (char*)op.packet, op.bytes);
+               for (j=0;j<nframes;j++)
                {
-                  /*Copy Ogg packet to Speex bitstream*/
-                  speex_bits_read_from(&bits, (char*)op.packet, op.bytes);
-                  /*Decode a frame*/
+                  /*Decode frame*/
                   speex_decode(st, &bits, output, 0);
-               } else {
-                  static int first=1;
-                  if ((((float)rand())/RAND_MAX < .1) && !first)
-                  {
-                     printf ("PACKET LOSS\n");
-                     speex_bits_rewind(&bits);
-                     speex_decode(st, &bits, output, 1);
-                  } else {
-                     printf ("PACKET OK\n");
-                     speex_bits_read_from(&bits, (char*)op.packet, op.bytes);
-                     speex_decode(st, &bits, output, 0);
-                  }
-                  first=0;
-               }
+               
                /*PCM saturation (just in case)*/
                for (i=0;i<frame_size;i++)
                {
@@ -348,6 +337,7 @@ int main(int argc, char **argv)
                for (i=0;i<frame_size;i++)
                   out[i]=(short)le_short(output[i]);
                fwrite(out, sizeof(short), frame_size, fout);
+                  }
             }
             packet_count++;
          }

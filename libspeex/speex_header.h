@@ -43,10 +43,10 @@ typedef struct SpeexHeader {
    int bitrate;
    int frame_size;
    int vbr;
+   int frames_per_packet;
    int reserved1;
    int reserved2;
    int reserved3;
-   int reserved4;
 } SpeexHeader;
 
 void speex_init_header(SpeexHeader *header, int rate, int nb_channels, struct SpeexMode *m);

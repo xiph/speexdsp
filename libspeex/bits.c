@@ -169,3 +169,8 @@ unsigned int speex_bits_unpack_unsigned(SpeexBits *bits, int nbBits)
    }
    return d;
 }
+
+int speex_bits_nbytes(SpeexBits *bits)
+{
+   return ((bits->nbBits+7)>>3);
+}
