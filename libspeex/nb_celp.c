@@ -89,6 +89,7 @@ void *nb_encoder_init(SpeexMode *m)
    st->submodeID=mode->defaultSubmode;
    st->pre_mem=0;
    st->pre_mem2=0;
+   st->bounded_pitch = 0;
 
    /* Allocating input buffer */
    st->inBuf = speex_alloc(st->bufSize*sizeof(float));
@@ -302,10 +303,13 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
 
 
       /*Open-loop pitch*/
-      if (SUBMODE(lbr_pitch) != -1 || st->vbr_enabled || SUBMODE(forced_pitch_gain)) {
+      /*if (SUBMODE(lbr_pitch) != -1 || st->vbr_enabled || SUBMODE(forced_pitch_gain))*/
+      if (!st->submodes[st->submodeID] || st->vbr_enabled || SUBMODE(forced_pitch_gain) ||
+          SUBMODE(lbr_pitch) != -1)
+      {
          int nol_pitch[4];
          float nol_pitch_coef[4];
-
+         
          bw_lpc(st->gamma1, st->interp_lpc, st->bw_lpc1, st->lpcSize);
          bw_lpc(st->gamma2, st->interp_lpc, st->bw_lpc2, st->lpcSize);
          
@@ -570,7 +574,9 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
             pit_min = st->min_pitch;
             pit_max = st->max_pitch;
          }
-
+         
+         if (st->bounded_pitch && pit_max>offset)
+            pit_max=offset;
          pitch = SUBMODE(ltp_quant)(target, sw, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2,
                                     exc, SUBMODE(ltp_params), pit_min, pit_max, ol_pitch_coef,
                                     st->lpcSize, st->subframeSize, bits, stack, 
@@ -724,6 +730,10 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
      in[i]=st->frame[i] + st->preemph*in[i-1];
    st->pre_mem2=in[st->frameSize-1];
 
+   if (SUBMODE(innovation_quant) == noise_codebook_quant)
+      st->bounded_pitch = 1;
+   else
+      st->bounded_pitch = 0;
 }
 
 
@@ -1238,6 +1248,8 @@ void nb_encoder_ctl(void *state, int request, void *ptr)
       break;
    case SPEEX_SET_COMPLEXITY:
       st->complexity = (*(int*)ptr);
+      if (st->complexity<1)
+         st->complexity=1;
       break;
    case SPEEX_GET_COMPLEXITY:
       (*(int*)ptr) = st->complexity;

@@ -1037,6 +1037,8 @@ void sb_encoder_ctl(void *state, int request, void *ptr)
    case SPEEX_SET_COMPLEXITY:
       speex_encoder_ctl(st->st_low, SPEEX_SET_COMPLEXITY, ptr);
       st->complexity = (*(int*)ptr);
+      if (st->complexity<1)
+         st->complexity=1;
       break;
    case SPEEX_GET_COMPLEXITY:
       (*(int*)ptr) = st->complexity;

@@ -352,15 +352,21 @@ int complexity
    float *gains;
 
    N=complexity;
-   if (N<1)
-      N=1;
    if (N>10)
       N=10;
-
    /*FIXME: This breaks if sizeof(int) != sizeof(float) */
    nbest=(int*)PUSH(stack, N);
    gains = PUSH(stack, N);
    params = (ltp_params*) par;
+
+   if (N==0 || end<start)
+   {
+      speex_bits_pack(bits, 0, params->pitch_bits);
+      speex_bits_pack(bits, 0, params->gain_bits);
+      for (i=0;i<nsf;i++)
+         exc[i]=0;
+      return start;
+   }
    
    best_exc=PUSH(stack,nsf);
    

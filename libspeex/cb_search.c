@@ -68,7 +68,7 @@ int   complexity
 {
    int i,j,k,m,n,q;
    float *resp;
-   float *t, *e, *E;
+   float *t, *e, *E, *r2;
    /*FIXME: Should make this dynamic*/
    float *tmp, *_ot[20], *_nt[20];
    float *ndist, *odist;
@@ -89,8 +89,6 @@ int   complexity
    oind=_oind;
    nind=_nind;
    N=complexity;
-   if (N<1)
-      N=1;
    if (N>10)
       N=10;
 
@@ -103,6 +101,7 @@ int   complexity
    resp = PUSH(stack, shape_cb_size*subvect_size);
    t = PUSH(stack, nsf);
    e = PUSH(stack, nsf);
+   r2 = PUSH(stack, nsf);
    E = PUSH(stack, shape_cb_size);
    /*FIXME: This breaks if sizeof(int) != sizeof(float) */
    ind = (int*)PUSH(stack, nb_subvect);
@@ -222,6 +221,8 @@ int   complexity
             {
 
                /*previous target (we don't care what happened before*/
+               for (m=0;m<(i+1)*subvect_size;m++)
+                  t[m]=ct[m];
                for (m=(i+1)*subvect_size;m<nsf;m++)
                   t[m]=ct[m];
                /* New code: update the rest of the target only if it's worth it */
@@ -313,9 +314,9 @@ int   complexity
       exc[j]+=e[j];
    
    /* Update target */
-   syn_percep_zero(e, ak, awk1, awk2, r, nsf,p, stack);
+   syn_percep_zero(e, ak, awk1, awk2, r2, nsf,p, stack);
    for (j=0;j<nsf;j++)
-      target[j]-=r[j];
+      target[j]-=r2[j];
 
 }
 
