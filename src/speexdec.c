@@ -1,5 +1,5 @@
 /* Copyright (C) 2002 Jean-Marc Valin 
-   File: speexenc.c
+   File: speexdec.c
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Lesser General Public
@@ -32,11 +32,8 @@ void usage()
 {
    fprintf (stderr, "speexenc [options] <input file> <output file>\n");
    fprintf (stderr, "options:\n");
-   fprintf (stderr, "\t--narrowband -n    Narrowband (8 kHz) input file\n"); 
-   fprintf (stderr, "\t--wideband   -w    Wideband (16 kHz) input file\n"); 
    fprintf (stderr, "\t--help       -h    This help\n"); 
    fprintf (stderr, "\t--version    -v    Version information\n"); 
-   fprintf (stderr, "\nInput must be raw audio (no header), 16 bits\n"); 
 }
 
 void version()
@@ -51,18 +48,16 @@ int main(int argc, char **argv)
    int narrowband=0, wideband=0;
    char *inFile, *outFile;
    FILE *fin, *fout;
-   short in[MAX_FRAME_SIZE];
-   float input[MAX_FRAME_SIZE];
+   short out[MAX_FRAME_SIZE];
+   float output[MAX_FRAME_SIZE];
    int frame_size;
-   int i,nbBytes;
    SpeexMode *mode=NULL;
-   EncState st;
+   DecState st;
    FrameBits bits;
    char cbits[MAX_FRAME_BYTES];
+   int at_end=0;
    struct option long_options[] =
    {
-      {"wideband", no_argument, NULL, 0},
-      {"narrowband", no_argument, NULL, 0},
       {"help", no_argument, NULL, 0},
       {"version", no_argument, NULL, 0},
       {0, 0, 0, 0}
@@ -78,11 +73,7 @@ int main(int argc, char **argv)
       switch(c)
       {
       case 0:
-         if (strcmp(long_options[option_index].name,"narrowband")==0)
-            narrowband=1;
-         else if (strcmp(long_options[option_index].name,"wideband")==0)
-               wideband=1;
-         else if (strcmp(long_options[option_index].name,"help")==0)
+         if (strcmp(long_options[option_index].name,"help")==0)
          {
             usage();
             exit(0);
@@ -92,18 +83,12 @@ int main(int argc, char **argv)
             exit(0);
          }
          break;
-      case 'n':
-         narrowband=1;
-         break;
       case 'h':
          usage();
          break;
       case 'v':
          version();
          exit(0);
-         break;
-      case 'w':
-         wideband=1;
          break;
       case '?':
          usage();
@@ -118,18 +103,6 @@ int main(int argc, char **argv)
    }
    inFile=argv[optind];
    outFile=argv[optind+1];
-
-   if (wideband && narrowband)
-   {
-      fprintf (stderr,"Cannot specify both wideband and narrowband at the same time\n");
-      exit(1);
-   };
-   if (!wideband)
-      narrowband=1;
-   if (narrowband)
-      mode=&mp_nb_mode;
-   if (wideband)
-      mode=&mp_wb_mode;
 
    if (strcmp(inFile, "-")==0)
       fin=stdin;
@@ -154,23 +127,41 @@ int main(int argc, char **argv)
       }
    }
 
-   encoder_init(&st, mode);
+   mode=&mp_nb_mode;
+   decoder_init(&st, mode);
    frame_size=mode->frameSize;
-
+   frame_bits_init(&bits);
    while (1)
    {
-      fread(in, sizeof(short), frame_size, fin);
-      if (feof(fin))
+      int i,nbBytes, nb_read;
+      nb_read=300-((bits.nbBits>>3)-bits.bytePtr);
+      if (nb_read>0&&!at_end)
+      {
+         nb_read=fread(cbits, sizeof(char), nb_read, fin);
+         printf ("nb_read = %d\n", nb_read);
+         if (feof(fin))
+            at_end=1;
+         if (nb_read>0 && !at_end)
+            frame_bits_read_whole_bytes(&bits, cbits, nb_read);
+      }
+      
+      printf ("bits.nbBits = %d, bits.bytePtr = %d\n", bits.nbBits>>3, bits.bytePtr);
+      if (((bits.nbBits>>3)-bits.bytePtr)<1)
          break;
+
+      decode(&st, &bits, output);
       for (i=0;i<frame_size;i++)
-         input[i]=in[i];
-      encode(&st, input, &bits);
-      nbBytes = frame_bits_write_whole_bytes(&bits, cbits, 200);
-      fwrite(cbits, 1, nbBytes, fout);
+      {
+         if (output[i]>32000)
+            output[i]=32000;
+         else if (output[i]<-32000)
+            output[i]=-32000;
+      }
+      for (i=0;i<frame_size;i++)
+         out[i]=output[i];
+      fwrite(out, sizeof(short), frame_size, fout);
    }
-   nbBytes = frame_bits_write(&bits, cbits, 200);
-   fwrite(cbits, 1, nbBytes, fout);
-   encoder_destroy(&st);
+   decoder_destroy(&st);
    exit(0);
    return 1;
 }

@@ -69,6 +69,30 @@ void frame_bits_init_from(FrameBits *bits, char *bytes, int len)
    bits->bitPtr=0;
 }
 
+void frame_bits_flush(FrameBits *bits)
+{
+   int i;
+   if (bits->bytePtr>0)
+   {
+      for (i=bits->bytePtr;i<((bits->nbBits+7)>>3);i++)
+         bits->bytes[i-bits->bytePtr]=bits->bytes[i];
+   }
+   bits->nbBits -= bits->bytePtr<<3;
+   bits->bytePtr=0;
+}
+
+void frame_bits_read_whole_bytes(FrameBits *bits, char *bytes, int len)
+{
+   int i,pos;
+   printf ("reading:\n");
+   printf ("%d %d %d\n", bits->nbBits, bits->bytePtr, bits->bitPtr);
+   /*frame_bits_flush(bits);*/
+   pos=bits->nbBits>>3;
+   for (i=0;i<len;i++)
+      bits->bytes[pos+i]=bytes[i];
+   bits->nbBits+=len<<3;
+}
+
 int frame_bits_write(FrameBits *bits, char *bytes, int max_len)
 {
    int i;
@@ -86,10 +110,15 @@ int frame_bits_write_whole_bytes(FrameBits *bits, char *bytes, int max_len)
       max_len = ((bits->nbBits)>>3);
    for (i=0;i<max_len;i++)
       bytes[i]=bits->bytes[i];
-
-   bits->bytes[0]=bits->bytes[max_len];
+   
+   if (bits->bitPtr>0)
+      bits->bytes[0]=bits->bytes[max_len];
+   else
+      bits->bytes[0]=0;
+   for (i=1;i<((bits->nbBits)>>3)+1;i++)
+      bits->bytes[i]=0;
    bits->bytePtr=0;
-   bits->nbBits-=((bits->nbBits)>>3)<<3;
+   bits->nbBits &= 7;
    return max_len;
 }
 

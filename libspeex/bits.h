@@ -22,7 +22,7 @@
 #ifndef BITS_H
 #define BITS_H
 
-#define MAX_BYTES_PER_FRAME 1000
+#define MAX_BYTES_PER_FRAME 1000000
 
 typedef struct FrameBits {
    char bytes[MAX_BYTES_PER_FRAME];
@@ -40,6 +40,8 @@ void frame_bits_reset(FrameBits *bits);
 void frame_bits_rewind(FrameBits *bits);
 
 void frame_bits_init_from(FrameBits *bits, char *bytes, int len);
+
+void frame_bits_read_whole_bytes(FrameBits *bits, char *bytes, int len);
 
 int frame_bits_write(FrameBits *bits, char *bytes, int max_len);
 
