@@ -676,6 +676,8 @@ void sb_decode(SBDecState *st, FrameBits *bits, float *out)
    for (i=0;i<st->frame_size;i++)
       st->exc[i]=0;
 
+   
+
    /* Up-sample coded low-band and high-band*/
    for (i=0;i<st->frame_size;i++)
    {

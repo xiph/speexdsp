@@ -350,8 +350,7 @@ float *stack
       
       gain_id = frame_bits_unpack_unsigned(bits, 3);
       gains[i]=scal_gains4[gain_id];
-      if (sign[i])
-         gains[i]=-gains[i];
+      gains[i] *= sign[i];
       gains[i] *= exc_energy;
    }
 
