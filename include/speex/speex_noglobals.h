@@ -37,27 +37,12 @@
 #ifndef SPEEX_NOGLOBALS_H
 #define SPEEX_NOGLOBALS_H
 
+/* See README.symbian in the Speex source distribution for information
+ * on using this API */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-/** Default narrowband mode */
-const SpeexMode * speex_nb_mode_new (void);
-void speex_nb_mode_free (const SpeexMode * mode);
-
-/** Default wideband mode */
-const SpeexMode * speex_wb_mode_new (void);
-void speex_wb_mode_free (const SpeexMode * mode);
-
-/** Default "ultra-wideband" mode */
-const SpeexMode * speex_uwb_mode_new (void);
-void speex_uwb_mode_free (const SpeexMode * mode);
-
-/** Query modes available */
-const SpeexMode * speex_mode_new_byID (int id);
-
-/** Free a mode, using its ID */
-void speex_mode_free_byID (SpeexMode * mode, int id);
 
 /** Instantiate a mode */
 const SpeexMode * speex_mode_new (int modeID);

@@ -745,7 +745,7 @@ static const SpeexNBMode * nb_mode (void)
 
 
 /* Default mode for narrowband */
-const SpeexMode * speex_nb_mode_new (void)
+static const SpeexMode * speex_nb_mode_new (void)
 {
   const SpeexNBMode * _nb_mode;
 
@@ -769,7 +769,7 @@ const SpeexMode * speex_nb_mode_new (void)
    );
 }
 
-void speex_nb_mode_free (const SpeexMode * mode)
+static void speex_nb_mode_free (const SpeexMode * mode)
 {
   nb_mode_free ((SpeexNBMode *)mode->mode);
   speex_free ((void *)mode);
@@ -959,7 +959,7 @@ sb_wb_mode_free (const SpeexSBMode * mode)
   speex_nb_mode_free (mode->nb_mode);
 }
 
-const SpeexMode * speex_wb_mode_new (void)
+static const SpeexMode * speex_wb_mode_new (void)
 {
   const SpeexSBMode * sb_mode;
 
@@ -983,7 +983,7 @@ const SpeexMode * speex_wb_mode_new (void)
    );
 }
 
-void speex_wb_mode_free (const SpeexMode * mode)
+static void speex_wb_mode_free (const SpeexMode * mode)
 {
   sb_wb_mode_free (mode->mode);
   speex_free ((void *)mode);
@@ -1051,13 +1051,13 @@ static const SpeexSBMode * sb_uwb_mode (void)
   return NULL;
 }
 
-void sb_uwb_mode_free (const SpeexSBMode * mode)
+static void sb_uwb_mode_free (const SpeexSBMode * mode)
 {
   sb_wb_mode_free ((const SpeexSBMode *)mode->nb_mode);
   sb_mode_free (mode);
 }
 
-const SpeexMode * speex_uwb_mode_new (void)
+static const SpeexMode * speex_uwb_mode_new (void)
 {
   const SpeexSBMode * sb_mode;
 
@@ -1081,30 +1081,10 @@ const SpeexMode * speex_uwb_mode_new (void)
    );
 }
 
-void speex_uwb_mode_free (const SpeexMode * mode)
+static void speex_uwb_mode_free (const SpeexMode * mode)
 {
   sb_uwb_mode_free (mode->mode);
   speex_free ((void *)mode);
-}
-
-const SpeexMode * speex_mode_new_byID (int id)
-{
-  switch (id) {
-  case 0: return speex_nb_mode_new(); break;
-  case 1: return speex_wb_mode_new(); break;
-  case 2: return speex_uwb_mode_new(); break;
-  default: return NULL;
-  }
-}
-
-void speex_mode_free_byID (SpeexMode * mode, int id)
-{
-  switch (id) {
-  case 0: speex_nb_mode_free(mode); break;
-  case 1: speex_wb_mode_free(mode); break;
-  case 2:  speex_uwb_mode_free(mode); break;
-  default: break;
-  }
 }
 
 const SpeexMode * speex_mode_new (int modeID)
