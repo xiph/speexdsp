@@ -56,6 +56,11 @@ extern "C" {
 #define SPEEX_GET_PF 1
 
 
+/* Values allowed for mode queries */
+#define SPEEX_MODE_FRAME_SIZE 0
+#define SPEEX_SUBMODE_BITS_PER_FRAME 1
+
+
 #define SPEEX_NB_MODES 2
 
 
@@ -71,11 +76,16 @@ typedef void (*decode_func)(void *state, SpeexBits *bits, float *out, int lost);
 typedef void (*encoder_ctl_func)(void *state, int request, void *ptr);
 typedef void (*decoder_ctl_func)(void *state, int request, void *ptr);
 
+typedef void (*mode_query_func)(void *mode, int request, void *ptr);
+
 /** Struct defining a Speex mode */ 
 typedef struct SpeexMode {
    /** Pointer to the low-level mode data */
    void *mode;
 
+   /** Pointer to the mode query function */
+   mode_query_func query;
+   
    /** The name of the mode (you should not rely on this to identify the mode)*/
    char *modeName;
 
@@ -149,11 +159,14 @@ void speex_decoder_destroy(void *state);
 
 /** Uses an existing decoder state to decode one frame of speech from bit-stream 
     bits. The output speech is saved written to out. */
-void speex_decode(void *state, SpeexBits *bits, float *out, int lost);
+int speex_decode(void *state, SpeexBits *bits, float *out, int lost);
 
 /** Used like the ioctl function to control the encoder parameters */
 void speex_decoder_ctl(void *state, int request, void *ptr);
 
+
+/** Query function for mode information */
+void speex_mode_query(SpeexMode *mode, int request, void *ptr);
 
 
 /** Default narrowband mode */

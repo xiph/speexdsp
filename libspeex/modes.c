@@ -20,6 +20,7 @@
 */
 
 #include <stdlib.h>
+#include <stdio.h>
 #include "modes.h"
 #include "ltp.h"
 #include "quant_lsp.h"
@@ -36,10 +37,12 @@ extern float hexc_table[];
 extern float exc_5_256_table[];
 extern float exc_5_64_table[];
 extern float exc_8_128_table[];
-extern float exc_8_32_table[];
 extern float exc_10_32_table[];
 extern float exc_10_16_table[];
 extern float hexc_10_32_table[];
+
+static void nb_mode_query(void *mode, int request, void *ptr);
+static void wb_mode_query(void *mode, int request, void *ptr);
 
 /* Parameters for Long-Term Prediction (LTP)*/
 static ltp_params ltp_params_nb = {
@@ -302,6 +305,7 @@ static SpeexNBMode nb_mode = {
 
 SpeexMode speex_nb_mode = {
    &nb_mode,
+   nb_mode_query,
    "narrowband",
    0,
    4,
@@ -424,6 +428,7 @@ SpeexSBMode sb_wb_mode = {
 
 SpeexMode speex_wb_mode = {
    &sb_wb_mode,
+   wb_mode_query,
    "full-rate wideband (sub-band CELP)",
    1,
    4,
@@ -467,9 +472,22 @@ void speex_decoder_destroy(void *state)
    (*((SpeexMode**)state))->dec_destroy(state);
 }
 
-void speex_decode(void *state, SpeexBits *bits, float *out, int lost)
+int speex_decode(void *state, SpeexBits *bits, float *out, int lost)
 {
+   int m = speex_bits_peek_unsigned(bits, 5);
+   if (m==15)
+   {
+      return -1;
+   } else if (m==14)
+   {
+      int req_size = speex_bits_unpack_unsigned(bits, 6);
+      speex_bits_advance(bits, 8*req_size);
+   } else if (m>7)
+   {
+      return -2;
+   }
    (*((SpeexMode**)state))->dec(state, bits, out, lost);
+   return 0;
 }
 
 
@@ -481,4 +499,47 @@ void speex_encoder_ctl(void *state, int request, void *ptr)
 void speex_decoder_ctl(void *state, int request, void *ptr)
 {
    (*((SpeexMode**)state))->dec_ctl(state, request, ptr);
+}
+
+
+
+static void nb_mode_query(void *mode, int request, void *ptr)
+{
+   SpeexNBMode *m = mode;
+   
+   switch (request)
+   {
+   case SPEEX_MODE_FRAME_SIZE:
+      *((int*)ptr)=m->frameSize;
+      break;
+   case SPEEX_SUBMODE_BITS_PER_FRAME:
+      *((int*)ptr) = m->submodes[*((int*)ptr)]->bits_per_frame;
+      break;
+   default:
+      fprintf(stderr, "Unknown wb_mode_query request: %d\n", request);
+   }
+
+}
+
+static void wb_mode_query(void *mode, int request, void *ptr)
+{
+   SpeexSBMode *m = mode;
+
+   switch (request)
+   {
+   case SPEEX_MODE_FRAME_SIZE:
+      *((int*)ptr)=m->frameSize;
+      break;
+   case SPEEX_SUBMODE_BITS_PER_FRAME:
+      *((int*)ptr) = m->submodes[*((int*)ptr)]->bits_per_frame;
+      break;
+   default:
+      fprintf(stderr, "Unknown wb_mode_query request: %d\n", request);
+   }
+}
+
+
+void speex_mode_query(SpeexMode *mode, int request, void *ptr)
+{
+   mode->query(mode, request, ptr);
 }
