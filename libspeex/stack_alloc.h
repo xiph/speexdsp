@@ -60,9 +60,12 @@
 
 #endif
 
-#ifdef VAR_ARRAYS
+#if defined(VAR_ARRAYS)
 #define VARDECL(var) 
 #define ALLOC(var, size, type) type var[size]
+#elif defined(USE_ALLOCA)
+#define VARDECL(var) var
+#define ALLOC(var, size, type) var = alloca(sizeof(type)*size)
 #else
 #define VARDECL(var) var
 #define ALLOC(var, size, type) var = PUSH(stack, size, type)
