@@ -38,19 +38,24 @@
 /* FIXME: Get rid of this kludge quick before someone gets hurt */
 
 #ifdef FIXED_POINT
+
 #define LSP_LINEAR(i) (SHL(i+1,11))
+#define LSP_LINEAR_HIGH(i) (ADD16(MULT16_16_16(i,2560),6144))
 #define LSP_DIV_256(x) (SHL((spx_word16_t)x, 5))
 #define LSP_DIV_512(x) (SHL((spx_word16_t)x, 4))
 #define LSP_DIV_1024(x) (SHL((spx_word16_t)x, 3))
 #define LSP_PI 25736
+
 #else
 
 #define LSP_LINEAR(i) (.25*(i)+.25)
+#define LSP_LINEAR_HIGH(i) (.3125*(i)+.75)
 #define LSP_SCALE 256.
 #define LSP_DIV_256(x) (0.0039062*(x))
 #define LSP_DIV_512(x) (0.0019531*(x))
 #define LSP_DIV_1024(x) (0.00097656*(x))
 #define LSP_PI M_PI
+
 #endif
 
 static void compute_quant_weights(spx_lsp_t *qlsp, spx_word16_t *quant_weight, int order)
@@ -310,7 +315,7 @@ void lsp_quant_high(spx_lsp_t *lsp, spx_lsp_t *qlsp, int order, SpeexBits *bits)
       }*/
 
    for (i=0;i<order;i++)
-      qlsp[i]-=LSP_SCALING*(.3125*i+.75);
+      qlsp[i]-=LSP_LINEAR_HIGH(i);
 #ifndef FIXED_POINT
    for (i=0;i<order;i++)
       qlsp[i] = qlsp[i]*LSP_SCALE;
@@ -341,17 +346,17 @@ void lsp_unquant_high(spx_lsp_t *lsp, int order, SpeexBits *bits)
 
    int i, id;
    for (i=0;i<order;i++)
-      lsp[i]=LSP_SCALING*(.3125*i+.75);
+      lsp[i]=LSP_LINEAR_HIGH(i);
 
 
    id=speex_bits_unpack_unsigned(bits, 6);
    for (i=0;i<order;i++)
-      lsp[i] += LSP_SCALING*0.0039062*high_lsp_cdbk[id*order+i];
+      lsp[i] += LSP_DIV_256(high_lsp_cdbk[id*order+i]);
 
 
    id=speex_bits_unpack_unsigned(bits, 6);
    for (i=0;i<order;i++)
-      lsp[i] += LSP_SCALING*0.0019531*high_lsp_cdbk2[id*order+i];
+      lsp[i] += LSP_DIV_512(high_lsp_cdbk2[id*order+i]);
 }
 
 

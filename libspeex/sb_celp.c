@@ -543,7 +543,7 @@ int sb_encode(void *state, short *in, SpeexBits *bits)
 
       if (!SUBMODE(innovation_quant)) {/* 1 for spectral folding excitation, 0 for stochastic */
          float g;
-         float el;
+         spx_word16_t el;
          el = compute_rms(low_innov+offset, st->subframeSize);
 
          /* Gain to use if we want to use the low-band excitation for high-band */
@@ -966,7 +966,8 @@ int sb_decode(void *state, SpeexBits *bits, short *out)
    for (sub=0;sub<st->nbSubframes;sub++)
    {
       spx_sig_t *exc, *sp;
-      float filter_ratio, el=0;
+      spx_word16_t filter_ratio;
+      spx_word16_t el=0;
       int offset;
       spx_word32_t rl=0,rh=0;
       
@@ -1018,7 +1019,6 @@ int sb_decode(void *state, SpeexBits *bits, short *out)
          rl = low_pi_gain[sub];
 #ifdef FIXED_POINT
          filter_ratio=DIV32_16(SHL(rl+82,2),SHR(82+rh,5));
-         filter_ratio /= 128.;
 #else
          filter_ratio=(rl+.01)/(rh+.01);
 #endif
@@ -1033,30 +1033,37 @@ int sb_decode(void *state, SpeexBits *bits, short *out)
          quant = speex_bits_unpack_unsigned(bits, 5);
          g= exp(((float)quant-10)/8.0);
          
-         /*printf ("unquant folding gain: %f\n", g);*/
+#ifdef FIXED_POINT
+         g /= filter_ratio/128.;
+#else
          g /= filter_ratio;
-         
+#endif
          /* High-band excitation using the low-band excitation and a gain */
          for (i=0;i<st->subframeSize;i++)
             exc[i]=mode->folding_gain*g*low_innov[offset+i];
          /*speex_rand_vec(mode->folding_gain*g*sqrt(el/st->subframeSize), exc, st->subframeSize);*/
       } else {
-         float gc, scale;
+         spx_word16_t gc;
+         spx_word32_t scale;
          int qgc = speex_bits_unpack_unsigned(bits, 4);
 
          el = compute_rms(low_exc+offset, st->subframeSize);
 
+#ifdef FIXED_POINT
+         gc = MULT16_32_Q15(28626,gc_quant_bound[qgc]);
+#else
          gc = exp((1/3.7)*qgc-0.15556);
+#endif
 
          if (st->subframeSize==80)
             gc *= 1.4142;
 
-         scale = gc*(1+el)/filter_ratio;
+         scale = SHL(MULT16_16(DIV32_16(SHL(gc,SIG_SHIFT-4),filter_ratio),(1+el)),4);
 
          SUBMODE(innovation_unquant)(exc, SUBMODE(innovation_params), st->subframeSize, 
                                 bits, stack);
 
-         signal_mul(exc,exc,SIG_SCALING*scale,st->subframeSize);
+         signal_mul(exc,exc,scale,st->subframeSize);
 
          if (SUBMODE(double_codebook)) {
             char *tmp_stack=stack;
@@ -1066,7 +1073,7 @@ int sb_decode(void *state, SpeexBits *bits, short *out)
             SUBMODE(innovation_unquant)(innov2, SUBMODE(innovation_params), st->subframeSize, 
                                 bits, tmp_stack);
             for (i=0;i<st->subframeSize;i++)
-               innov2[i]*=scale*(1/2.5);
+               innov2[i]*=scale/(float)SIG_SCALING*(1/2.5);
             for (i=0;i<st->subframeSize;i++)
                exc[i] += innov2[i];
          }
