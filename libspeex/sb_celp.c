@@ -25,7 +25,7 @@
 #include "lpc.h"
 #include "lsp.h"
 #include <stdio.h>
-
+#include "stack_alloc.h"
 
 #ifndef M_PI
 #define M_PI           3.14159265358979323846  /* pi */
@@ -33,6 +33,8 @@
 
 #define sqr(x) ((x)*(x))
 
+#if 0
+#define QMF_ORDER 32
 static float h0[32] = {
    0.0006910579, -0.001403793,
    -0.001268303, 0.004234195,
@@ -70,6 +72,78 @@ static float h1[32] = {
    0.004234195, 0.001268303,
    -0.001403793, -0.0006910579
 };
+#else 
+#define QMF_ORDER 64
+static float h0[64] = {
+   3.596189e-05, -0.0001123515,
+   -0.0001104587, 0.0002790277,
+   0.0002298438, -0.0005953563,
+   -0.0003823631, 0.00113826,
+   0.0005308539, -0.001986177,
+   -0.0006243724, 0.003235877,
+   0.0005743159, -0.004989147,
+   -0.0002584767, 0.007367171,
+   -0.0004857935, -0.01050689,
+   0.001894714, 0.01459396,
+   -0.004313674, -0.01994365,
+   0.00828756, 0.02716055,
+   -0.01485397, -0.03764973,
+   0.026447, 0.05543245,
+   -0.05095487, -0.09779096,
+   0.1382363, 0.4600981,
+   0.4600981, 0.1382363,
+   -0.09779096, -0.05095487,
+   0.05543245, 0.026447,
+   -0.03764973, -0.01485397,
+   0.02716055, 0.00828756,
+   -0.01994365, -0.004313674,
+   0.01459396, 0.001894714,
+   -0.01050689, -0.0004857935,
+   0.007367171, -0.0002584767,
+   -0.004989147, 0.0005743159,
+   0.003235877, -0.0006243724,
+   -0.001986177, 0.0005308539,
+   0.00113826, -0.0003823631,
+   -0.0005953563, 0.0002298438,
+   0.0002790277, -0.0001104587,
+   -0.0001123515, 3.596189e-05
+};
+
+static float h1[64] = {
+   3.596189e-05, 0.0001123515,
+   -0.0001104587, -0.0002790277,
+   0.0002298438, 0.0005953563,
+   -0.0003823631, -0.00113826,
+   0.0005308539, 0.001986177,
+   -0.0006243724, -0.003235877,
+   0.0005743159, 0.004989147,
+   -0.0002584767, -0.007367171,
+   -0.0004857935, 0.01050689,
+   0.001894714, -0.01459396,
+   -0.004313674, 0.01994365,
+   0.00828756, -0.02716055,
+   -0.01485397, 0.03764973,
+   0.026447, -0.05543245,
+   -0.05095487, 0.09779096,
+   0.1382363, -0.4600981,
+   0.4600981, -0.1382363,
+   -0.09779096, 0.05095487,
+   0.05543245, -0.026447,
+   -0.03764973, 0.01485397,
+   0.02716055, -0.00828756,
+   -0.01994365, 0.004313674,
+   0.01459396, -0.001894714,
+   -0.01050689, 0.0004857935,
+   0.007367171, 0.0002584767,
+   -0.004989147, -0.0005743159,
+   0.003235877, 0.0006243724,
+   -0.001986177, -0.0005308539,
+   0.00113826, 0.0003823631,
+   -0.0005953563, -0.0002298438,
+   0.0002790277, 0.0001104587,
+   -0.0001123515, -3.596189e-05
+};
+#endif
 
 void sb_encoder_init(SBEncState *st, SpeexMode *mode)
 {
@@ -84,8 +158,10 @@ void sb_encoder_init(SBEncState *st, SpeexMode *mode)
 
    st->lag_factor = .01;
    st->lpc_floor = 1.001;
+   st->gamma1=.9;
+   st->gamma2=.6;
    st->first=1;
-   st->stack = calloc(2000, sizeof(float));
+   st->stack = calloc(10000, sizeof(float));
 
    st->x0=calloc(st->full_frame_size, sizeof(float));
    st->x1=calloc(st->full_frame_size, sizeof(float));
@@ -95,13 +171,17 @@ void sb_encoder_init(SBEncState *st, SpeexMode *mode)
    st->y0=calloc(st->full_frame_size, sizeof(float));
    st->y1=calloc(st->full_frame_size, sizeof(float));
 
-   st->h0_mem=calloc(32, sizeof(float));
-   st->h1_mem=calloc(32, sizeof(float));
-   st->g0_mem=calloc(32, sizeof(float));
-   st->g1_mem=calloc(32, sizeof(float));
+   st->h0_mem=calloc(QMF_ORDER, sizeof(float));
+   st->h1_mem=calloc(QMF_ORDER, sizeof(float));
+   st->g0_mem=calloc(QMF_ORDER, sizeof(float));
+   st->g1_mem=calloc(QMF_ORDER, sizeof(float));
 
    st->buf=calloc(st->windowSize, sizeof(float));
-   st->exc=calloc(2*st->frame_size, sizeof(float));
+   st->excBuf=calloc(2*st->frame_size, sizeof(float));
+   st->exc=st->excBuf+st->frame_size;
+
+   st->res=calloc(st->frame_size, sizeof(float));
+   st->target=calloc(st->frame_size, sizeof(float));
    st->window=calloc(st->windowSize, sizeof(float));
    for (i=0;i<st->windowSize;i++)
       st->window[i]=.5*(1-cos(2*M_PI*i/st->windowSize));
@@ -113,15 +193,19 @@ void sb_encoder_init(SBEncState *st, SpeexMode *mode)
    st->rc = malloc(st->lpcSize*sizeof(float));
    st->autocorr = malloc((st->lpcSize+1)*sizeof(float));
    st->lpc = malloc((st->lpcSize+1)*sizeof(float));
+   st->bw_lpc1 = malloc((st->lpcSize+1)*sizeof(float));
+   st->bw_lpc2 = malloc((st->lpcSize+1)*sizeof(float));
    st->lsp = malloc(st->lpcSize*sizeof(float));
    st->qlsp = malloc(st->lpcSize*sizeof(float));
    st->old_lsp = malloc(st->lpcSize*sizeof(float));
    st->old_qlsp = malloc(st->lpcSize*sizeof(float));
    st->interp_lsp = malloc(st->lpcSize*sizeof(float));
    st->interp_qlsp = malloc(st->lpcSize*sizeof(float));
-   st->interp_lpc = malloc(st->lpcSize*sizeof(float));
-   st->interp_qlpc = malloc(st->lpcSize*sizeof(float));
+   st->interp_lpc = malloc((st->lpcSize+1)*sizeof(float));
+   st->interp_qlpc = malloc((st->lpcSize+1)*sizeof(float));
 
+   st->mem_sp = calloc(st->lpcSize, sizeof(float));
+   st->mem_sw = calloc(st->lpcSize, sizeof(float));
 
 }
 
@@ -142,10 +226,15 @@ void sb_encoder_destroy(SBEncState *st)
    
    free(st->buf);
    free(st->window);
+   free(st->excBuf);
+   free(st->res);
+   free(st->target);
    free(st->lagWindow);
    free(st->rc);
    free(st->autocorr);
    free(st->lpc);
+   free(st->bw_lpc1);
+   free(st->bw_lpc2);
    free(st->lsp);
    free(st->qlsp);
    free(st->old_lsp);
@@ -155,7 +244,11 @@ void sb_encoder_destroy(SBEncState *st)
    free(st->interp_lpc);
    free(st->interp_qlpc);
 
+   free(st->mem_sp);
+   free(st->mem_sw);
+
    free(st->stack);
+   
 }
 
 
@@ -163,8 +256,8 @@ void sb_encode(SBEncState *st, float *in, FrameBits *bits)
 {
    int i, roots, sub;
    /* Compute the two sub-bands by filtering with h0 and h1*/
-   fir_mem(in, h0, st->x0, st->full_frame_size, 32, st->h0_mem);
-   fir_mem(in, h1, st->x1, st->full_frame_size, 32, st->h1_mem);
+   fir_mem(in, h0, st->x0, st->full_frame_size, QMF_ORDER, st->h0_mem);
+   fir_mem(in, h1, st->x1, st->full_frame_size, QMF_ORDER, st->h1_mem);
    /* Down-sample x0 and x1 */
    for (i=0;i<st->frame_size;i++)
    {
@@ -177,7 +270,7 @@ void sb_encode(SBEncState *st, float *in, FrameBits *bits)
    /* High-band buffering / sync with low band */
    for (i=0;i<st->frame_size;i++)
    {
-      st->exc[i]=st->exc[st->frame_size+i];
+      st->excBuf[i]=st->exc[i];
       st->high[i]=st->high[st->frame_size+i];
       st->high[st->frame_size+i]=st->x1d[i];
    }
@@ -225,13 +318,15 @@ void sb_encode(SBEncState *st, float *in, FrameBits *bits)
    
    for (sub=0;sub<st->nbSubframes;sub++)
    {
-      float *exc, *sp, tmp;
+      float *exc, *sp, *mem, tmp;
       int offset;
       
       offset = st->subframeSize*sub;
       sp=st->high+offset;
       exc=st->exc+offset;
 
+      mem=PUSH(st->stack, st->lpcSize);
+      
       /* LSP interpolation (quantized and unquantized) */
       tmp = (.5 + sub)/st->nbSubframes;
       for (i=0;i<st->lpcSize;i++)
@@ -247,19 +342,35 @@ void sb_encode(SBEncState *st, float *in, FrameBits *bits)
       for (i=0;i<st->lpcSize;i++)
          st->interp_qlsp[i] = cos(st->interp_qlsp[i]);
       lsp_to_lpc(st->interp_qlsp, st->interp_qlpc, st->lpcSize, st->stack);
+
+      bw_lpc(st->gamma1, st->interp_lpc, st->bw_lpc1, st->lpcSize);
+      bw_lpc(st->gamma2, st->interp_lpc, st->bw_lpc2, st->lpcSize);
       
-      residue(sp, st->interp_qlpc, exc, st->subframeSize, st->lpcSize);
-      {
+      for (i=0;i<st->lpcSize;i++)
+         mem[i]=st->mem_sp[i];
+      residue_mem(sp, st->interp_qlpc, exc, st->subframeSize, st->lpcSize, mem);
+      if (1) {
          float el=0,eh=0,g;
+         printf ("exc0");
+         for (i=0;i<st->subframeSize;i++)
+            printf (" %f", exc[i]);
+         printf ("\n");
          for (i=0;i<st->subframeSize;i++)
             eh+=sqr(exc[i]);
          for (i=0;i<st->subframeSize;i++)
             el+=sqr(st->st_low.exc[offset+i]);
          g=eh/(.01+el);
+         g=sqrt(g);
          for (i=0;i<st->subframeSize;i++)
             exc[i]=g*st->st_low.exc[offset+i];
+         printf ("exc1");
+         for (i=0;i<st->subframeSize;i++)
+            printf (" %f", exc[i]);
+         printf ("\n");
       }
-      syn_filt(exc, st->interp_qlpc, sp, st->subframeSize, st->lpcSize);
+      syn_filt_mem(exc, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, st->mem_sp);
+
+      POP(st->stack);
    }
 
    /* Up-sample coded low-band and high-band*/
@@ -271,8 +382,8 @@ void sb_encode(SBEncState *st, float *in, FrameBits *bits)
       st->x1[(i<<1)+1]=0;
    }
    /* Reconstruct the original */
-   fir_mem(st->x0, h0, st->y0, st->full_frame_size, 32, st->g0_mem);
-   fir_mem(st->x1, h1, st->y1, st->full_frame_size, 32, st->g1_mem);
+   fir_mem(st->x0, h0, st->y0, st->full_frame_size, QMF_ORDER, st->g0_mem);
+   fir_mem(st->x1, h1, st->y1, st->full_frame_size, QMF_ORDER, st->g1_mem);
    for (i=0;i<st->full_frame_size;i++)
       in[i]=2*(st->y0[i]-st->y1[i]);
 

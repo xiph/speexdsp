@@ -36,6 +36,8 @@ typedef struct SBEncState {
    int    first;
    float  lag_factor;
    float  lpc_floor;
+   float  gamma1;
+   float  gamma2;
 
    float *stack;
    float *x0, *x0d, *x1, *x1d;
@@ -43,8 +45,11 @@ typedef struct SBEncState {
    float *y0, *y1;
    float *h0_mem, *h1_mem, *g0_mem, *g1_mem;
 
+   float *excBuf;
    float *exc;
    float *buf;
+   float *res;
+   float *target;
    float *window;
    float *lagWindow;
    float *autocorr;
@@ -58,6 +63,11 @@ typedef struct SBEncState {
    float *interp_qlsp;
    float *interp_lpc;
    float *interp_qlpc;
+   float *bw_lpc1;
+   float *bw_lpc2;
+
+   float *mem_sp;
+   float *mem_sw;
 } SBEncState;
 
 

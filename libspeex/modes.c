@@ -203,7 +203,7 @@ SpeexMode mp_sb_mode = {
    144,    /*pitchEnd*/
    0.9,    /*gamma1*/
    0.6,    /*gamma2*/
-   .005,   /*lag_factor*/
+   .002,   /*lag_factor*/
    1.0001, /*lpc_floor*/
    0.0,    /*preemph*/
    /*LSP quantization*/
