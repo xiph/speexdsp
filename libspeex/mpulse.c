@@ -55,6 +55,14 @@ int porder(int *p, int *s, int *o, int len)
          }
       }
    }
+   printf ("quant_pulse\n");
+   for (i=0;i<len;i++)
+      printf ("%d ", p[i]);
+   printf ("\n");
+   for (i=0;i<len;i++)
+      printf ("%d ", s[i]);
+   printf ("\n");
+
    for (i=0;i<len;i++)
    {
       rep[p[i]]++;
@@ -68,15 +76,6 @@ int porder(int *p, int *s, int *o, int len)
    st=uniq;
    en=&uniq[nb_uniq-1];
 
-   for (i=0;i<len;i++)
-      printf ("%d ", p[i]);
-   printf ("\n");
-   for (i=0;i<nb_uniq;i++)
-      printf ("%d ", uniq[i]);
-   printf ("\n");
-   for (i=0;i<nb_uniq;i++)
-      printf ("%d ", s[i]);
-   printf ("\n");
 
    bit1=s[0];
    n=0;
@@ -112,6 +111,10 @@ int porder(int *p, int *s, int *o, int len)
          }
       }
    }
+   for (i=0;i<len;i++)
+      printf ("%d ", o[i]);
+   printf ("\n");
+
    return s[0];
 }
 
@@ -156,13 +159,10 @@ void rorder(int *p, int *s, int *o, int bit, int len)
    ss[0]=bit;
    n=1;
 
+   printf ("unquant_pulse\n");
    for (i=0;i<len;i++)
-      printf ("%d ", p[i]);
+      printf ("%d ", o[i]);
    printf ("\n");
-   for (i=0;i<nb_uniq;i++)
-      printf ("%d ", uniq[i]);
-   printf ("\n");
-
 
    for (i=1;i<len;i++)
    {
@@ -365,15 +365,15 @@ float *stack
       {
          ind*=nsf/nb_tracks;
          ind+=tr[j];
-         printf ("%d ", ind);
+         /*printf ("%d ", ind);*/
       }
       
       frame_bits_pack(bits,ind,track_ind_bits);
 
-      printf ("track %d %d:", i, ind);
+      /*printf ("track %d %d:", i, ind);
       for (j=0;j<pulses_per_track;j++)
         printf ("%d ", tr[j]);
-      printf ("\n");
+        printf ("\n");*/
    }
    POP(stack);
    POP(stack);
@@ -420,7 +420,7 @@ float *stack
       int max_val=nsf/nb_tracks;
       bit1=frame_bits_unpack_unsigned(bits, 1);
       ind = frame_bits_unpack_unsigned(bits,track_ind_bits);
-      printf ("unquant ind = %d\n", ind);
+      /*printf ("unquant ind = %d\n", ind);*/
       for (j=0;j<pulses_per_track;j++)
       {
          track[pulses_per_track-1-j]=ind%max_val;
@@ -429,7 +429,7 @@ float *stack
       rorder(track, signs, tr, bit1, pulses_per_track);
       for (j=0;j<pulses_per_track;j++)
       {
-         exc[tr[i]*nb_tracks+i] += signs[j] ? -g : g;
+         exc[tr[j]*nb_tracks+i] += signs[j] ? -g : g;
       }
    }
 
