@@ -176,7 +176,7 @@ void *sb_encoder_init(SpeexMode *m)
    st->submodes=mode->submodes;
    st->submodeID=mode->defaultSubmode;
    {
-      int mod=3;
+      int mod=4;
       speex_encoder_ctl(st->st_low, SPEEX_SET_MODE, &mod);
    }
 

@@ -37,6 +37,7 @@ extern float gain_cdbk_lbr[];
 extern float hexc_table[];
 extern float exc_5_256_table[];
 extern float exc_5_64_table[];
+extern float exc_8_128_table[];
 extern float exc_10_32_table[];
 extern float hexc_10_32_table[];
 
@@ -82,6 +83,14 @@ ltp_params ltp_params_lbr = {
    4
 };
 
+/* Parameters for Long-Term Prediction (LTP)*/
+ltp_params ltp_params_med = {
+   gain_cdbk_lbr,
+   5,
+   7
+};
+
+
 /* Split-VQ innovation parameters for low bit-rate narrowband */
 split_cb_params split_cb_nb_lbr = {
    10,               /*subvect_size*/
@@ -97,6 +106,14 @@ split_cb_params split_cb_nb = {
    8,               /*nb_subvect*/
    exc_5_64_table, /*shape_cb*/
    6,               /*shape_bits*/
+};
+
+/* Split-VQ innovation parameters narrowband */
+split_cb_params split_cb_nb_med = {
+   8,               /*subvect_size*/
+   5,               /*nb_subvect*/
+   exc_8_128_table, /*shape_cb*/
+   7,               /*shape_bits*/
 };
 
 /* Split-VQ innovation for low-band wideband */
@@ -143,8 +160,24 @@ SpeexSubmode nb_submode1 = {
    &pf_params_lbr
 };
 
-
 SpeexSubmode nb_submode2 = {
+   0,
+   /*LSP quantization*/
+   lsp_quant_nb,
+   lsp_unquant_nb,
+   /*Pitch quantization*/
+   pitch_search_3tap,
+   pitch_unquant_3tap,
+   &ltp_params_med,
+   /*Innovation quantization*/
+   split_cb_search_nogain2,
+   split_cb_nogain_unquant,
+   &split_cb_nb_med,
+   nb_post_filter,
+   &pf_params_nb
+};
+
+SpeexSubmode nb_submode3 = {
    0,
    /*LSP quantization*/
    lsp_quant_nb,
@@ -161,7 +194,7 @@ SpeexSubmode nb_submode2 = {
    &pf_params_nb
 };
 
-SpeexSubmode nb_submode3 = {
+SpeexSubmode nb_submode4 = {
    0,
    /*LSP quantization*/
    lsp_quant_nb,
@@ -192,8 +225,8 @@ SpeexNBMode nb_mode = {
    .005,   /*lag_factor*/
    1.0001, /*lpc_floor*/
    0.0,    /*preemph*/
-   {NULL, &nb_submode1, &nb_submode2, &nb_submode3},
-   2
+   {NULL, &nb_submode1, &nb_submode2, &nb_submode3, &nb_submode4},
+   3
 };
 
 
