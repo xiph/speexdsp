@@ -53,6 +53,10 @@
 #include "misc.h"
 #include <speex/speex_preprocess.h>
 
+#ifdef DISABLE_GLOBAL_POINTERS
+#include <speex/speex_noglobals.h>
+#endif
+
 #if defined WIN32 || defined _WIN32
 #include "getopt_win.h"
 /* We need the following two to set stdout to binary */
@@ -224,6 +228,7 @@ int main(int argc, char **argv)
    int dtx_enabled=0;
    int nbBytes;
    const SpeexMode *mode=NULL;
+   int modeID = 0;
    void *st;
    SpeexBits bits;
    char cbits[MAX_FRAME_BYTES];
@@ -301,13 +306,13 @@ int main(int argc, char **argv)
       case 0:
          if (strcmp(long_options[option_index].name,"narrowband")==0)
          {
-            mode=&speex_nb_mode;
+            modeID = SPEEX_MODEID_NB;
          } else if (strcmp(long_options[option_index].name,"wideband")==0)
          {
-            mode=&speex_wb_mode;
+            modeID = SPEEX_MODEID_WB;
          } else if (strcmp(long_options[option_index].name,"ultra-wideband")==0)
          {
-            mode=&speex_uwb_mode;
+            modeID = SPEEX_MODEID_UWB;
          } else if (strcmp(long_options[option_index].name,"vbr")==0)
          {
             vbr_enabled=1;
@@ -394,7 +399,7 @@ int main(int argc, char **argv)
 
          break;
       case 'n':
-         mode=&speex_nb_mode;
+         modeID = SPEEX_MODEID_NB;
          break;
       case 'h':
          usage();
@@ -408,10 +413,10 @@ int main(int argc, char **argv)
          print_bitrate=1;
          break;
       case 'w':
-         mode=&speex_wb_mode;
+         modeID = SPEEX_MODEID_WB;
          break;
       case 'u':
-         mode=&speex_uwb_mode;
+         modeID = SPEEX_MODEID_UWB;
          break;
       case '?':
          usage();
@@ -467,7 +472,7 @@ int main(int argc, char **argv)
    if (!mode && !rate)
    {
       /* By default, use narrowband/8 kHz */
-      mode=&speex_nb_mode;
+      modeID = SPEEX_MODEID_NB;
       rate=8000;
    } else if (mode && rate)
    {
@@ -477,19 +482,19 @@ int main(int argc, char **argv)
          exit(1);
       } else if (rate>25000)
       {
-         if (mode!=&speex_uwb_mode)
+         if (modeID != SPEEX_MODEID_UWB)
          {
             fprintf (stderr, "Warning: Trying to encode in %s at %d Hz. I'll do it but I suggest you try ultra-wideband instead\n", mode->modeName , rate);
          }
       } else if (rate>12500)
       {
-         if (mode!=&speex_wb_mode)
+         if (modeID != SPEEX_MODEID_WB)
          {
             fprintf (stderr, "Warning: Trying to encode in %s at %d Hz. I'll do it but I suggest you try wideband instead\n", mode->modeName , rate);
          }
       } else if (rate>=6000)
       {
-         if (mode!=&speex_nb_mode)
+         if (modeID != SPEEX_MODEID_NB)
          {
             fprintf (stderr, "Warning: Trying to encode in %s at %d Hz. I'll do it but I suggest you try narrowband instead\n", mode->modeName , rate);
          }
@@ -505,30 +510,36 @@ int main(int argc, char **argv)
          exit(1);
       } else if (rate>25000)
       {
-         mode=&speex_uwb_mode;
+         modeID = SPEEX_MODEID_UWB;
       } else if (rate>12500)
       {
-         mode=&speex_wb_mode;
+         modeID = SPEEX_MODEID_WB;
       } else if (rate>=6000)
       {
-         mode=&speex_nb_mode;
+         modeID = SPEEX_MODEID_NB;
       } else {
          fprintf (stderr, "Error: Sampling rate too low: %d Hz\n", rate);
          exit(1);
       }
    } else if (!rate)
    {
-      if (mode==&speex_nb_mode)
+      if (modeID == SPEEX_MODEID_NB)
          rate=8000;
-      else if (mode==&speex_wb_mode)
+      else if (modeID == SPEEX_MODEID_WB)
          rate=16000;
-      else if (mode==&speex_uwb_mode)
+      else if (modeID == SPEEX_MODEID_UWB)
          rate=32000;
    }
 
    if (!quiet)
       if (rate!=8000 && rate!=16000 && rate!=32000)
          fprintf (stderr, "Warning: Speex is only optimized for 8, 16 and 32 kHz. It will still work at %d Hz but your mileage may vary\n", rate); 
+
+#ifdef DISABLE_GLOBAL_POINTERS
+   mode = speex_mode_new (modeID);
+#else
+   mode = speex_mode_list[modeID];
+#endif
 
    speex_init_header(&header, rate, 1, mode);
    header.frames_per_packet=nframes;
@@ -776,7 +787,10 @@ int main(int argc, char **argv)
       else
          bytes_written += ret;
    }
-   
+
+#ifdef DISABLE_GLOBAL_POINTERS
+   speex_mode_destroy (mode);
+#endif   
 
    speex_encoder_destroy(st);
    speex_bits_destroy(&bits);
