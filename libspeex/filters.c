@@ -187,7 +187,61 @@ spx_word16_t compute_rms(const spx_sig_t *x, int len)
    return SHR(SHL((spx_word32_t)spx_sqrt(1+DIV32(sum,len)),(sig_shift+3)),SIG_SHIFT);
 }
 
+#ifdef ARM4_ASM
+void filter_mem2(const spx_sig_t *x, const spx_coef_t *num, const spx_coef_t *den, spx_sig_t *y, int N, int ord, spx_mem_t *mem)
+{
+   int i,j;
+   spx_sig_t xi,yi,nyi;
 
+   for (i=0;i<N;i++)
+   {
+      int deadm, deadn, deadd, deadidx, x1, y1, dead1, dead2, dead3, dead4, dead5;
+      xi=SATURATE(x[i],805306368);
+      yi = SATURATE(ADD32(xi, SHL(mem[0],2)),805306368);
+      nyi = -yi;
+      y[i] = yi;
+      __asm__ __volatile__ (
+            ".filterloop: \n"
+            "\tldrsh %6, [%1], #2\n"
+            "\tsmull %8, %9, %4, %6\n"
+            "\tldr %10, [%0, #4]\n"
+            "\tmov %8, %8, lsr #15\n"
+            "\tadd %8, %8, %9, lsl #17\n"
+            "\tadd %10, %10, %8\n"
+
+            "\tldrsh %6, [%2], #2\n"
+            "\tsmull %8, %9, %5, %6\n"
+            "\tmov %8, %8, lsr #15\n"
+            "\tadd %8, %8, %9, lsl #17\n"
+            "\tadd %10, %10, %8\n"
+
+            "\tstr %10, [%0], #4 \n"
+            "\tsubs %3, %3, #1\n"
+            "\t bne .filterloop\n"
+            
+            
+            "\tldrsh %6, [%1], #2\n"
+            "\tsmull %8, %9, %4, %6\n"
+            "\tmov %8, %8, lsr #15\n"
+            "\tadd %10, %8, %9, lsl #17\n"
+
+            "\tldrsh %6, [%2], #2\n"
+            "\tsmull %8, %9, %5, %6\n"
+            "\tmov %8, %8, lsr #15\n"
+            "\tadd %8, %8, %9, lsl #17\n"
+            "\tadd %10, %10, %8\n"
+
+            "\tstr %10, [%0], #4 \n"
+
+         : "=r" (deadm), "=r" (deadn), "=r" (deadd), "=r" (deadidx),
+           "=r" (xi), "=r" (nyi), "=r" (dead1), "=r" (dead2),
+           "=r" (dead3), "=r" (dead4), "=r" (dead5)
+         : "0" (mem), "1" (num+1), "2" (den+1), "3" (ord-1), "4" (xi), "5" (nyi)
+         : "cc", "memory");
+   
+   }
+}
+#else
 void filter_mem2(const spx_sig_t *x, const spx_coef_t *num, const spx_coef_t *den, spx_sig_t *y, int N, int ord, spx_mem_t *mem)
 {
    int i,j;
@@ -208,6 +262,7 @@ void filter_mem2(const spx_sig_t *x, const spx_coef_t *num, const spx_coef_t *de
       y[i] = yi;
    }
 }
+#endif
 
 void iir_mem2(const spx_sig_t *x, const spx_coef_t *den, spx_sig_t *y, int N, int ord, spx_mem_t *mem)
 {
