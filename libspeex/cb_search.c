@@ -1,3 +1,4 @@
+/* Original copyright */
 /*-----------------------------------------------------------------------*\
 
     FILE........: GAINSHAPE.C
@@ -9,6 +10,7 @@
     General gain-shape codebook search.
 
 \*-----------------------------------------------------------------------*/
+
 
 /* Modified by Jean-Marc Valin 2002
 
@@ -152,8 +154,8 @@ FrameBits *bits,
 float *stack
 )
 {
-   int i,j;
-   float *resp, *E, *Ee;
+   int i,j, id;
+   float *resp, *E, q;
    float *t, *r, *e, *tresp;
    float *gains;
    int *ind;
@@ -170,49 +172,49 @@ float *stack
    resp = PUSH(stack, shape_cb_size*subvect_size);
    tresp = PUSH(stack, shape_cb_size*nsf);
    E = PUSH(stack, shape_cb_size);
-   Ee = PUSH(stack, shape_cb_size);
    t = PUSH(stack, nsf);
    r = PUSH(stack, nsf);
    e = PUSH(stack, nsf);
    gains = PUSH(stack, nb_subvect);
    ind = (int*)PUSH(stack, nb_subvect);
 
+   /* Compute energy of the "real excitation" */
    syn_filt_zero(target, awk1, e, nsf, p);
    residue_zero(e, ak, e, nsf, p);
    residue_zero(e, awk2, e, nsf, p);
    for (i=0;i<nsf;i++)
       exc_energy += e[i]*e[i];
-   exc_energy=sqrt(.125*exc_energy);
+   exc_energy=sqrt(exc_energy/nb_subvect);
 
-   /* Quantize global (average) gain */
-   {
-      float q;
-      int id;
-      q=log(exc_energy+.1);
-      q=floor(.5+2*(q-2));
-      if (q<0)
-         q=0;
-      if (q>15)
-         q=15;
-      id = (int)q;
-      frame_bits_pack(bits, id, 4);
-      exc_energy=exp(.5*q+2);
-   }
+   /* Quantize global ("average") gain */
+   q=log(exc_energy+.1);
+   q=floor(.5+2*(q-2));
+   if (q<0)
+      q=0;
+   if (q>15)
+      q=15;
+   id = (int)q;
+   frame_bits_pack(bits, id, 4);
+   exc_energy=exp(.5*q+2);
+
 
    for (i=0;i<nsf;i++)
       t[i]=target[i];
+
+   /* Pre-compute codewords response and energy */
    for (i=0;i<shape_cb_size;i++)
    {
       float *res = resp+i*subvect_size;
+
+      /* Compute codeword response */
       residue_zero(shape_cb+i*subvect_size, awk1, res, subvect_size, p);
       syn_filt_zero(res, ak, res, subvect_size, p);
       syn_filt_zero(res, awk2, res, subvect_size,p);
+
+      /* Compute energy of codeword response */
       E[i]=0;
       for(j=0;j<subvect_size;j++)
          E[i]+=res[j]*res[j];
-      Ee[i]=0;
-      for(j=0;j<subvect_size;j++)
-         Ee[i]+=shape_cb[i*subvect_size+j]*shape_cb[i*subvect_size+j];
       
    }
 
@@ -220,6 +222,7 @@ float *stack
    {
       int best_index=0;
       float g, corr, best_gain=0, score, best_score=-1;
+      /* Find best codeword for current sub-vector */
       for (j=0;j<shape_cb_size;j++)
       {
          corr=xcorr(resp+j*subvect_size,t+subvect_size*i,subvect_size);
@@ -233,27 +236,20 @@ float *stack
          }
       }
       frame_bits_pack(bits,best_index,params->shape_bits);
+      
+      /* Quantize gain */
       {
-         int s=0, best_id, j;
-         float best_dist;
+         int s=0, best_id;
          best_gain /= .01+exc_energy;
          if (best_gain<0)
          {
             best_gain=-best_gain;
             s=1;
          }
-         best_dist=(best_gain-scal_gains4[0])*(best_gain-scal_gains4[0]);
-         best_id=0;
-         for (j=1;j<8;j++)
-         {
-            float dist;
-            dist=(best_gain-scal_gains4[j])*(best_gain-scal_gains4[j]);
-            if (dist<best_dist)
-            {
-               best_id=j;
-               best_dist=dist;
-            }
-         }
+
+         /* Find gain index (it's a scalar but we use the VQ code anyway)*/
+         best_id = vq_index(&best_gain, scal_gains4, 1, 8);
+
          best_gain=scal_gains4[best_id];
          /*printf ("gain_quant: %f %d %f\n", best_gain, best_id, scal_gains4[best_id]);*/
          if (s)
@@ -278,12 +274,16 @@ float *stack
          t[j]-=r[j];
    }
    
+   /* Put everything back together */
    for (i=0;i<nb_subvect;i++)
       for (j=0;j<subvect_size;j++)
          e[subvect_size*i+j]=gains[i]*shape_cb[ind[i]*subvect_size+j];
 
+   /* Update excitation */
    for (j=0;j<nsf;j++)
       exc[j]+=e[j];
+   
+   /* Update target */
    residue_zero(e, awk1, r, nsf, p);
    syn_filt_zero(r, ak, r, nsf, p);
    syn_filt_zero(r, awk2, r, nsf,p);
@@ -293,7 +293,6 @@ float *stack
    
 
 
-   POP(stack);
    POP(stack);
    POP(stack);
    POP(stack);
@@ -339,6 +338,7 @@ float *stack
       exc_energy=exp(.5*id+2);
    }
 
+   /* Decode codewords and gains */
    for (i=0;i<nb_subvect;i++)
    {
       int gain_id;
@@ -355,13 +355,12 @@ float *stack
 
 
    }
+
+   /* Compute decoded excitation */
    for (i=0;i<nb_subvect;i++)
       for (j=0;j<subvect_size;j++)
          exc[subvect_size*i+j]+=gains[i]*shape_cb[ind[i]*subvect_size+j];
-   printf ("decode_exc:");
-   for (i=0;i<nsf;i++)
-      printf (" %f", exc[i]);
-   printf ("\n");
+
    POP(stack);
    POP(stack);
    POP(stack);
