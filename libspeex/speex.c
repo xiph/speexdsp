@@ -16,12 +16,12 @@
 void encoder_init(EncState *st)
 {
    int i;
-   st->frameSize = 128;
-   st->windowSize = 256;
+   st->frameSize = 160;
+   st->windowSize = 320;
    st->nbSubframes=4;
-   st->subframeSize=32;
+   st->subframeSize=40;
    st->lpcSize = 10;
-   st->bufSize = 512;
+   st->bufSize = 640;
    st->gamma=.9;
    st->inBuf = malloc(st->bufSize*sizeof(float));
    st->frame = st->inBuf + st->bufSize - st->windowSize;
@@ -108,6 +108,8 @@ void encode(EncState *st, float *in, int *outSize, void *bits)
       fprintf (stderr, "roots!=st->lpcSize\n");
       exit(1);
    }
+   for (i=0;i<st->lpcSize;i++)
+      st->lsp[i] = acos(st->lsp[i]);
    /*for (i=0;i<roots;i++)
       printf("%f ", st->lsp[i]);
       printf ("\n\n");*/
@@ -126,12 +128,14 @@ void encode(EncState *st, float *in, int *outSize, void *bits)
          st->interp_lsp[i] = (1-tmp)*st->old_lsp[i] + tmp*st->lsp[i];
 
       /* Compute interpolated LPCs */
+      for (i=0;i<st->lpcSize;i++)
+         st->interp_lsp[i] = cos(st->interp_lsp[i]);
       lsp_to_lpc(st->interp_lsp, st->interp_lpc, st->lpcSize);
 
-      /*for (i=0;i<st->lpcSize+1;i++)
+      for (i=0;i<st->lpcSize+1;i++)
          printf("%f ", st->interp_lpc[i]);
       printf ("\n");
-      */
+      
 
       /* Compute bandwidth-expanded LPCs for perceptual weighting*/
       tmp=1;

@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define FRAME_SIZE 128
+#define FRAME_SIZE 160
 
 int main(int argc, char **argv)
 {
