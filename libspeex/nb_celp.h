@@ -82,7 +82,7 @@ typedef struct EncState {
    spx_word16_t *window;         /**< Temporary (Hanning) window */
    spx_sig_t *buf2;           /**< 2nd temporary buffer */
    spx_word16_t *autocorr;       /**< auto-correlation */
-   float *lagWindow;      /**< Window applied to auto-correlation */
+   spx_word16_t *lagWindow;      /**< Window applied to auto-correlation */
    spx_coef_t *lpc;            /**< LPCs for current frame */
    spx_lsp_t *lsp;            /**< LSPs for current frame */
    spx_lsp_t *qlsp;           /**< Quantized LSPs for current frame */

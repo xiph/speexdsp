@@ -35,7 +35,8 @@
 
 #include "misc.h"
 
-int scal_quant(float in, float *boundary, int entries);
+int scal_quant(spx_word16_t in, spx_word16_t *boundary, int entries);
+int scal_quant32(spx_word32_t in, spx_word32_t *boundary, int entries);
 
 int vq_index(float *in, float *codebook, int len, int entries);
 

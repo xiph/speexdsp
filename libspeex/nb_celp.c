@@ -56,11 +56,25 @@
 
 #define SUBMODE(x) st->submodes[st->submodeID]->x
 
+#ifdef FIXED_POINT
+spx_word32_t ol_gain_table[31]={18900, 25150, 33468, 44536, 59265, 78865, 104946, 139653, 185838, 247297, 329081, 437913, 582736, 775454, 1031906, 1373169, 1827293, 2431601, 3235761, 4305867, 5729870, 7624808, 10146425, 13501971, 17967238, 23909222, 31816294, 42338330, 56340132, 74972501, 99766822};
+#endif
+
+#ifdef FIXED_POINT
+spx_word16_t exc_gain_quant_scal3_bound[7]={1841, 3883, 6051, 8062, 10444, 13580, 18560};
+spx_word16_t exc_gain_quant_scal3[8]={1002, 2680, 5086, 7016, 9108, 11781, 15380, 21740};
+#else
 float exc_gain_quant_scal3_bound[7]={0.112338, 0.236980, 0.369316, 0.492054, 0.637471, 0.828874, 1.132784};
 float exc_gain_quant_scal3[8]={0.061130, 0.163546, 0.310413, 0.428220, 0.555887, 0.719055, 0.938694, 1.326874};
+#endif
 
+#ifdef FIXED_POINT
+spx_word16_t exc_gain_quant_scal1_bound[1]={14385};
+spx_word16_t exc_gain_quant_scal1[2]={11546, 17224};
+#else
 float exc_gain_quant_scal1_bound[1]={0.87798};
 float exc_gain_quant_scal1[2]={0.70469, 1.05127};
+#endif
 
 
 #define sqr(x) ((x)*(x))
@@ -128,9 +142,9 @@ void *nb_encoder_init(SpeexMode *m)
          st->window[part1+i]=(spx_word16_t)(SIG_SCALING*(.54+.46*cos(M_PI*i/part2)));
    }
    /* Create the window for autocorrelation (lag-windowing) */
-   st->lagWindow = PUSH(st->stack, st->lpcSize+1, float);
+   st->lagWindow = PUSH(st->stack, st->lpcSize+1, spx_word16_t);
    for (i=0;i<st->lpcSize+1;i++)
-      st->lagWindow[i]=exp(-.5*sqr(2*M_PI*st->lag_factor*i));
+      st->lagWindow[i]=16384*exp(-.5*sqr(2*M_PI*st->lag_factor*i));
 
    st->autocorr = PUSH(st->stack, st->lpcSize+1, spx_word16_t);
 
@@ -236,7 +250,7 @@ int nb_encode(void *state, short *in, SpeexBits *bits)
 
    /* Lag windowing: equivalent to filtering in the power-spectrum domain */
    for (i=0;i<st->lpcSize+1;i++)
-      st->autocorr[i] = (spx_word16_t) (st->autocorr[i]*st->lagWindow[i]);
+      st->autocorr[i] = MULT16_16_Q14(st->autocorr[i],st->lagWindow[i]);
 
    /* Levinson-Durbin */
    _spx_lpc(st->lpc+1, st->autocorr, st->lpcSize);
@@ -560,8 +574,16 @@ int nb_encode(void *state, short *in, SpeexBits *bits)
    
    
    /*Quantize and transmit open-loop excitation gain*/
+#ifdef FIXED_POINT
    {
-      int qe = (int)(floor(3.5*log(ol_gain*1.0/SIG_SCALING)));
+      int qe = scal_quant32(ol_gain, ol_gain_table, 32);
+      /*ol_gain = exp(qe/3.5)*SIG_SCALING;*/
+      ol_gain = MULT16_32_Q15(28406,ol_gain_table[qe]);
+      speex_bits_pack(bits, qe, 5);      
+   }
+#else
+   {
+      int qe = (int)(floor(.5+3.5*log(ol_gain*1.0/SIG_SCALING)));
       if (qe<0)
          qe=0;
       if (qe>31)
@@ -569,6 +591,8 @@ int nb_encode(void *state, short *in, SpeexBits *bits)
       ol_gain = exp(qe/3.5)*SIG_SCALING;
       speex_bits_pack(bits, qe, 5);
    }
+#endif
+
 
 #ifdef EPIC_48K
    }
@@ -753,7 +777,7 @@ int nb_encode(void *state, short *in, SpeexBits *bits)
       {
          spx_sig_t *innov;
          spx_word32_t ener=0;
-         float fine_gain;
+         spx_word16_t fine_gain;
 
          innov = st->innov+sub*st->subframeSize;
          for (i=0;i<st->subframeSize;i++)
@@ -767,7 +791,7 @@ int nb_encode(void *state, short *in, SpeexBits *bits)
             printf ("%f\n", st->buf2[i]/ener);
          */
          
-         fine_gain = ener/(float)ol_gain;
+         fine_gain = DIV32_16(ener,SHR(ol_gain,SIG_SHIFT));
 
          /* Calculate gain correction for the sub-frame (if any) */
          if (SUBMODE(have_subframe_gain)) 
@@ -777,11 +801,11 @@ int nb_encode(void *state, short *in, SpeexBits *bits)
             {
                qe = scal_quant(fine_gain, exc_gain_quant_scal3_bound, 8);
                speex_bits_pack(bits, qe, 3);
-               ener=ol_gain*exc_gain_quant_scal3[qe];
+               ener=MULT16_32_Q14(exc_gain_quant_scal3[qe],ol_gain);
             } else {
                qe = scal_quant(fine_gain, exc_gain_quant_scal1_bound, 2);
                speex_bits_pack(bits, qe, 1);
-               ener=ol_gain*exc_gain_quant_scal1[qe];               
+               ener=MULT16_32_Q14(exc_gain_quant_scal1[qe],ol_gain);               
             }
          } else {
             ener=ol_gain;
@@ -1100,7 +1124,7 @@ int nb_decode(void *state, SpeexBits *bits, short *out)
    int i, sub;
    int pitch;
    float pitch_gain[3];
-   float ol_gain=0;
+   spx_word32_t ol_gain=0;
    int ol_pitch=0;
    float ol_pitch_coef=0;
    int best_pitch=40;
@@ -1315,7 +1339,11 @@ int nb_decode(void *state, SpeexBits *bits, short *out)
    {
       int qe;
       qe = speex_bits_unpack_unsigned(bits, 5);
+#ifdef FIXED_POINT
+      ol_gain = MULT16_32_Q15(28406,ol_gain_table[qe]);
+#else
       ol_gain = SIG_SCALING*exp(qe/3.5);
+#endif
    }
 #ifdef EPIC_48K
    }
@@ -1506,11 +1534,11 @@ int nb_decode(void *state, SpeexBits *bits, short *out)
          if (SUBMODE(have_subframe_gain)==3)
          {
             q_energy = speex_bits_unpack_unsigned(bits, 3);
-            ener = ol_gain*exc_gain_quant_scal3[q_energy];
+            ener = MULT16_32_Q14(exc_gain_quant_scal3[q_energy],ol_gain);
          } else if (SUBMODE(have_subframe_gain)==1)
          {
             q_energy = speex_bits_unpack_unsigned(bits, 1);
-            ener = ol_gain*exc_gain_quant_scal1[q_energy];
+            ener = MULT16_32_Q14(exc_gain_quant_scal1[q_energy],ol_gain);
          } else {
             ener = ol_gain;
          }

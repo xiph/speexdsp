@@ -32,7 +32,18 @@
 
 #include "vq.h"
 
-int scal_quant(float in, float *boundary, int entries)
+int scal_quant(spx_word16_t in, spx_word16_t *boundary, int entries)
+{
+   int i=0;
+   while (i<entries-1 && in>boundary[0])
+   {
+      boundary++;
+      i++;
+   }
+   return i;
+}
+
+int scal_quant32(spx_word32_t in, spx_word32_t *boundary, int entries)
 {
    int i=0;
    while (i<entries-1 && in>boundary[0])
