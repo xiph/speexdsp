@@ -22,8 +22,8 @@
 
 /** Post-filter parameters*/
 typedef struct pf_params {
-   float formant_enh;
-   float pitch_enh;
+   float formant_enh;     /* formant enhancement factor */
+   float pitch_enh;       /* pitch enhancement factor */
 } pf_params;
 
 /** Perceptual post-filter for narrowband */
