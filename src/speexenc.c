@@ -314,7 +314,7 @@ int main(int argc, char **argv)
    }
 
    rate=0;
-   if (strcmp(inFile+strlen(inFile)-4,".wav")==0 || strcmp(inFile+strlen(inFile)-4,".WAV"))
+   if (strcmp(inFile+strlen(inFile)-4,".wav")==0 || strcmp(inFile+strlen(inFile)-4,".WAV")==0)
       {
          if (read_wav_header(fin, &rate, &chan, &fmt, &size)==-1)
             exit(1);

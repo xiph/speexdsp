@@ -119,7 +119,7 @@ FILE *out_file_open(char *outFile, int rate)
             perror(outFile);
             exit(1);
          }
-         if (strcmp(outFile+strlen(outFile)-4,".wav")==0)
+         if (strcmp(outFile+strlen(outFile)-4,".wav")==0 || strcmp(inFile+strlen(inFile)-4,".WAV")==0)
             write_wav_header(fout, rate, 1, 0, 0);
       }
    }
@@ -443,7 +443,7 @@ int main(int argc, char **argv)
 
    }
 
-   if (strcmp(outFile+strlen(outFile)-4,".wav")==0)
+   if (strcmp(outFile+strlen(outFile)-4,".wav")==0 || strcmp(inFile+strlen(inFile)-4,".WAV")==0)
    {
       if (fseek(fout,4,SEEK_SET)==0)
       {
