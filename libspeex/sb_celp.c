@@ -867,3 +867,21 @@ void sb_decode(void *state, SpeexBits *bits, float *out, int lost)
    st->first=0;
 
 }
+
+
+void sb_ctl(void *state, int request, void *ptr)
+{
+   switch(request)
+   {
+   case SPEEX_SET_PF:
+      {
+         SBDecState *st;
+         st=state;
+         speex_ctl(st->st_low, request, ptr);
+      }
+      break;
+   default:
+      fprintf(stderr, "Unknown nb_ctl request: %d\n", request);
+   }
+
+}

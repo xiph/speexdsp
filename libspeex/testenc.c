@@ -16,11 +16,16 @@ int main(int argc, char **argv)
    void *st;
    void *dec;
    SpeexBits bits;
+   int pf;
 
    for (i=0;i<FRAME_SIZE;i++)
       bak2[i]=0;
    st = speex_encoder_init(&speex_nb_mode);
    dec = speex_decoder_init(&speex_nb_mode);
+
+   pf=0;
+   speex_ctl(dec, SPEEX_SET_PF, &pf);
+
    if (argc != 4 && argc != 3)
    {
       fprintf (stderr, "Usage: encode [in file] [out file] [bits file]\nargc = %d", argc);

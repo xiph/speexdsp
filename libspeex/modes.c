@@ -141,6 +141,7 @@ SpeexMode low_wb_mode = {
    &nb_decoder_init,
    &nb_decoder_destroy,
    &nb_decode,
+   &nb_ctl,
    160
 };
 
@@ -152,6 +153,7 @@ SpeexMode speex_nb_mode = {
    &nb_decoder_init,
    &nb_decoder_destroy,
    &nb_decode,
+   &nb_ctl,
    160
 };
 
@@ -186,6 +188,7 @@ SpeexMode speex_wb_mode = {
    &sb_decoder_init,
    &sb_decoder_destroy,
    &sb_decode,
+   &sb_ctl,
    320
 };
 
@@ -220,4 +223,10 @@ void speex_decoder_destroy(void *state)
 void speex_decode(void *state, SpeexBits *bits, float *out, int lost)
 {
    (*((SpeexMode**)state))->dec(state, bits, out, lost);
+}
+
+
+void speex_ctl(void *state, int request, void *ptr)
+{
+   (*((SpeexMode**)state))->ctl(state, request, ptr);
 }

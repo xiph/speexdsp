@@ -585,6 +585,7 @@ void *nb_decoder_init(SpeexMode *m)
 
    st->post_filter_func = mode->post_filter_func;
    st->post_filter_params = mode->post_filter_params;
+   st->pf_enabled=0;
 
    st->stack = calloc(10000, sizeof(float));
 
@@ -717,7 +718,7 @@ void nb_decode(void *state, SpeexBits *bits, float *out, int lost)
       for (i=0;i<st->subframeSize;i++)
          exc2[i]=exc[i];
 
-      if (1)
+      if (st->pf_enabled)
          st->post_filter_func(exc, exc2, st->interp_qlpc, st->lpcSize, st->subframeSize,
                               pitch, pitch_gain, st->post_filter_params, st->stack);
 
@@ -743,4 +744,21 @@ void nb_decode(void *state, SpeexBits *bits, float *out, int lost)
    /* The next frame will not be the first (Duh!) */
    st->first = 0;
 
+}
+
+
+void nb_ctl(void *state, int request, void *ptr)
+{
+   switch(request)
+   {
+   case SPEEX_SET_PF:
+      {
+         DecState *st;
+         st=state;     
+         st->pf_enabled = *((int*)ptr);
+      }
+      break;
+   default:
+      fprintf(stderr, "Unknown nb_ctl request: %d\n", request);
+   }
 }

@@ -8,7 +8,7 @@ Version: %ver
 Release: %rel
 Copyright: LGPL
 Group: Application/Devel
-Source: http://download.sourceforge.net/speex/%{name}-%{ver}.tar.gz
+Source: http://prdownloads.sourceforge.net/speex/%{name}-%{ver}.tar.gz
 URL: http://speex.sourceforge.net/
 Vendor: Speex
 Packager: Jean-Marc Valin (jean-marc.valin@hermes.usherb.ca)

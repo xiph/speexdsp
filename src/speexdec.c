@@ -26,14 +26,15 @@
 #include "ogg/ogg.h"
 
 #define MAX_FRAME_SIZE 2000
-#define MAX_FRAME_BYTES 1000
 
 void usage()
 {
    fprintf (stderr, "speexenc [options] <input file> <output file>\n");
    fprintf (stderr, "options:\n");
-   fprintf (stderr, "\t--help       -h    This help\n"); 
-   fprintf (stderr, "\t--version    -v    Version information\n"); 
+   fprintf (stderr, "\t--help       -h      This help\n"); 
+   fprintf (stderr, "\t--version    -v      Version information\n"); 
+   fprintf (stderr, "\t--pf         --pf    Enable post-filter\n"); 
+   fprintf (stderr, "\t--no-pf      --no-pf Disable post-filter\n"); 
 }
 
 void version()
@@ -58,12 +59,17 @@ int main(int argc, char **argv)
    {
       {"help", no_argument, NULL, 0},
       {"version", no_argument, NULL, 0},
+      {"pf", no_argument, NULL, 0},
+      {"no-pf", no_argument, NULL, 0},
       {0, 0, 0, 0}
    };
    ogg_sync_state oy;
    ogg_page       og;
    ogg_packet     op;
    ogg_stream_state os;
+   int pf_enabled;
+
+   pf_enabled = 0;
 
    /*Process options*/
    while(1)
@@ -84,6 +90,12 @@ int main(int argc, char **argv)
          {
             version();
             exit(0);
+         } else if (strcmp(long_options[option_index].name,"pf")==0)
+         {
+            pf_enabled=1;
+         } else if (strcmp(long_options[option_index].name,"no-pf")==0)
+         {
+            pf_enabled=0;
          }
          break;
       case 'h':
@@ -172,6 +184,7 @@ int main(int argc, char **argv)
                }
                /*Initialize Speex decoder*/
                st = speex_decoder_init(mode);
+               speex_ctl(st, SPEEX_SET_PF, &pf_enabled);
                frame_size=mode->frameSize;
                first=0;
             } else {

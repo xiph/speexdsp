@@ -122,7 +122,7 @@ typedef struct DecState {
    void             *innovation_params;
    nb_post_filter_func post_filter_func;
    void             *post_filter_params;
-
+   int               pf_enabled;
 } DecState;
 
 /**Initializes encoder state*/
@@ -144,6 +144,7 @@ void nb_decoder_destroy(void *state);
 /**Decodes one frame*/
 void nb_decode(void *state, SpeexBits *bits, float *out, int lost);
 
+void nb_ctl(void *state, int request, void *ptr);
 
 
 #endif
