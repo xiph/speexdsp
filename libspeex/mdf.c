@@ -41,7 +41,7 @@
 /** Creates a new echo canceller state */
 SpeexEchoState *speex_echo_state_init(int frame_size, int filter_length)
 {
-   int N,M;
+   int i,N,M;
    SpeexEchoState *st = (SpeexEchoState *)speex_alloc(sizeof(SpeexEchoState));
 
    st->frame_size = frame_size;
@@ -66,6 +66,10 @@ SpeexEchoState *speex_echo_state_init(int frame_size, int filter_length)
    st->grad = (float*)speex_alloc(N*M*sizeof(float));
    st->old_grad = (float*)speex_alloc(N*M*sizeof(float));
    
+   for (i=0;i<N*M;i++)
+   {
+      st->W[i] = 0;
+   }
    return st;
 }
 
@@ -134,9 +138,27 @@ void speex_echo_cancel(SpeexEchoState *st, float *ref, float *echo, float *out, 
       st->Y[N-1] += st->X[(j+1)*N-1]*st->W[(j+1)*N-1];
    }
 
+#if 1
    if (Yout)
-      for (i=0;i<N;i++)
-         Yout[i] = st->Y[i];
+   {
+      for (i=1,j=1;i<N-1;i+=2,j++)
+      {
+         Yout[j] =  st->X[(M-1)*N+i]*st->X[(M-1)*N+i] + st->X[(M-1)*N+i+1]*st->X[(M-1)*N+i+1];
+         Yout[j] *= .01;
+      }
+      Yout[0] = Yout[st->frame_size] = 0;
+   }
+
+#else
+   if (Yout)
+   {
+      for (i=1,j=1;i<N-1;i+=2,j++)
+      {
+         Yout[j] =  st->Y[i]*st->Y[i] + st->Y[i+1]*st->Y[i+1];
+      }
+      Yout[0] = Yout[st->frame_size] = 0;
+   }
+#endif
 
    for (i=0;i<N;i++)
       st->y[i] = st->Y[i];
@@ -152,6 +174,7 @@ void speex_echo_cancel(SpeexEchoState *st, float *ref, float *echo, float *out, 
       out[i] = ref[i] - st->y[i+st->frame_size];
       st->E[i] = 0;
       st->E[i+st->frame_size] = out[i];
+      /*out[i] = st->y[i+st->frame_size];*/
    }
 
    drft_forward(&st->fft_lookup, st->E);
@@ -235,18 +258,22 @@ void speex_echo_cancel(SpeexEchoState *st, float *ref, float *echo, float *out, 
          st->power_1[i] = 1.0/(1e6+st->power[i]);
    }
 
-   /* Update filter weights */
+   /* Compute weight gradient */
    for (j=0;j<M;j++)
    {
-      for (i=1;i<N-1;i+=2)
+      for (i=1,m=1;i<N-1;i+=2,m++)
       {
-         st->PHI[i] = st->X[j*N+i]*st->E[i] + st->X[j*N+i+1]*st->E[i+1];
-         st->PHI[i+1] = -st->X[j*N+i+1]*st->E[i] + st->X[j*N+i]*st->E[i+1];
+         st->PHI[i] = st->power_1[m] 
+         * (st->X[j*N+i]*st->E[i] + st->X[j*N+i+1]*st->E[i+1]);
+         st->PHI[i+1] = st->power_1[m] 
+         * (-st->X[j*N+i+1]*st->E[i] + st->X[j*N+i]*st->E[i+1]);
       }
-      st->PHI[0] = st->X[j*N]*st->E[0];
-      st->PHI[N-1] = st->X[(j+1)*N-1]*st->E[N-1];
+      st->PHI[0] = st->power_1[0] * st->X[j*N]*st->E[0];
+      st->PHI[N-1] = st->power_1[st->frame_size] * st->X[(j+1)*N-1]*st->E[N-1];
+      
 
 #if 0
+      /*st->PHI[0] = st->PHI[N-1] = 0;*/
       drft_backward(&st->fft_lookup, st->PHI);
       for (i=0;i<N;i++)
          st->PHI[i]*=scale;
@@ -254,13 +281,7 @@ void speex_echo_cancel(SpeexEchoState *st, float *ref, float *echo, float *out, 
         st->PHI[i]=0;
       drft_forward(&st->fft_lookup, st->PHI);
 #endif
-      
-#if 0
-      for (i=1,m=1;i<N-1;i+=2,m++)
-         st->W[j*N+i] += st->adapt_rate*st->PHI[i]*st->power_1[m];
-      st->W[j*N] += st->adapt_rate*st->PHI[0]*st->power_1[0];
-      st->W[(j+1)*N-1] += st->adapt_rate*st->PHI[N-1]*st->power_1[st->frame_size];
-#endif
+     
 
       for (i=0;i<N;i++)
       {
@@ -272,17 +293,31 @@ void speex_echo_cancel(SpeexEchoState *st, float *ref, float *echo, float *out, 
    }
 
    if (st->cancel_count>2*M)
-      st->adapt_rate = .01;
+      st->adapt_rate = .005;
    else
       st->adapt_rate = .0;
 
+   /* Update weights */
+   for (i=0;i<M*N;i++)
+      st->W[i] += st->adapt_rate*st->grad[i];
+
+   /* AUMDF modification */
    for (j=0;j<M;j++)
    {
-      for (i=1,m=1;i<N-1;i+=2,m++)
-         st->W[j*N+i] += st->adapt_rate*st->grad[j*N+i]*st->power_1[m];
-      st->W[j*N] += st->adapt_rate*st->grad[j*N]*st->power_1[0];
-      st->W[(j+1)*N-1] += st->adapt_rate*st->grad[(j+1)*N-1]*st->power_1[st->frame_size];
+      if (st->cancel_count%M == j)
+      {
+         drft_backward(&st->fft_lookup, &st->W[j*N]);
+         for (i=0;i<N;i++)
+            st->W[j*N+i]*=scale;
+         for (i=st->frame_size;i<N;i++)
+         {
+            st->W[j*N+i]=0;
+         }
+         drft_forward(&st->fft_lookup, &st->W[j*N]);
+      }
+
    }
+
    /*fprintf (stderr, "%f %f %f %f\n", st->adapt_rate, powE, powY, powD);*/
 }
 
