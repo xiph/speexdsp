@@ -1,0 +1,469 @@
+#LyX 1.2 created this file. For more info see http://www.lyx.org/
+\lyxformat 220
+\textclass article
+\language english
+\inputencoding auto
+\fontscheme default
+\graphics default
+\paperfontsize default
+\papersize Default
+\paperpackage a4
+\use_geometry 0
+\use_amsmath 0
+\use_natbib 0
+\use_numerical_citations 0
+\paperorientation portrait
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\defskip medskip
+\quotes_language english
+\quotes_times 2
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+
+\layout Title
+
+The Speex CELP Codec
+\newline 
+(How It Really Works)
+\layout Author
+
+Jean-Marc Valin
+\layout Standard
+\pagebreak_top \pagebreak_bottom 
+
+\begin_inset LatexCommand \tableofcontents{}
+
+\end_inset 
+
+
+\layout Section
+
+Introduction to Speex
+\layout Standard
+
+Speex has been designed with the following goals in mind:
+\layout Itemize
+
+Patent-free (imples that we can't use ACELP or other patented algorithms)
+\layout Itemize
+
+Good for Voice over IP (VoIP)
+\layout Itemize
+
+Provide with very good quality speech (at least as an option)
+\layout Itemize
+
+Allow a wide range of quality/bit-rate
+\layout Itemize
+
+Integrate both narrowband and wideband coding
+\layout Itemize
+
+Reasonable complexity
+\layout Standard
+
+Throughout the design the following assumptions and constraints were considered
+\layout Itemize
+
+Presence of packet losses
+\layout Itemize
+
+Integrity of received frames (no bit-errors)
+\layout Itemize
+
+Memory footprint is neither critical nor unlimited
+\layout Standard
+
+This led us to choose the CELP technique for Speex.
+ Also many design decisions were based on the original goals and assumptions:
+\layout Itemize
+
+Mimimizing the amount of information extracted from past frames (for robustness
+ to packet loss)
+\layout Itemize
+
+Dynamically-selectable codebooks (LSP, pitch and innovation)
+\layout Itemize
+
+LD-CELP-like fixed codebooks (without backward-adaptive grains) because
+ of patent issues
+\layout Section
+
+Introduction to CELP coding
+\layout Standard
+
+Speex is based on the CELP, which stands for Code Excited Linear Prediction.
+ This section attempts to introduce the principles behind CELP, so if you
+ are already familiar with CELP, you can safely skip to section 
+\begin_inset LatexCommand \ref{sec:Speex-narrowband-mode}
+
+\end_inset 
+
+.
+ The CELP technique is based on three ideas:
+\layout Enumerate
+
+The use of a linear prediction (LP) model to model the vocal tract
+\layout Enumerate
+
+The use of (adaptive and fixed) codebook entries as input (excitation) of
+ the LP model
+\layout Enumerate
+
+The search performed in closed-loop in a 
+\begin_inset Quotes eld
+\end_inset 
+
+perceptually weighted domain
+\begin_inset Quotes erd
+\end_inset 
+
+
+\layout Subsection
+
+Linear prediction
+\layout Standard
+
+The linear prediction model represents each speech sample as linear combination
+ of past samples, plus an error signal called the excitation (or residual).
+\begin_inset Formula \[
+x(n)=\sum _{i=1}^{N}a_{i}x(n-i)+e(n)\]
+
+\end_inset 
+
+
+\layout Standard
+
+
+\begin_inset Formula \[
+x(z)=\frac{1}{A(z)}\: e(z)\]
+
+\end_inset 
+
+
+\layout Standard
+
+
+\begin_inset Formula \[
+A(z)=1-\sum _{i=1}^{N}a_{i}z^{-i}\]
+
+\end_inset 
+
+
+\layout Standard
+
+We usually refer to 
+\begin_inset Formula $A(z)$
+\end_inset 
+
+ as the analysis filter and 
+\begin_inset Formula $1/A(z)$
+\end_inset 
+
+ as the synthesis filter.
+\layout Standard
+
+The 
+\begin_inset Formula $A(z)$
+\end_inset 
+
+ filter is computed using the Levinson-Durbin algorithm, which starts from
+ the auto-correlation 
+\begin_inset Formula $R(m)$
+\end_inset 
+
+ of the signal 
+\begin_inset Formula $x(n)$
+\end_inset 
+
+.
+\layout Standard
+
+
+\begin_inset Formula \[
+r(m)=\sum _{i=0}^{N-1}x(i)x(i-m)\]
+
+\end_inset 
+
+
+\layout Standard
+
+For an order 
+\begin_inset Formula $N$
+\end_inset 
+
+ filter, we have:
+\begin_inset Formula \[
+\mathbf{R}=\left[\begin{array}{cccc}
+ r(0) & r(1) & \cdots  & r(N-1)\\
+ r(1) & r(0) & \cdots  & r(N-2)\\
+ \vdots  & \vdots  & \ddots  & \vdots \\
+ r(N-1) & r(N-2) & \cdots  & r(0)\end{array}
+\right]\]
+
+\end_inset 
+
+
+\begin_inset Formula \[
+\mathbf{r}=\left[\begin{array}{c}
+ r(1)\\
+ r(2)\\
+ \vdots \\
+ R(N)\end{array}
+\right]\]
+
+\end_inset 
+
+
+\layout Standard
+
+The filter coefficients 
+\begin_inset Formula $a_{i}$
+\end_inset 
+
+ are found by solving the system.
+ What the Levinson-Durbin algorithm does here is making the solution to
+ the problem 
+\begin_inset Formula $\mathcal{O}\left(N^{2}\right)$
+\end_inset 
+
+ instead of 
+\begin_inset Formula $\mathcal{O}\left(N^{3}\right)$
+\end_inset 
+
+ by exploiting the fact that matrix 
+\begin_inset Formula $\mathbf{R}$
+\end_inset 
+
+ is toeplitz hermitian.
+\begin_inset Formula \[
+\mathbf{Ra}=\mathbf{r}\]
+
+\end_inset 
+
+
+\layout Standard
+
+Lag-windowing, noise floor
+\layout Subsection
+
+Pitch prediction
+\layout Standard
+
+
+\begin_inset Formula \[
+r(n)=\beta r(n-T)+c(n)\]
+
+\end_inset 
+
+
+\layout Standard
+
+
+\begin_inset Formula \[
+r(z)=\frac{1}{1-\beta z^{-T}}\: c(z)\]
+
+\end_inset 
+
+where 
+\begin_inset Formula $c(n)$
+\end_inset 
+
+is taken from the 
+\emph on 
+innovation codebook
+\emph default 
+.
+\layout Subsection
+
+Innovation codebook
+\layout Standard
+
+This is where most of the bits in a CELP codec are allocated.
+\layout Subsection
+
+Analysis-by-synthesis and error weighting
+\layout Standard
+
+Most (if not all) modern audio codecs attempt to 
+\emph on 
+shape
+\emph default 
+ the noise so that it is the hardest to detect with the ear.
+ That means that more noise can be tolerated in parts of the spectrum that
+ are louder and 
+\emph on 
+vice versa
+\emph default 
+.
+ 
+\layout Standard
+
+
+\begin_inset Formula \begin{equation}
+W(z)=\frac{A\left(\frac{z}{\gamma _{1}}\right)}{A\left(\frac{z}{\gamma _{2}}\right)}\label{eq:weighting_filter}\end{equation}
+
+\end_inset 
+
+
+\layout Section
+
+Speex narrowband mode
+\begin_inset LatexCommand \label{sec:Speex-narrowband-mode}
+
+\end_inset 
+
+
+\layout Standard
+
+This section looks at how Speex works for narrowband (
+\begin_inset Formula $8\: \mathrm{kHz}$
+\end_inset 
+
+ sampling rate) operation.
+ The frame size for this mode is 
+\begin_inset Formula $20\: \mathrm{ms}$
+\end_inset 
+
+, corresponding to 160 samples.
+ Each frame is also subdivided into 4 subframes of 40 samples each.
+\layout Subsection
+
+LPC analysis
+\layout Standard
+
+An LPC analysis is first performed on a (Hamming) window that spans all
+ the current frame and half a frame in advance.
+ The LPC coefficients are then converted to Line Spectral Pair (LSP), a
+ represeitation that is more robust to quantization.
+ The LSP's are quantized using 30 bits for higher quality modes and 18 bits
+ for lower quality.
+ The quantized LSP's are considered to be associated to the 
+\begin_inset Formula $4^{th}$
+\end_inset 
+
+ subframes and the LSP's associated to the first 3 subframes are linearly
+ interpolated using the current and previous LSP's.
+\layout Standard
+
+The perceptual weighting filter used by Speex corresponds to the one described
+ by eq.
+ 
+\begin_inset LatexCommand \ref{eq:weighting_filter}
+
+\end_inset 
+
+ with 
+\begin_inset Formula $\gamma _{1}=0.9$
+\end_inset 
+
+ and 
+\begin_inset Formula $\gamma _{2}=0.6$
+\end_inset 
+
+.
+ We can use the unquantized 
+\begin_inset Formula $A(z)$
+\end_inset 
+
+ filter since the weighting filter is only used in the encoder.
+\layout Subsection
+
+Pitch prediction (adaptive codebook)
+\layout Standard
+
+Speex uses a 3-tap prediction for pitch.
+ That is, 
+\layout Standard
+
+
+\begin_inset Formula \[
+r(n)=\beta _{0}r(n-T-1)+\beta _{1}r(n-T)+\beta _{2}r(n-T+1)+c(n)\]
+
+\end_inset 
+
+
+\layout Standard
+
+where 
+\begin_inset Formula $T$
+\end_inset 
+
+ is the pitch period and the 
+\begin_inset Formula $\beta _{i}$
+\end_inset 
+
+ are the prediction (filter) taps.
+\layout Subsection
+
+Innovation codebook
+\layout Standard
+
+In Speex, the innovation signal is quantized using shape-only vector quantizatio
+n (VQ).
+ That means that the codebooks that are used represent both the shape and
+ the gain at the same time.
+ This save many bits that would otherwise be allocated for a separate gain
+ at the price of a slight increase in complexity.
+ Except for the absence of (backward-adaptive) gain, the technique used
+ in Speex is similar to LD-CELP.
+ However since we do not have a low-delay constraint, the search can be
+ made more 
+\begin_inset Quotes eld
+\end_inset 
+
+global
+\begin_inset Quotes erd
+\end_inset 
+
+ and make use of the whole information available for a sub-frame.
+\layout Section
+
+Speex wideband mode (sub-band CELP)
+\layout Standard
+
+For wideband, the Speex approach is similar to the ITU-T G.722 (ADPCM) wideband
+ standard in that it uses a 
+\emph on 
+q
+\emph default 
+uadrature 
+\emph on 
+m
+\emph default 
+irror 
+\emph on 
+f
+\emph default 
+ilter (QMF) to split the band in two.
+ The 16 kHz signal is thus divided into two 8 kHz signals, one representing
+ the low band (0-4 kHz), the other the high band (4-8 kHz).
+ The low band is encoded with the narrowband mode described in section 
+\begin_inset LatexCommand \ref{sec:Speex-narrowband-mode}
+
+\end_inset 
+
+ in such a way that the resulting 
+\begin_inset Quotes eld
+\end_inset 
+
+embedded narrowband bit-stream
+\begin_inset Quotes erd
+\end_inset 
+
+ can also be decoded with the narrowband decoder.
+ Since the low band encoding has already been described only the high band
+ encoding is described in this section.
+\layout Subsection
+
+Linear prediction
+\layout Standard
+
+The linear prediction part used for the high-band is very similar to what
+ is done for narrowband.
+ The only difference is that we use only 12 bits to encode the high-band
+ LSP's.
+\the_end
