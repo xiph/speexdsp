@@ -30,260 +30,304 @@
    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-void filter_mem2(float *x, float *_num, float *_den, float *y, int N, int ord, float *_mem)
+#include <xmmintrin.h>
+
+void filter_mem2_10(float *x, float *_num, float *_den, float *y, int N, int ord, float *_mem)
 {
-   float __num[20], __den[20], __mem[20];
-   float *num, *den, *mem;
+   __m128 num[3], den[3], mem[3];
+
    int i;
 
-   num = (float*)(((int)(__num+4))&0xfffffff0)-1;
-   den = (float*)(((int)(__den+4))&0xfffffff0)-1;
-   mem = (float*)(((int)(__mem+4))&0xfffffff0)-1;
-   for (i=0;i<=10;i++)
-      num[i]=den[i]=0;
-   for (i=0;i<10;i++)
-      mem[i]=0;
-
-   for (i=0;i<ord+1;i++)
+   /* Copy numerator, denominator and memory to aligned xmm */
+   for (i=0;i<2;i++)
    {
-      num[i]=_num[i];
-      den[i]=_den[i];
+      mem[i] = _mm_loadu_ps(_mem+4*i);
+      num[i] = _mm_loadu_ps(_num+4*i+1);
+      den[i] = _mm_loadu_ps(_den+4*i+1);
    }
-   for (i=0;i<ord;i++)
-      mem[i]=_mem[i];
-   for (i=0;i<N;i+=4)
+   mem[2] = _mm_setr_ps(_mem[8], _mem[9], 0, 0);
+   num[2] = _mm_setr_ps(_num[9], _num[10], 0, 0);
+   den[2] = _mm_setr_ps(_den[9], _den[10], 0, 0);
+   
+   for (i=0;i<N;i++)
    {
+      __m128 xx;
+      __m128 yy;
+      /* Compute next filter result */
+      xx = _mm_load_ps1(x+i);
+      yy = _mm_add_ss(xx, mem[0]);
+      _mm_store_ss(y+i, yy);
+      yy = _mm_shuffle_ps(yy, yy, 0);
+      
+      /* Update memory */
+      mem[0] = _mm_move_ss(mem[0], mem[1]);
+      mem[0] = _mm_shuffle_ps(mem[0], mem[0], 0x39);
 
-      __asm__ __volatile__ 
-      (
-       "\tmovss (%1), %%xmm0\n"
-       "\tmovss (%0), %%xmm1\n"
-       "\taddss %%xmm0, %%xmm1\n"
-       "\tmovss %%xmm1, (%2)\n"
-       "\tshufps $0x00, %%xmm0, %%xmm0\n"
-       "\tshufps $0x00, %%xmm1, %%xmm1\n"
+      mem[0] = _mm_add_ps(mem[0], _mm_mul_ps(xx, num[0]));
+      mem[0] = _mm_sub_ps(mem[0], _mm_mul_ps(yy, den[0]));
 
-       "\tmovaps 4(%3),  %%xmm2\n"
-       "\tmovaps 4(%4),  %%xmm3\n"
-       "\tmulps  %%xmm0, %%xmm2\n"
-       "\tmulps  %%xmm1, %%xmm3\n"
-       "\tmovaps 20(%3), %%xmm4\n"
-       "\tmulps  %%xmm0, %%xmm4\n"
-       "\taddps  4(%0),  %%xmm2\n"
-       "\tmovaps 20(%4), %%xmm5\n"
-       "\tmulps  %%xmm1, %%xmm5\n"
-       "\taddps  20(%0), %%xmm4\n"
-       "\tsubps  %%xmm3, %%xmm2\n"
-       "\tmovups %%xmm2, (%0)\n"
-       "\tsubps  %%xmm5, %%xmm4\n"
-       "\tmovups %%xmm4, 16(%0)\n"
+      mem[1] = _mm_move_ss(mem[1], mem[2]);
+      mem[1] = _mm_shuffle_ps(mem[1], mem[1], 0x39);
 
-       "\tmovss  36(%3), %%xmm2\n"
-       "\tmulss  %%xmm0, %%xmm2\n"
-       "\tmovss  36(%4), %%xmm3\n"
-       "\tmulss  %%xmm1, %%xmm3\n"
-       "\taddss  36(%0), %%xmm2\n"
-       "\tmovss  40(%3), %%xmm4\n"
-       "\tmulss  %%xmm0, %%xmm4\n"
-       "\tmovss  40(%4), %%xmm5\n"
-       "\tmulss  %%xmm1, %%xmm5\n"
-       "\tsubss  %%xmm3, %%xmm2\n"
-       "\tmovss  %%xmm2, 32(%0)       \n"
-       "\tsubss  %%xmm5, %%xmm4\n"
-       "\tmovss  %%xmm4, 36(%0)\n"
+      mem[1] = _mm_add_ps(mem[1], _mm_mul_ps(xx, num[1]));
+      mem[1] = _mm_sub_ps(mem[1], _mm_mul_ps(yy, den[1]));
 
+      mem[2] = _mm_shuffle_ps(mem[2], mem[2], 0xfd);
 
-
-       "\tmovss 4(%1), %%xmm0\n"
-       "\tmovss (%0), %%xmm1\n"
-       "\taddss %%xmm0, %%xmm1\n"
-       "\tmovss %%xmm1, 4(%2)\n"
-       "\tshufps $0x00, %%xmm0, %%xmm0\n"
-       "\tshufps $0x00, %%xmm1, %%xmm1\n"
-
-       "\tmovaps 4(%3),  %%xmm2\n"
-       "\tmovaps 4(%4),  %%xmm3\n"
-       "\tmulps  %%xmm0, %%xmm2\n"
-       "\tmulps  %%xmm1, %%xmm3\n"
-       "\tmovaps 20(%3), %%xmm4\n"
-       "\tmulps  %%xmm0, %%xmm4\n"
-       "\taddps  4(%0),  %%xmm2\n"
-       "\tmovaps 20(%4), %%xmm5\n"
-       "\tmulps  %%xmm1, %%xmm5\n"
-       "\taddps  20(%0), %%xmm4\n"
-       "\tsubps  %%xmm3, %%xmm2\n"
-       "\tmovups %%xmm2, (%0)\n"
-       "\tsubps  %%xmm5, %%xmm4\n"
-       "\tmovups %%xmm4, 16(%0)\n"
-
-       "\tmovss  36(%3), %%xmm2\n"
-       "\tmulss  %%xmm0, %%xmm2\n"
-       "\tmovss  36(%4), %%xmm3\n"
-       "\tmulss  %%xmm1, %%xmm3\n"
-       "\taddss  36(%0), %%xmm2\n"
-       "\tmovss  40(%3), %%xmm4\n"
-       "\tmulss  %%xmm0, %%xmm4\n"
-       "\tmovss  40(%4), %%xmm5\n"
-       "\tmulss  %%xmm1, %%xmm5\n"
-       "\tsubss  %%xmm3, %%xmm2\n"
-       "\tmovss  %%xmm2, 32(%0)       \n"
-       "\tsubss  %%xmm5, %%xmm4\n"
-       "\tmovss  %%xmm4, 36(%0)\n"
-
-
-
-       "\tmovss 8(%1), %%xmm0\n"
-       "\tmovss (%0), %%xmm1\n"
-       "\taddss %%xmm0, %%xmm1\n"
-       "\tmovss %%xmm1, 8(%2)\n"
-       "\tshufps $0x00, %%xmm0, %%xmm0\n"
-       "\tshufps $0x00, %%xmm1, %%xmm1\n"
-
-       "\tmovaps 4(%3),  %%xmm2\n"
-       "\tmovaps 4(%4),  %%xmm3\n"
-       "\tmulps  %%xmm0, %%xmm2\n"
-       "\tmulps  %%xmm1, %%xmm3\n"
-       "\tmovaps 20(%3), %%xmm4\n"
-       "\tmulps  %%xmm0, %%xmm4\n"
-       "\taddps  4(%0),  %%xmm2\n"
-       "\tmovaps 20(%4), %%xmm5\n"
-       "\tmulps  %%xmm1, %%xmm5\n"
-       "\taddps  20(%0), %%xmm4\n"
-       "\tsubps  %%xmm3, %%xmm2\n"
-       "\tmovups %%xmm2, (%0)\n"
-       "\tsubps  %%xmm5, %%xmm4\n"
-       "\tmovups %%xmm4, 16(%0)\n"
-
-       "\tmovss  36(%3), %%xmm2\n"
-       "\tmulss  %%xmm0, %%xmm2\n"
-       "\tmovss  36(%4), %%xmm3\n"
-       "\tmulss  %%xmm1, %%xmm3\n"
-       "\taddss  36(%0), %%xmm2\n"
-       "\tmovss  40(%3), %%xmm4\n"
-       "\tmulss  %%xmm0, %%xmm4\n"
-       "\tmovss  40(%4), %%xmm5\n"
-       "\tmulss  %%xmm1, %%xmm5\n"
-       "\tsubss  %%xmm3, %%xmm2\n"
-       "\tmovss  %%xmm2, 32(%0)       \n"
-       "\tsubss  %%xmm5, %%xmm4\n"
-       "\tmovss  %%xmm4, 36(%0)\n"
-
-
-
-       "\tmovss 12(%1), %%xmm0\n"
-       "\tmovss (%0), %%xmm1\n"
-       "\taddss %%xmm0, %%xmm1\n"
-       "\tmovss %%xmm1, 12(%2)\n"
-       "\tshufps $0x00, %%xmm0, %%xmm0\n"
-       "\tshufps $0x00, %%xmm1, %%xmm1\n"
-
-       "\tmovaps 4(%3),  %%xmm2\n"
-       "\tmovaps 4(%4),  %%xmm3\n"
-       "\tmulps  %%xmm0, %%xmm2\n"
-       "\tmulps  %%xmm1, %%xmm3\n"
-       "\tmovaps 20(%3), %%xmm4\n"
-       "\tmulps  %%xmm0, %%xmm4\n"
-       "\taddps  4(%0),  %%xmm2\n"
-       "\tmovaps 20(%4), %%xmm5\n"
-       "\tmulps  %%xmm1, %%xmm5\n"
-       "\taddps  20(%0), %%xmm4\n"
-       "\tsubps  %%xmm3, %%xmm2\n"
-       "\tmovups %%xmm2, (%0)\n"
-       "\tsubps  %%xmm5, %%xmm4\n"
-       "\tmovups %%xmm4, 16(%0)\n"
-
-       "\tmovss  36(%3), %%xmm2\n"
-       "\tmulss  %%xmm0, %%xmm2\n"
-       "\tmovss  36(%4), %%xmm3\n"
-       "\tmulss  %%xmm1, %%xmm3\n"
-       "\taddss  36(%0), %%xmm2\n"
-       "\tmovss  40(%3), %%xmm4\n"
-       "\tmulss  %%xmm0, %%xmm4\n"
-       "\tmovss  40(%4), %%xmm5\n"
-       "\tmulss  %%xmm1, %%xmm5\n"
-       "\tsubss  %%xmm3, %%xmm2\n"
-       "\tmovss  %%xmm2, 32(%0)       \n"
-       "\tsubss  %%xmm5, %%xmm4\n"
-       "\tmovss  %%xmm4, 36(%0)\n"
-
-       : : "r" (mem), "r" (x+i), "r" (y+i), "r" (num), "r" (den)
-       : "memory" );
-
+      mem[2] = _mm_add_ps(mem[2], _mm_mul_ps(xx, num[2]));
+      mem[2] = _mm_sub_ps(mem[2], _mm_mul_ps(yy, den[2]));
    }
-   for (i=0;i<ord;i++)
-      _mem[i]=mem[i];
-
+   /* Put memory back in its place */
+   _mm_storeu_ps(_mem, mem[0]);
+   _mm_storeu_ps(_mem+4, mem[1]);
+   _mm_store_ss(_mem+8, mem[2]);
+   mem[2] = _mm_shuffle_ps(mem[2], mem[2], 0x55);
+   _mm_store_ss(_mem+9, mem[2]);
 }
 
+void filter_mem2_8(float *x, float *_num, float *_den, float *y, int N, int ord, float *_mem)
+{
+   __m128 num[2], den[2], mem[2];
+
+   int i;
+
+   /* Copy numerator, denominator and memory to aligned xmm */
+   for (i=0;i<2;i++)
+   {
+      mem[i] = _mm_loadu_ps(_mem+4*i);
+      num[i] = _mm_loadu_ps(_num+4*i+1);
+      den[i] = _mm_loadu_ps(_den+4*i+1);
+   }
+   
+   for (i=0;i<N;i++)
+   {
+      __m128 xx;
+      __m128 yy;
+      /* Compute next filter result */
+      xx = _mm_load_ps1(x+i);
+      yy = _mm_add_ss(xx, mem[0]);
+      _mm_store_ss(y+i, yy);
+      yy = _mm_shuffle_ps(yy, yy, 0);
+      
+      /* Update memory */
+      mem[0] = _mm_move_ss(mem[0], mem[1]);
+      mem[0] = _mm_shuffle_ps(mem[0], mem[0], 0x39);
+
+      mem[0] = _mm_add_ps(mem[0], _mm_mul_ps(xx, num[0]));
+      mem[0] = _mm_sub_ps(mem[0], _mm_mul_ps(yy, den[0]));
+
+      mem[1] = _mm_sub_ss(mem[1], mem[1]);
+      mem[1] = _mm_shuffle_ps(mem[1], mem[1], 0x39);
+
+      mem[1] = _mm_add_ps(mem[1], _mm_mul_ps(xx, num[1]));
+      mem[1] = _mm_sub_ps(mem[1], _mm_mul_ps(yy, den[1]));
+   }
+   /* Put memory back in its place */
+   _mm_storeu_ps(_mem, mem[0]);
+   _mm_storeu_ps(_mem+4, mem[1]);
+}
+
+
+
+void filter_mem2(float *x, float *_num, float *_den, float *y, int N, int ord, float *_mem)
+{
+   if(ord==10)
+      filter_mem2_10(x, _num, _den, y, N, ord, _mem);
+   else if (ord==8)
+      filter_mem2_8(x, _num, _den, y, N, ord, _mem);
+}
+
+
+
+void iir_mem2_10(float *x, float *_den, float *y, int N, int ord, float *_mem)
+{
+   __m128 den[3], mem[3];
+
+   int i;
+
+   /* Copy numerator, denominator and memory to aligned xmm */
+   for (i=0;i<2;i++)
+   {
+      mem[i] = _mm_loadu_ps(_mem+4*i);
+      den[i] = _mm_loadu_ps(_den+4*i+1);
+   }
+   mem[2] = _mm_setr_ps(_mem[8], _mem[9], 0, 0);
+   den[2] = _mm_setr_ps(_den[9], _den[10], 0, 0);
+   
+   for (i=0;i<N;i++)
+   {
+      __m128 xx;
+      __m128 yy;
+      /* Compute next filter result */
+      xx = _mm_load_ps1(x+i);
+      yy = _mm_add_ss(xx, mem[0]);
+      _mm_store_ss(y+i, yy);
+      yy = _mm_shuffle_ps(yy, yy, 0);
+      
+      /* Update memory */
+      mem[0] = _mm_move_ss(mem[0], mem[1]);
+      mem[0] = _mm_shuffle_ps(mem[0], mem[0], 0x39);
+
+      mem[0] = _mm_sub_ps(mem[0], _mm_mul_ps(yy, den[0]));
+
+      mem[1] = _mm_move_ss(mem[1], mem[2]);
+      mem[1] = _mm_shuffle_ps(mem[1], mem[1], 0x39);
+
+      mem[1] = _mm_sub_ps(mem[1], _mm_mul_ps(yy, den[1]));
+
+      mem[2] = _mm_shuffle_ps(mem[2], mem[2], 0xfd);
+
+      mem[2] = _mm_sub_ps(mem[2], _mm_mul_ps(yy, den[2]));
+   }
+   /* Put memory back in its place */
+   _mm_storeu_ps(_mem, mem[0]);
+   _mm_storeu_ps(_mem+4, mem[1]);
+   _mm_store_ss(_mem+8, mem[2]);
+   mem[2] = _mm_shuffle_ps(mem[2], mem[2], 0x55);
+   _mm_store_ss(_mem+9, mem[2]);
+}
+
+
+void iir_mem2_8(float *x, float *_den, float *y, int N, int ord, float *_mem)
+{
+   __m128 den[2], mem[2];
+
+   int i;
+
+   /* Copy numerator, denominator and memory to aligned xmm */
+   for (i=0;i<2;i++)
+   {
+      mem[i] = _mm_loadu_ps(_mem+4*i);
+      den[i] = _mm_loadu_ps(_den+4*i+1);
+   }
+   
+   for (i=0;i<N;i++)
+   {
+      __m128 xx;
+      __m128 yy;
+      /* Compute next filter result */
+      xx = _mm_load_ps1(x+i);
+      yy = _mm_add_ss(xx, mem[0]);
+      _mm_store_ss(y+i, yy);
+      yy = _mm_shuffle_ps(yy, yy, 0);
+      
+      /* Update memory */
+      mem[0] = _mm_move_ss(mem[0], mem[1]);
+      mem[0] = _mm_shuffle_ps(mem[0], mem[0], 0x39);
+
+      mem[0] = _mm_sub_ps(mem[0], _mm_mul_ps(yy, den[0]));
+
+      mem[1] = _mm_sub_ss(mem[1], mem[1]);
+      mem[1] = _mm_shuffle_ps(mem[1], mem[1], 0x39);
+
+      mem[1] = _mm_sub_ps(mem[1], _mm_mul_ps(yy, den[1]));
+   }
+   /* Put memory back in its place */
+   _mm_storeu_ps(_mem, mem[0]);
+   _mm_storeu_ps(_mem+4, mem[1]);
+}
 
 void iir_mem2(float *x, float *_den, float *y, int N, int ord, float *_mem)
 {
-   float  __den[20], __mem[20];
-   float *den, *mem;
-   int i;
-
-   den = (float*)(((int)(__den+4))&0xfffffff0)-1;
-   mem = (float*)(((int)(__mem+4))&0xfffffff0)-1;
-   for (i=0;i<=10;i++)
-      den[i]=0;
-   for (i=0;i<10;i++)
-      mem[i]=0;
-   for (i=0;i<ord+1;i++)
-   {
-      den[i]=_den[i];
-   }
-   for (i=0;i<ord;i++)
-      mem[i]=_mem[i];
-
-   for (i=0;i<N;i++)
-   {
-#if 0
-      y[i] = x[i] + mem[0];
-      for (j=0;j<ord-1;j++)
-      {
-         mem[j] = mem[j+1] - den[j+1]*y[i];
-      }
-      mem[ord-1] = - den[ord]*y[i];
-#else
-      __asm__ __volatile__ 
-      (
-       "\tmovss (%1), %%xmm0\n"
-       "\tmovss (%0), %%xmm1\n"
-       "\taddss %%xmm0, %%xmm1\n"
-       "\tmovss %%xmm1, (%2)\n"
-       "\tshufps $0x00, %%xmm0, %%xmm0\n"
-       "\tshufps $0x00, %%xmm1, %%xmm1\n"
-
-       
-       "\tmovaps 4(%3),  %%xmm2\n"
-       "\tmovaps 20(%3), %%xmm3\n"
-       "\tmulps  %%xmm1, %%xmm2\n"
-       "\tmulps  %%xmm1, %%xmm3\n"
-       "\tmovss  36(%3), %%xmm4\n"
-       "\tmovss  40(%3), %%xmm5\n"
-       "\tmulss  %%xmm1, %%xmm4\n"
-       "\tmulss  %%xmm1, %%xmm5\n"
-       "\tmovaps 4(%0),  %%xmm6\n"
-       "\tsubps  %%xmm2, %%xmm6\n"
-       "\tmovups %%xmm6, (%0)\n"
-       "\tmovaps 20(%0), %%xmm7\n"
-       "\tsubps  %%xmm3, %%xmm7\n"
-       "\tmovups %%xmm7, 16(%0)\n"
-
-
-       "\tmovss  36(%0), %%xmm7\n"
-       "\tsubss  %%xmm4, %%xmm7\n"
-       "\tmovss  %%xmm7, 32(%0)       \n"
-       "\txorps  %%xmm2, %%xmm2\n"
-       "\tsubss  %%xmm5, %%xmm2\n"
-       "\tmovss  %%xmm2, 36(%0)\n"
-
-       : : "r" (mem), "r" (x+i), "r" (y+i), "r" (den)
-       : "memory" );
-#endif
-   }
-   for (i=0;i<ord;i++)
-      _mem[i]=mem[i];
-
+   if(ord==10)
+      iir_mem2_10(x, _den, y, N, ord, _mem);
+   else if (ord==8)
+      iir_mem2_8(x, _den, y, N, ord, _mem);
 }
 
+
+void fir_mem2_10(float *x, float *_num, float *y, int N, int ord, float *_mem)
+{
+   __m128 num[3], mem[3];
+
+   int i;
+
+   /* Copy numerator, denominator and memory to aligned xmm */
+   for (i=0;i<2;i++)
+   {
+      mem[i] = _mm_loadu_ps(_mem+4*i);
+      num[i] = _mm_loadu_ps(_num+4*i+1);
+   }
+   mem[2] = _mm_setr_ps(_mem[8], _mem[9], 0, 0);
+   num[2] = _mm_setr_ps(_num[9], _num[10], 0, 0);
+   
+   for (i=0;i<N;i++)
+   {
+      __m128 xx;
+      __m128 yy;
+      /* Compute next filter result */
+      xx = _mm_load_ps1(x+i);
+      yy = _mm_add_ss(xx, mem[0]);
+      _mm_store_ss(y+i, yy);
+      yy = _mm_shuffle_ps(yy, yy, 0);
+      
+      /* Update memory */
+      mem[0] = _mm_move_ss(mem[0], mem[1]);
+      mem[0] = _mm_shuffle_ps(mem[0], mem[0], 0x39);
+
+      mem[0] = _mm_add_ps(mem[0], _mm_mul_ps(xx, num[0]));
+
+      mem[1] = _mm_move_ss(mem[1], mem[2]);
+      mem[1] = _mm_shuffle_ps(mem[1], mem[1], 0x39);
+
+      mem[1] = _mm_add_ps(mem[1], _mm_mul_ps(xx, num[1]));
+
+      mem[2] = _mm_shuffle_ps(mem[2], mem[2], 0xfd);
+
+      mem[2] = _mm_add_ps(mem[2], _mm_mul_ps(xx, num[2]));
+   }
+   /* Put memory back in its place */
+   _mm_storeu_ps(_mem, mem[0]);
+   _mm_storeu_ps(_mem+4, mem[1]);
+   _mm_store_ss(_mem+8, mem[2]);
+   mem[2] = _mm_shuffle_ps(mem[2], mem[2], 0x55);
+   _mm_store_ss(_mem+9, mem[2]);
+}
+
+void fir_mem2_8(float *x, float *_num, float *y, int N, int ord, float *_mem)
+{
+   __m128 num[2], mem[2];
+
+   int i;
+
+   /* Copy numerator, denominator and memory to aligned xmm */
+   for (i=0;i<2;i++)
+   {
+      mem[i] = _mm_loadu_ps(_mem+4*i);
+      num[i] = _mm_loadu_ps(_num+4*i+1);
+   }
+   
+   for (i=0;i<N;i++)
+   {
+      __m128 xx;
+      __m128 yy;
+      /* Compute next filter result */
+      xx = _mm_load_ps1(x+i);
+      yy = _mm_add_ss(xx, mem[0]);
+      _mm_store_ss(y+i, yy);
+      yy = _mm_shuffle_ps(yy, yy, 0);
+      
+      /* Update memory */
+      mem[0] = _mm_move_ss(mem[0], mem[1]);
+      mem[0] = _mm_shuffle_ps(mem[0], mem[0], 0x39);
+
+      mem[0] = _mm_add_ps(mem[0], _mm_mul_ps(xx, num[0]));
+
+      mem[1] = _mm_sub_ss(mem[1], mem[1]);
+      mem[1] = _mm_shuffle_ps(mem[1], mem[1], 0x39);
+
+      mem[1] = _mm_add_ps(mem[1], _mm_mul_ps(xx, num[1]));
+   }
+   /* Put memory back in its place */
+   _mm_storeu_ps(_mem, mem[0]);
+   _mm_storeu_ps(_mem+4, mem[1]);
+}
+
+
+void fir_mem2(float *x, float *_num, float *y, int N, int ord, float *_mem)
+{
+   if(ord==10)
+      fir_mem2_10(x, _num, y, N, ord, _mem);
+   else if (ord==8)
+      fir_mem2_8(x, _num, y, N, ord, _mem);
+}

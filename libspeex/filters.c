@@ -301,8 +301,6 @@ void iir_mem2(const spx_sig_t *x, const spx_coef_t *den, spx_sig_t *y, int N, in
 }
 
 
-#endif
-
 void fir_mem2(const spx_sig_t *x, const spx_coef_t *num, spx_sig_t *y, int N, int ord, spx_mem_t *mem)
 {
    int i,j;
@@ -318,7 +316,7 @@ void fir_mem2(const spx_sig_t *x, const spx_coef_t *num, spx_sig_t *y, int N, in
       mem[ord-1] = num[ord]*xi;
    }
 }
-
+#endif
 
 #endif
 
