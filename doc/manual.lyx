@@ -706,8 +706,7 @@ Minimizing the amount of information extracted from past frames (for robustness
 Dynamically-selectable codebooks (LSP, pitch and innovation)
 \layout Itemize
 
-G.728-like fixed codebooks (without backward-adaptive gains because of patent
- issues)
+sub-vector fixed (innovation) codebooks
 \layout Subsection
 
 LPC Analysis
@@ -842,18 +841,7 @@ n (VQ).
  the gain at the same time.
  This save many bits that would otherwise be allocated for a separate gain
  at the price of a slight increase in complexity.
- Except for the absence of (backward-adaptive) gain, the technique used
- in Speex is similar to G.728 (LD-CELP).
- However since we do not have a low-delay constraint, the search can be
- made more 
-\begin_inset Quotes eld
-\end_inset 
-
-global
-\begin_inset Quotes erd
-\end_inset 
-
- and make use of the whole information available for a sub-frame.
+ 
 \layout Subsection
 
 Bit allocation

@@ -186,7 +186,7 @@ void nb_encoder_destroy(void *state)
    vbr_destroy(st->vbr);
 
    /*Free state memory... should be last*/
-   speex_free((float*)st);
+   speex_free(st);
 }
 
 int nb_encode(void *state, float *in, SpeexBits *bits)
@@ -266,7 +266,6 @@ int nb_encode(void *state, float *in, SpeexBits *bits)
    lsp_dist=0;
    for (i=0;i<st->lpcSize;i++)
       lsp_dist += (st->old_lsp[i] - st->lsp[i])*(st->old_lsp[i] - st->lsp[i]);
-   /*printf ("%f\n", lsp_dist);*/
 
    /* Whole frame analysis (open-loop estimation of pitch and excitation gain) */
    {
@@ -301,7 +300,6 @@ int nb_encode(void *state, float *in, SpeexBits *bits)
                                nol_pitch, nol_pitch_coef, 6, stack);
          ol_pitch=nol_pitch[0];
          ol_pitch_coef = nol_pitch_coef[0];
-         /*printf ("%f %d %d %d %d %d %d ", ol_pitch_coef, nol_pitch[0], nol_pitch[1], nol_pitch[2], nol_pitch[3], nol_pitch[4], nol_pitch[5]);*/
          /*Try to remove pitch multiples*/
          for (i=1;i<6;i++)
          {
@@ -313,11 +311,9 @@ int nb_encode(void *state, float *in, SpeexBits *bits)
                ol_pitch = nol_pitch[i];
             }
          }
-         /*printf ("%d\n", ol_pitch);*/
          /*if (ol_pitch>50)
            ol_pitch/=2;*/
          /*ol_pitch_coef = sqrt(ol_pitch_coef);*/
-         /*printf ("ol_pitch: %d %f\n", ol_pitch, ol_pitch_coef);*/
       } else {
          ol_pitch=0;
          ol_pitch_coef=0;
@@ -329,8 +325,6 @@ int nb_encode(void *state, float *in, SpeexBits *bits)
       ol_gain=0;
       for (i=0;i<st->frameSize;i++)
          ol_gain += st->exc[i]*st->exc[i];
-      /*for (i=0;i<160;i++)
-        printf ("%f\n", st->exc[i]);*/
       
       ol_gain=sqrt(1+ol_gain/st->frameSize);
    }
@@ -356,7 +350,6 @@ int nb_encode(void *state, float *in, SpeexBits *bits)
             st->vbr_quality=10;
          if (st->vbr_quality<0)
             st->vbr_quality=0;
-         /*printf ("%f %f\n", st->abr_drift/(.1+st->abr_count), st->vbr_quality);*/
       }
 
       st->relative_quality = vbr_analysis(st->vbr, in, st->frameSize, ol_pitch, ol_pitch_coef);
@@ -382,22 +375,17 @@ int nb_encode(void *state, float *in, SpeexBits *bits)
          
          if (mode==0)
          {
-            if (st->submodeID>1 || lsp_dist>.05 || st->dtx_count>20)
+            if (st->dtx_count==0 || lsp_dist>.05 || st->dtx_count>20)
             {
                mode=1;
-               st->dtx_count=0;
+               st->dtx_count=1;
             } else {
                mode=0;
                st->dtx_count++;
             }
          } else {
-            if (st->submodeID>1)
-               st->dtx_count=0;
+            st->dtx_count=0;
          }
-
-         /*fprintf(stderr, "");
-         fprintf (stderr, "encode %f %d\n", st->relative_quality, mode);
-         fprintf(stderr, "encode: %d %d\n",st->submodeID, mode);*/
 
          speex_encoder_ctl(state, SPEEX_SET_MODE, &mode);
 
@@ -409,29 +397,30 @@ int nb_encode(void *state, float *in, SpeexBits *bits)
             st->abr_drift2 = .95*st->abr_drift2 + .05*(bitrate-st->abr_enabled);
             st->abr_count += 1.0;
          }
-         /*fprintf(stderr, "encode: %d %d\n",st->submodeID, mode);*/
+
       } else {
          /*VAD only case*/
          int mode;
          if (st->relative_quality<2)
          {
-            if (st->submodeID>1 || lsp_dist>.05 || !st->dtx_enabled || st->dtx_count>20)
+            if (st->dtx_count==0 || lsp_dist>.05 || !st->dtx_enabled || st->dtx_count>20)
             {
-               st->dtx_count=0;
+               st->dtx_count=1;
                mode=1;
             } else {
                mode=0;
                st->dtx_count++;
             }
-         } else
+         } else {
+            st->dtx_count = 0;
             mode=st->submodeSelect;
+         }
          /*speex_encoder_ctl(state, SPEEX_SET_MODE, &mode);*/
          st->submodeID=mode;
       } 
    } else {
       st->relative_quality = -1;
    }
-   /*printf ("VBR quality = %f\n", vbr_qual);*/
 
    /* First, transmit a zero for narrowband */
    speex_bits_pack(bits, 0, 1);
@@ -712,15 +701,6 @@ int nb_encode(void *state, float *in, SpeexBits *bits)
 
          ener_1 = 1/ener;
 
-#if 0
-         {
-            int start=rand()%35;
-            printf ("norm_exc: ");
-            for (i=start;i<start+5;i++)
-               printf ("%f ", ener_1*st->buf2[i]);
-            printf ("\n");
-         }
-#endif    
          /* Normalize innovation */
          for (i=0;i<st->subframeSize;i++)
             target[i]*=ener_1;
@@ -783,6 +763,14 @@ int nb_encode(void *state, float *in, SpeexBits *bits)
          st->old_lsp[i] = st->lsp[i];
       for (i=0;i<st->lpcSize;i++)
          st->old_qlsp[i] = st->qlsp[i];
+   }
+
+   if (st->submodeID==1)
+   {
+      if (st->dtx_count)
+         speex_bits_pack(bits, 15, 4);
+      else
+         speex_bits_pack(bits, 0, 4);
    }
 
    /* The next frame will not be the first (Duh!) */
@@ -882,7 +870,7 @@ void *nb_decoder_init(SpeexMode *m)
 
    st->voc_m1=st->voc_m2=st->voc_mean=0;
    st->voc_offset=0;
-
+   st->dtx_enabled=0;
    return st;
 }
 
@@ -912,10 +900,6 @@ static void nb_decode_lost(DecState *st, float *out, char *stack)
       pitch_gain=.95;
 
    pitch_gain *= fact;
-   
-#ifdef DEBUG
-   printf ("recovered unquantized pitch: %d, gain: %f (fact=%f, buf=[%f %f %f], med=%f)\n", st->last_pitch, pitch_gain, fact, st->pitch_gain_buf[0], st->pitch_gain_buf[1], st->pitch_gain_buf[2], gain_med);
-#endif
 
    /* Shift all buffers by one frame */
    speex_move(st->inBuf, st->inBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(float));
@@ -960,18 +944,17 @@ static void nb_decode_lost(DecState *st, float *out, char *stack)
       /* THIS CAN BE IMPROVED */
       /*if (pitch_gain>.95)
         pitch_gain=.95;*/
-      /*printf ("%f\n", pitch_gain);*/
       {
          float innov_gain=0;
          for (i=0;i<st->frameSize;i++)
             innov_gain += st->innov[i]*st->innov[i];
-         innov_gain=sqrt(innov_gain/160);
+         innov_gain=sqrt(innov_gain/st->frameSize);
       for (i=0;i<st->subframeSize;i++)
       {
 #if 0
          exc[i] = pitch_gain * exc[i - st->last_pitch] + fact*sqrt(1-pitch_gain)*st->innov[i+offset];
          /*Just so it give the same lost packets as with if 0*/
-         rand();
+         /*rand();*/
 #else
          /*exc[i]=pitch_gain*exc[i-st->last_pitch] +  fact*st->innov[i+offset];*/
          exc[i]=pitch_gain*exc[i-st->last_pitch] + 
@@ -1030,7 +1013,7 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
    stack=st->stack;
 
    /* Check if we're in DTX mode*/
-   if (!bits && st->submodeID<2)
+   if (!bits && st->dtx_enabled)
    {
       st->submodeID=0;
    } else 
@@ -1051,12 +1034,34 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
             int advance;
             advance = submode = speex_bits_unpack_unsigned(bits, SB_SUBMODE_BITS);
             speex_mode_query(&speex_wb_mode, SPEEX_SUBMODE_BITS_PER_FRAME, &advance);
+            if (advance < 0)
+            {
+               speex_warning ("Invalid wideband mode encountered. Corrupted stream?");
+               return -2;
+            } 
             advance -= (SB_SUBMODE_BITS+1);
             speex_bits_advance(bits, advance);
             wideband = speex_bits_unpack_unsigned(bits, 1);
             if (wideband)
             {
-               speex_error ("Corrupted stream?");
+               int submode;
+               int advance;
+               advance = submode = speex_bits_unpack_unsigned(bits, SB_SUBMODE_BITS);
+               speex_mode_query(&speex_wb_mode, SPEEX_SUBMODE_BITS_PER_FRAME, &advance);
+               if (advance < 0)
+               {
+                  speex_warning ("Invalid wideband mode encountered: corrupted stream?");
+                  return -2;
+               } 
+               advance -= (SB_SUBMODE_BITS+1);
+               speex_bits_advance(bits, advance);
+               wideband = speex_bits_unpack_unsigned(bits, 1);
+               if (wideband)
+               {
+                  speex_warning ("More than to wideband layers found: corrupted stream?");
+                  return -2;
+               }
+
             }
          }
 
@@ -1158,7 +1163,6 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
       int quant;
       quant = speex_bits_unpack_unsigned(bits, 4);
       ol_pitch_coef=0.066667*quant;
-      /*fprintf (stderr, "unquant pitch coef: %f\n", ol_pitch_coef);*/
    }
    
    /* Get global excitation gain */
@@ -1166,12 +1170,23 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
       int qe;
       qe = speex_bits_unpack_unsigned(bits, 5);
       ol_gain = exp(qe/3.5);
-      /*printf ("decode_ol_gain: %f\n", ol_gain);*/
    }
 
    awk1=PUSH(stack, st->lpcSize+1, float);
    awk2=PUSH(stack, st->lpcSize+1, float);
    awk3=PUSH(stack, st->lpcSize+1, float);
+
+   if (st->submodeID==1)
+   {
+      int extra;
+      extra = speex_bits_unpack_unsigned(bits, 4);
+      if (extra==15)
+         st->dtx_enabled=1;
+      else
+         st->dtx_enabled=0;
+   }
+   if (st->submodeID>1)
+      st->dtx_enabled=0;
 
    /*Loop on subframes */
    for (sub=0;sub<st->nbSubframes;sub++)
@@ -1326,9 +1341,7 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
          } else {
             ener = ol_gain;
          }
-         
-         /*printf ("unquant_energy: %d %f\n", q_energy, ener);*/
-         
+                  
          if (SUBMODE(innovation_unquant))
          {
             /*Fixed codebook contribution*/
@@ -1364,7 +1377,7 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
                g=1;
             for (i=0;i<st->subframeSize;i++)
             {
-               int tmp=exc[i];
+               float tmp=exc[i];
                exc[i]=.8*g*exc[i]*ol_gain + .6*g*st->voc_m1*ol_gain + .5*g*innov[i] - .5*g*st->voc_m2 + (1-g)*innov[i];
                st->voc_m1 = tmp;
                st->voc_m2=innov[i];
@@ -1375,7 +1388,6 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
             for (i=0;i<st->subframeSize;i++)
                exc[i]+=innov[i];
          }
-         /*printf ("%f %f\n", ener, ol_gain);*/
          /* Decode second codebook (only for some modes) */
          if (SUBMODE(double_codebook))
          {
@@ -1436,11 +1448,6 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
       st->pitch_gain_buf_idx = 0;
 
    st->last_ol_gain = ol_gain;
-
-
-#ifdef DEBUG
-printf ("last pitch: {%d, %f} buf=[%f %f %f]\n", st->last_pitch, st->last_pitch_gain, st->pitch_gain_buf[0], st->pitch_gain_buf[1], st->pitch_gain_buf[2]);
-#endif
 
    return 0;
 }

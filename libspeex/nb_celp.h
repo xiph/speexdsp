@@ -132,7 +132,7 @@ typedef struct DecState {
    int    min_pitch;      /**< Minimum pitch value allowed */
    int    max_pitch;      /**< Maximum pitch value allowed */
    int    sampling_rate;
-   int    last_ol_gain;   /**< Open-loop gain for previous frame */
+   float  last_ol_gain;   /**< Open-loop gain for previous frame */
 
 
    float  gamma1;         /**< Perceptual filter: A(z/gamma1) */
@@ -169,6 +169,8 @@ typedef struct DecState {
    float  voc_m2;
    float  voc_mean;
    int    voc_offset;
+
+   int    dtx_enabled;
 } DecState;
 
 /** Initializes encoder state*/

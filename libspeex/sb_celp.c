@@ -297,8 +297,6 @@ int sb_encode(void *state, float *in, SpeexBits *bits)
    {
       roots = lpc_to_lsp (st->lpc, st->lpcSize, st->lsp, 11, 0.02, stack);
       if (roots!=st->lpcSize) {
-         /*fprintf (stderr, "roots!=st->lpcSize (found only %d roots)\n", roots);*/
-
          /*If we can't find all LSP's, do some damage control and use a flat filter*/
          for (i=0;i<st->lpcSize;i++)
          {
@@ -333,7 +331,6 @@ int sb_encode(void *state, float *in, SpeexBits *bits)
             st->vbr_quality=10;
          if (st->vbr_quality<0)
             st->vbr_quality=0;
-         /*printf ("%f %f\n", st->abr_drift, st->vbr_quality);*/
       }
 
 
@@ -368,9 +365,7 @@ int sb_encode(void *state, float *in, SpeexBits *bits)
                break;
             modeid--;
          }
-         /*fprintf (stderr, "%f %d\n", low_qual, modeid);*/
          speex_encoder_ctl(state, SPEEX_SET_HIGH_MODE, &modeid);
-         /*fprintf (stderr, "%d %d\n", st->submodeID, modeid);*/
          if (st->abr_enabled)
          {
             int bitrate;
@@ -431,15 +426,7 @@ int sb_encode(void *state, float *in, SpeexBits *bits)
 
 
    /* LSP quantization */
-   SUBMODE(lsp_quant)(st->lsp, st->qlsp, st->lpcSize, bits);
-   
-   /*printf ("high_lsp:");
-   for (i=0;i<st->lpcSize;i++)
-      printf (" %f", st->lsp[i]);
-      printf ("\n");*/
-   /*for (i=0;i<st->lpcSize;i++)
-     st->qlsp[i]=st->lsp[i];*/
-   
+   SUBMODE(lsp_quant)(st->lsp, st->qlsp, st->lpcSize, bits);   
 
    if (st->first)
    {
@@ -561,21 +548,7 @@ int sb_encode(void *state, float *in, SpeexBits *bits)
 
          scale = gc*sqrt(1+el)/filter_ratio;
          scale_1 = 1/scale;
-#if 0
-         if (0 && rand()%5==0)
-         {
-            float sc = 1/sqrt(.1+eh/st->subframeSize);
-            if (rand()&1)
-               sc=-sc;
-            for (i=0;i<st->subframeSize;i++)
-            {
-               float tmp=exc[i]*sc;
-               if (i%8==0)
-                  printf ("\nhexc");
-               printf (" %f", tmp);
-            }
-         }
-#endif
+
          for (i=0;i<st->subframeSize;i++)
             exc[i]=0;
          exc[0]=1;
@@ -639,17 +612,6 @@ int sb_encode(void *state, float *in, SpeexBits *bits)
                exc[i] += innov2[i];
          }
 
-#if 0
-         {
-            float en=0;
-            for (i=0;i<st->subframeSize;i++)
-               en+=exc[i]*exc[i];
-            en=sqrt(eh/(1+en));
-            for (i=0;i<st->subframeSize;i++)
-               exc[i]*=en;
-            printf ("correction high: %f\n", en);
-         }
-#endif
       }
 
          /*Keep the previous memory*/

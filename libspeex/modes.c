@@ -158,7 +158,7 @@ static split_cb_params split_cb_high_lbr = {
 static SpeexSubmode nb_submode1 = {
    0,
    1,
-   1,
+   0,
    0,
    /* LSP quantization */
    lsp_quant_lbr,
@@ -571,7 +571,12 @@ static void nb_mode_query(void *mode, int request, void *ptr)
       *((int*)ptr)=m->frameSize;
       break;
    case SPEEX_SUBMODE_BITS_PER_FRAME:
-      *((int*)ptr) = m->submodes[*((int*)ptr)]->bits_per_frame;
+      if (*((int*)ptr)==0)
+         *((int*)ptr) = NB_SUBMODE_BITS+1;
+      else if (m->submodes[*((int*)ptr)]==NULL)
+         *((int*)ptr) = -1;
+      else
+         *((int*)ptr) = m->submodes[*((int*)ptr)]->bits_per_frame;
       break;
    default:
       speex_warning_int("Unknown nb_mode_query request: ", request);
@@ -589,7 +594,12 @@ static void wb_mode_query(void *mode, int request, void *ptr)
       *((int*)ptr)=m->frameSize;
       break;
    case SPEEX_SUBMODE_BITS_PER_FRAME:
-      *((int*)ptr) = m->submodes[*((int*)ptr)]->bits_per_frame;
+      if (*((int*)ptr)==0)
+         *((int*)ptr) = SB_SUBMODE_BITS+1;
+      else if (m->submodes[*((int*)ptr)]==NULL)
+         *((int*)ptr) = -1;
+      else
+         *((int*)ptr) = m->submodes[*((int*)ptr)]->bits_per_frame;
       break;
    default:
       speex_warning_int("Unknown wb_mode_query request: ", request);

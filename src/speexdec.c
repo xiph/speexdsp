@@ -553,12 +553,20 @@ int main(int argc, char **argv)
                speex_bits_read_from(&bits, (char*)op.packet, op.bytes);
                for (j=0;j<nframes;j++)
                {
+                  int ret;
                   /*Decode frame*/
                   if (!lost)
-                     speex_decode(st, &bits, output);
+                     ret = speex_decode(st, &bits, output);
                   else
-                     speex_decode(st, NULL, output);
+                     ret = speex_decode(st, NULL, output);
 
+                  if (ret==-1)
+                     break;
+                  if (ret==-2)
+                  {
+                     fprintf (stderr, "Decoding error: corrupted stream?\n");
+                     break;
+                  }
                   if (channels==2)
                      speex_decode_stereo(output, frame_size, &stereo);
 
