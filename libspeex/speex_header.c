@@ -76,7 +76,7 @@ void speex_init_header(SpeexHeader *header, int rate, int nb_channels, SpeexMode
 char *speex_header_to_packet(SpeexHeader *header, int *size)
 {
    SpeexHeader *le_header;
-   le_header = malloc(sizeof(SpeexHeader));
+   le_header = speex_alloc(sizeof(SpeexHeader));
    
    memcpy(le_header, header, sizeof(SpeexHeader));
    
@@ -111,7 +111,7 @@ SpeexHeader *speex_packet_to_header(char *packet, int size)
       return NULL;
    }
    
-   le_header = malloc(sizeof(SpeexHeader));
+   le_header = speex_alloc(sizeof(SpeexHeader));
    
    memcpy(le_header, packet, sizeof(SpeexHeader));
    

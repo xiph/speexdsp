@@ -18,7 +18,7 @@
 */
 
 #include "misc.h"
-
+#include <stdlib.h>
 
 unsigned int be_int(unsigned int i)
 {
@@ -62,4 +62,14 @@ unsigned short le_short(unsigned short s)
    ret += s<<8;
 #endif
    return ret;
+}
+
+void *speex_alloc (int size)
+{
+   return calloc(size,1);
+}
+
+void speex_free (void *ptr)
+{
+   free(ptr);
 }
