@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in. -*-Makefile-*-
 
-# $Id: Makefile.am,v 1.49 2003/03/17 22:40:57 jm Exp $
+# $Id: Makefile.am,v 1.50 2003/05/08 04:04:49 jm Exp $
 
 # Disable automatic dependency tracking if using other tools than gcc and gmake
 #AUTOMAKE_OPTIONS = no-dependencies
@@ -36,14 +36,17 @@ libspeex_la_SOURCES = nb_celp.c \
 	speex_header.c \
 	speex_callbacks.c \
 	math_approx.c \
-	stereo.c
+	stereo.c \
+	denoise.c \
+	smallft.c
 
 
 include_HEADERS =  speex.h \
 	speex_bits.h \
 	speex_header.h \
 	speex_callbacks.h \
-	speex_stereo.h
+	speex_stereo.h \
+	denoise.h
 
 noinst_HEADERS = lsp.h \
 	nb_celp.h \
@@ -60,12 +63,13 @@ noinst_HEADERS = lsp.h \
 	misc.h \
 	ltp_sse.h \
 	filters_sse.h \
-	math_approx.h
+	math_approx.h \
+	smallft.h
 	
 	
 libspeex_la_LDFLAGS = -version-info @SPEEX_LT_CURRENT@:@SPEEX_LT_REVISION@:@SPEEX_LT_AGE@
 
-noinst_PROGRAMS = testenc testenc_wb testenc_uwb
+noinst_PROGRAMS = testenc testenc_wb testenc_uwb testdenoise
 
 testenc_SOURCES = testenc.c
 testenc_LDADD = libspeex.la
@@ -75,3 +79,6 @@ testenc_wb_LDADD = libspeex.la
 
 testenc_uwb_SOURCES = testenc_uwb.c
 testenc_uwb_LDADD = libspeex.la
+
+testdenoise_SOURCES = testdenoise.c
+testdenoise_LDADD = libspeex.la
