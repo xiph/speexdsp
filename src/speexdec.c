@@ -102,12 +102,27 @@ FILE *out_file_open(char *outFile, int rate)
 
 void usage()
 {
-   fprintf (stderr, "speexenc [options] <input file> <output file>\n");
+
+   fprintf (stderr, "Speex decoder version " VERSION "\n");
+   fprintf (stderr, "\n");
+   fprintf (stderr, "usage: speexdec [options] input_file.spx\n");
+   fprintf (stderr, "       speexdec [options] input_file.spx output_file.wav\n");
+   fprintf (stderr, "\n");
+   fprintf (stderr, "input_file can be:\n");
+   fprintf (stderr, "  filename.spx          regular Speex file\n");
+   fprintf (stderr, "  -                     stdin\n");
+   fprintf (stderr, "\n");  
+   fprintf (stderr, "output_file can be:\n");
+   fprintf (stderr, "  filename.wav          wav file\n");
+   fprintf (stderr, "  filename.*            raw PCM file (any extension other that .wav)\n");
+   fprintf (stderr, "  -                     stdout\n");
+   fprintf (stderr, "  (nothing)             will be played to soundcard\n");
+   fprintf (stderr, "\n");  
    fprintf (stderr, "options:\n");
-   fprintf (stderr, "\t--help       -h      This help\n"); 
-   fprintf (stderr, "\t--version    -v      Version information\n"); 
-   fprintf (stderr, "\t--pf                 Enable post-filter\n"); 
-   fprintf (stderr, "\t--no-pf              Disable post-filter\n");
+   fprintf (stderr, "  --help       -h      This help\n");
+   fprintf (stderr, "  --version    -v      Version information\n");
+   fprintf (stderr, "  --pf                 Enable post-filter\n");
+   fprintf (stderr, "  --no-pf              Disable post-filter (default FOR NOW)\n");
 }
 
 void version()

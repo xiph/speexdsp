@@ -43,15 +43,29 @@ int oe_write_page(ogg_page *page, FILE *fp)
 
 void usage()
 {
-   fprintf (stderr, "speexenc [options] <input file> <output file>\n");
+   fprintf (stderr, "Speex encoder version " VERSION "\n");
+   fprintf (stderr, "\n");
+   fprintf (stderr, "usage: speexenc [options] input_file output_file\n");
+   fprintf (stderr, "\n");
+   fprintf (stderr, "input_file can be:\n");
+   fprintf (stderr, "  filename.wav          wav file\n");
+   fprintf (stderr, "  filename.*            raw PCM file (any extension other than .wav)\n");
+   fprintf (stderr, "  -                     stdin\n");
+   fprintf (stderr, "\n");  
+   fprintf (stderr, "output_file can be:\n");
+   fprintf (stderr, "  filename.spx          Speex file\n");
+   fprintf (stderr, "  -                     stdout\n");
+   fprintf (stderr, "\n");  
    fprintf (stderr, "options:\n");
-   fprintf (stderr, "\t--narrowband -n    Narrowband (8 kHz) input file\n"); 
-   fprintf (stderr, "\t--wideband   -w    Wideband (16 kHz) input file\n"); 
-   fprintf (stderr, "\t--quality n        Encoding quality setting from 0 to 10\n"); 
-   fprintf (stderr, "\t--lbr              Low bit-rate mode (equivalent to --quality 3)\n"); 
-   fprintf (stderr, "\t--help       -h    This help\n"); 
-   fprintf (stderr, "\t--version    -v    Version information\n"); 
-   fprintf (stderr, "\nInput must be raw audio (mono, no header), 16 bits or a mono wav file\n"); 
+   fprintf (stderr, "  --narrowband -n    Narrowband (8 kHz) input file\n"); 
+   fprintf (stderr, "  --wideband   -w    Wideband (16 kHz) input file\n"); 
+   fprintf (stderr, "  --quality n        Encoding quality setting from 0 to 10\n"); 
+   fprintf (stderr, "  --lbr              Low bit-rate mode (equivalent to --quality 3)\n"); 
+   fprintf (stderr, "  --help       -h    This help\n"); 
+   fprintf (stderr, "  --version    -v    Version information\n"); 
+   fprintf (stderr, "\n");  
+   fprintf (stderr, "Input must be mono\n"); 
+   fprintf (stderr, "Raw PCM needs to be 16-bit little-endian\n"); 
 }
 
 void version()
