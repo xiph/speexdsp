@@ -23,14 +23,14 @@ int main(int argc, char **argv)
       bak2[i]=0;
    st = speex_encoder_init(&speex_wb_mode);
    dec = speex_decoder_init(&speex_wb_mode);
-
+   
    tmp=0;
    speex_decoder_ctl(dec, SPEEX_SET_ENH, &tmp);
-   tmp=1;
+   tmp=0;
    speex_encoder_ctl(st, SPEEX_SET_VBR, &tmp);
    tmp=10;
-   speex_encoder_ctl(st, SPEEX_SET_VBR_QUALITY, &tmp);
-
+   speex_encoder_ctl(st, SPEEX_SET_QUALITY, &tmp);
+   
    if (argc != 4 && argc != 3)
    {
       fprintf (stderr, "Usage: encode [in file] [out file] [bits file]\nargc = %d", argc);
@@ -93,5 +93,7 @@ int main(int argc, char **argv)
    fprintf (stderr, "Total encoded size: %d bits\n", bitCount);
    speex_encoder_destroy(st);
    speex_decoder_destroy(dec);
+   fclose(fin);
+   fclose(fout);
    return 1;
 }

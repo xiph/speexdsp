@@ -28,9 +28,9 @@ int main(int argc, char **argv)
    speex_decoder_ctl(dec, SPEEX_SET_ENH, &tmp);
    tmp=0;
    speex_encoder_ctl(st, SPEEX_SET_VBR, &tmp);
-   tmp=2;
+   tmp=10;
    speex_encoder_ctl(st, SPEEX_SET_QUALITY, &tmp);
-   tmp=2;
+   tmp=4;
    speex_encoder_ctl(st, SPEEX_SET_COMPLEXITY, &tmp);
 
    if (argc != 4 && argc != 3)

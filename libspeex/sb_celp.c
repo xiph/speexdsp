@@ -645,7 +645,6 @@ void sb_encode(void *state, float *in, SpeexBits *bits)
 
 void *sb_decoder_init(SpeexMode *m)
 {
-   int i;
    SBDecState *st;
    SpeexSBMode *mode;
    st = speex_alloc(sizeof(SBDecState));

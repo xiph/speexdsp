@@ -119,11 +119,13 @@ void usage()
    fprintf (stderr, "  (nothing)             will be played to soundcard\n");
    fprintf (stderr, "\n");  
    fprintf (stderr, "options:\n");
-   fprintf (stderr, "  --pf                 Enable post-filter\n");
-   fprintf (stderr, "  --no-pf              Disable post-filter (default FOR NOW)\n");
-   fprintf (stderr, "  --help       -h      This help\n");
-   fprintf (stderr, "  --version    -v      Version information\n");
-   fprintf (stderr, "  -V                 Verbose mode (show bit-rate)\n"); 
+   fprintf (stderr, "  --enh                 Enable perceptual enhancement\n");
+   fprintf (stderr, "  --no-enh              Disable perceptual enhancement (default FOR NOW)\n");
+   fprintf (stderr, "  -V                    Verbose mode (show bit-rate)\n"); 
+   fprintf (stderr, "  --help       -h       This help\n");
+   fprintf (stderr, "  --version    -v       Version information\n");
+   fprintf (stderr, "  --pf                  Deprecated, use --pf instead\n");
+   fprintf (stderr, "  --no-pf               Deprecated, use --no-pf instead\n");
 }
 
 void version()
@@ -131,7 +133,7 @@ void version()
    fprintf (stderr, "Speex decoder version " VERSION "\n");
 }
 
-static void *process_header(ogg_packet *op, int pf_enabled, int *frame_size, int *rate, int *nframes)
+static void *process_header(ogg_packet *op, int enh_enabled, int *frame_size, int *rate, int *nframes)
 {
    void *st;
    SpeexMode *mode;
@@ -164,7 +166,7 @@ static void *process_header(ogg_packet *op, int pf_enabled, int *frame_size, int
    }
    
    st = speex_decoder_init(mode);
-   speex_decoder_ctl(st, SPEEX_SET_PF, &pf_enabled);
+   speex_decoder_ctl(st, SPEEX_SET_ENH, &enh_enabled);
    speex_decoder_ctl(st, SPEEX_GET_FRAME_SIZE, frame_size);
    
    *rate = header->rate;
@@ -201,6 +203,8 @@ int main(int argc, char **argv)
    {
       {"help", no_argument, NULL, 0},
       {"version", no_argument, NULL, 0},
+      {"enh", no_argument, NULL, 0},
+      {"no-enh", no_argument, NULL, 0},
       {"pf", no_argument, NULL, 0},
       {"no-pf", no_argument, NULL, 0},
       {0, 0, 0, 0}
@@ -209,11 +213,12 @@ int main(int argc, char **argv)
    ogg_page       og;
    ogg_packet     op;
    ogg_stream_state os;
-   int pf_enabled;
+   int enh_enabled;
    int nframes=2;
    int print_bitrate=0;
+   int close_in=0;
 
-   pf_enabled = 0;
+   enh_enabled = 0;
 
    /*Process options*/
    while(1)
@@ -234,12 +239,20 @@ int main(int argc, char **argv)
          {
             version();
             exit(0);
+         } else if (strcmp(long_options[option_index].name,"enh")==0)
+         {
+            enh_enabled=1;
+         } else if (strcmp(long_options[option_index].name,"no-enh")==0)
+         {
+            enh_enabled=0;
          } else if (strcmp(long_options[option_index].name,"pf")==0)
          {
-            pf_enabled=1;
+            fprintf (stderr, "--pf is deprecated, use --enh instead\n");
+            enh_enabled=1;
          } else if (strcmp(long_options[option_index].name,"no-pf")==0)
          {
-            pf_enabled=0;
+            fprintf (stderr, "--no-pf is deprecated, use --no-enh instead\n");
+            enh_enabled=0;
          }
          break;
       case 'h':
@@ -281,6 +294,7 @@ int main(int argc, char **argv)
          perror(inFile);
          exit(1);
       }
+      close_in=1;
    }
 
 
@@ -315,7 +329,7 @@ int main(int argc, char **argv)
             if (packet_count==0)
             {
                int rate;
-               st = process_header(&op, pf_enabled, &frame_size, &rate, &nframes);
+               st = process_header(&op, enh_enabled, &frame_size, &rate, &nframes);
                if (!nframes)
                   nframes=1;
                if (!st)
@@ -329,7 +343,7 @@ int main(int argc, char **argv)
             } else {
 
                /*End of stream condition*/
-               if (strncmp((char *)op.packet, "END OF STREAM", 13)==0)
+               if (op.e_o_s)
                   break;
                /*Copy Ogg packet to Speex bitstream*/
                speex_bits_read_from(&bits, (char*)op.packet, op.bytes);
@@ -370,8 +384,11 @@ int main(int argc, char **argv)
    if (st)
       speex_decoder_destroy(st);
    speex_bits_destroy(&bits);
+   ogg_sync_clear(&oy);
    ogg_stream_clear(&os);
- 
-   exit(0);
+
+   if (close_in)
+      fclose(fin);
+   fclose(fout);
    return 1;
 }

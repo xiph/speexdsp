@@ -55,9 +55,11 @@ void enh_lpc(float *ak, int order, float *num, float *den, float k1, float k2, f
    d2=PUSH(stack,order+1);
    for (i=0;i<=order;i++)
    {
-      den[i]=ak[i];
+      /*FIXME: Big kludge here!!!*/
+      den[i]=0*ak[i];
       num[i]=0;
    }
+   den[0]=1;
    for (i=order+1;i<=(order<<1);i++)
       den[i]=num[i]=0;
    r=.9;
@@ -288,7 +290,6 @@ float  comb_gain     /*gain of comb filter*/
 {
    int i;
    float exc_energy=0, new_exc_energy=0;
-   float *awk1, *awk2;
    float gain;
 
    /*Compute excitation energy prior to enhancement*/

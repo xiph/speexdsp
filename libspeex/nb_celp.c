@@ -672,7 +672,7 @@ void *nb_decoder_init(SpeexMode *m)
    st->qlsp = speex_alloc(st->lpcSize*sizeof(float));
    st->old_qlsp = speex_alloc(st->lpcSize*sizeof(float));
    st->interp_qlsp = speex_alloc(st->lpcSize*sizeof(float));
-   st->mem_sp = speex_alloc(4*st->lpcSize*sizeof(float));
+   st->mem_sp = speex_alloc(5*st->lpcSize*sizeof(float));
 
    st->pi_gain = speex_alloc(st->nbSubframes*sizeof(float));
    st->last_pitch = 40;
@@ -917,11 +917,10 @@ void nb_decode(void *state, SpeexBits *bits, float *out, int lost)
       if (st->lpc_enh_enabled && SUBMODE(comb_gain>0))
          comb_filter(exc, sp, st->interp_qlpc, st->lpcSize, st->subframeSize,
                               pitch, pitch_gain, .5);
-      /*syn_filt_mem(sp, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, 
-        st->mem_sp);*/
-      
       pole_zero_mem(sp, num, den, sp, st->subframeSize, (st->lpcSize<<1), 
-                    st->mem_sp, st->stack);
+                    st->mem_sp+st->lpcSize, st->stack);
+      syn_filt_mem(sp, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, 
+        st->mem_sp);
       
       POP(st->stack);
       POP(st->stack);

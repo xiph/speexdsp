@@ -1691,7 +1691,7 @@ Quality versus bit-rate
 
 \layout Subsection
 
-Perceptual post-filter
+Perceptual enhancement
 \layout Standard
 
 This part of the codec only applies to the decoder and can even be changed
@@ -2187,10 +2187,10 @@ speexdec
 The decoder takes the following options:
 \layout Description
 
---pf enable post-filter
+--enh enable post-filter
 \layout Description
 
---nopf disable post-filter (default)
+--no-enh disable post-filter (default)
 \layout Description
 
 --help\SpecialChar ~
@@ -2449,10 +2449,10 @@ The different values of request allowed are (note that some only apply to
  the encoder or the decoder):
 \layout Description
 
-SPEEX_SET_PF** Set post-filter to on (1) or off (0) (integer)
+SPEEX_SET_ENH** Set post-filter to on (1) or off (0) (integer)
 \layout Description
 
-SPEEX_GET_PF** Get post-filter status (integer)
+SPEEX_GET_ENH** Get post-filter status (integer)
 \layout Description
 
 SPEEX_GET_FRAME_SIZE Get the frame size used for the current mode (integer)

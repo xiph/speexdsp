@@ -239,7 +239,7 @@ static SpeexSubmode nb_submode6 = {
    split_cb_nogain_unquant,
    &split_cb_sb,
 
-   0.68, 0.65, .2,
+   0.68, 0.65, .1,
    18150
 };
 

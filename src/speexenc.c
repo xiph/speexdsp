@@ -119,6 +119,7 @@ int main(int argc, char **argv)
    int nframes=1;
    int complexity=3;
    char *comments = "Encoded with Speex " VERSION;
+   int close_in=0, close_out=0;
 
    /*Process command-line options*/
    while(1)
@@ -217,6 +218,7 @@ int main(int argc, char **argv)
          perror(inFile);
          exit(1);
       }
+      close_in=1;
    }
 
    rate=0;
@@ -274,6 +276,7 @@ int main(int argc, char **argv)
          perror(outFile);
          exit(1);
       }
+      close_out=1;
    }
 
 
@@ -293,7 +296,7 @@ int main(int argc, char **argv)
       op.b_o_s = 0;
       op.e_o_s = 0;
       op.granulepos = 0;
-      op.packetno = 0;
+      op.packetno = 1;
       ogg_stream_packetin(&os, &op);
       
       while((result = ogg_stream_flush(&os, &og)))
@@ -328,6 +331,7 @@ int main(int argc, char **argv)
          speex_encoder_ctl(st, SPEEX_SET_VBR_QUALITY, &tmp);
    }
 
+   speex_bits_init(&bits);
    /*Main encoding loop (one frame per iteration)*/
    while (1)
    {
@@ -357,7 +361,7 @@ int main(int argc, char **argv)
       op.b_o_s = 0;
       op.e_o_s = 0;
       op.granulepos = id*frame_size;
-      op.packetno = id/nframes;
+      op.packetno = 2+id/nframes;
       ogg_stream_packetin(&os, &op);
 
       /*Write all new pages (not likely 0 or 1)*/
@@ -378,8 +382,8 @@ int main(int argc, char **argv)
    op.bytes = 13;
    op.b_o_s = 0;
    op.e_o_s = 1;
-   op.granulepos = id+1;
-   op.packetno = id+1;
+   op.granulepos = -1;
+   op.packetno = 3+id/nframes;
    ogg_stream_packetin(&os, &op);
    /*Flush all pages left to be written*/
    while (ogg_stream_flush(&os, &og))
@@ -399,7 +403,10 @@ int main(int argc, char **argv)
    speex_bits_destroy(&bits);
    ogg_stream_clear(&os);
 
-   exit(0);
+   if (close_in)
+      fclose(fin);
+   if (close_out)
+      fclose(fout);
    return 1;
 }
 
