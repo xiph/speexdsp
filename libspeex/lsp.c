@@ -19,6 +19,12 @@
 #include "lsp.h"
 #include "stack_alloc.h"
 
+
+#ifndef M_PI
+#define M_PI           3.14159265358979323846  /* pi */
+#endif
+
+
 /*---------------------------------------------------------------------------*\
 
 	FUNCTION....: cheb_poly_eva()
@@ -278,4 +284,22 @@ void lsp_to_lpc(float *freq,float *ak,int lpcrdr, float *stack)
     }
     /*free(Wp);*/
     POP(stack);
+}
+
+
+void lsp_enforce_margin(float *lsp, int len, float margin)
+{
+   int i;
+   if (lsp[0]<margin)
+      lsp[0]=margin;
+   if (lsp[len-1]>M_PI-margin)
+      lsp[len]=margin;
+   for (i=1;i<len-1;i++)
+   {
+      if (lsp[i]<lsp[i-1]+margin)
+         lsp[i]=lsp[i-1]+margin;
+
+      if (lsp[i]>lsp[i+1]-margin)
+         lsp[i]= .5* (lsp[i] + lsp[i+1]-margin);
+   }
 }

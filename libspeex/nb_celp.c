@@ -287,6 +287,9 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
       for (i=0;i<st->lpcSize;i++)
          st->interp_qlsp[i] = (1-tmp)*st->old_qlsp[i] + tmp*st->qlsp[i];
 
+      lsp_enforce_margin(st->interp_lsp, st->lpcSize, .002);
+      lsp_enforce_margin(st->interp_qlsp, st->lpcSize, .002);
+
       if (0) {
          float *h=PUSH(st->stack, 8);
          for (i=0;i<8;i++)
@@ -673,10 +676,13 @@ void nb_decode(void *state, SpeexBits *bits, float *out, int lost)
       for (i=0;i<st->lpcSize;i++)
          st->interp_qlsp[i] = (1-tmp)*st->old_qlsp[i] + tmp*st->qlsp[i];
 
+      lsp_enforce_margin(st->interp_qlsp, st->lpcSize, .002);
+
       /* Compute interpolated LPCs (unquantized) */
       for (i=0;i<st->lpcSize;i++)
          st->interp_qlsp[i] = cos(st->interp_qlsp[i]);
       lsp_to_lpc(st->interp_qlsp, st->interp_qlpc, st->lpcSize, st->stack);
+
 
       tmp=1;
       st->pi_gain[sub]=0;
