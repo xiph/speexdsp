@@ -369,6 +369,7 @@ int lost)
    gain[2] = gain_cdbk[gain_index*12+2];
    if (lost)
    {
+#if 0
       float gain_sum;
       /*Put everything in one tap*/
       gain[1]+=gain[0]+gain[2];
@@ -381,6 +382,16 @@ int lost)
             gain[i]*=fact;
       }
       /*gain[1]=.8;*/
+#else
+      float gain_sum;
+      gain_sum = fabs(gain[0])+fabs(gain[1])+fabs(gain[2]);
+      if (gain_sum>.85)
+      {
+         float fact = .85/gain_sum;
+         for (i=0;i<3;i++)
+            gain[i]*=fact;
+      }
+#endif
    }
 
    *pitch_val = pitch;

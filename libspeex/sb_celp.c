@@ -41,7 +41,6 @@
 
 #define SUBMODE(x) st->submodes[st->submodeID]->x
 
-
 #define QMF_ORDER 64
 static float h0[64] = {
    3.596189e-05, -0.0001123515,
@@ -263,12 +262,14 @@ void sb_encode(void *state, float *in, SpeexBits *bits)
    /* Compute the two sub-bands by filtering with h0 and h1*/
    fir_mem(in, h0, st->x0, st->full_frame_size, QMF_ORDER, st->h0_mem);
    fir_mem(in, h1, st->x1, st->full_frame_size, QMF_ORDER, st->h1_mem);
+
    /* Down-sample x0 and x1 */
    for (i=0;i<st->frame_size;i++)
-   {
-      st->x0d[i]=st->x0[i<<1];
       st->x1d[i]=st->x1[i<<1];
-   }
+
+   for (i=0;i<st->frame_size;i++)
+      st->x0d[i]=st->x0[i<<1];
+
    /* Encode the narrowband part*/
    nb_encode(st->st_low, st->x0d, bits);
 
@@ -276,19 +277,10 @@ void sb_encode(void *state, float *in, SpeexBits *bits)
    speex_bits_pack(bits, st->submodeID, SB_SUBMODE_BITS);
 
    /* High-band buffering / sync with low band */
-#if 0
-   for (i=0;i<st->frame_size;i++)
-   {
-      /*st->excBuf[i]=st->exc[i];*/
-      st->high[i]=st->high[st->frame_size+i];
-      st->high[st->frame_size+i]=st->x1d[i];
-   }
-#else
    for (i=0;i<st->windowSize-st->frame_size;i++)
       st->high[i] = st->high[st->frame_size+i];
    for (i=0;i<st->frame_size;i++)
       st->high[st->windowSize-st->frame_size+i]=st->x1d[i];
-#endif
 
    speex_move(st->excBuf, st->excBuf+st->frame_size, (st->bufSize-st->frame_size)*sizeof(float));
 
@@ -546,6 +538,23 @@ void sb_encode(void *state, float *in, SpeexBits *bits)
          for (i=0;i<st->subframeSize;i++)
             exc[i] += innov[i]*scale;
 
+         if (SUBMODE(double_codebook)) {
+            float *innov2 = PUSH(st->stack, st->subframeSize);
+            for (i=0;i<st->subframeSize;i++)
+               innov2[i]=0;
+            for (i=0;i<st->subframeSize;i++)
+               target[i]*=2.5;
+            SUBMODE(innovation_quant)(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2, 
+                                      SUBMODE(innovation_params), st->lpcSize, st->subframeSize, 
+                                      innov2, bits, st->stack, st->complexity);
+            for (i=0;i<st->subframeSize;i++)
+               innov2[i]*=scale*(1/2.5);
+            for (i=0;i<st->subframeSize;i++)
+               exc[i] += innov2[i];
+            POP(st->stack);
+         }
+
+
          if (0) {
             float en=0;
             for (i=0;i<st->subframeSize;i++)
@@ -644,7 +653,6 @@ void *sb_decoder_init(SpeexMode *m)
    st->interp_qlpc = speex_alloc((st->lpcSize+1)*sizeof(float));
 
    st->mem_sp = speex_alloc(st->lpcSize*sizeof(float));
-
    return st;
 }
 
@@ -816,6 +824,20 @@ void sb_decode(void *state, SpeexBits *bits, float *out, int lost)
                                 bits, st->stack);
          for (i=0;i<st->subframeSize;i++)
             exc[i]*=scale;
+
+         if (SUBMODE(double_codebook)) {
+            float *innov2 = PUSH(st->stack, st->subframeSize);
+            for (i=0;i<st->subframeSize;i++)
+               innov2[i]=0;
+            SUBMODE(innovation_unquant)(innov2, SUBMODE(innovation_params), st->subframeSize, 
+                                bits, st->stack);
+            for (i=0;i<st->subframeSize;i++)
+               innov2[i]*=scale*(1/2.5);
+            for (i=0;i<st->subframeSize;i++)
+               exc[i] += innov2[i];
+            POP(st->stack);
+         }
+
       }
       syn_filt_mem(exc, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, st->mem_sp);
 
@@ -834,7 +856,6 @@ void sb_decode(void *state, SpeexBits *bits, float *out, int lost)
    fir_mem(st->x1, h1, st->y1, st->full_frame_size, QMF_ORDER, st->g1_mem);
    for (i=0;i<st->full_frame_size;i++)
       out[i]=2*(st->y0[i]-st->y1[i]);
-
 
    for (i=0;i<st->lpcSize;i++)
       st->old_qlsp[i] = st->qlsp[i];
@@ -910,10 +931,16 @@ void sb_encoder_ctl(void *state, int request, void *ptr)
             st->submodeID = 2;
             break;
          case 8:
-         case 9:
-         case 10:
             nb_mode=6;
             st->submodeID = 3;
+            break;
+         case 9:
+            nb_mode=7;
+            st->submodeID = 3;
+            break;
+         case 10:
+            nb_mode=7;
+            st->submodeID = 4;
             break;
          default:
             fprintf(stderr, "Unknown sb_ctl quality: %d\n", quality);

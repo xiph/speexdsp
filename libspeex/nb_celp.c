@@ -622,6 +622,23 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
          } else {
             fprintf(stderr, "No fixed codebook\n");
          }
+
+         if (SUBMODE(double_codebook)) {
+            float *innov2 = PUSH(st->stack, st->subframeSize);
+            for (i=0;i<st->subframeSize;i++)
+               innov2[i]=0;
+            for (i=0;i<st->subframeSize;i++)
+               target[i]*=2.2;
+            SUBMODE(innovation_quant)(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2, 
+                                      SUBMODE(innovation_params), st->lpcSize, st->subframeSize, 
+                                      innov2, bits, st->stack, st->complexity);
+            for (i=0;i<st->subframeSize;i++)
+               innov2[i]*=ener*(1/2.2);
+            for (i=0;i<st->subframeSize;i++)
+               exc[i] += innov2[i];
+            POP(st->stack);
+         }
+
          /*POP(st->stack);*/
          for (i=0;i<st->subframeSize;i++)
             target[i]*=ener;
@@ -979,6 +996,19 @@ void nb_decode(void *state, SpeexBits *bits, float *out, int lost)
          for (i=0;i<st->subframeSize;i++)
             exc[i]+=innov[i];
 
+         if (SUBMODE(double_codebook))
+         {
+            float *innov2 = PUSH(st->stack, st->subframeSize);
+            for (i=0;i<st->subframeSize;i++)
+               innov2[i]=0;
+            SUBMODE(innovation_unquant)(innov2, SUBMODE(innovation_params), st->subframeSize, bits, st->stack);
+            for (i=0;i<st->subframeSize;i++)
+               innov2[i]*=ener*(1/2.2);
+            for (i=0;i<st->subframeSize;i++)
+               exc[i] += innov2[i];
+            POP(st->stack);
+         }
+
          /*POP(st->stack);*/
       }
 
@@ -1063,8 +1093,10 @@ void nb_encoder_ctl(void *state, int request, void *ptr)
             st->submodeID = 4;
          else if (quality<=8)
             st->submodeID = 5;
-         else if (quality<=10)
+         else if (quality<=9)
             st->submodeID = 6;
+         else if (quality<=10)
+            st->submodeID = 7;
          else
             fprintf(stderr, "Unknown nb_ctl quality: %d\n", quality);
       }

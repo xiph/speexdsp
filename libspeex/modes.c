@@ -127,11 +127,12 @@ static split_cb_params split_cb_high_lbr = {
    5,               /*shape_bits*/
 };
 
-
+/* 2150 bps "vocoder-like" mode for comfort noise */
 static SpeexSubmode nb_submode1 = {
    0,
    1,
    1,
+   0,
    /* LSP quantization */
    lsp_quant_lbr,
    lsp_unquant_lbr,
@@ -147,7 +148,9 @@ static SpeexSubmode nb_submode1 = {
    43
 };
 
+/* 5.95 kbps very low bit-rate mode */
 static SpeexSubmode nb_submode2 = {
+   0,
    0,
    0,
    0,
@@ -167,11 +170,12 @@ static SpeexSubmode nb_submode2 = {
    119
 };
 
-
+/* 8 kbps low bit-rate mode */
 static SpeexSubmode nb_submode3 = {
    -1,
    0,
    1,
+   0,
    /*LSP quantization*/
    lsp_quant_lbr,
    lsp_unquant_lbr,
@@ -188,10 +192,12 @@ static SpeexSubmode nb_submode3 = {
    160
 };
 
+/* 11 kbps medium bit-rate mode */
 static SpeexSubmode nb_submode4 = {
    -1,
    0,
    1,
+   0,
    /*LSP quantization*/
    lsp_quant_lbr,
    lsp_unquant_lbr,
@@ -208,10 +214,12 @@ static SpeexSubmode nb_submode4 = {
    220
 };
 
+/* 15 kbps high bit-rate mode */
 static SpeexSubmode nb_submode5 = {
    -1,
    0,
    3,
+   0,
    /*LSP quantization*/
    lsp_quant_nb,
    lsp_unquant_nb,
@@ -228,10 +236,12 @@ static SpeexSubmode nb_submode5 = {
    300
 };
 
+/* 18.2 high bit-rate mode */
 static SpeexSubmode nb_submode6 = {
    -1,
    0,
    3,
+   0,
    /*LSP quantization*/
    lsp_quant_nb,
    lsp_unquant_nb,
@@ -248,6 +258,28 @@ static SpeexSubmode nb_submode6 = {
    364
 };
 
+/* 24.6 kbps high bit-rate mode */
+static SpeexSubmode nb_submode7 = {
+   -1,
+   0,
+   3,
+   1,
+   /*LSP quantization*/
+   lsp_quant_nb,
+   lsp_unquant_nb,
+   /*Pitch quantization*/
+   pitch_search_3tap,
+   pitch_unquant_3tap,
+   &ltp_params_nb,
+   /*Innovation quantization*/
+   split_cb_search_nogain,
+   split_cb_nogain_unquant,
+   &split_cb_nb,
+
+   0.65, 0.65, 0,
+   492
+};
+
 
 /* Default mode for narrowband */
 static SpeexNBMode nb_mode = {
@@ -262,7 +294,7 @@ static SpeexNBMode nb_mode = {
    .005,   /*lag_factor*/
    1.0001, /*lpc_floor*/
    0.0,    /*preemph*/
-   {NULL, &nb_submode1, &nb_submode2, &nb_submode3, &nb_submode4, &nb_submode5, &nb_submode6, NULL,
+   {NULL, &nb_submode1, &nb_submode2, &nb_submode3, &nb_submode4, &nb_submode5, &nb_submode6, &nb_submode7,
    NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL},
    5
 };
@@ -290,6 +322,7 @@ static SpeexSubmode wb_submode1 = {
    0,
    0,
    1,
+   0,
    /*LSP quantization*/
    lsp_quant_high,
    lsp_unquant_high,
@@ -311,6 +344,7 @@ static SpeexSubmode wb_submode2 = {
    0,
    0,
    1,
+   0,
    /*LSP quantization*/
    lsp_quant_high,
    lsp_unquant_high,
@@ -332,6 +366,7 @@ static SpeexSubmode wb_submode3 = {
    0,
    0,
    1,
+   0,
    /*LSP quantization*/
    lsp_quant_high,
    lsp_unquant_high,
@@ -348,6 +383,27 @@ static SpeexSubmode wb_submode3 = {
    192
 };
 
+static SpeexSubmode wb_submode4 = {
+   0,
+   0,
+   1,
+   1,
+   /*LSP quantization*/
+   lsp_quant_high,
+   lsp_unquant_high,
+   /*Pitch quantization*/
+   NULL,
+   NULL,
+   NULL,
+   /*Innovation quantization*/
+   split_cb_search_shape_sign,
+   split_cb_shape_sign_unquant,
+   &split_cb_high,
+
+   0, 0, -1,
+   352
+};
+
 
 /* Split-band wideband CELP mode*/
 SpeexSBMode sb_wb_mode = {
@@ -361,7 +417,7 @@ SpeexSBMode sb_wb_mode = {
    .002,   /*lag_factor*/
    1.0001, /*lpc_floor*/
    0.0,    /*preemph*/
-   {NULL, &wb_submode1, &wb_submode2, &wb_submode3, NULL, NULL, NULL, NULL},
+   {NULL, &wb_submode1, &wb_submode2, &wb_submode3, &wb_submode4, NULL, NULL, NULL},
    3
 };
 

@@ -70,9 +70,11 @@ unsigned int speex_bits_unpack_unsigned(SpeexBits *bits, int nbBits);
 
 int speex_bits_nbytes(SpeexBits *bits);
 
+unsigned int speex_bits_peek_unsigned(SpeexBits *bits, int nbBits);
+
 int speex_bits_peek(SpeexBits *bits);
 
-   void speex_bits_advance(SpeexBits *bits, int n);
+void speex_bits_advance(SpeexBits *bits, int n);
 
 #ifdef __cplusplus
 }

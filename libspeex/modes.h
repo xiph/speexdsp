@@ -59,6 +59,7 @@ typedef struct SpeexSubmode {
    int     lbr_pitch;
    int     forced_pitch_gain;
    int     have_subframe_gain;
+   int     double_codebook;
    /*LSP functions*/
    lsp_quant_func    lsp_quant;
    lsp_unquant_func  lsp_unquant;
