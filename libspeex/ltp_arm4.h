@@ -102,6 +102,25 @@ static void pitch_xcorr(const spx_word16_t *_x, const spx_word16_t *_y, spx_word
          spx_word32_t part1, part2, part3, part4, x0;
          spx_word32_t dead1;
          __asm__ __volatile__ (
+#ifdef SHORTCUTS
+               "\tldrsh %10, [%8], #2 \n"
+               "\tmul %4, %10, %0 \n"
+               "\tldrsh %15, [%8], #2 \n"
+               "\tmul %5, %10, %1 \n"
+               "\tldrsh %0, [%9], #2 \n"
+               "\tmul %6, %10, %2 \n"
+               "\tldrsh %1, [%9], #2 \n"
+               "\tmul %7, %10, %3 \n"
+               
+               
+               "\tmla %4, %15, %2, %4 \n"
+               "\tldrsh %2, [%9], #2 \n"
+               "\tmla %5, %15, %3, %5 \n"
+               "\tldrsh %3, [%9], #2 \n"
+               "\tmla %6, %15, %0, %6 \n"
+               "\tmla %7, %15, %1, %7 \n"
+
+#else
                "\tldrsh %10, [%8], #2 \n"
                "\tmul %4, %10, %0 \n"
                "\tmul %5, %10, %1 \n"
@@ -130,7 +149,7 @@ static void pitch_xcorr(const spx_word16_t *_x, const spx_word16_t *_y, spx_word
                "\tmla %7, %10, %2, %7 \n"
 
                "\tldrsh %3, [%9], #2 \n"
-
+#endif
 
                "\tldr %10, %11 \n"
                "\tldr %15, %12 \n"
