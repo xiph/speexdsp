@@ -29,7 +29,7 @@
 
 The Speex Codec Manual
 \newline 
-(draft)
+(draft for Speex 0.6.0)
 \layout Author
 
 Jean-Marc Valin
@@ -96,7 +96,9 @@ all trademarks are property of their respective owner
 Introduction to Speex
 \layout Standard
 
-Speex has been designed with the following goals in mind:
+The Speex project has been started because there was a need for a speech
+ codec that was open-source and free from software patents.
+ Speex has thus been designed with the following goals in mind:
 \layout Itemize
 
 No use of patented algorithms (e.g.
@@ -2548,10 +2550,48 @@ Formats and standards
 
 Speex can encode speech in both narrowband and wideband and provides different
  bit-rates.
- All modes of operation MUST be supported at the decoder and at least one
- MUST be supported by the encoder.
- The main reason is that not all platforms may be able to handle the complexity
- of encoding for all modes.
+ However not all features must be supported by a certain implementation
+ or device.
+ In order to be said 
+\begin_inset Quotes eld
+\end_inset 
+
+Speex compatible
+\begin_inset Quotes erd
+\end_inset 
+
+, an implementation must implement at least a basic set of features.
+\layout Standard
+
+At the minimum, all narrowband and wideband modes of operation MUST be supported
+ at the decoder.
+ For wideband, a decoder MAY either be able to decode all modes or be able
+ to decode the embedded narrowband part of all modes (which includes ignoring
+ the high-band bits).
+\layout Standard
+
+For encoders, at least one narrowband and one wideband mode MUST be supported.
+ Note that the wideband mode MAY be the 
+\begin_inset Quotes eld
+\end_inset 
+
+null highband
+\begin_inset Quotes erd
+\end_inset 
+
+ mode
+\begin_inset Foot
+collapsed true
+
+\layout Standard
+
+This can be done by appending 4 zero bits at the end of a narrowband frame
+\end_inset 
+
+.
+ The main reason why all encoding modes do not have to be supported is that
+ some platforms may not be able to handle the complexity of encoding in
+ some modes.
 \layout Subsection
 
 RTP Payload Format
@@ -2561,28 +2601,11 @@ Since Speex encoded frames already contain mode information, they can be
  sent without any other information in an RTP packet.
  If more than one frame is transmitted, no byte padding is performed at
  the end of frames, except the last one.
+ The number of frames contained in each packet MUST be transmitted out-of-band.
  
 \layout Subsection
 
 Ogg file format
-\layout Standard
-
-Speex bit-streams can be stored in Ogg files.
- In this case, the first packet of the Ogg file contains the Speex header
- (see speex_header.h for now) and the second packet contains a user-comment
- string (without terminating null).
- After the header and comment packets, next packets contain one or more
- (number found in header) Speex frames.
- The stream is terminated by a packet containing the string 
-\begin_inset Quotes eld
-\end_inset 
-
-END OF STREAM
-\begin_inset Quotes erd
-\end_inset 
-
- (without terminating null).
- 
 \layout Standard
 
 Speex bit-streams can be stored in Ogg files.
@@ -2624,10 +2647,14 @@ speex_version
 \emph on 
 beginning of stream
 \emph default 
- (b_o_s) flag is set to 1 for the header.
+ (
+\family typewriter 
+b_o_s
+\family default 
+) flag is set to 1 for the header.
  The header packet has 
 \family typewriter 
-packetno=1
+packetno=0
 \family default 
  and 
 \family typewriter 
@@ -2637,7 +2664,7 @@ granulepos=0
 \layout Standard
 
 The second packet contains a user-comment string, without terminating null.
- The content/format of comment is not defined.
+ The content/format of the comment string is not defined.
  This packet has 
 \family typewriter 
 packetno=1
@@ -2655,7 +2682,7 @@ The third and subsequant packets each contain one or more (number found
 \family typewriter 
 packetno
 \family default 
- starting from 3 and the 
+ starting from 2 and the 
 \family typewriter 
 granulepos
 \family default 
@@ -2671,7 +2698,24 @@ END OF STREAM
 \end_inset 
 
  (without terminating null).
- 
+ The the 
+\emph on 
+end of stream
+\emph default 
+ (
+\family typewriter 
+e_o_s
+\family default 
+) flag set to 1.
+ The decoder should rely on the 
+\family typewriter 
+e_o_s
+\family default 
+ flag and 
+\emph on 
+not
+\emph default 
+ the content of the packet.
 \layout Standard
 
 
@@ -3136,6 +3180,19 @@ clearpage
 
 \layout Section
 \start_of_appendix 
+FAQ
+\layout Subsection*
+
+Vorbis is open-source and patent-free, why not use it?
+\layout Standard
+
+Vorbis is a great project but its goals are not the same as Speex.
+ Vorbis is mostly aimed at compressing music and audio in general, while
+ Speex targets speech only.
+ For that reason Speex can achieve much better results than Vorbis on speech,
+ typically 2-4 times higher compression at equal quality.
+\layout Section
+
 GNU Free Documentation License
 \layout Standard
 
