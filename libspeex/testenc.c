@@ -13,7 +13,7 @@ int main(int argc, char **argv)
    short out_short[FRAME_SIZE];
    float in_float[FRAME_SIZE];
    float out_float[FRAME_SIZE];
-   float sigpow,errpow,snr, seg_snr;
+   float sigpow,errpow,snr, seg_snr=0;
    int snr_frames = 0;
    char cbits[200];
    int nbBits;
