@@ -30,6 +30,8 @@ int main(int argc, char **argv)
    speex_encoder_ctl(st, SPEEX_SET_VBR, &tmp);
    tmp=10;
    speex_encoder_ctl(st, SPEEX_SET_QUALITY, &tmp);
+   tmp=3;
+   speex_encoder_ctl(st, SPEEX_SET_COMPLEXITY, &tmp);
    
    if (argc != 4 && argc != 3)
    {

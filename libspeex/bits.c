@@ -22,10 +22,25 @@
 #include "speex_bits.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include "misc.h"
 
 void speex_bits_init(SpeexBits *bits)
 {
    int i;
+   bits->bytes = speex_alloc(MAX_BYTES_PER_FRAME);
+
+   for (i=0;i<MAX_BYTES_PER_FRAME;i++)
+      bits->bytes[i]=0;
+   bits->nbBits=0;
+   bits->bytePtr=0;
+   bits->bitPtr=0;
+}
+
+void speex_bits_init_buffer(SpeexBits *bits, void *buff)
+{
+   int i;
+   bits->bytes = buff;
+
    for (i=0;i<MAX_BYTES_PER_FRAME;i++)
       bits->bytes[i]=0;
    bits->nbBits=0;
@@ -35,6 +50,7 @@ void speex_bits_init(SpeexBits *bits)
 
 void speex_bits_destroy(SpeexBits *bits)
 {
+   speex_free(bits->bytes);
    /* Will do something once the allocation is dynamic */
 }
 

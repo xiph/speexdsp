@@ -266,9 +266,25 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
       syn_filt(st->exc, st->bw_lpc2, st->sw, st->frameSize, st->lpcSize);
       
       /*Open-loop pitch*/
-      open_loop_nbest_pitch(st->sw, st->min_pitch, st->max_pitch, st->frameSize, 
-                            &ol_pitch, &ol_pitch_coef, 1, st->stack);
-
+      {
+         int nol_pitch[4];
+         float nol_pitch_coef[4];
+         open_loop_nbest_pitch(st->sw, st->min_pitch, st->max_pitch, st->frameSize, 
+                               nol_pitch, nol_pitch_coef, 4, st->stack);
+         ol_pitch=nol_pitch[0];
+         ol_pitch_coef = nol_pitch_coef[0];
+         for (i=1;i<4;i++)
+         {
+            if ((nol_pitch_coef[i] > .85*ol_pitch_coef) && 
+                (fabs(2*nol_pitch[i]-ol_pitch)<=2 || fabs(3*nol_pitch[i]-ol_pitch)<=4 || 
+                 fabs(4*nol_pitch[i]-ol_pitch)<=6 || fabs(5*nol_pitch[i]-ol_pitch)<=8))
+            {
+               /*ol_pitch_coef=nol_pitch_coef[i];*/
+               ol_pitch = nol_pitch[i];
+            }
+         }
+         printf ("ol_pitch: %d %f\n", ol_pitch, ol_pitch_coef);
+      }
       /*Compute "real" excitation*/
       residue(st->frame, st->interp_lpc, st->exc, st->frameSize, st->lpcSize);
 
@@ -547,7 +563,7 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
          
          ener /= ol_gain;
 
-         if (1)
+         if (0)
             printf ("ener: %f %f %f\n", ener, ol_gain, ol_pitch_coef);
 
          if (SUBMODE(have_subframe_gain)) 
@@ -923,11 +939,28 @@ void nb_decode(void *state, SpeexBits *bits, float *out, int lost)
             /*Fixed codebook contribution*/
             SUBMODE(innovation_unquant)(innov, SUBMODE(innovation_params), st->subframeSize, bits, st->stack);
          } else {
+#if 1
             float scale;
             scale = 3*sqrt(1.2-ol_pitch_coef);
             for (i=0;i<st->subframeSize;i++)
                innov[i] = scale*((((float)rand())/RAND_MAX)-.5);
-            
+#else
+            static int tim=0;
+            float pitch_scale, noise_scale;
+            float voice=ol_pitch_coef;
+            if (voice>.9)
+               voice=.9;
+            noise_scale = sqrt(1.01-voice);
+            pitch_scale = sqrt(ol_pitch*voice); 
+            for (i=0;i<st->subframeSize;i++)
+               innov[i] = 3*noise_scale*((((float)rand())/RAND_MAX)-.5);
+            while (tim<st->subframeSize)
+            {
+               innov[tim] += pitch_scale;
+               tim+=ol_pitch;
+            }
+            tim-=st->subframeSize;
+#endif
          }
 
          if (st->count_lost)

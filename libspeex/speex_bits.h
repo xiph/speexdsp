@@ -30,7 +30,7 @@ extern "C" {
 
 /** Bit-packing data structure representing (part of) a bit-stream. */
 typedef struct SpeexBits {
-   char bytes[MAX_BYTES_PER_FRAME];
+   char *bytes;
    int  nbBits;
    int  bytePtr;
    int  bitPtr;
@@ -38,6 +38,9 @@ typedef struct SpeexBits {
 
 /** Initializes and allocates resources for a SpeexBits struct */
 void speex_bits_init(SpeexBits *bits);
+
+/** Initializes SpeexBits struct using a pre-allocated buffer*/
+void speex_bits_init_buffer(SpeexBits *bits, void *buff);
 
 /** Frees all resources assiociated to a SpeexBits struct. Right now this does nothing since no resources are allocated, but this could change in the future.*/
 void speex_bits_destroy(SpeexBits *bits);
