@@ -251,19 +251,22 @@ void encode(EncState *st, float *in, int *outSize, void *bits)
          exc[i]=0;
 
       /* Compute zero response of A(z/g1) / ( A(z/g2) * Aq(z) ) */
+#if 0
       residue(exc, st->bw_lpc1, exc, st->subframeSize, st->lpcSize);
       syn_filt_mem(exc, st->interp_qlpc, res, st->subframeSize, st->lpcSize, st->mem3);
-      syn_filt_mem(exc, st->bw_lpc2, exc, st->subframeSize, st->lpcSize, st->mem4);
-
+#else
+      for (i=0;i<st->lpcSize;i++)
+         st->mem4[i]=st->mem5[i];
+      syn_filt_mem(exc, st->interp_qlpc, exc, st->subframeSize, st->lpcSize, st->mem4);
+      for (i=0;i<st->lpcSize;i++)
+         st->mem4[i]=st->mem5[i];
+      residue_mem(exc, st->bw_lpc1, res, st->subframeSize, st->lpcSize, st->mem4);
+#endif
 
       /* Compute weighted signal */
       residue_mem(sp, st->bw_lpc1, sw, st->subframeSize, st->lpcSize, st->mem1);
       for (i=0;i<st->lpcSize;i++)
         st->mem3[i]=sw[st->subframeSize-i-1];
-      syn_filt_mem(sw, st->bw_lpc2, sw, st->subframeSize, st->lpcSize, st->mem2);
-      for (i=0;i<st->lpcSize;i++)
-        st->mem4[i]=sw[st->subframeSize-i-1];
-
 
       /* Compute target signal */
       for (i=0;i<st->subframeSize;i++)
@@ -300,23 +303,18 @@ void encode(EncState *st, float *in, int *outSize, void *bits)
 
       /* Perform stochastic codebook search */
 
-#if 1 /* We're cheating: computing excitation directly from target */
+#if 0 /* We're cheating: computing excitation directly from target */
       residue_zero(target, st->interp_qlpc, exc, st->subframeSize, st->lpcSize);
-      residue_zero(target, st->bw_lpc2, exc, st->subframeSize, st->lpcSize);
       syn_filt_zero(exc, st->bw_lpc1, exc, st->subframeSize, st->lpcSize);
-      
+#else
+      syn_filt_zero(target, st->bw_lpc1, res, st->subframeSize, st->lpcSize);
+      residue_zero(res, st->interp_qlpc, exc, st->subframeSize, st->lpcSize);
 #endif
 
       /* Final signal synthesis from excitation */
       syn_filt_mem(exc, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, st->mem5);
 
       /* Compute weighted signal again, from synthesized speech (not sure it the right thing) */
-      /*residue_mem(sp, st->bw_lpc1, sw, st->subframeSize, st->lpcSize, st->mem6);
-      for (i=0;i<st->lpcSize;i++)
-        st->mem3[i]=sw[st->subframeSize-i-1];
-      syn_filt_mem(sw, st->bw_lpc2, sw, st->subframeSize, st->lpcSize, st->mem6);
-      for (i=0;i<st->lpcSize;i++)
-      st->mem4[i]=sw[st->subframeSize-i-1];*/
 
    }
 
