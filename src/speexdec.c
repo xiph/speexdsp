@@ -658,8 +658,9 @@ int main(int argc, char **argv)
       fprintf (stderr, "This doesn't look like a Speex file\n");
    }
    speex_bits_destroy(&bits);
+   if (stream_init)
+      ogg_stream_clear(&os);
    ogg_sync_clear(&oy);
-   ogg_stream_clear(&os);
 
 #if defined WIN32 || defined _WIN32
    if (fout && strlen(outFile)==0)
