@@ -36,7 +36,7 @@
 #define MISC_H
 
 #ifndef VERSION
-#define VERSION "speex-1.0rc3"
+#define VERSION "speex-1.0.0"
 #endif
 
 /*Disable some warnings on VC++*/
