@@ -133,9 +133,8 @@ float speex_rand(float std)
    return 3*std*((((float)rand())/RAND_MAX)-.5);
 }
 
-float _speex_putc(int ch, void *file)
+void _speex_putc(int ch, void *file)
 {
    FILE *f = (FILE *)file;
    fputc(ch, f);
-
 }

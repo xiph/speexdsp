@@ -69,6 +69,6 @@ void speex_rand_vec(float std, float *data, int len);
 
 float speex_rand(float std);
 
-float _speex_putc(int ch, void *file);
+void _speex_putc(int ch, void *file);
 
 #endif
