@@ -93,6 +93,10 @@ SOURCE=..\..\libspeex\cb_search.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\libspeex\exc_20_32_table.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\libspeex\exc_10_16_table.c
 # End Source File
 # Begin Source File
