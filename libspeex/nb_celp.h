@@ -74,6 +74,7 @@ typedef struct EncState {
    float *rc;             /* Reflection coefficients */
    float *mem_sp, *mem_sw;
    float *dmem1, *dmem2;
+   float  st_pitch, lt_pitch;
    float *pi_gain;
    VBRState *vbr;
 

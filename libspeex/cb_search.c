@@ -29,20 +29,6 @@
 #define min(a,b) ((a) < (b) ? (a) : (b))
 #define max(a,b) ((a) > (b) ? (a) : (b))
 
-
-static float scal_gains4[16] = {
-   0.27713,
-   0.49282,
-   0.69570,
-   0.90786,
-   1.14235,
-   1.42798,
-   1.80756,
-   2.42801
-};
-
-
-
 void split_cb_search_nogain(
 float target[],			/* target vector */
 float ak[],			/* LPCs for this subframe */

@@ -121,7 +121,8 @@ void *nb_encoder_init(SpeexMode *m)
    st->interp_qlsp = malloc(st->lpcSize*sizeof(float));
    st->rc = malloc(st->lpcSize*sizeof(float));
    st->first = 1;
-   
+
+   st->st_pitch = st->lt_pitch = 0;
    st->mem_sp = calloc(st->lpcSize, sizeof(float));
    st->mem_sw = calloc(st->lpcSize, sizeof(float));
 
@@ -190,21 +191,6 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
 
    st=state;
    
-   if (st->vbr)
-      vbr_qual = vbr_analysis(st->vbr, in, st->frameSize);
-   if (0) {
-      int qual = (int)floor(8+1*vbr_qual+.5);
-      if (qual<0)
-         qual=0;
-      if (qual>10)
-         qual=10;
-      speex_encoder_ctl(state, SPEEX_SET_QUALITY, &qual);
-   }
-   printf ("VBR quality = %f\n", vbr_qual);
-
-   /* First, transmit the sub-mode we use for this frame */
-   speex_bits_pack(bits, st->submodeID, NB_SUBMODE_BITS);
-
    /* Copy new data in input buffer */
    memmove(st->inBuf, st->inBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(float));
    st->inBuf[st->bufSize-st->frameSize] = in[0] - st->preemph*st->pre_mem;
@@ -246,31 +232,21 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
       st->lsp[i] = acos(st->lsp[i]);
    /*print_vec(st->lsp, 10, "LSP:");*/
    /* LSP Quantization */
-#if 1
-   SUBMODE(lsp_quant)(st->lsp, st->qlsp, st->lpcSize, bits);
-#else
-   for (i=0;i<st->lpcSize;i++)
-     st->qlsp[i]=st->lsp[i];
-#endif
-
-   /* Special case for first frame */
    if (st->first)
    {
       for (i=0;i<st->lpcSize;i++)
          st->old_lsp[i] = st->lsp[i];
-      for (i=0;i<st->lpcSize;i++)
-         st->old_qlsp[i] = st->qlsp[i];
    }
 
 
-   /* Whole frame analysis (some open-loop estimations) */
+   /* Whole frame analysis (open-loop estimation of pitch and excitation gain) */
    {
       for (i=0;i<st->lpcSize;i++)
          st->interp_lsp[i] = .5*st->old_lsp[i] + .5*st->lsp[i];
 
       lsp_enforce_margin(st->interp_lsp, st->lpcSize, .002);
 
-      /* Compute interpolated LPCs (unquantized) */
+      /* Compute interpolated LPCs (unquantized) for whole frame*/
       for (i=0;i<st->lpcSize;i++)
          st->interp_lsp[i] = cos(st->interp_lsp[i]);
       lsp_to_lpc(st->interp_lsp, st->interp_lpc, st->lpcSize,st->stack);
@@ -281,13 +257,13 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
       residue(st->frame, st->bw_lpc1, st->exc, st->frameSize, st->lpcSize);
       syn_filt(st->exc, st->bw_lpc2, st->sw, st->frameSize, st->lpcSize);
       
-      if (SUBMODE(lbr_pitch) && SUBMODE(ltp_params))
-      {
-         open_loop_nbest_pitch(st->sw, st->min_pitch, st->max_pitch, st->frameSize, &ol_pitch, 1, st->stack);
-         speex_bits_pack(bits, ol_pitch-st->min_pitch, 7);
-      } else 
-         ol_pitch = 0;
+      /*Open-loop pitch*/
+      open_loop_nbest_pitch(st->sw, st->min_pitch, st->max_pitch, st->frameSize, 
+                            &ol_pitch, &st->st_pitch, 1, st->stack);
+      st->lt_pitch = .6*st->lt_pitch + .4*st->st_pitch;
+      printf ("st_pitch = %f\n", st->st_pitch);
 
+      /*Compute "real" excitation*/
       residue(st->frame, st->interp_lpc, st->exc, st->frameSize, st->lpcSize);
 
       /* Compute open-loop excitation gain */
@@ -296,19 +272,55 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
          ol_gain += st->exc[i]*st->exc[i];
       
       ol_gain=sqrt(1+ol_gain/st->frameSize);
+   }
 
-      /* Quantize open-loop gain */
-      /*printf ("ol_gain: %f\n", ol_gain);*/
-      if (1) {
-         int qe = (int)(floor(3.5*log(ol_gain)));
-         if (qe<0)
-            qe=0;
-         if (qe>31)
-            qe=31;
-         ol_gain = exp(qe/3.5);
-         speex_bits_pack(bits, qe, 5);
-      }
+   /*Experimental VBR stuff*/
+   if (st->vbr)
+      vbr_qual = vbr_analysis(st->vbr, in, st->frameSize);
+   if (0) {
+      int qual = (int)floor(8+1*vbr_qual+.5);
+      if (qual<0)
+         qual=0;
+      if (qual>10)
+         qual=10;
+      speex_encoder_ctl(state, SPEEX_SET_QUALITY, &qual);
+   }
+   printf ("VBR quality = %f\n", vbr_qual);
 
+   /* First, transmit the sub-mode we use for this frame */
+   speex_bits_pack(bits, st->submodeID, NB_SUBMODE_BITS);
+
+
+   /*Quantize LSPs*/
+#if 1 /*0 for unquantized*/
+   SUBMODE(lsp_quant)(st->lsp, st->qlsp, st->lpcSize, bits);
+#else
+   for (i=0;i<st->lpcSize;i++)
+     st->qlsp[i]=st->lsp[i];
+#endif
+
+   /*If we use low bit-rate pitch mode, transmit open-loop pitch*/
+   if (SUBMODE(lbr_pitch) && SUBMODE(ltp_params))
+   {
+      speex_bits_pack(bits, ol_pitch-st->min_pitch, 7);
+   }
+   
+   /*Quantize and transmit open-loop excitation gain*/
+   {
+      int qe = (int)(floor(3.5*log(ol_gain)));
+      if (qe<0)
+         qe=0;
+      if (qe>31)
+         qe=31;
+      ol_gain = exp(qe/3.5);
+      speex_bits_pack(bits, qe, 5);
+   }
+
+   /* Special case for first frame */
+   if (st->first)
+   {
+      for (i=0;i<st->lpcSize;i++)
+         st->old_qlsp[i] = st->qlsp[i];
    }
 
    /* Loop on sub-frames */

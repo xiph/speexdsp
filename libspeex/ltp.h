@@ -27,7 +27,7 @@ typedef struct ltp_params {
 } ltp_params;
 
 
-void open_loop_nbest_pitch(float *sw, int start, int end, int len, int *pitch, int N, float *stack);
+void open_loop_nbest_pitch(float *sw, int start, int end, int len, int *pitch, float *gain, int N, float *stack);
 
 
 /** Finds the best quantized 3-tap pitch predictor by analysis by synthesis */

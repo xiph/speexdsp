@@ -27,23 +27,26 @@
 #define abs(x) ((x)<0 ? -(x) : (x))
 
 
-void open_loop_nbest_pitch(float *sw, int start, int end, int len, int *pitch, int N, float *stack)
+void open_loop_nbest_pitch(float *sw, int start, int end, int len, int *pitch, float *gain, int N, float *stack)
 {
    int i,j,k;
    float corr;
    float energy;
    float score, *best_score;
+   float e0;
 
    best_score = PUSH(stack,N);
    for (i=0;i<N;i++)
         best_score[i]=-1;
    energy=xcorr(sw-start, sw-start, len);
+   e0=xcorr(sw, sw, len);
    for (i=start;i<=end;i++)
    {
       corr=xcorr(sw, sw-i, len);
       score=corr*corr/(energy+1);
       if (score>best_score[N-1])
       {
+         float g = sqrt(corr*corr/((energy+10)*(e0+10)));
          for (j=0;j<N;j++)
          {
             if (score > best_score[j])
@@ -52,9 +55,11 @@ void open_loop_nbest_pitch(float *sw, int start, int end, int len, int *pitch, i
                {
                   best_score[k]=best_score[k-1];
                   pitch[k]=pitch[k-1];
+                  gain[k] = gain[k-1];
                }
                best_score[j]=score;
                pitch[j]=i;
+               gain[j]=g;
                break;
             }
          }
@@ -276,13 +281,16 @@ float *exc2
    float err, best_err=-1;
    int N=3;
    ltp_params *params;
-   int *nbest=(int*)PUSH(stack, N);
+   int *nbest;
+   float *gains;
+   nbest=(int*)PUSH(stack, N);
+   gains = PUSH(stack, N);
    params = (ltp_params*) par;
    
    best_exc=PUSH(stack,nsf);
    
    
-   open_loop_nbest_pitch(sw, start, end, nsf, nbest, N, stack);
+   open_loop_nbest_pitch(sw, start, end, nsf, nbest, gains, N, stack);
    for (i=0;i<N;i++)
    {
       pitch=nbest[i];
@@ -309,7 +317,7 @@ float *exc2
 
    POP(stack);
    POP(stack);
-
+   POP(stack);
    return pitch;
 }
 
