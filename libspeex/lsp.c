@@ -430,7 +430,7 @@ void lsp_to_lpc(spx_lsp_t *freq,spx_coef_t *ak,int lpcrdr, char *stack)
     /* initialise contents of array */
 
     for(i=0;i<=4*m+1;i++){       	/* set contents of buffer to 0 */
-	*pw++ = 0.0;
+	*pw++ = 0;
     }
 
     /* Set pointers up */
@@ -471,8 +471,8 @@ void lsp_to_lpc(spx_lsp_t *freq,spx_coef_t *ak,int lpcrdr, char *stack)
 	*(n4+1) = xin1;
 	*(n4+2) = xin2;
 
-	xin1 = 0.0;
-	xin2 = 0.0;
+	xin1 = 0;
+	xin2 = 0;
     }
 }
 #else
