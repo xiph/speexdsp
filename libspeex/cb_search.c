@@ -238,7 +238,7 @@ int   complexity
             /*compute error (distance)*/
             err=odist[j];
             for (m=i*subvect_size;m<(i+1)*subvect_size;m++)
-               err += t[m]*t[m];
+               err = MAC16_16(err, t[m],t[m]);
             /*update n-best list*/
             if (err<ndist[N-1] || ndist[N-1]<-1)
             {

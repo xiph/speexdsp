@@ -380,7 +380,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
 
       } else {
 #endif
-         ol_gain = SHL(compute_rms(st->exc, st->frameSize),SIG_SHIFT);
+         ol_gain = SHL((spx_word32_t)compute_rms(st->exc, st->frameSize),SIG_SHIFT);
 #ifdef EPIC_48K
       }
 #endif
@@ -803,7 +803,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
          
          residue_percep_zero(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2, st->buf2, st->subframeSize, st->lpcSize, stack);
 
-         ener = SHL(compute_rms(st->buf2, st->subframeSize),SIG_SHIFT);
+         ener = SHL((spx_word32_t)compute_rms(st->buf2, st->subframeSize),SIG_SHIFT);
 
          /*for (i=0;i<st->subframeSize;i++)
             printf ("%f\n", st->buf2[i]/ener);

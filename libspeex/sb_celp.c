@@ -565,6 +565,21 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
 
          /* Gain to use if we want to use the low-band excitation for high-band */
          g=eh/(.01+el);
+         
+#if 0
+         {
+            char *tmp_stack=stack;
+            float *tmp_sig;
+            float g2;
+            tmp_sig = PUSH(tmp_stack, st->subframeSize, spx_sig_t);
+            for (i=0;i<st->lpcSize;i++)
+               mem[i]=st->mem_sp[i];
+            iir_mem2(low_innov+offset, st->interp_qlpc, tmp_sig, st->subframeSize, st->lpcSize, mem);
+            g2 = compute_rms(sp, st->subframeSize)/(.01+compute_rms(tmp_sig, st->subframeSize));
+            /*fprintf (stderr, "gains: %f %f\n", g, g2);*/
+            g = g2;
+         }
+#endif
 
 #ifdef FIXED_POINT
          g *= filter_ratio/128.;
