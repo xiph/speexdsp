@@ -326,7 +326,7 @@ float *stack
 
 
 /** Finds the best quantized 3-tap pitch predictor by analysis by synthesis */
-int pitch_search_3tap(
+float pitch_gain_search_3tap(
 float target[],                 /* Target vector */
 float *sw,
 float ak[],                     /* LPCs for this subframe */
@@ -334,13 +334,13 @@ float awk1[],                   /* Weighted LPCs #1 for this subframe */
 float awk2[],                   /* Weighted LPCs #2 for this subframe */
 float exc[],                    /* Excitation */
 void *par,
-int   start,                    /* Smallest pitch value allowed */
-int   end,                      /* Largest pitch value allowed */
+int   pitch,                    /* Pitch value */
 int   p,                        /* Number of LPC coeffs */
 int   nsf,                      /* Number of samples in subframe */
 FrameBits *bits,
 float *stack,
-float *exc2
+float *exc2,
+int  *cdbk_index
 )
 {
    int i,j;
@@ -350,7 +350,7 @@ float *exc2
    float corr[3];
    float A[3][3];
    float gain[3];
-   int   pitch, gain_cdbk_size;
+   int   gain_cdbk_size;
    float *gain_cdbk;
    ltp_params *params;
    params = (ltp_params*) par;
@@ -366,18 +366,6 @@ float *exc2
    e[0]=tmp2;
    e[1]=tmp2+nsf;
    e[2]=tmp2+2*nsf;
-
-   /* Perform closed-loop 1-tap search*/
-   /* FIXME: Should better handle short (<nsf) pitch periods*/
-   overlap_cb_search(target, ak, awk1, awk2,
-                     &exc2[-end], end-start+1, gain, &pitch, p,
-                     nsf, stack);
-   /* Real pitch value */
-   pitch=end-pitch;
-
-   open_loop_pitch(sw, start, end, nsf, &pitch);
-
-   
    
    for (i=0;i<3;i++)
    {
@@ -437,15 +425,15 @@ float *exc2
       gain[0] = gain_cdbk[best_cdbk*12];
       gain[1] = gain_cdbk[best_cdbk*12+1];
       gain[2] = gain_cdbk[best_cdbk*12+2];
-      frame_bits_pack(bits,pitch-start,params->pitch_bits);
-      frame_bits_pack(bits,best_cdbk,params->gain_bits);
 
+      *cdbk_index=best_cdbk;
    }
    
    for (i=0;i<nsf;i++)
       exc[i]=gain[0]*e[2][i]+gain[1]*e[1][i]+gain[2]*e[0][i];
 #ifdef DEBUG
    printf ("3-tap pitch = %d, gains = [%f %f %f]\n",pitch, gain[0], gain[1], gain[2]);
+#endif
    {
       float tmp1=0,tmp2=0;
       for (i=0;i<nsf;i++)
@@ -453,9 +441,82 @@ float *exc2
       for (i=0;i<nsf;i++)
          tmp2+=(target[i]-gain[2]*x[0][i]-gain[1]*x[1][i]-gain[0]*x[2][i])
          * (target[i]-gain[2]*x[0][i]-gain[1]*x[1][i]-gain[0]*x[2][i]);
+#ifdef DEBUG
       printf ("prediction gain = %f\n",tmp1/(tmp2+1));
-   }
 #endif
+      return tmp2;
+   }
+}
+
+
+/** Finds the best quantized 3-tap pitch predictor by analysis by synthesis */
+int pitch_search_3tap(
+float target[],                 /* Target vector */
+float *sw,
+float ak[],                     /* LPCs for this subframe */
+float awk1[],                   /* Weighted LPCs #1 for this subframe */
+float awk2[],                   /* Weighted LPCs #2 for this subframe */
+float exc[],                    /* Excitation */
+void *par,
+int   start,                    /* Smallest pitch value allowed */
+int   end,                      /* Largest pitch value allowed */
+int   p,                        /* Number of LPC coeffs */
+int   nsf,                      /* Number of samples in subframe */
+FrameBits *bits,
+float *stack,
+float *exc2
+)
+{
+   int i,j;
+   int cdbk_index, pitch, ol_pitch;
+   float *best_exc;
+   int best_pitch=0;
+   float err, best_err=-1;
+   int N=0;
+
+   best_exc=PUSH(stack,nsf);
+
+   open_loop_pitch(sw, start, nsf, nsf, &ol_pitch);
+
+   for (pitch=ol_pitch-N; pitch<=ol_pitch+N; pitch++)
+   {
+      for (j=0;j<nsf;j++)
+         exc[j]=0;
+      err=pitch_gain_search_3tap(target, sw, ak, awk1, awk2, exc, par, pitch, p, nsf,
+                             bits, stack, exc2, &cdbk_index);
+      if (err<best_err || best_err<0)
+      {
+         for (j=0;j<nsf;j++)
+            best_exc[j]=exc[j];
+         best_err=err;
+         best_pitch=pitch;
+      }
+   }
+
+
+   open_loop_pitch(sw, nsf, end, nsf, &ol_pitch);
+
+   for (pitch=ol_pitch-N; pitch<=ol_pitch+N; pitch++)
+   {
+      for (j=0;j<nsf;j++)
+         exc[j]=0;
+      err=pitch_gain_search_3tap(target, sw, ak, awk1, awk2, exc, par, pitch, p, nsf,
+                             bits, stack, exc2, &cdbk_index);
+      if (err<best_err || best_err<0)
+      {
+         for (j=0;j<nsf;j++)
+            best_exc[j]=exc[j];
+         best_err=err;
+         best_pitch=pitch;
+      }
+   }
+
+
+
+   for (i=0;i<nsf;i++)
+      exc[i]=best_exc[i];
+
+   POP(stack);
    return pitch;
 }
 
