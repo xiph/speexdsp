@@ -74,7 +74,7 @@ int oe_write_page(ogg_page *page, FILE *fp)
 int read_samples(FILE *fin,int frame_size, int bits, int channels, int lsb, float * input)
 {   
    unsigned char in[MAX_FRAME_BYTES*2];
-   int i,d;
+   int i;
    short *s;
 
    /*Read input audio*/
@@ -101,18 +101,6 @@ int read_samples(FILE *fin,int frame_size, int bits, int channels, int lsb, floa
       }
    }
 
-#if 0
-   if(channels==2)
-   {
-      /* downmix to mono */
-      for(i=0;i<frame_size;i++)
-      {
-         d=s[i*2]+s[i*2+1];
-         s[i]=d>>1;
-      }
-   }
-#endif
-
    /* copy to float input buffer */
    for (i=0;i<frame_size*channels;i++)
    {
@@ -122,27 +110,31 @@ int read_samples(FILE *fin,int frame_size, int bits, int channels, int lsb, floa
    return 0;
 }
 
+void version()
+{
+   printf ("speexenc (Speex encoder) version " VERSION " (compiled " __DATE__ ")\n");
+   printf ("Copyright (C) 2002 Jean-Marc Valin\n");
+}
+
 void usage()
 {
-   /*printf ("Speex encoder version " VERSION " (compiled " __DATE__ ")\n");
-   printf ("\n");*/
    printf ("Usage: speexenc [options] input_file output_file\n");
    printf ("\n");
    printf ("Encodes input_file using Speex. It can read the WAV or raw files.\n");
    printf ("\n");
    printf ("input_file can be:\n");
-   printf ("  filename.wav          wav file\n");
-   printf ("  filename.*            raw PCM file (any extension other than .wav)\n");
-   printf ("  -                     stdin\n");
+   printf ("  filename.wav      wav file\n");
+   printf ("  filename.*        Raw PCM file (any extension other than .wav)\n");
+   printf ("  -                 stdin\n");
    printf ("\n");  
    printf ("output_file can be:\n");
-   printf ("  filename.spx          Speex file\n");
-   printf ("  -                     stdout\n");
+   printf ("  filename.spx      Speex file\n");
+   printf ("  -                 stdout\n");
    printf ("\n");  
    printf ("Options:\n");
    printf (" -n, --narrowband   Narrowband (8 kHz) input file\n"); 
    printf (" -w, --wideband     Wideband (16 kHz) input file\n"); 
-   printf (" -u, --ultra-wideband \"Ultra-Wideband\" (32 kHz) input file\n"); 
+   printf (" -u, --ultra-wideband \"Ultra-wideband\" (32 kHz) input file\n"); 
    printf (" --quality n        Encoding quality (0-10), default 3\n"); 
    printf (" --vbr              Enable variable bit-rate (VBR)\n"); 
    printf (" --comp n           Set encoding complexity (0-10), default 3\n"); 
@@ -154,11 +146,12 @@ void usage()
    printf (" -v, --version      Version information\n"); 
    printf (" -V                 Verbose mode (show bit-rate)\n"); 
    printf ("Raw input options:\n");
+   printf (" --rate             Sampling rate for raw input\n"); 
    printf (" --le               Raw input is little-endian\n"); 
    printf (" --be               Raw input is big-endian\n"); 
    printf (" --8bit             Raw input is 8-bit unsigned\n"); 
    printf (" --16bit            Raw input is 16-bit signed\n"); 
-   printf (" --stereo           Consider input as stereo\n"); 
+   printf (" --stereo           Consider raw input as stereo\n"); 
    printf ("Default raw PCM input is 16-bit, little-endian, mono\n"); 
    printf ("\n");
    printf ("More information is available from the Speex site: http://www.speex.org\n");
@@ -166,16 +159,11 @@ void usage()
    printf ("Please report bugs to the mailing list `speex-dev@xiph.org'.\n");
 }
 
-void version()
-{
-   printf ("Speex encoder version " VERSION " (compiled " __DATE__ ")\n");
-}
 
 int main(int argc, char **argv)
 {
    int c;
    int option_index = 0;
-   int narrowband=0, wideband=0, ultrawide=0;
    char *inFile, *outFile;
    FILE *fin, *fout;
    float input[MAX_FRAME_SIZE];
@@ -201,6 +189,7 @@ int main(int argc, char **argv)
       {"lin8", no_argument, NULL, 0},
       {"lin16", no_argument, NULL, 0},
       {"stereo", no_argument, NULL, 0},
+      {"rate", required_argument, NULL, 0},
       {"version", no_argument, NULL, 0},
       {"comment", required_argument, NULL, 0},
       {"author", required_argument, NULL, 0},
@@ -208,7 +197,7 @@ int main(int argc, char **argv)
       {0, 0, 0, 0}
    };
    int print_bitrate=0;
-   int rate, size;
+   int rate=0, size;
    int chan=1;
    int fmt=16;
    int quality=-1;
@@ -242,14 +231,18 @@ int main(int argc, char **argv)
       {
       case 0:
          if (strcmp(long_options[option_index].name,"narrowband")==0)
-            narrowband=1;
-         else if (strcmp(long_options[option_index].name,"wideband")==0)
-               wideband=1;
-         else if (strcmp(long_options[option_index].name,"ultra-wideband")==0)
-               ultrawide=1;
-         else if (strcmp(long_options[option_index].name,"vbr")==0)
-               vbr_enabled=1;
-         else if (strcmp(long_options[option_index].name,"quality")==0)
+         {
+            mode=&speex_nb_mode;
+         } else if (strcmp(long_options[option_index].name,"wideband")==0)
+         {
+            mode=&speex_wb_mode;
+         } else if (strcmp(long_options[option_index].name,"ultra-wideband")==0)
+         {
+            mode=&speex_uwb_mode;
+         } else if (strcmp(long_options[option_index].name,"vbr")==0)
+         {
+            vbr_enabled=1;
+         } else if (strcmp(long_options[option_index].name,"quality")==0)
          {
             quality = atoi (optarg);
             vbr_quality=atof(optarg);
@@ -286,6 +279,9 @@ int main(int argc, char **argv)
          } else if (strcmp(long_options[option_index].name,"stereo")==0)
          {
             chan=2;
+         } else if (strcmp(long_options[option_index].name,"rate")==0)
+         {
+            rate=atoi (optarg);
          } else if (strcmp(long_options[option_index].name,"comment")==0)
          {
            comment_add(&comments, &comments_length, NULL, optarg); 
@@ -299,7 +295,7 @@ int main(int argc, char **argv)
 
          break;
       case 'n':
-         narrowband=1;
+         mode=&speex_nb_mode;
          break;
       case 'h':
          usage();
@@ -313,10 +309,10 @@ int main(int argc, char **argv)
          print_bitrate=1;
          break;
       case 'w':
-         wideband=1;
+         mode=&speex_wb_mode;
          break;
       case 'u':
-         ultrawide=1;
+         mode=&speex_uwb_mode;
          break;
       case '?':
          usage();
@@ -331,12 +327,6 @@ int main(int argc, char **argv)
    }
    inFile=argv[optind];
    outFile=argv[optind+1];
-
-   if ((wideband && narrowband) || (wideband && ultrawide) || (ultrawide && narrowband))
-   {
-      fprintf (stderr,"Cannot specify two modes at the same time\n");
-      exit(1);
-   };
 
    /*Initialize Ogg stream struct*/
    srand(time(NULL));
@@ -368,76 +358,51 @@ int main(int argc, char **argv)
       close_in=1;
    }
 
-   rate=0;
    if (strcmp(inFile+strlen(inFile)-4,".wav")==0 || strcmp(inFile+strlen(inFile)-4,".WAV")==0)
-      {
-         if (read_wav_header(fin, &rate, &chan, &fmt, &size)==-1)
-            exit(1);
-	 lsb=1; /* CHECK: exists big-endian .wav ?? */
-      }
+   {
+      if (read_wav_header(fin, &rate, &chan, &fmt, &size)==-1)
+         exit(1);
+      lsb=1; /* CHECK: exists big-endian .wav ?? */
+   }
    /*fprintf (stderr, "wave info: %d %d %d %d\n", rate, chan, fmt, size);*/
 
-   if (rate==16000)
+   /* By default, use narrowband/8 kHz */
+   if (!mode && !rate)
    {
-      wideband=1;
-      if (narrowband)
-         fprintf (stderr,"Warning: encoding a wideband file in narrowband\n");
-   } else if (rate==8000)
+      mode=&speex_nb_mode;
+      rate=8000;
+   } else if (mode && rate)
    {
-      narrowband=1;
-      if (wideband)
-         fprintf (stderr,"Warning: encoding a narrowband file in wideband\n");
-   } else if (rate==22050)
+      /*FIXME: Should print some warnings if mode doesn't fit with the rate*/
+   } else if (!mode)
    {
-      wideband=1;
-      fprintf (stderr,"Warning: Speex is not optimized for 22.05 kHz sampling rate. Your mileage may vary\n");
-      if (narrowband)
-         fprintf (stderr,"Warning: encoding a wideband file in narrowband\n");
-   } else if (rate==32000)
+      if (rate>48000)
+      {
+         fprintf (stderr, "Bit-rate too high: %d Hz, try down-sampling\n", rate);
+      } else if (rate>25000)
+      {
+         mode=&speex_uwb_mode;
+      } else if (rate>12500)
+      {
+         mode=&speex_wb_mode;
+      } else if (rate>6000)
+      {
+         mode=&speex_nb_mode;
+      } else {
+         fprintf (stderr, "Bit-rate too low: %d Hz\n", rate);
+      }
+   } else if (!rate)
    {
-      ultrawide=1;
-      if (wideband)
-         fprintf (stderr,"Warning: encoding a narrowband file in wideband\n");
-   } else if (rate==44100)
-   {
-      fprintf (stderr,"Warning: Speex is not optimized for 44.1 kHz sampling rate. Your mileage may vary\n");
-      ultrawide=1;
-      if (wideband)
-         fprintf (stderr,"Warning: encoding a narrowband file in wideband\n");
-   } else if (rate==48000)
-   {
-      fprintf (stderr,"Warning: Speex is not optimized for 48 kHz sampling rate. Your mileage may vary\n");
-      ultrawide=1;
-      if (wideband)
-         fprintf (stderr,"Warning: encoding a narrowband file in wideband\n");
-   } else if (rate==11025)
-   {
-      fprintf (stderr,"Warning: Speex is not optimized for 11.025 kHz sampling rate. Your mileage may vary\n");
-      narrowband=1;
-      if (wideband)
-         fprintf (stderr,"Warning: encoding a narrowband file in wideband\n");
+      if (mode==&speex_nb_mode)
+         rate=8000;
+      else if (mode==&speex_wb_mode)
+         rate=16000;
+      else if (mode==&speex_uwb_mode)
+         rate=32000;
    }
 
-   if (!wideband && !ultrawide)
-      narrowband=1;
-   if (narrowband)
-   {
-      if (!rate)
-         rate = 8000;
-      mode=&speex_nb_mode;
-   }
-   if (wideband)
-   {
-      if (!rate)
-         rate = 16000;
-      mode=&speex_wb_mode;
-   }
-   if (ultrawide)
-   {
-      if (!rate)
-         rate = 32000;
-      mode=&speex_uwb_mode;
-   }
+   if (rate!=8000 && rate!=16000 && rate!=32000)
+      fprintf (stderr, "Warning: Speex is only optimized for 8,16 and 32 kHz. It will still work at %d Hz but your mileage may vary\n", rate); 
 
    speex_init_header(&header, rate, 1, mode);
    header.frames_per_packet=nframes;

@@ -169,6 +169,10 @@ SOURCE=..\..\libspeex\quant_lsp.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\libspeex\stereo.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\libspeex\sb_celp.c
 # End Source File
 # Begin Source File
@@ -238,6 +242,10 @@ SOURCE=..\..\libspeex\speex.h
 # Begin Source File
 
 SOURCE=..\..\libspeex\speex_bits.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\libspeex\speex_stereo.h
 # End Source File
 # Begin Source File
 

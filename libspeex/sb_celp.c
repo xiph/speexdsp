@@ -940,6 +940,7 @@ void sb_encoder_ctl(void *state, int request, void *ptr)
       {
          int nb_qual;
          int quality = (*(int*)ptr);
+         /*FIXME: Cleanup needed, should be a mode property*/
          switch (quality)
          {
          case 0:
@@ -955,15 +956,15 @@ void sb_encoder_ctl(void *state, int request, void *ptr)
             st->submodeID = 1;
             break;
          case 3:
-            nb_qual=4;
+            nb_qual=3;
             st->submodeID = 1;
             break;
          case 4:
-            nb_qual=6;
+            nb_qual=5;
             st->submodeID = 1;
             break;
          case 5:
-            nb_qual=8;
+            nb_qual=7;
             st->submodeID = 1;
             break;
          case 6:

@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in. -*-Makefile-*-
 
-# $Id: Makefile.am,v 1.46 2002/11/07 22:13:15 jm Exp $
+# $Id: Makefile.am,v 1.47 2002/11/09 06:00:02 jm Exp $
 
 # Disable automatic dependency tracking if using other tools than gcc and gmake
 #AUTOMAKE_OPTIONS = no-dependencies
@@ -59,8 +59,7 @@ noinst_HEADERS = lsp.h \
 	misc.h \
 	ltp_sse.h \
 	filters_sse.h \
-	math_approx.h \
-	speex_stereo.h
+	math_approx.h
 	
 	
 libspeex_la_LDFLAGS = -release $(LT_RELEASE)

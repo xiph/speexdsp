@@ -102,7 +102,12 @@ FILE *out_file_open(char *outFile, int rate, int *channels)
 #if defined HAVE_SYS_SOUNDCARD_H
       int audio_fd, format, stereo;
       audio_fd=open("/dev/dsp", O_WRONLY);
-      
+      if (audio_fd<0)
+      {
+         perror("Cannot open /dev/dsp");
+         exit(1);         
+      }
+
       format=AFMT_S16_LE;
       if (ioctl(audio_fd, SNDCTL_DSP_SETFMT, &format)==-1)
       {
@@ -110,9 +115,9 @@ FILE *out_file_open(char *outFile, int rate, int *channels)
          close(audio_fd);
          exit(1);
       }
-      
+
       stereo=0;
-      if (*channels=2)
+      if (*channels==2)
          stereo=1;
       if (ioctl(audio_fd, SNDCTL_DSP_STEREO, &stereo)==-1)
       {
@@ -125,7 +130,6 @@ FILE *out_file_open(char *outFile, int rate, int *channels)
          if (*channels==1)
             fprintf (stderr, "Cannot set mono mode, will decode in stereo\n");
          *channels=2;
-         fprintf (stderr, "Cannot set mono mode\n");
       }
 
       if (ioctl(audio_fd, SNDCTL_DSP_SPEED, &rate)==-1)
@@ -136,7 +140,7 @@ FILE *out_file_open(char *outFile, int rate, int *channels)
       }
       fout = fdopen(audio_fd, "w");
 #elif defined WIN32 || defined _WIN32
-      if (Set_WIN_Params (INVALID_FILEDESC, rate, SAMPLE_SIZE, 1))
+      if (Set_WIN_Params (INVALID_FILEDESC, rate, SAMPLE_SIZE, *channels))
       {
          fprintf (stderr, "Can't access %s\n", "WAVE OUT");
          exit(1);
@@ -174,28 +178,26 @@ FILE *out_file_open(char *outFile, int rate, int *channels)
 
 void usage()
 {
-   /*printf ("Speex decoder version " VERSION " (compiled " __DATE__ ")\n");
-   printf ("\n");*/
-   printf ("Usage: speexdec [options] input_file.spx\n");
-   printf ("       speexdec [options] input_file.spx output_file.wav\n");
+   printf ("Usage: speexdec [options] input_file.spx [output_file]\n");
    printf ("\n");
    printf ("Decodes a Speex file and produce a WAV file or raw file\n");
    printf ("\n");
    printf ("input_file can be:\n");
-   printf ("  filename.spx          regular Speex file\n");
-   printf ("  -                     stdin\n");
+   printf ("  filename.spx         regular Speex file\n");
+   printf ("  -                    stdin\n");
    printf ("\n");  
    printf ("output_file can be:\n");
-   printf ("  filename.wav          wav file\n");
-   printf ("  filename.*            raw PCM file (any extension other that .wav)\n");
-   printf ("  -                     stdout\n");
-   printf ("  (nothing)             will be played to soundcard\n");
+   printf ("  filename.wav         Wav file\n");
+   printf ("  filename.*           Raw PCM file (any extension other that .wav)\n");
+   printf ("  -                    stdout\n");
+   printf ("  (nothing)            Will be played to soundcard\n");
    printf ("\n");  
    printf ("Options:\n");
    printf (" --enh                 Enable perceptual enhancement\n");
    printf (" --no-enh              Disable perceptual enhancement (default FOR NOW)\n");
-   printf (" --force-nb            Force decoding in narrowband, even for wideband\n");
-   printf (" --force-wb            Force decoding in wideband, even for narrowband\n");
+   printf (" --force-nb            Force decoding in narrowband\n");
+   printf (" --force-wb            Force decoding in wideband\n");
+   printf (" --force-uwb           Force decoding in ultra-wideband\n");
    printf (" --mono                Force decoding in mono\n");
    printf (" --stereo              Force decoding in stereo\n");
    printf (" --packet-loss n       Simulate n %% random packet loss\n");
@@ -212,7 +214,8 @@ void usage()
 
 void version()
 {
-   printf ("Speex decoder version " VERSION " (compiled " __DATE__ ")\n");
+   printf ("speexdec (Speex decoder) version " VERSION " (compiled " __DATE__ ")\n");
+   printf ("Copyright (C) 2002 Jean-Marc Valin\n");
 }
 
 static void *process_header(ogg_packet *op, int enh_enabled, int *frame_size, int *rate, int *nframes, int forceMode, int *channels, SpeexStereoState *stereo)
@@ -261,12 +264,16 @@ static void *process_header(ogg_packet *op, int enh_enabled, int *frame_size, in
    callback.data = stereo;
    speex_decoder_ctl(st, SPEEX_SET_HANDLER, &callback);
    
-   /* FIXME: need to adjust in case the forceMode option is set */
    *rate = header->rate;
-   if (header->mode==1 && forceMode==0)
-      *rate/=2;
-   if (header->mode==0 && forceMode==1)
-      *rate*=2;
+   /* Adjust rate if --force-* options are used */
+   if (forceMode!=-1)
+   {
+      if (header->mode < forceMode)
+         *rate <<= (forceMode - header->mode);
+      if (header->mode > forceMode)
+         *rate >>= (header->mode - forceMode);
+   }
+
    *nframes = header->frames_per_packet;
 
    if (*channels==-1)
@@ -309,6 +316,7 @@ int main(int argc, char **argv)
       {"no-pf", no_argument, NULL, 0},
       {"force-nb", no_argument, NULL, 0},
       {"force-wb", no_argument, NULL, 0},
+      {"force-uwb", no_argument, NULL, 0},
       {"mono", no_argument, NULL, 0},
       {"stereo", no_argument, NULL, 0},
       {"packet-loss", required_argument, NULL, 0},
@@ -370,6 +378,9 @@ int main(int argc, char **argv)
          } else if (strcmp(long_options[option_index].name,"force-wb")==0)
          {
             forceMode=1;
+         } else if (strcmp(long_options[option_index].name,"force-uwb")==0)
+         {
+            forceMode=2;
          } else if (strcmp(long_options[option_index].name,"mono")==0)
          {
             channels=1;
@@ -526,7 +537,6 @@ int main(int argc, char **argv)
 #endif
                   fwrite(out, sizeof(short), frame_size*channels, fout);
                   
-                  /*FIXME: Not sure we should multiply by channels here*/
                   audio_size+=sizeof(short)*frame_size*channels;
                }
             }
