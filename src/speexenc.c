@@ -155,8 +155,11 @@ void usage()
    printf (" --be               Raw input is big-endian\n"); 
    printf (" --8bit             Raw input is 8-bit unsigned\n"); 
    printf (" --16bit            Raw input is 16-bit signed\n"); 
-   printf ("\n");  
-   printf ("Default Raw PCM input is 16-bit, little-endian, mono\n"); 
+   printf ("Default raw PCM input is 16-bit, little-endian, mono\n"); 
+   printf ("\n");
+   printf ("More information is available from the Speex site: http://www.speex.org\n");
+   printf ("\n");
+   printf ("Please report bugs to the mailing list `speex-dev@xiph.org'.\n");
 }
 
 void version()

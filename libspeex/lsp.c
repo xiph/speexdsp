@@ -68,7 +68,7 @@ Modified by Jean-Marc Valin
 
 
 
-float cheb_poly_eva(float *coef,float x,int m,void *stack)
+static float cheb_poly_eva(float *coef,float x,int m,void *stack)
 /*  float coef[]  	coefficients of the polynomial to be evaluated 	*/
 /*  float x   		the point where polynomial is to be evaluated 	*/
 /*  int m 		order of the polynomial 			*/
