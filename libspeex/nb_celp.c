@@ -36,6 +36,7 @@
 #define M_PI           3.14159265358979323846  /* pi */
 #endif
 
+
 #define sqr(x) ((x)*(x))
 #define min(a,b) ((a) < (b) ? (a) : (b))
 
@@ -582,6 +583,9 @@ void *nb_decoder_init(SpeexMode *m)
    st->innovation_unquant = mode->innovation_unquant;
    st->innovation_params = mode->innovation_params;
 
+   st->post_filter_func = mode->post_filter_func;
+   st->post_filter_params = mode->post_filter_params;
+
    st->stack = calloc(10000, sizeof(float));
 
    st->inBuf = malloc(st->bufSize*sizeof(float));
@@ -631,7 +635,7 @@ void nb_decode(void *state, SpeexBits *bits, float *out, int lost)
    DecState *st;
    int i, sub;
    int pitch;
-   float pitch_gain;
+   float pitch_gain[3];
 
    st=state;
 
@@ -685,7 +689,7 @@ void nb_decode(void *state, SpeexBits *bits, float *out, int lost)
          exc[i]=0;
 
       /*Adaptive codebook contribution*/
-      st->ltp_unquant(exc, st->min_pitch, st->max_pitch, st->ltp_params, st->subframeSize, &pitch, &pitch_gain, bits, st->stack, lost);
+      st->ltp_unquant(exc, st->min_pitch, st->max_pitch, st->ltp_params, st->subframeSize, &pitch, &pitch_gain[0], bits, st->stack, lost);
       
 
       {
@@ -712,8 +716,10 @@ void nb_decode(void *state, SpeexBits *bits, float *out, int lost)
 
       for (i=0;i<st->subframeSize;i++)
          exc2[i]=exc[i];
-      /*nb_post_filter(exc, exc2, st->interp_qlpc, st->lpcSize, st->subframeSize,
-        pitch, pitch_gain, st->stack);*/
+
+      if (1)
+         st->post_filter_func(exc, exc2, st->interp_qlpc, st->lpcSize, st->subframeSize,
+                              pitch, pitch_gain, st->post_filter_params, st->stack);
 
       /*Compute decoded signal*/
       syn_filt_mem(exc2, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, st->mem_sp);

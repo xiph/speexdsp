@@ -46,6 +46,9 @@ typedef void (*innovation_quant_func)(float *, float *, float *, float *, void *
 
 typedef void (*innovation_unquant_func)(float *, void *, int, SpeexBits*, float *);
 
+typedef void (*nb_post_filter_func)(float *, float *, float *, int, int, int, 
+                               float *, void *, float *);
+
 /*Struct defining the encoding/decoding mode*/
 typedef struct SpeexNBMode {
    int     frameSize;
@@ -60,6 +63,7 @@ typedef struct SpeexNBMode {
    float   lag_factor;
    float   lpc_floor;
    float   preemph;
+
    /*LSP functions*/
    lsp_quant_func    lsp_quant;
    lsp_unquant_func  lsp_unquant;
@@ -68,11 +72,15 @@ typedef struct SpeexNBMode {
    ltp_quant_func    ltp_quant;
    ltp_unquant_func  ltp_unquant;
    void             *ltp_params;
-   /*Quantization of innovation */
+
+   /*Quantization of innovation*/
    innovation_quant_func innovation_quant;
    innovation_unquant_func innovation_unquant;
    void             *innovation_params;
 
+   /*Post-filter*/
+   nb_post_filter_func post_filter_func;
+   void             *post_filter_params;
 } SpeexNBMode;
 
 

@@ -574,7 +574,10 @@ int lost)
    }
 
    *pitch_val = pitch;
-   *gain_val = gain[0]+gain[1]+gain[2];
+   /**gain_val = gain[0]+gain[1]+gain[2];*/
+   gain_val[0]=gain[0];
+   gain_val[1]=gain[1];
+   gain_val[2]=gain[2];
 
 #ifdef DEBUG
    printf ("unquantized pitch: %d %f %f %f\n", pitch, gain[0], gain[1], gain[2]);

@@ -26,7 +26,7 @@
 #include "cb_search.h"
 #include "sb_celp.h"
 #include "nb_celp.h"
-
+#include "post_filter.h"
 
 /* Extern declarations for all codebooks we use here */
 extern float gain_cdbk_nb[];
@@ -34,8 +34,20 @@ extern float hexc_table[];
 extern float exc_5_256_table[];
 extern float exc_5_64_table[];
 
+/* Post-filter parameters for narrowband */
+pf_params pf_params_nb = {
+   0.1,      /* formant enhancement factor */
+   0.6       /* pitch enhancement factor */
+};
+
+/* Post-filter parameters for wideband */
+pf_params pf_params_sb = {
+   0.04,     /* formant enhancement factor */
+   0.4       /* pitch enhancement factor */
+};
+
 /* Parameters for Long-Term Prediction (LTP)*/
-static ltp_params ltp_params_nb = {
+ltp_params ltp_params_nb = {
    gain_cdbk_nb,
    7,
    7
@@ -87,7 +99,9 @@ SpeexNBMode nb_mode = {
    /*Innovation quantization*/
    split_cb_search_nogain2,
    split_cb_nogain_unquant,
-   &split_cb_nb
+   &split_cb_nb,
+   nb_post_filter,
+   &pf_params_nb
 };
 
 /* Narrowband mode used for split-band wideband CELP*/
@@ -114,7 +128,9 @@ static SpeexNBMode low_sb_mode = {
    /*Innovation quantization*/
    split_cb_search_nogain2,
    split_cb_nogain_unquant,
-   &split_cb_sb
+   &split_cb_sb,
+   nb_post_filter,
+   &pf_params_nb
 };
 
 SpeexMode low_wb_mode = {

@@ -20,6 +20,7 @@
 #include <math.h>
 #include "filters.h"
 #include "stack_alloc.h"
+#include "post_filter.h"
 
 /* Perceptual post-filter for narrowband */
 void nb_post_filter(
@@ -29,24 +30,32 @@ float *ak,
 int p, 
 int nsf,
 int pitch,
-float pitch_gain,
+float *pitch_gain,
+void *par,
 float *stack)
 {
    int i;
    float exc_energy=0, new_exc_energy=0;
    float *awk;
    float gain;
+   pf_params *params;
+   
+   params = (pf_params*) par;
 
    awk = PUSH(stack, p);
    
-   bw_lpc (0.1, ak, awk, p);
+   bw_lpc (params->formant_enh, ak, awk, p);
 
    for (i=0;i<nsf;i++)
       exc_energy+=exc[i]*exc[i];
 
    for (i=0;i<nsf;i++)
    {
-      new_exc[i] = exc[i] + .4*pitch_gain*exc[i-pitch];
+      new_exc[i] = exc[i] + params->pitch_enh*(
+                                               pitch_gain[0]*exc[i-pitch+1] +
+                                               pitch_gain[1]*exc[i-pitch] +
+                                               pitch_gain[2]*exc[i-pitch-1]
+                                               );
    }
    
    syn_filt(new_exc, awk, new_exc, nsf, p);

@@ -20,7 +20,13 @@
 #ifndef POST_FILTER_H
 #define POST_FILTER_H
 
-/* Perceptual post-filter for narrowband */
+/** Post-filter parameters*/
+typedef struct pf_params {
+   float formant_enh;
+   float pitch_enh;
+} pf_params;
+
+/** Perceptual post-filter for narrowband */
 void nb_post_filter(
 float *exc, 
 float *new_exc, 
@@ -28,7 +34,8 @@ float *ak,
 int p, 
 int nsf,
 int pitch,
-float pitch_gain,
+float *pitch_gain,
+void *params,
 float *stack);
 
 

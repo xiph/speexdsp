@@ -120,6 +120,9 @@ typedef struct DecState {
    void             *ltp_params;
    innovation_unquant_func innovation_unquant;
    void             *innovation_params;
+   nb_post_filter_func post_filter_func;
+   void             *post_filter_params;
+
 } DecState;
 
 /**Initializes encoder state*/
