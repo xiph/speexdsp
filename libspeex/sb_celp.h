@@ -49,6 +49,7 @@ typedef struct SBEncState {
    float *exc;
    float *buf;
    float *res;
+   float *sw;
    float *target;
    float *window;
    float *lagWindow;

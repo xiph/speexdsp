@@ -26,10 +26,13 @@
 #include "lsp.h"
 #include <stdio.h>
 #include "stack_alloc.h"
+#include "cb_search.h"
 
 #ifndef M_PI
 #define M_PI           3.14159265358979323846  /* pi */
 #endif
+
+extern float stoc[];
 
 #define sqr(x) ((x)*(x))
 
@@ -154,10 +157,10 @@ void sb_encoder_init(SBEncState *st, SpeexMode *mode)
    st->subframeSize = 40;
    st->nbSubframes = 4;
    st->windowSize = mode->windowSize;
-   st->lpcSize=8;
+   st->lpcSize=12;
 
-   st->lag_factor = .01;
-   st->lpc_floor = 1.001;
+   st->lag_factor = .002;
+   st->lpc_floor = 1.0001;
    st->gamma1=.9;
    st->gamma2=.6;
    st->first=1;
@@ -181,6 +184,7 @@ void sb_encoder_init(SBEncState *st, SpeexMode *mode)
    st->exc=st->excBuf+st->frame_size;
 
    st->res=calloc(st->frame_size, sizeof(float));
+   st->sw=calloc(st->frame_size, sizeof(float));
    st->target=calloc(st->frame_size, sizeof(float));
    st->window=calloc(st->windowSize, sizeof(float));
    for (i=0;i<st->windowSize;i++)
@@ -227,6 +231,7 @@ void sb_encoder_destroy(SBEncState *st)
    free(st->buf);
    free(st->window);
    free(st->excBuf);
+   free(st->sw);
    free(st->res);
    free(st->target);
    free(st->lagWindow);
@@ -318,12 +323,15 @@ void sb_encode(SBEncState *st, float *in, FrameBits *bits)
    
    for (sub=0;sub<st->nbSubframes;sub++)
    {
-      float *exc, *sp, *mem, tmp;
+      float *exc, *sp, *mem, *res, *target, *sw, tmp;
       int offset;
       
       offset = st->subframeSize*sub;
       sp=st->high+offset;
-      exc=st->exc+offset;
+      exc=st->excBuf+offset;
+      res=st->res+offset;
+      target=st->target+offset;
+      sw=st->sw+offset;
 
       mem=PUSH(st->stack, st->lpcSize);
       
@@ -345,7 +353,7 @@ void sb_encode(SBEncState *st, float *in, FrameBits *bits)
 
       bw_lpc(st->gamma1, st->interp_lpc, st->bw_lpc1, st->lpcSize);
       bw_lpc(st->gamma2, st->interp_lpc, st->bw_lpc2, st->lpcSize);
-      
+#if 0
       for (i=0;i<st->lpcSize;i++)
          mem[i]=st->mem_sp[i];
       residue_mem(sp, st->interp_qlpc, exc, st->subframeSize, st->lpcSize, mem);
@@ -368,7 +376,94 @@ void sb_encode(SBEncState *st, float *in, FrameBits *bits)
             printf (" %f", exc[i]);
          printf ("\n");
       }
+#else
+      /* Reset excitation */
+      for (i=0;i<st->subframeSize;i++)
+         exc[i]=0;
+
+      /* Compute zero response of A(z/g1) / ( A(z/g2) * Aq(z) ) */
+      for (i=0;i<st->lpcSize;i++)
+         mem[i]=st->mem_sp[i];
+      syn_filt_mem(exc, st->interp_qlpc, exc, st->subframeSize, st->lpcSize, mem);
+      for (i=0;i<st->lpcSize;i++)
+         mem[i]=st->mem_sp[i];
+      residue_mem(exc, st->bw_lpc1, res, st->subframeSize, st->lpcSize, mem);
+      for (i=0;i<st->lpcSize;i++)
+         mem[i]=st->mem_sw[i];
+      syn_filt_mem(res, st->bw_lpc2, res, st->subframeSize, st->lpcSize, mem);
+
+      /* Compute weighted signal */
+      for (i=0;i<st->lpcSize;i++)
+         mem[i]=st->mem_sp[i];
+      residue_mem(sp, st->bw_lpc1, sw, st->subframeSize, st->lpcSize, mem);
+      for (i=0;i<st->lpcSize;i++)
+         mem[i]=st->mem_sw[i];
+      syn_filt_mem(sw, st->bw_lpc2, sw, st->subframeSize, st->lpcSize, mem);
+
+      /* Compute target signal */
+      for (i=0;i<st->subframeSize;i++)
+         target[i]=sw[i]-res[i];
+      if (0)
+      {
+         syn_filt_zero(target, st->bw_lpc1, exc, st->subframeSize, st->lpcSize);
+         residue_zero(exc, st->interp_qlpc, exc, st->subframeSize, st->lpcSize);
+         residue_zero(exc, st->bw_lpc2, exc, st->subframeSize, st->lpcSize);
+         printf ("exca");
+         for (i=0;i<st->subframeSize;i++)
+            printf (" %f", exc[i]);
+         printf ("\n");
+      } else {
+         int ind,k,N=1;
+         float gain;
+         for (i=0;i<st->subframeSize;i++)
+            exc[i]=0;
+#if 1
+         overlap_cb_search(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2,
+                           &stoc[0], 512, &gain, &ind, st->lpcSize,
+                           st->subframeSize);
+         for (i=0;i<st->subframeSize;i++)
+            exc[i]=gain*stoc[ind+i];
+#else
+for (k=0;k<N;k++)
+         {
+            int of=k*st->subframeSize/N;
+         overlap_cb_search(target+of, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2,
+                           &stoc[0], 512, &gain, &ind, st->lpcSize,
+                           st->subframeSize/N);
+         for (i=0;i<st->subframeSize;i++)
+            res[i]=0;
+         for (i=0;i<st->subframeSize/N;i++)
+            res[of+i]=gain*stoc[ind+i];
+         residue_zero(res, st->bw_lpc1, res, st->subframeSize, st->lpcSize);
+         syn_filt_zero(res, st->interp_qlpc, res, st->subframeSize, st->lpcSize);
+         syn_filt_zero(res, st->bw_lpc2, res, st->subframeSize, st->lpcSize);
+         for (i=0;i<st->subframeSize;i++)
+            target[i]-=res[i];
+         for (i=0;i<st->subframeSize/N;i++)
+            exc[of+i]+=gain*stoc[ind+i];
+         }
+
+#endif
+      }
+#endif
+
+      printf ("sp");
+      for (i=0;i<st->subframeSize;i++)
+         printf (" %f", sp[i]);
+      printf("\n");
+      printf ("lpc");
+      for (i=0;i<st->lpcSize;i++)
+         printf (" %f", st->interp_lpc[i]);
+      printf("\n");
+      /*Keep the previous memory*/
+      for (i=0;i<st->lpcSize;i++)
+         mem[i]=st->mem_sp[i];
+      /* Final signal synthesis from excitation */
       syn_filt_mem(exc, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, st->mem_sp);
+
+      /* Compute weighted signal again, from synthesized speech (not sure it's the right thing) */
+      residue_mem(sp, st->bw_lpc1, sw, st->subframeSize, st->lpcSize, mem);
+      syn_filt_mem(sw, st->bw_lpc2, sw, st->subframeSize, st->lpcSize, st->mem_sw);
 
       POP(st->stack);
    }
@@ -386,6 +481,11 @@ void sb_encode(SBEncState *st, float *in, FrameBits *bits)
    fir_mem(st->x1, h1, st->y1, st->full_frame_size, QMF_ORDER, st->g1_mem);
    for (i=0;i<st->full_frame_size;i++)
       in[i]=2*(st->y0[i]-st->y1[i]);
+
+   for (i=0;i<st->lpcSize;i++)
+      st->old_lsp[i] = st->lsp[i];
+   for (i=0;i<st->lpcSize;i++)
+      st->old_qlsp[i] = st->qlsp[i];
 
    st->first=0;
 }
