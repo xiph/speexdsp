@@ -1268,6 +1268,12 @@ int sb_decoder_ctl(void *state, int request, void *ptr)
    st=(SBDecState*)state;
    switch(request)
    {
+   case SPEEX_SET_HIGH_MODE:
+      st->submodeID = (*(int*)ptr);
+      break;
+   case SPEEX_SET_LOW_MODE:
+      speex_encoder_ctl(st->st_low, SPEEX_SET_LOW_MODE, ptr);
+      break;
    case SPEEX_GET_LOW_MODE:
       speex_decoder_ctl(st->st_low, SPEEX_GET_LOW_MODE, ptr);
       break;
@@ -1277,6 +1283,20 @@ int sb_decoder_ctl(void *state, int request, void *ptr)
    case SPEEX_SET_ENH:
       speex_decoder_ctl(st->st_low, request, ptr);
       st->lpc_enh_enabled = *((int*)ptr);
+      break;
+   case SPEEX_SET_MODE:
+   case SPEEX_SET_QUALITY:
+      {
+         int nb_qual;
+         int quality = (*(int*)ptr);
+         if (quality < 0)
+            quality = 0;
+         if (quality > 10)
+            quality = 10;
+         st->submodeID = ((SpeexSBMode*)(st->mode->mode))->quality_map[quality];
+         nb_qual = ((SpeexSBMode*)(st->mode->mode))->low_quality_map[quality];
+         speex_decoder_ctl(st->st_low, SPEEX_SET_MODE, &nb_qual);
+      }
       break;
    case SPEEX_GET_BITRATE:
       speex_decoder_ctl(st->st_low, request, ptr);

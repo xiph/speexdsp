@@ -1817,6 +1817,10 @@ int nb_decoder_ctl(void *state, int request, void *ptr)
    st=(DecState*)state;
    switch(request)
    {
+   case SPEEX_SET_LOW_MODE:
+   case SPEEX_SET_MODE:
+      st->submodeID = (*(int*)ptr);
+      break;
    case SPEEX_GET_LOW_MODE:
    case SPEEX_GET_MODE:
       (*(int*)ptr) = st->submodeID;
