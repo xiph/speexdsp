@@ -1,5 +1,5 @@
 # Microsoft Developer Studio Project File - Name="libspeex" - Package Owner=<4>
-# Microsoft Developer Studio Generated Build File, Format Version 60000
+# Microsoft Developer Studio Generated Build File, Format Version 6.00
 # ** DO NOT EDIT **
 
 # TARGTYPE "Win32 (x86) Static Library" 0x0104
@@ -42,7 +42,7 @@ RSC=rc.exe
 # PROP Target_Dir ""
 F90=df.exe
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /YX /FD /c
-# ADD CPP /nologo /GX /Ox /Ot /Og /Oi /Ob2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /YX /FD /c
+# ADD CPP /nologo /GX /Ox /Ot /Og /Oi /Ob2 /D inline=__inline /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /YX /FD /c
 # ADD BASE RSC /l 0x809 /d "NDEBUG"
 # ADD RSC /l 0x809 /d "NDEBUG"
 BSC32=bscmake.exe
@@ -92,10 +92,6 @@ SOURCE=..\..\libspeex\bits.c
 # Begin Source File
 
 SOURCE=..\..\libspeex\cb_search.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\libspeex\denoise.c
 # End Source File
 # Begin Source File
 
@@ -176,6 +172,10 @@ SOURCE=..\..\libspeex\modes.c
 # Begin Source File
 
 SOURCE=..\..\libspeex\nb_celp.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\libspeex\preprocess.c
 # End Source File
 # Begin Source File
 
