@@ -68,10 +68,10 @@ void decoder_destroy(void *state);
 void decode(void *state, FrameBits *bits, float *out);
 
    /** Default narrowband mode */
-extern SpeexMode nb_mode;
+extern SpeexMode speex_nb_mode;
 
    /** Default wideband mode */
-extern SpeexMode wb_mode;
+extern SpeexMode speex_wb_mode;
 
 
 #ifdef __cplusplus

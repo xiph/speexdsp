@@ -21,6 +21,7 @@
 #include <math.h>
 #include <stdio.h>
 
+extern int lsp_nb_vqid[64];
 static float quant_weight[MAX_LSP_SIZE];
 
 /* Note: x is modified*/
@@ -201,6 +202,7 @@ void lsp_quant_wb(float *lsp, float *qlsp, int order, FrameBits *bits)
 
    for (i=0;i<order;i++)
       qlsp[i]=lsp[i]-qlsp[i];
+
 }
 
 

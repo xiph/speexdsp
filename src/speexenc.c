@@ -126,9 +126,9 @@ int main(int argc, char **argv)
    if (!wideband)
       narrowband=1;
    if (narrowband)
-      mode=&nb_mode;
+      mode=&speex_nb_mode;
    if (wideband)
-      mode=&wb_mode;
+      mode=&speex_wb_mode;
 
    st = encoder_init(mode);
 

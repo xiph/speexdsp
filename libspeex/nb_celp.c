@@ -28,6 +28,8 @@
 #include "cb_search.h"
 #include "filters.h"
 #include "stack_alloc.h"
+#include "vq.h"
+#include "speex_bits.h"
 
 #ifndef M_PI
 #define M_PI           3.14159265358979323846  /* pi */
@@ -182,7 +184,6 @@ void nb_encoder_destroy(void *state)
    free(st);
 }
 
-
 void nb_encode(void *state, float *in, FrameBits *bits)
 {
    EncState *st;
@@ -229,9 +230,10 @@ void nb_encode(void *state, float *in, FrameBits *bits)
    /* x-domain to angle domain*/
    for (i=0;i<st->lpcSize;i++)
       st->lsp[i] = acos(st->lsp[i]);
-   
+   /*print_vec(st->lsp, 10, "LSP:");*/
    /* LSP Quantization */
    st->lsp_quant(st->lsp, st->qlsp, st->lpcSize, bits);
+
    /*for (i=0;i<st->lpcSize;i++)
      st->qlsp[i]=st->lsp[i];*/
    /*printf ("LSP ");
@@ -283,6 +285,19 @@ void nb_encode(void *state, float *in, FrameBits *bits)
       for (i=0;i<st->lpcSize;i++)
          st->interp_qlsp[i] = (1-tmp)*st->old_qlsp[i] + tmp*st->qlsp[i];
 
+      if (0) {
+         float *h=PUSH(st->stack, 8);
+         for (i=0;i<8;i++)
+            h[i]=0;
+         h[0]=1;
+         
+         residue_zero(h, st->bw_lpc1, h, 8, st->lpcSize);
+         syn_filt_zero(h, st->interp_qlpc, h, 8, st->lpcSize);
+         syn_filt_zero(h, st->bw_lpc2, h, 8, st->lpcSize);
+         print_vec(h, 8, "lpc_resp");
+         POP(st->stack);
+      }
+      
       /* Compute interpolated LPCs (quantized and unquantized) */
       for (i=0;i<st->lpcSize;i++)
          st->interp_lsp[i] = cos(st->interp_lsp[i]);
@@ -388,7 +403,7 @@ void nb_encode(void *state, float *in, FrameBits *bits)
       syn_filt_zero(target, st->bw_lpc1, res, st->subframeSize, st->lpcSize);
       residue_zero(res, st->interp_qlpc, st->buf2, st->subframeSize, st->lpcSize);
       residue_zero(st->buf2, st->bw_lpc2, st->buf2, st->subframeSize, st->lpcSize);
-      if (1||(snr>9 && (rand()%6==0)))
+      /*if (1||(snr>9 && (rand()%6==0)))
       {
          float ener=0;
          printf ("exc ");
@@ -401,15 +416,78 @@ void nb_encode(void *state, float *in, FrameBits *bits)
          }
          printf ("\n");
       printf ("innovation_energy = %f\n", ener);
+      }*/
+      if (rand()%5==0 && snr>5)
+      {
+         float ener=0, sign=1;
+         if (rand()%2)
+            sign=-1;
+         for (i=0;i<st->subframeSize;i++)
+         {
+            ener+=st->buf2[i]*st->buf2[i];
+         }
+         ener=sign/sqrt(.01+ener/st->subframeSize);
+         for (i=0;i<st->subframeSize;i++)
+         {
+            if (i%8==0)
+               printf ("\nexc ");
+            printf ("%f ", ener*st->buf2[i]);
+         }
+         printf ("\n");
       }
+
       for (i=0;i<st->subframeSize;i++)
          exc[i]+=st->buf2[i];
 #else
+      if (0)
+      {
       /* Perform a split-codebook search */
       st->innovation_quant(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2,
                            st->innovation_params, st->lpcSize,
                            st->subframeSize, exc, bits, st->stack);
+      }
+      else
+      {
+         float *innov;
+         float ener=0, ener_1;
+         innov=PUSH(st->stack, st->subframeSize);
+         for (i=0;i<st->subframeSize;i++)
+            innov[i]=0;
+         syn_filt_zero(target, st->bw_lpc1, res, st->subframeSize, st->lpcSize);
+         residue_zero(res, st->interp_qlpc, st->buf2, st->subframeSize, st->lpcSize);
+         residue_zero(st->buf2, st->bw_lpc2, st->buf2, st->subframeSize, st->lpcSize);
+         for (i=0;i<st->subframeSize;i++)
+            ener+=st->buf2[i]*st->buf2[i];
+         ener=sqrt(.1+ener/st->subframeSize);
 
+         {
+            int qe = (int)(floor(7*log(ener)));
+            if (qe<0)
+               qe=0;
+            if (qe>63)
+               qe=63;
+            ener = exp(qe/7.0);
+            speex_bits_pack(bits, qe, 6);
+            printf ("quant_energy: %d %f\n", qe, ener);
+         }
+         ener_1 = 1/ener;
+         
+         for (i=0;i<st->subframeSize;i++)
+            target[i]*=ener_1;
+#if 1
+         st->innovation_quant(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2, 
+                                st->innovation_params, st->lpcSize, st->subframeSize, 
+                                innov, bits, st->stack);
+         
+         for (i=0;i<st->subframeSize;i++)
+            exc[i] += innov[i]*ener;
+#else
+         for (i=0;i<st->subframeSize;i++)
+            exc[i] += st->buf2[i];
+#endif
+         POP(st->stack);
+
+      }
 #endif
       /* Compute weighted noise energy and SNR */
       enoise=0;
@@ -596,9 +674,29 @@ void nb_decode(void *state, FrameBits *bits, float *out)
 
       /*Adaptive codebook contribution*/
       st->ltp_unquant(exc, st->min_pitch, st->max_pitch, st->ltp_params, st->subframeSize, bits, st->stack);
-       
-      /*Fixed codebook contribution*/
-      st->innovation_unquant(exc, st->innovation_params, st->subframeSize, bits, st->stack);
+      
+
+      {
+         int q_energy;
+         float ener;
+         float *innov;
+         
+         innov = PUSH(st->stack, st->subframeSize);
+         for (i=0;i<st->subframeSize;i++)
+            innov[i]=0;
+
+         q_energy = speex_bits_unpack_unsigned(bits, 6);
+         ener = exp(q_energy/7.0);
+         printf ("unquant_energy: %d %f\n", q_energy, ener);
+         
+         /*Fixed codebook contribution*/
+         st->innovation_unquant(innov, st->innovation_params, st->subframeSize, bits, st->stack);
+
+         for (i=0;i<st->subframeSize;i++)
+            exc[i]+=ener*innov[i];
+
+         POP(st->stack);
+      }
 
       /*Compute decoded signal*/
       syn_filt_mem(exc, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, st->mem_sp);

@@ -19,8 +19,8 @@ int main(int argc, char **argv)
 
    for (i=0;i<FRAME_SIZE;i++)
       bak2[i]=0;
-   st = encoder_init(&wb_mode);
-   dec = decoder_init(&wb_mode);
+   st = encoder_init(&speex_wb_mode);
+   dec = decoder_init(&speex_wb_mode);
    if (argc != 4 && argc != 3)
    {
       fprintf (stderr, "Usage: encode [in file] [out file] [bits file]\nargc = %d", argc);
@@ -61,7 +61,7 @@ int main(int argc, char **argv)
       }
       speex_bits_rewind(&bits);
       
-      decode(dec, &bits, input);
+      /*decode(dec, &bits, input);*/
 
       /* Save the bits here */
       for (i=0;i<FRAME_SIZE;i++)

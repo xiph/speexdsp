@@ -138,11 +138,11 @@ int main(int argc, char **argv)
       header[5]=0;
       if (strcmp(header,"spexn")==0)
       {
-         mode=&nb_mode;
+         mode=&speex_nb_mode;
          narrowband=1;
       } else if (strcmp(header,"spexw")==0)
       {
-         mode=&wb_mode;
+         mode=&speex_wb_mode;
          wideband=1;
       } else 
       {

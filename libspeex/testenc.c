@@ -19,8 +19,8 @@ int main(int argc, char **argv)
 
    for (i=0;i<FRAME_SIZE;i++)
       bak2[i]=0;
-   st = encoder_init(&nb_mode);
-   dec = decoder_init(&nb_mode);
+   st = encoder_init(&speex_nb_mode);
+   dec = decoder_init(&speex_nb_mode);
    if (argc != 4 && argc != 3)
    {
       fprintf (stderr, "Usage: encode [in file] [out file] [bits file]\nargc = %d", argc);

@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in. -*-Makefile-*-
 
-# $Id: Makefile.am,v 1.26 2002/05/03 19:27:52 jmvalin Exp $
+# $Id: Makefile.am,v 1.27 2002/05/14 03:25:47 jmvalin Exp $
 
 # Disable automatic dependency tracking if using other tools than gcc and gmake
 #AUTOMAKE_OPTIONS = no-dependencies
@@ -18,22 +18,16 @@ libspeex_la_SOURCES = nb_celp.c \
 	lsp_tables_wb.c \
 	gain_table.c \
 	cb_search.c \
-	stoc.c \
 	filters.c \
 	bits.c \
 	modes.c \
-	exc_table.c \
-	exc_wb_table.c \
-	exc_gains_table.c \
-	exc_gains_wb_table.c \
-	exc_gains_wb2_table.c \
 	vq.c \
-	matrix.c \
-	mpulse.c \
-	exc_sb_table.c \
 	high_lsp_tables.c \
 	vbr.c \
-	hexc_table.c
+	hexc_table.c \
+	exc_5_256_table.c \
+	exc_8_256_table.c \
+	exc_5_64_table.c
 
 
 include_HEADERS =  speex.h \
@@ -48,8 +42,6 @@ noinst_HEADERS = lsp.h \
 	filters.h \
 	stack_alloc.h \
 	vq.h \
-	matrix.h \
-	mpulse.h \
 	modes.h \
 	sb_celp.h \
 	vbr.h

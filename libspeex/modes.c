@@ -24,19 +24,16 @@
 #include "ltp.h"
 #include "quant_lsp.h"
 #include "cb_search.h"
-#include "mpulse.h"
 #include "sb_celp.h"
 #include "nb_celp.h"
 
 
 /* Extern declarations for all codebooks we use here */
 extern float gain_cdbk_nb[];
-extern float exc_gains_table[];
-extern float exc_table[];
-extern float exc_wb_table[];
-extern float exc_gains_wb_table[];
-extern float exc_sb_table[];
 extern float hexc_table[];
+extern float exc_5_256_table[];
+extern float exc_8_256_table[];
+extern float exc_5_64_table[];
 
 /* Parameters for Long-Term Prediction (LTP)*/
 static ltp_params ltp_params_nb = {
@@ -45,32 +42,19 @@ static ltp_params ltp_params_nb = {
    7
 };
 
-static ltp_params ltp_params_wb = {
-   gain_cdbk_nb,
-   7,
-   8
-};
-
 /* Split-VQ innovation parameters */
-static split_cb_params split_cb_nb = {
-   8,               /*subvect_size*/
-   5,               /*nb_subvect*/
-   exc_table,       /*shape_cb*/
-   7,               /*shape_bits*/
+split_cb_params split_cb_nb = {
+   5,               /*subvect_size*/
+   8,               /*nb_subvect*/
+   exc_5_64_table, /*shape_cb*/
+   6,               /*shape_bits*/
 };
 
-static split_cb_params split_cb_sb = {
+split_cb_params split_cb_sb = {
    5,               /*subvect_size*/
    8,              /*nb_subvect*/
-   exc_sb_table,    /*shape_cb*/
-   7,               /*shape_bits*/
-};
-
-static split_cb_params split_cb_wb = {
-   8,               /*subvect_size*/
-   10,              /*nb_subvect*/
-   exc_wb_table,    /*shape_cb*/
-   7,               /*shape_bits*/
+   exc_5_256_table,    /*shape_cb*/
+   8,               /*shape_bits*/
 };
 
 static split_cb_params split_cb_high = {
@@ -80,33 +64,8 @@ static split_cb_params split_cb_high = {
    8,               /*shape_bits*/
 };
 
-
-/* Various multi-pulse parameter definitions */
-static mpulse_params mpulse_nb = {
-   15,     /*nb_pulse*/
-   5,      /*nb_tracks*/
-   4,    /*gain_coef*/
-   10
-};
-
-
-static mpulse_params mpulse_sb = {
-   15,     /*nb_pulse*/
-   5,      /*nb_tracks*/
-   3.8,    /*gain_coef*/
-   10
-};
-
-
-static mpulse_params mpulse_wb = {
-   24,     /*nb_pulse*/
-   4,      /*nb_tracks*/
-   2.2,    /*gain_coef*/
-   26,
-};
-
 /* Default mode for narrowband */
-static SpeexNBMode mp_nb_mode = {
+SpeexNBMode nb_mode = {
    160,    /*frameSize*/
    40,     /*subframeSize*/
    320,    /*windowSize*/
@@ -127,9 +86,9 @@ static SpeexNBMode mp_nb_mode = {
    pitch_unquant_3tap,
    &ltp_params_nb,
    /*Innovation quantization*/
-   mpulse_search,
-   mpulse_unquant,
-   &mpulse_nb
+   split_cb_search_nogain2,
+   split_cb_nogain_unquant,
+   &split_cb_nb
 };
 
 /* Narrowband mode used for split-band wideband CELP*/
@@ -154,15 +113,9 @@ static SpeexNBMode low_sb_mode = {
    pitch_unquant_3tap,
    &ltp_params_nb,
    /*Innovation quantization*/
-#if 1
-   split_cb_search2,
-   split_cb_unquant,
+   split_cb_search_nogain2,
+   split_cb_nogain_unquant,
    &split_cb_sb
-#else
-   mpulse_search,
-   mpulse_unquant,
-   &mpulse_sb
-#endif
 };
 
 SpeexMode low_wb_mode = {
@@ -176,8 +129,8 @@ SpeexMode low_wb_mode = {
    160
 };
 
-SpeexMode nb_mode = {
-   &mp_nb_mode,
+SpeexMode speex_nb_mode = {
+   &nb_mode,
    &nb_encoder_init,
    &nb_encoder_destroy,
    &nb_encode,
@@ -210,7 +163,7 @@ static SpeexSBMode sb_wb_mode = {
 };
 
 
-SpeexMode wb_mode = {
+SpeexMode speex_wb_mode = {
    &sb_wb_mode,
    &sb_encoder_init,
    &sb_encoder_destroy,
