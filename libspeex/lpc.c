@@ -131,7 +131,7 @@ int          n
    int shift, ac_shift;
    
    for (j=0;j<n;j++)
-      ac0 += MULT16_16(x[j],x[j])/256;
+      ac0 += SHR(MULT16_16(x[j],x[j]),8);
    ac0 += n;
    shift = 8;
    while (shift && ac0<0x40000000)

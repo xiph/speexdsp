@@ -39,9 +39,18 @@
 
 #ifdef FIXED_POINT
 #define LSP_LINEAR(i) (SHL(i+1,11))
+#define LSP_DIV_256(x) (SHL((spx_word16_t)x, 5))
+#define LSP_DIV_512(x) (SHL((spx_word16_t)x, 4))
+#define LSP_DIV_1024(x) (SHL((spx_word16_t)x, 3))
+
 #else
+
 #define LSP_LINEAR(i) (.25*(i)+.25)
 #define LSP_SCALE 256.
+#define LSP_DIV_256(x) (0.0039062*(x))
+#define LSP_DIV_512(x) (0.0019531*(x))
+#define LSP_DIV_1024(x) (0.00097656*(x))
+
 #endif
 
 static void compute_quant_weights(spx_lsp_t *qlsp, spx_word16_t *quant_weight, int order)
@@ -188,23 +197,23 @@ void lsp_unquant_nb(spx_lsp_t *lsp, int order, SpeexBits *bits)
 
    id=speex_bits_unpack_unsigned(bits, 6);
    for (i=0;i<10;i++)
-      lsp[i] += LSP_SCALING*(0.0039062*cdbk_nb[id*10+i]);
+      lsp[i] += LSP_DIV_256(cdbk_nb[id*10+i]);
 
    id=speex_bits_unpack_unsigned(bits, 6);
    for (i=0;i<5;i++)
-      lsp[i] += LSP_SCALING*(0.0019531 * cdbk_nb_low1[id*5+i]);
+      lsp[i] += LSP_DIV_512(cdbk_nb_low1[id*5+i]);
 
    id=speex_bits_unpack_unsigned(bits, 6);
    for (i=0;i<5;i++)
-      lsp[i] += LSP_SCALING*(0.00097656 * cdbk_nb_low2[id*5+i]);
+      lsp[i] += LSP_DIV_1024(cdbk_nb_low2[id*5+i]);
 
    id=speex_bits_unpack_unsigned(bits, 6);
    for (i=0;i<5;i++)
-      lsp[i+5] += LSP_SCALING*(0.0019531 * cdbk_nb_high1[id*5+i]);
+      lsp[i+5] += LSP_DIV_512(cdbk_nb_high1[id*5+i]);
    
    id=speex_bits_unpack_unsigned(bits, 6);
    for (i=0;i<5;i++)
-      lsp[i+5] += LSP_SCALING*(0.00097656 * cdbk_nb_high2[id*5+i]);
+      lsp[i+5] += LSP_DIV_1024(cdbk_nb_high2[id*5+i]);
 }
 
 
@@ -258,15 +267,15 @@ void lsp_unquant_lbr(spx_lsp_t *lsp, int order, SpeexBits *bits)
 
    id=speex_bits_unpack_unsigned(bits, 6);
    for (i=0;i<10;i++)
-      lsp[i] += LSP_SCALING*0.0039062*cdbk_nb[id*10+i];
+      lsp[i] += LSP_DIV_256(cdbk_nb[id*10+i]);
 
    id=speex_bits_unpack_unsigned(bits, 6);
    for (i=0;i<5;i++)
-      lsp[i] += LSP_SCALING*0.0019531*cdbk_nb_low1[id*5+i];
+      lsp[i] += LSP_DIV_512(cdbk_nb_low1[id*5+i]);
 
    id=speex_bits_unpack_unsigned(bits, 6);
    for (i=0;i<5;i++)
-      lsp[i+5] += LSP_SCALING*0.0019531*cdbk_nb_high1[id*5+i];
+      lsp[i+5] += LSP_DIV_512(cdbk_nb_high1[id*5+i]);
    
 }
 

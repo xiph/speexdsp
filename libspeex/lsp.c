@@ -79,7 +79,14 @@ static spx_word16_t cos_32(spx_word16_t x)
 #define ANGLE2X(a) (SHL(cos_32(a),2))
 #define X2ANGLE(x) (acos(x)*LSP_SCALING)
 
+/* maybe we could approximate acos as 
+   sqrt(6.7349563814-5.213449731*sqrt(0.6688572663+x))
+*/
 #else
+
+#define C1 0.99940307
+#define C2 -0.49558072
+#define C3 0.03679168
 
 #define ANGLE2X(a) (cos(a))
 #define X2ANGLE(x) (acos(x))
