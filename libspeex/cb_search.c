@@ -454,7 +454,7 @@ float *stack
    float *resp, *E, q;
    float *t, *r, *e;
    float *gains;
-   int *ind;
+   int *ind, *gain_ind;
    float *shape_cb;
    int shape_cb_size, subvect_size, nb_subvect;
    float exc_energy=0;
@@ -472,6 +472,7 @@ float *stack
    e = PUSH(stack, nsf);
    gains = PUSH(stack, nb_subvect);
    ind = (int*)PUSH(stack, nb_subvect);
+   gain_ind = (int*)PUSH(stack, nb_subvect);
 
    /* Compute energy of the "real excitation" */
    syn_filt_zero(target, awk1, e, nsf, p);
@@ -526,7 +527,7 @@ float *stack
 
    for (i=0;i<nb_subvect;i++)
    {
-      int best_index[2]={0,0}, k, m;
+      int best_index[2]={0,0}, k, m, best_gain_ind[2]={0,0};
       float g, corr, best_gain[2]={0,0}, score, best_score[2]={-1,-1};
       /* Find best codeword for current sub-vector */
       for (j=0;j<shape_cb_size;j++)
@@ -563,6 +564,7 @@ float *stack
          /* Find gain index (it's a scalar but we use the VQ code anyway)*/
          best_id = vq_index(&best_gain[k], scal_gains4, 1, 8);
 
+         best_gain_ind[k]=best_id;
          best_gain[k]=scal_gains4[best_id];
          /*printf ("gain_quant: %f %d %f\n", best_gain, best_id, scal_gains4[best_id]);*/
          if (s)
@@ -635,7 +637,7 @@ float *stack
             best_index[0]=best_index[1];
             best_score[0]=best_score[1];
             best_gain[0]=best_gain[1];
-
+            best_gain_ind[0]=best_gain_ind[1];
          }
          POP(stack);
       }
@@ -644,6 +646,7 @@ float *stack
       
 
       ind[i]=best_index[0];
+      gain_ind[i]=best_gain_ind[0];
       gains[i]=best_gain[0];
       /* Update target for next subvector */
       for (j=0;j<subvect_size;j++)
@@ -653,7 +656,17 @@ float *stack
             t[k] -= g*r[m];
       }
    }
-   
+   for (i=0;i<nb_subvect;i++)
+   {
+      frame_bits_pack(bits, ind[i], params->shape_bits);
+      if (gains[i]<0)
+         frame_bits_pack(bits, 1, 1);
+      else
+         frame_bits_pack(bits, 0, 1);
+      frame_bits_pack(bits, gain_ind[i], 3);
+      printf ("encode split: %d %d %f\n", i, ind[i], gains[i]);
+
+   }
    /* Put everything back together */
    for (i=0;i<nb_subvect;i++)
       for (j=0;j<subvect_size;j++)
@@ -673,6 +686,7 @@ float *stack
    
 
 
+   POP(stack);
    POP(stack);
    POP(stack);
    POP(stack);
@@ -732,7 +746,7 @@ float *stack
       gains[i] *= sign[i];
       gains[i] *= exc_energy;
 
-
+      printf ("decode split: %d %d %f\n", i, ind[i], gains[i]);
    }
 
    /* Compute decoded excitation */
@@ -742,5 +756,45 @@ float *stack
 
    POP(stack);
    POP(stack);
+   POP(stack);
+}
+
+
+
+void split_cb_nogain_unquant(
+float *exc,
+void *par,                      /* non-overlapping codebook */
+int   nsf,                      /* number of samples in subframe */
+float gain,
+FrameBits *bits,
+float *stack
+)
+{
+   int i,j;
+   int *ind;
+   float *shape_cb;
+   int shape_cb_size, subvect_size, nb_subvect;
+   split_cb_params *params;
+
+   params = (split_cb_params *) par;
+   subvect_size = params->subvect_size;
+   nb_subvect = params->nb_subvect;
+   shape_cb_size = 1<<params->shape_bits;
+   shape_cb = params->shape_cb;
+   
+   ind = (int*)PUSH(stack, nb_subvect);
+
+   /* Decode codewords and gains */
+   for (i=0;i<nb_subvect;i++)
+   {
+      int gain_id;
+      ind[i] = frame_bits_unpack_unsigned(bits, params->shape_bits);
+   }
+
+   /* Compute decoded excitation */
+   for (i=0;i<nb_subvect;i++)
+      for (j=0;j<subvect_size;j++)
+         exc[subvect_size*i+j]+=gain*shape_cb[ind[i]*subvect_size+j];
+
    POP(stack);
 }

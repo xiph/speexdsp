@@ -93,3 +93,19 @@ int   nsf,                      /* Number of samples in subframe */
 FrameBits *bits,
 float *stack
 );
+
+float pitch_gain_search_3tap(
+float target[],                 /* Target vector */
+float ak[],                     /* LPCs for this subframe */
+float awk1[],                   /* Weighted LPCs #1 for this subframe */
+float awk2[],                   /* Weighted LPCs #2 for this subframe */
+float exc[],                    /* Excitation */
+void *par,
+int   pitch,                    /* Pitch value */
+int   p,                        /* Number of LPC coeffs */
+int   nsf,                      /* Number of samples in subframe */
+FrameBits *bits,
+float *stack,
+float *exc2,
+int  *cdbk_index
+);

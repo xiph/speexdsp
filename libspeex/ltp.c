@@ -328,7 +328,6 @@ float *stack
 /** Finds the best quantized 3-tap pitch predictor by analysis by synthesis */
 float pitch_gain_search_3tap(
 float target[],                 /* Target vector */
-float *sw,
 float ak[],                     /* LPCs for this subframe */
 float awk1[],                   /* Weighted LPCs #1 for this subframe */
 float awk2[],                   /* Weighted LPCs #2 for this subframe */
@@ -468,21 +467,28 @@ float *exc2
 )
 {
    int i,j;
-   int cdbk_index, pitch, ol_pitch;
+   int cdbk_index, pitch, ol_pitch, best_gain_index=0;
    float *best_exc;
    int best_pitch=0;
    float err, best_err=-1;
-   int N=0;
+   int N=2;
+   ltp_params *params;
+   params = (ltp_params*) par;
 
    best_exc=PUSH(stack,nsf);
 
    open_loop_pitch(sw, start, nsf, nsf, &ol_pitch);
 
+   if (ol_pitch-N<start)
+      ol_pitch=start+N;
+   if (ol_pitch+N>end)
+      ol_pitch=end-N;
+
    for (pitch=ol_pitch-N; pitch<=ol_pitch+N; pitch++)
    {
       for (j=0;j<nsf;j++)
          exc[j]=0;
-      err=pitch_gain_search_3tap(target, sw, ak, awk1, awk2, exc, par, pitch, p, nsf,
+      err=pitch_gain_search_3tap(target, ak, awk1, awk2, exc, par, pitch, p, nsf,
                              bits, stack, exc2, &cdbk_index);
       if (err<best_err || best_err<0)
       {
@@ -490,6 +496,7 @@ float *exc2
             best_exc[j]=exc[j];
          best_err=err;
          best_pitch=pitch;
+         best_gain_index=cdbk_index;
       }
    }
 
@@ -500,7 +507,7 @@ float *exc2
    {
       for (j=0;j<nsf;j++)
          exc[j]=0;
-      err=pitch_gain_search_3tap(target, sw, ak, awk1, awk2, exc, par, pitch, p, nsf,
+      err=pitch_gain_search_3tap(target, ak, awk1, awk2, exc, par, pitch, p, nsf,
                              bits, stack, exc2, &cdbk_index);
       if (err<best_err || best_err<0)
       {
@@ -508,11 +515,13 @@ float *exc2
             best_exc[j]=exc[j];
          best_err=err;
          best_pitch=pitch;
+         best_gain_index=cdbk_index;
       }
    }
 
-
-
+   frame_bits_pack(bits, best_pitch-start, params->pitch_bits);
+   frame_bits_pack(bits, best_gain_index, params->gain_bits);
+   printf ("encode pitch: %d %d\n", best_pitch, best_gain_index);
    for (i=0;i<nsf;i++)
       exc[i]=best_exc[i];
 
@@ -543,6 +552,7 @@ float *stack
    pitch = frame_bits_unpack_unsigned(bits, params->pitch_bits);
    pitch += start;
    gain_index = frame_bits_unpack_unsigned(bits, params->gain_bits);
+   printf ("decode pitch: %d %d\n", pitch, gain_index);
    gain[0] = gain_cdbk[gain_index*12];
    gain[1] = gain_cdbk[gain_index*12+1];
    gain[2] = gain_cdbk[gain_index*12+2];
@@ -554,5 +564,31 @@ float *stack
    for (i=nsf-1;i>=0;i--)
    {
       exc[i]=gain[0]*exc[i-pitch+1] + gain[1]*exc[i-pitch] + gain[2]*exc[i-pitch-1];
+   }
+
+   {
+      float *e[3];
+      float *tmp2;
+      tmp2=PUSH(stack, 3*nsf);
+      e[0]=tmp2;
+      e[1]=tmp2+nsf;
+      e[2]=tmp2+2*nsf;
+      
+      for (i=0;i<3;i++)
+      {
+         int j;
+         int pp=pitch+1-i;
+         for (j=0;j<nsf;j++)
+         {
+            if (j-pp<0)
+               e[i][j]=exc[j-pp];
+            else
+               e[i][j]=exc[j-pp-pitch];
+         }
+      }
+      for (i=0;i<nsf;i++)
+         exc[i]=gain[0]*e[2][i]+gain[1]*e[1][i]+gain[2]*e[0][i];
+      
+      POP(stack);
    }
 }
