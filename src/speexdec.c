@@ -257,7 +257,7 @@ int main(int argc, char **argv)
    int close_in=0;
    int eos=0;
    int forceMode=-1;
-
+   int audio_size=0;
    enh_enabled = 0;
 
    /*Process options*/
@@ -432,6 +432,7 @@ int main(int argc, char **argv)
                   else
 #endif
                   fwrite(out, sizeof(short), frame_size, fout);
+                  audio_size+=sizeof(short)*frame_size;
                }
             }
             packet_count++;
@@ -440,6 +441,26 @@ int main(int argc, char **argv)
       if (feof(fin))
          break;
 
+   }
+
+   if (strcmp(outFile+strlen(outFile)-4,".wav")==0)
+   {
+      if (fseek(fout,4,SEEK_SET)==0)
+      {
+         int tmp;
+         tmp = le_int(audio_size+36);
+         fwrite(&tmp,4,1,fout);
+         if (fseek(fout,32,SEEK_CUR)==0)
+         {
+            tmp = le_int(audio_size);
+            fwrite(&tmp,4,1,fout);
+         } else
+         {
+            fprintf (stderr, "First seek worked, second didn't\n");
+         }
+      } else {
+         fprintf (stderr, "Cannot seek on wave file, size will be incorrect\n");
+      }
    }
 
    if (st)
