@@ -17,13 +17,24 @@
 */
 
 #include <stdio.h>
+#if !defined WIN32 && !defined _WIN32
 #include <unistd.h>
 #include <getopt.h>
+#endif
 #include <stdlib.h>
 #include <string.h>
 
 #include "speex.h"
 #include "ogg/ogg.h"
+
+#if defined WIN32 || defined _WIN32
+#include <windows.h>
+#include "getopt.h"
+#include "wave_out.h"
+/* We need the following two to set stdout to binary */
+#include <io.h>
+#include <fcntl.h>
+#endif
 
 #ifdef HAVE_SYS_SOUNDCARD_H
 #include <sys/soundcard.h>
@@ -46,7 +57,7 @@ FILE *out_file_open(char *outFile, int rate)
    /*Open output file*/
    if (strlen(outFile)==0)
    {
-#ifdef HAVE_SYS_SOUNDCARD_H
+#if defined HAVE_SYS_SOUNDCARD_H
       int audio_fd, format, stereo;
       audio_fd=open("/dev/dsp", O_WRONLY);
       
@@ -78,16 +89,31 @@ FILE *out_file_open(char *outFile, int rate)
          exit(1);
       }
       fout = fdopen(audio_fd, "w");
+#elif defined WIN32 || defined _WIN32
+      if (Set_WIN_Params (INVALID_FILEDESC, rate, SAMPLE_SIZE, 1))
+      {
+         fprintf (stderr, "Can't access %s\n", "WAVE OUT");
+         exit(1);
+      }
 #else
       fprintf (stderr, "No soundcard support\n");
       exit(1);
 #endif
    } else {
       if (strcmp(outFile,"-")==0)
+      {
+#if defined WIN32 || defined _WIN32
+         _setmode(_fileno(stdout), _O_BINARY);
+#endif
          fout=stdout;
+      }
       else 
       {
+#if defined WIN32 || defined _WIN32
+         fout = fopen(outFile, "wb");
+#else
          fout = fopen(outFile, "w");
+#endif
          if (!fout)
          {
             perror(outFile);
@@ -305,10 +331,19 @@ int main(int argc, char **argv)
       outFile = "";
    /*Open input file*/
    if (strcmp(inFile, "-")==0)
+   {
+#if defined WIN32 || defined _WIN32
+      _setmode(_fileno(stdout), _O_BINARY);
+#endif
       fin=stdin;
+   }
    else 
    {
+#if defined WIN32 || defined _WIN32
+      fin = fopen(inFile, "rb");
+#else
       fin = fopen(inFile, "r");
+#endif
       if (!fin)
       {
          perror(inFile);
@@ -391,6 +426,11 @@ int main(int argc, char **argv)
                   /*Convert to short and save to output file*/
                   for (i=0;i<frame_size;i++)
                      out[i]=(short)le_short(output[i]);
+#if defined WIN32 || defined _WIN32
+                  if (strlen(outFile)==0)
+                      WIN_Play_Samples (out, sizeof(short) * frame_size);
+                  else
+#endif
                   fwrite(out, sizeof(short), frame_size, fout);
                }
             }

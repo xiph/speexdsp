@@ -2072,7 +2072,7 @@ N/A
 
 \layout Standard
 
-Application-defined
+Application-defined, Speex should never see it
 \end_inset 
 </cell>
 </row>
@@ -2098,7 +2098,7 @@ N/A
 
 \layout Standard
 
-In-band signaling
+In-band signaling, Speex will skip it
 \end_inset 
 </cell>
 </row>

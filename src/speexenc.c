@@ -17,8 +17,10 @@
 */
 
 #include <stdio.h>
+#if !defined WIN32 && !defined _WIN32
 #include <unistd.h>
 #include <getopt.h>
+#endif
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
@@ -28,6 +30,13 @@
 #include "wav_io.h"
 #include "speex_header.h"
 #include "misc.h"
+
+#if defined WIN32 || defined _WIN32
+#include "getopt.h"
+/* We need the following two to set stdout to binary */
+#include <io.h>
+#include <fcntl.h>
+#endif
 
 /*Write an Ogg page to a file pointer*/
 int oe_write_page(ogg_page *page, FILE *fp)
@@ -283,10 +292,19 @@ int main(int argc, char **argv)
    }
 
    if (strcmp(inFile, "-")==0)
+   {
+#if defined WIN32 || defined _WIN32
+         _setmode(_fileno(stdout), _O_BINARY);
+#endif
       fin=stdin;
+   }
    else 
    {
+#if defined WIN32 || defined _WIN32
+      fin = fopen(inFile, "rb");
+#else
       fin = fopen(inFile, "r");
+#endif
       if (!fin)
       {
          perror(inFile);
@@ -344,10 +362,19 @@ int main(int argc, char **argv)
    st = speex_encoder_init(mode);
 
    if (strcmp(outFile,"-")==0)
+   {
+#if defined WIN32 || defined _WIN32
+      _setmode(_fileno(stdout), _O_BINARY);
+#endif
       fout=stdout;
+   }
    else 
    {
+#if defined WIN32 || defined _WIN32
+      fout = fopen(outFile, "wb");
+#else
       fout = fopen(outFile, "w");
+#endif
       if (!fout)
       {
          perror(outFile);

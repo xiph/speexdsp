@@ -28,9 +28,12 @@
 #include "stack_alloc.h"
 #include "vq.h"
 
-#define min(a,b) ((a) < (b) ? (a) : (b))
-#define max(a,b) ((a) > (b) ? (a) : (b))
-
+#ifndef min
+# define min(a,b) ((a) < (b) ? (a) : (b))
+#endif
+#ifndef max
+# define max(a,b) ((a) > (b) ? (a) : (b))
+#endif
 
 
 void split_cb_search_nogain(
