@@ -43,6 +43,8 @@
 #include "ltp.h"
 #include "misc.h"
 
+#include <stdio.h>
+
 #ifndef M_PI
 #define M_PI           3.14159265358979323846  /* pi */
 #endif
@@ -252,6 +254,11 @@ int sb_encode(void *state, float *in, SpeexBits *bits)
    /* Encode the narrowband part*/
    speex_encode(st->st_low, st->x0d, bits);
 
+   for (i=0;i<st->frame_size;i++)
+      st->x0d[i] *= SIG_SCALING;
+   for (i=0;i<st->frame_size;i++)
+      st->x1d[i] *= SIG_SCALING;
+
    /* High-band buffering / sync with low band */
    for (i=0;i<st->windowSize-st->frame_size;i++)
       st->high[i] = st->high[st->frame_size+i];
@@ -277,7 +284,7 @@ int sb_encode(void *state, float *in, SpeexBits *bits)
 
    /* Start encoding the high-band */
    for (i=0;i<st->windowSize;i++)
-      st->buf[i] = st->high[i] * st->window[i];
+      st->buf[i] = st->high[i] * st->window[i] / SIG_SCALING;
 
    /* Compute auto-correlation */
    _spx_autocorr(st->buf, st->autocorr, st->lpcSize+1, st->windowSize);
@@ -336,8 +343,9 @@ int sb_encode(void *state, float *in, SpeexBits *bits)
 
       for (i=0;i<st->frame_size;i++)
       {
-         e_low  += st->x0d[i]* st->x0d[i];
-         e_high += st->high[i]* st->high[i];
+         /*FIXME: Are the two signals (low, high) in sync? */
+         e_low  += st->x0d[i]* st->x0d[i] / (SIG_SCALING*SIG_SCALING);
+         e_high += st->high[i]* st->high[i] / (SIG_SCALING*SIG_SCALING);
       }
       ratio = log((1+e_high)/(1+e_low));
       speex_encoder_ctl(st->st_low, SPEEX_GET_RELATIVE_QUALITY, &st->relative_quality);
@@ -420,7 +428,7 @@ int sb_encode(void *state, float *in, SpeexBits *bits)
       fir_mem_up(st->high, h1, st->y1, st->full_frame_size, QMF_ORDER, st->g1_mem, stack);
 
       for (i=0;i<st->full_frame_size;i++)
-         in[i]=2*(st->y0[i]-st->y1[i]);
+         in[i]=2*(st->y0[i]-st->y1[i]) / SIG_SCALING;
 #endif
 
       if (dtx)
@@ -510,13 +518,13 @@ int sb_encode(void *state, float *in, SpeexBits *bits)
       fir_mem2(sp, st->interp_qlpc, exc, st->subframeSize, st->lpcSize, st->mem_sp2);
       /* Compute energy of low-band and high-band excitation */
       for (i=0;i<st->subframeSize;i++)
-         eh+=sqr(exc[i]);
+         eh+=sqr(exc[i]/SIG_SCALING);
 
       if (!SUBMODE(innovation_quant)) {/* 1 for spectral folding excitation, 0 for stochastic */
          float g;
          /*speex_bits_pack(bits, 1, 1);*/
          for (i=0;i<st->subframeSize;i++)
-            el+=sqr(low_innov[offset+i]);
+            el+=sqr(low_innov[offset+i]/SIG_SCALING);
 
          /* Gain to use if we want to use the low-band excitation for high-band */
          g=eh/(.01+el);
@@ -542,7 +550,7 @@ int sb_encode(void *state, float *in, SpeexBits *bits)
          float gc, scale, scale_1;
 
          for (i=0;i<st->subframeSize;i++)
-            el+=sqr(low_exc[offset+i]);
+            el+=sqr(low_exc[offset+i]/SIG_SCALING);
          /*speex_bits_pack(bits, 0, 1);*/
 
          gc = sqrt(1+eh)*filter_ratio/sqrt((1+el)*st->subframeSize);
@@ -561,7 +569,7 @@ int sb_encode(void *state, float *in, SpeexBits *bits)
 
          for (i=0;i<st->subframeSize;i++)
             exc[i]=0;
-         exc[0]=1;
+         exc[0]=SIG_SCALING;
          syn_percep_zero(exc, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2, syn_resp, st->subframeSize, st->lpcSize, stack);
          
          /* Reset excitation */
@@ -591,8 +599,12 @@ int sb_encode(void *state, float *in, SpeexBits *bits)
 
 
          for (i=0;i<st->subframeSize;i++)
-            target[i]*=scale_1;
-         
+            target[i]*=scale_1/SIG_SCALING;
+
+         FLOAT_SIGNAL;
+         for (i=0;i<st->subframeSize;i++)
+            syn_resp[i]/=SIG_SCALING;
+
          /* Reset excitation */
          for (i=0;i<st->subframeSize;i++)
             innov[i]=0;
@@ -604,7 +616,7 @@ int sb_encode(void *state, float *in, SpeexBits *bits)
          /*print_vec(target, st->subframeSize, "after");*/
 
          for (i=0;i<st->subframeSize;i++)
-            exc[i] += innov[i]*scale;
+            exc[i] += innov[i]*scale*SIG_SCALING;
 
          if (SUBMODE(double_codebook)) {
             char *tmp_stack=stack;
@@ -617,10 +629,14 @@ int sb_encode(void *state, float *in, SpeexBits *bits)
                                       SUBMODE(innovation_params), st->lpcSize, st->subframeSize, 
                                       innov2, syn_resp, bits, tmp_stack, (st->complexity+1)>>1);
             for (i=0;i<st->subframeSize;i++)
-               innov2[i]*=scale*(1/2.5);
+               innov2[i]*=scale*(1/2.5)*SIG_SCALING;
             for (i=0;i<st->subframeSize;i++)
                exc[i] += innov2[i];
          }
+
+         FIXED_SIGNAL;
+         for (i=0;i<st->subframeSize;i++)
+            syn_resp[i]/=SIG_SCALING;
 
       }
 
@@ -642,7 +658,7 @@ int sb_encode(void *state, float *in, SpeexBits *bits)
    fir_mem_up(st->high, h1, st->y1, st->full_frame_size, QMF_ORDER, st->g1_mem, stack);
 
    for (i=0;i<st->full_frame_size;i++)
-      in[i]=2*(st->y0[i]-st->y1[i]);
+      in[i]=2*(st->y0[i]-st->y1[i]) / SIG_SCALING;
 #endif
    for (i=0;i<st->lpcSize;i++)
       st->old_lsp[i] = st->lsp[i];
@@ -829,6 +845,9 @@ int sb_decode(void *state, SpeexBits *bits, float *out)
    /* Decode the low-band */
    ret = speex_decode(st->st_low, bits, st->x0d);
 
+   for (i=0;i<st->frame_size;i++)
+      st->x0d[i] *= SIG_SCALING;
+
    speex_decoder_ctl(st->st_low, SPEEX_GET_DTX_STATUS, &dtx);
 
    /* If error decoding the narrowband part, propagate error */
@@ -889,7 +908,7 @@ int sb_decode(void *state, SpeexBits *bits, float *out)
       fir_mem_up(st->high, h1, st->y1, st->full_frame_size, QMF_ORDER, st->g1_mem, stack);
 
       for (i=0;i<st->full_frame_size;i++)
-         out[i]=2*(st->y0[i]-st->y1[i]);
+         out[i]=2*(st->y0[i]-st->y1[i]) / SIG_SCALING;
 
       return 0;
 
@@ -991,7 +1010,7 @@ int sb_decode(void *state, SpeexBits *bits, float *out)
          int quant;
 
          for (i=0;i<st->subframeSize;i++)
-            el+=sqr(low_innov[offset+i]);
+            el+=sqr(low_innov[offset+i]/SIG_SCALING);
          quant = speex_bits_unpack_unsigned(bits, 5);
          g= exp(((float)quant-10)/8.0);
          
@@ -1006,13 +1025,12 @@ int sb_decode(void *state, SpeexBits *bits, float *out)
          float gc, scale;
          int qgc = speex_bits_unpack_unsigned(bits, 4);
          for (i=0;i<st->subframeSize;i++)
-            el+=sqr(low_exc[offset+i]);
+            el+=sqr(low_exc[offset+i]/SIG_SCALING);
 
 
          gc = exp((1/3.7)*qgc-2);
 
          scale = gc*sqrt(1+el)/filter_ratio;
-
 
          SUBMODE(innovation_unquant)(exc, SUBMODE(innovation_params), st->subframeSize, 
                                 bits, stack);
@@ -1058,7 +1076,7 @@ int sb_decode(void *state, SpeexBits *bits, float *out)
    fir_mem_up(st->high, h1, st->y1, st->full_frame_size, QMF_ORDER, st->g1_mem, stack);
 
    for (i=0;i<st->full_frame_size;i++)
-      out[i]=2*(st->y0[i]-st->y1[i]);
+      out[i]=2*(st->y0[i]-st->y1[i]) / SIG_SCALING;
 
    for (i=0;i<st->lpcSize;i++)
       st->old_qlsp[i] = st->qlsp[i];
