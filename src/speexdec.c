@@ -571,7 +571,7 @@ int main(int argc, char **argv)
 
                /*Copy Ogg packet to Speex bitstream*/
                speex_bits_read_from(&bits, (char*)op.packet, op.bytes);
-               for (j=0;j<nframes;j++)
+               for (j=0;j!=nframes;j++)
                {
                   int ret;
                   /*Decode frame*/

@@ -672,6 +672,7 @@ int main(int argc, char **argv)
 
       if ((id+1)%nframes!=0)
          continue;
+      speex_bits_insert_terminator(&bits);
       nbBytes = speex_bits_write(&bits, cbits, MAX_FRAME_BYTES);
       speex_bits_reset(&bits);
       op.packet = (unsigned char *)cbits;

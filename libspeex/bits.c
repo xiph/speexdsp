@@ -342,3 +342,11 @@ int speex_bits_nbytes(SpeexBits *bits)
 {
    return ((bits->nbBits+7)>>3);
 }
+
+void speex_bits_insert_terminator(SpeexBits *bits)
+{
+   if (bits->bitPtr<7)
+      speex_bits_pack(bits, 0, 1);
+   while (bits->bitPtr<7)
+      speex_bits_pack(bits, 1, 1);
+}

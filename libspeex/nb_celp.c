@@ -1158,6 +1158,8 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
 
       /* Search for next narrowband block (handle requests, skip wideband blocks) */
       do {
+         if (speex_bits_remaining(bits)<5)
+            return -1;
          wideband = speex_bits_unpack_unsigned(bits, 1);
          if (wideband) /* Skip wideband block (for compatibility) */
          {
@@ -1172,6 +1174,9 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
             } 
             advance -= (SB_SUBMODE_BITS+1);
             speex_bits_advance(bits, advance);
+            
+            if (speex_bits_remaining(bits)<5)
+               return -1;
             wideband = speex_bits_unpack_unsigned(bits, 1);
             if (wideband)
             {
@@ -1193,7 +1198,8 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
 
             }
          }
-
+         if (speex_bits_remaining(bits)<4)
+            return -1;
          /* FIXME: Check for overflow */
          m = speex_bits_unpack_unsigned(bits, 4);
          if (m==15) /* We found a terminator */
