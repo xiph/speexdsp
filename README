@@ -1,32 +1,9 @@
 See INSTALL file for instruction on how to install Speex.
 
-The Speex project aims to build an open-source patent-free voice codec. 
-Unlike other codecs like MP3 and Ogg Vorbis, Speex is specially designed 
-for compressing voice at low bit-rates for applications such as voice over 
-IP (VoIP). In some sense, it is meant to be complementary to the Ogg 
-Vorbis codec.
+The Speex is a patent-free, Open Source/Free Software voice codec. Unlike other codecs like MP3 and Ogg Vorbis, Speex is designed to compress voice at bitrates in the 2-45 kbps range. Possible applications include VoIP, internet audio streaming, archiving of speech data (e.g. voice mail), and audio books. In some sense, it is meant to be complementary to the Ogg Vorbis codec.
 
-Although we aim at providing a patent-free codec, we strongly suggest you
-have a look at patent issues if you are thinking about using Speex 
-commercially. The speech coding field is a real patent minefield and
-the scope and enforceability of all these patents is sometimes unclear,
-not to mention that each country has different laws.
+To use the Speex command line tools:
 
-To use Speex:
+% speexenc [options] input_file.wav compressed_file.spx
 
-% speexenc [-n or -w] input_file.sw compressed_file.spx
-
-% speexdec compressed_file.spx output_file.sw
-
-where -n is for narrowband (8 kHz sampling) and -w is wideband (16 kHz 
-sampling).
-
-All audio files are assumed to be raw (no header) 16-bit PCM files. To
-convert a .wav file into this format:
-% sox my_file.wav -t sw my_file.sw
-
-Note that if the original sampling frequency of the wav is not 8 kHz or 16 kHz,
-you will need to add "-r 8000" or "-r 16000" (without the quotes).
-
-To create a .wav file:
-% sox -t sw my_file.sw my_file.wav
+% speexdec [options] compressed_file.spx output_file.wav
