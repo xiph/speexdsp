@@ -37,7 +37,7 @@
 #include "stack_alloc.h"
 #include "vq.h"
 
-
+extern float exc_gains_wb2_table[];
 /*---------------------------------------------------------------------------*\
                                                                              
  void overlap_cb_search()							      
@@ -125,8 +125,6 @@ int   nsf                       /* number of samples in subframe */
   free(impulse);
   return bscore;
 }
-
-
 
 
 void split_cb_search(
@@ -251,25 +249,39 @@ float *stack
          frame_bits_pack(bits,max_index,3);
 
          /*Vector quantize gains[i]*/
-#if 1
+         if (nb_subvect<=5)
+         {
          best_vq_index = vq_index(gains, gain_cb, nb_subvect, gain_cb_size);
          frame_bits_pack(bits,best_vq_index,params->gain_bits);
          printf ("best_gains_vq_index %d %f %d\n", best_vq_index, min_dist, max_index);
          for (i=0;i<nb_subvect;i++)
             gains[i]= sign[i]*gain_cb[best_vq_index*nb_subvect+i]/max_gain/(Ee[ind[i]]+.001);
-#else
+         } else
+         {
+            float tmp[5];
+            int best_vq_index2;
          best_vq_index = vq_index(gains, gain_cb, nb_subvect/2, gain_cb_size);
+         for (i=0;i<5;i++)
+            tmp[i]=gains[i]-gain_cb[best_vq_index*nb_subvect/2+i];
+         best_vq_index2 = vq_index(tmp, exc_gains_wb2_table, nb_subvect/2, 256);
+
          frame_bits_pack(bits,best_vq_index,params->gain_bits);
          printf ("best_gains_vq_index %d %f %d\n", best_vq_index, min_dist, max_index);
          for (i=0;i<nb_subvect/2;i++)
-            gains[i]= sign[i]*gain_cb[best_vq_index*nb_subvect+i]/max_gain/(Ee[ind[i]]+.001);
+            gains[i]= sign[i]*(gain_cb[best_vq_index*nb_subvect/2+i]+exc_gains_wb2_table[best_vq_index2*nb_subvect/2+i])/max_gain/(Ee[ind[i]]+.001);
+
 
          best_vq_index = vq_index(gains+5, gain_cb, nb_subvect/2, gain_cb_size);
          frame_bits_pack(bits,best_vq_index,params->gain_bits);
+         for (i=0;i<5;i++)
+            tmp[i]=gains[i+5]-gain_cb[best_vq_index*nb_subvect/2+i];
+         best_vq_index2 = vq_index(tmp, exc_gains_wb2_table, nb_subvect/2, 256);
+
          printf ("best_gains_vq_index %d %f %d\n", best_vq_index, min_dist, max_index);
          for (i=0;i<nb_subvect/2;i++)
-            gains[i+5]= sign[i+5]*gain_cb[best_vq_index*nb_subvect+i]/max_gain/(Ee[ind[i+5]]+.001);
-#endif
+            gains[i+5]= sign[i+5]*(gain_cb[best_vq_index*nb_subvect/2+i]+exc_gains_wb2_table[best_vq_index2*nb_subvect/2+i])/max_gain/(Ee[ind[i+5]]+.001);
+         }
+
     
 
          POP(stack);
@@ -302,6 +314,7 @@ float *stack
    POP(stack);
    POP(stack);
 }
+
 
 void split_cb_unquant(
 float *exc,

@@ -40,7 +40,10 @@ typedef struct EncState {
    float  gamma2;         /* Perceptual filter: A(z/gamma2) */
    float  lag_factor;     /* Lag windowing gaussian width */
    float  lpc_floor;      /* Noise floor multiplier for A[0] in LPC analysis*/
-   float *stack;          /* Pseudo-stack allocation */
+   float  preemph;        /* Pre-emphasis: P(z) = 1 - a*z^-1*/
+   float  pre_mem;        /* 1-element memory for pre-emphasis */
+   float  pre_mem2;       /* 1-element memory for pre-emphasis */
+   float *stack;          /* Pseudo-stack allocation for temporary memory */
    int    os_fact;        /* Over-sampling factor for fractional pitch */
    int    os_filt_ord2;   /* Over-sampling filter size for fractional pitch */
    float *os_exc;         /* Over-sampled excitation for fractional pitch */

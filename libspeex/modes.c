@@ -56,7 +56,7 @@ split_cb_params split_cb_wb = {
    10,              /*nb_subvect*/
    exc_wb_table,    /*shape_cb*/
    7,               /*shape_bits*/
-   NULL/*exc_gains_wb_table*/, /*gain_cb*/
+   exc_gains_wb_table, /*gain_cb*/
    8                /*gain_bits*/
 };
 
@@ -73,6 +73,7 @@ SpeexMode nb_mode = {
    0.6,    /*gamma2*/
    .005,
    1.0001,
+   0.0,
    /*LSP quantization*/
    lsp_quant_nb,
    lsp_unquant_nb,
@@ -99,7 +100,8 @@ SpeexMode wb_mode = {
    0.9,    /*gamma1*/
    0.6,    /*gamma2*/
    .002,
-   1.00002,
+   1.00001,
+   0.0,
    /*LSP quantization*/
    lsp_quant_wb,
    lsp_unquant_wb,

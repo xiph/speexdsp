@@ -55,6 +55,8 @@ void encoder_init(EncState *st, SpeexMode *mode)
    st->max_pitch=mode->pitchEnd;
    st->lag_factor=mode->lag_factor;
    st->lpc_floor = mode->lpc_floor;
+   st->preemph = mode->preemph;
+  
 
    st->lsp_quant = mode->lsp_quant;
    st->ltp_quant = mode->ltp_quant;
@@ -62,6 +64,8 @@ void encoder_init(EncState *st, SpeexMode *mode)
    st->innovation_quant = mode->innovation_quant;
    st->innovation_params = mode->innovation_params;
 
+   st->pre_mem=0;
+   st->pre_mem2=0;
 
    /* Over-sampling filter (fractional pitch)*/
    st->os_fact=4;
@@ -106,7 +110,7 @@ void encoder_init(EncState *st, SpeexMode *mode)
 
    st->autocorr = malloc((st->lpcSize+1)*sizeof(float));
 
-   st->stack = calloc(10000, sizeof(float));
+   st->stack = calloc(20000, sizeof(float));
 
    st->buf2 = malloc(st->windowSize*sizeof(float));
 
@@ -167,8 +171,11 @@ void encode(EncState *st, float *in, FrameBits *bits)
 
    /* Copy new data in input buffer */
    memmove(st->inBuf, st->inBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(float));
-   for (i=0;i<st->frameSize;i++)
-      st->inBuf[st->bufSize-st->frameSize+i] = in[i];
+   st->inBuf[st->bufSize-st->frameSize] = in[0] - st->preemph*st->pre_mem;
+   for (i=1;i<st->frameSize;i++)
+      st->inBuf[st->bufSize-st->frameSize+i] = in[i] - st->preemph*in[i-1];
+   st->pre_mem = in[st->frameSize-1];
+
    memmove(st->excBuf, st->excBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(float));
    memmove(st->swBuf, st->swBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(float));
 
@@ -264,6 +271,10 @@ void encode(EncState *st, float *in, FrameBits *bits)
       bw_lpc(st->gamma1, st->interp_lpc, st->bw_lpc1, st->lpcSize);
       bw_lpc(st->gamma2, st->interp_lpc, st->bw_lpc2, st->lpcSize);
       
+      /*for (i=1;i<=st->lpcSize;i++)
+         st->bw_lpc2[i]=0;
+      st->bw_lpc2[1]=-st->preemph;*/
+
       /* Reset excitation */
       for (i=0;i<st->subframeSize;i++)
          exc[i]=0;
@@ -317,28 +328,29 @@ void encode(EncState *st, float *in, FrameBits *bits)
       snr = 10*log10((esig+1)/(enoise+1));
       printf ("pitch SNR = %f\n", snr);
 
-#if 1 /*If set to 1, compute "real innovation" i.e. cheat to get perfect reconstruction*/
+#if 0 /*If set to 1, compute "real innovation" i.e. cheat to get perfect reconstruction*/
       syn_filt_zero(target, st->bw_lpc1, res, st->subframeSize, st->lpcSize);
       residue_zero(res, st->interp_qlpc, st->buf2, st->subframeSize, st->lpcSize);
       residue_zero(st->buf2, st->bw_lpc2, st->buf2, st->subframeSize, st->lpcSize);
-      if (snr>9 && (rand()%10==0))
+      if (1||(snr>9 && (rand()%10==0)))
       {
          printf ("exc ");
          for (i=0;i<st->subframeSize;i++)
          {
-            if (i && i%8==0)
+            if (0&&i && i%8==0)
                printf ("\nexc ");
             printf ("%f ", st->buf2[i]);
          }
          printf ("\n");
       }
-      /*for (i=0;i<st->subframeSize;i++)
+      for (i=0;i<st->subframeSize;i++)
          exc[i]+=st->buf2[i];
-#else*/
+#else
       /* Perform a split-codebook search */
       st->innovation_quant(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2,
                            st->innovation_params, st->lpcSize,
                            st->subframeSize, exc, bits, st->stack);
+
 #endif
       /* Compute weighted noise energy and SNR */
       enoise=0;
@@ -372,8 +384,10 @@ void encode(EncState *st, float *in, FrameBits *bits)
    st->first = 0;
 
    /* Replace input by synthesized speech */
-   for (i=0;i<st->frameSize;i++)
-     in[i]=st->frame[i];
+   in[0] = st->frame[0] + st->preemph*st->pre_mem2;
+   for (i=1;i<st->frameSize;i++)
+     in[i]=st->frame[i] + st->preemph*in[i-1];
+   st->pre_mem2=in[st->frameSize-1];
 }
 
 
