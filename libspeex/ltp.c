@@ -589,7 +589,6 @@ int lost)
 #ifdef DEBUG
    printf ("unquantized pitch: %d %f %f %f\n", pitch, gain[0], gain[1], gain[2]);
 #endif
-
    for(i=0;i<nsf;i++)
       exc[i]=0;
 

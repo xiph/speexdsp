@@ -22,7 +22,8 @@
 
 /** Post-filter parameters*/
 typedef struct pf_params {
-   float formant_enh;     /* formant enhancement factor */
+   float formant_enh_num; /* formant enhancement numerator */
+   float formant_enh_den; /* formant enhancement denominator */
    float pitch_enh;       /* pitch enhancement factor */
 } pf_params;
 
@@ -36,6 +37,8 @@ int nsf,
 int pitch,
 float *pitch_gain,
 void *params,
+float *mem,
+float *mem2,
 float *stack);
 
 

@@ -234,10 +234,12 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
       st->lsp[i] = acos(st->lsp[i]);
    /*print_vec(st->lsp, 10, "LSP:");*/
    /* LSP Quantization */
+#if 1
    st->lsp_quant(st->lsp, st->qlsp, st->lpcSize, bits);
-
-   /*for (i=0;i<st->lpcSize;i++)
-     st->qlsp[i]=st->lsp[i];*/
+#else
+   for (i=0;i<st->lpcSize;i++)
+     st->qlsp[i]=st->lsp[i];
+#endif
    /*printf ("LSP ");
    for (i=0;i<st->lpcSize;i++)
       printf ("%f ", st->lsp[i]);
@@ -611,6 +613,8 @@ void *nb_decoder_init(SpeexMode *m)
    st->old_qlsp = malloc(st->lpcSize*sizeof(float));
    st->interp_qlsp = malloc(st->lpcSize*sizeof(float));
    st->mem_sp = calloc(st->lpcSize, sizeof(float));
+   st->mem_pf = calloc(st->lpcSize, sizeof(float));
+   st->mem_pf2 = calloc(st->lpcSize, sizeof(float));
 
    st->pi_gain = calloc(st->nbSubframes, sizeof(float));
    
@@ -630,6 +634,8 @@ void nb_decoder_destroy(void *state)
    free(st->interp_qlsp);
    free(st->stack);
    free(st->mem_sp);
+   free(st->mem_pf);
+   free(st->mem_pf2);
    free(st->pi_gain);
    
    free(state);
@@ -724,13 +730,23 @@ void nb_decode(void *state, SpeexBits *bits, float *out, int lost)
 
       for (i=0;i<st->subframeSize;i++)
          exc2[i]=exc[i];
+#if 0
+      /*Compute decoded signal*/
+      syn_filt_mem(exc, st->interp_qlpc, exc2, st->subframeSize, st->lpcSize, st->mem_sp);
 
       if (st->pf_enabled)
+         st->post_filter_func(exc2, sp, st->interp_qlpc, st->lpcSize, st->subframeSize,
+                              pitch, pitch_gain, st->post_filter_params, st->mem_pf, st->stack);
+#else
+      if (st->pf_enabled)
          st->post_filter_func(exc, exc2, st->interp_qlpc, st->lpcSize, st->subframeSize,
-                              pitch, pitch_gain, st->post_filter_params, st->stack);
-
-      /*Compute decoded signal*/
+                              pitch, pitch_gain, st->post_filter_params, st->mem_pf, 
+                              st->mem_pf2, st->stack);
+      
       syn_filt_mem(exc2, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, st->mem_sp);
+
+
+#endif
 
    }
    

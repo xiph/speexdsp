@@ -47,7 +47,7 @@ typedef void (*innovation_quant_func)(float *, float *, float *, float *, void *
 typedef void (*innovation_unquant_func)(float *, void *, int, SpeexBits*, float *);
 
 typedef void (*nb_post_filter_func)(float *, float *, float *, int, int, int, 
-                               float *, void *, float *);
+                               float *, void *, float *, float *, float *);
 
 /*Struct defining the encoding/decoding mode*/
 typedef struct SpeexNBMode {

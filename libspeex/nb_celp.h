@@ -113,6 +113,8 @@ typedef struct DecState {
    float *interp_qlsp;    /* Interpolated quantized LSPs */
    float *interp_qlpc;    /* Interpolated quantized LPCs */
    float *mem_sp;
+   float *mem_pf;
+   float *mem_pf2;
    float *pi_gain;
 
    lsp_unquant_func  lsp_unquant;

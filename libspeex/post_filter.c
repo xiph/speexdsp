@@ -32,6 +32,8 @@ int nsf,
 int pitch,
 float *pitch_gain,
 void *par,
+float *mem,
+float *mem2,
 float *stack)
 {
    int i;
@@ -39,12 +41,13 @@ float *stack)
    float *awk;
    float gain;
    pf_params *params;
-   
+   float *tmp_exc;
+
    params = (pf_params*) par;
 
    awk = PUSH(stack, p);
-   
-   bw_lpc (params->formant_enh, ak, awk, p);
+   tmp_exc = PUSH(stack, nsf);
+  
 
    for (i=0;i<nsf;i++)
       exc_energy+=exc[i]*exc[i];
@@ -58,14 +61,19 @@ float *stack)
                                                );
    }
    
-   syn_filt(new_exc, awk, new_exc, nsf, p);
+   bw_lpc (params->formant_enh_num, ak, awk, p);
+   residue_mem(new_exc, awk, tmp_exc, nsf, p, mem);
+   bw_lpc (params->formant_enh_den, ak, awk, p);
+   syn_filt_mem(tmp_exc, awk, new_exc, nsf, p, mem2);
 
    for (i=0;i<nsf;i++)
       new_exc_energy+=new_exc[i]*new_exc[i];
 
    gain = sqrt(exc_energy)/sqrt(.1+new_exc_energy);
+   /*gain=1;*/
    for (i=0;i<nsf;i++)
       new_exc[i] *= gain;
-
+   
+   POP(stack);
    POP(stack);
 }

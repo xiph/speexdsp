@@ -36,14 +36,16 @@ extern float exc_5_64_table[];
 
 /* Post-filter parameters for narrowband */
 pf_params pf_params_nb = {
-   0.1,      /* formant enhancement factor */
-   0.6       /* pitch enhancement factor */
+   0.65,      /* formant enhancement numerator */
+   0.7,      /* formant enhancement denominator */
+   0.4       /* pitch enhancement factor */
 };
 
 /* Post-filter parameters for wideband */
 pf_params pf_params_sb = {
-   0.04,     /* formant enhancement factor */
-   0.4       /* pitch enhancement factor */
+   0.65,      /* formant enhancement numerator */
+   0.67,      /* formant enhancement denominator */
+   0.3       /* pitch enhancement factor */
 };
 
 /* Parameters for Long-Term Prediction (LTP)*/
