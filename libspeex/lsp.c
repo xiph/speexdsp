@@ -57,8 +57,8 @@ Modified by Jean-Marc Valin
 #endif
 
 #ifdef FIXED_POINT
-#define ANGLE2X(a) (cos(a))
-#define X2ANGLE(x) (acos(x))
+#define ANGLE2X(a) (cos((a)/LSP_SCALING))
+#define X2ANGLE(x) (acos(x)*LSP_SCALING)
 #else
 #define ANGLE2X(a) (cos(a))
 #define X2ANGLE(x) (acos(x))
@@ -165,7 +165,7 @@ static float cheb_poly_eva(spx_word32_t *coef,float x,int m,char *stack)
 \*---------------------------------------------------------------------------*/
 
 
-int lpc_to_lsp (spx_coef_t *a,int lpcrdr,float *freq,int nb,float delta, char *stack)
+int lpc_to_lsp (spx_coef_t *a,int lpcrdr,spx_lsp_t *freq,int nb,float delta, char *stack)
 /*  float *a 		     	lpc coefficients			*/
 /*  int lpcrdr			order of LPC coefficients (10) 		*/
 /*  float *freq 	      	LSP frequencies in the x domain       	*/
@@ -328,7 +328,7 @@ int lpc_to_lsp (spx_coef_t *a,int lpcrdr,float *freq,int nb,float delta, char *s
 
 #ifdef FIXED_POINT
 
-void lsp_to_lpc(float *freq,spx_coef_t *ak,int lpcrdr, char *stack)
+void lsp_to_lpc(spx_lsp_t *freq,spx_coef_t *ak,int lpcrdr, char *stack)
 /*  float *freq 	array of LSP frequencies in the x domain	*/
 /*  float *ak 		array of LPC coefficients 			*/
 /*  int lpcrdr  	order of LPC coefficients 			*/
@@ -400,7 +400,7 @@ void lsp_to_lpc(float *freq,spx_coef_t *ak,int lpcrdr, char *stack)
 }
 #else
 
-void lsp_to_lpc(float *freq,spx_coef_t *ak,int lpcrdr, char *stack)
+void lsp_to_lpc(spx_lsp_t *freq,spx_coef_t *ak,int lpcrdr, char *stack)
 /*  float *freq 	array of LSP frequencies in the x domain	*/
 /*  float *ak 		array of LPC coefficients 			*/
 /*  int lpcrdr  	order of LPC coefficients 			*/
@@ -463,19 +463,19 @@ void lsp_to_lpc(float *freq,spx_coef_t *ak,int lpcrdr, char *stack)
 
 /*Added by JMV
   Makes sure the LSPs are stable*/
-void lsp_enforce_margin(float *lsp, int len, float margin)
+void lsp_enforce_margin(spx_lsp_t *lsp, int len, float margin)
 {
    int i;
-   if (lsp[0]<margin)
-      lsp[0]=margin;
-   if (lsp[len-1]>M_PI-margin)
-      lsp[len-1]=M_PI-margin;
+   if (lsp[0]<LSP_SCALING*margin)
+      lsp[0]=LSP_SCALING*margin;
+   if (lsp[len-1]>LSP_SCALING*(M_PI-margin))
+      lsp[len-1]=LSP_SCALING*(M_PI-margin);
    for (i=1;i<len-1;i++)
    {
-      if (lsp[i]<lsp[i-1]+margin)
-         lsp[i]=lsp[i-1]+margin;
+      if (lsp[i]<lsp[i-1]+LSP_SCALING*margin)
+         lsp[i]=lsp[i-1]+LSP_SCALING*margin;
 
-      if (lsp[i]>lsp[i+1]-margin)
-         lsp[i]= .5* (lsp[i] + lsp[i+1]-margin);
+      if (lsp[i]>lsp[i+1]-LSP_SCALING*margin)
+         lsp[i]= .5* (lsp[i] + lsp[i+1]-LSP_SCALING*margin);
    }
 }

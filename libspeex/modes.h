@@ -48,10 +48,10 @@
 
 
 /** Quantizes LSPs */
-typedef void (*lsp_quant_func)(float *, float *, int, SpeexBits *);
+typedef void (*lsp_quant_func)(spx_lsp_t *, spx_lsp_t *, int, SpeexBits *);
 
 /** Decodes quantized LSPs */
-typedef void (*lsp_unquant_func)(float *, int, SpeexBits *);
+typedef void (*lsp_unquant_func)(spx_lsp_t *, int, SpeexBits *);
 
 
 /** Long-term predictor quantization */

@@ -49,10 +49,10 @@ Modified by Jean-Marc Valin
 
 #include "misc.h"
 
-int lpc_to_lsp (spx_coef_t *a, int lpcrdr, float *freq, int nb, float delta, char *stack);
-void lsp_to_lpc(float *freq, spx_coef_t *ak, int lpcrdr, char *stack);
+int lpc_to_lsp (spx_coef_t *a, int lpcrdr, spx_lsp_t *freq, int nb, float delta, char *stack);
+void lsp_to_lpc(spx_lsp_t *freq, spx_coef_t *ak, int lpcrdr, char *stack);
 
 /*Added by JMV*/
-void lsp_enforce_margin(float *lsp, int len, float margin);
+void lsp_enforce_margin(spx_lsp_t *lsp, int len, float margin);
 
 #endif	/* __AK2LSPD__ */

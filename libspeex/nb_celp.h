@@ -84,12 +84,12 @@ typedef struct EncState {
    spx_word16_t *autocorr;       /**< auto-correlation */
    float *lagWindow;      /**< Window applied to auto-correlation */
    spx_coef_t *lpc;            /**< LPCs for current frame */
-   float *lsp;            /**< LSPs for current frame */
-   float *qlsp;           /**< Quantized LSPs for current frame */
-   float *old_lsp;        /**< LSPs for previous frame */
-   float *old_qlsp;       /**< Quantized LSPs for previous frame */
-   float *interp_lsp;     /**< Interpolated LSPs */
-   float *interp_qlsp;    /**< Interpolated quantized LSPs */
+   spx_lsp_t *lsp;            /**< LSPs for current frame */
+   spx_lsp_t *qlsp;           /**< Quantized LSPs for current frame */
+   spx_lsp_t *old_lsp;        /**< LSPs for previous frame */
+   spx_lsp_t *old_qlsp;       /**< Quantized LSPs for previous frame */
+   spx_lsp_t *interp_lsp;     /**< Interpolated LSPs */
+   spx_lsp_t *interp_qlsp;    /**< Interpolated quantized LSPs */
    spx_coef_t *interp_lpc;     /**< Interpolated LPCs */
    spx_coef_t *interp_qlpc;    /**< Interpolated quantized LPCs */
    spx_coef_t *bw_lpc1;        /**< LPCs after bandwidth expansion by gamma1 for perceptual weighting*/
@@ -149,9 +149,9 @@ typedef struct DecState {
    spx_sig_t *excBuf;         /**< Excitation buffer */
    spx_sig_t *exc;            /**< Start of excitation frame */
    spx_sig_t *innov;          /**< Innovation for the frame */
-   float *qlsp;           /**< Quantized LSPs for current frame */
-   float *old_qlsp;       /**< Quantized LSPs for previous frame */
-   float *interp_qlsp;    /**< Interpolated quantized LSPs */
+   spx_lsp_t *qlsp;           /**< Quantized LSPs for current frame */
+   spx_lsp_t *old_qlsp;       /**< Quantized LSPs for previous frame */
+   spx_lsp_t *interp_qlsp;    /**< Interpolated quantized LSPs */
    spx_coef_t *interp_qlpc;    /**< Interpolated quantized LPCs */
    spx_mem_t *mem_sp;         /**< Filter memory for synthesis signal */
    float *pi_gain;        /**< Gain of LPC filter at theta=pi (fe/2) */

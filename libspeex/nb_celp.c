@@ -144,17 +144,17 @@ void *nb_encoder_init(SpeexMode *m)
    st->bw_lpc1 = PUSH(st->stack, st->lpcSize+1, spx_coef_t);
    st->bw_lpc2 = PUSH(st->stack, st->lpcSize+1, spx_coef_t);
 
-   st->lsp = PUSH(st->stack, st->lpcSize, float);
-   st->qlsp = PUSH(st->stack, st->lpcSize, float);
-   st->old_lsp = PUSH(st->stack, st->lpcSize, float);
-   st->old_qlsp = PUSH(st->stack, st->lpcSize, float);
-   st->interp_lsp = PUSH(st->stack, st->lpcSize, float);
-   st->interp_qlsp = PUSH(st->stack, st->lpcSize, float);
+   st->lsp = PUSH(st->stack, st->lpcSize, spx_lsp_t);
+   st->qlsp = PUSH(st->stack, st->lpcSize, spx_lsp_t);
+   st->old_lsp = PUSH(st->stack, st->lpcSize, spx_lsp_t);
+   st->old_qlsp = PUSH(st->stack, st->lpcSize, spx_lsp_t);
+   st->interp_lsp = PUSH(st->stack, st->lpcSize, spx_lsp_t);
+   st->interp_qlsp = PUSH(st->stack, st->lpcSize, spx_lsp_t);
 
    st->first = 1;
    for (i=0;i<st->lpcSize;i++)
    {
-      st->lsp[i]=8192*(M_PI*((float)(i+1)))/(st->lpcSize+1);
+      st->lsp[i]=LSP_SCALING*(M_PI*((float)(i+1)))/(st->lpcSize+1);
    }
 
    st->mem_sp = PUSH(st->stack, st->lpcSize, spx_mem_t);
@@ -267,6 +267,7 @@ int nb_encode(void *state, short *in, SpeexBits *bits)
    lsp_dist=0;
    for (i=0;i<st->lpcSize;i++)
       lsp_dist += (st->old_lsp[i] - st->lsp[i])*(st->old_lsp[i] - st->lsp[i]);
+   lsp_dist /= LSP_SCALING*LSP_SCALING;
 
    /* Whole frame analysis (open-loop estimation of pitch and excitation gain) */
    {
@@ -948,9 +949,9 @@ void *nb_decoder_init(SpeexMode *m)
    st->innov = PUSH(st->stack, st->frameSize, spx_sig_t);
 
    st->interp_qlpc = PUSH(st->stack, st->lpcSize+1, spx_coef_t);
-   st->qlsp = PUSH(st->stack, st->lpcSize, float);
-   st->old_qlsp = PUSH(st->stack, st->lpcSize, float);
-   st->interp_qlsp = PUSH(st->stack, st->lpcSize, float);
+   st->qlsp = PUSH(st->stack, st->lpcSize, spx_lsp_t);
+   st->old_qlsp = PUSH(st->stack, st->lpcSize, spx_lsp_t);
+   st->interp_qlsp = PUSH(st->stack, st->lpcSize, spx_lsp_t);
    st->mem_sp = PUSH(st->stack, 5*st->lpcSize, spx_mem_t);
    st->comb_mem = PUSHS(st->stack, CombFilterMem);
    comp_filter_mem_init (st->comb_mem);
@@ -1261,6 +1262,7 @@ int nb_decode(void *state, SpeexBits *bits, short *out)
       float lsp_dist=0, fact;
       for (i=0;i<st->lpcSize;i++)
          lsp_dist += fabs(st->old_qlsp[i] - st->qlsp[i]);
+      lsp_dist /= LSP_SCALING*LSP_SCALING;
       fact = .6*exp(-.2*lsp_dist);
       for (i=0;i<2*st->lpcSize;i++)
          st->mem_sp[i] = (spx_mem_t)(st->mem_sp[i]*fact);

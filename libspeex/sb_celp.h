@@ -74,12 +74,12 @@ typedef struct SBEncState {
    float *lagWindow;           /**< Auto-correlation window */
    spx_word16_t *autocorr;            /**< Auto-correlation (for LPC analysis) */
    spx_coef_t *lpc;                 /**< LPC coefficients */
-   float *lsp;                 /**< LSP coefficients */
-   float *qlsp;                /**< Quantized LSPs */
-   float *old_lsp;             /**< LSPs of previous frame */
-   float *old_qlsp;            /**< Quantized LSPs of previous frame */
-   float *interp_lsp;          /**< Interpolated LSPs for current sub-frame */
-   float *interp_qlsp;         /**< Interpolated quantized LSPs for current sub-frame */
+   spx_lsp_t *lsp;                 /**< LSP coefficients */
+   spx_lsp_t *qlsp;                /**< Quantized LSPs */
+   spx_lsp_t *old_lsp;             /**< LSPs of previous frame */
+   spx_lsp_t *old_qlsp;            /**< Quantized LSPs of previous frame */
+   spx_lsp_t *interp_lsp;          /**< Interpolated LSPs for current sub-frame */
+   spx_lsp_t *interp_qlsp;         /**< Interpolated quantized LSPs for current sub-frame */
    spx_coef_t *interp_lpc;          /**< Interpolated LPCs for current sub-frame */
    spx_coef_t *interp_qlpc;         /**< Interpolated quantized LPCs for current sub-frame */
    spx_coef_t *bw_lpc1;             /**< Bandwidth-expanded version of LPCs (#1) */
@@ -129,9 +129,9 @@ typedef struct SBDecState {
    spx_word32_t *g0_mem, *g1_mem;
 
    spx_sig_t *exc;
-   float *qlsp;
-   float *old_qlsp;
-   float *interp_qlsp;
+   spx_lsp_t *qlsp;
+   spx_lsp_t *old_qlsp;
+   spx_lsp_t *interp_qlsp;
    spx_coef_t *interp_qlpc;
 
    spx_mem_t *mem_sp;

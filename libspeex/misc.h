@@ -45,10 +45,12 @@ typedef signed short spx_word16_t;
 typedef signed int   spx_word32_t;
 typedef spx_word32_t spx_mem_t;
 typedef spx_word16_t spx_coef_t;
+typedef spx_word16_t spx_lsp_t;
 typedef spx_word32_t spx_sig_t;
 
 #define LPC_SCALING  8192.
 #define SIG_SCALING  16384
+#define LSP_SCALING  8192.
 
 #define LPC_SHIFT    13
 #define SIG_SHIFT    14
@@ -78,12 +80,14 @@ typedef spx_word32_t spx_sig_t;
 
 typedef float spx_mem_t;
 typedef float spx_coef_t;
+typedef float spx_lsp_t;
 typedef float spx_sig_t;
 typedef float spx_word16_t;
 typedef float spx_word32_t;
 
 #define LPC_SCALING  1.
 #define SIG_SCALING  1.
+#define LSP_SCALING  1.
 
 #define LPC_SHIFT    0
 #define SIG_SHIFT    0

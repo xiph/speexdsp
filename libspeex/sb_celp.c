@@ -205,12 +205,12 @@ void *sb_encoder_init(SpeexMode *m)
    st->lpc = PUSH(st->stack, st->lpcSize+1, spx_coef_t);
    st->bw_lpc1 = PUSH(st->stack, st->lpcSize+1, spx_coef_t);
    st->bw_lpc2 = PUSH(st->stack, st->lpcSize+1, spx_coef_t);
-   st->lsp = PUSH(st->stack, st->lpcSize, float);
-   st->qlsp = PUSH(st->stack, st->lpcSize, float);
-   st->old_lsp = PUSH(st->stack, st->lpcSize, float);
-   st->old_qlsp = PUSH(st->stack, st->lpcSize, float);
-   st->interp_lsp = PUSH(st->stack, st->lpcSize, float);
-   st->interp_qlsp = PUSH(st->stack, st->lpcSize, float);
+   st->lsp = PUSH(st->stack, st->lpcSize, spx_lsp_t);
+   st->qlsp = PUSH(st->stack, st->lpcSize, spx_lsp_t);
+   st->old_lsp = PUSH(st->stack, st->lpcSize, spx_lsp_t);
+   st->old_qlsp = PUSH(st->stack, st->lpcSize, spx_lsp_t);
+   st->interp_lsp = PUSH(st->stack, st->lpcSize, spx_lsp_t);
+   st->interp_qlsp = PUSH(st->stack, st->lpcSize, spx_lsp_t);
    st->interp_lpc = PUSH(st->stack, st->lpcSize+1, spx_coef_t);
    st->interp_qlpc = PUSH(st->stack, st->lpcSize+1, spx_coef_t);
    st->pi_gain = PUSH(st->stack, st->nbSubframes, float);
@@ -710,9 +710,9 @@ void *sb_decoder_init(SpeexMode *m)
 
    st->exc=PUSH(st->stack, st->frame_size, spx_sig_t);
 
-   st->qlsp = PUSH(st->stack, st->lpcSize, float);
-   st->old_qlsp = PUSH(st->stack, st->lpcSize, float);
-   st->interp_qlsp = PUSH(st->stack, st->lpcSize, float);
+   st->qlsp = PUSH(st->stack, st->lpcSize, spx_lsp_t);
+   st->old_qlsp = PUSH(st->stack, st->lpcSize, spx_lsp_t);
+   st->interp_qlsp = PUSH(st->stack, st->lpcSize, spx_lsp_t);
    st->interp_qlpc = PUSH(st->stack, st->lpcSize+1, spx_coef_t);
 
    st->pi_gain = PUSH(st->stack, st->nbSubframes, float);
