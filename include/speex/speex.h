@@ -56,7 +56,7 @@ extern "C" {
 /** Set quality value */
 #define SPEEX_SET_QUALITY 4
 /** Get current quality setting */
-#define SPEEX_GET_QUALITY 5
+/* #define SPEEX_GET_QUALITY 5 -- Doesn't make much sense, does it? */
 
 /** Set sub-mode to use */
 #define SPEEX_SET_MODE 6
@@ -361,10 +361,10 @@ extern SpeexMode speex_wb_mode;
 extern SpeexMode speex_uwb_mode;
 
 /** List of all modes available */
-extern const SpeexMode * const speex_mode_list[SPEEX_NB_MODES];
+extern SpeexMode *speex_mode_list[SPEEX_NB_MODES];
 
 /** Obtain one of the modes available */
-const SpeexMode * const speex_lib_get_mode (int mode);
+SpeexMode *speex_lib_get_mode (int mode);
 
 #ifdef __cplusplus
 }

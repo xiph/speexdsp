@@ -71,7 +71,7 @@ int oe_write_page(ogg_page *page, FILE *fp)
 #define MAX_FRAME_BYTES 2000
 
 /* Convert input audio bits, endians and channels */
-static int read_samples(FILE *fin,int frame_size, int bits, int channels, int lsb, float * input, char *buff, int *size)
+static int read_samples(FILE *fin,int frame_size, int bits, int channels, int lsb, short * input, char *buff, int *size)
 {   
    unsigned char in[MAX_FRAME_BYTES*2];
    int i;
@@ -205,7 +205,7 @@ int main(int argc, char **argv)
    int option_index = 0;
    char *inFile, *outFile;
    FILE *fin, *fout;
-   float input[MAX_FRAME_SIZE];
+   short input[MAX_FRAME_SIZE];
    int frame_size;
    int quiet=0;
    int vbr_enabled=0;
@@ -214,6 +214,7 @@ int main(int argc, char **argv)
    int dtx_enabled=0;
    int nbBytes;
    SpeexMode *mode=NULL;
+   int modeID = -1;
    void *st;
    SpeexBits bits;
    char cbits[MAX_FRAME_BYTES];
@@ -270,8 +271,8 @@ int main(int argc, char **argv)
    char first_bytes[12];
    int wave_input=0;
    int tmp;
-   int lookahead = 0;   
-
+   int lookahead = 0;
+   
    comment_init(&comments, &comments_length, vendor_string);
 
    /*Process command-line options*/
@@ -287,13 +288,13 @@ int main(int argc, char **argv)
       case 0:
          if (strcmp(long_options[option_index].name,"narrowband")==0)
          {
-            mode=&speex_nb_mode;
+            modeID = SPEEX_MODEID_NB;
          } else if (strcmp(long_options[option_index].name,"wideband")==0)
          {
-            mode=&speex_wb_mode;
+            modeID = SPEEX_MODEID_WB;
          } else if (strcmp(long_options[option_index].name,"ultra-wideband")==0)
          {
-            mode=&speex_uwb_mode;
+            modeID = SPEEX_MODEID_UWB;
          } else if (strcmp(long_options[option_index].name,"vbr")==0)
          {
             vbr_enabled=1;
@@ -380,7 +381,7 @@ int main(int argc, char **argv)
 
          break;
       case 'n':
-         mode=&speex_nb_mode;
+         modeID = SPEEX_MODEID_NB;
          break;
       case 'h':
          usage();
@@ -394,10 +395,10 @@ int main(int argc, char **argv)
          print_bitrate=1;
          break;
       case 'w':
-         mode=&speex_wb_mode;
+         modeID = SPEEX_MODEID_WB;
          break;
       case 'u':
-         mode=&speex_uwb_mode;
+         modeID = SPEEX_MODEID_UWB;
          break;
       case '?':
          usage();
@@ -450,12 +451,12 @@ int main(int argc, char **argv)
       }
    }
 
-   if (!mode && !rate)
+   if (modeID==-1 && !rate)
    {
       /* By default, use narrowband/8 kHz */
-      mode=&speex_nb_mode;
+      modeID = SPEEX_MODEID_NB;
       rate=8000;
-   } else if (mode && rate)
+   } else if (modeID!=-1 && rate)
    {
       if (rate>48000)
       {
@@ -463,19 +464,19 @@ int main(int argc, char **argv)
          exit(1);
       } else if (rate>25000)
       {
-         if (mode!=&speex_uwb_mode)
+         if (modeID != SPEEX_MODEID_UWB)
          {
             fprintf (stderr, "Warning: Trying to encode in %s at %d Hz. I'll do it but I suggest you try ultra-wideband instead\n", mode->modeName , rate);
          }
       } else if (rate>12500)
       {
-         if (mode!=&speex_wb_mode)
+         if (modeID != SPEEX_MODEID_WB)
          {
             fprintf (stderr, "Warning: Trying to encode in %s at %d Hz. I'll do it but I suggest you try wideband instead\n", mode->modeName , rate);
          }
       } else if (rate>=6000)
       {
-         if (mode!=&speex_nb_mode)
+         if (modeID != SPEEX_MODEID_NB)
          {
             fprintf (stderr, "Warning: Trying to encode in %s at %d Hz. I'll do it but I suggest you try narrowband instead\n", mode->modeName , rate);
          }
@@ -483,7 +484,7 @@ int main(int argc, char **argv)
          fprintf (stderr, "Error: sampling rate too low: %d Hz\n", rate);
          exit(1);
       }
-   } else if (!mode)
+   } else if (modeID==-1)
    {
       if (rate>48000)
       {
@@ -491,30 +492,32 @@ int main(int argc, char **argv)
          exit(1);
       } else if (rate>25000)
       {
-         mode=&speex_uwb_mode;
+         modeID = SPEEX_MODEID_UWB;
       } else if (rate>12500)
       {
-         mode=&speex_wb_mode;
+         modeID = SPEEX_MODEID_WB;
       } else if (rate>=6000)
       {
-         mode=&speex_nb_mode;
+         modeID = SPEEX_MODEID_NB;
       } else {
          fprintf (stderr, "Error: Sampling rate too low: %d Hz\n", rate);
          exit(1);
       }
    } else if (!rate)
    {
-      if (mode==&speex_nb_mode)
+      if (modeID == SPEEX_MODEID_NB)
          rate=8000;
-      else if (mode==&speex_wb_mode)
+      else if (modeID == SPEEX_MODEID_WB)
          rate=16000;
-      else if (mode==&speex_uwb_mode)
+      else if (modeID == SPEEX_MODEID_UWB)
          rate=32000;
    }
 
    if (!quiet)
       if (rate!=8000 && rate!=16000 && rate!=32000)
          fprintf (stderr, "Warning: Speex is only optimized for 8, 16 and 32 kHz. It will still work at %d Hz but your mileage may vary\n", rate); 
+
+   mode = speex_lib_get_mode (modeID);
 
    speex_init_header(&header, rate, 1, mode);
    header.frames_per_packet=nframes;
@@ -649,8 +652,10 @@ int main(int argc, char **argv)
       id++;
       /*Encode current frame*/
       if (chan==2)
-         speex_encode_stereo(input, frame_size, &bits);
-      speex_encode(st, input, &bits);
+         speex_encode_stereo_int(input, frame_size, &bits);
+
+      speex_encode_int(st, input, &bits);
+      
       nb_encoded += frame_size;
       if (print_bitrate) {
          int tmp;
@@ -749,7 +754,6 @@ int main(int argc, char **argv)
       else
          bytes_written += ret;
    }
-   
 
    speex_encoder_destroy(st);
    speex_bits_destroy(&bits);

@@ -47,7 +47,7 @@
 
 #define MAX_IN_SAMPLES 640
 
-const SpeexMode * const speex_mode_list[SPEEX_NB_MODES] = {&speex_nb_mode, &speex_wb_mode, &speex_uwb_mode};
+SpeexMode *speex_mode_list[SPEEX_NB_MODES] = {&speex_nb_mode, &speex_wb_mode, &speex_uwb_mode};
 
 /* Extern declarations for all codebooks we use here */
 extern signed char gain_cdbk_nb[];
@@ -578,6 +578,7 @@ int speex_encode_int(void *state, short *in, SpeexBits *bits)
 {
    int i;
    int N;
+   /* FIXME: Do some dynamic allocation here */
    float float_in[MAX_IN_SAMPLES];
    speex_encoder_ctl(state, SPEEX_GET_FRAME_SIZE, &N);
    for (i=0;i<N;i++)
@@ -599,6 +600,7 @@ int speex_decode_int(void *state, SpeexBits *bits, short *out)
 {
    int i;
    int N;
+   /* FIXME: Do some dynamic allocation here */
    float float_out[MAX_IN_SAMPLES];
    int ret;
    speex_decoder_ctl(state, SPEEX_GET_FRAME_SIZE, &N);
@@ -716,7 +718,7 @@ int speex_lib_ctl(int request, void *ptr)
    return 0;
 }
 
-const SpeexMode * const speex_lib_get_mode (int mode)
+SpeexMode *speex_lib_get_mode (int mode)
 {
   if (mode < 0 || mode > SPEEX_NB_MODES) return NULL;
 

@@ -34,6 +34,8 @@
 #include "vq.h"
 #include <math.h>
 
+#define MAX_IN_SAMPLES 640
+
 /*float e_ratio_quant[4] = {1, 1.26, 1.587, 2};*/
 static float e_ratio_quant[4] = {.25, .315, .397, .5};
 
@@ -74,6 +76,16 @@ void speex_encode_stereo(float *data, int frame_size, SpeexBits *bits)
    speex_bits_pack(bits, tmp, 2);
 }
 
+void speex_encode_stereo_int(short *data, int frame_size, SpeexBits *bits)
+{
+   int i;
+   /* FIXME: Do some dynamic allocation here */
+   float float_data[2*MAX_IN_SAMPLES];
+   for (i=0;i<2*frame_size;i++)
+      float_data[i] = data[i];
+   speex_encode_stereo(float_data, frame_size, bits);
+}
+
 void speex_decode_stereo(float *data, int frame_size, SpeexStereoState *stereo)
 {
    float balance, e_ratio;
@@ -100,6 +112,24 @@ void speex_decode_stereo(float *data, int frame_size, SpeexStereoState *stereo)
       stereo->smooth_right = .98*stereo->smooth_right + .02*e_right;
       data[2*i] = stereo->smooth_left*ftmp;
       data[2*i+1] = stereo->smooth_right*ftmp;
+   }
+}
+
+void speex_decode_stereo_int(short *data, int frame_size, SpeexStereoState *stereo)
+{
+   int i;
+   int N;
+   /* FIXME: Do some dynamic allocation here */
+   float float_data[2*MAX_IN_SAMPLES];
+   speex_decode_stereo(float_data, frame_size, stereo);
+   for (i=0;i<frame_size;i++)
+   {
+      if (float_data[i]>32767.f)
+         data[i] = 32767;
+      else if (float_data[i]<-32768.f)
+         data[i] = -32768;
+      else
+         data[i] = (short)floor(.5+float_data[i]);
    }
 }
 
