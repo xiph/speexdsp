@@ -2,7 +2,7 @@
    Written by Jean-Marc Valin
 
    File: denoise.c
-
+   Denoiser based on the algorithm by Ephraim and Malah
 
    Redistribution and use in source and binary forms, with or without
    modification, are permitted provided that the following conditions are
@@ -240,211 +240,13 @@ static void update_noise(SpeexDenoiseState *st, float *ps, float *echo)
    }
 }
 
-int speex_denoise(SpeexDenoiseState *st, float *x, float *echo)
+static int speex_compute_vad(SpeexDenoiseState *st, float *ps, float mean_prior, float mean_post)
 {
-   int i;
-   int is_speech=0;
-   float mean_post=0;
-   float mean_prior=0;
-   float energy;
+   int i, is_speech=0;
    int N = st->ps_size;
-   int N3 = 2*N - st->frame_size;
-   int N4 = st->frame_size - N3;
    float scale=.5/N;
-   float *ps=st->ps;
 
-   /* 'Build' input frame */
-   for (i=0;i<N3;i++)
-      st->frame[i]=st->inbuf[i];
-   for (i=0;i<st->frame_size;i++)
-      st->frame[N3+i]=x[i];
-   
-   /* Update inbuf */
-   for (i=0;i<N3;i++)
-      st->inbuf[i]=x[N4+i];
-
-   /* Windowing */
-   for (i=0;i<2*N;i++)
-      st->frame[i] *= st->window[i];
-
-   /* Perform FFT */
-   drft_forward(&st->fft_lookup, st->frame);
-
-   /************************************************************** 
-    *  Denoise in spectral domain using Ephraim-Malah algorithm  *
-    **************************************************************/
-
-   /* Power spectrum */
-   ps[0]=1;
-   for (i=1;i<N;i++)
-      ps[i]=1+st->frame[2*i-1]*st->frame[2*i-1] + st->frame[2*i]*st->frame[2*i];
-
-   energy=0;
-   for (i=1;i<N;i++)
-      energy += log(100+ps[i]);
-   energy /= 160;
-   st->last_energy[st->nb_denoise%STABILITY_TIME]=energy;
-
-   if (st->nb_denoise>=STABILITY_TIME)
-   {
-      float E=0, E2=0;
-      float std;
-      for (i=0;i<STABILITY_TIME;i++)
-      {
-         E+=st->last_energy[i];
-         E2+=st->last_energy[i]*st->last_energy[i];
-      }
-      E2=E2/STABILITY_TIME;
-      E=E/STABILITY_TIME;
-      std = sqrt(E2-E*E);
-      if (std<.15 && st->last_update>20)
-      {
-         update_noise(st, &st->last_ps[st->last_id*N], echo);
-      }
-      /*fprintf (stderr, "%f\n", std);*/
-   }
-
-   st->nb_denoise++;
-#if 0
-   if (st->nb_min_estimate<50)
-   {
-      float ener=0;
-      for (i=1;i<N;i++)
-         ener += ps[i];
-      /*fprintf (stderr, "%f\n", ener);*/
-      if (ener < st->min_ener || st->nb_min_estimate==0)
-      {
-         st->min_ener = ener;
-         for (i=1;i<N;i++)
-            st->min_ps[i] = ps[i];
-      }
-      st->nb_min_estimate++;
-   } else {
-      float noise_ener=0;
-      st->nb_min_estimate=0;
-      for (i=1;i<N;i++)
-         noise_ener += st->noise[i];
-      /*fprintf (stderr, "%f %f\n", noise_ener, st->min_ener);*/
-      if (0&&(st->last_update>50 && st->min_ener > 3*noise_ener) || st->last_update>50)
-      {
-         for (i=1;i<N;i++)
-         {
-            if (st->noise[i] < st->min_ps[i])
-               st->noise[i] = st->min_ps[i];
-         }
-         /*fprintf (stderr, "tata %d\n",st->last_update);*/
-         st->last_update=0;
-      } else {
-         /*fprintf (stderr, "+");*/
-      }
-   }
-#endif
-
-   /* Noise estimation always updated for the 20 first times */
-   if (st->nb_adapt<15)
-      /*if (st->nb_adapt<25 && st->nb_adapt>15)*/
-   {
-      update_noise(st, ps, echo);
-      st->last_update=0;
-   }
-
-   if (echo)
-      for (i=1;i<N;i++)
-         st->echo_noise[i] = (.7*st->echo_noise[i] + .3* 2*echo[i]);
-
-   /* Compute a posteriori SNR */
-   for (i=1;i<N;i++)
-   {
-      st->post[i] = ps[i]/(1+st->noise[i]+st->echo_noise[i]) - 1;
-      if (st->post[i]>100)
-         st->post[i]=100;
-      /*if (st->post[i]<0)
-        st->post[i]=0;*/
-      mean_post+=st->post[i];
-   }
-   mean_post /= N;
-   if (mean_post<0)
-      mean_post=0;
-
-   /* Special case for first frame */
-   if (st->nb_adapt==1)
-      for (i=1;i<N;i++)
-         st->old_ps[i] = ps[i];
-
-   /* Compute a priori SNR */
-   {
-      /* A priori update rate */
-      float gamma;
-      float min_gamma=0.12;
-      gamma = 1.0/st->nb_denoise;
-
-      /*Make update rate smaller when there's no speech*/
-#if 0
-      if (mean_post<3.5 && mean_prior < 1)
-         min_gamma *= (mean_post+.5);
-      else
-         min_gamma *= 4.;
-#else
-      min_gamma = .2*fabs(mean_prior - mean_post)*fabs(mean_prior - mean_post);
-      if (min_gamma>.6)
-         min_gamma = .6;
-      if (min_gamma<.01)
-         min_gamma = .01;
-#endif
-      min_gamma = .6;
-
-      if (gamma<min_gamma)
-         gamma=min_gamma;
-      
-      for (i=1;i<N;i++)
-      {
-         
-         /* A priori SNR update */
-         st->prior[i] = gamma*max(0.0,st->post[i]) +
-         (1-gamma)*st->gain[i]*st->gain[i]*st->old_ps[i]/(1+st->noise[i]+st->echo_noise[i]);
-         
-         if (st->prior[i]>100)
-            st->prior[i]=100;
-         
-         mean_prior+=st->prior[i];
-      }
-   }
-   mean_prior /= N;
-
-#if 0
-   for (i=0;i<N;i++)
-   {
-      fprintf (stderr, "%f ", st->prior[i]);
-   }
-   fprintf (stderr, "\n");
-#endif
-   /*fprintf (stderr, "%f %f\n", mean_prior,mean_post);*/
-
-   if (st->nb_denoise>=20)
-   {
-      int do_update = 0;
-      float noise_ener=0, sig_ener=0;
-      /* If SNR is low (both a priori and a posteriori), update the noise estimate*/
-      /*if (mean_prior<.23 && mean_post < .5)*/
-      if (mean_prior<.23 && mean_post < .5)
-         do_update = 1;
-      for (i=1;i<N;i++)
-      {
-         noise_ener += st->noise[i];
-         sig_ener += ps[i];
-      }
-      if (noise_ener > 3*sig_ener)
-         do_update = 1;
-      /*do_update = 0;*/
-      if (do_update)
-      {
-         st->consec_noise++;
-      } else {
-         st->consec_noise=0;
-      }
-   }
-
-   /*fprintf (stderr, "%f %f ", mean_prior, mean_post);*/
+   /* FIXME: Clean this up a bit */
    {
       float bands[NB_BANDS];
       int j;
@@ -631,6 +433,223 @@ int speex_denoise(SpeexDenoiseState *st, float *x, float *echo)
 
    }
 
+   return is_speech;
+}
+
+static void speex_compute_agc(SpeexDenoiseState *st, float mean_prior)
+{
+   int i;
+   int N = st->ps_size;
+   float scale=.5/N;
+
+   /** BEGIN AGC */
+   if ((mean_prior>3&&mean_prior>3))
+   {
+      float loudness=0;
+      float rate;
+      st->nb_loudness_adapt++;
+      rate=2.0/(1+st->nb_loudness_adapt);
+      if (rate < .01)
+         rate = .01;
+
+      for (i=2;i<N;i++)
+      {
+         loudness += scale*st->ps[i] * st->gain2[i] * st->gain2[i] * st->loudness_weight[i];
+      }
+      loudness=sqrt(loudness);
+      /*if (loudness < 2*pow(st->loudness, 1.0/LOUDNESS_EXP) &&
+        loudness*2 > pow(st->loudness, 1.0/LOUDNESS_EXP))*/
+      st->loudness = (1-rate)*st->loudness + (rate)*pow(loudness, LOUDNESS_EXP);
+      
+      st->loudness2 = (1-rate)*st->loudness2 + rate*pow(st->loudness, 1.0/LOUDNESS_EXP);
+
+      loudness = pow(st->loudness, 1.0/LOUDNESS_EXP);
+
+      /*fprintf (stderr, "%f %f %f\n", loudness, st->loudness2, rate);*/
+   }
+   for (i=0;i<N;i++)
+      st->gain2[i] *= 6000.0/st->loudness2;
+   
+
+   /** END AGC */
+
+}
+
+int speex_denoise(SpeexDenoiseState *st, float *x, float *echo)
+{
+   int i;
+   int is_speech=0;
+   float mean_post=0;
+   float mean_prior=0;
+   float energy;
+   int N = st->ps_size;
+   int N3 = 2*N - st->frame_size;
+   int N4 = st->frame_size - N3;
+   float scale=.5/N;
+   float *ps=st->ps;
+
+   /* 'Build' input frame */
+   for (i=0;i<N3;i++)
+      st->frame[i]=st->inbuf[i];
+   for (i=0;i<st->frame_size;i++)
+      st->frame[N3+i]=x[i];
+   
+   /* Update inbuf */
+   for (i=0;i<N3;i++)
+      st->inbuf[i]=x[N4+i];
+
+   /* Windowing */
+   for (i=0;i<2*N;i++)
+      st->frame[i] *= st->window[i];
+
+   /* Perform FFT */
+   drft_forward(&st->fft_lookup, st->frame);
+
+   /************************************************************** 
+    *  Denoise in spectral domain using Ephraim-Malah algorithm  *
+    **************************************************************/
+
+   /* Power spectrum */
+   ps[0]=1;
+   for (i=1;i<N;i++)
+      ps[i]=1+st->frame[2*i-1]*st->frame[2*i-1] + st->frame[2*i]*st->frame[2*i];
+
+   energy=0;
+   for (i=1;i<N;i++)
+      energy += log(100+ps[i]);
+   energy /= 160;
+   st->last_energy[st->nb_denoise%STABILITY_TIME]=energy;
+
+   if (st->nb_denoise>=STABILITY_TIME)
+   {
+      float E=0, E2=0;
+      float std;
+      for (i=0;i<STABILITY_TIME;i++)
+      {
+         E+=st->last_energy[i];
+         E2+=st->last_energy[i]*st->last_energy[i];
+      }
+      E2=E2/STABILITY_TIME;
+      E=E/STABILITY_TIME;
+      std = sqrt(E2-E*E);
+      if (std<.15 && st->last_update>20)
+      {
+         update_noise(st, &st->last_ps[st->last_id*N], echo);
+      }
+      /*fprintf (stderr, "%f\n", std);*/
+   }
+
+   st->nb_denoise++;
+
+   /* Noise estimation always updated for the 20 first times */
+   if (st->nb_adapt<15)
+      /*if (st->nb_adapt<25 && st->nb_adapt>15)*/
+   {
+      update_noise(st, ps, echo);
+      st->last_update=0;
+   }
+
+   /* Deal with residual echo if provided */
+   if (echo)
+      for (i=1;i<N;i++)
+         st->echo_noise[i] = (.7*st->echo_noise[i] + .3* echo[i]);
+
+   /* Compute a posteriori SNR */
+   for (i=1;i<N;i++)
+   {
+      st->post[i] = ps[i]/(1+st->noise[i]+st->echo_noise[i]) - 1;
+      if (st->post[i]>100)
+         st->post[i]=100;
+      /*if (st->post[i]<0)
+        st->post[i]=0;*/
+      mean_post+=st->post[i];
+   }
+   mean_post /= N;
+   if (mean_post<0)
+      mean_post=0;
+
+   /* Special case for first frame */
+   if (st->nb_adapt==1)
+      for (i=1;i<N;i++)
+         st->old_ps[i] = ps[i];
+
+   /* Compute a priori SNR */
+   {
+      /* A priori update rate */
+      float gamma;
+      float min_gamma=0.12;
+      gamma = 1.0/st->nb_denoise;
+
+      /*Make update rate smaller when there's no speech*/
+#if 0
+      if (mean_post<3.5 && mean_prior < 1)
+         min_gamma *= (mean_post+.5);
+      else
+         min_gamma *= 4.;
+#else
+      min_gamma = .2*fabs(mean_prior - mean_post)*fabs(mean_prior - mean_post);
+      if (min_gamma>.6)
+         min_gamma = .6;
+      if (min_gamma<.01)
+         min_gamma = .01;
+#endif
+      min_gamma = .6;
+
+      if (gamma<min_gamma)
+         gamma=min_gamma;
+      
+      for (i=1;i<N;i++)
+      {
+         
+         /* A priori SNR update */
+         st->prior[i] = gamma*max(0.0,st->post[i]) +
+         (1-gamma)*st->gain[i]*st->gain[i]*st->old_ps[i]/(1+st->noise[i]+st->echo_noise[i]);
+         
+         if (st->prior[i]>100)
+            st->prior[i]=100;
+         
+         mean_prior+=st->prior[i];
+      }
+   }
+   mean_prior /= N;
+
+#if 0
+   for (i=0;i<N;i++)
+   {
+      fprintf (stderr, "%f ", st->prior[i]);
+   }
+   fprintf (stderr, "\n");
+#endif
+   /*fprintf (stderr, "%f %f\n", mean_prior,mean_post);*/
+
+   if (st->nb_denoise>=20)
+   {
+      int do_update = 0;
+      float noise_ener=0, sig_ener=0;
+      /* If SNR is low (both a priori and a posteriori), update the noise estimate*/
+      /*if (mean_prior<.23 && mean_post < .5)*/
+      if (mean_prior<.23 && mean_post < .5)
+         do_update = 1;
+      for (i=1;i<N;i++)
+      {
+         noise_ener += st->noise[i];
+         sig_ener += ps[i];
+      }
+      if (noise_ener > 3*sig_ener)
+         do_update = 1;
+      /*do_update = 0;*/
+      if (do_update)
+      {
+         st->consec_noise++;
+      } else {
+         st->consec_noise=0;
+      }
+   }
+
+
+   is_speech = speex_compute_vad(st, ps, mean_prior, mean_post);
+
+
    if (st->consec_noise>=3)
    {
       update_noise(st, st->old_ps, echo);
@@ -638,6 +657,7 @@ int speex_denoise(SpeexDenoiseState *st, float *x, float *echo)
    } else {
       st->last_update++;
    }
+
 
    /* Compute gain according to the Ephraim-Malah algorithm */
    for (i=1;i<N;i++)
@@ -689,33 +709,10 @@ int speex_denoise(SpeexDenoiseState *st, float *x, float *echo)
    }
    st->gain2[N-1]=0;
 
-   if ((mean_prior>3&&mean_prior>3))
-   {
-      float loudness=0;
-      float rate;
-      st->nb_loudness_adapt++;
-      rate=2.0/(1+st->nb_loudness_adapt);
-      if (rate < .01)
-         rate = .01;
 
-      for (i=2;i<N;i++)
-      {
-         loudness += scale*st->ps[i] * st->gain2[i] * st->gain2[i] * st->loudness_weight[i];
-      }
-      loudness=sqrt(loudness);
-      /*if (loudness < 2*pow(st->loudness, 1.0/LOUDNESS_EXP) &&
-        loudness*2 > pow(st->loudness, 1.0/LOUDNESS_EXP))*/
-      st->loudness = (1-rate)*st->loudness + (rate)*pow(loudness, LOUDNESS_EXP);
-      
-      st->loudness2 = (1-rate)*st->loudness2 + rate*pow(st->loudness, 1.0/LOUDNESS_EXP);
+   /* FIXME: Add an option to enable/disable AGC */
+   speex_compute_agc(st, mean_prior);
 
-      loudness = pow(st->loudness, 1.0/LOUDNESS_EXP);
-
-      /*fprintf (stderr, "%f %f %f\n", loudness, st->loudness2, rate);*/
-   }
-   for (i=0;i<N;i++)
-      st->gain2[i] *= 6000.0/st->loudness2;
-   
 #if 0
    if (!is_speech)
    {
@@ -729,12 +726,14 @@ int speex_denoise(SpeexDenoiseState *st, float *x, float *echo)
    }
 #endif
 #endif
+
    /* Apply computed gain */
    for (i=1;i<N;i++)
    {
       st->frame[2*i-1] *= st->gain2[i];
       st->frame[2*i] *= st->gain2[i];
    }
+
    /* Get rid of the DC and very low frequencies */
    st->frame[0]=0;
    st->frame[1]=0;
