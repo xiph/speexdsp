@@ -79,6 +79,161 @@ static void compute_weighted_codebook(const signed char *shape_cb, const spx_sig
 #endif
 
 
+
+#if 0
+
+void split_cb_search_shape_sign(
+spx_sig_t target[],			/* target vector */
+spx_coef_t ak[],			/* LPCs for this subframe */
+spx_coef_t awk1[],			/* Weighted LPCs for this subframe */
+spx_coef_t awk2[],			/* Weighted LPCs for this subframe */
+const void *par,                      /* Codebook/search parameters*/
+int   p,                        /* number of LPC coeffs */
+int   nsf,                      /* number of samples in subframe */
+spx_sig_t *exc,
+spx_sig_t *r,
+SpeexBits *bits,
+char *stack,
+int   complexity,
+int   update_target
+                               )
+{
+   int i,j,k,m,n,q;
+   spx_word16_t *resp;
+#ifdef _USE_SSE
+   __m128 *resp2;
+   __m128 *E;
+#else
+   spx_word16_t *resp2;
+   spx_word32_t *E;
+#endif
+   spx_word16_t *t;
+   spx_sig_t *e, *r2;
+   const signed char *shape_cb;
+   int shape_cb_size, subvect_size, nb_subvect;
+   split_cb_params *params;
+   int N=2;
+   int best_index;
+   spx_word32_t best_dist;
+   int have_sign;
+   N=complexity;
+   if (N>10)
+      N=10;
+   if (N<1)
+      N=1;
+   
+   params = (split_cb_params *) par;
+   subvect_size = params->subvect_size;
+   nb_subvect = params->nb_subvect;
+   shape_cb_size = 1<<params->shape_bits;
+   shape_cb = params->shape_cb;
+   have_sign = params->have_sign;
+   resp = PUSH(stack, shape_cb_size*subvect_size, spx_word16_t);
+#ifdef _USE_SSE
+   resp2 = PUSH(stack, (shape_cb_size*subvect_size)>>2, __m128);
+   E = PUSH(stack, shape_cb_size>>2, __m128);
+#else
+   resp2 = resp;
+   E = PUSH(stack, shape_cb_size, spx_word32_t);
+#endif
+   t = PUSH(stack, nsf, spx_word16_t);
+   e = PUSH(stack, nsf, spx_sig_t);
+   r2 = PUSH(stack, nsf, spx_sig_t);
+   
+   /* FIXME: make that adaptive? */
+   for (i=0;i<nsf;i++)
+      t[i]=SHR(target[i],6);
+
+   compute_weighted_codebook(shape_cb, r, resp, resp2, E, shape_cb_size, subvect_size, stack);
+
+   for (i=0;i<nb_subvect;i++)
+   {
+      spx_word16_t *x=t+subvect_size*i;
+      /*Find new n-best based on previous n-best j*/
+      if (have_sign)
+         vq_nbest_sign(x, resp2, subvect_size, shape_cb_size, E, 1, &best_index, &best_dist, stack);
+      else
+         vq_nbest(x, resp2, subvect_size, shape_cb_size, E, 1, &best_index, &best_dist, stack);
+      
+      speex_bits_pack(bits,best_index,params->shape_bits+have_sign);
+      
+      /* New code: update only enough of the target to calculate error*/
+      {
+         int rind;
+         spx_word16_t *res;
+         spx_word16_t sign=1;
+         rind = best_index;
+         if (rind>=shape_cb_size)
+         {
+            sign=-1;
+            rind-=shape_cb_size;
+         }
+         res = resp+rind*subvect_size;
+         if (sign>0)
+            for (m=0;m<subvect_size;m++)
+               t[subvect_size*i+m] -= res[m];
+         else
+            for (m=0;m<subvect_size;m++)
+               t[subvect_size*i+m] += res[m];
+
+#ifdef FIXED_POINT
+         if (sign)
+         {
+            for (j=0;j<subvect_size;j++)
+               e[subvect_size*i+j]=SHL((spx_word32_t)shape_cb[rind*subvect_size+j],SIG_SHIFT-5);
+         } else {
+            for (j=0;j<subvect_size;j++)
+               e[subvect_size*i+j]=-SHL((spx_word32_t)shape_cb[rind*subvect_size+j],SIG_SHIFT-5);
+         }
+#else
+         for (j=0;j<subvect_size;j++)
+            e[subvect_size*i+j]=sign*0.03125*shape_cb[rind*subvect_size+j];
+#endif
+      
+      }
+            
+      for (m=0;m<subvect_size;m++)
+      {
+         spx_word16_t g;
+         int rind;
+         spx_word16_t sign=1;
+         rind = best_index;
+         if (rind>=shape_cb_size)
+         {
+            sign=-1;
+            rind-=shape_cb_size;
+         }
+         
+         q=subvect_size-m;
+#ifdef FIXED_POINT
+         g=sign*shape_cb[rind*subvect_size+m];
+         for (n=subvect_size*(i+1);n<nsf;n++,q++)
+            t[n] = SUB32(t[n],MULT16_16_Q11(g,r[q]));
+#else
+         g=sign*0.03125*shape_cb[rind*subvect_size+m];
+         for (n=subvect_size*(i+1);n<nsf;n++,q++)
+            t[n] = SUB32(t[n],g*r[q]);
+#endif
+      }
+
+
+   }
+
+   /* Update excitation */
+   for (j=0;j<nsf;j++)
+      exc[j]+=e[j];
+   
+   /* Update target: only update target if necessary */
+   if (update_target)
+   {
+      syn_percep_zero(e, ak, awk1, awk2, r2, nsf,p, stack);
+      for (j=0;j<nsf;j++)
+         target[j]-=r2[j];
+   }
+}
+
+#else
+
 void split_cb_search_shape_sign(
 spx_sig_t target[],			/* target vector */
 spx_coef_t ak[],			/* LPCs for this subframe */
@@ -361,7 +516,7 @@ int   update_target
          target[j]-=r2[j];
    }
 }
-
+#endif
 
 void split_cb_shape_sign_unquant(
 spx_sig_t *exc,
