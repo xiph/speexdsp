@@ -60,6 +60,7 @@ int   nsf,                      /* Number of samples in subframe */
 SpeexBits *bits,
 float *stack,
 float *exc2,
+float *r,
 int   complexity
 );
 
@@ -91,6 +92,7 @@ int   nsf,                      /* Number of samples in subframe */
 SpeexBits *bits,
 float *stack,
 float *exc2,
+float *r,
 int  *cdbk_index
 );
 
@@ -112,6 +114,7 @@ int   nsf,                      /* Number of samples in subframe */
 SpeexBits *bits,
 float *stack,
 float *exc2,
+float *r,
 int complexity
 );
 

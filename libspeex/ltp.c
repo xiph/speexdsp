@@ -151,6 +151,7 @@ int   nsf,                      /* Number of samples in subframe */
 SpeexBits *bits,
 float *stack,
 float *exc2,
+float *r,
 int  *cdbk_index
 )
 {
@@ -164,6 +165,7 @@ int  *cdbk_index
    int   gain_cdbk_size;
    float *gain_cdbk;
    float err1,err2;
+
    ltp_params *params;
    params = (ltp_params*) par;
    gain_cdbk=params->gain_cdbk;
@@ -179,7 +181,7 @@ int  *cdbk_index
    e[1]=tmp2+nsf;
    e[2]=tmp2+2*nsf;
    
-   for (i=0;i<3;i++)
+   for (i=2;i>=0;i--)
    {
       int pp=pitch+1-i;
       for (j=0;j<nsf;j++)
@@ -192,7 +194,15 @@ int  *cdbk_index
             e[i][j]=0;
       }
 
-      syn_percep_zero(e[i], ak, awk1, awk2, x[i], nsf, p, stack);
+      if (i==2)
+         syn_percep_zero(e[i], ak, awk1, awk2, x[i], nsf, p, stack);
+      else {
+         for (j=0;j<nsf-1;j++)
+            x[i][j+1]=x[i+1][j];
+         x[i][0]=0;
+         for (j=0;j<nsf;j++)
+            x[i][j]+=e[i][0]*r[j];
+      }
    }
 
    for (i=0;i<3;i++)
@@ -327,6 +337,7 @@ int   nsf,                      /* Number of samples in subframe */
 SpeexBits *bits,
 float *stack,
 float *exc2,
+float *r,
 int complexity
 )
 {
@@ -362,7 +373,7 @@ int complexity
       for (j=0;j<nsf;j++)
          exc[j]=0;
       err=pitch_gain_search_3tap(target, ak, awk1, awk2, exc, par, pitch, p, nsf,
-                                 bits, stack, exc2, &cdbk_index);
+                                 bits, stack, exc2, r, &cdbk_index);
       if (err<best_err || best_err<0)
       {
          for (j=0;j<nsf;j++)
@@ -453,8 +464,14 @@ int lost)
          {
             if (j-pp<0)
                e[i][j]=exc[j-pp];
-            else
+            else if (j-pp-pitch<0)
                e[i][j]=exc[j-pp-pitch];
+            else
+               e[i][j]=0;
+         /*if (j-pp<0)
+               e[i][j]=exc[j-pp];
+            else
+            e[i][j]=exc[j-pp-pitch];*/
          }
       }
       for (i=0;i<nsf;i++)
@@ -481,6 +498,7 @@ int   nsf,                      /* Number of samples in subframe */
 SpeexBits *bits,
 float *stack,
 float *exc2,
+float *r,
 int complexity
 )
 {

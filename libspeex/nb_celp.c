@@ -217,6 +217,7 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
    float delta_qual=0;
    float *res, *target, *mem;
    float *stack;
+   float *syn_resp;
 
    st=state;
    stack=st->stack;
@@ -442,6 +443,7 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
    res = PUSH(stack, st->subframeSize);
    /* Target signal */
    target = PUSH(stack, st->subframeSize);
+   syn_resp = PUSH(stack, st->subframeSize);
    mem = PUSH(stack, st->lpcSize);
 
    /* Loop on sub-frames */
@@ -506,6 +508,11 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
             st->bw_lpc2[i]=0;
       }
 
+      for (i=0;i<st->subframeSize;i++)
+         exc[i]=0;
+      exc[0]=1;
+      syn_percep_zero(exc, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2, syn_resp, st->subframeSize, st->lpcSize, stack);
+
       /* Reset excitation */
       for (i=0;i<st->subframeSize;i++)
          exc[i]=0;
@@ -567,7 +574,7 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
          pitch = SUBMODE(ltp_quant)(target, sw, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2,
                                     exc, SUBMODE(ltp_params), pit_min, pit_max, ol_pitch_coef,
                                     st->lpcSize, st->subframeSize, bits, stack, 
-                                    exc2, st->complexity);
+                                    exc2, syn_resp, st->complexity);
 
          /*printf ("cl_pitch: %d\n", pitch);*/
          st->pitch[sub]=pitch;
@@ -651,7 +658,7 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
             /* Normal quantization */
             SUBMODE(innovation_quant)(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2, 
                                       SUBMODE(innovation_params), st->lpcSize, st->subframeSize, 
-                                      innov, bits, stack, st->complexity);
+                                      innov, syn_resp, bits, stack, st->complexity);
             for (i=0;i<st->subframeSize;i++)
                innov[i]*=ener;
             for (i=0;i<st->subframeSize;i++)
@@ -669,7 +676,7 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
                target[i]*=2.2;
             SUBMODE(innovation_quant)(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2, 
                                       SUBMODE(innovation_params), st->lpcSize, st->subframeSize, 
-                                      innov2, bits, tmp_stack, st->complexity);
+                                      innov2, syn_resp, bits, tmp_stack, st->complexity);
             for (i=0;i<st->subframeSize;i++)
                innov2[i]*=ener*(1/2.2);
             for (i=0;i<st->subframeSize;i++)

@@ -60,6 +60,7 @@ void *par,                      /* Codebook/search parameters*/
 int   p,                        /* number of LPC coeffs */
 int   nsf,                      /* number of samples in subframe */
 float *exc,
+float *r,
 SpeexBits *bits,
 float *stack,
 int   complexity
@@ -67,7 +68,7 @@ int   complexity
 {
    int i,j,k,m,n,q;
    float *resp;
-   float *t, *r, *e, *E;
+   float *t, *e, *E;
    /*FIXME: Should make this dynamic*/
    float *tmp, *_ot[20], *_nt[20];
    float *ndist, *odist;
@@ -101,7 +102,6 @@ int   complexity
    have_sign = params->have_sign;
    resp = PUSH(stack, shape_cb_size*subvect_size);
    t = PUSH(stack, nsf);
-   r = PUSH(stack, nsf);
    e = PUSH(stack, nsf);
    E = PUSH(stack, shape_cb_size);
    /*FIXME: This breaks if sizeof(int) != sizeof(float) */
@@ -140,11 +140,6 @@ int   complexity
 
    for (i=0;i<nsf;i++)
       t[i]=target[i];
-
-   e[0]=1;
-   for (i=1;i<nsf;i++)
-      e[i]=0;
-   syn_percep_zero(e, ak, awk1, awk2, r, nsf,p, stack);
 
    /* Pre-compute codewords response and energy */
    for (i=0;i<shape_cb_size;i++)
@@ -380,6 +375,7 @@ void *par,                      /* Codebook/search parameters*/
 int   p,                        /* number of LPC coeffs */
 int   nsf,                      /* number of samples in subframe */
 float *exc,
+float *r,
 SpeexBits *bits,
 float *stack,
 int   complexity

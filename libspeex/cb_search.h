@@ -53,6 +53,7 @@ void *par,                      /* Codebook/search parameters*/
 int   p,                        /* number of LPC coeffs */
 int   nsf,                      /* number of samples in subframe */
 float *exc,
+float *r,
 SpeexBits *bits,
 float *stack,
 int   complexity
@@ -76,6 +77,7 @@ void *par,                      /* Codebook/search parameters*/
 int   p,                        /* number of LPC coeffs */
 int   nsf,                      /* number of samples in subframe */
 float *exc,
+float *r,
 SpeexBits *bits,
 float *stack,
 int   complexity

@@ -57,7 +57,7 @@ typedef void (*lsp_unquant_func)(float *, int, SpeexBits *);
 /** Long-term predictor quantization */
 typedef int (*ltp_quant_func)(float *, float *, float *, float *, 
                               float *, float *, void *, int, int, float, 
-                              int, int, SpeexBits*, float *, float *, int);
+                              int, int, SpeexBits*, float *, float *, float *, int);
 
 /** Long-term un-quantize */
 typedef void (*ltp_unquant_func)(float *, int, int, float, void *, int, int *,
@@ -66,7 +66,7 @@ typedef void (*ltp_unquant_func)(float *, int, int, float, void *, int, int *,
 
 /** Innovation quantization function */
 typedef void (*innovation_quant_func)(float *, float *, float *, float *, void *, int, int, 
-                                      float *, SpeexBits *, float *, int);
+                                      float *, float *, SpeexBits *, float *, int);
 
 /** Innovation unquantization function */
 typedef void (*innovation_unquant_func)(float *, void *, int, SpeexBits*, float *);

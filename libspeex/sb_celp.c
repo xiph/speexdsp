@@ -270,7 +270,7 @@ void sb_encode(void *state, float *in, SpeexBits *bits)
    SBEncState *st;
    int i, roots, sub;
    float *stack;
-   float *mem, *innov;
+   float *mem, *innov, *syn_resp;
 
    st = state;
    stack=st->stack;
@@ -395,6 +395,7 @@ void sb_encode(void *state, float *in, SpeexBits *bits)
    }
    
    mem=PUSH(stack, st->lpcSize);
+   syn_resp=PUSH(stack, st->subframeSize);
    innov = PUSH(stack, st->subframeSize);
 
    for (sub=0;sub<st->nbSubframes;sub++)
@@ -516,6 +517,11 @@ void sb_encode(void *state, float *in, SpeexBits *bits)
             }
          }
 
+         for (i=0;i<st->subframeSize;i++)
+            exc[i]=0;
+         exc[0]=1;
+         syn_percep_zero(exc, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2, syn_resp, st->subframeSize, st->lpcSize, stack);
+         
          /* Reset excitation */
          for (i=0;i<st->subframeSize;i++)
             exc[i]=0;
@@ -569,7 +575,7 @@ void sb_encode(void *state, float *in, SpeexBits *bits)
          /*print_vec(target, st->subframeSize, "\ntarget");*/
          SUBMODE(innovation_quant)(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2, 
                                    SUBMODE(innovation_params), st->lpcSize, st->subframeSize, 
-                                   innov, bits, stack, (st->complexity+1)>>1);
+                                   innov, syn_resp, bits, stack, (st->complexity+1)>>1);
          /*print_vec(target, st->subframeSize, "after");*/
 
          for (i=0;i<st->subframeSize;i++)
@@ -584,7 +590,7 @@ void sb_encode(void *state, float *in, SpeexBits *bits)
                target[i]*=2.5;
             SUBMODE(innovation_quant)(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2, 
                                       SUBMODE(innovation_params), st->lpcSize, st->subframeSize, 
-                                      innov2, bits, tmp_stack, (st->complexity+1)>>1);
+                                      innov2, syn_resp, bits, tmp_stack, (st->complexity+1)>>1);
             for (i=0;i<st->subframeSize;i++)
                innov2[i]*=scale*(1/2.5);
             for (i=0;i<st->subframeSize;i++)
