@@ -327,14 +327,10 @@ int sb_encode(void *state, short *in, SpeexBits *bits)
          /*If we can't find all LSP's, do some damage control and use a flat filter*/
          for (i=0;i<st->lpcSize;i++)
          {
-            st->lsp[i]=cos(M_PI*((float)(i+1))/(st->lpcSize+1));
+            st->lsp[i]=M_PI*((float)(i+1))/(st->lpcSize+1);
          }
       }
    }
-
-   /* x-domain to angle domain*/
-   for (i=0;i<st->lpcSize;i++)
-      st->lsp[i] = acos(st->lsp[i]);
 
    /* VBR code */
    if ((st->vbr_enabled || st->vad_enabled) && !dtx)
@@ -495,13 +491,6 @@ int sb_encode(void *state, short *in, SpeexBits *bits)
       
       lsp_enforce_margin(st->interp_lsp, st->lpcSize, .05);
       lsp_enforce_margin(st->interp_qlsp, st->lpcSize, .05);
-
-      /* Compute interpolated LPCs (quantized and unquantized) */
-      for (i=0;i<st->lpcSize;i++)
-         st->interp_lsp[i] = cos(st->interp_lsp[i]);
-      for (i=0;i<st->lpcSize;i++)
-         st->interp_qlsp[i] = cos(st->interp_qlsp[i]);
-
 
       lsp_to_lpc(st->interp_lsp, st->interp_lpc, st->lpcSize,stack);
       lsp_to_lpc(st->interp_qlsp, st->interp_qlpc, st->lpcSize, stack);
@@ -823,9 +812,14 @@ static void sb_decode_lost(SBDecState *st, short *out, int dtx, char *stack)
    fir_mem_up(st->x0d, h0, st->y0, st->full_frame_size, QMF_ORDER, st->g0_mem, stack);
    fir_mem_up(st->high, h1, st->y1, st->full_frame_size, QMF_ORDER, st->g1_mem, stack);
 
+#ifdef FIXED_POINT
    for (i=0;i<st->full_frame_size;i++)
-      out[i]=2*(st->y0[i]-st->y1[i]);
-   
+      out[i]=SHR(st->y0[i]-st->y1[i],SIG_SHIFT-1);
+#else
+   for (i=0;i<st->full_frame_size;i++)
+      out[i]=2*(st->y0[i]-st->y1[i]);   
+#endif
+
    if (dtx)
    {
       st->submodeID=saved_modeid;
@@ -921,9 +915,14 @@ int sb_decode(void *state, SpeexBits *bits, short *out)
       fir_mem_up(st->x0d, h0, st->y0, st->full_frame_size, QMF_ORDER, st->g0_mem, stack);
       fir_mem_up(st->high, h1, st->y1, st->full_frame_size, QMF_ORDER, st->g1_mem, stack);
 
+#ifdef FIXED_POINT
       for (i=0;i<st->full_frame_size;i++)
-         out[i]=2*(st->y0[i]-st->y1[i]) / SIG_SCALING;
-
+         out[i]=SHR(st->y0[i]-st->y1[i],SIG_SHIFT-1);
+#else
+      for (i=0;i<st->full_frame_size;i++)
+         out[i]=2*(st->y0[i]-st->y1[i]);   
+#endif
+      
       return 0;
 
    }
@@ -967,10 +966,6 @@ int sb_decode(void *state, SpeexBits *bits, short *out)
          st->interp_qlsp[i] = (1-tmp)*st->old_qlsp[i] + tmp*st->qlsp[i];
 
       lsp_enforce_margin(st->interp_qlsp, st->lpcSize, .05);
-
-      /* LSPs to x-domain */
-      for (i=0;i<st->lpcSize;i++)
-         st->interp_qlsp[i] = cos(st->interp_qlsp[i]);
 
       /* LSP to LPC */
       lsp_to_lpc(st->interp_qlsp, st->interp_qlpc, st->lpcSize, stack);
@@ -1087,8 +1082,13 @@ int sb_decode(void *state, SpeexBits *bits, short *out)
    fir_mem_up(st->x0d, h0, st->y0, st->full_frame_size, QMF_ORDER, st->g0_mem, stack);
    fir_mem_up(st->high, h1, st->y1, st->full_frame_size, QMF_ORDER, st->g1_mem, stack);
 
+#ifdef FIXED_POINT
    for (i=0;i<st->full_frame_size;i++)
-      out[i]=SHR((st->y0[i]-st->y1[i]), SIG_SHIFT-1);
+      out[i]=SHR(st->y0[i]-st->y1[i],SIG_SHIFT-1);
+#else
+   for (i=0;i<st->full_frame_size;i++)
+      out[i]=2*(st->y0[i]-st->y1[i]);   
+#endif
 
    for (i=0;i<st->lpcSize;i++)
       st->old_qlsp[i] = st->qlsp[i];

@@ -248,21 +248,13 @@ int nb_encode(void *state, short *in, SpeexBits *bits)
    /* LPC to LSPs (x-domain) transform */
    roots=lpc_to_lsp (st->lpc, st->lpcSize, st->lsp, 15, 0.2, stack);
    /* Check if we found all the roots */
-   if (roots==st->lpcSize)
+   if (roots!=st->lpcSize)
    {
-      /* LSP x-domain to angle domain*/
-      for (i=0;i<st->lpcSize;i++)
-         st->lsp[i] = acos(st->lsp[i]);
-   } else {
       /* Search again if we can afford it */
       if (st->complexity>1)
          roots = lpc_to_lsp (st->lpc, st->lpcSize, st->lsp, 11, 0.05, stack);
-      if (roots==st->lpcSize) 
+      if (roots!=st->lpcSize) 
       {
-         /* LSP x-domain to angle domain*/
-         for (i=0;i<st->lpcSize;i++)
-            st->lsp[i] = acos(st->lsp[i]);
-      } else {
          /*If we can't find all LSP's, do some damage control and use previous filter*/
          for (i=0;i<st->lpcSize;i++)
          {
@@ -288,8 +280,6 @@ int nb_encode(void *state, short *in, SpeexBits *bits)
       lsp_enforce_margin(st->interp_lsp, st->lpcSize, .002);
 
       /* Compute interpolated LPCs (unquantized) for whole frame*/
-      for (i=0;i<st->lpcSize;i++)
-         st->interp_lsp[i] = cos(st->interp_lsp[i]);
       lsp_to_lpc(st->interp_lsp, st->interp_lpc, st->lpcSize,stack);
 
 
@@ -647,12 +637,8 @@ int nb_encode(void *state, short *in, SpeexBits *bits)
       lsp_enforce_margin(st->interp_qlsp, st->lpcSize, .002);
 
       /* Compute interpolated LPCs (quantized and unquantized) */
-      for (i=0;i<st->lpcSize;i++)
-         st->interp_lsp[i] = cos(st->interp_lsp[i]);
       lsp_to_lpc(st->interp_lsp, st->interp_lpc, st->lpcSize,stack);
 
-      for (i=0;i<st->lpcSize;i++)
-         st->interp_qlsp[i] = cos(st->interp_qlsp[i]);
       lsp_to_lpc(st->interp_qlsp, st->interp_qlpc, st->lpcSize, stack);
 
       /* Compute analysis filter gain at w=pi (for use in SB-CELP) */
@@ -1380,8 +1366,6 @@ int nb_decode(void *state, SpeexBits *bits, short *out)
 
 
       /* Compute interpolated LPCs (unquantized) */
-      for (i=0;i<st->lpcSize;i++)
-         st->interp_qlsp[i] = cos(st->interp_qlsp[i]);
       lsp_to_lpc(st->interp_qlsp, st->interp_qlpc, st->lpcSize, stack);
 
       /* Compute enhanced synthesis filter */
