@@ -356,11 +356,13 @@ int speex_denoise(SpeexDenoiseState *st, float *x)
       else
          min_gamma *= 4.;
 #else
-      min_gamma = .5*fabs(mean_prior - mean_post);
-      if (min_gamma>.5)
-         min_gamma = .5;
+      min_gamma = .2*fabs(mean_prior - mean_post)*fabs(mean_prior - mean_post);
+      if (min_gamma>.6)
+         min_gamma = .6;
+      if (min_gamma<.01)
+         min_gamma = .01;
 #endif
-      /*min_gamma = .5;*/
+      /*min_gamma = .2;*/
 
       if (gamma<min_gamma)
          gamma=min_gamma;
