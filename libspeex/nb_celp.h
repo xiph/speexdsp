@@ -102,6 +102,7 @@ typedef struct EncState {
    float    vbr_quality;    /**< Quality setting for VBR encoding */
    int    vbr_enabled;    /**< 1 for enabling VBR, 0 otherwise */
    int    complexity;     /**< Complexity setting (0-10 from least complex to most complex) */
+   int    sampling_rate;
 
    SpeexSubmode **submodes; /**< Sub-mode data */
    int    submodeID;      /**< Activated sub-mode */
@@ -120,6 +121,8 @@ typedef struct DecState {
    int    bufSize;        /**< Buffer size */
    int    min_pitch;      /**< Minimum pitch value allowed */
    int    max_pitch;      /**< Maximum pitch value allowed */
+   int    sampling_rate;
+
 
    float  gamma1;         /**< Perceptual filter: A(z/gamma1) */
    float  gamma2;         /**< Perceptual filter: A(z/gamma2) */

@@ -8,8 +8,8 @@ Version: %ver
 Release: %rel
 Copyright: BSD
 Group: Application/Devel
-Source: http://prdownloads.sourceforge.net/speex/%{name}-%{ver}.tar.gz
-URL: http://speex.sourceforge.net/
+Source: http://www.speex.org/download/%{name}-%{ver}.tar.gz
+URL: http://www.speex.org/
 Vendor: Speex
 Packager: Jean-Marc Valin (jean-marc.valin@hermes.usherb.ca)
 BuildRoot: /var/tmp/%{name}-build-root
@@ -57,7 +57,6 @@ make DESTDIR=$RPM_BUILD_ROOT install
 %doc COPYING AUTHORS ChangeLog NEWS README
 /usr/share/man/man1/speexenc.1*
 /usr/share/man/man1/speexdec.1*
-%doc doc/manual.pdf
 %attr(755,root,root) %{_bindir}/speex*
 %attr(755,root,root) %{_libdir}/libspeex*.so
 
@@ -66,4 +65,4 @@ make DESTDIR=$RPM_BUILD_ROOT install
 %attr(755,root,root) %{_libdir}/libspeex*.la
 %{_includedir}/speex*.h
 %{_libdir}/libspeex*.a
-
+%doc doc/manual.pdf

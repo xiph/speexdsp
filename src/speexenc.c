@@ -222,7 +222,7 @@ int main(int argc, char **argv)
    /*Process command-line options*/
    while(1)
    {
-      c = getopt_long (argc, argv, "nwhvV",
+      c = getopt_long (argc, argv, "nwuhvV",
                        long_options, &option_index);
       if (c==-1)
          break;
@@ -364,21 +364,46 @@ int main(int argc, char **argv)
          exit(1);
       lsb=1; /* CHECK: exists big-endian .wav ?? */
    }
-   /*fprintf (stderr, "wave info: %d %d %d %d\n", rate, chan, fmt, size);*/
 
-   /* By default, use narrowband/8 kHz */
    if (!mode && !rate)
    {
+      /* By default, use narrowband/8 kHz */
       mode=&speex_nb_mode;
       rate=8000;
    } else if (mode && rate)
    {
-      /*FIXME: Should print some warnings if mode doesn't fit with the rate*/
+      if (rate>48000)
+      {
+         fprintf (stderr, "Bit-rate too high: %d Hz, try down-sampling\n", rate);
+         exit(1);
+      } else if (rate>25000)
+      {
+         if (mode!=&speex_uwb_mode)
+         {
+            fprintf (stderr, "WARNING: Trying to encode in %s at %d Hz. I'll do it but I suggest you try ultra-wideband instead\n", mode->modeName , rate);
+         }
+      } else if (rate>12500)
+      {
+         if (mode!=&speex_wb_mode)
+         {
+            fprintf (stderr, "WARNING: Trying to encode in %s at %d Hz. I'll do it but I suggest you try wideband instead\n", mode->modeName , rate);
+         }
+      } else if (rate>6000)
+      {
+         if (mode!=&speex_nb_mode)
+         {
+            fprintf (stderr, "WARNING: Trying to encode in %s at %d Hz. I'll do it but I suggest you try narrowband instead\n", mode->modeName , rate);
+         }
+      } else {
+         fprintf (stderr, "Bit-rate too low: %d Hz\n", rate);
+         exit(1);
+      }
    } else if (!mode)
    {
       if (rate>48000)
       {
          fprintf (stderr, "Bit-rate too high: %d Hz, try down-sampling\n", rate);
+         exit(1);
       } else if (rate>25000)
       {
          mode=&speex_uwb_mode;
@@ -390,6 +415,7 @@ int main(int argc, char **argv)
          mode=&speex_nb_mode;
       } else {
          fprintf (stderr, "Bit-rate too low: %d Hz\n", rate);
+         exit(1);
       }
    } else if (!rate)
    {
@@ -402,15 +428,20 @@ int main(int argc, char **argv)
    }
 
    if (rate!=8000 && rate!=16000 && rate!=32000)
-      fprintf (stderr, "Warning: Speex is only optimized for 8,16 and 32 kHz. It will still work at %d Hz but your mileage may vary\n", rate); 
+      fprintf (stderr, "Warning: Speex is only optimized for 8, 16 and 32 kHz. It will still work at %d Hz but your mileage may vary\n", rate); 
 
    speex_init_header(&header, rate, 1, mode);
    header.frames_per_packet=nframes;
    header.vbr=vbr_enabled;
    header.nb_channels = chan;
 
-   fprintf (stderr, "Encoding %d Hz audio using %s mode\n", 
-            header.rate, mode->modeName);
+   {
+      char *st_string="mono";
+      if (chan==2)
+         st_string="stereo";
+      fprintf (stderr, "Encoding %d Hz audio using %s mode (%s)\n", 
+               header.rate, mode->modeName, st_string);
+   }
    /*fprintf (stderr, "Encoding %d Hz audio at %d bps using %s mode\n", 
      header.rate, mode->bitrate, mode->modeName);*/
 
@@ -477,6 +508,8 @@ int main(int argc, char **argv)
 
    speex_encoder_ctl(st, SPEEX_GET_FRAME_SIZE, &frame_size);
    speex_encoder_ctl(st, SPEEX_SET_COMPLEXITY, &complexity);
+   speex_encoder_ctl(st, SPEEX_SET_SAMPLING_RATE, &rate);
+
    if (vbr_enabled)
    {
       int tmp;

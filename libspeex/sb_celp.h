@@ -93,6 +93,7 @@ typedef struct SBEncState {
    SpeexSubmode **submodes;
    int    submodeID;
    int    complexity;
+   int    sampling_rate;
 
 } SBEncState;
 
@@ -107,6 +108,7 @@ typedef struct SBDecState {
    int    nbSubframes;
    int    lpcSize;
    int    first;
+   int    sampling_rate;
 
    void  *stack;
    float *x0d, *x1d;

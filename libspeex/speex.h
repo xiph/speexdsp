@@ -88,16 +88,19 @@ extern "C" {
 /** Get current complexity of the encoder (0-10) */
 #define SPEEX_GET_COMPLEXITY 17
 
-/*Would be SPEEX_SET_FRAME_SIZE, but it's (currently) invalid*/
+/** Set bit-rate used by the encoder (or lower) */
+#define SPEEX_SET_BITRATE 18
 /** Get current bit-rate used by the encoder or decoder */
 #define SPEEX_GET_BITRATE 19
 
 /**Define a handler function for in-band Speex request*/
 #define SPEEX_SET_HANDLER 20
 
-
 /**Define a handler function for in-band user-defined request*/
 #define SPEEX_SET_USER_HANDLER 22
+
+#define SPEEX_SET_SAMPLING_RATE 24
+#define SPEEX_GET_SAMPLING_RATE 25
 
 
    /* Used internally, not to be used in applications */

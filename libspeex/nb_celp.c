@@ -171,6 +171,7 @@ void *nb_encoder_init(SpeexMode *m)
       st->vbr = 0;
    }
    st->complexity=2;
+   st->sampling_rate=8000;
 
    return st;
 }
@@ -783,7 +784,7 @@ void *nb_decoder_init(SpeexMode *m)
    st->pi_gain = (float*)speex_alloc(st->nbSubframes*sizeof(float));
    st->last_pitch = 40;
    st->count_lost=0;
-
+   st->sampling_rate=8000;
 
    st->user_callback.func = &speex_default_user_handler;
    st->user_callback.data = NULL;
@@ -1281,9 +1282,15 @@ void nb_encoder_ctl(void *state, int request, void *ptr)
       break;
    case SPEEX_GET_BITRATE:
       if (st->submodes[st->submodeID])
-         (*(int*)ptr) = 50*SUBMODE(bits_per_frame);
+         (*(int*)ptr) = st->sampling_rate*SUBMODE(bits_per_frame)/st->frameSize;
       else
-         (*(int*)ptr) = 50*(NB_SUBMODE_BITS+1);
+         (*(int*)ptr) = st->sampling_rate*(NB_SUBMODE_BITS+1)/st->frameSize;
+      break;
+   case SPEEX_SET_SAMPLING_RATE:
+      st->sampling_rate = (*(int*)ptr);
+      break;
+   case SPEEX_GET_SAMPLING_RATE:
+      (*(int*)ptr)=st->sampling_rate;
       break;
    case SPEEX_GET_PI_GAIN:
       {
@@ -1331,9 +1338,15 @@ void nb_decoder_ctl(void *state, int request, void *ptr)
       break;
    case SPEEX_GET_BITRATE:
       if (st->submodes[st->submodeID])
-         (*(int*)ptr) = 50*SUBMODE(bits_per_frame);
+         (*(int*)ptr) = st->sampling_rate*SUBMODE(bits_per_frame)/st->frameSize;
       else
-         (*(int*)ptr) = 50*(NB_SUBMODE_BITS+1);
+         (*(int*)ptr) = st->sampling_rate*(NB_SUBMODE_BITS+1)/st->frameSize;
+      break;
+   case SPEEX_SET_SAMPLING_RATE:
+      st->sampling_rate = (*(int*)ptr);
+      break;
+   case SPEEX_GET_SAMPLING_RATE:
+      (*(int*)ptr)=st->sampling_rate;
       break;
    case SPEEX_SET_HANDLER:
       {

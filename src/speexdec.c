@@ -140,10 +140,13 @@ FILE *out_file_open(char *outFile, int rate, int *channels)
       }
       fout = fdopen(audio_fd, "w");
 #elif defined WIN32 || defined _WIN32
-      if (Set_WIN_Params (INVALID_FILEDESC, rate, SAMPLE_SIZE, *channels))
       {
-         fprintf (stderr, "Can't access %s\n", "WAVE OUT");
-         exit(1);
+         unsigned int speex_channels = *channels;
+         if (Set_WIN_Params (INVALID_FILEDESC, rate, SAMPLE_SIZE, speex_channels))
+         {
+            fprintf (stderr, "Can't access %s\n", "WAVE OUT");
+            exit(1);
+         }
       }
 #else
       fprintf (stderr, "No soundcard support\n");
@@ -273,6 +276,8 @@ static void *process_header(ogg_packet *op, int enh_enabled, int *frame_size, in
       if (header->mode > forceMode)
          *rate >>= (header->mode - forceMode);
    }
+
+   speex_decoder_ctl(st, SPEEX_SET_SAMPLING_RATE, rate);
 
    *nframes = header->frames_per_packet;
 

@@ -218,6 +218,8 @@ void *sb_encoder_init(SpeexMode *m)
    st->mem_sp2 = (float*)speex_alloc(st->lpcSize*sizeof(float));
    st->mem_sw = (float*)speex_alloc(st->lpcSize*sizeof(float));
    st->complexity=2;
+   speex_decoder_ctl(st->st_low, SPEEX_GET_SAMPLING_RATE, &st->sampling_rate);
+   st->sampling_rate*=2;
 
    return st;
 }
@@ -637,6 +639,8 @@ void *sb_decoder_init(SpeexMode *m)
    st->subframeSize = mode->subframeSize;
    st->nbSubframes = mode->frameSize/mode->subframeSize;
    st->lpcSize=8;
+   speex_decoder_ctl(st->st_low, SPEEX_GET_SAMPLING_RATE, &st->sampling_rate);
+   st->sampling_rate*=2;
 
    st->submodes=mode->submodes;
    st->submodeID=mode->defaultSubmode;
@@ -1008,9 +1012,20 @@ void sb_encoder_ctl(void *state, int request, void *ptr)
    case SPEEX_GET_BITRATE:
       speex_encoder_ctl(st->st_low, request, ptr);
       if (st->submodes[st->submodeID])
-         (*(int*)ptr) += 50*SUBMODE(bits_per_frame);
+         (*(int*)ptr) += st->sampling_rate*SUBMODE(bits_per_frame)/st->full_frame_size;
       else
-         (*(int*)ptr) += 50*(SB_SUBMODE_BITS+1);
+         (*(int*)ptr) += st->sampling_rate*(SB_SUBMODE_BITS+1)/st->full_frame_size;
+      break;
+   case SPEEX_SET_SAMPLING_RATE:
+      {
+         int tmp=(*(int*)ptr);
+         st->sampling_rate = tmp;
+         tmp>>=1;
+         speex_encoder_ctl(st->st_low, SPEEX_SET_SAMPLING_RATE, &tmp);
+      }
+      break;
+   case SPEEX_GET_SAMPLING_RATE:
+      (*(int*)ptr)=st->sampling_rate;
       break;
    case SPEEX_GET_PI_GAIN:
       {
@@ -1061,9 +1076,20 @@ void sb_decoder_ctl(void *state, int request, void *ptr)
    case SPEEX_GET_BITRATE:
       speex_decoder_ctl(st->st_low, request, ptr);
       if (st->submodes[st->submodeID])
-         (*(int*)ptr) += 50*SUBMODE(bits_per_frame);
+         (*(int*)ptr) += st->sampling_rate*SUBMODE(bits_per_frame)/st->full_frame_size;
       else
-         (*(int*)ptr) += 50*(SB_SUBMODE_BITS+1);
+         (*(int*)ptr) += st->sampling_rate*(SB_SUBMODE_BITS+1)/st->full_frame_size;
+      break;
+   case SPEEX_SET_SAMPLING_RATE:
+      {
+         int tmp=(*(int*)ptr);
+         st->sampling_rate = tmp;
+         tmp>>=1;
+         speex_decoder_ctl(st->st_low, SPEEX_SET_SAMPLING_RATE, &tmp);
+      }
+      break;
+   case SPEEX_GET_SAMPLING_RATE:
+      (*(int*)ptr)=st->sampling_rate;
       break;
    case SPEEX_SET_HANDLER:
       speex_decoder_ctl(st->st_low, SPEEX_SET_HANDLER, ptr);
