@@ -226,7 +226,6 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
    int ol_pitch;
    float ol_pitch_coef;
    float ol_gain;
-   float delta_qual=0;
    float *res, *target, *mem;
    void *stack;
    float *syn_resp;
@@ -365,44 +364,30 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
    /*Experimental VBR stuff*/
    if (st->vbr)
    {
-      delta_qual = vbr_analysis(st->vbr, in, st->frameSize, ol_pitch, ol_pitch_coef);
+      st->relative_quality = vbr_analysis(st->vbr, in, st->frameSize, ol_pitch, ol_pitch_coef);
       /*if (delta_qual<0)*/
       /*  delta_qual*=.1*(3+st->vbr_quality);*/
       if (st->vbr_enabled) 
       {
-         if (0) 
+         int mode;
+         mode = 7;
+         while (mode)
          {
-         int qual = (int)floor(st->vbr_quality+delta_qual+.5);
-         if (qual<1 && delta_qual>-3.5)
-            qual=1;
-         if (qual<0)
-            qual=0;
-         if (qual>10)
-            qual=10;
-         if (qual==10 && st->vbr_quality<10)
-            qual=9;
-         speex_encoder_ctl(state, SPEEX_SET_QUALITY, &qual);
-         } else {
-            int vqual, mode;
-            float level = delta_qual+7;
-            /*fprintf(stderr, "%f\n", level);*/
-            vqual = (int)floor(.5+st->vbr_quality);
-            mode = 7;
-            while (mode)
-            {
-               int v1;
-               float thresh;
-               v1=(int)floor(st->vbr_quality);
-               if (v1==10)
-                  thresh = vbr_nb_thresh[mode][v1];
-               else
-                  thresh = (st->vbr_quality-v1)*vbr_nb_thresh[mode][v1+1] + (1+v1-st->vbr_quality)*vbr_nb_thresh[mode][v1];
-               if (level > thresh)
-                  break;
-               mode--;
-            }
-            speex_encoder_ctl(state, SPEEX_SET_MODE, &mode);
+            int v1;
+            float thresh;
+            v1=(int)floor(st->vbr_quality);
+            if (v1==10)
+               thresh = vbr_nb_thresh[mode][v1];
+            else
+               thresh = (st->vbr_quality-v1)*vbr_nb_thresh[mode][v1+1] + (1+v1-st->vbr_quality)*vbr_nb_thresh[mode][v1];
+            if (st->relative_quality > thresh)
+               break;
+            mode--;
          }
+         /*fprintf (stderr, "%f %d\n", st->relative_quality, mode);*/
+         speex_encoder_ctl(state, SPEEX_SET_MODE, &mode);
+      } else {
+         st->relative_quality = -1;
       }
    }
    /*printf ("VBR quality = %f\n", vbr_qual);*/
@@ -536,7 +521,6 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
          st->pi_gain[sub] += tmp*st->interp_qlpc[i];
          tmp = -tmp;
       }
-     
 
       /* Compute bandwidth-expanded (unquantized) LPCs for perceptual weighting */
       bw_lpc(st->gamma1, st->interp_lpc, st->bw_lpc1, st->lpcSize);
@@ -1358,6 +1342,9 @@ void nb_encoder_ctl(void *state, int request, void *ptr)
          for (i=0;i<st->frameSize;i++)
             e[i]=st->innov[i];
       }
+      break;
+   case SPEEX_GET_RELATIVE_QUALITY:
+      (*(float*)ptr)=st->relative_quality;
       break;
    default:
       fprintf(stderr, "Unknown nb_ctl request: %d\n", request);

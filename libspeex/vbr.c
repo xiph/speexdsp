@@ -47,13 +47,13 @@
 
 float vbr_nb_thresh[8][11]={
    {-1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0}, /* silence */
-   { 4.5,  3.5,  2.5,  1.5,  0.5,  0.0,  0.0,  0.0,  0.0,  0.0, -1.0}, /*  2 kbps */
-   { 9.0,  7.5,  6.5,  5.5,  5.0,  4.0,  4.5,  3.0,  2.0,  1.0,  0.0}, /*  6 kbps */
-   {11.0,  9.5,  8.5,  7.5,  7.0,  6.5,  6.0,  5.0,  4.0,  3.0,  1.0}, /*  8 kbps */
-   {11.0, 11.0, 11.0,  9.5,  8.5,  7.5,  6.5,  6.0,  5.0,  4.0,  2.0}, /* 11 kbps */
-   {11.0, 11.0, 11.0, 11.0,  9.5,  9.0,  8.0,  7.5,  6.5,  5.0,  3.0}, /* 15 kbps */
+   { 3.9,  2.5,  2.0,  1.5,  0.5,  0.0,  0.0,  0.0,  0.0,  0.0, -1.0}, /*  2 kbps */
+   { 8.0,  6.0,  3.9,  4.5,  4.0,  3.5,  3.0,  2.5,  2.0,  1.0,  0.0}, /*  6 kbps */
+   {11.0,  8.5,  7.5,  7.0,  6.5,  6.0,  5.5,  5.0,  4.0,  3.0,  1.0}, /*  8 kbps */
+   {11.0, 11.0,  9.9,  9.0,  8.0,  7.0,  6.5,  6.0,  5.0,  4.0,  2.0}, /* 11 kbps */
+   {11.0, 11.0, 11.0, 11.0,  9.5,  9.0,  8.0,  7.0,  6.5,  5.0,  3.0}, /* 15 kbps */
    {11.0, 11.0, 11.0, 11.0, 11.0, 11.0,  9.5,  8.5,  8.0,  6.5,  4.0}, /* 18 kbps */
-   {11.0, 11.0, 11.0, 11.0, 11.0, 11.0, 11.0, 11.0,  9.5,  7.5,  5.5}  /* 24 kbps */ 
+   {11.0, 11.0, 11.0, 11.0, 11.0, 11.0, 11.0, 11.0,  9.8,  7.5,  5.5}  /* 24 kbps */ 
 };
 
 
@@ -108,7 +108,7 @@ float vbr_analysis(VBRState *vbr, float *sig, int len, int pitch, float pitch_co
 {
    int i;
    float ener=0, ener1=0, ener2=0;
-   float qual=0;
+   float qual=7;
    int va;
    float log_energy;
    float non_st=0;
@@ -155,11 +155,11 @@ float vbr_analysis(VBRState *vbr, float *sig, int len, int pitch, float pitch_co
 
    /* Checking for "pseudo temporal masking" */
    if (ener < .1*vbr->average_energy)
-      qual -= .7;
+      qual -= .5;
    if (ener < .01*vbr->average_energy)
-      qual -= .7;
+      qual -= .5;
    if (ener < .001*vbr->average_energy)
-      qual -= .7;
+      qual -= .5;
    /* Checking for very low absolute energy */
    if (ener < 30000)
    {
@@ -174,7 +174,9 @@ float vbr_analysis(VBRState *vbr, float *sig, int len, int pitch, float pitch_co
          qual += .7;
       if (ener > vbr->last_energy*1.8)
          qual += .7;
-      if (ener > 3*vbr->average_energy)
+      if (ener > 2*vbr->average_energy)
+         qual += .7;
+      if (ener > 4*vbr->average_energy)
          qual += .7;
       if (ener2 > 1.6*ener1)
          qual += .7;
@@ -184,23 +186,24 @@ float vbr_analysis(VBRState *vbr, float *sig, int len, int pitch, float pitch_co
       if (ener < .3*vbr->last_energy)
          qual -= .6;
    }
+   vbr->last_energy = ener;
    vbr->soft_pitch = .6*vbr->soft_pitch + .4*pitch_coef;
-   qual += 1.0*((pitch_coef-.4) + (vbr->soft_pitch-.4));
+   qual += 2.5*((pitch_coef-.4) + (vbr->soft_pitch-.4));
 
    if (qual < vbr->last_quality)
       qual = .5*qual + .5*vbr->last_quality;
-   if (qual<-3)
-      qual=-3;
-   if (qual>3)
-      qual=3;
-
+   if (qual<4)
+      qual=4;
+   if (qual>10)
+      qual=10;
+   
    if (vbr->consec_noise>=1)
-      qual-=1.2;
-   if (vbr->consec_noise>=4)
-      qual-=1.2;
-   if (vbr->consec_noise>=8)
-      qual-=1.2;
-
+      qual-=1.3;
+   if (vbr->consec_noise>=5)
+      qual-=1.3;
+   if (vbr->consec_noise>=12)
+      qual-=1.3;
+   
    vbr->last_pitch_coef = pitch_coef;
    vbr->last_quality = qual;
 

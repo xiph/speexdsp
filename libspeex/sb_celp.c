@@ -33,7 +33,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <stdio.h>
-#include "nb_celp.h"
+/*#include "nb_celp.h"*/
 #include "sb_celp.h"
 #include "stdlib.h"
 #include "filters.h"
@@ -217,6 +217,10 @@ void *sb_encoder_init(SpeexMode *m)
    st->mem_sp = (float*)speex_alloc(st->lpcSize*sizeof(float));
    st->mem_sp2 = (float*)speex_alloc(st->lpcSize*sizeof(float));
    st->mem_sw = (float*)speex_alloc(st->lpcSize*sizeof(float));
+
+   st->vbr_quality = 8;
+   st->vbr_enabled = 0;
+
    st->complexity=2;
    speex_decoder_ctl(st->st_low, SPEEX_GET_SAMPLING_RATE, &st->sampling_rate);
    st->sampling_rate*=2;
@@ -288,9 +292,6 @@ void sb_encode(void *state, float *in, SpeexBits *bits)
    /* Encode the narrowband part*/
    speex_encode(st->st_low, st->x0d, bits);
 
-   speex_bits_pack(bits, 1, 1);
-   speex_bits_pack(bits, st->submodeID, SB_SUBMODE_BITS);
-
    /* High-band buffering / sync with low band */
    for (i=0;i<st->windowSize-st->frame_size;i++)
       st->high[i] = st->high[st->frame_size+i];
@@ -343,6 +344,41 @@ void sb_encode(void *state, float *in, SpeexBits *bits)
    /* x-domain to angle domain*/
    for (i=0;i<st->lpcSize;i++)
       st->lsp[i] = acos(st->lsp[i]);
+
+   /* VBR code */
+   if (0){
+      float e_low=0, e_high=0;
+      float ratio;
+      float low_qual;
+      for (i=0;i<st->frame_size;i++)
+      {
+         e_low  += st->x0d[i]* st->x0d[i];
+         e_high += st->high[i]* st->high[i];
+      }
+      ratio = log((1+e_high)/(1+e_low));
+      speex_encoder_ctl(st->st_low, SPEEX_GET_RELATIVE_QUALITY, &low_qual);
+      if (ratio<-4)
+         ratio=-4;
+      if (ratio>0)
+         ratio=0;
+      /*if (ratio>-2)*/
+      low_qual+=1.0*(ratio+2);
+      {
+         int high_mode=2;
+         if (low_qual>10)
+            high_mode=4;
+         else if (low_qual>7.5)
+            high_mode=3;
+         else if (low_qual>5)
+            high_mode=2;
+         /*high_mode=1;*/
+         speex_encoder_ctl(st, SPEEX_SET_HIGH_MODE, &high_mode);
+      }
+      /*fprintf (stderr, "%f %f\n", ratio, low_qual);*/
+   }
+
+   speex_bits_pack(bits, 1, 1);
+   speex_bits_pack(bits, st->submodeID, SB_SUBMODE_BITS);
 
    /* If null mode (no transmission), just set a couple things to zero*/
    if (st->submodes[st->submodeID] == NULL)
@@ -933,7 +969,7 @@ void sb_encoder_ctl(void *state, int request, void *ptr)
    case SPEEX_SET_VBR_QUALITY:
       {
          int q;
-         float qual = (*(float*)ptr)+1;
+         float qual = (*(float*)ptr)+.5;
          if (qual>10)
             qual=10;
          q=(int)floor(.5+*(float*)ptr);

@@ -90,6 +90,9 @@ typedef struct SBEncState {
    float *mem_sw;              /**< Perceptual signal memory */
    float *pi_gain;
 
+   float  vbr_quality;         /**< Quality setting for VBR encoding */
+   int    vbr_enabled;         /**< 1 for enabling VBR, 0 otherwise */
+
    SpeexSubmode **submodes;
    int    submodeID;
    int    complexity;

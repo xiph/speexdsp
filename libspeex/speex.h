@@ -102,6 +102,7 @@ extern "C" {
 #define SPEEX_SET_SAMPLING_RATE 24
 #define SPEEX_GET_SAMPLING_RATE 25
 
+#define SPEEX_GET_RELATIVE_QUALITY 27
 
    /* Used internally, not to be used in applications */
 #define SPEEX_GET_PI_GAIN 100
