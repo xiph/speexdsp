@@ -297,11 +297,13 @@ static void *process_header(ogg_packet *op, int enh_enabled, int *frame_size, in
    speex_decoder_ctl(st, SPEEX_SET_ENH, &enh_enabled);
    speex_decoder_ctl(st, SPEEX_GET_FRAME_SIZE, frame_size);
 
-   callback.callback_id = SPEEX_INBAND_STEREO;
-   callback.func = speex_std_stereo_request_handler;
-   callback.data = stereo;
-   speex_decoder_ctl(st, SPEEX_SET_HANDLER, &callback);
-   
+   if (!(*channels==1))
+   {
+      callback.callback_id = SPEEX_INBAND_STEREO;
+      callback.func = speex_std_stereo_request_handler;
+      callback.data = stereo;
+      speex_decoder_ctl(st, SPEEX_SET_HANDLER, &callback);
+   }
    if (!*rate)
       *rate = header->rate;
    /* Adjust rate if --force-* options are used */

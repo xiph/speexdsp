@@ -97,7 +97,7 @@ static int read_samples(FILE *fin,int frame_size, int bits, int channels, int ls
    }
    nb_read /= bits/8*channels;
 
-   fprintf (stderr, "%d\n", nb_read);
+   /*fprintf (stderr, "%d\n", nb_read);*/
    if (nb_read==0)
       return 1;
 

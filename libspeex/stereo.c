@@ -96,8 +96,10 @@ void speex_decode_stereo(float *data, int frame_size, SpeexStereoState *stereo)
    for (i=frame_size-1;i>=0;i--)
    {
       float ftmp=data[i];
-      data[2*i] = e_left*ftmp;
-      data[2*i+1] = e_right*ftmp;
+      stereo->smooth_left  = .98*stereo->smooth_left  + .02*e_left;
+      stereo->smooth_right = .98*stereo->smooth_right + .02*e_right;
+      data[2*i] = stereo->smooth_left*ftmp;
+      data[2*i+1] = stereo->smooth_right*ftmp;
    }
 }
 
