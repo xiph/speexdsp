@@ -39,4 +39,5 @@ Developing applications for libspeex for Symbian OS
 
      Note that the constants SPEEX_MODEID_NB, SPEEX_MODEID_WB and
      SPEEX_MODEID_UWB were introduced in libspeex 1.1.6, and are
-     defined in <speex/speex.h>.
+     defined in <speex/speex.h>. speex_lib_get_mode() was introduced
+     in libspeex 1.1.7 and is declared in <speex/speex.h>.
