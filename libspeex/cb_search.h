@@ -36,7 +36,7 @@ int   nsf                       /* number of samples in subframe */
 );
 
 
-float split_cb_search(
+void split_cb_search(
 float target[],			/* target vector */
 float ak[],			/* LPCs for this subframe */
 float awk1[],			/* Weighted LPCs for this subframe */

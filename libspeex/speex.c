@@ -153,7 +153,7 @@ void encoder_destroy(EncState *st)
 
 void encode(EncState *st, float *in, FrameBits *bits)
 {
-   int i, j, sub, roots;
+   int i, sub, roots;
    float error;
 
    /* Copy new data in input buffer */
@@ -193,18 +193,18 @@ void encode(EncState *st, float *in, FrameBits *bits)
       st->lsp[i] = acos(st->lsp[i]);
    
    /* LSP Quantization */
+   lsp_quant_nb(st->lsp, st->qlsp, 10, bits);
+
+   if (st->first)
    {
-      unsigned int id;
       for (i=0;i<st->lpcSize;i++)
-         st->qlsp[i]=st->lsp[i];
-      id=lsp_quant_nb(st->qlsp,10 );
-      /*Watch out for 32-bit ints*/
-      frame_bits_pack(bits,id,30);
-      lsp_unquant_nb(st->qlsp,10,id);
+         st->old_lsp[i] = st->lsp[i];
+      for (i=0;i<st->lpcSize;i++)
+         st->old_qlsp[i] = st->qlsp[i];
    }
 
    /*Find open-loop pitch for the whole frame*/
-   {
+   if (0) {
       float *mem = PUSH(st->stack, st->lpcSize);
       
       for (i=0;i<st->lpcSize;i++)
@@ -228,7 +228,7 @@ void encode(EncState *st, float *in, FrameBits *bits)
    /* Loop on sub-frames */
    for (sub=0;sub<st->nbSubframes;sub++)
    {
-      float tmp, tmp1,tmp2,gain[3];
+      float tmp, gain[3];
       float esig=0, enoise=0, snr;
       int pitch, offset, pitch_gain_index;
       float *sp, *sw, *res, *exc, *target, *mem;
@@ -311,7 +311,7 @@ void encode(EncState *st, float *in, FrameBits *bits)
 #else
       pitch_search_3tap(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2,
                         exc, 20, 147, &gain[0], &pitch, &pitch_gain_index, st->lpcSize,
-                        st->subframeSize, bits);
+                        st->subframeSize, bits, st->stack);
       for (i=0;i<st->subframeSize;i++)
         exc[i]=gain[0]*exc[i-pitch]+gain[1]*exc[i-pitch-1]+gain[2]*exc[i-pitch-2];
       printf ("3-tap pitch = %d, gains = [%f %f %f]\n",pitch, gain[0], gain[1], gain[2]);
@@ -366,7 +366,7 @@ void encode(EncState *st, float *in, FrameBits *bits)
       snr = 10*log10((esig+1)/(enoise+1));
       printf ("seg SNR = %f\n", snr);
 
-#else
+#else /* Cheating to get perfect reconstruction */
 
 #if 1 /* Code to calculate the exact excitation after pitch prediction  */
       for (i=0;i<st->subframeSize;i++)
@@ -442,7 +442,7 @@ void encode(EncState *st, float *in, FrameBits *bits)
    for (i=0;i<st->lpcSize;i++)
       st->old_qlsp[i] = st->qlsp[i];
 
-   /* The next frame will not by the first (Duh!) */
+   /* The next frame will not be the first (Duh!) */
    st->first = 0;
 
    /* Replace input by synthesized speech */
@@ -501,5 +501,21 @@ void decoder_destroy(DecState *st)
 
 void decode(DecState *st, FrameBits *bits, float *out)
 {
-   int id = frame_bits_unpack_signed(bits, 30);
+   int i;
+
+   lsp_unquant_nb(st->qlsp, st->lpcSize, bits);
+   if (st->first)
+   {
+      for (i=0;i<st->lpcSize;i++)
+         st->old_qlsp[i] = st->qlsp[i];
+   }
+
+
+   /* Store the LSPs for interpolation in the next frame */
+   for (i=0;i<st->lpcSize;i++)
+      st->old_qlsp[i] = st->qlsp[i];
+
+   /* The next frame will not be the first (Duh!) */
+   st->first = 0;
+
 }

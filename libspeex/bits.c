@@ -21,6 +21,7 @@
 
 #include "bits.h"
 #include <stdio.h>
+#include <stdlib.h>
 
 void frame_bits_init(FrameBits *bits)
 {
@@ -74,7 +75,6 @@ int frame_bits_write(FrameBits *bits, char *bytes, int max_len)
 
 void frame_bits_pack(FrameBits *bits, int data, int nbBits)
 {
-   int i;
    unsigned int d=data;
    while(nbBits)
    {
@@ -106,11 +106,9 @@ int frame_bits_unpack_signed(FrameBits *bits, int nbBits)
 
 unsigned int frame_bits_unpack_unsigned(FrameBits *bits, int nbBits)
 {
-   int i;
    unsigned int d=0;
    while(nbBits)
    {
-      int bit;
       d<<=1;
       d |= (bits->bytes[bits->bytePtr]>>(7-bits->bitPtr))&1;
       bits->bitPtr++;

@@ -20,6 +20,8 @@
 #ifndef QUANT_LSP_H
 #define QUANT_LSP_H
 
+#include "bits.h"
+
 #define MAX_LSP_SIZE 20
 
 #define NB_CDBK_SIZE 64
@@ -36,9 +38,9 @@ extern float cdbk_nb_high1[];
 extern float cdbk_nb_high2[];
 
 /* Quantizes narrowband LSPs with 30 bits */
-unsigned long long lsp_quant_nb(float *lsp, int order);
+void lsp_quant_nb(float *lsp, float *qlsp, int order, FrameBits *bits);
 
 /* Decodes quantized narrowband LSPs */
-void lsp_unquant_nb(float *lsp, int order, unsigned long long id);
+void lsp_unquant_nb(float *lsp, int order, FrameBits *bits);
 
 #endif

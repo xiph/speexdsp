@@ -43,7 +43,7 @@ float *stack
 );
 
 /** Finds the best quantized 3-tap pitch predictor by analysis by synthesis */
-float pitch_search_3tap(
+void pitch_search_3tap(
 float target[],                 /* Target vector */
 float ak[],                     /* LPCs for this subframe */
 float awk1[],                   /* Weighted LPCs #1 for this subframe */
@@ -56,7 +56,8 @@ int   *pitch,                   /* Best pitch delay */
 int   *gain_index,              /* Index of optimum gain */
 int   p,                        /* Number of LPC coeffs */
 int   nsf,                      /* Number of samples in subframe */
-FrameBits *bits
+FrameBits *bits,
+float *stack
 );
 
 /** Finds the best quantized 3-tap pitch predictor by analysis by synthesis */
@@ -71,5 +72,6 @@ int   end,                      /* Largest pitch value allowed */
 float *gain,                    /* 3-tab gains of optimum entry */
 int   *pitch,                   /* Index of optimum entry */
 int   p,                        /* Number of LPC coeffs */
-int   nsf                       /* Number of samples in subframe */
+int   nsf,                      /* Number of samples in subframe */
+float *stack
 );

@@ -17,6 +17,8 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
+#include <math.h>
+#include <stdio.h>
 #include "ltp.h"
 #include "cb_search.h"
 #include "stack_alloc.h"
@@ -28,7 +30,7 @@
 void open_loop_pitch(float *sw, int start, int end, int len, int *pitch, int *vuv)
 {
    int i;
-   float e0, corr, energy, best_gain, pred_gain, best_corr, best_energy;
+   float e0, corr, energy, best_gain=0, pred_gain, best_corr=0, best_energy=0;
    float score, best_score=-1;
    e0=xcorr(sw, sw, len);
    energy=xcorr(sw-start, sw-start, len);
@@ -74,8 +76,8 @@ int   nsf,                      /* Number of samples in subframe */
 float *stack
 )
 {
-   int i, j, size, filt_size, base, frac, best_cor;
-   float *oexc_mem, *oexc, *exc_ptr, *fexc, *f, frac_pitch, best_score=-1, best_gain;
+   int i, j, size, filt_size, base, frac=0, best_cor=0;
+   float *oexc_mem, *oexc, *exc_ptr, *fexc, *f, frac_pitch=0, best_score=-1, best_gain=0;
    float sc;
    float corr[3];
    float A[3][3];
@@ -232,15 +234,17 @@ int   end,                      /* Largest pitch value allowed */
 float *gain,                    /* 3-tab gains of optimum entry */
 int   *pitch,                   /* Index of optimum entry */
 int   p,                        /* Number of LPC coeffs */
-int   nsf                       /* Number of samples in subframe */
+int   nsf,                       /* Number of samples in subframe */
+float *stack
 )
 {
    int i,j;
-   float tmp[3*nsf];
+   float *tmp;
    float *x[3];
    float corr[3];
    float A[3][3];
 
+   tmp = PUSH(stack, 3*nsf);
    x[0]=tmp;
    x[1]=tmp+nsf;
    x[2]=tmp+2*nsf;
@@ -305,11 +309,12 @@ int   nsf                       /* Number of samples in subframe */
       printf ("prediction gain = %f\n",tmp1/(tmp2+1));
       return tmp1/(tmp2+1);
    }
+   POP(stack);
 }
 
 
 /** Finds the best quantized 3-tap pitch predictor by analysis by synthesis */
-float pitch_search_3tap(
+void pitch_search_3tap(
 float target[],                 /* Target vector */
 float ak[],                     /* LPCs for this subframe */
 float awk1[],                   /* Weighted LPCs #1 for this subframe */
@@ -322,14 +327,17 @@ int   *pitch,                   /* Index of optimum entry */
 int   *gain_index,              /* Index of optimum gain */
 int   p,                        /* Number of LPC coeffs */
 int   nsf,                      /* Number of samples in subframe */
-FrameBits *bits
+FrameBits *bits,
+float *stack
 )
 {
    int i,j;
-   float tmp[3*nsf];
+   float *tmp;
    float *x[3];
    float corr[3];
    float A[3][3];
+
+   tmp = PUSH(stack, 3*nsf);
 
    x[0]=tmp;
    x[1]=tmp+nsf;
