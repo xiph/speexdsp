@@ -48,6 +48,7 @@
 #include <io.h>
 #include <fcntl.h>
 #endif
+#include <math.h>
 
 #ifdef HAVE_SYS_SOUNDCARD_H
 #include <sys/soundcard.h>
@@ -551,7 +552,7 @@ int main(int argc, char **argv)
                   }
                   /*Convert to short and save to output file*/
                   for (i=0;i<frame_size*channels;i++)
-                     out[i]=(short)le_short((short)output[i]);
+                     out[i]=(short)le_short((short)floor(.5+output[i]));
 #if defined WIN32 || defined _WIN32
                   if (strlen(outFile)==0)
                       WIN_Play_Samples (out, sizeof(short) * frame_size*channels);

@@ -297,7 +297,7 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
    lsp_dist=0;
    for (i=0;i<st->lpcSize;i++)
       lsp_dist += (st->old_lsp[i] - st->lsp[i])*(st->old_lsp[i] - st->lsp[i]);
-   printf ("%f\n", lsp_dist);
+   /*printf ("%f\n", lsp_dist);*/
 
    /* Whole frame analysis (open-loop estimation of pitch and excitation gain) */
    {
@@ -428,12 +428,15 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
       } else {
          /*VAD only case*/
          int mode;
-         if (st->relative_quality<2)
+         if (st->relative_quality<4)
          {
             if (st->submodeID>1 || lsp_dist>.05 || !st->dtx_enabled)
                mode=1;
             else
+            {
                mode=0;
+               fprintf (stderr, "tata\n");
+            }
          } else
             mode=st->submodeSelect;
          /*speex_encoder_ctl(state, SPEEX_SET_MODE, &mode);*/
@@ -1101,7 +1104,7 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
    if (st->submodes[st->submodeID] == NULL)
    {
       float *lpc;
-      lpc = PUSH(st->stack,11, float);
+      lpc = PUSH(stack,11, float);
       bw_lpc(.93, st->interp_qlpc, lpc, 10);
       /*for (i=0;i<st->frameSize;i++)
         st->exc[i]=0;*/
@@ -1618,6 +1621,10 @@ void nb_decoder_ctl(void *state, int request, void *ptr)
    st=(DecState*)state;
    switch(request)
    {
+   case SPEEX_GET_LOW_MODE:
+   case SPEEX_GET_MODE:
+      (*(int*)ptr) = st->submodeID;
+      break;
    case SPEEX_SET_ENH:
       st->lpc_enh_enabled = *((int*)ptr);
       break;

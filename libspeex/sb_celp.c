@@ -278,6 +278,7 @@ void sb_encode(void *state, float *in, SpeexBits *bits)
    float *mem, *innov, *syn_resp;
    float *low_pi_gain, *low_exc, *low_innov;
    SpeexSBMode *mode;
+   int dtx;
 
    st = (SBEncState*)state;
    stack=st->stack;
@@ -305,6 +306,13 @@ void sb_encode(void *state, float *in, SpeexBits *bits)
    speex_encoder_ctl(st->st_low, SPEEX_GET_EXC, low_exc);
    speex_encoder_ctl(st->st_low, SPEEX_GET_INNOV, low_innov);
    
+   speex_encoder_ctl(st->st_low, SPEEX_GET_LOW_MODE, &dtx);
+
+   if (dtx==0)
+      dtx=1;
+   else
+      dtx=0;
+
    /* Start encoding the high-band */
    for (i=0;i<st->windowSize;i++)
       st->buf[i] = st->high[i] * st->window[i];
@@ -343,7 +351,8 @@ void sb_encode(void *state, float *in, SpeexBits *bits)
       st->lsp[i] = acos(st->lsp[i]);
 
    /* VBR code */
-   if (st->vbr_enabled || st->vad_enabled){
+   if ((st->vbr_enabled || st->vad_enabled) && !dtx)
+   {
       float e_low=0, e_high=0;
       float ratio;
       if (st->abr_enabled)
@@ -425,10 +434,13 @@ void sb_encode(void *state, float *in, SpeexBits *bits)
    }
 
    speex_bits_pack(bits, 1, 1);
-   speex_bits_pack(bits, st->submodeID, SB_SUBMODE_BITS);
+   if (dtx)
+      speex_bits_pack(bits, 0, SB_SUBMODE_BITS);
+   else
+      speex_bits_pack(bits, st->submodeID, SB_SUBMODE_BITS);
 
    /* If null mode (no transmission), just set a couple things to zero*/
-   if (st->submodes[st->submodeID] == NULL)
+   if (dtx || st->submodes[st->submodeID] == NULL)
    {
       for (i=0;i<st->frame_size;i++)
          st->exc[i]=st->sw[i]=0;
@@ -786,13 +798,18 @@ void sb_decoder_destroy(void *state)
    speex_free(state);
 }
 
-static void sb_decode_lost(SBDecState *st, float *out, void *stack)
+static void sb_decode_lost(SBDecState *st, float *out, int dtx, void *stack)
 {
    int i;
    float *awk1, *awk2, *awk3;
-   for (i=0;i<st->frame_size;i++)
-      st->exc[i]*=0.8;
-   
+   int saved_modeid=0;
+
+   if (dtx)
+   {
+      saved_modeid=st->submodeID;
+      st->submodeID=1;
+   }
+
    st->first=1;
    
    awk1=PUSH(stack, st->lpcSize+1, float);
@@ -821,10 +838,15 @@ static void sb_decode_lost(SBDecState *st, float *out, void *stack)
    
    
    /* Final signal synthesis from excitation */
-   for (i=0;i<st->frame_size;i++)
-      st->exc[i] *= .9;
+   if (!dtx)
+   {
+      for (i=0;i<st->frame_size;i++)
+         st->exc[i] *= .9;
+   }
+
    for (i=0;i<st->frame_size;i++)
       st->high[i]=st->exc[i];
+
    if (st->lpc_enh_enabled)
    {
       /* Use enhanced LPC filter */
@@ -849,6 +871,11 @@ static void sb_decode_lost(SBDecState *st, float *out, void *stack)
    for (i=0;i<st->full_frame_size;i++)
       out[i]=2*(st->y0[i]-st->y1[i]);
    
+   if (dtx)
+   {
+      st->submodeID=saved_modeid;
+   }
+
    return;
 }
 
@@ -861,12 +888,19 @@ int sb_decode(void *state, SpeexBits *bits, float *out)
    void *stack;
    float *low_pi_gain, *low_exc, *low_innov;
    float *awk1, *awk2, *awk3;
-
+   float dtx;
+   
    st = (SBDecState*)state;
    stack=st->stack;
 
    /* Decode the low-band */
    ret = speex_decode(st->st_low, bits, st->x0d);
+
+   speex_decoder_ctl(st->st_low, SPEEX_GET_LOW_MODE, &dtx);
+   if (dtx==0)
+      dtx=1;
+   else
+      dtx=0;
 
    /* If error decoding the narrowband part, propagate error */
    if (ret!=0)
@@ -876,7 +910,7 @@ int sb_decode(void *state, SpeexBits *bits, float *out)
 
    if (!bits)
    {
-      sb_decode_lost(st, out, stack);
+      sb_decode_lost(st, out, 0, stack);
       return 0;
    }
 
@@ -891,6 +925,12 @@ int sb_decode(void *state, SpeexBits *bits, float *out)
    {
       /*Was a narrowband frame, set "null submode"*/
       st->submodeID = 0;
+   }
+
+   if (dtx)
+   {
+      sb_decode_lost(st, out, 1, stack);
+      return 0;      
    }
 
    for (i=0;i<st->frame_size;i++)
@@ -1097,7 +1137,16 @@ void sb_encoder_ctl(void *state, int request, void *ptr)
       st->submodeSelect = st->submodeID = (*(int*)ptr);
       break;
    case SPEEX_SET_LOW_MODE:
-      speex_encoder_ctl(st->st_low, SPEEX_SET_MODE, ptr);
+      speex_encoder_ctl(st->st_low, SPEEX_SET_LOW_MODE, ptr);
+      break;
+   case SPEEX_SET_DTX:
+      speex_encoder_ctl(st->st_low, SPEEX_SET_DTX, ptr);
+      break;
+   case SPEEX_GET_DTX:
+      speex_encoder_ctl(st->st_low, SPEEX_GET_DTX, ptr);
+      break;
+   case SPEEX_GET_LOW_MODE:
+      speex_encoder_ctl(st->st_low, SPEEX_GET_LOW_MODE, ptr);
       break;
    case SPEEX_SET_MODE:
       speex_encoder_ctl(st, SPEEX_SET_QUALITY, ptr);
@@ -1272,6 +1321,9 @@ void sb_decoder_ctl(void *state, int request, void *ptr)
    st=(SBDecState*)state;
    switch(request)
    {
+   case SPEEX_GET_LOW_MODE:
+      speex_encoder_ctl(st->st_low, SPEEX_GET_LOW_MODE, ptr);
+      break;
    case SPEEX_GET_FRAME_SIZE:
       (*(int*)ptr) = st->full_frame_size;
       break;

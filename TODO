@@ -1,8 +1,6 @@
 Features
-*Average bit-rate VBR
 -Add maximum/minimum bit-rate control for VBR
 -Get the encoder to use the rate of packet loss (more conservative pitch gains)
--No transmission when constant noise/silence
 
 Long-term quality improvements
 -Improve perceptual enhancement (including wideband)
@@ -15,7 +13,6 @@ Standards
 *required for 1.0
 
 ideas:
-peelable stream (double codebook, higher bands, stereo)
-DTX in Ogg? (painful)
+Peelable stream (double codebook, higher bands, stereo)
 LPC from spectral domain
-Masking curve from Vorbis
+Better psycho-acoustics? Masking curve from Vorbis
