@@ -53,7 +53,7 @@ SpeexEchoState *speex_echo_state_init(int frame_size, int filter_length)
    N = st->window_size;
    M = st->M = (filter_length+N-1)/frame_size;
    st->cancel_count=0;
-   st->adapt_rate = .01;
+   st->adapt_rate = .01f;
 
    st->fft_lookup = (struct drft_lookup*)speex_alloc(sizeof(struct drft_lookup));
    drft_init(st->fft_lookup, N);
@@ -103,8 +103,8 @@ void speex_echo_state_destroy(SpeexEchoState *st)
    speex_free(st);
 }
 
-/** Performs echo cancellation a frame */
-void speex_echo_cancel(SpeexEchoState *st, float *ref, float *echo, float *out, float *Yout)
+/** Performs echo cancellation on a frame */
+void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, int *Yout)
 {
    int i,j,m;
    int N,M;
@@ -114,7 +114,7 @@ void speex_echo_cancel(SpeexEchoState *st, float *ref, float *echo, float *out, 
 
    N = st->window_size;
    M = st->M;
-   scale = 1.0/N;
+   scale = 1.0f/N;
    st->cancel_count++;
 
    /* Copy input data to buffer */
@@ -206,7 +206,7 @@ void speex_echo_cancel(SpeexEchoState *st, float *ref, float *echo, float *out, 
 
    for (i=0;i<st->frame_size;i++)
    {
-      powD += N*ref[i]*ref[i];
+      powD += N*((float)ref[i])*ref[i];
    }
 #if 0
    for (i=1;i<N-1;i+=2)
@@ -240,9 +240,9 @@ void speex_echo_cancel(SpeexEchoState *st, float *ref, float *echo, float *out, 
       float tmp, tmp2;
 
       if (st->cancel_count<M)
-         s = 1.0/st->cancel_count;
+         s = 1.0f/st->cancel_count;
       else
-         s = 1.0/M;
+         s = 1.0f/M;
       
       for (i=1,j=1;i<N-1;i+=2,j++)
       {
@@ -280,7 +280,7 @@ void speex_echo_cancel(SpeexEchoState *st, float *ref, float *echo, float *out, 
       }
       
       for (i=0;i<=st->frame_size;i++)
-         st->power_1[i] = 1.0/(1e6+st->power[i]);
+         st->power_1[i] = 1.0f/(1e6f+st->power[i]);
    }
 
    /* Compute weight gradient */
@@ -321,16 +321,16 @@ void speex_echo_cancel(SpeexEchoState *st, float *ref, float *echo, float *out, 
    {
       if (st->cancel_count<8*M)
       {
-         st->adapt_rate = .5/(2+M);
+         st->adapt_rate = .5f/(2+M);
       } else {
-         st->adapt_rate = spectral_dist*(1.0/(2+M));
-         if (st->adapt_rate>.5/(2+M))
-            st->adapt_rate=.5/(2+M);
+         st->adapt_rate = spectral_dist*(1.0f/(2+M));
+         if (st->adapt_rate>.5f/(2+M))
+            st->adapt_rate=.5f/(2+M);
          if (st->adapt_rate<0)
             st->adapt_rate=0;
       }
    } else
-      st->adapt_rate = .0;
+      st->adapt_rate = .0f;
 
    /* Update weights */
    for (i=0;i<M*N;i++)
