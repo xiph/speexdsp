@@ -720,6 +720,8 @@ static void sb_decode_lost(SBDecState *st, float *out, int dtx, char *stack)
    {
       saved_modeid=st->submodeID;
       st->submodeID=1;
+   } else {
+      bw_lpc(0.99, st->interp_qlpc, st->interp_qlpc, st->lpcSize);
    }
 
    st->first=1;
@@ -733,8 +735,13 @@ static void sb_decode_lost(SBDecState *st, float *out, int dtx, char *stack)
       float r=.9;
       
       float k1,k2,k3;
-      k1=SUBMODE(lpc_enh_k1);
-      k2=SUBMODE(lpc_enh_k2);
+      if (st->submodes[st->submodeID] != NULL)
+      {
+         k1=SUBMODE(lpc_enh_k1);
+         k2=SUBMODE(lpc_enh_k2);
+      } else {
+         k1=k2=.7;
+      }
       k3=(1-(1-r*k1)/(1-r*k2))/r;
       k3=k1-k2;
       if (!st->lpc_enh_enabled)
@@ -808,11 +815,7 @@ int sb_decode(void *state, SpeexBits *bits, float *out)
    /* Decode the low-band */
    ret = speex_decode(st->st_low, bits, st->x0d);
 
-   speex_decoder_ctl(st->st_low, SPEEX_GET_LOW_MODE, &dtx);
-   if (dtx==0)
-      dtx=1;
-   else
-      dtx=0;
+   speex_decoder_ctl(st->st_low, SPEEX_GET_DTX_STATUS, &dtx);
 
    /* If error decoding the narrowband part, propagate error */
    if (ret!=0)
@@ -820,43 +823,38 @@ int sb_decode(void *state, SpeexBits *bits, float *out)
       return ret;
    }
 
-   if (bits || st->submodes[st->submodeID] != NULL)
+   if (!bits)
    {
-      if (!bits)
-      {
-         sb_decode_lost(st, out, 0, stack);
-         return 0;
-      }
-      
-      /*Check "wideband bit"*/
-      if (speex_bits_remaining(bits)>0)
-         wideband = speex_bits_peek(bits);
-      else
-         wideband = 0;
-      if (wideband)
-      {
-         /*Regular wideband frame, read the submode*/
-         wideband = speex_bits_unpack_unsigned(bits, 1);
-         st->submodeID = speex_bits_unpack_unsigned(bits, SB_SUBMODE_BITS);
-      } else
-      {
-         /*Was a narrowband frame, set "null submode"*/
-         st->submodeID = 0;
-      }
-      
-      if (dtx)
-      {
-         sb_decode_lost(st, out, 1, stack);
-         return 0;      
-      }
+      sb_decode_lost(st, out, dtx, stack);
+      return 0;
    }
 
-   for (i=0;i<st->frame_size;i++)
-      st->exc[i]=0;
+   /*Check "wideband bit"*/
+   if (speex_bits_remaining(bits)>0)
+      wideband = speex_bits_peek(bits);
+   else
+      wideband = 0;
+   if (wideband)
+   {
+      /*Regular wideband frame, read the submode*/
+      wideband = speex_bits_unpack_unsigned(bits, 1);
+      st->submodeID = speex_bits_unpack_unsigned(bits, SB_SUBMODE_BITS);
+   } else
+   {
+      /*Was a narrowband frame, set "null submode"*/
+      st->submodeID = 0;
+   }
+   /*FIXME: Check for valid submodeID */
 
    /* If null mode (no transmission), just set a couple things to zero*/
    if (st->submodes[st->submodeID] == NULL)
    {
+      if (dtx)
+      {
+         sb_decode_lost(st, out, 1, stack);
+         return 0;
+      }
+
       for (i=0;i<st->frame_size;i++)
          st->exc[i]=0;
 
@@ -874,6 +872,9 @@ int sb_decode(void *state, SpeexBits *bits, float *out)
       return 0;
 
    }
+
+   for (i=0;i<st->frame_size;i++)
+      st->exc[i]=0;
 
    low_pi_gain = PUSH(stack, st->nbSubframes, float);
    low_exc = PUSH(stack, st->frame_size, float);
@@ -1309,6 +1310,9 @@ void sb_decoder_ctl(void *state, int request, void *ptr)
          for (i=0;i<st->frame_size;i++)
             e[2*i]=2*st->exc[i];
       }
+      break;
+   case SPEEX_GET_DTX_STATUS:
+      speex_decoder_ctl(st->st_low, SPEEX_GET_DTX_STATUS, ptr);
       break;
    default:
       speex_warning_int("Unknown nb_ctl request: ", request);

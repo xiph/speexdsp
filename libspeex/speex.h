@@ -134,6 +134,8 @@ extern "C" {
 #define SPEEX_GET_EXC     101
 /** Used internally*/
 #define SPEEX_GET_INNOV   102
+/** Used internally*/
+#define SPEEX_GET_DTX_STATUS   103
 
 
 /* Preserving compatibility:*/

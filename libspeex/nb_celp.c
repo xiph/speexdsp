@@ -927,8 +927,13 @@ static void nb_decode_lost(DecState *st, float *out, char *stack)
          float r=.9;
          
          float k1,k2,k3;
-         k1=SUBMODE(lpc_enh_k1);
-         k2=SUBMODE(lpc_enh_k2);
+         if (st->submodes[st->submodeID] != NULL)
+         {
+            k1=SUBMODE(lpc_enh_k1);
+            k2=SUBMODE(lpc_enh_k2);
+         } else {
+            k1=k2=.7;
+         }
          k3=(1-(1-r*k1)/(1-r*k2))/r;
          if (!st->lpc_enh_enabled)
          {
@@ -1180,6 +1185,7 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
    {
       int extra;
       extra = speex_bits_unpack_unsigned(bits, 4);
+
       if (extra==15)
          st->dtx_enabled=1;
       else
@@ -1689,6 +1695,9 @@ void nb_decoder_ctl(void *state, int request, void *ptr)
          for (i=0;i<st->frameSize;i++)
             e[i]=st->innov[i];
       }
+      break;
+   case SPEEX_GET_DTX_STATUS:
+      *((int*)ptr) = st->dtx_enabled;
       break;
    default:
       speex_warning_int("Unknown nb_ctl request: ", request);
