@@ -37,8 +37,6 @@
 #include "speex_bits.h"
 #include "speex_jitter.h"
 
-#include <stdio.h>
-
 void speex_jitter_init(SpeexJitter *jitter, void *decoder, int sampling_rate)
 {
    int i;
@@ -73,7 +71,6 @@ void speex_jitter_put(SpeexJitter *jitter, char *packet, int len, int timestamp)
 {
    int i,j;
 
-   fprintf (stderr, "in\n");
    /* Cleanup buffer (remove old packets that weren't played) */
    for (i=0;i<SPEEX_JITTER_MAX_BUFFER_SIZE;i++)
    {
@@ -130,7 +127,6 @@ void speex_jitter_get(SpeexJitter *jitter, float *out)
    /* Handle frame interpolation (receiving too fast) */
    if (jitter->interp_frame)
    {
-      fprintf (stderr, "interp\n");
       speex_decode(jitter->dec, NULL, out);
       jitter->interp_frame = 0;
       return;
@@ -154,15 +150,12 @@ void speex_jitter_get(SpeexJitter *jitter, float *out)
       return;
    }
    
-   fprintf (stderr, "%d ", jitter->pointer_timestamp);
    /* Search the buffer for a packet with the right timestamp */
    for (i=0;i<SPEEX_JITTER_MAX_BUFFER_SIZE;i++)
    {
-      fprintf (stderr, "%d ", jitter->timestamp[i]);
       if (jitter->len[i]!=-1 && jitter->timestamp[i]==jitter->pointer_timestamp)
          break;
    }
-   fprintf (stderr, "\n");
    
    if (i==SPEEX_JITTER_MAX_BUFFER_SIZE)
    {
@@ -179,7 +172,6 @@ void speex_jitter_get(SpeexJitter *jitter, float *out)
 
       /*Packet is late or lost*/
       speex_decode(jitter->dec, NULL, out);
-      fprintf (stderr, "lost packet\n");
    } else {
       /* Found the right packet */
       speex_bits_read_from(&jitter->current_packet, jitter->buf[i], jitter->len[i]);
