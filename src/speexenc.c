@@ -76,9 +76,6 @@ int main(int argc, char **argv)
       {"version", no_argument, NULL, 0},
       {0, 0, 0, 0}
    };
-   /*ogg_stream_state *ogg_state;
-   ogg_packet packet;
-   ogg_page page;*/
 
    ogg_stream_state os;
    ogg_page 		 og;
@@ -86,6 +83,7 @@ int main(int argc, char **argv)
    int bytes_written, ret, result;
    int id=0;
 
+   /*Process command-line options*/
    while(1)
    {
       c = getopt_long (argc, argv, "nwhv",
@@ -137,6 +135,7 @@ int main(int argc, char **argv)
    inFile=argv[optind];
    outFile=argv[optind+1];
 
+   /*Initialize Ogg stream struct*/
    if (ogg_stream_init(&os, 0)==-1)
    {
       fprintf(stderr,"Stream init failed\n");
@@ -155,6 +154,7 @@ int main(int argc, char **argv)
    if (wideband)
       mode=&speex_wb_mode;
 
+   /*Initialize Speex encoder*/
    st = encoder_init(mode);
 
    if (strcmp(inFile, "-")==0)
@@ -180,13 +180,8 @@ int main(int argc, char **argv)
       }
    }
 
-   /*Temporary header*/
+   /*Write header (format will change)*/
    {
-      char *header="";
-      /*if (narrowband)
-         header="spexn";
-      if (wideband)
-      header="spexw";*/
 
       if (narrowband)
          op.packet = (unsigned char *)"speex narrowband";
@@ -211,24 +206,21 @@ int main(int argc, char **argv)
          else
             bytes_written += ret;
       }
-      
-      
-      if (fwrite(header, 1, 5, fout)!=5)
-      {
-         perror("Cannot write header");
-      }
    }
 
    frame_size=mode->frameSize;
 
+   /*Main encoding loop (one frame per iteration)*/
    while (1)
    {
       id++;
+      /*Read input audio*/
       fread(in, sizeof(short), frame_size, fin);
       if (feof(fin))
          break;
       for (i=0;i<frame_size;i++)
          input[i]=in[i];
+      /*Encode current frame*/
       encode(st, input, &bits);
 
       /*if (id%5!=0)
