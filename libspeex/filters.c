@@ -32,17 +32,8 @@
 
 #include "filters.h"
 #include "stack_alloc.h"
-#include <stdio.h>
 #include <math.h>
 
-void print_vec(float *vec, int len, char *name)
-{
-   int i;
-   printf ("%s ", name);
-   for (i=0;i<len;i++)
-      printf (" %f", vec[i]);
-   printf ("\n");
-}
 
 void bw_lpc(float gamma, float *lpc_in, float *lpc_out, int order)
 {
@@ -131,16 +122,17 @@ void residue_percep_zero(float *xx, float *ak, float *awk1, float *awk2, float *
    fir_mem2(y, awk2, y, N, ord, mem);
 }
 
-#define MAX_FILTER 100
-#define MAX_SIGNAL 1000
 
-void qmf_decomp(float *xx, float *aa, float *y1, float *y2, int N, int M, float *mem)
+void qmf_decomp(float *xx, float *aa, float *y1, float *y2, int N, int M, float *mem, void *stack)
 {
    int i,j,k,M2;
-   /* FIXME: this should be dynamic */
-   float a[MAX_FILTER];
-   float x[MAX_SIGNAL];
-   float *x2=x+M-1;
+   float *a;
+   float *x;
+   float *x2;
+   
+   a = PUSH(stack, M, float);
+   x = PUSH(stack, N+M-1, float);
+   x2=x+M-1;
    M2=M>>1;
    for (i=0;i<M;i++)
       a[M-i-1]=aa[i];
@@ -166,14 +158,13 @@ void qmf_decomp(float *xx, float *aa, float *y1, float *y2, int N, int M, float 
 }
 
 /* By segher */
-void fir_mem_up(float *x, float *a, float *y, int N, int M, float *mem)
+void fir_mem_up(float *x, float *a, float *y, int N, int M, float *mem, void *stack)
    /* assumptions:
       all odd x[i] are zero -- well, actually they are left out of the array now
       N and M are multiples of 4 */
 {
    int i, j;
-   /*FIXME: Make that dynamic*/
-   float xx[384];
+   float *xx=PUSH(stack, M+N-1, float);
 
    for (i = 0; i < N/2; i++)
       xx[2*i] = x[N/2-1-i];

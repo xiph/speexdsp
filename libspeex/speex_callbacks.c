@@ -119,7 +119,7 @@ int speex_std_vbr_quality_request_handler(SpeexBits *bits, void *state, void *da
 int speex_std_char_handler(SpeexBits *bits, void *state, void *data)
 {
    unsigned char ch;
-   FILE *f = data;
+   FILE *f = (FILE *)data;
    ch = speex_bits_unpack_unsigned(bits, 8);
    fputc(ch, f);
    return 0;

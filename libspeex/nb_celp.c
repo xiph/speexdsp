@@ -67,8 +67,8 @@ void *nb_encoder_init(SpeexMode *m)
    SpeexNBMode *mode;
    int i;
 
-   mode=m->mode;
-   st = speex_alloc(sizeof(EncState));
+   mode=(SpeexNBMode *)m->mode;
+   st = (EncState*)speex_alloc(sizeof(EncState));
    st->mode=m;
    /* Codec parameters, should eventually have several "modes"*/
    st->frameSize = mode->frameSize;
@@ -92,71 +92,71 @@ void *nb_encoder_init(SpeexMode *m)
    st->bounded_pitch = 0;
 
    /* Allocating input buffer */
-   st->inBuf = speex_alloc(st->bufSize*sizeof(float));
+   st->inBuf = (float*)speex_alloc(st->bufSize*sizeof(float));
    st->frame = st->inBuf + st->bufSize - st->windowSize;
    /* Allocating excitation buffer */
-   st->excBuf = speex_alloc(st->bufSize*sizeof(float));
+   st->excBuf = (float*)speex_alloc(st->bufSize*sizeof(float));
    st->exc = st->excBuf + st->bufSize - st->windowSize;
-   st->swBuf = speex_alloc(st->bufSize*sizeof(float));
+   st->swBuf = (float*)speex_alloc(st->bufSize*sizeof(float));
    st->sw = st->swBuf + st->bufSize - st->windowSize;
 
-   st->exc2Buf = speex_alloc(st->bufSize*sizeof(float));
+   st->exc2Buf = (float*)speex_alloc(st->bufSize*sizeof(float));
    st->exc2 = st->exc2Buf + st->bufSize - st->windowSize;
 
-   st->innov = speex_alloc(st->frameSize*sizeof(float));
+   st->innov = (float*)speex_alloc(st->frameSize*sizeof(float));
 
    /* Asymetric "pseudo-Hamming" window */
    {
       int part1, part2;
       part1 = st->subframeSize*7/2;
       part2 = st->subframeSize*5/2;
-      st->window = speex_alloc(st->windowSize*sizeof(float));
+      st->window = (float*)speex_alloc(st->windowSize*sizeof(float));
       for (i=0;i<part1;i++)
          st->window[i]=.54-.46*cos(M_PI*i/part1);
       for (i=0;i<part2;i++)
          st->window[part1+i]=.54+.46*cos(M_PI*i/part2);
    }
    /* Create the window for autocorrelation (lag-windowing) */
-   st->lagWindow = speex_alloc((st->lpcSize+1)*sizeof(float));
+   st->lagWindow = (float*)speex_alloc((st->lpcSize+1)*sizeof(float));
    for (i=0;i<st->lpcSize+1;i++)
       st->lagWindow[i]=exp(-.5*sqr(2*M_PI*st->lag_factor*i));
 
-   st->autocorr = speex_alloc((st->lpcSize+1)*sizeof(float));
+   st->autocorr = (float*)speex_alloc((st->lpcSize+1)*sizeof(float));
 
-   st->stack = speex_alloc(20000*sizeof(float));
+   st->stack = (float*)speex_alloc(20000*sizeof(float));
 
-   st->buf2 = speex_alloc(st->windowSize*sizeof(float));
+   st->buf2 = (float*)speex_alloc(st->windowSize*sizeof(float));
 
-   st->lpc = speex_alloc((st->lpcSize+1)*sizeof(float));
-   st->interp_lpc = speex_alloc((st->lpcSize+1)*sizeof(float));
-   st->interp_qlpc = speex_alloc((st->lpcSize+1)*sizeof(float));
-   st->bw_lpc1 = speex_alloc((st->lpcSize+1)*sizeof(float));
-   st->bw_lpc2 = speex_alloc((st->lpcSize+1)*sizeof(float));
+   st->lpc = (float*)speex_alloc((st->lpcSize+1)*sizeof(float));
+   st->interp_lpc = (float*)speex_alloc((st->lpcSize+1)*sizeof(float));
+   st->interp_qlpc = (float*)speex_alloc((st->lpcSize+1)*sizeof(float));
+   st->bw_lpc1 = (float*)speex_alloc((st->lpcSize+1)*sizeof(float));
+   st->bw_lpc2 = (float*)speex_alloc((st->lpcSize+1)*sizeof(float));
 
-   st->lsp = speex_alloc(st->lpcSize*sizeof(float));
-   st->qlsp = speex_alloc(st->lpcSize*sizeof(float));
-   st->old_lsp = speex_alloc(st->lpcSize*sizeof(float));
-   st->old_qlsp = speex_alloc(st->lpcSize*sizeof(float));
-   st->interp_lsp = speex_alloc(st->lpcSize*sizeof(float));
-   st->interp_qlsp = speex_alloc(st->lpcSize*sizeof(float));
-   st->rc = speex_alloc(st->lpcSize*sizeof(float));
+   st->lsp = (float*)speex_alloc(st->lpcSize*sizeof(float));
+   st->qlsp = (float*)speex_alloc(st->lpcSize*sizeof(float));
+   st->old_lsp = (float*)speex_alloc(st->lpcSize*sizeof(float));
+   st->old_qlsp = (float*)speex_alloc(st->lpcSize*sizeof(float));
+   st->interp_lsp = (float*)speex_alloc(st->lpcSize*sizeof(float));
+   st->interp_qlsp = (float*)speex_alloc(st->lpcSize*sizeof(float));
+   st->rc = (float*)speex_alloc(st->lpcSize*sizeof(float));
    st->first = 1;
    for (i=0;i<st->lpcSize;i++)
    {
       st->lsp[i]=(M_PI*((float)(i+1)))/(st->lpcSize+1);
    }
 
-   st->mem_sp = speex_alloc(st->lpcSize*sizeof(float));
-   st->mem_sw = speex_alloc(st->lpcSize*sizeof(float));
-   st->mem_sw_whole = speex_alloc(st->lpcSize*sizeof(float));
-   st->mem_exc = speex_alloc(st->lpcSize*sizeof(float));
+   st->mem_sp = (float*)speex_alloc(st->lpcSize*sizeof(float));
+   st->mem_sw = (float*)speex_alloc(st->lpcSize*sizeof(float));
+   st->mem_sw_whole = (float*)speex_alloc(st->lpcSize*sizeof(float));
+   st->mem_exc = (float*)speex_alloc(st->lpcSize*sizeof(float));
 
-   st->pi_gain = speex_alloc(st->nbSubframes*sizeof(float));
+   st->pi_gain = (float*)speex_alloc(st->nbSubframes*sizeof(float));
 
-   st->pitch = speex_alloc(st->nbSubframes*sizeof(int));
+   st->pitch = (int*)speex_alloc(st->nbSubframes*sizeof(int));
 
    if (1) {
-      st->vbr = speex_alloc(sizeof(VBRState));
+      st->vbr = (VBRState*)speex_alloc(sizeof(VBRState));
       vbr_init(st->vbr);
       st->vbr_quality = 8;
       st->vbr_enabled = 0;
@@ -170,14 +170,14 @@ void *nb_encoder_init(SpeexMode *m)
 
 void nb_encoder_destroy(void *state)
 {
-   EncState *st=state;
+   EncState *st=(EncState *)state;
    /* Free all allocated memory */
    speex_free(st->inBuf);
    speex_free(st->excBuf);
    speex_free(st->swBuf);
    speex_free(st->exc2Buf);
    speex_free(st->innov);
-   speex_free(st->stack);
+   speex_free((float*)st->stack);
 
    speex_free(st->window);
    speex_free(st->buf2);
@@ -208,7 +208,7 @@ void nb_encoder_destroy(void *state)
    speex_free(st->vbr);
 
    /*Free state memory... should be last*/
-   speex_free(st);
+   speex_free((float*)st);
 }
 
 void nb_encode(void *state, float *in, SpeexBits *bits)
@@ -223,7 +223,7 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
    void *stack;
    float *syn_resp;
 
-   st=state;
+   st=(EncState *)state;
    stack=st->stack;
 
    /* Copy new data in input buffer */
@@ -671,7 +671,7 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
 
          /* In some (rare) modes, we do a second search (more bits) to reduce noise even more */
          if (SUBMODE(double_codebook)) {
-            float *tmp_stack=stack;
+            void *tmp_stack=stack;
             float *innov2 = PUSH(tmp_stack, st->subframeSize, float);
             for (i=0;i<st->subframeSize;i++)
                innov2[i]=0;
@@ -731,8 +731,8 @@ void *nb_decoder_init(SpeexMode *m)
    SpeexNBMode *mode;
    int i;
 
-   mode=m->mode;
-   st = speex_alloc(sizeof(DecState));
+   mode=(SpeexNBMode*)m->mode;
+   st = (DecState *)speex_alloc(sizeof(DecState));
    st->mode=m;
 
    st->first=1;
@@ -757,23 +757,23 @@ void *nb_decoder_init(SpeexMode *m)
 
    st->stack = speex_alloc(20000*sizeof(float));
 
-   st->inBuf = speex_alloc(st->bufSize*sizeof(float));
+   st->inBuf = (float*)speex_alloc(st->bufSize*sizeof(float));
    st->frame = st->inBuf + st->bufSize - st->windowSize;
-   st->excBuf = speex_alloc(st->bufSize*sizeof(float));
+   st->excBuf = (float*)speex_alloc(st->bufSize*sizeof(float));
    st->exc = st->excBuf + st->bufSize - st->windowSize;
    for (i=0;i<st->bufSize;i++)
       st->inBuf[i]=0;
    for (i=0;i<st->bufSize;i++)
       st->excBuf[i]=0;
-   st->innov = speex_alloc(st->frameSize*sizeof(float));
+   st->innov = (float*)speex_alloc(st->frameSize*sizeof(float));
 
-   st->interp_qlpc = speex_alloc((st->lpcSize+1)*sizeof(float));
-   st->qlsp = speex_alloc(st->lpcSize*sizeof(float));
-   st->old_qlsp = speex_alloc(st->lpcSize*sizeof(float));
-   st->interp_qlsp = speex_alloc(st->lpcSize*sizeof(float));
-   st->mem_sp = speex_alloc(5*st->lpcSize*sizeof(float));
+   st->interp_qlpc = (float*)speex_alloc((st->lpcSize+1)*sizeof(float));
+   st->qlsp = (float*)speex_alloc(st->lpcSize*sizeof(float));
+   st->old_qlsp = (float*)speex_alloc(st->lpcSize*sizeof(float));
+   st->interp_qlsp = (float*)speex_alloc(st->lpcSize*sizeof(float));
+   st->mem_sp = (float*)speex_alloc(5*st->lpcSize*sizeof(float));
 
-   st->pi_gain = speex_alloc(st->nbSubframes*sizeof(float));
+   st->pi_gain = (float*)speex_alloc(st->nbSubframes*sizeof(float));
    st->last_pitch = 40;
    st->count_lost=0;
 
@@ -789,7 +789,7 @@ void *nb_decoder_init(SpeexMode *m)
 void nb_decoder_destroy(void *state)
 {
    DecState *st;
-   st=state;
+   st=(DecState*)state;
    speex_free(st->inBuf);
    speex_free(st->excBuf);
    speex_free(st->innov);
@@ -901,7 +901,7 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
    int m;
    void *stack;
    float *awk1, *awk2, *awk3;
-   st=state;
+   st=(DecState*)state;
    stack=st->stack;
 
    /* If bits is NULL, consider the packet to be lost (what could we do anyway) */
@@ -1156,7 +1156,7 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
          /* Decode second codebook (only for some modes) */
          if (SUBMODE(double_codebook))
          {
-            float *tmp_stack=stack;
+            void *tmp_stack=stack;
             float *innov2 = PUSH(tmp_stack, st->subframeSize, float);
             for (i=0;i<st->subframeSize;i++)
                innov2[i]=0;
@@ -1215,7 +1215,7 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
 void nb_encoder_ctl(void *state, int request, void *ptr)
 {
    EncState *st;
-   st=state;     
+   st=(EncState*)state;     
    switch(request)
    {
    case SPEEX_GET_FRAME_SIZE:
@@ -1286,7 +1286,7 @@ void nb_encoder_ctl(void *state, int request, void *ptr)
 void nb_decoder_ctl(void *state, int request, void *ptr)
 {
    DecState *st;
-   st=state;
+   st=(DecState*)state;
    switch(request)
    {
    case SPEEX_SET_ENH:
@@ -1306,7 +1306,7 @@ void nb_decoder_ctl(void *state, int request, void *ptr)
       break;
    case SPEEX_SET_HANDLER:
       {
-         SpeexCallback *c = ptr;
+         SpeexCallback *c = (SpeexCallback*)ptr;
          st->speex_callbacks[c->callback_id].func=c->func;
          st->speex_callbacks[c->callback_id].data=c->data;
          st->speex_callbacks[c->callback_id].callback_id=c->callback_id;
@@ -1314,7 +1314,7 @@ void nb_decoder_ctl(void *state, int request, void *ptr)
       break;
    case SPEEX_SET_USER_HANDLER:
       {
-         SpeexCallback *c = ptr;
+         SpeexCallback *c = (SpeexCallback*)ptr;
          st->user_callback.func=c->func;
          st->user_callback.data=c->data;
          st->user_callback.callback_id=c->callback_id;

@@ -90,7 +90,7 @@ int main(int argc, char **argv)
       }
       speex_bits_reset(&bits);
       for (i=0;i<FRAME_SIZE;i++)
-         in[i]=input[i];
+         in[i]=(short)input[i];
       for (i=0;i<FRAME_SIZE;i++)
          bak2[i]=bak[i];
       fwrite(in, sizeof(short), FRAME_SIZE, fout);

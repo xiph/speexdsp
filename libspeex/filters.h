@@ -33,10 +33,9 @@
 #ifndef FILTERS_H
 #define FILTERS_H
 
-void qmf_decomp(float *xx, float *aa, float *y1, float *y2, int N, int M, float *mem);
-void fir_mem_up(float *x, float *a, float *y, int N, int M, float *mem);
+void qmf_decomp(float *xx, float *aa, float *y1, float *y2, int N, int M, float *mem, void *stack);
+void fir_mem_up(float *x, float *a, float *y, int N, int M, float *mem, void *stack);
 
-void print_vec(float *vec, int len, char *name);
 
 void filter_mem2(float *x, float *num, float *den, float *y, int N, int ord, float *mem);
 void fir_mem2(float *x, float *num, float *y, int N, int ord, float *mem);

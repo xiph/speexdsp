@@ -84,9 +84,7 @@ static float inner_prod(float *a, float *b, int len)
   movhlps %%xmm3, %%xmm4
   addps %%xmm4, %%xmm3
   movaps %%xmm3, %%xmm4
-  //FIXME: which one?
   shufps $0x55, %%xmm4, %%xmm4
-  //shufps $33, %%xmm4, %%xmm4
   addss %%xmm4, %%xmm3
   movss %%xmm3, (%%edx)
   

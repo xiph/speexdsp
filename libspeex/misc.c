@@ -33,6 +33,18 @@
 #include "misc.h"
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
+
+#ifndef RELEASE
+void print_vec(float *vec, int len, char *name)
+{
+   int i;
+   printf ("%s ", name);
+   for (i=0;i<len;i++)
+      printf (" %f", vec[i]);
+   printf ("\n");
+}
+#endif
 
 unsigned int be_int(unsigned int i)
 {

@@ -357,8 +357,8 @@ int complexity
    N=complexity;
    if (N>10)
       N=10;
-   /*FIXME: This breaks if sizeof(int) != sizeof(float) */
-   nbest=(int*)PUSH(stack, N, float);
+
+   nbest=PUSH(stack, N, int);
    gains = PUSH(stack, N, float);
    params = (ltp_params*) par;
 

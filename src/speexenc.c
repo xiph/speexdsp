@@ -51,8 +51,9 @@
 #include <fcntl.h>
 #endif
 
-void comment_init();
-void comment_add();
+
+void comment_init(char **comments, int* length, char *vendor_string);
+void comment_add(char **comments, int* length, char *tag, char *val);
 
 
 /*Write an Ogg page to a file pointer*/
@@ -636,7 +637,7 @@ void comment_add(char **comments, int* length, char *tag, char *val)
   int val_len=strlen(val);
   int len=(*length)+4+tag_len+val_len;
 
-  p=realloc(p, len);
+  p=(char*)realloc(p, len);
   if(p==NULL){
   }
 

@@ -506,7 +506,7 @@ void speex_decoder_ctl(void *state, int request, void *ptr)
 
 static void nb_mode_query(void *mode, int request, void *ptr)
 {
-   SpeexNBMode *m = mode;
+   SpeexNBMode *m = (SpeexNBMode*)mode;
    
    switch (request)
    {
@@ -524,7 +524,7 @@ static void nb_mode_query(void *mode, int request, void *ptr)
 
 static void wb_mode_query(void *mode, int request, void *ptr)
 {
-   SpeexSBMode *m = mode;
+   SpeexSBMode *m = (SpeexSBMode*)mode;
 
    switch (request)
    {

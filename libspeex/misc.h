@@ -39,6 +39,10 @@
 #define VERSION "Speex-1.0beta2"
 #endif
 
+#ifndef RELEASE
+void print_vec(float *vec, int len, char *name);
+#endif
+
 unsigned int be_int(unsigned int i);
 unsigned int le_int(unsigned int i);
 

@@ -55,10 +55,9 @@ int   complexity
    int i,j,k,m,n,q;
    float *resp;
    float *t, *e, *E, *r2;
-   /*FIXME: Should make this dynamic*/
-   float *tmp, *_ot[20], *_nt[20];
+   float *tmp;
    float *ndist, *odist;
-   int *itmp, *_nind[20], *_oind[20];
+   int *itmp;
    float **ot, **nt;
    int **nind, **oind;
    int *ind;
@@ -70,13 +69,14 @@ int   complexity
    float *best_dist;
    int have_sign;
 
-   ot=_ot;
-   nt=_nt;
-   oind=_oind;
-   nind=_nind;
    N=complexity;
    if (N>10)
       N=10;
+
+   ot=PUSH(stack, N, float*);
+   nt=PUSH(stack, N, float*);
+   oind=PUSH(stack, N, int*);
+   nind=PUSH(stack, N, int*);
 
    params = (split_cb_params *) par;
    subvect_size = params->subvect_size;

@@ -190,7 +190,7 @@ void usage()
    printf (" --no-enh              Disable perceptual enhancement (default FOR NOW)\n");
    printf (" --force-nb            Force decoding in narrowband, even for wideband\n");
    printf (" --force-wb            Force decoding in wideband, even for narrowband\n");
-   printf (" --packet-loss n       Simulate n % random packet loss\n");
+   printf (" --packet-loss n       Simulate n %% random packet loss\n");
    printf (" -V                    Verbose mode (show bit-rate)\n"); 
    printf (" -h, --help            This help\n");
    printf (" -v, --version         Version information\n");
@@ -441,7 +441,7 @@ int main(int argc, char **argv)
                fout = out_file_open(outFile, rate);
 
             } else if (packet_count==1){
-               print_comments(op.packet, op.bytes);
+               print_comments((char*)op.packet, op.bytes);
                /*
                fprintf (stderr, "File comments: ");
                fwrite(op.packet, 1, op.bytes, stderr);
@@ -484,7 +484,7 @@ int main(int argc, char **argv)
                   }
                   /*Convert to short and save to output file*/
                   for (i=0;i<frame_size;i++)
-                     out[i]=(short)le_short(output[i]);
+                     out[i]=(short)le_short((short)output[i]);
 #if defined WIN32 || defined _WIN32
                   if (strlen(outFile)==0)
                       WIN_Play_Samples (out, sizeof(short) * frame_size);
