@@ -388,6 +388,12 @@ int main(int argc, char **argv)
             rate=atoi (optarg);
          } else if (strcmp(long_options[option_index].name,"comment")==0)
          {
+	   if (!strchr(optarg, '='))
+	   {
+	     fprintf (stderr, "Invalid comment: %s\n", optarg);
+	     fprintf (stderr, "Comments must be of the form name=value\n");
+	     exit(1);
+	   }
            comment_add(&comments, &comments_length, NULL, optarg); 
          } else if (strcmp(long_options[option_index].name,"author")==0)
          {
