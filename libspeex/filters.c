@@ -478,7 +478,7 @@ CombFilterMem *mem
 {
    int i;
    spx_word16_t exc_energy=0, new_exc_energy=0;
-   float gain;
+   spx_word16_t gain;
    spx_word16_t step;
    spx_word16_t fact;
 
@@ -524,21 +524,24 @@ CombFilterMem *mem
    /*Amplitude after enhancement*/
    new_exc_energy = compute_rms(new_exc, nsf);
 
-   /*Compute scaling factor and normalize energy*/
-   gain = (exc_energy)/(.1+new_exc_energy);
-   if (gain < .5)
-      gain=.5;
-   if (gain>.9999)
-      gain=.9999;
+   if (exc_energy > new_exc_energy)
+      exc_energy = new_exc_energy;
+   
+   gain = DIV32_16(SHL(exc_energy,15),1+new_exc_energy);
 
 #ifdef FIXED_POINT
+   if (gain < 16384)
+      gain = 16384;
+#else
+   if (gain < .5)
+      gain=.5;
+#endif
+
+#ifdef FIXED_POINT
+   for (i=0;i<nsf;i++)
    {
-      spx_word16_t gg = gain*32768;
-      for (i=0;i<nsf;i++)
-   {
-      mem->smooth_gain = MULT16_16_Q15(31457,mem->smooth_gain) + MULT16_16_Q15(1311,gg);
+      mem->smooth_gain = MULT16_16_Q15(31457,mem->smooth_gain) + MULT16_16_Q15(1311,gain);
       new_exc[i] = MULT16_32_Q15(mem->smooth_gain, new_exc[i]);
-   }
    }
 #else
    for (i=0;i<nsf;i++)
