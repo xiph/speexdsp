@@ -21,6 +21,7 @@
 void encoder_init(EncState *st)
 {
    int i;
+   /* Codec parameters, should eventually have several "modes"*/
    st->frameSize = 160;
    st->windowSize = 320;
    st->nbSubframes=4;
@@ -28,6 +29,7 @@ void encoder_init(EncState *st)
    st->lpcSize = 10;
    st->bufSize = 640;
    st->gamma=.9;
+
    st->inBuf = malloc(st->bufSize*sizeof(float));
    st->frame = st->inBuf + st->bufSize - st->windowSize;
    st->wBuf = malloc(st->bufSize*sizeof(float));
@@ -36,15 +38,18 @@ void encoder_init(EncState *st)
       st->inBuf[i]=0;
    for (i=0;i<st->bufSize;i++)
       st->wBuf[i]=0;
+
    st->window = malloc(st->windowSize*sizeof(float));
    /* Hanning window */
    for (i=0;i<st->windowSize;i++)
       st->window[i]=.5*(1-cos(2*M_PI*i/st->windowSize));
+
    st->buf2 = malloc(st->windowSize*sizeof(float));
    st->lpc = malloc((st->lpcSize+1)*sizeof(float));
    st->interp_lpc = malloc((st->lpcSize+1)*sizeof(float));
    st->bw_lpc = malloc((st->lpcSize+1)*sizeof(float));
    st->autocorr = malloc((st->lpcSize+1)*sizeof(float));
+
    /* Create the window for autocorrelation (lag-windowing) */
    st->lagWindow = malloc((st->lpcSize+1)*sizeof(float));
    for (i=0;i<st->lpcSize+1;i++)
@@ -58,6 +63,7 @@ void encoder_init(EncState *st)
 
 void encoder_destroy(EncState *st)
 {
+   /* Free all allocated memory */
    free(st->inBuf);
    free(st->wBuf);
    free(st->window);
@@ -87,24 +93,24 @@ void encode(EncState *st, float *in, int *outSize, void *bits)
    /* Window for analysis */
    for (i=0;i<st->windowSize;i++)
       st->buf2[i] = st->frame[i] * st->window[i];
+
    /* Compute auto-correlation */
    autocorr(st->buf2, st->autocorr, st->lpcSize+1, st->windowSize);
+
    st->autocorr[0] += 1;        /* prevents NANs */
    st->autocorr[0] *= 1.0001;   /* 40 dB noise floor */
-   /* Perform lag windowing here, equivalent to filtering in the power-spectrum domain */
+   /* Lag windowing: equivalent to filtering in the power-spectrum domain */
    for (i=0;i<st->lpcSize+1;i++)
       st->autocorr[i] *= st->lagWindow[i];
+
    /* Levinson-Durbin */
-   /*for (i=0;i<st->lpcSize+1;i++)
-      printf("%f ", st->autocorr[i]);
-   printf ("\n");
-   */
    error = wld(st->lpc+1, st->autocorr, st->rc, st->lpcSize);
    st->lpc[0]=1;
+   /*printf ("prediction error = %f, R[0] = %f, gain = %f\n", error, st->autocorr[0], st->autocorr[0]/error);*/
+
    /*for (i=0;i<st->lpcSize+1;i++)
-     printf("%f ", st->lpc[i]);
-   printf ("\n");*/
-   printf ("prediction error = %f, R[0] = %f, gain = %f\n", error, st->autocorr[0], st->autocorr[0]/error);
+      printf("%f ", st->lpc[i]);
+      printf ("aa\n");*/
 
    /* LPC to LSPs (x-domain) transform */
    roots=lpc_to_lsp (st->lpc, st->lpcSize, st->lsp, 6, 0.02);
@@ -113,6 +119,8 @@ void encode(EncState *st, float *in, int *outSize, void *bits)
       fprintf (stderr, "roots!=st->lpcSize\n");
       exit(1);
    }
+
+   /* x-domain to angle domain*/
    for (i=0;i<st->lpcSize;i++)
       st->lsp[i] = acos(st->lsp[i]);
 
@@ -127,17 +135,15 @@ void encode(EncState *st, float *in, int *outSize, void *bits)
       lsp_unquant_nb(st->lsp,10,id);
    }
 
-   /*for (i=0;i<roots;i++)
-      printf("%f ", st->lsp[i]);
-      printf ("\n");*/
-
-#if 1
+   /* Loop on all sub-frames */
    for (sub=0;sub<st->nbSubframes;sub++)
    {
       float tmp, tmp1,tmp2,gain[3];
       int pitch, offset;
 
+      /* Offset relative to start of frame */
       offset = st->subframeSize*sub;
+
       /* LSP interpolation */
       tmp = (.5 + sub)/st->nbSubframes;
       for (i=0;i<st->lpcSize;i++)
@@ -164,7 +170,7 @@ void encode(EncState *st, float *in, int *outSize, void *bits)
          printf("%f ", st->bw_lpc[i]);
          printf ("\n");*/
 
-      /* Compute perceptualy weighted residue */      
+      /* Compute perceptualy weighted residue (FIR) */      
       for (i=0;i<st->subframeSize;i++)
       {
          st->wframe[offset+i]=st->frame[offset+i];
@@ -172,31 +178,26 @@ void encode(EncState *st, float *in, int *outSize, void *bits)
            st->wframe[offset+i] += st->frame[offset+i-j]*st->bw_lpc[j];
       }
 
-      /* Find pitch gain and delay */
+      /* Find pitch gain and delay, gains are already quantized*/
       pitch = ltp_closed_loop(st->wframe+offset, st->subframeSize, 20, 120, gain);
       /*pitch = three_tap_ltp(st->wframe+offset, st->subframeSize, 20, 120, gain);*/
-      /*pitch = open_loop_ltp(st->wframe+offset, st->subframeSize, 20, 120, gain);*/
-      
-      /* Quantization of pitch period and gains */
 
-      /*printf ("pitch = %d, gain = %f\n",pitch,gain);*/
-      printf ("pitch = %d, gain = %f %f %f\n",pitch,gain[0], gain[1], gain[2]);
+      printf ("pitch = %d, gains = %f %f %f\n",pitch,gain[0], gain[1], gain[2]);
       /*printf ("%f %f %f ",gain[0], gain[1], gain[2]);*/
       
       tmp1=0;
       for (i=0;i<st->subframeSize;i++)
          tmp1+=st->wframe[offset+i]*st->wframe[offset+i];
-      /*printf ("before: %f ", tmp1);*/
       predictor_three_tap(st->wframe+offset, st->subframeSize, pitch, gain);
       
       tmp2=0;
       for (i=0;i<st->subframeSize;i++)
          tmp2+=st->wframe[offset+i]*st->wframe[offset+i];
-      /*printf ("after: %f\n", tmp2);*/
-      printf ("pitch gain: %f\n", tmp1/(tmp2+.001));
+      printf ("pitch prediction gain: %f\n", tmp1/(tmp2+.001));
       
-      /*Analysis by synthesis and quantization here*/
+      /*Analysis by synthesis and excitation quantization here*/
 
+      /* Reverse the 3-tab pitch predictor (IIR)*/
       inverse_three_tap(st->wframe+offset, st->subframeSize, pitch, gain);
 
       /*Inverse short-term predictor (1/W(z/gamma))*/
@@ -208,11 +209,14 @@ void encode(EncState *st, float *in, int *outSize, void *bits)
       }
 
    }
-#endif
+
    printf ("\n");
+   /* Store the LSPs for interpolation in the next frame */
    for (i=0;i<st->lpcSize;i++)
       st->old_lsp[i] = st->lsp[i];
+   /* The next frame will not by the first (Duh!) */
    st->first = 0;
+   /* Replace input by synthesized speech */
    for (i=0;i<st->frameSize;i++)
       in[i]=st->frame[i];
 }
