@@ -49,6 +49,11 @@
 
 #define NB_BANDS 8
 
+#define ZMIN .1
+#define ZMAX .316
+#define ZMIN_1 10
+#define LOG_MIN_MAX_1 0.86859
+
 static void conj_window(float *w, int len)
 {
    int i;
@@ -159,6 +164,10 @@ SpeexPreprocessState *speex_preprocess_state_init(int frame_size, int sampling_r
    st->Smin = (float*)speex_alloc(N*sizeof(float));
    st->Stmp = (float*)speex_alloc(N*sizeof(float));
    st->update_prob = (float*)speex_alloc(N*sizeof(float));
+
+   st->zeta = (float*)speex_alloc(N*sizeof(float));
+   st->Zpeak = 0;
+   st->Zlast = 0;
 
    st->noise_bands = (float*)speex_alloc(NB_BANDS*sizeof(float));
    st->noise_bands2 = (float*)speex_alloc(NB_BANDS*sizeof(float));
@@ -610,6 +619,7 @@ int speex_preprocess(SpeexPreprocessState *st, float *x, float *echo)
    int N4 = st->frame_size - N3;
    float scale=.5/N;
    float *ps=st->ps;
+   float Zframe=0, Pframe;
 
    preprocess_analysis(st, x);
 
@@ -734,16 +744,80 @@ int speex_preprocess(SpeexPreprocessState *st, float *x, float *echo)
       }
    }
 
+   for (i=1;i<N;i++)
+   {
+      st->zeta[i] = .7*st->zeta[i] + .3*st->prior[i];
+   }
 
+   {
+      int freq_start = (int)(300.0*2*N/st->sampling_rate);
+      int freq_end   = (int)(2000.0*2*N/st->sampling_rate);
+      for (i=freq_start;i<freq_end;i++)
+      {
+         Zframe += st->zeta[i];         
+      }
+   }
+
+   Zframe /= N;
+   if (Zframe<ZMIN)
+   {
+      Pframe = 0;
+   } else {
+      if (Zframe > 1.5*st->Zlast)
+      {
+         Pframe = 1;
+         st->Zpeak = Zframe;
+         if (st->Zpeak > 10)
+            st->Zpeak = 10;
+         if (st->Zpeak < 1)
+            st->Zpeak = 1;
+      } else {
+         if (Zframe < st->Zpeak*ZMIN)
+         {
+            Pframe = 0;
+         } else if (Zframe > st->Zpeak*ZMAX)
+         {
+            Pframe = 1;
+         } else {
+            Pframe = log(Zframe/(st->Zpeak*ZMIN)) / log(ZMAX/ZMIN);
+         }
+      }
+   }
+   st->Zlast = Zframe;
+
+   fprintf (stderr, "%f\n", Pframe);
    /* Compute gain according to the Ephraim-Malah algorithm */
    for (i=1;i<N;i++)
    {
       float MM;
       float theta;
       float prior_ratio;
+      float p, q;
+      float zeta1;
+      float P1;
 
       prior_ratio = st->prior[i]/(1.0001+st->prior[i]);
       theta = (1+st->post[i])*prior_ratio;
+
+      if (i==1 || i==N-1)
+         zeta1 = st->zeta[i];
+      else
+         zeta1 = .25*st->zeta[i-1] + .5*st->zeta[i] + .25*st->zeta[i+1];
+      if (zeta1<ZMIN)
+         P1 = 0;
+      else if (zeta1>ZMAX)
+         P1 = 1;
+      else
+         P1 = LOG_MIN_MAX_1 * log(ZMIN_1*zeta1);
+  
+      /*P1 = log(zeta1/ZMIN)/log(ZMAX/ZMIN);*/
+      
+      /* FIXME: add global prop (P2) */
+      q = 1-Pframe*P1;
+      if (q>.95)
+         q=.95;
+      p=1/(1 + (q/(1-q))*(1+st->prior[i])*exp(-theta));
+      
 
 #if 0
       /* log-spectral magnitude estimator */
@@ -762,24 +836,16 @@ int speex_preprocess(SpeexPreprocessState *st, float *x, float *echo)
       {
          st->gain[i]=2;
       }
-   }
-   st->gain[0]=0;
-   st->gain[N-1]=0;
 
-   if (st->denoise_enabled)
-   {
-      for (i=1;i<N-1;i++)
+      if (st->denoise_enabled)
       {
-         st->gain2[i]=st->gain[i];
-         /* Limits noise reduction to -26 dB, put prevents some musical noise */
-         /*if (st->gain2[i]<.05)
-           st->gain2[i]=.05;*/
+         st->gain2[i]=p*p*st->gain[i];
+      } else {
+         st->gain2[i]=1;
       }
-      st->gain2[N-1]=0;
-   } else {
-      for (i=0;i<N;i++)
-         st->gain2[i] = 1;
    }
+   st->gain2[0]=st->gain[0]=0;
+   st->gain2[N-1]=st->gain[N-1]=0;
 
    if (st->agc_enabled)
       speex_compute_agc(st, mean_prior);

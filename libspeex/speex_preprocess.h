@@ -64,6 +64,10 @@ typedef struct SpeexPreprocessState {
    float *Stmp;              /**< See Cohen paper */
    float *update_prob;       /**< Propability of speech presence for noise update */
 
+   float *zeta;              /**< Smoothed a priori SNR */
+   float  Zpeak;
+   float  Zlast;
+
    float *loudness_weight;   /**< Perceptual loudness curve */
 
    float *echo_noise;
