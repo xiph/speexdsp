@@ -48,7 +48,7 @@ void open_loop_nbest_pitch(float *sw, int start, int end, int len, int *pitch, f
       {
          float g1, g;
          g1 = corr/(energy+10);
-         g = sqrt(corr/(e0+10));
+         g = sqrt(g1*corr/(e0+10));
          if (g>g1)
             g=g1;
          if (g<0)
@@ -444,8 +444,8 @@ int complexity
 )
 {
    int i;
-   if (pitch_coef>.98)
-      pitch_coef=.98;
+   if (pitch_coef>.9)
+      pitch_coef=.9;
    for (i=0;i<nsf;i++)
    {
       exc[i]=exc[i-start]*pitch_coef;
@@ -469,8 +469,8 @@ int lost)
 {
    int i;
    /*pitch_coef=.9;*/
-   if (pitch_coef>.98)
-      pitch_coef=.98;
+   if (pitch_coef>.9)
+      pitch_coef=.9;
    for (i=0;i<nsf;i++)
    {
       exc[i]=exc[i-start]*pitch_coef;

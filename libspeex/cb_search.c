@@ -601,5 +601,5 @@ float *stack
    int i;
 
    for (i=0;i<nsf;i++)
-      exc[i]+=2*((((float)rand())/RAND_MAX)-.5);
+      exc[i]+=3*((((float)rand())/RAND_MAX)-.5);
 }

@@ -305,11 +305,13 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
    if (st->vbr)
    {
       delta_qual = vbr_analysis(st->vbr, in, st->frameSize, ol_pitch, ol_pitch_coef);
-      if (delta_qual<0)
+      /*if (delta_qual<0)*/
          delta_qual*=.1*(3+st->vbr_quality);
       if (st->vbr_enabled) 
       {
          int qual = (int)floor(st->vbr_quality+delta_qual+.5);
+         if (qual<1 && delta_qual>-3.5)
+            qual=1;
          if (qual<0)
             qual=0;
          if (qual>10)
