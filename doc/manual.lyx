@@ -3203,6 +3203,16 @@ Speex is mainly designed for 3 different sampling rates: 8 kHz, 16 kHz,
  
 \layout Subsection*
 
+Quality
+\layout Subsection*
+
+Complexity (variable)
+\layout Standard
+
+With Speex, it is possible to vary the complexity allowed for the encoder.
+ 
+\layout Subsection*
+
 Variable Bit-Rate (VBR)
 \layout Standard
 
@@ -3229,23 +3239,53 @@ difficulty
 \layout Subsection*
 
 Average Bit-Rate (ABR)
-\layout Standard
-
 \layout Subsection*
 
 Voice Activity Detection (VAD)
+\layout Standard
+
+When enabled, voice activity detection detects whether the audio being encoded
+ is speech or silence/background noise.
+ VAD is always implicitly activated when encoding in VBR, so the option
+ is only useful in non-VBR operation.
+ In this case, Speex detects non-speech periods and encode them with just
+ enough bits to reproduce the background noise.
+ This is calles 
+\begin_inset Quotes eld
+\end_inset 
+
+comfort noise generation
+\begin_inset Quotes erd
+\end_inset 
+
+ (CNG).
 \layout Subsection*
 
 Discontinuous Transmission (DTX)
+\layout Standard
+
+Discontinuous transmission is an addition to VAD operation, that allows
+ to stop transmitting completely when the background noise is stationnary.
+ In file-based operation, since we cannot just stop writing to the file,
+ only 5 bits are used for such frames (corresponding to 250 bps).
 \layout Subsection*
 
 Perceptual enhancement
-\layout Subsection*
+\layout Standard
 
-Complexity (variable)
-\layout Subsection*
-
-Quality
+Perceptual enhancement is a part of the decoder which, when turned on, tries
+ to reduce (the perception of) the noise produced by the coding/decoding
+ process.
+ In most cases, perceptual enhancement make the sound further from the original
+ 
+\emph on 
+objectively
+\emph default 
+ (if you use SNR), but in the end it still 
+\emph on 
+sounds
+\emph default 
+ better (subjective improvement).
 \layout Section
 
 Command-line encoder/decoder
