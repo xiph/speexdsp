@@ -248,25 +248,25 @@ void iir_mem2(const spx_sig_t *x, const spx_coef_t *den, spx_sig_t *y, int N, in
       nyi = -yi;
       y[i] = yi;
       __asm__ __volatile__ (
-            ".iirloop: \n"
-
             "\tldrsh %4, [%1], #2\n"
             "\tsmull %5, %6, %3, %4\n"
+
+            ".iirloop: \n"
             "\tldr %7, [%0, #4]\n"
 
+            "\tldrsh %4, [%1], #2\n"
             "\tmov %5, %5, lsr #15\n"
-            "\tadd %5, %5, %6, lsl #17\n"
-            "\tadd %7, %7, %5\n"
+            "\tadd %8, %5, %6, lsl #17\n"
+            "\tsmull %5, %6, %3, %4\n"
+            "\tadd %7, %7, %8\n"
             "\tstr %7, [%0], #4 \n"
             "\tsubs %2, %2, #1\n"
             "\t bne .iirloop\n"
 
-            "\tldrsh %4, [%1], #2\n"
-            "\tsmull %5, %6, %3, %4\n"
-
             "\tmov %5, %5, lsr #15\n"
             "\tadd %7, %5, %6, lsl #17\n"
             "\tstr %7, [%0], #4 \n"
+
          : "=r" (deadm), "=r" (deadd), "=r" (deadidx), "=r" (nyi),
            "=r" (dead1), "=r" (dead2), "=r" (dead3), "=r" (dead4),
            "=r" (dead5), "=r" (dead6)
