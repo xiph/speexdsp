@@ -283,7 +283,7 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
          qual=10;
       speex_encoder_ctl(state, SPEEX_SET_QUALITY, &qual);
    }
-   printf ("VBR quality = %f\n", vbr_qual);
+   /*printf ("VBR quality = %f\n", vbr_qual);*/
 
    /* First, transmit the sub-mode we use for this frame */
    speex_bits_pack(bits, st->submodeID, NB_SUBMODE_BITS);
@@ -298,10 +298,22 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
 #endif
 
    /*If we use low bit-rate pitch mode, transmit open-loop pitch*/
-   if (SUBMODE(lbr_pitch) && SUBMODE(ltp_params))
+   if (SUBMODE(lbr_pitch)!=-1 && SUBMODE(ltp_params))
    {
       speex_bits_pack(bits, ol_pitch-st->min_pitch, 7);
+   } else if (SUBMODE(lbr_pitch)==0)
+   {
+      int quant;
+      speex_bits_pack(bits, ol_pitch-st->min_pitch, 7);
+      quant = (int)floor(.5+15*ol_pitch_coef);
+      if (quant>15)
+         quant=0;
+      if (quant<0)
+         quant=0;
+      speex_bits_pack(bits, quant, 4);
+      ol_pitch_coef=0.066667*quant;
    }
+   
    
    /*Quantize and transmit open-loop excitation gain*/
    {
@@ -451,6 +463,11 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
          }
          /*printf ("cl_pitch: %d\n", pitch);*/
          st->pitch[sub]=pitch;
+      } else if (SUBMODE(lbr_pitch==0)) {
+         for (i=0;i<st->subframeSize;i++)
+         {
+            exc[i]=exc[i-ol_pitch]*ol_pitch_coef;
+         }
       }
 
       /* Update target for adaptive codebook contribution */
@@ -714,6 +731,7 @@ void nb_decode(void *state, SpeexBits *bits, float *out, int lost)
    float pitch_gain[3];
    float ol_gain;
    int ol_pitch=0;
+   float ol_pitch_coef=0;
    int best_pitch=40;
    float best_pitch_gain=-1;
    st=state;
@@ -737,8 +755,17 @@ void nb_decode(void *state, SpeexBits *bits, float *out, int lost)
    }
 
    /* Get open-loop pitch estimation for low bit-rate pitch coding */
-   if (SUBMODE(lbr_pitch) && SUBMODE(ltp_params))
+   if (SUBMODE(lbr_pitch)!=-1 && SUBMODE(ltp_params))
+   {
       ol_pitch = st->min_pitch+speex_bits_unpack_unsigned(bits, 7);
+      speex_bits_pack(bits, ol_pitch-st->min_pitch, 7);
+   } else if (SUBMODE(lbr_pitch)==0)
+   {
+      int quant;
+      ol_pitch = st->min_pitch+speex_bits_unpack_unsigned(bits, 7);
+      quant = speex_bits_unpack_unsigned(bits, 4);
+      ol_pitch_coef=0.066667*quant;
+   }
    
    /* Get global excitation gain */
    {
@@ -833,6 +860,11 @@ void nb_decode(void *state, SpeexBits *bits, float *out, int lost)
             for (i=0;i<st->subframeSize;i++)
                exc[i]=st->last_pitch_gain*exc[i-st->last_pitch];
          }
+      } else if (SUBMODE(lbr_pitch==0)) {
+         for (i=0;i<st->subframeSize;i++)
+         {
+            exc[i]=exc[i-ol_pitch]*ol_pitch_coef;
+         }
       }
       
       /* Unquantize the innovation */
@@ -860,8 +892,10 @@ void nb_decode(void *state, SpeexBits *bits, float *out, int lost)
             /*Fixed codebook contribution*/
             SUBMODE(innovation_unquant)(innov, SUBMODE(innovation_params), st->subframeSize, bits, st->stack);
          } else {
+            float scale;
+            scale = 3*sqrt(1.2-ol_pitch_coef);
             for (i=0;i<st->subframeSize;i++)
-               innov[i] = 3*((((float)rand())/RAND_MAX)-.5);
+               innov[i] = scale*((((float)rand())/RAND_MAX)-.5);
             
          }
 
@@ -932,16 +966,18 @@ void nb_encoder_ctl(void *state, int request, void *ptr)
          int quality = (*(int*)ptr);
          if (quality<=0)
             st->submodeID = 1;
-         else if (quality<=2)
+         else if (quality<=1)
             st->submodeID = 1;
-         else if (quality<=4)
+         else if (quality<=2)
             st->submodeID = 2;
-         else if (quality<=6)
+         else if (quality<=4)
             st->submodeID = 3;
-         else if (quality<=8)
+         else if (quality<=6)
             st->submodeID = 4;
-         else if (quality<=10)
+         else if (quality<=8)
             st->submodeID = 5;
+         else if (quality<=10)
+            st->submodeID = 6;
          else
             fprintf(stderr, "Unknown nb_ctl quality: %d\n", quality);
       }

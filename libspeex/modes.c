@@ -90,6 +90,13 @@ ltp_params ltp_params_med = {
    7
 };
 
+/* Split-VQ innovation parameters for very low bit-rate narrowband */
+split_cb_params split_cb_nb_vlbr = {
+   10,               /*subvect_size*/
+   4,               /*nb_subvect*/
+   exc_10_32_table, /*shape_cb*/
+   4,               /*shape_bits*/
+};
 
 /* Split-VQ innovation parameters for low bit-rate narrowband */
 split_cb_params split_cb_nb_lbr = {
@@ -162,6 +169,25 @@ SpeexSubmode nb_submode1 = {
 };
 
 SpeexSubmode nb_submode2 = {
+   0,
+   0,
+   /*LSP quantization*/
+   lsp_quant_lbr,
+   lsp_unquant_lbr,
+   /*No pitch quantization*/
+   NULL,
+   NULL,
+   NULL,
+   /*Innovation quantization*/
+   split_cb_search_nogain2,
+   split_cb_nogain_unquant,
+   &split_cb_nb_vlbr,
+   nb_post_filter,
+   &pf_params_lbr
+};
+
+
+SpeexSubmode nb_submode3 = {
    -1,
    1,
    /*LSP quantization*/
@@ -179,7 +205,7 @@ SpeexSubmode nb_submode2 = {
    &pf_params_lbr
 };
 
-SpeexSubmode nb_submode3 = {
+SpeexSubmode nb_submode4 = {
    -1,
    1,
    /*LSP quantization*/
@@ -197,7 +223,7 @@ SpeexSubmode nb_submode3 = {
    &pf_params_nb
 };
 
-SpeexSubmode nb_submode4 = {
+SpeexSubmode nb_submode5 = {
    -1,
    1,
    /*LSP quantization*/
@@ -215,7 +241,7 @@ SpeexSubmode nb_submode4 = {
    &pf_params_nb
 };
 
-SpeexSubmode nb_submode5 = {
+SpeexSubmode nb_submode6 = {
    -1,
    1,
    /*LSP quantization*/
@@ -247,9 +273,9 @@ SpeexNBMode nb_mode = {
    .005,   /*lag_factor*/
    1.0001, /*lpc_floor*/
    0.0,    /*preemph*/
-   {NULL, &nb_submode1, &nb_submode2, &nb_submode3, &nb_submode4, &nb_submode5, NULL, NULL,
+   {NULL, &nb_submode1, &nb_submode2, &nb_submode3, &nb_submode4, &nb_submode5, &nb_submode6, NULL,
    NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL},
-   4
+   5
 };
 
 

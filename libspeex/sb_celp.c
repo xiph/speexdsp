@@ -176,7 +176,7 @@ void *sb_encoder_init(SpeexMode *m)
    st->submodes=mode->submodes;
    st->submodeID=mode->defaultSubmode;
    {
-      int mod=5;
+      int mod=6;
       speex_encoder_ctl(st->st_low, SPEEX_SET_MODE, &mod);
    }
 
@@ -930,35 +930,38 @@ void sb_encoder_ctl(void *state, int request, void *ptr)
          switch (quality)
          {
          case 0:
-         case 1:
             nb_mode=1;
             st->submodeID = 1;
             break;
-         case 2:
+         case 1:
             nb_mode=2;
             st->submodeID = 1;
             break;
-         case 3:
+         case 2:
             nb_mode=3;
             st->submodeID = 1;
             break;
+         case 3:
+            nb_mode=4;
+            st->submodeID = 1;
+            break;
          case 4:
-            nb_mode=3;
+            nb_mode=4;
             st->submodeID = 2;
             break;
          case 5:
-            nb_mode=4;
+            nb_mode=5;
             st->submodeID = 2;
             break;
          case 6:
          case 7:
-            nb_mode=5;
+            nb_mode=6;
             st->submodeID = 2;
             break;
          case 8:
          case 9:
          case 10:
-            nb_mode=5;
+            nb_mode=6;
             st->submodeID = 3;
             break;
          default:

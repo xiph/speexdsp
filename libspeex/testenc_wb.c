@@ -25,6 +25,8 @@ int main(int argc, char **argv)
 
    pf=0;
    speex_decoder_ctl(dec, SPEEX_SET_PF, &pf);
+   pf=10;
+   speex_encoder_ctl(st, SPEEX_SET_QUALITY, &pf);
 
    if (argc != 4 && argc != 3)
    {
