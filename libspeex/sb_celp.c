@@ -147,16 +147,8 @@ void *sb_encoder_init(SpeexMode *m)
    st->submodes=mode->submodes;
    st->submodeSelect = st->submodeID=mode->defaultSubmode;
    
-   {
-      /* FIXME: Should do this without explicit reference to a mode */
-#if 0
-      int mod=6;
-      speex_encoder_ctl(st->st_low, SPEEX_SET_MODE, &mod);
-#else
-      int mod=9;
-      speex_encoder_ctl(st->st_low, SPEEX_SET_QUALITY, &mod);
-#endif
-   }
+   i=9;
+   speex_encoder_ctl(st->st_low, SPEEX_SET_QUALITY, &i);
 
    st->lag_factor = mode->lag_factor;
    st->lpc_floor = mode->lpc_floor;

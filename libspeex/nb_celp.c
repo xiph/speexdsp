@@ -77,7 +77,7 @@ void *nb_encoder_init(SpeexMode *m)
    mode=(SpeexNBMode *)m->mode;
    st = (EncState*)speex_alloc(sizeof(EncState));
    st->mode=m;
-   /* Codec parameters, should eventually have several "modes"*/
+
    st->frameSize = mode->frameSize;
    st->windowSize = st->frameSize*3/2;
    st->nbSubframes=mode->frameSize/mode->subframeSize;
@@ -167,6 +167,7 @@ void *nb_encoder_init(SpeexMode *m)
    st->vbr_quality = 8;
    st->vbr_enabled = 0;
    st->vad_enabled = 0;
+   st->dtx_enabled = 0;
    st->abr_enabled = 0;
    st->abr_drift = 0;
 
@@ -229,7 +230,7 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
    float *res, *target, *mem;
    void *stack;
    float *syn_resp;
-
+   float lsp_dist=0;
    float *orig;
 
    st=(EncState *)state;
@@ -292,24 +293,20 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
       }
    }
 
-   /* LSP Quantization */
-   if (st->first)
-   {
-      for (i=0;i<st->lpcSize;i++)
-         st->old_lsp[i] = st->lsp[i];
-   }
 
-   if (0) {
-      float dd=0;
-      for (i=0;i<st->lpcSize;i++)
-         dd += fabs(st->old_lsp[i] - st->lsp[i]);
-      printf ("lspdist = %f\n", dd);
-   }
+   lsp_dist=0;
+   for (i=0;i<st->lpcSize;i++)
+      lsp_dist += (st->old_lsp[i] - st->lsp[i])*(st->old_lsp[i] - st->lsp[i]);
+   printf ("%f\n", lsp_dist);
 
    /* Whole frame analysis (open-loop estimation of pitch and excitation gain) */
    {
-      for (i=0;i<st->lpcSize;i++)
-         st->interp_lsp[i] = .5*st->old_lsp[i] + .5*st->lsp[i];
+      if (st->first)
+         for (i=0;i<st->lpcSize;i++)
+            st->interp_lsp[i] = st->lsp[i];
+      else
+         for (i=0;i<st->lpcSize;i++)
+            st->interp_lsp[i] = .375*st->old_lsp[i] + .625*st->lsp[i];
 
       lsp_enforce_margin(st->interp_lsp, st->lpcSize, .002);
 
@@ -380,17 +377,17 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
          {
             /* Only adapt if long-term and short-term drift are the same sign */
             qual_change = -.00001*st->abr_drift/(1+st->abr_count);
-            if (qual_change>.1)
-               qual_change=.1;
-            if (qual_change<-.1)
-               qual_change=-.1;
+            if (qual_change>.05)
+               qual_change=.05;
+            if (qual_change<-.05)
+               qual_change=-.05;
          }
          st->vbr_quality += qual_change;
          if (st->vbr_quality>10)
             st->vbr_quality=10;
          if (st->vbr_quality<0)
             st->vbr_quality=0;
-         /*printf ("%f %f\n", st->abr_drift, st->vbr_quality);*/
+         printf ("%f %f\n", st->abr_drift/(.1+st->abr_count), st->vbr_quality);
       }
 
       st->relative_quality = vbr_analysis(st->vbr, in, st->frameSize, ol_pitch, ol_pitch_coef);
@@ -431,9 +428,13 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
       } else {
          /*VAD only case*/
          int mode;
-         if (st->relative_quality<2.0)
-            mode=1;
-         else
+         if (st->relative_quality<2)
+         {
+            if (st->submodeID>1 || lsp_dist>.05 || !st->dtx_enabled)
+               mode=1;
+            else
+               mode=0;
+         } else
             mode=st->submodeSelect;
          /*speex_encoder_ctl(state, SPEEX_SET_MODE, &mode);*/
          st->submodeID=mode;
@@ -472,6 +473,14 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
       return;
 
    }
+
+   /* LSP Quantization */
+   if (st->first)
+   {
+      for (i=0;i<st->lpcSize;i++)
+         st->old_lsp[i] = st->lsp[i];
+   }
+
 
    /*Quantize LSPs*/
 #if 1 /*0 for unquantized*/
@@ -778,10 +787,13 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
    }
 
    /* Store the LSPs for interpolation in the next frame */
-   for (i=0;i<st->lpcSize;i++)
-      st->old_lsp[i] = st->lsp[i];
-   for (i=0;i<st->lpcSize;i++)
-      st->old_qlsp[i] = st->qlsp[i];
+   if (st->submodeID>=1)
+   {
+      for (i=0;i<st->lpcSize;i++)
+         st->old_lsp[i] = st->lsp[i];
+      for (i=0;i<st->lpcSize;i++)
+         st->old_qlsp[i] = st->qlsp[i];
+   }
 
    /* The next frame will not be the first (Duh!) */
    st->first = 0;
@@ -804,7 +816,7 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
      in[i]=st->frame[i] + st->preemph*in[i-1];
    st->pre_mem2=in[st->frameSize-1];
 
-   if (SUBMODE(innovation_quant) == noise_codebook_quant)
+   if (SUBMODE(innovation_quant) == noise_codebook_quant || st->submodeID==0)
       st->bounded_pitch = 1;
    else
       st->bounded_pitch = 0;
@@ -897,22 +909,14 @@ void nb_decoder_destroy(void *state)
    speex_free(state);
 }
 
-/* 2.5 branches*/
 #define median3(a, b, c)	((a) < (b) ? ((b) < (c) ? (b) : ((a) < (c) ? (c) : (a))) : ((c) < (b) ? (b) : ((c) < (a) ? (c) : (a))))
 
-/*static float pitch_gain_pattern[4] = { 0.95, 0.9, 0.8, 0.4 };
- */
 static void nb_decode_lost(DecState *st, float *out, void *stack)
 {
    int i, sub;
    float *awk1, *awk2, *awk3;
    float pitch_gain, fact, gain_med;
 
-   /*if (st->count_lost < 4)
-      fact = pitch_gain_pattern[st->count_lost];
-   else
-      fact = 0.2;
-   */
    fact = exp(-.04*st->count_lost*st->count_lost);
    gain_med = median3(st->pitch_gain_buf[0], st->pitch_gain_buf[1], st->pitch_gain_buf[2]);
    if (gain_med < st->last_pitch_gain)
@@ -979,7 +983,7 @@ static void nb_decode_lost(DecState *st, float *out, void *stack)
          innov_gain=sqrt(innov_gain/160);
       for (i=0;i<st->subframeSize;i++)
       {
-#if 1
+#if 0
          exc[i] = pitch_gain * exc[i - st->last_pitch] + fact*sqrt(1-pitch_gain)*st->innov[i+offset];
          /*Just so it give the same lost packets as with if 0*/
          rand();
@@ -1026,7 +1030,7 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
    int i, sub;
    int pitch;
    float pitch_gain[3];
-   float ol_gain;
+   float ol_gain=0;
    int ol_pitch=0;
    float ol_pitch_coef=0;
    int best_pitch=40;
@@ -1096,12 +1100,30 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
    /* If null mode (no transmission), just set a couple things to zero*/
    if (st->submodes[st->submodeID] == NULL)
    {
-      for (i=0;i<st->frameSize;i++)
-         st->exc[i]=0;
+      float *lpc;
+      lpc = PUSH(st->stack,11, float);
+      bw_lpc(.93, st->interp_qlpc, lpc, 10);
+      /*for (i=0;i<st->frameSize;i++)
+        st->exc[i]=0;*/
+      {
+         float innov_gain=0;
+         float pitch_gain=st->last_pitch_gain;
+         if (pitch_gain>.6)
+            pitch_gain=.6;
+         for (i=0;i<st->frameSize;i++)
+            innov_gain += st->innov[i]*st->innov[i];
+         innov_gain=sqrt(innov_gain/160);
+         for (i=0;i<st->frameSize;i++)
+         {
+            st->exc[i]=3*innov_gain*((((float)rand())/RAND_MAX)-.5);
+         }
+      }
+
+
       st->first=1;
 
       /* Final signal synthesis from excitation */
-      iir_mem2(st->exc, st->interp_qlpc, st->frame, st->frameSize, st->lpcSize, st->mem_sp);
+      iir_mem2(st->exc, lpc, st->frame, st->frameSize, st->lpcSize, st->mem_sp);
 
       out[0] = st->frame[0] + st->preemph*st->pre_mem;
       for (i=1;i<st->frameSize;i++)
@@ -1460,6 +1482,12 @@ void nb_encoder_ctl(void *state, int request, void *ptr)
       break;
    case SPEEX_GET_VAD:
       (*(int*)ptr) = st->vad_enabled;
+      break;
+   case SPEEX_SET_DTX:
+      st->dtx_enabled = (*(int*)ptr);
+      break;
+   case SPEEX_GET_DTX:
+      (*(int*)ptr) = st->dtx_enabled;
       break;
    case SPEEX_SET_ABR:
       st->abr_enabled = (*(int*)ptr);
