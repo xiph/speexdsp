@@ -13,8 +13,8 @@ are required due to the following limitation imposed on DLLs in Symbian OS:
 
     -- Coding Idioms for Symbian OS, Oct 2002 [1]
 
-This document outlines how to build libspeex for Symbian OS, and how to
-develop applications using the modified libspeex API.
+This file (README.symbian) outlines how to build libspeex for Symbian OS,
+and how to develop applications using the modified libspeex API.
 
 Note that these modifications have been implemented in a portable manner so
 that they may also be used on other platforms with similar restrictions,
@@ -35,6 +35,12 @@ speex_* headers.
 When building in a GNU environment, this behaviour can be configured by:
 
   ./configure --disable-global-pointers
+
+The symbian/ directory contains the following files for Symbian's abuild tool:
+
+  bld.inf    Component definition file
+  speex.mmp  Project specification file
+  config.h   Configuration options for both emulator and device builds
 
 
 Developing applications for libspeex modified for Symbian OS
