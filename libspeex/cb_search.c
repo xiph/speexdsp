@@ -387,9 +387,7 @@ int   complexity
 {
    int i;
    float *tmp=PUSH(stack, nsf);
-   syn_filt_zero(target, awk1, tmp, nsf, p);
-   residue_zero(tmp, ak, tmp, nsf, p);
-   residue_zero(tmp, awk2, tmp, nsf, p);
+   residue_percep_zero(target, ak, awk1, awk2, tmp, nsf, p, stack);
 
    for (i=0;i<nsf;i++)
       exc[i]+=tmp[i];

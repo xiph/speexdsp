@@ -44,22 +44,6 @@ void iir_mem2(float *x, float *den, float *y, int N, int ord, float *mem);
 /* Apply bandwidth expansion on LPC coef */
 void bw_lpc(float gamma, float *lpc_in, float *lpc_out, int order);
 
-void poly(float *re, float *im, float *p, int ord);
-
-void enh_lpc(float *ak, int order, float *num, float *den, float k1, float k2, float *stack);
-
-/*LPC polynomial "flatifier"*/
-void lpc_flat(float g1, float g2, float *lpc_in, float *lpc_out1, float *lpc_out2, int order);
-
-
-
-/* Synthesis filter using zero memory */
-void syn_filt_zero(float *x, float *a, float *y, int N, int ord);
-
-/* Analysis (FIR) filter using zero memory */
-void residue_zero(float *x, float *a, float *y, int N, int ord);
-
-
 
 
 /* FIR filter */

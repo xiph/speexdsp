@@ -576,9 +576,6 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
       }
 
       /* Update target for adaptive codebook contribution */
-      /*residue_zero(exc, st->bw_lpc1, res, st->subframeSize, st->lpcSize);
-      syn_filt_zero(res, st->interp_qlpc, res, st->subframeSize, st->lpcSize);
-      syn_filt_zero(res, st->bw_lpc2, res, st->subframeSize, st->lpcSize);*/
       syn_percep_zero(exc, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2, res, st->subframeSize, st->lpcSize, stack);
       for (i=0;i<st->subframeSize;i++)
         target[i]-=res[i];
@@ -603,9 +600,6 @@ void nb_encode(void *state, float *in, SpeexBits *bits)
          for (i=0;i<st->subframeSize;i++)
             innov[i]=0;
          
-         /*syn_filt_zero(target, st->bw_lpc1, res, st->subframeSize, st->lpcSize);
-         residue_zero(res, st->interp_qlpc, st->buf2, st->subframeSize, st->lpcSize);
-         residue_zero(st->buf2, st->bw_lpc2, st->buf2, st->subframeSize, st->lpcSize);*/
          residue_percep_zero(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2, st->buf2, st->subframeSize, st->lpcSize, stack);
          for (i=0;i<st->subframeSize;i++)
             ener+=st->buf2[i]*st->buf2[i];
@@ -808,14 +802,15 @@ void nb_decoder_destroy(void *state)
 static void nb_decode_lost(DecState *st, float *out, float *stack)
 {
    int i, sub;
-   float *num, *den;
+   float *awk1, *awk2, *awk3;
    /*float exc_ener=0,g;*/
    /* Shift all buffers by one frame */
    speex_move(st->inBuf, st->inBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(float));
    speex_move(st->excBuf, st->excBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(float));
 
-   num=PUSH(stack, ((st->lpcSize<<1)+1));
-   den=PUSH(stack, ((st->lpcSize<<1)+1));
+   awk1=PUSH(stack, (st->lpcSize+1));
+   awk2=PUSH(stack, (st->lpcSize+1));
+   awk3=PUSH(stack, (st->lpcSize+1));
 
    for (sub=0;sub<st->nbSubframes;sub++)
    {
@@ -829,13 +824,22 @@ static void nb_decode_lost(DecState *st, float *out, float *stack)
       exc=st->exc+offset;
       /* Excitation after post-filter*/
 
-      if (st->lpc_enh_enabled)
       {
-         enh_lpc(st->interp_qlpc, st->lpcSize, num, den, 
-                 SUBMODE(lpc_enh_k1), SUBMODE(lpc_enh_k2), stack);
-      } else {
-         enh_lpc(st->interp_qlpc, st->lpcSize, num, den, 
-                 SUBMODE(lpc_enh_k2), SUBMODE(lpc_enh_k2), stack);
+         float r=.9;
+         
+         float k1,k2,k3;
+         k1=SUBMODE(lpc_enh_k1);
+         k2=SUBMODE(lpc_enh_k2);
+         k3=(1-(1-r*k1)/(1-r*k2))/r;
+         if (!st->lpc_enh_enabled)
+         {
+            k1=k2;
+            k3=0;
+         }
+         bw_lpc(k1, st->interp_qlpc, awk1, st->lpcSize);
+         bw_lpc(k2, st->interp_qlpc, awk2, st->lpcSize);
+         bw_lpc(k3, st->interp_qlpc, awk3, st->lpcSize);
+         
       }
         
       for (i=0;i<st->subframeSize;i++)
@@ -847,11 +851,9 @@ static void nb_decode_lost(DecState *st, float *out, float *stack)
       for (i=0;i<st->subframeSize;i++)
          sp[i]=exc[i];
       
-      /*pole_zero_mem(sp, num, den, sp, st->subframeSize, (st->lpcSize<<1), 
-                    st->mem_sp+st->lpcSize, stack);*/
-      filter_mem2(sp, num, den, sp, st->subframeSize, (st->lpcSize<<1), 
+      filter_mem2(sp, awk3, awk1, sp, st->subframeSize, st->lpcSize, 
         st->mem_sp+st->lpcSize);
-      iir_mem2(sp, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, 
+      filter_mem2(sp, awk2, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, 
         st->mem_sp);
   
    }
@@ -1150,9 +1152,9 @@ int nb_decode(void *state, SpeexBits *bits, float *out)
          comb_filter(exc, sp, st->interp_qlpc, st->lpcSize, st->subframeSize,
                               pitch, pitch_gain, .5);
       filter_mem2(sp, awk3, awk1, sp, st->subframeSize, st->lpcSize, 
-        st->mem_sp);
-      filter_mem2(sp, awk2, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, 
         st->mem_sp+st->lpcSize);
+      filter_mem2(sp, awk2, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, 
+        st->mem_sp);
    }
    
    /*Copy output signal*/
