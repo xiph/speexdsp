@@ -388,7 +388,7 @@ int nb_encode(void *state, float *in, SpeexBits *bits)
             st->vbr_quality=10;
          if (st->vbr_quality<0)
             st->vbr_quality=0;
-         printf ("%f %f\n", st->abr_drift/(.1+st->abr_count), st->vbr_quality);
+         /*printf ("%f %f\n", st->abr_drift/(.1+st->abr_count), st->vbr_quality);*/
       }
 
       st->relative_quality = vbr_analysis(st->vbr, in, st->frameSize, ol_pitch, ol_pitch_coef);
