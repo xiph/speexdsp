@@ -2569,15 +2569,109 @@ Ogg file format
 
 Speex bit-streams can be stored in Ogg files.
  In this case, the first packet of the Ogg file contains the Speex header
- (see speex_header.h for now) and the second packet contains comments.
- The next frames contain one or more (number found in header) Speex frames.
- The header format is described in table 
+ (see speex_header.h for now) and the second packet contains a user-comment
+ string (without terminating null).
+ After the header and comment packets, next packets contain one or more
+ (number found in header) Speex frames.
+ The stream is terminated by a packet containing the string 
+\begin_inset Quotes eld
+\end_inset 
+
+END OF STREAM
+\begin_inset Quotes erd
+\end_inset 
+
+ (without terminating null).
+ 
+\layout Standard
+
+Speex bit-streams can be stored in Ogg files.
+ In this case, the first packet of the Ogg file contains the Speex header
+ described in table 
 \begin_inset LatexCommand \ref{cap:ogg_speex_header}
 
 \end_inset 
 
 .
- All integer fields are stored as little-endian.
+ All integer fields in the headers are stored as little-endian.
+ The 
+\family typewriter 
+speex_string
+\family default 
+ field must contain the 
+\begin_inset Quotes eld
+\end_inset 
+
+
+\family typewriter 
+Speex
+\family default 
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+
+\begin_inset Quotes eld
+\end_inset 
+
+ (with 3 training spaces), which identifies the bit-stream.
+ The next field, 
+\family typewriter 
+speex_version
+\family default 
+ contains the version of Speex that encoded the file.
+ For now, refer to speex_header.[ch] for more info.
+ The 
+\emph on 
+beginning of stream
+\emph default 
+ (b_o_s) flag is set to 1 for the header.
+ The header packet has 
+\family typewriter 
+packetno=1
+\family default 
+ and 
+\family typewriter 
+granulepos=0
+\family default 
+.
+\layout Standard
+
+The second packet contains a user-comment string, without terminating null.
+ The content/format of comment is not defined.
+ This packet has 
+\family typewriter 
+packetno=1
+\family default 
+ and 
+\family typewriter 
+granulepos=0
+\family default 
+.
+\layout Standard
+
+The third and subsequant packets each contain one or more (number found
+ in header) Speex frames.
+ These are identified with 
+\family typewriter 
+packetno
+\family default 
+ starting from 3 and the 
+\family typewriter 
+granulepos
+\family default 
+ is the number of the first sample encoded in that packet.
+\layout Standard
+
+The stream is terminated by a packet containing the string 
+\begin_inset Quotes eld
+\end_inset 
+
+END OF STREAM
+\begin_inset Quotes erd
+\end_inset 
+
+ (without terminating null).
+ 
 \layout Standard
 
 
@@ -3027,27 +3121,6 @@ Ogg/Speex header packet
 \end_inset 
 
 
-\layout Standard
-
-The speex_string field must contain the 
-\begin_inset Quotes eld
-\end_inset 
-
-
-\family typewriter 
-Speex
-\family default 
-\SpecialChar ~
-\SpecialChar ~
-\SpecialChar ~
-
-\begin_inset Quotes eld
-\end_inset 
-
- (with 3 spaces), which identifies the bit-stream.
- The next field, speex_version contains the version of Speex that encoded
- the file.
- 
 \layout Standard
 
 
