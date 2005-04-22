@@ -43,6 +43,117 @@ extern long long spx_mips;
 #define VERIFY_SHORT(x) ((x)<=32767&&(x)>=-32768)
 #define VERIFY_INT(x) ((x)<=2147483647LL&&(x)>=-2147483648LL)
 
+static inline short NEG16(int x)
+{
+   int res;
+   if (!VERIFY_SHORT(x))
+   {
+      fprintf (stderr, "NEG16: input is not short: %d\n", x);
+   }
+   res = -x;
+   if (!VERIFY_SHORT(res))
+      fprintf (stderr, "NEG16: output is not short: %d\n", res);
+   spx_mips++;
+   return res;
+}
+static inline int NEG32(long long x)
+{
+   long long res;
+   if (!VERIFY_INT(x))
+   {
+      fprintf (stderr, "NEG16: input is not int: %d\n", x);
+   }
+   res = -x;
+   if (!VERIFY_INT(res))
+      fprintf (stderr, "NEG16: output is not int: %d\n", res);
+   spx_mips++;
+   return res;
+}
+
+static inline short EXTRACT16(int x)
+{
+   int res;
+   if (!VERIFY_SHORT(x))
+   {
+      fprintf (stderr, "EXTRACT16: input is not short: %d\n", x);
+   }
+   res = x;
+   spx_mips++;
+   return res;
+}
+
+static inline int EXTEND32(int x)
+{
+   int res;
+   if (!VERIFY_SHORT(x))
+   {
+      fprintf (stderr, "EXTRACT16: input is not short: %d\n", x);
+   }
+   res = x;
+   spx_mips++;
+   return res;
+}
+
+static inline short SHR16(int a, int shift) 
+{
+   int res;
+   if (!VERIFY_SHORT(a) || !VERIFY_SHORT(shift))
+   {
+      fprintf (stderr, "SHR16: inputs are not short: %d %d\n", a, shift);
+   }
+   res = a>>shift;
+   if (!VERIFY_SHORT(res))
+      fprintf (stderr, "SHR16: output is not short: %d\n", res);
+   spx_mips++;
+   return res;
+}
+static inline short SHL16(int a, int shift) 
+{
+   int res;
+   if (!VERIFY_SHORT(a) || !VERIFY_SHORT(shift))
+   {
+      fprintf (stderr, "SHR16: inputs are not short: %d %d\n", a, shift);
+   }
+   res = a<<shift;
+   if (!VERIFY_SHORT(res))
+      fprintf (stderr, "SHR16: output is not short: %d\n", res);
+   spx_mips++;
+   return res;
+}
+
+static inline int SHR32(long long a, int shift) 
+{
+   long long  res;
+   if (!VERIFY_INT(a) || !VERIFY_SHORT(shift))
+   {
+      fprintf (stderr, "SHR32: inputs are not int: %d %d\n", a, shift);
+   }
+   res = a>>shift;
+   if (!VERIFY_INT(res))
+      fprintf (stderr, "SHR32: output is not int: %d\n", res);
+   spx_mips++;
+   return res;
+}
+static inline int SHL32(long long a, int shift) 
+{
+   long long  res;
+   if (!VERIFY_INT(a) || !VERIFY_SHORT(shift))
+   {
+      fprintf (stderr, "SHR32: inputs are not int: %d %d\n", a, shift);
+   }
+   res = a<<shift;
+   if (!VERIFY_INT(res))
+      fprintf (stderr, "SHR32: output is not int: %d\n", res);
+   spx_mips++;
+   return res;
+}
+
+
+#define PSHR16(a,shift) (SHR16(ADD16(a,(1<<((shift)-1))),shift))
+#define PSHR32(a,shift) (SHR32(ADD32(a,(1<<((shift)-1))),shift))
+#define SATURATE16(x,a) (((x)>(a) ? (a) : (x)<-(a) ? -(a) : (x)))
+#define SATURATE32(x,a) (((x)>(a) ? (a) : (x)<-(a) ? -(a) : (x)))
+
 #define SHR(a,shift) ((a) >> (shift))
 #define SHL(a,shift) ((a) << (shift))
 
@@ -136,12 +247,12 @@ static inline int MULT16_16(int a, int b)
 #define MULT16_16B(a,b)     (((short)(a))*((short)(b)))
 
 #define MAC16_16(c,a,b)     (ADD32((c),MULT16_16((a),(b))))
-#define MAC16_16_Q11(c,a,b)     (ADD32((c),SHR(MULT16_16((a),(b)),11)))
-#define MAC16_16_Q13(c,a,b)     (ADD32((c),SHR(MULT16_16((a),(b)),13)))
+#define MAC16_16_Q11(c,a,b)     (ADD16((c),EXTRACT16(SHR32(MULT16_16((a),(b)),11))))
+#define MAC16_16_Q13(c,a,b)     (ADD16((c),EXTRACT16(SHR32(MULT16_16((a),(b)),13))))
 
-#define MULT16_32_Q12(a,b) ADD32(MULT16_16((a),SHR((b),12)), SHR(MULT16_16((a),((b)&0x00000fff)),12))
-#define MULT16_32_Q13(a,b) ADD32(MULT16_16((a),SHR((b),13)), SHR(MULT16_16((a),((b)&0x00001fff)),13))
-#define MULT16_32_Q14(a,b) ADD32(MULT16_16((a),SHR((b),14)), SHR(MULT16_16((a),((b)&0x00003fff)),14))
+#define MULT16_32_Q12(a,b) ADD32(MULT16_16((a),SHR32((b),12)), SHR32(MULT16_16((a),((b)&0x00000fff)),12))
+#define MULT16_32_Q13(a,b) ADD32(MULT16_16((a),SHR32((b),13)), SHR32(MULT16_16((a),((b)&0x00001fff)),13))
+#define MULT16_32_Q14(a,b) ADD32(MULT16_16((a),SHR32((b),14)), SHR32(MULT16_16((a),((b)&0x00003fff)),14))
 
 #define MULT16_32_Q11(a,b) ADD32(MULT16_16((a),SHR((b),11)), SHR(MULT16_16((a),((b)&0x000007ff)),11))
 #define MAC16_32_Q11(c,a,b) ADD32(c,ADD32(MULT16_16((a),SHR((b),11)), SHR(MULT16_16((a),((b)&0x000007ff)),11)))

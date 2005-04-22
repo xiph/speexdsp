@@ -676,10 +676,6 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
 
          scale = SHL(MULT16_16(DIV32_16(SHL(gc,SIG_SHIFT-4),filter_ratio),(1+el)),4);
 
-         /*for (i=0;i<st->subframeSize;i++)
-            exc[i]=VERY_SMALL;
-         exc[0]=SIG_SCALING;
-         syn_percep_zero(exc, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2, syn_resp, st->subframeSize, st->lpcSize, stack);*/
          compute_impulse_response(st->interp_qlpc, st->bw_lpc1, st->bw_lpc2, syn_resp, st->subframeSize, st->lpcSize, stack);
 
          

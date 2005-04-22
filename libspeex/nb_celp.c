@@ -236,7 +236,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
    /* Copy new data in input buffer */
    speex_move(st->inBuf, st->inBuf+st->frameSize, (st->windowSize-st->frameSize)*sizeof(spx_sig_t));
    for (i=0;i<st->frameSize;i++)
-      st->inBuf[st->windowSize-st->frameSize+i] = SHL((int)in[i], SIG_SHIFT);
+      st->inBuf[st->windowSize-st->frameSize+i] = SHL32(EXTEND32(in[i]), SIG_SHIFT);
 
    /* Move signals 1 frame towards the past */
    speex_move(st->excBuf, st->excBuf+st->frameSize, (st->max_pitch+1)*sizeof(spx_sig_t));
@@ -247,7 +247,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
       ALLOC(w_sig, st->windowSize, spx_word16_t);
       /* Window for analysis */
       for (i=0;i<st->windowSize;i++)
-         w_sig[i] = SHR(MULT16_16(SHR((spx_word32_t)(st->frame[i]),SIG_SHIFT),st->window[i]),SIG_SHIFT);
+         w_sig[i] = EXTRACT16(SHR32(MULT16_16(EXTRACT16(SHR32(st->frame[i],SIG_SHIFT)),st->window[i]),SIG_SHIFT));
 
       /* Compute auto-correlation */
       _spx_autocorr(w_sig, st->autocorr, st->lpcSize+1, st->windowSize);
@@ -371,7 +371,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
 
       } else {
 #endif
-         ol_gain = SHL((spx_word32_t)compute_rms(st->exc, st->frameSize),SIG_SHIFT);
+         ol_gain = SHL32(EXTEND32(compute_rms(st->exc, st->frameSize)),SIG_SHIFT);
 #ifdef EPIC_48K
       }
 #endif
@@ -690,11 +690,6 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
       
       if (st->complexity==0)
          response_bound >>= 1;
-      /* Compute impulse response of A(z/g1) / ( A(z)*A(z/g2) )*/
-      /*for (i=0;i<st->subframeSize;i++)
-         exc[i]=VERY_SMALL;
-      exc[0]=SIG_SCALING;
-      syn_percep_zero(exc, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2, syn_resp, response_bound, st->lpcSize, stack);*/
       compute_impulse_response(st->interp_qlpc, st->bw_lpc1, st->bw_lpc2, syn_resp, response_bound, st->lpcSize, stack);
       for (i=response_bound;i<st->subframeSize;i++)
          syn_resp[i]=VERY_SMALL;
@@ -803,7 +798,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
          for (i=0;i<st->subframeSize;i++)
             real_exc[i] = SUB32(real_exc[i], exc[i]);
 
-         ener = SHL((spx_word32_t)compute_rms(real_exc, st->subframeSize),SIG_SHIFT);
+         ener = SHL32(EXTEND32(compute_rms(real_exc, st->subframeSize)),SIG_SHIFT);
          
          /*FIXME: Should use DIV32_16 and make sure result fits in 16 bits */
 #ifdef FIXED_POINT

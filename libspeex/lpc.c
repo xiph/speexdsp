@@ -88,7 +88,7 @@ int          p
    for (i = 0; i < p; i++) {
 
       /* Sum up this iteration's reflection coefficient */
-      spx_word32_t rr = -SHL(ac[i + 1],13);
+      spx_word32_t rr = NEG32(SHL32(EXTEND32(ac[i + 1]),13));
       for (j = 0; j < i; j++) 
          rr = SUB32(rr,MULT16_16(lpc[j],ac[i - j]));
 #ifdef FIXED_POINT

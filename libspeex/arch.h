@@ -102,6 +102,19 @@ typedef float spx_word64_t;
 
 #define VERY_SMALL 1e-30
 
+#define NEG16(x) (-(x))
+#define NEG32(x) (-(x))
+#define EXTRACT16(x) (x)
+#define EXTEND32(x) (x)
+#define SHR16(a,shift) (a)
+#define SHL16(a,shift) (a)
+#define SHR32(a,shift) (a)
+#define SHL32(a,shift) (a)
+#define PSHR16(a,shift) (a)
+#define PSHR32(a,shift) (a)
+#define SATURATE16(x,a) (x)
+#define SATURATE32(x,a) (x)
+
 #define PSHR(a,shift)       (a)
 #define SHR(a,shift)       (a)
 #define SHL(a,shift)       (a)
@@ -130,6 +143,7 @@ typedef float spx_word64_t;
 #define MULT16_16_Q13(a,b)     ((a)*(b))
 #define MULT16_16_Q14(a,b)     ((a)*(b))
 #define MULT16_16_Q15(a,b)     ((a)*(b))
+#define MULT16_16_P15(a,b)     ((a)*(b))
 
 #define DIV32_16(a,b)     ((a)/(b))
 #define DIV32(a,b)     ((a)/(b))

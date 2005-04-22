@@ -35,10 +35,23 @@
 #ifndef FIXED_ARM5E_H
 #define FIXED_ARM5E_H
 
+#define NEG16(x) (-(x))
+#define NEG32(x) (-(x))
+#define EXTRACT16(x) ((spx_word16_t)x)
+#define EXTEND32(x) ((spx_word32_t)x)
+#define SHR16(a,shift) ((a) >> (shift))
+#define SHL16(a,shift) ((a) << (shift))
+#define SHR32(a,shift) ((a) >> (shift))
+#define SHL32(a,shift) ((a) << (shift))
+#define PSHR16(a,shift) (SHR16((a)+(1<<((shift)-1)),shift))
+#define PSHR32(a,shift) (SHR32((a)+(1<<((shift)-1)),shift))
+#define SATURATE16(x,a) (((x)>(a) ? (a) : (x)<-(a) ? -(a) : (x)))
+#define SATURATE32(x,a) (((x)>(a) ? (a) : (x)<-(a) ? -(a) : (x)))
+
 #define SHR(a,shift) ((a) >> (shift))
 #define SHL(a,shift) ((a) << (shift))
-
 #define SATURATE(x,a) ((x)>(a) ? (a) : (x)<-(a) ? -(a) : (x))
+#define PSHR(a,shift) (SHR((a)+(1<<((shift)-1)),shift))
 
 
 #define ADD16(a,b) ((short)((short)(a)+(short)(b)))
@@ -47,7 +60,6 @@
 #define SUB32(a,b) ((a)-(b))
 #define ADD64(a,b) ((a)+(b))
 
-#define PSHR(a,shift) (SHR((a)+(1<<((shift)-1)),shift))
 
 /* result fits in 16 bits */
 #define MULT16_16_16(a,b)     (((short)(a))*((short)(b)))

@@ -77,7 +77,7 @@ static spx_word16_t spx_cos(spx_word16_t x)
       x2 = MULT16_16_P13(x,x);
       return ADD32(C1, MULT16_16_P13(x2, ADD32(C2, MULT16_16_P13(x2, ADD32(C3, MULT16_16_P13(C4, x2))))));
    } else {
-      x = 25736-x;
+      x = SUB16(25736,x);
       x2 = MULT16_16_P13(x,x);
       return SUB32(-C1, MULT16_16_P13(x2, ADD32(C2, MULT16_16_P13(x2, ADD32(C3, MULT16_16_P13(C4, x2))))));
       /*return SUB32(-C1, MULT16_16_Q13(x2, ADD32(C2, MULT16_16_Q13(C3, x2))));*/
@@ -115,7 +115,7 @@ static inline spx_word16_t spx_cos(spx_word16_t x)
    } else {
       x = M_PI-x;
       x *= x;
-      return -(C1 + x*(C2+x*(C3+C4*x)));
+      return NEG16(C1 + x*(C2+x*(C3+C4*x)));
    }
 }
 #define FREQ_SCALE 1.
@@ -176,7 +176,7 @@ static inline spx_word32_t cheb_poly_eva(spx_word32_t *coef,spx_word16_t x,int m
     /*x *= 2;*/
     for(i=2;i<=m2;i++)
     {
-       T[i] = MULT16_16_Q13(x,T[i-1]) - T[i-2];
+       T[i] = SUB16(MULT16_16_Q13(x,T[i-1]), T[i-2]);
        sum = ADD32(sum, MULT16_16_P14(coefn[m2-i],T[i]));
        /*printf ("%f ", sum);*/
     }
@@ -276,8 +276,8 @@ int lpc_to_lsp (spx_coef_t *a,int lpcrdr,spx_lsp_t *freq,int nb,spx_word16_t del
     *px++ = LPC_SCALING;
     *qx++ = LPC_SCALING;
     for(i=1;i<=m;i++){
-	*px++ = (a[i]+a[lpcrdr+1-i]) - *p++;
-	*qx++ = (a[i]-a[lpcrdr+1-i]) + *q++;
+       *px++ = SUB32(ADD32(EXTEND32(a[i]),EXTEND32(a[lpcrdr+1-i])), *p++);
+       *qx++ = ADD32(SUB32(EXTEND32(a[i]),EXTEND32(a[lpcrdr+1-i])), *q++);
     }
     px = P;
     qx = Q;
@@ -333,7 +333,7 @@ int lpc_to_lsp (spx_coef_t *a,int lpcrdr,spx_lsp_t *freq,int nb,spx_word16_t del
            spx_word16_t dd;
            /* Modified by JMV to provide smaller steps around x=+-1 */
 #ifdef FIXED_POINT
-           dd = MULT16_16_Q15(delta,(FREQ_SCALE - MULT16_16_Q14(MULT16_16_Q14(xl,xl),14000)));
+           dd = MULT16_16_Q15(delta,SUB16(FREQ_SCALE, MULT16_16_Q14(MULT16_16_Q14(xl,xl),14000)));
            if (psuml<512 && psuml>-512)
               dd = PSHR(dd,1);
 #else
@@ -341,7 +341,7 @@ int lpc_to_lsp (spx_coef_t *a,int lpcrdr,spx_lsp_t *freq,int nb,spx_word16_t del
            if (fabs(psuml)<.2)
               dd *= .5;
 #endif
-           xr = xl - dd;                        	/* interval spacing 	*/
+           xr = SUB16(xl, dd);                        	/* interval spacing 	*/
 	    psumr = cheb_poly_eva(pt,xr,lpcrdr,stack);/* poly(xl-delta_x) 	*/
 	    temp_psumr = psumr;
 	    temp_xr = xr;

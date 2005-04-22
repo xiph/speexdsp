@@ -41,7 +41,6 @@
 #include "ltp.h"
 #include <math.h>
 
-#ifdef FIXED_POINT
 void bw_lpc(spx_word16_t gamma, const spx_coef_t *lpc_in, spx_coef_t *lpc_out, int order)
 {
    int i;
@@ -53,19 +52,6 @@ void bw_lpc(spx_word16_t gamma, const spx_coef_t *lpc_in, spx_coef_t *lpc_out, i
       tmp = MULT16_16_P15(tmp, gamma);
    }
 }
-#else
-void bw_lpc(spx_word16_t gamma, const spx_coef_t *lpc_in, spx_coef_t *lpc_out, int order)
-{
-   int i;
-   float tmp=1;
-   for (i=0;i<order+1;i++)
-   {
-      lpc_out[i] = tmp * lpc_in[i];
-      tmp *= gamma;
-   }
-}
-
-#endif
 
 
 #ifdef FIXED_POINT
@@ -202,15 +188,15 @@ void filter_mem2(const spx_sig_t *x, const spx_coef_t *num, const spx_coef_t *de
 
    for (i=0;i<N;i++)
    {
-      xi=PSHR(SATURATE(x[i],536870911),SIG_SHIFT);
-      yi = PSHR(SATURATE(ADD32(x[i], SHL(mem[0],1)),536870911),SIG_SHIFT);
-      nyi = -yi;
+      xi= EXTRACT16(PSHR32(SATURATE(x[i],536870911),SIG_SHIFT));
+      yi = EXTRACT16(PSHR32(SATURATE(ADD32(x[i], SHL32(mem[0],1)),536870911),SIG_SHIFT));
+      nyi = NEG16(yi);
       for (j=0;j<ord-1;j++)
       {
          mem[j] = MAC16_16(MAC16_16(mem[j+1], num[j+1],xi), den[j+1],nyi);
       }
       mem[ord-1] = ADD32(MULT16_16(num[ord],xi), MULT16_16(den[ord],nyi));
-      y[i] = SHL(yi,SIG_SHIFT);
+      y[i] = SHL32(EXTEND32(yi),SIG_SHIFT);
    }
 }
 #else
@@ -222,8 +208,8 @@ void filter_mem2(const spx_sig_t *x, const spx_coef_t *num, const spx_coef_t *de
    for (i=0;i<N;i++)
    {
       xi=SATURATE(x[i],805306368);
-      yi = SATURATE(ADD32(xi, SHL(mem[0],2)),805306368);
-      nyi = -yi;
+      yi = SATURATE(ADD32(xi, SHL32(mem[0],2)),805306368);
+      nyi = NEG32(yi);
       for (j=0;j<ord-1;j++)
       {
          mem[j] = MAC16_32_Q15(MAC16_32_Q15(mem[j+1], num[j+1],xi), den[j+1],nyi);
@@ -242,15 +228,15 @@ void iir_mem2(const spx_sig_t *x, const spx_coef_t *den, spx_sig_t *y, int N, in
 
    for (i=0;i<N;i++)
    {
-      xi=PSHR(SATURATE(x[i],536870911),SIG_SHIFT);
-      yi = PSHR(SATURATE(x[i] + (mem[0]<<1),536870911),SIG_SHIFT);
-      nyi = -yi;
+      xi=EXTRACT16(PSHR32(SATURATE(x[i],536870911),SIG_SHIFT));
+      yi = EXTRACT16(PSHR32(SATURATE(x[i] + SHL32(mem[0],1),536870911),SIG_SHIFT));
+      nyi = NEG16(yi);
       for (j=0;j<ord-1;j++)
       {
          mem[j] = MAC16_16(mem[j+1],den[j+1],nyi);
       }
       mem[ord-1] = MULT16_16(den[ord],nyi);
-      y[i] = SHL(yi,SIG_SHIFT);
+      y[i] = SHL32(EXTEND32(yi),SIG_SHIFT);
    }
 }
 #else
@@ -262,13 +248,13 @@ void iir_mem2(const spx_sig_t *x, const spx_coef_t *den, spx_sig_t *y, int N, in
    for (i=0;i<N;i++)
    {
       xi=SATURATE(x[i],805306368);
-      yi = SATURATE(xi + (mem[0]<<2),805306368);
-      nyi = -yi;
+      yi = SATURATE(xi + SHL32(mem[0],2),805306368);
+      nyi = NEG32(yi);
       for (j=0;j<ord-1;j++)
       {
          mem[j] = MAC16_32_Q15(mem[j+1],den[j+1],nyi);
       }
-      mem[ord-1] = - MULT16_32_Q15(den[ord],yi);
+      mem[ord-1] = MULT16_32_Q15(den[ord],nyi);
       y[i] = yi;
    }
 }
@@ -285,14 +271,14 @@ void fir_mem2(const spx_sig_t *x, const spx_coef_t *num, spx_sig_t *y, int N, in
 
    for (i=0;i<N;i++)
    {
-      xi= PSHR(SATURATE(x[i],536870911),SIG_SHIFT);
-      yi = PSHR(SATURATE(x[i] + (mem[0]<<1),536870911),SIG_SHIFT);
+      xi= EXTRACT16(PSHR32(SATURATE(x[i],536870911),SIG_SHIFT));
+      yi = EXTRACT16(PSHR32(SATURATE(x[i] + SHL32(mem[0],1),536870911),SIG_SHIFT));
       for (j=0;j<ord-1;j++)
       {
          mem[j] = MAC16_16(mem[j+1], num[j+1],xi);
       }
       mem[ord-1] = MULT16_16(num[ord],xi);
-      y[i] = SHL(yi,SIG_SHIFT);
+      y[i] = SHL32(EXTEND32(yi),SIG_SHIFT);
    }
 }
 #else
@@ -304,7 +290,7 @@ void fir_mem2(const spx_sig_t *x, const spx_coef_t *num, spx_sig_t *y, int N, in
    for (i=0;i<N;i++)
    {
       xi=SATURATE(x[i],805306368);
-      yi = xi + (mem[0]<<2);
+      yi = xi + SHL32(mem[0],2);
       for (j=0;j<ord-1;j++)
       {
          mem[j] = MAC16_32_Q15(mem[j+1], num[j+1],xi);
@@ -433,9 +419,9 @@ void compute_impulse_response(const spx_coef_t *ak, const spx_coef_t *awk1, cons
    for (i=0;i<N;i++)
    {
       y1 = ADD16(y[i], PSHR(mem1[0],LPC_SHIFT));
-      ny1i = -y1;
+      ny1i = NEG16(y1);
       y[i] = ADD16(SHL(y1,1), PSHR(mem2[0],LPC_SHIFT));
-      ny2i = -y[i];
+      ny2i = NEG16(y[i]);
       for (j=0;j<ord-1;j++)
       {
          mem1[j] = MAC16_16(mem1[j+1], awk2[j+1],ny1i);

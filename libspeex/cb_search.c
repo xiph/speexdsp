@@ -177,10 +177,10 @@ int   update_target
          if (sign)
          {
             for (j=0;j<subvect_size;j++)
-               e[subvect_size*i+j]=SHL((spx_word32_t)shape_cb[rind*subvect_size+j],SIG_SHIFT-5);
+               e[subvect_size*i+j]=SHL(EXTEND32(shape_cb[rind*subvect_size+j]),SIG_SHIFT-5);
          } else {
             for (j=0;j<subvect_size;j++)
-               e[subvect_size*i+j]=-SHL((spx_word32_t)shape_cb[rind*subvect_size+j],SIG_SHIFT-5);
+               e[subvect_size*i+j]=NEG32(SHL(EXTEND32(shape_cb[rind*subvect_size+j]),SIG_SHIFT-5));
          }
 #else
          for (j=0;j<subvect_size;j++)
@@ -500,10 +500,10 @@ int   update_target
       if (sign==1)
       {
          for (j=0;j<subvect_size;j++)
-            e[subvect_size*i+j]=SHL((spx_word32_t)shape_cb[rind*subvect_size+j],SIG_SHIFT-5);
+            e[subvect_size*i+j]=SHL(EXTEND32(shape_cb[rind*subvect_size+j]),SIG_SHIFT-5);
       } else {
          for (j=0;j<subvect_size;j++)
-            e[subvect_size*i+j]=-SHL((spx_word32_t)shape_cb[rind*subvect_size+j],SIG_SHIFT-5);
+            e[subvect_size*i+j]=NEG32(SHL(EXTEND32(shape_cb[rind*subvect_size+j]),SIG_SHIFT-5));
       }
 #else
       for (j=0;j<subvect_size;j++)
@@ -572,7 +572,7 @@ char *stack
             exc[subvect_size*i+j]=SHL((spx_word32_t)shape_cb[ind[i]*subvect_size+j],SIG_SHIFT-5);
       } else {
          for (j=0;j<subvect_size;j++)
-            exc[subvect_size*i+j]=-SHL((spx_word32_t)shape_cb[ind[i]*subvect_size+j],SIG_SHIFT-5);
+            exc[subvect_size*i+j]=NEG32(SHL(EXTEND32(shape_cb[ind[i]*subvect_size+j]),SIG_SHIFT-5));
       }
 #else
       for (j=0;j<subvect_size;j++)
