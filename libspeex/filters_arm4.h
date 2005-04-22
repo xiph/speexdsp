@@ -267,7 +267,7 @@ void iir_mem2(const spx_sig_t *x, const spx_coef_t *den, spx_sig_t *y, int N, in
             "\tldrsh %4, [%1], #2\n"
             "\tsmull %5, %6, %3, %4\n"
 
-#if SHORTCUTS
+#ifdef SHORTCUTS
                         
             "\tldrsh %4, [%1], #2\n"
             "\tmov %5, %5, lsr #15\n"
