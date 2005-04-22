@@ -88,7 +88,7 @@ static spx_word16_t spx_cos(spx_word16_t x)
 #define FREQ_SCALE 16384
 
 /*#define ANGLE2X(a) (32768*cos(((a)/8192.)))*/
-#define ANGLE2X(a) (SHL(spx_cos(a),2))
+#define ANGLE2X(a) (SHL16(spx_cos(a),2))
 
 /*#define X2ANGLE(x) (acos(.00006103515625*(x))*LSP_SCALING)*/
 #define X2ANGLE(x) (spx_acos(x))
@@ -292,8 +292,8 @@ int lpc_to_lsp (spx_coef_t *a,int lpcrdr,spx_lsp_t *freq,int nb,spx_word16_t del
        px++;
        qx++;
     }
-    P[m] = PSHR(P[m],3);
-    Q[m] = PSHR(Q[m],3);
+    P[m] = PSHR32(P[m],3);
+    Q[m] = PSHR32(Q[m],3);
 #else
     *px++ = LPC_SCALING;
     *qx++ = LPC_SCALING;
@@ -335,7 +335,7 @@ int lpc_to_lsp (spx_coef_t *a,int lpcrdr,spx_lsp_t *freq,int nb,spx_word16_t del
 #ifdef FIXED_POINT
            dd = MULT16_16_Q15(delta,SUB16(FREQ_SCALE, MULT16_16_Q14(MULT16_16_Q14(xl,xl),14000)));
            if (psuml<512 && psuml>-512)
-              dd = PSHR(dd,1);
+              dd = PSHR16(dd,1);
 #else
            dd=delta*(1-.9*xl*xl);
            if (fabs(psuml)<.2)
@@ -362,7 +362,7 @@ int lpc_to_lsp (spx_coef_t *a,int lpcrdr,spx_lsp_t *freq,int nb,spx_word16_t del
 		psumm=psuml;
 		for(k=0;k<=nb;k++){
 #ifdef FIXED_POINT
-		    xm = ADD16(PSHR(xl,1),PSHR(xr,1));        	/* bisect the interval 	*/
+		    xm = ADD16(PSHR16(xl,1),PSHR16(xr,1));        	/* bisect the interval 	*/
 #else
                     xm = .5*(xl+xr);        	/* bisect the interval 	*/
 #endif
@@ -472,7 +472,7 @@ void lsp_to_lpc(spx_lsp_t *freq,spx_coef_t *ak,int lpcrdr, char *stack)
         else if (xout1 + xout2 < -SHL(32766,8))
            ak[j] = -32767;
         else
-           ak[j] = PSHR(ADD32(xout1,xout2),8);
+           ak[j] = EXTRACT16(PSHR32(ADD32(xout1,xout2),8));
 	*(n4+1) = xin1;
 	*(n4+2) = xin2;
 
@@ -568,7 +568,7 @@ void lsp_enforce_margin(spx_lsp_t *lsp, int len, spx_word16_t margin)
          lsp[i]=lsp[i-1]+m;
 
       if (lsp[i]>lsp[i+1]-m)
-         lsp[i]= SHR(lsp[i],1) + SHR(lsp[i+1]-m,1);
+         lsp[i]= SHR16(lsp[i],1) + SHR16(lsp[i+1]-m,1);
    }
 }
 
@@ -576,7 +576,7 @@ void lsp_enforce_margin(spx_lsp_t *lsp, int len, spx_word16_t margin)
 void lsp_interpolate(spx_lsp_t *old_lsp, spx_lsp_t *new_lsp, spx_lsp_t *interp_lsp, int len, int subframe, int nb_subframes)
 {
    int i;
-   spx_word16_t tmp = DIV32_16(SHL(1 + subframe,14),nb_subframes);
+   spx_word16_t tmp = DIV32_16(SHL32(1 + subframe,14),nb_subframes);
    spx_word16_t tmp2 = 16384-tmp;
    for (i=0;i<len;i++)
    {

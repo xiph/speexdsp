@@ -45,11 +45,11 @@
 
 #ifdef FIXED_POINT
 
-#define LSP_LINEAR(i) (SHL(i+1,11))
+#define LSP_LINEAR(i) (SHL16(i+1,11))
 #define LSP_LINEAR_HIGH(i) (ADD16(MULT16_16_16(i,2560),6144))
-#define LSP_DIV_256(x) (SHL((spx_word16_t)x, 5))
-#define LSP_DIV_512(x) (SHL((spx_word16_t)x, 4))
-#define LSP_DIV_1024(x) (SHL((spx_word16_t)x, 3))
+#define LSP_DIV_256(x) (SHL16((spx_word16_t)x, 5))
+#define LSP_DIV_512(x) (SHL16((spx_word16_t)x, 4))
+#define LSP_DIV_1024(x) (SHL16((spx_word16_t)x, 3))
 #define LSP_PI 25736
 
 #else
@@ -103,7 +103,7 @@ static int lsp_quant(spx_word16_t *x, const signed char *cdbk, int nbVec, int nb
       dist=0;
       for (j=0;j<nbDim;j++)
       {
-         tmp=SUB16(x[j],SHL((spx_word16_t)*ptr++,5));
+         tmp=SUB16(x[j],SHL16((spx_word16_t)*ptr++,5));
          dist=MAC16_16(dist,tmp,tmp);
       }
       if (dist<best_dist || i==0)
@@ -114,7 +114,7 @@ static int lsp_quant(spx_word16_t *x, const signed char *cdbk, int nbVec, int nb
    }
 
    for (j=0;j<nbDim;j++)
-      x[j] = SUB16(x[j],SHL((spx_word16_t)cdbk[best_id*nbDim+j],5));
+      x[j] = SUB16(x[j],SHL16((spx_word16_t)cdbk[best_id*nbDim+j],5));
     
    return best_id;
 }
@@ -133,7 +133,7 @@ static int lsp_weight_quant(spx_word16_t *x, spx_word16_t *weight, const signed 
       dist=0;
       for (j=0;j<nbDim;j++)
       {
-         tmp=SUB16(x[j],SHL((spx_word16_t)*ptr++,5));
+         tmp=SUB16(x[j],SHL16((spx_word16_t)*ptr++,5));
          dist=MAC16_32_Q15(dist,weight[j],MULT16_16(tmp,tmp));
       }
       if (dist<best_dist || i==0)
@@ -144,7 +144,7 @@ static int lsp_weight_quant(spx_word16_t *x, spx_word16_t *weight, const signed 
    }
    
    for (j=0;j<nbDim;j++)
-      x[j] = SUB16(x[j],SHL((spx_word16_t)cdbk[best_id*nbDim+j],5));
+      x[j] = SUB16(x[j],SHL16((spx_word16_t)cdbk[best_id*nbDim+j],5));
    return best_id;
 }
 
@@ -193,7 +193,7 @@ void lsp_quant_nb(spx_lsp_t *lsp, spx_lsp_t *qlsp, int order, SpeexBits *bits)
 
 #ifdef FIXED_POINT
    for (i=0;i<order;i++)
-      qlsp[i]=PSHR(qlsp[i],2);
+      qlsp[i]=PSHR16(qlsp[i],2);
 #else
    for (i=0;i<order;i++)
       qlsp[i]=qlsp[i] * .00097656;
@@ -212,23 +212,23 @@ void lsp_unquant_nb(spx_lsp_t *lsp, int order, SpeexBits *bits)
 
    id=speex_bits_unpack_unsigned(bits, 6);
    for (i=0;i<10;i++)
-      lsp[i] += LSP_DIV_256(cdbk_nb[id*10+i]);
+      lsp[i] = ADD32(lsp[i], LSP_DIV_256(cdbk_nb[id*10+i]));
 
    id=speex_bits_unpack_unsigned(bits, 6);
    for (i=0;i<5;i++)
-      lsp[i] += LSP_DIV_512(cdbk_nb_low1[id*5+i]);
+      lsp[i] = ADD16(lsp[i], LSP_DIV_512(cdbk_nb_low1[id*5+i]));
 
    id=speex_bits_unpack_unsigned(bits, 6);
    for (i=0;i<5;i++)
-      lsp[i] += LSP_DIV_1024(cdbk_nb_low2[id*5+i]);
+      lsp[i] = ADD32(lsp[i], LSP_DIV_1024(cdbk_nb_low2[id*5+i]));
 
    id=speex_bits_unpack_unsigned(bits, 6);
    for (i=0;i<5;i++)
-      lsp[i+5] += LSP_DIV_512(cdbk_nb_high1[id*5+i]);
+      lsp[i+5] = ADD32(lsp[i+5], LSP_DIV_512(cdbk_nb_high1[id*5+i]));
    
    id=speex_bits_unpack_unsigned(bits, 6);
    for (i=0;i<5;i++)
-      lsp[i+5] += LSP_DIV_1024(cdbk_nb_high2[id*5+i]);
+      lsp[i+5] = ADD32(lsp[i+5], LSP_DIV_1024(cdbk_nb_high2[id*5+i]));
 }
 
 
@@ -263,7 +263,7 @@ void lsp_quant_lbr(spx_lsp_t *lsp, spx_lsp_t *qlsp, int order, SpeexBits *bits)
 
 #ifdef FIXED_POINT
    for (i=0;i<order;i++)
-      qlsp[i] = PSHR(qlsp[i],1);
+      qlsp[i] = PSHR16(qlsp[i],1);
 #else
    for (i=0;i<order;i++)
       qlsp[i] = qlsp[i]*0.0019531;
@@ -346,7 +346,7 @@ void lsp_quant_high(spx_lsp_t *lsp, spx_lsp_t *qlsp, int order, SpeexBits *bits)
 
 #ifdef FIXED_POINT
    for (i=0;i<order;i++)
-      qlsp[i] = PSHR(qlsp[i],1);
+      qlsp[i] = PSHR16(qlsp[i],1);
 #else
    for (i=0;i<order;i++)
       qlsp[i] = qlsp[i]*0.0019531;

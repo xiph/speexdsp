@@ -64,12 +64,12 @@ static void compute_weighted_codebook(const signed char *shape_cb, const spx_wor
          for (k=0;k<=j;k++)
             resj = MAC16_16(resj,shape[k],r[j-k]);
 #ifdef FIXED_POINT
-         resj = SHR(resj, 11);
+         resj = SHR32(resj, 11);
 #else
          resj *= 0.03125;
 #endif
          /* Compute codeword energy */
-         E[i]=ADD32(E[i],MULT16_16(resj,resj));
+         E[i]=ADD32(E[i],MULT16_16(EXTRACT16(resj),EXTRACT16(resj)));
          res[j] = resj;
          /*printf ("%d\n", (int)res[j]);*/
       }
@@ -140,7 +140,7 @@ int   update_target
    
    /* FIXME: make that adaptive? */
    for (i=0;i<nsf;i++)
-      t[i]=SHR(target[i],6);
+      t[i]=EXTRACT16(PSHR32(target[i],6));
 
    compute_weighted_codebook(shape_cb, r, resp, resp2, E, shape_cb_size, subvect_size, stack);
 
@@ -177,10 +177,10 @@ int   update_target
          if (sign)
          {
             for (j=0;j<subvect_size;j++)
-               e[subvect_size*i+j]=SHL(EXTEND32(shape_cb[rind*subvect_size+j]),SIG_SHIFT-5);
+               e[subvect_size*i+j]=SHL32(EXTEND32(shape_cb[rind*subvect_size+j]),SIG_SHIFT-5);
          } else {
             for (j=0;j<subvect_size;j++)
-               e[subvect_size*i+j]=NEG32(SHL(EXTEND32(shape_cb[rind*subvect_size+j]),SIG_SHIFT-5));
+               e[subvect_size*i+j]=NEG32(SHL32(EXTEND32(shape_cb[rind*subvect_size+j]),SIG_SHIFT-5));
          }
 #else
          for (j=0;j<subvect_size;j++)
@@ -205,7 +205,7 @@ int   update_target
 #ifdef FIXED_POINT
          g=sign*shape_cb[rind*subvect_size+m];
          for (n=subvect_size*(i+1);n<nsf;n++,q++)
-            t[n] = SUB32(t[n],MULT16_16_Q11(g,r[q]));
+            t[n] = SUB32(t[n],MULT16_16_Q11_32(g,r[q]));
 #else
          g=sign*0.03125*shape_cb[rind*subvect_size+m];
          for (n=subvect_size*(i+1);n<nsf;n++,q++)
@@ -336,7 +336,7 @@ int   update_target
    
    /* FIXME: make that adaptive? */
    for (i=0;i<nsf;i++)
-      t[i]=SHR(target[i],6);
+      t[i]=EXTRACT16(PSHR32(target[i],6));
 
    for (j=0;j<N;j++)
       for (i=0;i<nsf;i++)
@@ -427,7 +427,7 @@ int   update_target
 #ifdef FIXED_POINT
                   g=sign*shape_cb[rind*subvect_size+m];
                   for (n=subvect_size*(i+1);n<nsf;n++,q++)
-                     t[n] = SUB32(t[n],MULT16_16_Q11(g,r[q]));
+                     t[n] = SUB32(t[n],MULT16_16_Q11_32(g,r[q]));
 #else
                   g=sign*0.03125*shape_cb[rind*subvect_size+m];
                   for (n=subvect_size*(i+1);n<nsf;n++,q++)
@@ -500,10 +500,10 @@ int   update_target
       if (sign==1)
       {
          for (j=0;j<subvect_size;j++)
-            e[subvect_size*i+j]=SHL(EXTEND32(shape_cb[rind*subvect_size+j]),SIG_SHIFT-5);
+            e[subvect_size*i+j]=SHL32(EXTEND32(shape_cb[rind*subvect_size+j]),SIG_SHIFT-5);
       } else {
          for (j=0;j<subvect_size;j++)
-            e[subvect_size*i+j]=NEG32(SHL(EXTEND32(shape_cb[rind*subvect_size+j]),SIG_SHIFT-5));
+            e[subvect_size*i+j]=NEG32(SHL32(EXTEND32(shape_cb[rind*subvect_size+j]),SIG_SHIFT-5));
       }
 #else
       for (j=0;j<subvect_size;j++)
@@ -569,10 +569,10 @@ char *stack
       if (s==1)
       {
          for (j=0;j<subvect_size;j++)
-            exc[subvect_size*i+j]=SHL((spx_word32_t)shape_cb[ind[i]*subvect_size+j],SIG_SHIFT-5);
+            exc[subvect_size*i+j]=SHL32(EXTEND32(shape_cb[ind[i]*subvect_size+j]),SIG_SHIFT-5);
       } else {
          for (j=0;j<subvect_size;j++)
-            exc[subvect_size*i+j]=NEG32(SHL(EXTEND32(shape_cb[ind[i]*subvect_size+j]),SIG_SHIFT-5));
+            exc[subvect_size*i+j]=NEG32(SHL32(EXTEND32(shape_cb[ind[i]*subvect_size+j]),SIG_SHIFT-5));
       }
 #else
       for (j=0;j<subvect_size;j++)

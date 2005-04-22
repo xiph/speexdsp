@@ -135,7 +135,7 @@ int          n
    int shift, ac_shift;
    
    for (j=0;j<n;j++)
-      ac0 = ADD32(ac0,SHR(MULT16_16(x[j],x[j]),8));
+      ac0 = ADD32(ac0,SHR32(MULT16_16(x[j],x[j]),8));
    ac0 = ADD32(ac0,n);
    shift = 8;
    while (shift && ac0<0x40000000)
@@ -156,10 +156,10 @@ int          n
       d=0;
       for (j=i;j<n;j++)
       {
-         d = ADD32(d,SHR(MULT16_16(x[j],x[j-i]), shift));
+         d = ADD32(d,SHR32(MULT16_16(x[j],x[j-i]), shift));
       }
       
-      ac[i] = SHR(d, ac_shift);
+      ac[i] = SHR32(d, ac_shift);
    }
 }
 

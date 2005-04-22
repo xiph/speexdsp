@@ -110,21 +110,21 @@ spx_word16_t spx_acos(spx_word16_t x)
 {
    int s=0;
    spx_word16_t ret;
-   spx_word32_t sq;
+   spx_word16_t sq;
    if (x<0)
    {
       s=1;
-      x = -x;
+      x = NEG16(x);
    }
-   x = 16384-x;
+   x = SUB16(16384,x);
    
    x = x >> 1;
    sq = MULT16_16_Q13(x, ADD16(A1, MULT16_16_Q13(x, ADD16(A2, MULT16_16_Q13(x, (A3))))));
-   ret = spx_sqrt(SHL(sq,13));
+   ret = spx_sqrt(SHL32(EXTEND32(sq),13));
    
    /*ret = spx_sqrt(67108864*(-1.6129e-04 + 2.0104e+00*f + 2.7373e-01*f*f + 1.8136e-01*f*f*f));*/
    if (s)
-      ret = 25736-ret;
+      ret = SUB16(25736,ret);
    return ret;
 }
 

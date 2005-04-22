@@ -62,7 +62,7 @@ void signal_mul(const spx_sig_t *x, spx_sig_t *y, spx_word32_t scale, int len)
    int i;
    for (i=0;i<len;i++)
    {
-      y[i] = SHL(MULT16_32_Q14(SHR(x[i],7),scale),7);
+      y[i] = SHL32(MULT16_32_Q14(EXTRACT16(SHR32(x[i],7)),scale),7);
    }
 }
 
@@ -71,11 +71,11 @@ void signal_div(const spx_sig_t *x, spx_sig_t *y, spx_word32_t scale, int len)
    int i;
    spx_word16_t scale_1;
 
-   scale = PSHR(scale, SIG_SHIFT);
+   scale = PSHR32(scale, SIG_SHIFT);
    if (scale<2)
       scale_1 = 32767;
    else
-      scale_1 = 32767/scale;
+      scale_1 = EXTRACT16(DIV32(32767,scale));
    for (i=0;i<len;i++)
    {
       y[i] = MULT16_32_Q15(scale_1,x[i]);
@@ -133,18 +133,18 @@ spx_word16_t compute_rms(const spx_sig_t *x, int len)
    {
       spx_word32_t sum2=0;
       spx_word16_t tmp;
-      tmp = SHR(x[i],sig_shift);
+      tmp = EXTRACT16(SHR32(x[i],sig_shift));
       sum2 = MAC16_16(sum2,tmp,tmp);
-      tmp = SHR(x[i+1],sig_shift);
+      tmp = EXTRACT16(SHR32(x[i+1],sig_shift));
       sum2 = MAC16_16(sum2,tmp,tmp);
-      tmp = SHR(x[i+2],sig_shift);
+      tmp = EXTRACT16(SHR32(x[i+2],sig_shift));
       sum2 = MAC16_16(sum2,tmp,tmp);
-      tmp = SHR(x[i+3],sig_shift);
+      tmp = EXTRACT16(SHR32(x[i+3],sig_shift));
       sum2 = MAC16_16(sum2,tmp,tmp);
-      sum = ADD32(sum,SHR(sum2,6));
+      sum = ADD32(sum,SHR32(sum2,6));
    }
    
-   return SHR(SHL((spx_word32_t)spx_sqrt(1+DIV32(sum,len)),(sig_shift+3)),SIG_SHIFT);
+   return EXTRACT16(SHR32(SHL32(EXTEND32(spx_sqrt(1+DIV32(sum,len))),(sig_shift+3)),SIG_SHIFT));
 }
 
 #if defined(ARM4_ASM) || defined(ARM5E_ASM)
@@ -162,7 +162,7 @@ int normalize16(const spx_sig_t *x, spx_word16_t *y, spx_sig_t max_scale, int le
    {
       spx_sig_t tmp = x[i];
       if (tmp<0)
-         tmp = -tmp;
+         tmp = NEG32(tmp);
       if (tmp >= max_val)
          max_val = tmp;
    }
@@ -175,7 +175,7 @@ int normalize16(const spx_sig_t *x, spx_word16_t *y, spx_sig_t max_scale, int le
    }
 
    for (i=0;i<len;i++)
-      y[i] = SHR(x[i], sig_shift);
+      y[i] = EXTRACT16(SHR32(x[i], sig_shift));
    
    return sig_shift;
 }
@@ -418,9 +418,9 @@ void compute_impulse_response(const spx_coef_t *ak, const spx_coef_t *awk1, cons
       mem1[i] = mem2[i] = 0;
    for (i=0;i<N;i++)
    {
-      y1 = ADD16(y[i], PSHR(mem1[0],LPC_SHIFT));
+      y1 = ADD16(y[i], EXTRACT16(PSHR32(mem1[0],LPC_SHIFT)));
       ny1i = NEG16(y1);
-      y[i] = ADD16(SHL(y1,1), PSHR(mem2[0],LPC_SHIFT));
+      y[i] = ADD16(SHL16(y1,1), EXTRACT16(PSHR32(mem2[0],LPC_SHIFT)));
       ny2i = NEG16(y[i]);
       for (j=0;j<ord-1;j++)
       {

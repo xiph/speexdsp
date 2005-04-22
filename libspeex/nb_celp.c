@@ -803,14 +803,14 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
          /*FIXME: Should use DIV32_16 and make sure result fits in 16 bits */
 #ifdef FIXED_POINT
          {
-            spx_word32_t f = DIV32(ener,PSHR(ol_gain,SIG_SHIFT));
+            spx_word32_t f = DIV32(ener,PSHR32(ol_gain,SIG_SHIFT));
             if (f<32768)
                fine_gain = f;
             else
                fine_gain = 32767;
          }
 #else
-         fine_gain = DIV32_16(ener,PSHR(ol_gain,SIG_SHIFT));
+         fine_gain = DIV32_16(ener,PSHR32(ol_gain,SIG_SHIFT));
 #endif
          /* Calculate gain correction for the sub-frame (if any) */
          if (SUBMODE(have_subframe_gain)) 
@@ -904,7 +904,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
    /* Replace input by synthesized speech */
    for (i=0;i<st->frameSize;i++)
    {
-      spx_word32_t sig = PSHR(st->frame[i],SIG_SHIFT);
+      spx_word32_t sig = PSHR32(st->frame[i],SIG_SHIFT);
       if (sig>32767)
          sig = 32767;
       if (sig<-32767)
@@ -1102,7 +1102,7 @@ static void nb_decode_lost(DecState *st, spx_word16_t *out, char *stack)
 
    for (i=0;i<st->frameSize;i++)
    {
-      spx_word32_t sig = PSHR(st->frame[i],SIG_SHIFT);
+      spx_word32_t sig = PSHR32(st->frame[i],SIG_SHIFT);
       if (sig>32767)
          sig = 32767;
       if (sig<-32767)
@@ -1267,7 +1267,7 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
 
       for (i=0;i<st->frameSize;i++)
       {
-         spx_word32_t sig = PSHR(st->frame[i],SIG_SHIFT);
+         spx_word32_t sig = PSHR32(st->frame[i],SIG_SHIFT);
          if (sig>32767)
             sig = 32767;
          if (sig<-32767)
@@ -1609,7 +1609,7 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
    /*Copy output signal*/   
    for (i=0;i<st->frameSize;i++)
    {
-      spx_word32_t sig = PSHR(st->frame[i],SIG_SHIFT);
+      spx_word32_t sig = PSHR32(st->frame[i],SIG_SHIFT);
       if (sig>32767)
          sig = 32767;
       if (sig<-32767)
@@ -1629,7 +1629,7 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
    st->count_lost=0;
    st->last_pitch = best_pitch;
 #ifdef FIXED_POINT
-   st->last_pitch_gain = PSHR(pitch_average,2);
+   st->last_pitch_gain = PSHR16(pitch_average,2);
 #else
    st->last_pitch_gain = .25*pitch_average;   
 #endif

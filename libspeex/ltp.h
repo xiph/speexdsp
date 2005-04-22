@@ -40,7 +40,7 @@ typedef struct ltp_params {
 } ltp_params;
 
 #ifdef FIXED_POINT
-#define gain_3tap_to_1tap(g) (ABS(g[1]) + (g[0]>0 ? g[0] : -SHR(g[0],1)) + (g[2]>0 ? g[2] : -SHR(g[2],1)))
+#define gain_3tap_to_1tap(g) (ABS(g[1]) + (g[0]>0 ? g[0] : -SHR16(g[0],1)) + (g[2]>0 ? g[2] : -SHR16(g[2],1)))
 #else
 #define gain_3tap_to_1tap(g) (ABS(g[1]) + (g[0]>0 ? g[0] : -.5*g[0]) + (g[2]>0 ? g[2] : -.5*g[2]))
 #endif

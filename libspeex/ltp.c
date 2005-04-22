@@ -63,7 +63,7 @@ static spx_word32_t inner_prod(const spx_word16_t *x, const spx_word16_t *y, int
       part = MAC16_16(part,x[i+1],y[i+1]);
       part = MAC16_16(part,x[i+2],y[i+2]);
       part = MAC16_16(part,x[i+3],y[i+3]);
-      sum = ADD32(sum,SHR(part,6));
+      sum = ADD32(sum,SHR32(part,6));
    }
    return sum;
 }
@@ -119,10 +119,10 @@ static void pitch_xcorr(const spx_word16_t *_x, const spx_word16_t *_y, spx_word
          x++;
          y3=*y++;
          
-         sum1 = ADD32(sum1,SHR(part1,6));
-         sum2 = ADD32(sum2,SHR(part2,6));
-         sum3 = ADD32(sum3,SHR(part3,6));
-         sum4 = ADD32(sum4,SHR(part4,6));
+         sum1 = ADD32(sum1,SHR32(part1,6));
+         sum2 = ADD32(sum2,SHR32(part2,6));
+         sum3 = ADD32(sum3,SHR32(part3,6));
+         sum4 = ADD32(sum4,SHR32(part4,6));
       }
       corr[nb_pitch-1-i]=sum1;
       corr[nb_pitch-2-i]=sum2;
@@ -184,7 +184,7 @@ void open_loop_nbest_pitch(spx_sig_t *sw, int start, int end, int len, int *pitc
    for (i=start;i<=end;i++)
    {
       /* Update energy for next pitch*/
-      energy[i-start+1] = energy[i-start] + SHR(MULT16_16(swn[-i-1],swn[-i-1]),6) - SHR(MULT16_16(swn[-i+len-1],swn[-i+len-1]),6);
+      energy[i-start+1] = SUB32(ADD32(energy[i-start],SHR32(MULT16_16(swn[-i-1],swn[-i-1]),6)), SHR32(MULT16_16(swn[-i+len-1],swn[-i+len-1]),6));
    }
 
    pitch_xcorr(swn, swn-end, corr, len, end-start+1, stack);
@@ -205,12 +205,12 @@ void open_loop_nbest_pitch(spx_sig_t *sw, int start, int end, int len, int *pitc
          tmp = corr16[i-start];
          if (tmp>0)
          {
-            if (SHR(corr16[i-start],4)>ener16[i-start])
-               tmp = SHL((spx_word32_t)ener16[i-start],14);
-            else if (-SHR(corr16[i-start],4)>ener16[i-start])
-               tmp = -SHL((spx_word32_t)ener16[i-start],14);
+            if (SHR16(corr16[i-start],4)>ener16[i-start])
+               tmp = SHL32(EXTEND32(ener16[i-start]),14);
+            else if (-SHR16(corr16[i-start],4)>ener16[i-start])
+               tmp = -SHL32(EXTEND32(ener16[i-start]),14);
             else
-               tmp = SHL(tmp,10);
+               tmp = SHL32(tmp,10);
             g = DIV32_16(tmp, 8+ener16[i-start]);
             score[i-start] = MULT16_16(corr16[i-start],g);
          } else
@@ -260,7 +260,7 @@ void open_loop_nbest_pitch(spx_sig_t *sw, int start, int end, int len, int *pitc
        {
           spx_word16_t g;
           i=pitch[j];
-          g = DIV32(corr[i-start], 10+SHR(MULT16_16(spx_sqrt(e0),spx_sqrt(energy[i-start])),6));
+          g = DIV32(corr[i-start], 10+SHR32(MULT16_16(spx_sqrt(e0),spx_sqrt(energy[i-start])),6));
           /* FIXME: g = max(g,corr/energy) */
                    if (g<0)
                    g = 0;
@@ -337,7 +337,7 @@ int cdbk_offset
          x[i][0]=0;
          for (j=0;j<nsf;j++)
          {
-            x[i][j]=ADD32(x[i][j],SHL(MULT16_32_Q15(r[j], e[i][0]),1));
+            x[i][j]=ADD32(x[i][j],SHL32(MULT16_32_Q15(r[j], e[i][0]),1));
          }
       }
    }
@@ -394,12 +394,12 @@ int cdbk_offset
       {
          for (i=0;i<nsf;i++)
          {
-            y[j][i] = SHR(x[j][i],sig_shift);
+            y[j][i] = EXTRACT16(SHR32(x[j][i],sig_shift));
          }
-      }     
+      }
       for (i=0;i<nsf;i++)
       {
-         t[i] = SHR(target[i],sig_shift);
+         t[i] = EXTRACT16(SHR32(target[i],sig_shift));
       }
 
       for (i=0;i<3;i++)
@@ -467,9 +467,9 @@ int cdbk_offset
          }
       }
 #ifdef FIXED_POINT
-      gain[0] = 32+(spx_word16_t)gain_cdbk[best_cdbk*3];
-      gain[1] = 32+(spx_word16_t)gain_cdbk[best_cdbk*3+1];
-      gain[2] = 32+(spx_word16_t)gain_cdbk[best_cdbk*3+2];
+      gain[0] = ADD16(32,(spx_word16_t)gain_cdbk[best_cdbk*3]);
+      gain[1] = ADD16(32,(spx_word16_t)gain_cdbk[best_cdbk*3+1]);
+      gain[2] = ADD16(32,(spx_word16_t)gain_cdbk[best_cdbk*3+2]);
 #else
       gain[0] = 0.015625*gain_cdbk[best_cdbk*3]  + .5;
       gain[1] = 0.015625*gain_cdbk[best_cdbk*3+1]+ .5;
@@ -480,16 +480,18 @@ int cdbk_offset
 
 #ifdef FIXED_POINT
    for (i=0;i<nsf;i++)
-     exc[i]=SHL(MULT16_32_Q15(SHL(gain[0],7),e[2][i])+MULT16_32_Q15(SHL(gain[1],7),e[1][i])+MULT16_32_Q15(SHL(gain[2],7),e[0][i]),2);
+     exc[i]=SHL32(ADD32(ADD32(MULT16_32_Q15(SHL16(gain[0],7),e[2][i]), MULT16_32_Q15(SHL16(gain[1],7),e[1][i])),
+                        MULT16_32_Q15(SHL16(gain[2],7),e[0][i])), 2);
    
    err=0;
    for (i=0;i<nsf;i++)
    {
       spx_word16_t perr2;
-      spx_sig_t tmp = SHL((MULT16_32_Q15(SHL(gain[0],7),x[2][i])+MULT16_32_Q15(SHL(gain[1],7),x[1][i])+MULT16_32_Q15(SHL(gain[2],7),x[0][i])),2);
+      spx_sig_t tmp = SHL32(ADD32(ADD32(MULT16_32_Q15(SHL16(gain[0],7),x[2][i]),MULT16_32_Q15(SHL16(gain[1],7),x[1][i])),
+                                  MULT16_32_Q15(SHL16(gain[2],7),x[0][i])),2);
       spx_sig_t perr=SUB32(target[i],tmp);
       new_target[i] = SUB32(target[i], tmp);
-      perr2 = PSHR(perr,15);
+      perr2 = EXTRACT16(PSHR32(perr,15));
       err = ADD64(err,MULT16_16(perr2,perr2));
       
    }
@@ -711,7 +713,8 @@ int cdbk_offset
 #ifdef FIXED_POINT
       {
          for (i=0;i<nsf;i++)
-            exc[i]=SHL(MULT16_32_Q15(SHL(gain[0],7),e[2][i])+MULT16_32_Q15(SHL(gain[1],7),e[1][i])+MULT16_32_Q15(SHL(gain[2],7),e[0][i]),2);
+            exc[i]=SHL32(ADD32(ADD32(MULT16_32_Q15(SHL16(gain[0],7),e[2][i]), MULT16_32_Q15(SHL16(gain[1],7),e[1][i])),
+                               MULT16_32_Q15(SHL16(gain[2],7),e[0][i])), 2);
       }
 #else
       for (i=0;i<nsf;i++)
