@@ -45,7 +45,7 @@
 #include "cb_search_arm4.h"
 #else
 
-static void compute_weighted_codebook(const signed char *shape_cb, const spx_sig_t *r, spx_word16_t *resp, spx_word16_t *resp2, spx_word32_t *E, int shape_cb_size, int subvect_size, char *stack)
+static void compute_weighted_codebook(const signed char *shape_cb, const spx_word16_t *r, spx_word16_t *resp, spx_word16_t *resp2, spx_word32_t *E, int shape_cb_size, int subvect_size, char *stack)
 {
    int i, j, k;
    for (i=0;i<shape_cb_size;i++)
@@ -90,7 +90,7 @@ const void *par,                      /* Codebook/search parameters*/
 int   p,                        /* number of LPC coeffs */
 int   nsf,                      /* number of samples in subframe */
 spx_sig_t *exc,
-spx_sig_t *r,
+spx_word16_t *r,
 SpeexBits *bits,
 char *stack,
 int   complexity,
@@ -241,7 +241,7 @@ const void *par,                      /* Codebook/search parameters*/
 int   p,                        /* number of LPC coeffs */
 int   nsf,                      /* number of samples in subframe */
 spx_sig_t *exc,
-spx_sig_t *r,
+spx_word16_t *r,
 SpeexBits *bits,
 char *stack,
 int   complexity,
@@ -590,7 +590,7 @@ const void *par,                      /* Codebook/search parameters*/
 int   p,                        /* number of LPC coeffs */
 int   nsf,                      /* number of samples in subframe */
 spx_sig_t *exc,
-spx_sig_t *r,
+spx_word16_t *r,
 SpeexBits *bits,
 char *stack,
 int   complexity,

@@ -222,7 +222,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
    VARDECL(spx_sig_t *target);
    VARDECL(spx_mem_t *mem);
    char *stack;
-   VARDECL(spx_sig_t *syn_resp);
+   VARDECL(spx_word16_t *syn_resp);
    VARDECL(spx_sig_t *real_exc);
 #ifdef EPIC_48K
    int pitch_half[2];
@@ -619,7 +619,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
    ALLOC(res, st->subframeSize, spx_sig_t);
    /* Target signal */
    ALLOC(target, st->subframeSize, spx_sig_t);
-   ALLOC(syn_resp, st->subframeSize, spx_sig_t);
+   ALLOC(syn_resp, st->subframeSize, spx_word16_t);
    ALLOC(real_exc, st->subframeSize, spx_sig_t);
    ALLOC(mem, st->lpcSize, spx_mem_t);
 
@@ -688,16 +688,16 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
       for (i=0;i<st->subframeSize;i++)
          real_exc[i] = exc[i];
       
-      /* Compute impulse response of A(z/g1) / ( A(z)*A(z/g2) )*/
-      for (i=0;i<st->subframeSize;i++)
-         exc[i]=VERY_SMALL;
-      exc[0]=SIG_SCALING;
-      
       if (st->complexity==0)
          response_bound >>= 1;
-      syn_percep_zero(exc, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2, syn_resp, response_bound, st->lpcSize, stack);
+      /* Compute impulse response of A(z/g1) / ( A(z)*A(z/g2) )*/
+      /*for (i=0;i<st->subframeSize;i++)
+         exc[i]=VERY_SMALL;
+      exc[0]=SIG_SCALING;
+      syn_percep_zero(exc, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2, syn_resp, response_bound, st->lpcSize, stack);*/
+      compute_impulse_response(st->interp_qlpc, st->bw_lpc1, st->bw_lpc2, syn_resp, response_bound, st->lpcSize, stack);
       for (i=response_bound;i<st->subframeSize;i++)
-         syn_resp[i]=0;
+         syn_resp[i]=VERY_SMALL;
       
       /* Reset excitation */
       for (i=0;i<st->subframeSize;i++)

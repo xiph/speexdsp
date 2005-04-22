@@ -329,7 +329,7 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
    char *stack;
    VARDECL(spx_mem_t *mem);
    VARDECL(spx_sig_t *innov);
-   VARDECL(spx_sig_t *syn_resp);
+   VARDECL(spx_word16_t *syn_resp);
    VARDECL(spx_word32_t *low_pi_gain);
    VARDECL(spx_sig_t *low_exc);
    VARDECL(spx_sig_t *low_innov);
@@ -547,7 +547,7 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
    }
    
    ALLOC(mem, st->lpcSize, spx_mem_t);
-   ALLOC(syn_resp, st->subframeSize, spx_sig_t);
+   ALLOC(syn_resp, st->subframeSize, spx_word16_t);
    ALLOC(innov, st->subframeSize, spx_sig_t);
 
    for (sub=0;sub<st->nbSubframes;sub++)
@@ -676,10 +676,12 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
 
          scale = SHL(MULT16_16(DIV32_16(SHL(gc,SIG_SHIFT-4),filter_ratio),(1+el)),4);
 
-         for (i=0;i<st->subframeSize;i++)
+         /*for (i=0;i<st->subframeSize;i++)
             exc[i]=VERY_SMALL;
          exc[0]=SIG_SCALING;
-         syn_percep_zero(exc, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2, syn_resp, st->subframeSize, st->lpcSize, stack);
+         syn_percep_zero(exc, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2, syn_resp, st->subframeSize, st->lpcSize, stack);*/
+         compute_impulse_response(st->interp_qlpc, st->bw_lpc1, st->bw_lpc2, syn_resp, st->subframeSize, st->lpcSize, stack);
+
          
          /* Reset excitation */
          for (i=0;i<st->subframeSize;i++)

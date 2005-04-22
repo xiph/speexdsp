@@ -1,11 +1,19 @@
-Version 1.0
-Allocator override
-better error handling
-
-Version 1.2:
 Allocator override (speex_lib_ctl)
-support alloca?
-better error handling
+Support alloca/variable size arrays
+Better error handling
+Fixed-point:
+  - Packet-loss concealment
+  - Wideband
+  - Initialization
+  - Jitter buffer
+Echo cancellation:
+  - Re-enable denoiser hooks
+  - Improve doubletalk detector
+Denoiser:
+  - Fix hyper-geometric approximation
+  - Do some tuning
+VAD-NG:
+  - Use median filtering instead of "non-linear mean"
 
 
 

@@ -54,7 +54,7 @@ const void *par,                      /* Codebook/search parameters*/
 int   p,                        /* number of LPC coeffs */
 int   nsf,                      /* number of samples in subframe */
 spx_sig_t *exc,
-spx_sig_t *r,
+spx_word16_t *r,
 SpeexBits *bits,
 char *stack,
 int   complexity,
@@ -79,7 +79,7 @@ const void *par,                      /* Codebook/search parameters*/
 int   p,                        /* number of LPC coeffs */
 int   nsf,                      /* number of samples in subframe */
 spx_sig_t *exc,
-spx_sig_t *r,
+spx_word16_t *r,
 SpeexBits *bits,
 char *stack,
 int   complexity,

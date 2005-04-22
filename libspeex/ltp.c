@@ -284,7 +284,7 @@ int   nsf,                      /* Number of samples in subframe */
 SpeexBits *bits,
 char *stack,
 const spx_sig_t *exc2,
-const spx_sig_t *r,
+const spx_word16_t *r,
 spx_sig_t *new_target,
 int  *cdbk_index,
 int cdbk_offset
@@ -527,7 +527,7 @@ int   nsf,                      /* Number of samples in subframe */
 SpeexBits *bits,
 char *stack,
 spx_sig_t *exc2,
-spx_sig_t *r,
+spx_word16_t *r,
 int complexity,
 int cdbk_offset
 )
@@ -738,7 +738,7 @@ int   nsf,                      /* Number of samples in subframe */
 SpeexBits *bits,
 char *stack,
 spx_sig_t *exc2,
-spx_sig_t *r,
+spx_word16_t *r,
 int complexity,
 int cdbk_offset
 )

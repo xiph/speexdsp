@@ -69,6 +69,8 @@ void syn_percep_zero(const spx_sig_t *x, const spx_coef_t *ak, const spx_coef_t 
 
 void residue_percep_zero(const spx_sig_t *xx, const spx_coef_t *ak, const spx_coef_t *awk1, const spx_coef_t *awk2, spx_sig_t *y, int N, int ord, char *stack);
 
+void compute_impulse_response(const spx_coef_t *ak, const spx_coef_t *awk1, const spx_coef_t *awk2, spx_word16_t *y, int N, int ord, char *stack);
+
 void comb_filter_mem_init (CombFilterMem *mem);
 
 void comb_filter(
