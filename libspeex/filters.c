@@ -224,11 +224,10 @@ void filter_mem2(const spx_sig_t *x, const spx_coef_t *num, const spx_coef_t *de
 void iir_mem2(const spx_sig_t *x, const spx_coef_t *den, spx_sig_t *y, int N, int ord, spx_mem_t *mem)
 {
    int i,j;
-   spx_word16_t xi,yi,nyi;
+   spx_word16_t yi,nyi;
 
    for (i=0;i<N;i++)
    {
-      xi=EXTRACT16(PSHR32(SATURATE(x[i],536870911),SIG_SHIFT));
       yi = EXTRACT16(PSHR32(SATURATE(x[i] + SHL32(mem[0],1),536870911),SIG_SHIFT));
       nyi = NEG16(yi);
       for (j=0;j<ord-1;j++)
@@ -590,14 +589,14 @@ CombFilterMem *mem
 
       fact = ADD16(fact,step);
       
-      exc1 = SHL(MULT16_32_Q15(SHL(pitch_gain[0],7),exc[i-pitch+1]) +
-                 MULT16_32_Q15(SHL(pitch_gain[1],7),exc[i-pitch]) +
-                 MULT16_32_Q15(SHL(pitch_gain[2],7),exc[i-pitch-1]) , 2);
-      exc2 = SHL(MULT16_32_Q15(SHL(mem->last_pitch_gain[0],7),exc[i-mem->last_pitch+1]) +
-                 MULT16_32_Q15(SHL(mem->last_pitch_gain[1],7),exc[i-mem->last_pitch]) +
-                 MULT16_32_Q15(SHL(mem->last_pitch_gain[2],7),exc[i-mem->last_pitch-1]),2);
+      exc1 = SHL32(MULT16_32_Q15(SHL16(pitch_gain[0],7),exc[i-pitch+1]) +
+                 MULT16_32_Q15(SHL16(pitch_gain[1],7),exc[i-pitch]) +
+                 MULT16_32_Q15(SHL16(pitch_gain[2],7),exc[i-pitch-1]) , 2);
+      exc2 = SHL32(MULT16_32_Q15(SHL16(mem->last_pitch_gain[0],7),exc[i-mem->last_pitch+1]) +
+                 MULT16_32_Q15(SHL16(mem->last_pitch_gain[1],7),exc[i-mem->last_pitch]) +
+                 MULT16_32_Q15(SHL16(mem->last_pitch_gain[2],7),exc[i-mem->last_pitch-1]),2);
 
-      new_exc[i] = exc[i] + MULT16_32_Q15(comb_gain,MULT16_32_Q15(fact,exc1)  + MULT16_32_Q15(SUB16(COMB_STEP,fact), exc2));
+      new_exc[i] = exc[i] + MULT16_32_Q15(comb_gain, ADD32(MULT16_32_Q15(fact,exc1), MULT16_32_Q15(SUB16(COMB_STEP,fact), exc2)));
    }
 
    mem->last_pitch_gain[0] = pitch_gain[0];
@@ -611,7 +610,7 @@ CombFilterMem *mem
    if (exc_energy > new_exc_energy)
       exc_energy = new_exc_energy;
    
-   gain = DIV32_16(SHL(exc_energy,15),1+new_exc_energy);
+   gain = DIV32_16(SHL32(EXTEND32(exc_energy),15),ADD16(1,new_exc_energy));
 
 #ifdef FIXED_POINT
    if (gain < 16384)
@@ -624,7 +623,7 @@ CombFilterMem *mem
 #ifdef FIXED_POINT
    for (i=0;i<nsf;i++)
    {
-      mem->smooth_gain = MULT16_16_Q15(31457,mem->smooth_gain) + MULT16_16_Q15(1311,gain);
+      mem->smooth_gain = ADD16(MULT16_16_Q15(31457,mem->smooth_gain), MULT16_16_Q15(1311,gain));
       new_exc[i] = MULT16_32_Q15(mem->smooth_gain, new_exc[i]);
    }
 #else
