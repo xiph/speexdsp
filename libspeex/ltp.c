@@ -54,21 +54,23 @@
 
 static spx_word32_t inner_prod(const spx_word16_t *x, const spx_word16_t *y, int len)
 {
-   int i;
+   int i=0;
    spx_word32_t sum=0;
-   for (i=0;i<len;i+=4)
+   len >>= 2;
+   while(len--)
    {
       spx_word32_t part=0;
-      part = MAC16_16(part,x[i],y[i]);
-      part = MAC16_16(part,x[i+1],y[i+1]);
-      part = MAC16_16(part,x[i+2],y[i+2]);
-      part = MAC16_16(part,x[i+3],y[i+3]);
+      part = MAC16_16(part,*x++,*y++);
+      part = MAC16_16(part,*x++,*y++);
+      part = MAC16_16(part,*x++,*y++);
+      part = MAC16_16(part,*x++,*y++);
+      /* HINT: If you had a 40-bit accumulator, you could shift only at the end */
       sum = ADD32(sum,SHR32(part,6));
    }
    return sum;
 }
 
-#if 0 /* Enable this for machines with enough registers (i.e. not x86) */
+#if 0 /* HINT: Enable this for machines with enough registers (i.e. not x86) */
 static void pitch_xcorr(const spx_word16_t *_x, const spx_word16_t *_y, spx_word32_t *corr, int len, int nb_pitch, char *stack)
 {
    int i,j;

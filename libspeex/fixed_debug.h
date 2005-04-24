@@ -245,19 +245,32 @@ static inline int MULT16_16(int a, int b)
    return res;
 }
 
-#define MAC16_16(c,a,b)     (ADD32((c),MULT16_16((a),(b))))
+#define MAC16_16(c,a,b)     (spx_mips--,ADD32((c),MULT16_16((a),(b))))
 #define MAC16_16_Q11(c,a,b)     (ADD16((c),EXTRACT16(SHR32(MULT16_16((a),(b)),11))))
 #define MAC16_16_Q13(c,a,b)     (ADD16((c),EXTRACT16(SHR32(MULT16_16((a),(b)),13))))
 
-#define MULT16_32_Q12(a,b) ADD32(MULT16_16((a),SHR32((b),12)), SHR32(MULT16_16((a),((b)&0x00000fff)),12))
-#define MULT16_32_Q13(a,b) ADD32(MULT16_16((a),SHR32((b),13)), SHR32(MULT16_16((a),((b)&0x00001fff)),13))
-#define MULT16_32_Q14(a,b) ADD32(MULT16_16((a),SHR32((b),14)), SHR32(MULT16_16((a),((b)&0x00003fff)),14))
+static inline int MULT16_32_QX(int a, long long b, int Q)
+{
+   long long res;
+   if (!VERIFY_SHORT(a) || !VERIFY_INT(b))
+   {
+      fprintf (stderr, "MULT16_32_Q%d: inputs are not short+int: %d %d\n", Q, a, b);
+   }
+   res = (((long long)a)*(long long)b) >> Q;
+   if (!VERIFY_INT(res))
+      fprintf (stderr, "MULT16_32_Q%d: output is not int: %d*%d=%d\n", Q, a, b,(int)res);
+   spx_mips+=5;
+   return res;
+}
 
-#define MULT16_32_Q11(a,b) ADD32(MULT16_16((a),SHR32((b),11)), SHR32(MULT16_16((a),((b)&0x000007ff)),11))
-#define MAC16_32_Q11(c,a,b) ADD32(c,ADD32(MULT16_16((a),SHR32((b),11)), SHR32(MULT16_16((a),((b)&0x000007ff)),11)))
 
-#define MULT16_32_Q15(a,b) ADD32(MULT16_16((a),SHR32((b),15)), SHR32(MULT16_16((a),((b)&0x00007fff)),15))
-#define MAC16_32_Q15(c,a,b) ADD32(c,ADD32(MULT16_16((a),SHR32((b),15)), SHR32(MULT16_16((a),((b)&0x00007fff)),15)))
+#define MULT16_32_Q11(a,b) MULT16_32_QX(a,b,11)
+#define MAC16_32_Q11(c,a,b) ADD32((c),MULT16_32_Q11((a),(b)))
+#define MULT16_32_Q12(a,b) MULT16_32_QX(a,b,12)
+#define MULT16_32_Q13(a,b) MULT16_32_QX(a,b,13)
+#define MULT16_32_Q14(a,b) MULT16_32_QX(a,b,14)
+#define MULT16_32_Q15(a,b) MULT16_32_QX(a,b,15)
+#define MAC16_32_Q15(c,a,b) ADD32((c),MULT16_32_Q15((a),(b)))
 
 static inline int SATURATE(int a, int b)
 {
@@ -377,8 +390,6 @@ static inline short MULT16_16_P15(int a, int b)
    return res;
 }
 
-#define MUL_16_32_R15(a,bh,bl) ADD32(MULT16_16((a),(bh)), SHR(MULT16_16((a),(bl)),15))
-
 
 static inline int DIV32_16(long long a, long long b) 
 {
@@ -401,7 +412,7 @@ static inline int DIV32_16(long long a, long long b)
       if (res<-32768)
          res = -32768;
    }
-   spx_mips++;
+   spx_mips+=20;
    return res;
 }
 static inline int DIV32(long long a, long long b) 
@@ -420,7 +431,7 @@ static inline int DIV32(long long a, long long b)
    res = a/b;
    if (!VERIFY_INT(res))
       fprintf (stderr, "DIV32: output is not int: %d\n", (int)res);
-   spx_mips++;
+   spx_mips+=36;
    return res;
 }
 

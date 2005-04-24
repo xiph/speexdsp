@@ -61,16 +61,17 @@ static void compute_weighted_codebook(const signed char *shape_cb, const spx_wor
       for(j=0;j<subvect_size;j++)
       {
          spx_word32_t resj=0;
+         spx_word16_t res16;
          for (k=0;k<=j;k++)
             resj = MAC16_16(resj,shape[k],r[j-k]);
 #ifdef FIXED_POINT
-         resj = SHR32(resj, 11);
+         res16 = EXTRACT16(SHR32(resj, 11));
 #else
-         resj *= 0.03125;
+         res16 = 0.03125f*resj;
 #endif
          /* Compute codeword energy */
-         E[i]=ADD32(E[i],MULT16_16(EXTRACT16(resj),EXTRACT16(resj)));
-         res[j] = resj;
+         E[i]=MAC16_16(E[i],res16,res16);
+         res[j] = res16;
          /*printf ("%d\n", (int)res[j]);*/
       }
    }

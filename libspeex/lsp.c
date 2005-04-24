@@ -287,27 +287,28 @@ int lpc_to_lsp (spx_coef_t *a,int lpcrdr,spx_lsp_t *freq,int nb,spx_word16_t del
           speex_warning_int("px", *px);
        if (fabs(*qx)>=32768)
        speex_warning_int("qx", *qx);*/
-       *px = (2+*px)>>2;
-       *qx = (2+*qx)>>2;
+       *px = PSHR32(*px,2);
+       *qx = PSHR32(*qx,2);
        px++;
        qx++;
     }
+    /* The reason for this lies in the way cheb_poly_eva() is implemented for fixed-point */
     P[m] = PSHR32(P[m],3);
     Q[m] = PSHR32(Q[m],3);
 #else
     *px++ = LPC_SCALING;
     *qx++ = LPC_SCALING;
     for(i=1;i<=m;i++){
-	*px++ = (a[i]+a[lpcrdr+1-i]) - *p++;
-	*qx++ = (a[i]-a[lpcrdr+1-i]) + *q++;
+       *px++ = (a[i]+a[lpcrdr+1-i]) - *p++;
+       *qx++ = (a[i]-a[lpcrdr+1-i]) + *q++;
     }
     px = P;
     qx = Q;
     for(i=0;i<m;i++){
-	*px = 2**px;
-	*qx = 2**qx;
-	 px++;
-	 qx++;
+       *px = 2**px;
+       *qx = 2**qx;
+       px++;
+       qx++;
     }
 #endif
 
