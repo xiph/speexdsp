@@ -133,13 +133,13 @@ AC_ARG_ENABLE(valgrind, [  --enable-valgrind       Enable valgrind extra checks]
   AC_DEFINE([ENABLE_VALGRIND], , [Enable valgrind extra checks])
 fi])
 
-AC_ARG_ENABLE(sse, [  --enable-sse            enable SSE support], [if test "$enableval" = yes; then
+AC_ARG_ENABLE(sse, [  --enable-sse            Enable SSE support], [if test "$enableval" = yes; then
 AC_DEFINE([_USE_SSE], , [Enable SSE support])
 CFLAGS="$CFLAGS -O3 -msse"
 fi
 ])
 
-AC_ARG_ENABLE(fixed-point, [  --enable-fixed-point    compile as fixed-point],
+AC_ARG_ENABLE(fixed-point, [  --enable-fixed-point    Compile as fixed-point],
 [if test "$enableval" = yes; then
   AC_DEFINE([FIXED_POINT], , [Compile as fixed-point])
 fi])
@@ -159,17 +159,20 @@ AC_ARG_ENABLE(fixed-point-debug, [  --enable-fixed-point-debug  Debug fixed-poin
   AC_DEFINE([FIXED_DEBUG], , [Debug fixed-point implementation])
 fi])
 
-AC_ARG_ENABLE(epic-48k, [  --enable-epic-48k       enable support for Epic 4.8 kbps mode],
+AC_ARG_ENABLE(epic-48k, [  --enable-epic-48k       Enable support for Epic 4.8 kbps mode],
 [if test "$enableval" = yes; then
   AC_DEFINE([EPIC_48K], , [Enable support for Epic 4.8 kbps mode])
 fi])
 
-AC_ARG_ENABLE(ti-c55x, [  --enable-ti-c55x         enable support for TI C55X DSP],
+AC_ARG_ENABLE(ti-c55x, [  --enable-ti-c55x        Enable support for TI C55X DSP],
 [if test "$enableval" = yes; then
   AC_DEFINE([TI_C55X], , [Enable support for TI C55X DSP])
 fi])
 
-dnl Output the makefiles and version.h.
+AC_ARG_ENABLE(16bit-precision, [  --enable-16bit-precision Reduce precision to 16 bits (EXPERIMENTAL)],
+[if test "$enableval" = yes; then
+  AC_DEFINE([PRECISION16], , [Reduce precision to 16 bits (EXPERIMENTAL)])
+fi])
 
 AC_OUTPUT([Makefile libspeex/Makefile src/Makefile doc/Makefile Speex.spec
            include/Makefile include/speex/Makefile speex.pc
