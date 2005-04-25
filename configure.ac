@@ -70,6 +70,34 @@ fi
 AC_SUBST(SIZE16)
 AC_SUBST(SIZE32)
 
+AC_MSG_CHECKING(for C99 variable-size arrays)
+AC_TRY_RUN([
+int foo=10;
+int main() {int array[foo];return 0;}
+],
+[has_var_arrays=yes;AC_DEFINE([VAR_ARRAYS], [], [Use C99 variable-size arrays])],
+has_var_arrays=no,
+has_var_arrays=no,
+)
+AC_MSG_RESULT($has_var_arrays)
+
+AC_MSG_CHECKING(for alloca)
+AC_TRY_RUN([
+#include <alloca.h>
+int foo=10;
+int main() {int *array = alloca(foo);return 0;}
+],
+[
+has_alloca=yes;
+if test x$has_var_arrays = "xno" ; then
+AC_DEFINE([USE_ALLOCA], [], [Make use of alloca])
+fi
+],
+has_alloca=no,
+has_alloca=no,
+)
+AC_MSG_RESULT($has_alloca)
+
 
 AC_CHECK_HEADERS(sys/soundcard.h sys/audioio.h)
 
@@ -95,12 +123,12 @@ AC_DEFINE_UNQUOTED(SPEEX_MINOR_VERSION, ${SPEEX_MINOR_VERSION}, [Version minor])
 AC_DEFINE_UNQUOTED(SPEEX_MICRO_VERSION, ${SPEEX_MICRO_VERSION}, [Version micro])
 AC_DEFINE_UNQUOTED(SPEEX_EXTRA_VERSION, "${SPEEX_EXTRA_VERSION}", [Version extra])
 
-AC_ARG_ENABLE(wideband, [  --disable-wideband       disable wideband codec],
+AC_ARG_ENABLE(wideband, [  --disable-wideband      Disable wideband codec],
 [if test "$enableval" = no; then
   AC_DEFINE([DISABLE_WIDEBAND], , [Disable wideband codec])
 fi])
 
-AC_ARG_ENABLE(valgrind, [  --enable-valgrind       enable valgrind extra checks],
+AC_ARG_ENABLE(valgrind, [  --enable-valgrind       Enable valgrind extra checks],
 [if test "$enableval" = yes; then
   AC_DEFINE([ENABLE_VALGRIND], , [Enable valgrind extra checks])
 fi])
@@ -116,12 +144,12 @@ AC_ARG_ENABLE(fixed-point, [  --enable-fixed-point    compile as fixed-point],
   AC_DEFINE([FIXED_POINT], , [Compile as fixed-point])
 fi])
 
-AC_ARG_ENABLE(arm4-asm, [  --enable-arm4-asm        make use of ARM4 assembly instructions],
+AC_ARG_ENABLE(arm4-asm, [  --enable-arm4-asm       Make use of ARM4 assembly instructions],
 [if test "$enableval" = yes; then
   AC_DEFINE([ARM4_ASM], , [Make use of ARM4 assembly instructions])
 fi])
 
-AC_ARG_ENABLE(arm5e-asm, [  --enable-arm5e-asm        make use of ARM5E assembly instructions],
+AC_ARG_ENABLE(arm5e-asm, [  --enable-arm5e-asm      Make use of ARM5E assembly instructions],
 [if test "$enableval" = yes; then
   AC_DEFINE([ARM5_ASM], , [Make use of ARM5E assembly instructions])
 fi])

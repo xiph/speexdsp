@@ -34,6 +34,10 @@
 #ifndef STACK_ALLOC_H
 #define STACK_ALLOC_H
 
+#ifdef USE_ALLOCA
+#include <alloca.h>
+#endif
+
 #ifdef ENABLE_VALGRIND
 
 #include <valgrind/memcheck.h>

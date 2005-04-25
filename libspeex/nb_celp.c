@@ -95,11 +95,15 @@ void *nb_encoder_init(const SpeexMode *m)
    int i;
 
    mode=(const SpeexNBMode *)m->mode;
+#if defined(VAR_ARRAYS) || defined (USE_ALLOCA)
+   st = (EncState*)speex_alloc(sizeof(EncState));
+   st->stack = NULL;
+#else
    st = (EncState*)speex_alloc(sizeof(EncState)+8000*sizeof(spx_sig_t));
+   st->stack = ((char*)st) + sizeof(EncState);
+#endif
    if (!st)
       return NULL;
-
-   st->stack = ((char*)st) + sizeof(EncState);
    
    st->mode=m;
 
@@ -125,46 +129,46 @@ void *nb_encoder_init(const SpeexMode *m)
 #endif
 
    /* Allocating input buffer */
-   st->inBuf = PUSH(st->stack, st->windowSize, spx_sig_t);
+   st->inBuf = speex_alloc((st->windowSize)*sizeof(spx_sig_t));
    st->frame = st->inBuf;
    /* Allocating excitation buffer */
-   st->excBuf = PUSH(st->stack, mode->frameSize+mode->pitchEnd+1, spx_sig_t);
+   st->excBuf = speex_alloc((mode->frameSize+mode->pitchEnd+1)*sizeof(spx_sig_t));
    st->exc = st->excBuf + mode->pitchEnd + 1;
-   st->swBuf = PUSH(st->stack, mode->frameSize+mode->pitchEnd+1, spx_sig_t);
+   st->swBuf = speex_alloc((mode->frameSize+mode->pitchEnd+1)*sizeof(spx_sig_t));
    st->sw = st->swBuf + mode->pitchEnd + 1;
 
-   st->innov = PUSH(st->stack, st->frameSize, spx_sig_t);
+   st->innov = speex_alloc((st->frameSize)*sizeof(spx_sig_t));
 
    /* Asymmetric "pseudo-Hamming" window */
    {
       int part1, part2;
       part1=st->frameSize - (st->subframeSize>>1);
       part2=(st->frameSize>>1) + (st->subframeSize>>1);
-      st->window = PUSH(st->stack, st->windowSize, spx_word16_t);
+      st->window = speex_alloc((st->windowSize)*sizeof(spx_word16_t));
       for (i=0;i<part1;i++)
          st->window[i]=(spx_word16_t)(SIG_SCALING*(.54-.46*cos(M_PI*i/part1)));
       for (i=0;i<part2;i++)
          st->window[part1+i]=(spx_word16_t)(SIG_SCALING*(.54+.46*cos(M_PI*i/part2)));
    }
    /* Create the window for autocorrelation (lag-windowing) */
-   st->lagWindow = PUSH(st->stack, st->lpcSize+1, spx_word16_t);
+   st->lagWindow = speex_alloc((st->lpcSize+1)*sizeof(spx_word16_t));
    for (i=0;i<st->lpcSize+1;i++)
       st->lagWindow[i]=16384*exp(-.5*sqr(2*M_PI*st->lag_factor*i));
 
-   st->autocorr = PUSH(st->stack, st->lpcSize+1, spx_word16_t);
+   st->autocorr = speex_alloc((st->lpcSize+1)*sizeof(spx_word16_t));
 
-   st->lpc = PUSH(st->stack, st->lpcSize+1, spx_coef_t);
-   st->interp_lpc = PUSH(st->stack, st->lpcSize+1, spx_coef_t);
-   st->interp_qlpc = PUSH(st->stack, st->lpcSize+1, spx_coef_t);
-   st->bw_lpc1 = PUSH(st->stack, st->lpcSize+1, spx_coef_t);
-   st->bw_lpc2 = PUSH(st->stack, st->lpcSize+1, spx_coef_t);
+   st->lpc = speex_alloc((st->lpcSize+1)*sizeof(spx_coef_t));
+   st->interp_lpc = speex_alloc((st->lpcSize+1)*sizeof(spx_coef_t));
+   st->interp_qlpc = speex_alloc((st->lpcSize+1)*sizeof(spx_coef_t));
+   st->bw_lpc1 = speex_alloc((st->lpcSize+1)*sizeof(spx_coef_t));
+   st->bw_lpc2 = speex_alloc((st->lpcSize+1)*sizeof(spx_coef_t));
 
-   st->lsp = PUSH(st->stack, st->lpcSize, spx_lsp_t);
-   st->qlsp = PUSH(st->stack, st->lpcSize, spx_lsp_t);
-   st->old_lsp = PUSH(st->stack, st->lpcSize, spx_lsp_t);
-   st->old_qlsp = PUSH(st->stack, st->lpcSize, spx_lsp_t);
-   st->interp_lsp = PUSH(st->stack, st->lpcSize, spx_lsp_t);
-   st->interp_qlsp = PUSH(st->stack, st->lpcSize, spx_lsp_t);
+   st->lsp = speex_alloc((st->lpcSize)*sizeof(spx_lsp_t));
+   st->qlsp = speex_alloc((st->lpcSize)*sizeof(spx_lsp_t));
+   st->old_lsp = speex_alloc((st->lpcSize)*sizeof(spx_lsp_t));
+   st->old_qlsp = speex_alloc((st->lpcSize)*sizeof(spx_lsp_t));
+   st->interp_lsp = speex_alloc((st->lpcSize)*sizeof(spx_lsp_t));
+   st->interp_qlsp = speex_alloc((st->lpcSize)*sizeof(spx_lsp_t));
 
    st->first = 1;
    for (i=0;i<st->lpcSize;i++)
@@ -172,16 +176,16 @@ void *nb_encoder_init(const SpeexMode *m)
       st->lsp[i]=LSP_SCALING*(M_PI*((float)(i+1)))/(st->lpcSize+1);
    }
 
-   st->mem_sp = PUSH(st->stack, st->lpcSize, spx_mem_t);
-   st->mem_sw = PUSH(st->stack, st->lpcSize, spx_mem_t);
-   st->mem_sw_whole = PUSH(st->stack, st->lpcSize, spx_mem_t);
-   st->mem_exc = PUSH(st->stack, st->lpcSize, spx_mem_t);
+   st->mem_sp = speex_alloc((st->lpcSize)*sizeof(spx_mem_t));
+   st->mem_sw = speex_alloc((st->lpcSize)*sizeof(spx_mem_t));
+   st->mem_sw_whole = speex_alloc((st->lpcSize)*sizeof(spx_mem_t));
+   st->mem_exc = speex_alloc((st->lpcSize)*sizeof(spx_mem_t));
 
-   st->pi_gain = PUSH(st->stack, st->nbSubframes, spx_word32_t);
+   st->pi_gain = speex_alloc((st->nbSubframes)*sizeof(spx_word32_t));
 
-   st->pitch = PUSH(st->stack, st->nbSubframes, int);
+   st->pitch = speex_alloc((st->nbSubframes)*sizeof(int));
 
-   st->vbr = PUSHS(st->stack, VBRState);
+   st->vbr = speex_alloc(sizeof(VBRState));
    vbr_init(st->vbr);
    st->vbr_quality = 8;
    st->vbr_enabled = 0;
@@ -928,10 +932,18 @@ void *nb_decoder_init(const SpeexMode *m)
    int i;
 
    mode=(const SpeexNBMode*)m->mode;
+#if defined(VAR_ARRAYS) || defined (USE_ALLOCA)
+   st = (DecState *)speex_alloc(sizeof(DecState));
+   st->stack = NULL;
+#else
    st = (DecState *)speex_alloc(sizeof(DecState)+4000*sizeof(spx_sig_t));
+   st->stack = ((char*)st) + sizeof(DecState);
+#endif
+   if (!st)
+      return NULL;
+
    st->mode=m;
 
-   st->stack = ((char*)st) + sizeof(DecState);
 
    st->encode_submode = 1;
 #ifdef EPIC_48K
@@ -953,25 +965,25 @@ void *nb_decoder_init(const SpeexMode *m)
    st->lpc_enh_enabled=0;
 
 
-   st->inBuf = PUSH(st->stack, st->frameSize, spx_sig_t);
+   st->inBuf = speex_alloc((st->frameSize)*sizeof(spx_sig_t));
    st->frame = st->inBuf;
-   st->excBuf = PUSH(st->stack, st->frameSize + st->max_pitch + 1, spx_sig_t);
+   st->excBuf = speex_alloc((st->frameSize + st->max_pitch + 1)*sizeof(spx_sig_t));
    st->exc = st->excBuf + st->max_pitch + 1;
    for (i=0;i<st->frameSize;i++)
       st->inBuf[i]=0;
    for (i=0;i<st->frameSize + st->max_pitch + 1;i++)
       st->excBuf[i]=0;
-   st->innov = PUSH(st->stack, st->frameSize, spx_sig_t);
+   st->innov = speex_alloc((st->frameSize)*sizeof(spx_sig_t));
 
-   st->interp_qlpc = PUSH(st->stack, st->lpcSize+1, spx_coef_t);
-   st->qlsp = PUSH(st->stack, st->lpcSize, spx_lsp_t);
-   st->old_qlsp = PUSH(st->stack, st->lpcSize, spx_lsp_t);
-   st->interp_qlsp = PUSH(st->stack, st->lpcSize, spx_lsp_t);
-   st->mem_sp = PUSH(st->stack, 5*st->lpcSize, spx_mem_t);
-   st->comb_mem = PUSHS(st->stack, CombFilterMem);
+   st->interp_qlpc = speex_alloc((st->lpcSize+1)*sizeof(spx_coef_t));
+   st->qlsp = speex_alloc((st->lpcSize)*sizeof(spx_lsp_t));
+   st->old_qlsp = speex_alloc((st->lpcSize)*sizeof(spx_lsp_t));
+   st->interp_qlsp = speex_alloc((st->lpcSize)*sizeof(spx_lsp_t));
+   st->mem_sp = speex_alloc((5*st->lpcSize)*sizeof(spx_mem_t));
+   st->comb_mem = speex_alloc(sizeof(CombFilterMem));
    comb_filter_mem_init (st->comb_mem);
 
-   st->pi_gain = PUSH(st->stack, st->nbSubframes, spx_word32_t);
+   st->pi_gain = speex_alloc((st->nbSubframes)*sizeof(spx_word32_t));
    st->last_pitch = 40;
    st->count_lost=0;
    st->pitch_gain_buf[0] = st->pitch_gain_buf[1] = st->pitch_gain_buf[2] = 0;
