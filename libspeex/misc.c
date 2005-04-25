@@ -79,26 +79,6 @@ spx_uint32_t le_int(spx_uint32_t i)
    return ret;
 }
 
-unsigned short be_short(unsigned short s)
-{
-   unsigned short ret=s;
-#ifndef WORDS_BIGENDIAN
-   ret =  s>>8;
-   ret += s<<8;
-#endif
-   return ret;
-}
-
-unsigned short le_short(unsigned short s)
-{
-   unsigned short ret=s;
-#ifdef WORDS_BIGENDIAN
-   ret =  s>>8;
-   ret += s<<8;
-#endif
-   return ret;
-}
-
 #if BYTES_PER_CHAR == 2
 void speex_memcpy_bytes(char *dst, char *src, int nbytes)
 {
@@ -119,7 +99,7 @@ void speex_memcpy_bytes(char *dst, char *src, int nbytes)
 void speex_memset_bytes(char *dst, char c, int nbytes)
 {
   int i;
-  short cc = ((c << 8) | c);
+  spx_int16_t cc = ((c << 8) | c);
   int nchars = nbytes/BYTES_PER_CHAR;
   for (i=0;i<nchars;i++)
     dst[i]=cc;

@@ -36,7 +36,8 @@
 #ifndef SPEEX_H
 #define SPEEX_H
 
-#include "speex_bits.h"
+#include "speex/speex_bits.h"
+#include "speex/speex_types.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -305,7 +306,7 @@ int speex_encode(void *state, float *in, SpeexBits *bits);
  @param in Frame that will be encoded with a +-2^15 range
  @param bits Bit-stream where the data will be written
  */
-int speex_encode_int(void *state, short *in, SpeexBits *bits);
+int speex_encode_int(void *state, spx_int16_t *in, SpeexBits *bits);
 
 /** Used like the ioctl function to control the encoder parameters
  *
@@ -351,7 +352,7 @@ int speex_decode(void *state, SpeexBits *bits, float *out);
  * @param out Where to write the decoded frame
  * @return return status (0 for no error, -1 for end of stream, -2 other)
  */
-int speex_decode_int(void *state, SpeexBits *bits, short *out);
+int speex_decode_int(void *state, SpeexBits *bits, spx_int16_t *out);
 
 /** Used like the ioctl function to control the encoder parameters
  *

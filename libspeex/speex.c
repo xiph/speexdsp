@@ -87,7 +87,7 @@ int speex_encode(void *state, float *in, SpeexBits *bits)
 {
    int i;
    int N;
-   short short_in[MAX_IN_SAMPLES];
+   spx_int16_t short_in[MAX_IN_SAMPLES];
    speex_encoder_ctl(state, SPEEX_GET_FRAME_SIZE, &N);
    for (i=0;i<N;i++)
    {
@@ -96,12 +96,12 @@ int speex_encode(void *state, float *in, SpeexBits *bits)
       else if (in[i]<-32768.f)
          short_in[i] = -32768;
       else
-         short_in[i] = (short)floor(.5+in[i]);
+         short_in[i] = (spx_int16_t)floor(.5+in[i]);
    }
    return (*((SpeexMode**)state))->enc(state, short_in, bits);
 }
 
-int speex_encode_int(void *state, short *in, SpeexBits *bits)
+int speex_encode_int(void *state, spx_int16_t *in, SpeexBits *bits)
 {
    SpeexMode *mode;
    mode = *(SpeexMode**)state;
@@ -120,7 +120,7 @@ int speex_decode(void *state, SpeexBits *bits, float *out)
    return ret;
 }
 
-int speex_decode_int(void *state, SpeexBits *bits, short *out)
+int speex_decode_int(void *state, SpeexBits *bits, spx_int16_t *out)
 {
    SpeexMode *mode = *(SpeexMode**)state;
    return (mode)->dec(state, bits, out);
@@ -133,7 +133,7 @@ int speex_encode(void *state, float *in, SpeexBits *bits)
    return (*((SpeexMode**)state))->enc(state, in, bits);
 }
 
-int speex_encode_int(void *state, short *in, SpeexBits *bits)
+int speex_encode_int(void *state, spx_int16_t *in, SpeexBits *bits)
 {
    int i;
    int N;
@@ -149,7 +149,7 @@ int speex_decode(void *state, SpeexBits *bits, float *out)
    return (*((SpeexMode**)state))->dec(state, bits, out);
 }
 
-int speex_decode_int(void *state, SpeexBits *bits, short *out)
+int speex_decode_int(void *state, SpeexBits *bits, spx_int16_t *out)
 {
    int i;
    int N;
@@ -164,7 +164,7 @@ int speex_decode_int(void *state, SpeexBits *bits, short *out)
       else if (float_out[i]<-32768.f)
          out[i] = -32768;
       else
-         out[i] = (short)floor(.5+float_out[i]);
+         out[i] = (spx_int16_t)floor(.5+float_out[i]);
    }
    return ret;
 }

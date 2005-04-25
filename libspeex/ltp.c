@@ -54,7 +54,6 @@
 
 static spx_word32_t inner_prod(const spx_word16_t *x, const spx_word16_t *y, int len)
 {
-   int i=0;
    spx_word32_t sum=0;
    len >>= 2;
    while(len--)

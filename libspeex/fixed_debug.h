@@ -48,11 +48,11 @@ static inline short NEG16(int x)
    int res;
    if (!VERIFY_SHORT(x))
    {
-      fprintf (stderr, "NEG16: input is not short: %d\n", x);
+      fprintf (stderr, "NEG16: input is not short: %d\n", (int)x);
    }
    res = -x;
    if (!VERIFY_SHORT(res))
-      fprintf (stderr, "NEG16: output is not short: %d\n", res);
+      fprintf (stderr, "NEG16: output is not short: %d\n", (int)res);
    spx_mips++;
    return res;
 }
@@ -61,11 +61,11 @@ static inline int NEG32(long long x)
    long long res;
    if (!VERIFY_INT(x))
    {
-      fprintf (stderr, "NEG16: input is not int: %d\n", x);
+      fprintf (stderr, "NEG16: input is not int: %d\n", (int)x);
    }
    res = -x;
    if (!VERIFY_INT(res))
-      fprintf (stderr, "NEG16: output is not int: %d\n", res);
+      fprintf (stderr, "NEG16: output is not int: %d\n", (int)res);
    spx_mips++;
    return res;
 }
@@ -126,11 +126,11 @@ static inline int SHR32(long long a, int shift)
    long long  res;
    if (!VERIFY_INT(a) || !VERIFY_SHORT(shift))
    {
-      fprintf (stderr, "SHR32: inputs are not int: %d %d\n", a, shift);
+      fprintf (stderr, "SHR32: inputs are not int: %d %d\n", (int)a, shift);
    }
    res = a>>shift;
    if (!VERIFY_INT(res))
-      fprintf (stderr, "SHR32: output is not int: %d\n", res);
+      fprintf (stderr, "SHR32: output is not int: %d\n", (int)res);
    spx_mips++;
    return res;
 }
@@ -139,11 +139,11 @@ static inline int SHL32(long long a, int shift)
    long long  res;
    if (!VERIFY_INT(a) || !VERIFY_SHORT(shift))
    {
-      fprintf (stderr, "SHR32: inputs are not int: %d %d\n", a, shift);
+      fprintf (stderr, "SHR32: inputs are not int: %d %d\n", (int)a, shift);
    }
    res = a<<shift;
    if (!VERIFY_INT(res))
-      fprintf (stderr, "SHR32: output is not int: %d\n", res);
+      fprintf (stderr, "SHR32: output is not int: %d\n", (int)res);
    spx_mips++;
    return res;
 }
@@ -254,11 +254,11 @@ static inline int MULT16_32_QX(int a, long long b, int Q)
    long long res;
    if (!VERIFY_SHORT(a) || !VERIFY_INT(b))
    {
-      fprintf (stderr, "MULT16_32_Q%d: inputs are not short+int: %d %d\n", Q, a, b);
+      fprintf (stderr, "MULT16_32_Q%d: inputs are not short+int: %d %d\n", Q, (int)a, (int)b);
    }
    res = (((long long)a)*(long long)b) >> Q;
    if (!VERIFY_INT(res))
-      fprintf (stderr, "MULT16_32_Q%d: output is not int: %d*%d=%d\n", Q, a, b,(int)res);
+      fprintf (stderr, "MULT16_32_Q%d: output is not int: %d*%d=%d\n", Q, (int)a, (int)b,(int)res);
    spx_mips+=5;
    return res;
 }

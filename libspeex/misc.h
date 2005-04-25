@@ -52,10 +52,6 @@ void print_vec(float *vec, int len, char *name);
 spx_uint32_t be_int(spx_uint32_t i);
 spx_uint32_t le_int(spx_uint32_t i);
 
-
-unsigned short be_short(unsigned short s);
-unsigned short le_short(unsigned short s);
-
 /** Speex wrapper for calloc. To do your own dynamic allocation, all you need to do is replace this function, speex_realloc and speex_free */
 void *speex_alloc (int size);
 

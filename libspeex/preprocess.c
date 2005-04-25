@@ -547,7 +547,7 @@ static void speex_compute_agc(SpeexPreprocessState *st, float mean_prior)
    
 }
 
-static void preprocess_analysis(SpeexPreprocessState *st, short *x)
+static void preprocess_analysis(SpeexPreprocessState *st, spx_int16_t *x)
 {
    int i;
    int N = st->ps_size;
@@ -620,7 +620,7 @@ static void update_noise_prob(SpeexPreprocessState *st)
 
 #define NOISE_OVERCOMPENS 1.4
 
-int speex_preprocess(SpeexPreprocessState *st, short *x, int *echo)
+int speex_preprocess(SpeexPreprocessState *st, spx_int16_t *x, int *echo)
 {
    int i;
    int is_speech=1;
@@ -937,7 +937,7 @@ int speex_preprocess(SpeexPreprocessState *st, short *x, int *echo)
    return is_speech;
 }
 
-void speex_preprocess_estimate_update(SpeexPreprocessState *st, short *x, int *echo)
+void speex_preprocess_estimate_update(SpeexPreprocessState *st, spx_int16_t *x, int *echo)
 {
    int i;
    int N = st->ps_size;

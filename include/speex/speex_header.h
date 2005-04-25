@@ -37,13 +37,13 @@
 #ifndef SPEEX_HEADER_H
 #define SPEEX_HEADER_H
 
+#include "speex/speex_types.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 struct SpeexMode;
-
-typedef   signed long spx_int32_t;
 
 #define SPEEX_HEADER_STRING_LENGTH 8
 

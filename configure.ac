@@ -34,6 +34,42 @@ AM_PROG_LIBTOOL
 AC_C_BIGENDIAN
 AC_C_CONST
 AC_C_INLINE
+AC_C_RESTRICT
+
+AC_CHECK_SIZEOF(short)
+AC_CHECK_SIZEOF(int)
+AC_CHECK_SIZEOF(long)
+AC_CHECK_SIZEOF(long long)
+
+if test x$has_char16 = "xyes" ; then
+        case 1 in
+                $ac_cv_sizeof_short) SIZE16="short";;
+                $ac_cv_sizeof_int) SIZE16="int";;
+        esac
+else
+        case 2 in
+                $ac_cv_sizeof_short) SIZE16="short";;
+                $ac_cv_sizeof_int) SIZE16="int";;
+        esac
+fi
+
+if test x$has_char16 = "xyes" ; then
+        case 2 in
+                $ac_cv_sizeof_int) SIZE32="int";;
+                $ac_cv_sizeof_long) SIZE32="long";;
+                $ac_cv_sizeof_short) SIZE32="short";;
+        esac
+else
+        case 4 in
+                $ac_cv_sizeof_int) SIZE32="int";;
+                $ac_cv_sizeof_long) SIZE32="long";;
+                $ac_cv_sizeof_short) SIZE32="short";;
+        esac
+fi
+
+AC_SUBST(SIZE16)
+AC_SUBST(SIZE32)
+
 
 AC_CHECK_HEADERS(sys/soundcard.h sys/audioio.h)
 
@@ -110,9 +146,10 @@ dnl Output the makefiles and version.h.
 AC_OUTPUT([Makefile libspeex/Makefile src/Makefile doc/Makefile Speex.spec
            include/Makefile include/speex/Makefile speex.pc
            win32/Makefile win32/libspeex/Makefile win32/speexenc/Makefile
-           win32/speexdec/Makefile ])
+           win32/speexdec/Makefile include/speex/speex_types.h ])
 
 if test "x$src" = "x"; then 
+echo "**IMPORTANT**"
 echo "You don't seem to have the development package for libogg (libogg-devel) installed. Only the Speex library (libspeex) will be built (no encoder/decoder executable)"
 echo "You can download libogg from http://www.vorbis.com/download.psp"
 fi

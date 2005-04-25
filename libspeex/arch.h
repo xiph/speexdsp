@@ -35,16 +35,14 @@
 #ifndef ARCH_H
 #define ARCH_H
 
-#define ABS(x) ((x) < 0 ? (-(x)) : (x))
+#include "speex/speex_types.h"
 
-/* FIXME: Should provide better detection */
-/*typedef   signed long spx_int32_t;*/
-typedef unsigned long spx_uint32_t;
+#define ABS(x) ((x) < 0 ? (-(x)) : (x))
 
 #ifdef FIXED_POINT
 
-typedef signed short spx_word16_t;
-typedef signed int   spx_word32_t;
+typedef spx_int16_t spx_word16_t;
+typedef spx_int32_t   spx_word32_t;
 #ifdef _MSC_VER
 typedef __int64      spx_word64_t;
 #else
