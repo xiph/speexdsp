@@ -48,13 +48,15 @@
 static void compute_weighted_codebook(const signed char *shape_cb, const spx_word16_t *r, spx_word16_t *resp, spx_word16_t *resp2, spx_word32_t *E, int shape_cb_size, int subvect_size, char *stack)
 {
    int i, j, k;
+   VARDECL(spx_word16_t *shape);
+   ALLOC(shape, subvect_size, spx_word16_t);
    for (i=0;i<shape_cb_size;i++)
    {
       spx_word16_t *res;
-      const signed char *shape;
-
+      
       res = resp+i*subvect_size;
-      shape = shape_cb+i*subvect_size;
+      for (k=0;k<subvect_size;k++)
+         shape[k] = (spx_word16_t)shape_cb[i*subvect_size+k];
       E[i]=0;
 
       /* Compute codeword response using convolution with impulse response */

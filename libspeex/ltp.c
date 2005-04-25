@@ -445,9 +445,9 @@ int cdbk_offset
          spx_word32_t sum=0;
          spx_word16_t g0,g1,g2;
          ptr = gain_cdbk+3*i;
-         g0=ptr[0]+32;
-         g1=ptr[1]+32;
-         g2=ptr[2]+32;
+         g0=ADD16((spx_word16_t)ptr[0],32);
+         g1=ADD16((spx_word16_t)ptr[1],32);
+         g2=ADD16((spx_word16_t)ptr[2],32);
 
          sum = ADD32(sum,MULT16_32_Q14(MULT16_16_16(g0,64),C[0]));
          sum = ADD32(sum,MULT16_32_Q14(MULT16_16_16(g1,64),C[1]));
