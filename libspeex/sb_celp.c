@@ -216,11 +216,18 @@ void *sb_encoder_init(const SpeexMode *m)
    SBEncState *st;
    const SpeexSBMode *mode;
 
+#if defined(VAR_ARRAYS) || defined (USE_ALLOCA)
+   st = (SBEncState*)speex_alloc(sizeof(SBEncState));
+   st->stack = NULL;
+#else
    st = (SBEncState*)speex_alloc(sizeof(SBEncState)+10000*sizeof(spx_sig_t));
+   st->stack = ((char*)st) + sizeof(SBEncState);
+#endif
+   if (!st)
+      return NULL;
    st->mode = m;
    mode = (const SpeexSBMode*)m->mode;
 
-   st->stack = ((char*)st) + sizeof(SBEncState);
 
    st->st_low = speex_encoder_init(mode->nb_mode);
    st->full_frame_size = 2*mode->frameSize;
@@ -779,13 +786,20 @@ void *sb_decoder_init(const SpeexMode *m)
 {
    SBDecState *st;
    const SpeexSBMode *mode;
+#if defined(VAR_ARRAYS) || defined (USE_ALLOCA)
+   st = (SBDecState*)speex_alloc(sizeof(SBDecState));
+   st->stack = NULL;
+#else   
    st = (SBDecState*)speex_alloc(sizeof(SBDecState)+6000*sizeof(spx_sig_t));
+   st->stack = ((char*)st) + sizeof(SBDecState);
+#endif
+   if (!st)
+      return NULL;
    st->mode = m;
    mode=(const SpeexSBMode*)m->mode;
 
    st->encode_submode = 1;
 
-   st->stack = ((char*)st) + sizeof(SBDecState);
 
 
 
