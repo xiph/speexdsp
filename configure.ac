@@ -36,39 +36,7 @@ AC_C_CONST
 AC_C_INLINE
 AC_C_RESTRICT
 
-AC_CHECK_SIZEOF(short)
-AC_CHECK_SIZEOF(int)
-AC_CHECK_SIZEOF(long)
-AC_CHECK_SIZEOF(long long)
 
-if test x$has_char16 = "xyes" ; then
-        case 1 in
-                $ac_cv_sizeof_short) SIZE16="short";;
-                $ac_cv_sizeof_int) SIZE16="int";;
-        esac
-else
-        case 2 in
-                $ac_cv_sizeof_short) SIZE16="short";;
-                $ac_cv_sizeof_int) SIZE16="int";;
-        esac
-fi
-
-if test x$has_char16 = "xyes" ; then
-        case 2 in
-                $ac_cv_sizeof_int) SIZE32="int";;
-                $ac_cv_sizeof_long) SIZE32="long";;
-                $ac_cv_sizeof_short) SIZE32="short";;
-        esac
-else
-        case 4 in
-                $ac_cv_sizeof_int) SIZE32="int";;
-                $ac_cv_sizeof_long) SIZE32="long";;
-                $ac_cv_sizeof_short) SIZE32="short";;
-        esac
-fi
-
-AC_SUBST(SIZE16)
-AC_SUBST(SIZE32)
 
 AC_MSG_CHECKING(for C99 variable-size arrays)
 AC_TRY_RUN([
@@ -166,6 +134,7 @@ fi])
 
 AC_ARG_ENABLE(ti-c55x, [  --enable-ti-c55x        Enable support for TI C55X DSP],
 [if test "$enableval" = yes; then
+  has_char16=yes;
   AC_DEFINE([TI_C55X], , [Enable support for TI C55X DSP])
 fi])
 
@@ -173,6 +142,40 @@ AC_ARG_ENABLE(16bit-precision, [  --enable-16bit-precision Reduce precision to 1
 [if test "$enableval" = yes; then
   AC_DEFINE([PRECISION16], , [Reduce precision to 16 bits (EXPERIMENTAL)])
 fi])
+
+AC_CHECK_SIZEOF(short)
+AC_CHECK_SIZEOF(int)
+AC_CHECK_SIZEOF(long)
+AC_CHECK_SIZEOF(long long)
+
+if test x$has_char16 = "xyes" ; then
+        case 1 in
+                $ac_cv_sizeof_short) SIZE16="short";;
+                $ac_cv_sizeof_int) SIZE16="int";;
+        esac
+else
+        case 2 in
+                $ac_cv_sizeof_short) SIZE16="short";;
+                $ac_cv_sizeof_int) SIZE16="int";;
+        esac
+fi
+
+if test x$has_char16 = "xyes" ; then
+        case 2 in
+                $ac_cv_sizeof_int) SIZE32="int";;
+                $ac_cv_sizeof_long) SIZE32="long";;
+                $ac_cv_sizeof_short) SIZE32="short";;
+        esac
+else
+        case 4 in
+                $ac_cv_sizeof_int) SIZE32="int";;
+                $ac_cv_sizeof_long) SIZE32="long";;
+                $ac_cv_sizeof_short) SIZE32="short";;
+        esac
+fi
+
+AC_SUBST(SIZE16)
+AC_SUBST(SIZE32)
 
 AC_OUTPUT([Makefile libspeex/Makefile src/Makefile doc/Makefile Speex.spec
            include/Makefile include/speex/Makefile speex.pc

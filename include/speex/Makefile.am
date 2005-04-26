@@ -2,7 +2,6 @@
 #AUTOMAKE_OPTIONS = no-dependencies
 
 pkginclude_HEADERS =  speex.h \
-	speex_types.h \
 	speex_bits.h \
 	speex_header.h \
 	speex_callbacks.h \
