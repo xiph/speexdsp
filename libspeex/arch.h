@@ -98,7 +98,7 @@ typedef float spx_word64_t;
 #define LPC_SHIFT    0
 #define SIG_SHIFT    0
 
-#define VERY_SMALL 1e-30
+#define VERY_SMALL 1e-15
 
 #define NEG16(x) (-(x))
 #define NEG32(x) (-(x))

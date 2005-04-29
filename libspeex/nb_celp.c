@@ -515,9 +515,10 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
       /* Final signal synthesis from excitation */
       iir_mem2(st->exc, st->interp_qlpc, st->frame, st->frameSize, st->lpcSize, st->mem_sp);
 
+#ifdef RESYNTH
       for (i=0;i<st->frameSize;i++)
          in[i]=st->frame[i];
-
+#endif
       return 0;
 
    }
@@ -905,6 +906,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
    /* The next frame will not be the first (Duh!) */
    st->first = 0;
 
+#ifdef RESYNTH
    /* Replace input by synthesized speech */
    for (i=0;i<st->frameSize;i++)
    {
@@ -915,6 +917,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
          sig = -32767;
      in[i]=sig;
    }
+#endif
 
    if (SUBMODE(innovation_quant) == noise_codebook_quant || st->submodeID==0)
       st->bounded_pitch = 1;
@@ -1034,7 +1037,7 @@ static void nb_decode_lost(DecState *st, spx_word16_t *out, char *stack)
    if (pitch_gain>.95)
       pitch_gain=.95;
 
-   pitch_gain *= fact;
+   pitch_gain = fact*pitch_gain + VERY_SMALL;
 
    /* Shift all buffers by one frame */
    /*speex_move(st->inBuf, st->inBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(spx_sig_t));*/
@@ -1089,7 +1092,7 @@ static void nb_decode_lost(DecState *st, spx_word16_t *out, char *stack)
          /*rand();*/
 #else
          /*exc[i]=pitch_gain*exc[i-st->last_pitch] +  fact*st->innov[i+offset];*/
-         exc[i]=pitch_gain*exc[i-st->last_pitch] + 
+         exc[i]=pitch_gain*(exc[i-st->last_pitch]+VERY_SMALL) + 
          fact*sqrt(1-pitch_gain)*speex_rand(innov_gain);
 #endif
       }
@@ -1267,7 +1270,7 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
             pgain=.6;
 	 innov_gain = compute_rms(st->innov, st->frameSize);
          for (i=0;i<st->frameSize;i++)
-            st->exc[i]=0;
+            st->exc[i]=VERY_SMALL;
          speex_rand_vec(innov_gain, st->exc, st->frameSize);
       }
 

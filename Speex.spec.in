@@ -41,7 +41,7 @@ Speex development files.
 %setup
 
 %build
-export CFLAGS='-O3 -DRELEASE'
+export CFLAGS='-O3'
 ./configure --prefix=/usr --enable-shared --enable-static
 make
 

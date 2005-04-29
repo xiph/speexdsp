@@ -525,8 +525,7 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
       /* Final signal synthesis from excitation */
       iir_mem2(st->exc, st->interp_qlpc, st->high, st->frame_size, st->lpcSize, st->mem_sp);
 
-#ifndef RELEASE
-
+#ifdef RESYNTH
       /* Reconstruct the original */
       fir_mem_up(st->x0d, h0, st->y0, st->full_frame_size, QMF_ORDER, st->g0_mem, stack);
       fir_mem_up(st->high, h1, st->y1, st->full_frame_size, QMF_ORDER, st->g1_mem, stack);
@@ -759,8 +758,7 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
    }
 
 
-#ifndef RELEASE
-
+#ifdef RESYNTH
    /* Reconstruct the original */
    fir_mem_up(st->x0d, h0, st->y0, st->full_frame_size, QMF_ORDER, st->g0_mem, stack);
    fir_mem_up(st->high, h1, st->y1, st->full_frame_size, QMF_ORDER, st->g1_mem, stack);
