@@ -37,23 +37,21 @@ AC_C_INLINE
 AC_C_RESTRICT
 
 
-
 AC_MSG_CHECKING(for C99 variable-size arrays)
-AC_TRY_RUN([
+AC_TRY_COMPILE( , [
 int foo=10;
-int main() {int array[foo];return 0;}
+int array[foo];
 ],
-[has_var_arrays=yes;AC_DEFINE([VAR_ARRAYS], [], [Use C99 variable-size arrays])],
-has_var_arrays=no,
-has_var_arrays=no,
+[has_var_arrays=yes;AC_DEFINE([VAR_ARRAYS], [], [Use C99 variable-size arrays])
+],
+has_var_arrays=no
 )
 AC_MSG_RESULT($has_var_arrays)
 
 AC_MSG_CHECKING(for alloca)
-AC_TRY_RUN([
-#include <alloca.h>
+AC_TRY_COMPILE( [#include <alloca.h>], [
 int foo=10;
-int main() {int *array = alloca(foo);return 0;}
+int *array = alloca(foo);
 ],
 [
 has_alloca=yes;
@@ -61,8 +59,7 @@ if test x$has_var_arrays = "xno" ; then
 AC_DEFINE([USE_ALLOCA], [], [Make use of alloca])
 fi
 ],
-has_alloca=no,
-has_alloca=no,
+has_alloca=no
 )
 AC_MSG_RESULT($has_alloca)
 
