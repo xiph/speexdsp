@@ -31,6 +31,7 @@
 */
 
 #include <math.h>
+#include "misc.h"
 #include "ltp.h"
 #include "stack_alloc.h"
 #include "filters.h"
@@ -485,7 +486,7 @@ float last_pitch_gain)
 #endif
       }
       for (i=0;i<nsf;i++)
-           exc[i]=gain[0]*e[2][i]+gain[1]*e[1][i]+gain[2]*e[0][i];
+           exc[i]=VERY_SMALL+gain[0]*e[2][i]+gain[1]*e[1][i]+gain[2]*e[0][i];
    }
 }
 

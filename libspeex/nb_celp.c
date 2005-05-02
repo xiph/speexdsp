@@ -584,15 +584,15 @@ int nb_encode(void *state, float *in, SpeexBits *bits)
 
       /* Compute impulse response of A(z/g1) / ( A(z)*A(z/g2) )*/
       for (i=0;i<st->subframeSize;i++)
-         exc[i]=0;
+         exc[i]=VERY_SMALL;
       exc[0]=1;
       syn_percep_zero(exc, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2, syn_resp, st->subframeSize, st->lpcSize, stack);
 
       /* Reset excitation */
       for (i=0;i<st->subframeSize;i++)
-         exc[i]=0;
+         exc[i]=VERY_SMALL;
       for (i=0;i<st->subframeSize;i++)
-         exc2[i]=0;
+         exc2[i]=VERY_SMALL;
 
       /* Compute zero response of A(z/g1) / ( A(z/g2) * A(z) ) */
       for (i=0;i<st->lpcSize;i++)
@@ -905,7 +905,7 @@ static void nb_decode_lost(DecState *st, float *out, char *stack)
    if (pitch_gain>.95)
       pitch_gain=.95;
 
-   pitch_gain *= fact;
+   pitch_gain = pitch_gain*fact + VERY_SMALL;
 
    /* Shift all buffers by one frame */
    speex_move(st->inBuf, st->inBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(float));
@@ -968,13 +968,13 @@ static void nb_decode_lost(DecState *st, float *out, char *stack)
          /*rand();*/
 #else
          /*exc[i]=pitch_gain*exc[i-st->last_pitch] +  fact*st->innov[i+offset];*/
-         exc[i]=pitch_gain*exc[i-st->last_pitch] + 
+         exc[i]=pitch_gain*(exc[i-st->last_pitch]+VERY_SMALL) + 
          fact*sqrt(1-pitch_gain)*speex_rand(innov_gain);
 #endif
       }
       }
       for (i=0;i<st->subframeSize;i++)
-         sp[i]=exc[i];
+         sp[i]=exc[i]+VERY_SMALL;
       
       /* Signal synthesis */
       if (st->lpc_enh_enabled)

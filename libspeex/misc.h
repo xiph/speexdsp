@@ -49,7 +49,7 @@
 #pragma warning(disable : 4305)
 #endif
 
-#define VERY_SMALL 1e-30
+#define VERY_SMALL 1e-15
 
 #ifndef RELEASE
 void print_vec(float *vec, int len, char *name);
