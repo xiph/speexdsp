@@ -132,10 +132,14 @@ extern "C" {
 /** */
 #define SPEEX_GET_SUBMODE_ENCODING 37
 
-/*#define SPEEX_SET_SUBMODE_ENCODING 38*/
-/** */
+/*#define SPEEX_SET_LOOKAHEAD 38*/
+/** Returns the lookahead used by Speex */
 #define SPEEX_GET_LOOKAHEAD 39
 
+/** Sets tuning for packet-loss concealment (expected loss rate) */
+#define SPEEX_SET_PLC_TUNING 40
+/** Gets tuning for PLC */
+#define SPEEX_GET_PLC_TUNING 41
 
 /* Used internally, not to be used in applications */
 /** Used internally*/
