@@ -543,7 +543,7 @@ int main(int argc, char **argv)
       outFile = "";
    wav_format = strlen(outFile)>=4 && (
                                        strcmp(outFile+strlen(outFile)-4,".wav")==0
-                                       || strcmp(inFile+strlen(inFile)-4,".WAV")==0);
+                                       || strcmp(outFile+strlen(outFile)-4,".WAV")==0);
    /*Open input file*/
    if (strcmp(inFile, "-")==0)
    {
