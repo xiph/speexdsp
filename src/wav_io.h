@@ -30,6 +30,7 @@
 */
 
 #ifndef WAV_IO_H
+#define WAV_IO_H
 
 #include <stdio.h>
 
