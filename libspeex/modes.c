@@ -32,6 +32,7 @@
 
 */
 
+#include <math.h>
 #include "modes.h"
 #include "ltp.h"
 #include "quant_lsp.h"

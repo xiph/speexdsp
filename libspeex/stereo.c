@@ -118,7 +118,6 @@ void speex_decode_stereo(float *data, int frame_size, SpeexStereoState *stereo)
 void speex_decode_stereo_int(short *data, int frame_size, SpeexStereoState *stereo)
 {
    int i;
-   int N;
    /* FIXME: Do some dynamic allocation here */
    float float_data[2*MAX_IN_SAMPLES];
    speex_decode_stereo(float_data, frame_size, stereo);
