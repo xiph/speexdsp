@@ -109,7 +109,7 @@ typedef struct EncState {
    float  abr_count;
    int    complexity;     /**< Complexity setting (0-10 from least complex to most complex) */
    int    sampling_rate;
-
+   int    plc_tuning;
    int    encode_submode;
    const SpeexSubmode * const *submodes; /**< Sub-mode data */
    int    submodeID;      /**< Activated sub-mode */

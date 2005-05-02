@@ -288,7 +288,8 @@ const spx_sig_t *exc2,
 const spx_word16_t *r,
 spx_sig_t *new_target,
 int  *cdbk_index,
-int cdbk_offset
+int cdbk_offset,
+int plc_tuning
 )
 {
    int i,j;
@@ -431,34 +432,66 @@ int cdbk_offset
       C[2]=corr[0];
       C[3]=A[1][2];
       C[4]=A[0][1];
-      C[5]=A[0][2];
+      C[5]=A[0][2];      
       C[6]=A[2][2];
       C[7]=A[1][1];
       C[8]=A[0][0];
-#ifndef FIXED_POINT
-      C[6]*=.5;
-      C[7]*=.5;
-      C[8]*=.5;
+      
+      /*plc_tuning *= 2;*/
+      if (plc_tuning<2)
+         plc_tuning=2;
+#ifdef FIXED_POINT
+      C[0] = MAC16_32_Q15(C[0],MULT16_16_16(plc_tuning,-327),C[0]);
+      C[1] = MAC16_32_Q15(C[1],MULT16_16_16(plc_tuning,-327),C[1]);
+      C[2] = MAC16_32_Q15(C[2],MULT16_16_16(plc_tuning,-327),C[2]);
+#else
+      C[0]*=1-.01*plc_tuning;
+      C[1]*=1-.01*plc_tuning;
+      C[2]*=1-.01*plc_tuning;
+      C[6]*=.5*(1+.01*plc_tuning);
+      C[7]*=.5*(1+.01*plc_tuning);
+      C[8]*=.5*(1+.01*plc_tuning);
 #endif
       for (i=0;i<gain_cdbk_size;i++)
       {
          spx_word32_t sum=0;
          spx_word16_t g0,g1,g2;
+         spx_word16_t pitch_control=64;
+         spx_word16_t gain_sum;
+         
          ptr = gain_cdbk+3*i;
          g0=ADD16((spx_word16_t)ptr[0],32);
          g1=ADD16((spx_word16_t)ptr[1],32);
          g2=ADD16((spx_word16_t)ptr[2],32);
 
-         sum = ADD32(sum,MULT16_32_Q14(MULT16_16_16(g0,64),C[0]));
-         sum = ADD32(sum,MULT16_32_Q14(MULT16_16_16(g1,64),C[1]));
-         sum = ADD32(sum,MULT16_32_Q14(MULT16_16_16(g2,64),C[2]));
+         gain_sum = g1;
+         if (g0>0)
+            gain_sum += g0;
+         if (g2>0)
+            gain_sum += g2;
+         if (gain_sum > 64)
+         {
+            gain_sum = SUB16(gain_sum, 64);
+            if (gain_sum > 127)
+               gain_sum = 127;
+#ifdef FIXED_POINT
+            pitch_control =  SUB16(64,EXTRACT16(PSHR32(MULT16_16(64,MULT16_16_16(plc_tuning, gain_sum)),10)));
+#else
+            pitch_control = 64*(1.-.001*plc_tuning*gain_sum);
+#endif
+            if (pitch_control < 0)
+               pitch_control = 0;
+         }
+         
+         sum = ADD32(sum,MULT16_32_Q14(MULT16_16_16(g0,pitch_control),C[0]));
+         sum = ADD32(sum,MULT16_32_Q14(MULT16_16_16(g1,pitch_control),C[1]));
+         sum = ADD32(sum,MULT16_32_Q14(MULT16_16_16(g2,pitch_control),C[2]));
          sum = SUB32(sum,MULT16_32_Q14(MULT16_16_16(g0,g1),C[3]));
          sum = SUB32(sum,MULT16_32_Q14(MULT16_16_16(g2,g1),C[4]));
          sum = SUB32(sum,MULT16_32_Q14(MULT16_16_16(g2,g0),C[5]));
          sum = SUB32(sum,MULT16_32_Q15(MULT16_16_16(g0,g0),C[6]));
          sum = SUB32(sum,MULT16_32_Q15(MULT16_16_16(g1,g1),C[7]));
          sum = SUB32(sum,MULT16_32_Q15(MULT16_16_16(g2,g2),C[8]));
-
          /* We could force "safe" pitch values to handle packet loss better */
 
          if (sum>best_sum || i==0)
@@ -471,6 +504,7 @@ int cdbk_offset
       gain[0] = ADD16(32,(spx_word16_t)gain_cdbk[best_cdbk*3]);
       gain[1] = ADD16(32,(spx_word16_t)gain_cdbk[best_cdbk*3+1]);
       gain[2] = ADD16(32,(spx_word16_t)gain_cdbk[best_cdbk*3+2]);
+      /*printf ("%d %d %d %d\n",gain[0],gain[1],gain[2], best_cdbk);*/
 #else
       gain[0] = 0.015625*gain_cdbk[best_cdbk*3]  + .5;
       gain[1] = 0.015625*gain_cdbk[best_cdbk*3+1]+ .5;
@@ -532,7 +566,8 @@ char *stack,
 spx_sig_t *exc2,
 spx_word16_t *r,
 int complexity,
-int cdbk_offset
+int cdbk_offset,
+int plc_tuning
 )
 {
    int i,j;
@@ -577,7 +612,7 @@ int cdbk_offset
       for (j=0;j<nsf;j++)
          exc[j]=0;
       err=pitch_gain_search_3tap(target, ak, awk1, awk2, exc, par, pitch, p, nsf,
-                                 bits, stack, exc2, r, new_target, &cdbk_index, cdbk_offset);
+                                 bits, stack, exc2, r, new_target, &cdbk_index, cdbk_offset, plc_tuning);
       if (err<best_err || best_err<0)
       {
          for (j=0;j<nsf;j++)
@@ -744,7 +779,8 @@ char *stack,
 spx_sig_t *exc2,
 spx_word16_t *r,
 int complexity,
-int cdbk_offset
+int cdbk_offset,
+int plc_tuning
 )
 {
    int i;

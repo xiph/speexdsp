@@ -67,7 +67,8 @@ char *stack,
 spx_sig_t *exc2,
 spx_word16_t *r,
 int   complexity,
-int   cdbk_offset
+int   cdbk_offset,
+int plc_tuning
 );
 
 /*Unquantize adaptive codebook and update pitch contribution*/
@@ -107,7 +108,8 @@ char *stack,
 spx_sig_t *exc2,
 spx_word16_t *r,
 int complexity,
-int cdbk_offset
+int cdbk_offset,
+int plc_tuning
 );
 
 /** Unquantize forced pitch delay and gain */

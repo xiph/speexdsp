@@ -194,6 +194,7 @@ void *nb_encoder_init(const SpeexMode *m)
    st->abr_enabled = 0;
    st->abr_drift = 0;
 
+   st->plc_tuning = 2;
    st->complexity=2;
    st->sampling_rate=8000;
    st->dtx_count=0;
@@ -772,7 +773,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
             pitch = SUBMODE(ltp_quant)(target, sw, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2,
                                        exc, SUBMODE(ltp_params), pit_min, pit_max, ol_pitch_coef,
                                        st->lpcSize, st->subframeSize, bits, stack, 
-                                       exc, syn_resp, st->complexity, ol_pitch_id);
+                                       exc, syn_resp, st->complexity, ol_pitch_id, st->plc_tuning);
          } else {
 #endif
 
@@ -780,7 +781,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
          pitch = SUBMODE(ltp_quant)(target, sw, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2,
                                     exc, SUBMODE(ltp_params), pit_min, pit_max, ol_pitch_coef,
                                     st->lpcSize, st->subframeSize, bits, stack, 
-                                    exc, syn_resp, st->complexity, 0);
+                                    exc, syn_resp, st->complexity, 0, st->plc_tuning);
 #ifdef EPIC_48K
          }
 #endif
@@ -1793,6 +1794,14 @@ int nb_encoder_ctl(void *state, int request, void *ptr)
       break;
    case SPEEX_GET_LOOKAHEAD:
       (*(int*)ptr)=(st->windowSize-st->frameSize);
+      break;
+   case SPEEX_SET_PLC_TUNING:
+      st->plc_tuning = (*(int*)ptr);
+      if (st->plc_tuning>100)
+         st->plc_tuning=100;
+      break;
+   case SPEEX_GET_PLC_TUNING:
+      (*(int*)ptr)=(st->plc_tuning);
       break;
    case SPEEX_GET_PI_GAIN:
       {
