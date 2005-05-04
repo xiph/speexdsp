@@ -1,8 +1,7 @@
 # Disable automatic dependency tracking if using other tools than gcc and gmake
 #AUTOMAKE_OPTIONS = no-dependencies
 
-install-data: installdirs
-	$(INSTALL_DATA) $(top_builddir)/include/speex/speex_types.h $(includedir)/speex/speex_types.h
+nodist_pkginclude_HEADERS = speex_types.h
 
 pkginclude_HEADERS =  speex.h \
 	speex_bits.h \
