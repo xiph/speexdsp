@@ -38,9 +38,9 @@
 #ifndef SPEEX_VERSION
 #define SPEEX_MAJOR_VERSION 1
 #define SPEEX_MINOR_VERSION 1
-#define SPEEX_MICRO_VERSION 6
+#define SPEEX_MICRO_VERSION 8
 #define SPEEX_EXTRA_VERSION ""
-#define SPEEX_VERSION "speex-1.1.6"
+#define SPEEX_VERSION "speex-1.1.8"
 #endif
 
 #include "arch.h"
