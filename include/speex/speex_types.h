@@ -113,7 +113,7 @@
 
 #else
 
-#  include <spx/config_types.h>
+#  include <speex/speex_config_types.h>
 
 #endif
 

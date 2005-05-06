@@ -177,7 +177,8 @@ AC_SUBST(SIZE32)
 AC_OUTPUT([Makefile libspeex/Makefile src/Makefile doc/Makefile Speex.spec
            include/Makefile include/speex/Makefile speex.pc
            win32/Makefile win32/libspeex/Makefile win32/speexenc/Makefile
-           win32/speexdec/Makefile include/speex/speex_types.h ])
+           win32/speexdec/Makefile symbian/Makefile 
+           include/speex/speex_config_types.h ])
 
 if test "x$src" = "x"; then 
 echo "**IMPORTANT**"

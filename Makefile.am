@@ -13,9 +13,9 @@ pkgconfig_DATA = speex.pc
 EXTRA_DIST = Speex.spec Speex.spec.in Speex.kdevelop speex.m4 speex.pc.in
 
 #Fools KDevelop into including all files
-SUBDIRS = libspeex include @src@ doc win32
+SUBDIRS = libspeex include @src@ doc win32 symbian
 
-DIST_SUBDIRS = libspeex include src doc win32
+DIST_SUBDIRS = libspeex include src doc win32 symbian
 
 rpm: dist
 	rpmbuild -ta ${PACKAGE}-${VERSION}.tar.gz
