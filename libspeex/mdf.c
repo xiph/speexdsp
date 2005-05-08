@@ -48,6 +48,7 @@
 //#define BETA 0
 
 #define min(a,b) ((a)<(b) ? (a) : (b))
+#define max(a,b) ((a)>(b) ? (a) : (b))
 
 static inline float inner_prod(float *x, float *y, int N)
 {
@@ -116,7 +117,7 @@ SpeexEchoState *speex_echo_state_init(int frame_size, int filter_length)
    st->frame_size = frame_size;
    st->window_size = 2*frame_size;
    N = st->window_size;
-   M = st->M = (filter_length+N-1)/frame_size;
+   M = st->M = (filter_length+st->frame_size-1)/frame_size;
    st->cancel_count=0;
    st->adapt_rate = .01f;
 
@@ -130,6 +131,7 @@ SpeexEchoState *speex_echo_state_init(int frame_size, int filter_length)
    st->last_y = (float*)speex_alloc(N*sizeof(float));
    st->Yf = (float*)speex_alloc((st->frame_size+1)*sizeof(float));
    st->Rf = (float*)speex_alloc((st->frame_size+1)*sizeof(float));
+   st->Xf = (float*)speex_alloc((st->frame_size+1)*sizeof(float));
    st->fratio = (float*)speex_alloc((st->frame_size+1)*sizeof(float));
 
    st->X = (float*)speex_alloc(M*N*sizeof(float));
@@ -177,6 +179,7 @@ void speex_echo_state_destroy(SpeexEchoState *st)
    speex_free(st->Yps);
    speex_free(st->Yf);
    speex_free(st->Rf);
+   speex_free(st->Xf);
    speex_free(st->fratio);
 
    speex_free(st->X);
@@ -195,16 +198,12 @@ void speex_echo_state_destroy(SpeexEchoState *st)
 /** Performs echo cancellation on a frame */
 void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, float *Yout)
 {
-   int i,j,m;
+   int i,j;
    int N,M;
    float scale;
-   float spectral_dist=0;
-   float cos_dist=0;
-   float Eout=0;
-   float See=0;
    float ESR;
    float SER;
-   float Sry=0,Srr=0,Syy=0,Sey=0,Soo=0;
+   float Sry=0,Srr=0,Syy=0,Sey=0,See=0,Sxx=0;
 
    N = st->window_size;
    M = st->M;
@@ -258,7 +257,6 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
       
       st->E[i] = 0;
       st->E[i+st->frame_size] = tmp_out;
-      Eout += tmp_out*tmp_out;
       
       /* Saturation */
       if (tmp_out>32767)
@@ -286,76 +284,69 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
    }
    //printf ("\n");
 
-
-   {
-      /*float cos_dist;*/
-      for (i=0;i<st->frame_size;i++)
-      {
-         Sry += st->y[i+st->frame_size] * ref[i];
-         Sey += st->y[i+st->frame_size] * (ref[i]-st->y[i+st->frame_size]);
-         Soo += (ref[i]-st->y[i+st->frame_size]) * (ref[i]-st->y[i+st->frame_size]);
-         Srr += (float)ref[i] * (float)ref[i];
-         See += (float)echo[i] * (float)echo[i];
-         Syy += st->y[i+st->frame_size]*st->y[i+st->frame_size];
-      }
-      cos_dist = Sry/(sqrt(1e8+Srr)*sqrt(1e8+Syy));
-      /*printf (" %f ", cos_dist);*/
-      spectral_dist = Sry/(1e8+Srr);
-      /*printf (" %f\n", spectral_dist);*/
-      SER = Srr / (1+See);
-      ESR = .1*Syy / (1+Eout);
-      if (ESR>1)
-         ESR = 1;
+   /* Compute a bunch of correlations */
+   Sry = inner_prod(st->y+st->frame_size, st->d+st->frame_size, st->frame_size);
+   Sey = inner_prod(st->y+st->frame_size, st->E+st->frame_size, st->frame_size);
+   See = inner_prod(st->E+st->frame_size, st->E+st->frame_size, st->frame_size);
+   Syy = inner_prod(st->y+st->frame_size, st->y+st->frame_size, st->frame_size);
+   Srr = inner_prod(st->d+st->frame_size, st->d+st->frame_size, st->frame_size);
+   Sxx = inner_prod(st->x+st->frame_size, st->x+st->frame_size, st->frame_size);
       
-      if (ESR>.9 && st->cancel_count > 50)
-      {
-         if (!st->adapted)
-            fprintf(stderr, "Adapted at %d\n", st->cancel_count); 
-         st->adapted = 1;
-      }
-      printf ("%f %f %f %f %f %f %f %f %f\n", Srr, Syy, See, Eout, ESR, SER, Sry, Sey, Soo);
-      for (i=0;i<=st->frame_size;i++)
-      {
-         st->fratio[i]  = (.1*ESR+.9*min(.1+ESR,st->fratio[i]));
-         //st->power_1[i]  = (.0*ESR+1.*min(.0+ESR,st->power_1[i]));
-         //st->power_1[i]  = ESR;
-         //printf ("%f ", st->power_1[i]);
-      }
-      //printf ("\n");
+   SER = Srr / (1+Sxx);
+   ESR = .1*Syy / (1+See);
+   if (ESR>1)
+      ESR = 1;
+   
+   if (Sey/(1+Syy) < -.09 && ESR > .3)
+   {
+      for (i=0;i<M*N;i++)
+         st->W[i] *= max(0.8,1+Sey/(1+Syy)-.05);
    }
-   /* Convert error to frequency domain */
-   spx_drft_forward(st->fft_lookup, st->E);
-
+   if (Sey/(1+Syy) > .2 && (ESR > .3 || SER < 1))
+   {
+      for (i=0;i<M*N;i++)
+         st->W[i] *= 1.05;
+   }
    
-   if (See>1e8)
-      st->adapt_rate =.8/(2+M);
-   else if (See>3e7)
-      st->adapt_rate =.4/(2+M);
-   else if (See>1e7)
-      st->adapt_rate =.2/(2+M);
-   else if (See>3e6)
-      st->adapt_rate =.1/(2+M);
-   else
-      st->adapt_rate = 0;
+   if (ESR>.6 && st->cancel_count > 20)
+   //if (st->cancel_count > 40)
+   {
+      if (!st->adapted)
+         fprintf(stderr, "Adapted at %d\n", st->cancel_count); 
+      st->adapted = 1;
+   }
+   //printf ("%f %f %f %f %f %f %f %f\n", Srr, Syy, Sxx, See, ESR, SER, Sry, Sey);
+   for (i=0;i<=st->frame_size;i++)
+   {
+      st->fratio[i]  = (.2*ESR+.8*min(.005+ESR,st->fratio[i]));
+      printf ("%f ", st->fratio[i]);
+   }
+   printf ("\n");
    
-   if (SER<.1)
-      st->adapt_rate =.8/(1+M);
-   else if (SER<1)
-      st->adapt_rate =.4/(1+M);
-   else if (SER<10)
-      st->adapt_rate =.2/(1+M);
-   else
-      st->adapt_rate = 0;
    
    if (st->adapted)
-      st->adapt_rate = .95f/(1+M);
+   {
+      st->adapt_rate = .95f/(2+M);
+   } else {
+      if (SER<.1)
+         st->adapt_rate =.8/(2+M);
+      else if (SER<1)
+         st->adapt_rate =.4/(2+M);
+      else if (SER<10)
+         st->adapt_rate =.2/(2+M);
+      else if (SER<30)
+         st->adapt_rate =.08/(2+M);
+      else
+         st->adapt_rate = 0;
+   }
    
 
    /* Compute input power in each frequency bin */
    {
+#if 0
       float s;
       float tmp, tmp2;
-
+      int m;
       if (st->cancel_count<M)
          s = 1.0f/st->cancel_count;
       else
@@ -363,27 +354,35 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
       
       for (i=1,j=1;i<N-1;i+=2,j++)
       {
+#if 0
          tmp=0;
          for (m=0;m<M;m++)
          {
             float E = st->X[m*N+i]*st->X[m*N+i] + st->X[m*N+i+1]*st->X[m*N+i+1];
             tmp += E;
-            /*if (st->power[j] < .2*E)
-               st->power[j] = .2*E;
-            */
+            if (st->power[j] < .02*E)
+               st->power[j] = .02*E;
+            
          }
          tmp *= s;
          if (st->cancel_count<M)
             st->power[j] = tmp;
          else
             st->power[j] = BETA*st->power[j] + (1-BETA)*tmp;
+#else
+         float E;
+         float ss = 1.0f/st->cancel_count;
+         if (ss < .3/M)
+            ss=.3/M;
+         E = (st->X[(M-1)*N+i]*st->X[(M-1)*N+i] + st->X[(M-1)*N+i+1]*st->X[(M-1)*N+i+1]);
+         st->power[j] = (1-ss)*st->power[j] + ss*E;
+#endif
       }
       tmp=tmp2=0;
       for (m=0;m<M;m++)
       {
          tmp += st->X[m*N]*st->X[m*N];
          tmp2 += st->X[(m+1)*N-1]*st->X[(m+1)*N-1];
-         /*FIXME: Should put a bound on energy like several lines above */
       }
       tmp *= s;
       tmp2 *= s;
@@ -395,7 +394,15 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
          st->power[0] = BETA*st->power[0] + (1-BETA)*tmp;
          st->power[st->frame_size] = BETA*st->power[st->frame_size] + (1-BETA)*tmp2;
       }
+#else
       
+      float ss = 1.0f/st->cancel_count;
+      if (ss < .3/M)
+         ss=.3/M;
+      power_spectrum(&st->X[(M-1)*N], st->Xf, N);
+      for (j=0;j<=st->frame_size;j++)
+         st->power[j] = (1-ss)*st->power[j] + ss*st->Xf[j];
+#endif      
       if (st->adapted)
       {
          for (i=0;i<=st->frame_size;i++)
@@ -409,29 +416,20 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
    }
 
    
+   /* Convert error to frequency domain */
+   spx_drft_forward(st->fft_lookup, st->E);
 
    /* Compute weight gradient */
    for (j=0;j<M;j++)
    {
       weighted_spectral_mul_conj(st->power_1, &st->X[j*N], st->E, st->PHI, N);
 
-#if 0 /* Set to 1 to enable MDF instead of AUMDF (and comment out weight constraint below) */
-      spx_drft_backward(st->fft_lookup, st->PHI);
-      for (i=0;i<N;i++)
-         st->PHI[i]*=scale;
-      for (i=st->frame_size;i<N;i++)
-        st->PHI[i]=0;
-      spx_drft_forward(st->fft_lookup, st->PHI);
-#endif
-     
-
       for (i=0;i<N;i++)
       {
          st->grad[j*N+i] = st->PHI[i];
       }
-
-      
    }
+   
    /* Update weights */
    for (i=0;i<M*N;i++)
       st->W[i] += st->adapt_rate*st->grad[i];
@@ -439,6 +437,7 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
    /* AUMDF weight constraint */
    for (j=0;j<M;j++)
    {
+      /* Remove the "if" to make this an MDF filter */
       if (st->cancel_count%M == j)
       {
          spx_drft_backward(st->fft_lookup, &st->W[j*N]);
@@ -450,23 +449,12 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
          }
          spx_drft_forward(st->fft_lookup, &st->W[j*N]);
       }
-
    }
 
-   
-   
+
    /* Compute spectrum of estimated echo for use in an echo post-filter (if necessary)*/
    if (Yout)
    {
-      for (i=1,j=1;i<N-1;i+=2,j++)
-      {
-         Yout[j] =  st->Y[i]*st->Y[i] + st->Y[i+1]*st->Y[i+1];
-      }
-      Yout[0] = Yout[st->frame_size] = 0;
-      for (i=0;i<=st->frame_size;i++)
-         Yout[i] *= .1;
-      
-      
       if (st->adapted)
       {
          for (i=0;i<st->frame_size;i++)
@@ -480,12 +468,16 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
       for (i=0;i<N;i++)
          st->Yps[i] = (.5-.5*cos(2*M_PI*i/N))*st->last_y[i];
       spx_drft_forward(st->fft_lookup, st->Yps);
+#if 0
       for (i=1;i<st->frame_size;i++)
          st->Yps[i] = .1*st->Yps[2*i-1]*st->Yps[2*i-1] + st->Yps[2*i]*st->Yps[2*i];
       st->Yps[0] = .1*st->Yps[0]*st->Yps[0];
       st->Yps[st->frame_size] = .1*st->Yps[N-1]*st->Yps[N-1];
+#else
+      power_spectrum(st->Yps, st->Yps, N);
+#endif      
       for (i=0;i<=st->frame_size;i++)
-         Yout[i] = 3*st->Yps[i];
+         Yout[i] = .3*st->Yps[i];
    }
 
 }

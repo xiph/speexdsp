@@ -63,6 +63,7 @@ typedef struct SpeexEchoState {
    float *grad;
    float *Rf;
    float *Yf;
+   float *Xf;
    float *fratio;
 
    struct drft_lookup *fft_lookup;
