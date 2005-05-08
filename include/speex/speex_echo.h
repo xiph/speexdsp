@@ -44,6 +44,7 @@ typedef struct SpeexEchoState {
    int window_size;
    int M;
    int cancel_count;
+   int adapted;
    float adapt_rate;
 
    float *x;
@@ -51,6 +52,8 @@ typedef struct SpeexEchoState {
    float *d;
    float *D;
    float *y;
+   float *last_y;
+   float *Yps;
    float *Y;
    float *E;
    float *PHI;
@@ -58,6 +61,9 @@ typedef struct SpeexEchoState {
    float *power;
    float *power_1;
    float *grad;
+   float *Rf;
+   float *Yf;
+   float *fratio;
 
    struct drft_lookup *fft_lookup;
 
@@ -72,7 +78,7 @@ SpeexEchoState *speex_echo_state_init(int frame_size, int filter_length);
 void speex_echo_state_destroy(SpeexEchoState *st);
 
 /** Performs echo cancellation a frame */
-void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, int *Y);
+void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, float *Y);
 
 /** Reset the echo canceller state */
 void speex_echo_reset(SpeexEchoState *st);
