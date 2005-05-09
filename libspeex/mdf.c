@@ -194,7 +194,10 @@ void speex_echo_state_destroy(SpeexEchoState *st)
 
    speex_free(st);
 }
-
+#include <stdlib.h>
+   float mem=0;
+float sum_adapt =0;
+      
 /** Performs echo cancellation on a frame */
 void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, float *Yout)
 {
@@ -213,8 +216,11 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
    /* Copy input data to buffer */
    for (i=0;i<st->frame_size;i++)
    {
+      //float n = 50.*((rand()/(float)RAND_MAX)-.5) + .98*mem;
+      //mem = n;
+      float n=0;
       st->x[i] = st->x[i+st->frame_size];
-      st->x[i+st->frame_size] = echo[i];
+      st->x[i+st->frame_size] = echo[i] + n;
 
       st->d[i] = st->d[i+st->frame_size];
       st->d[i+st->frame_size] = ref[i];
@@ -284,6 +290,7 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
    }
    //printf ("\n");
 
+   float Sww=0;
    /* Compute a bunch of correlations */
    Sry = inner_prod(st->y+st->frame_size, st->d+st->frame_size, st->frame_size);
    Sey = inner_prod(st->y+st->frame_size, st->E+st->frame_size, st->frame_size);
@@ -291,12 +298,14 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
    Syy = inner_prod(st->y+st->frame_size, st->y+st->frame_size, st->frame_size);
    Srr = inner_prod(st->d+st->frame_size, st->d+st->frame_size, st->frame_size);
    Sxx = inner_prod(st->x+st->frame_size, st->x+st->frame_size, st->frame_size);
-      
+   for (i=0;i<M*N;i++)
+      Sww += st->W[i]*st->W[i];
+   
    SER = Srr / (1+Sxx);
    ESR = .1*Syy / (1+See);
    if (ESR>1)
       ESR = 1;
-   
+   /*
    if (Sey/(1+Syy) < -.09 && ESR > .3)
    {
       for (i=0;i<M*N;i++)
@@ -307,21 +316,22 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
       for (i=0;i<M*N;i++)
          st->W[i] *= 1.05;
    }
+   */
    
-   if (ESR>.6 && st->cancel_count > 20)
+   if (ESR>.6 && sum_adapt > 1)
    //if (st->cancel_count > 40)
    {
       if (!st->adapted)
-         fprintf(stderr, "Adapted at %d\n", st->cancel_count); 
+         fprintf(stderr, "Adapted at %d %f\n", st->cancel_count, sum_adapt);
       st->adapted = 1;
    }
-   //printf ("%f %f %f %f %f %f %f %f\n", Srr, Syy, Sxx, See, ESR, SER, Sry, Sey);
+   //printf ("%f %f %f %f %f %f %f %f %f ", Srr, Syy, Sxx, See, ESR, SER, Sry, Sey, Sww);
    for (i=0;i<=st->frame_size;i++)
    {
       st->fratio[i]  = (.2*ESR+.8*min(.005+ESR,st->fratio[i]));
-      printf ("%f ", st->fratio[i]);
+      //printf ("%f ", st->fratio[i]);
    }
-   printf ("\n");
+   //printf ("\n");
    
    
    if (st->adapted)
@@ -339,79 +349,27 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
       else
          st->adapt_rate = 0;
    }
-   
+   sum_adapt += st->adapt_rate;
 
    /* Compute input power in each frequency bin */
    {
-#if 0
-      float s;
-      float tmp, tmp2;
-      int m;
-      if (st->cancel_count<M)
-         s = 1.0f/st->cancel_count;
-      else
-         s = 1.0f/M;
-      
-      for (i=1,j=1;i<N-1;i+=2,j++)
-      {
-#if 0
-         tmp=0;
-         for (m=0;m<M;m++)
-         {
-            float E = st->X[m*N+i]*st->X[m*N+i] + st->X[m*N+i+1]*st->X[m*N+i+1];
-            tmp += E;
-            if (st->power[j] < .02*E)
-               st->power[j] = .02*E;
-            
-         }
-         tmp *= s;
-         if (st->cancel_count<M)
-            st->power[j] = tmp;
-         else
-            st->power[j] = BETA*st->power[j] + (1-BETA)*tmp;
-#else
-         float E;
-         float ss = 1.0f/st->cancel_count;
-         if (ss < .3/M)
-            ss=.3/M;
-         E = (st->X[(M-1)*N+i]*st->X[(M-1)*N+i] + st->X[(M-1)*N+i+1]*st->X[(M-1)*N+i+1]);
-         st->power[j] = (1-ss)*st->power[j] + ss*E;
-#endif
-      }
-      tmp=tmp2=0;
-      for (m=0;m<M;m++)
-      {
-         tmp += st->X[m*N]*st->X[m*N];
-         tmp2 += st->X[(m+1)*N-1]*st->X[(m+1)*N-1];
-      }
-      tmp *= s;
-      tmp2 *= s;
-      if (st->cancel_count<M)
-      {
-         st->power[0] = tmp;
-         st->power[st->frame_size] = tmp2;
-      } else {
-         st->power[0] = BETA*st->power[0] + (1-BETA)*tmp;
-         st->power[st->frame_size] = BETA*st->power[st->frame_size] + (1-BETA)*tmp2;
-      }
-#else
-      
       float ss = 1.0f/st->cancel_count;
       if (ss < .3/M)
          ss=.3/M;
       power_spectrum(&st->X[(M-1)*N], st->Xf, N);
       for (j=0;j<=st->frame_size;j++)
          st->power[j] = (1-ss)*st->power[j] + ss*st->Xf[j];
-#endif      
+      
+      
       if (st->adapted)
       {
          for (i=0;i<=st->frame_size;i++)
          {
-            st->power_1[i] = st->fratio[i] /(1+st->power[i]);
+            st->power_1[i] = st->fratio[i] /(1e3f+st->power[i]);
          }
       } else {
          for (i=0;i<=st->frame_size;i++)
-            st->power_1[i] = 1.0f/(1e5f+st->power[i]);
+            st->power_1[i] = 1.0f/(1e3f+st->power[i]);
       }
    }
 
@@ -419,21 +377,34 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
    /* Convert error to frequency domain */
    spx_drft_forward(st->fft_lookup, st->E);
 
+   //float Ephi = 0;
    /* Compute weight gradient */
    for (j=0;j<M;j++)
    {
       weighted_spectral_mul_conj(st->power_1, &st->X[j*N], st->E, st->PHI, N);
 
+      //st->PHI[0] = st->PHI[1] = st->PHI[2] = 0;
       for (i=0;i<N;i++)
       {
+         //Ephi += st->PHI[i]*st->PHI[i];
          st->grad[j*N+i] = st->PHI[i];
       }
    }
-   
+   //printf ("%f \n", Ephi);
    /* Update weights */
    for (i=0;i<M*N;i++)
       st->W[i] += st->adapt_rate*st->grad[i];
-
+   
+   for (i=0;i<M;i++)
+      for (j=0;j<N;j++)
+         st->W[i*N+j] *= 1-(60./M/(j+7)/(j+7))*ESR;
+   
+   /*for (i=0;i<M;i++)
+      for (j=0;j<9;j++)
+   st->W[i*N+j] *= 1-(.3/M)*ESR;*/
+   for (i=0;i<M*N;i++)
+      st->W[i] *= 1-(.02/M)*ESR;
+   
    /* AUMDF weight constraint */
    for (j=0;j<M;j++)
    {
@@ -449,6 +420,13 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
          }
          spx_drft_forward(st->fft_lookup, &st->W[j*N]);
       }
+   }
+   
+   if (st->cancel_count%100==0)
+   {
+      for (i=0;i<M*N;i++)
+         printf ("%f ", st->W[i]);
+      printf ("\n");
    }
 
 
@@ -467,17 +445,12 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
       }
       for (i=0;i<N;i++)
          st->Yps[i] = (.5-.5*cos(2*M_PI*i/N))*st->last_y[i];
+      
       spx_drft_forward(st->fft_lookup, st->Yps);
-#if 0
-      for (i=1;i<st->frame_size;i++)
-         st->Yps[i] = .1*st->Yps[2*i-1]*st->Yps[2*i-1] + st->Yps[2*i]*st->Yps[2*i];
-      st->Yps[0] = .1*st->Yps[0]*st->Yps[0];
-      st->Yps[st->frame_size] = .1*st->Yps[N-1]*st->Yps[N-1];
-#else
       power_spectrum(st->Yps, st->Yps, N);
-#endif      
+      
       for (i=0;i<=st->frame_size;i++)
-         Yout[i] = .3*st->Yps[i];
+         Yout[i] = .1*st->Yps[i];
    }
 
 }
