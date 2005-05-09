@@ -47,7 +47,10 @@ typedef struct SpeexEchoState {
    int adapted;
    float adapt_rate;
    float sum_adapt;
-
+   float Sey;
+   float Syy;
+   float See;
+   
    float *x;
    float *X;
    float *d;

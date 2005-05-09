@@ -121,7 +121,10 @@ SpeexEchoState *speex_echo_state_init(int frame_size, int filter_length)
    st->cancel_count=0;
    st->adapt_rate = .01f;
    st->sum_adapt = 0;
-
+   st->Sey = 0;
+   st->Syy = 0;
+   st->See = 0;
+         
    st->fft_lookup = (struct drft_lookup*)speex_alloc(sizeof(struct drft_lookup));
    spx_drft_init(st->fft_lookup, N);
    
@@ -151,13 +154,13 @@ SpeexEchoState *speex_echo_state_init(int frame_size, int filter_length)
       st->W[i] = 0;
    }
    
-   st->regul[0] = (10.)/(M*(4.)*(4.));
+   st->regul[0] = (.01+(10.)/((4.)*(4.)))/M;
    for (i=1,j=1;i<N-1;i+=2,j++)
    {
-      st->regul[i] = (10.)/(M*(j+4.)*(j+4.));
-      st->regul[i+1] = (10.)/(M*(j+4.)*(j+4.));
+      st->regul[i] = .01+((10.)/((j+4.)*(j+4.)))/M;
+      st->regul[i+1] = .01+((10.)/((j+4.)*(j+4.)))/M;
    }
-   st->regul[i] = (10.)/(M*(j+4.)*(j+4.));
+   st->regul[i] = .01+((10.)/((j+4.)*(j+4.)))/M;
          
    st->adapted = 0;
    return st;
@@ -304,6 +307,11 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
    Syy = inner_prod(st->y+st->frame_size, st->y+st->frame_size, st->frame_size);
    Srr = inner_prod(st->d+st->frame_size, st->d+st->frame_size, st->frame_size);
    Sxx = inner_prod(st->x+st->frame_size, st->x+st->frame_size, st->frame_size);
+   
+   st->Sey = .9*st->Sey + .1*Sey;
+   st->Syy = .9*st->Syy + .1*Syy;
+   st->See = .9*st->See + .1*See;
+   
    for (i=0;i<M*N;i++)
       Sww += st->W[i]*st->W[i];
    
@@ -331,7 +339,7 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
          fprintf(stderr, "Adapted at %d %f\n", st->cancel_count, st->sum_adapt);
       st->adapted = 1;
    }
-   //printf ("%f %f %f %f %f %f %f %f %f ", Srr, Syy, Sxx, See, ESR, SER, Sry, Sey, Sww);
+   printf ("%f %f %f %f %f %f %f %f %f %f %f %f\n", Srr, Syy, Sxx, See, ESR, SER, Sry, Sey, Sww, st->Sey, st->Syy, st->See);
    for (i=0;i<=st->frame_size;i++)
    {
       st->fratio[i]  = (.2*ESR+.8*min(.005+ESR,st->fratio[i]));
@@ -370,12 +378,10 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
       if (st->adapted)
       {
          for (i=0;i<=st->frame_size;i++)
-         {
-            st->power_1[i] = st->fratio[i] /(1e3f+st->power[i]);
-         }
+            st->power_1[i] = st->fratio[i] /(1.f+st->power[i]);
       } else {
          for (i=0;i<=st->frame_size;i++)
-            st->power_1[i] = 1.0f/(1e3f+st->power[i]);
+            st->power_1[i] = 1.0f/(1.f+st->power[i]);
       }
    }
 
@@ -422,12 +428,12 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
       }
    }
    
-   if (st->cancel_count%100==0)
+   /*if (st->cancel_count%100==0)
    {
       for (i=0;i<M*N;i++)
          printf ("%f ", st->W[i]);
       printf ("\n");
-   }
+   }*/
 
 
    /* Compute spectrum of estimated echo for use in an echo post-filter (if necessary)*/
@@ -450,7 +456,7 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
       power_spectrum(st->Yps, st->Yps, N);
       
       for (i=0;i<=st->frame_size;i++)
-         Yout[i] = 4*(.1+(.5/(1+st->sum_adapt)))*st->Yps[i];
+         Yout[i] = 3*(.1+(.5/(1+st->sum_adapt)))*st->Yps[i];
    }
 
 }
