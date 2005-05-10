@@ -44,8 +44,12 @@
 #include <math.h>
 #include <stdio.h>
 
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
 #define BETA .65
-//#define BETA 0
+/*#define BETA 0*/
 
 #define min(a,b) ((a)<(b) ? (a) : (b))
 #define max(a,b) ((a)>(b) ? (a) : (b))
@@ -229,7 +233,8 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
    float ESR;
    float SER;
    float Sry=0,Srr=0,Syy=0,Sey=0,See=0,Sxx=0;
-
+   float leak_estimate = .1+(.9/(1+2*st->sum_adapt));
+         
    N = st->window_size;
    M = st->M;
    scale = 1.0f/N;
@@ -301,15 +306,15 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
    for (j=0;j<=st->frame_size;j++)
    {
       float r;
-      r = .1*st->Yf[j] / (1+st->Rf[j]);
+      r = leak_estimate*st->Yf[j] / (1+st->Rf[j]);
       if (r>1)
          r = 1;
       st->fratio[j] = r;
-      //printf ("%f ", r);
+      /*printf ("%f ", r);*/
    }
-   //printf ("\n");
+   /*printf ("\n");*/
 
-   float Sww=0;
+   /*float Sww=0;*/
    /* Compute a bunch of correlations */
    Sry = inner_prod(st->y+st->frame_size, st->d+st->frame_size, st->frame_size);
    Sey = inner_prod(st->y+st->frame_size, st->E+st->frame_size, st->frame_size);
@@ -329,53 +334,47 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
       return;
    }
    
-   for (i=0;i<M*N;i++)
+   /*for (i=0;i<M*N;i++)
       Sww += st->W[i]*st->W[i];
+   */
    
    SER = Srr / (1+Sxx);
-   ESR = .1*Syy / (1+See);
+   ESR = leak_estimate*Syy / (1+See);
    if (ESR>1)
       ESR = 1;
-   
-   /*if (st->Sey/(1+st->Syy+.01*st->See) < -.09)
+#if 1
+   if (st->Sey/(1+st->Syy) < -.1 && (ESR > .3))
    {
       for (i=0;i<M*N;i++)
-         st->W[i] *= .95+0*max(0.8,1+Sey/(1+Syy)-.05);
-      fprintf (stderr, "corrected\n");
-   }*/
-   
-   /*if (st->Sey/(1+st->Syy+.01*st->See) < -.3)
-   {
-      st->adapted = 0;
-      st->sum_adapt = .1;
-   }*/
-   
-   /*if (Sey/(1+Syy) < -.09 && ESR > .3)
-   {
-      for (i=0;i<M*N;i++)
-         st->W[i] *= max(0.8,1+Sey/(1+Syy)-.05);
-   }*/
-   /*if (Sey/(1+Syy) > .2 && (ESR > .3 || SER < 1))
+         st->W[i] *= .95;
+      st->Sey *= .5;
+      /*fprintf (stderr, "corrected down\n");*/
+   }
+#endif
+#if 1
+   if (st->Sey/(1+st->Syy) > .1 && (ESR > .1 || SER < 10))
    {
       for (i=0;i<M*N;i++)
          st->W[i] *= 1.05;
+      st->Sey *= .5;
+      /*fprintf (stderr, "corrected up %d\n", st->cancel_count);*/
    }
-   */
+#endif
    
    if (ESR>.6 && st->sum_adapt > 1)
-   //if (st->cancel_count > 40)
+   /*if (st->cancel_count > 40)*/
    {
       if (!st->adapted)
          fprintf(stderr, "Adapted at %d %f\n", st->cancel_count, st->sum_adapt);
       st->adapted = 1;
    }
-   //printf ("%f %f %f %f %f %f %f %f %f %f %f %f\n", Srr, Syy, Sxx, See, ESR, SER, Sry, Sey, Sww, st->Sey, st->Syy, st->See);
+   /*printf ("%f %f %f %f %f %f %f %f %f %f %f %f\n", Srr, Syy, Sxx, See, ESR, SER, Sry, Sey, Sww, st->Sey, st->Syy, st->See);*/
    for (i=0;i<=st->frame_size;i++)
    {
       st->fratio[i]  = (.2*ESR+.8*min(.005+ESR,st->fratio[i]));
-      //printf ("%f ", st->fratio[i]);
+      /*printf ("%f ", st->fratio[i]);*/
    }
-   //printf ("\n");
+   /*printf ("\n");*/
    
    
    if (st->adapted)
@@ -419,55 +418,23 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
    /* Convert error to frequency domain */
    spx_drft_forward(st->fft_lookup, st->E);
 
-   float Wmag[M];
-   for (m=0;m<M;m++)
-      Wmag[m] = 0;
-   float WmagSum = 0;
+   /* Do some regularization (prevents problems when system is ill-conditoned) */
    for (m=0;m<M;m++)
    {
       for (i=0;i<N;i++)
       {
          st->W[m*N+i] *= 1-st->regul[i]*ESR;
-         Wmag[m] += st->W[m*N+i]*st->W[m*N+i];
       }
-      Wmag[m] = sqrt(Wmag[m]+1e-3);
-      WmagSum += Wmag[m];
    }
-   for (m=0;m<M;m++)
-   {
-      Wmag[m] *= 1./WmagSum;
-      Wmag[m] = .5+.5*Wmag[m];
-      //if (!st->adapted)
-      Wmag[m] = 1;
-      if (m==17 && !st->adapted)
-         Wmag[m] = 1;
-      else
-         Wmag[m] = .5;
-      Wmag[m] = 9./(9+M-m);
-      printf ("%f ", Wmag[m]);
-   }
-   printf ("\n");
-   //float Ephi = 0;
+   
    /* Compute weight gradient */
    for (j=0;j<M;j++)
    {
       weighted_spectral_mul_conj(st->power_1, &st->X[j*N], st->E, st->PHI, N);
 
-      //st->PHI[0] = st->PHI[1] = st->PHI[2] = 0;
       for (i=0;i<N;i++)
-      {
-         //Ephi += st->PHI[i]*st->PHI[i];
-         st->grad[j*N+i] = st->PHI[i];
-      }
-      
-      for (i=0;i<N;i++)
-         st->W[j*N+i] += st->adapt_rate*Wmag[j]*st->PHI[i];
+         st->W[j*N+i] += st->adapt_rate*st->PHI[i];
    }
-   //printf ("%f \n", Ephi);
-   /* Update weights */
-   /*for (i=0;i<M*N;i++)
-      st->W[i] += st->adapt_rate*st->grad[i];
-   */
    
    /* AUMDF weight constraint */
    for (j=0;j<M;j++)
@@ -514,7 +481,7 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
       power_spectrum(st->Yps, st->Yps, N);
       
       for (i=0;i<=st->frame_size;i++)
-         Yout[i] = 3*(.1+(.5/(1+st->sum_adapt)))*st->Yps[i];
+         Yout[i] = 2*leak_estimate*st->Yps[i];
    }
 
 }
