@@ -84,6 +84,7 @@
 #include <speex/speex_header.h>
 #include <speex/speex_stereo.h>
 #include <speex/speex_callbacks.h>
+#include "wav_io.h"
 
 #define MAX_FRAME_SIZE 2000
 
