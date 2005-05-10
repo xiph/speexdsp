@@ -76,7 +76,7 @@ static void pitch_xcorr(const spx_word16_t *_x, const spx_word16_t *_y, spx_word
    for (i=0;i<nb_pitch;i+=4)
    {
       /* Compute correlation*/
-      //corr[nb_pitch-1-i]=inner_prod(x, _y+i, len);
+      /*corr[nb_pitch-1-i]=inner_prod(x, _y+i, len);*/
       spx_word32_t sum1=0;
       spx_word32_t sum2=0;
       spx_word32_t sum3=0;
@@ -84,7 +84,7 @@ static void pitch_xcorr(const spx_word16_t *_x, const spx_word16_t *_y, spx_word
       const spx_word16_t *y = _y+i;
       const spx_word16_t *x = _x;
       spx_word16_t y0, y1, y2, y3;
-      //y0=y[0];y1=y[1];y2=y[2];y3=y[3];
+      /*y0=y[0];y1=y[1];y2=y[2];y3=y[3];*/
       y0=*y++;
       y1=*y++;
       y2=*y++;
