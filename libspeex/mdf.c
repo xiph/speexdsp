@@ -54,6 +54,7 @@
 #define min(a,b) ((a)<(b) ? (a) : (b))
 #define max(a,b) ((a)>(b) ? (a) : (b))
 
+/** Compute inner product of two real vectors */
 static inline float inner_prod(float *x, float *y, int N)
 {
    int i;
@@ -63,6 +64,7 @@ static inline float inner_prod(float *x, float *y, int N)
    return ret;
 }
 
+/** Compute power spectrum of a half-complex (packed) vector */
 static inline void power_spectrum(float *X, float *ps, int N)
 {
    int i, j;
@@ -74,6 +76,7 @@ static inline void power_spectrum(float *X, float *ps, int N)
    ps[j]=X[i]*X[i];
 }
 
+/** Compute cross-power spectrum of a half-complex (packed) vectors and add to acc */
 static inline void spectral_mul_accum(float *X, float *Y, float *acc, int N)
 {
    int i;
@@ -86,6 +89,7 @@ static inline void spectral_mul_accum(float *X, float *Y, float *acc, int N)
    acc[i] += X[i]*Y[i];
 }
 
+/** Compute cross-power spectrum of a half-complex (packed) vector with conjugate */
 static inline void spectral_mul_conj(float *X, float *Y, float *prod, int N)
 {
    int i;
@@ -99,6 +103,7 @@ static inline void spectral_mul_conj(float *X, float *Y, float *prod, int N)
 }
 
 
+/** Compute weighted cross-power spectrum of a half-complex (packed) vector with conjugate */
 static inline void weighted_spectral_mul_conj(float *w, float *X, float *Y, float *prod, int N)
 {
    int i, j;
@@ -170,6 +175,7 @@ SpeexEchoState *speex_echo_state_init(int frame_size, int filter_length)
    return st;
 }
 
+/** Resets echo canceller state */
 void speex_echo_reset(SpeexEchoState *st)
 {
    int i, M, N;
@@ -233,7 +239,9 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
    float ESR;
    float SER;
    float Sry=0,Srr=0,Syy=0,Sey=0,See=0,Sxx=0;
-   float leak_estimate = .1+(.9/(1+2*st->sum_adapt));
+   float leak_estimate;
+   
+   leak_estimate = .1+(.9/(1+2*st->sum_adapt));
          
    N = st->window_size;
    M = st->M;
@@ -314,7 +322,6 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
    }
    /*printf ("\n");*/
 
-   /*float Sww=0;*/
    /* Compute a bunch of correlations */
    Sry = inner_prod(st->y+st->frame_size, st->d+st->frame_size, st->frame_size);
    Sey = inner_prod(st->y+st->frame_size, st->E+st->frame_size, st->frame_size);
@@ -322,7 +329,8 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
    Syy = inner_prod(st->y+st->frame_size, st->y+st->frame_size, st->frame_size);
    Srr = inner_prod(st->d+st->frame_size, st->d+st->frame_size, st->frame_size);
    Sxx = inner_prod(st->x+st->frame_size, st->x+st->frame_size, st->frame_size);
-   
+
+   /* Compute smoothed cross-correlation and energy */   
    st->Sey = .98*st->Sey + .02*Sey;
    st->Syy = .98*st->Syy + .02*Syy;
    st->See = .98*st->See + .02*See;
@@ -343,6 +351,7 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
    if (ESR>1)
       ESR = 1;
 #if 1
+   /* If over-cancellation (creating echo with 180 phase) damp filter */
    if (st->Sey/(1+st->Syy) < -.1 && (ESR > .3))
    {
       for (i=0;i<M*N;i++)
@@ -352,6 +361,7 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
    }
 #endif
 #if 1
+   /* If under-cancellation (leaving echo with 0 phase) scale filter up */
    if (st->Sey/(1+st->Syy) > .1 && (ESR > .1 || SER < 10))
    {
       for (i=0;i<M*N;i++)
@@ -361,6 +371,7 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
    }
 #endif
    
+   /* We consider that the filter is adapted if the following is true*/
    if (ESR>.6 && st->sum_adapt > 1)
    /*if (st->cancel_count > 40)*/
    {
@@ -381,6 +392,7 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
    {
       st->adapt_rate = .95f/(2+M);
    } else {
+      /* Temporary adaption if filter is not adapted correctly */
       if (SER<.1)
          st->adapt_rate =.8/(2+M);
       else if (SER<1)
@@ -394,7 +406,7 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
    }
    st->sum_adapt += st->adapt_rate;
 
-   /* Compute input power in each frequency bin */
+   /* Compute echo power in each frequency bin */
    {
       float ss = 1.0f/st->cancel_count;
       if (ss < .3/M)
