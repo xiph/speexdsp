@@ -178,6 +178,16 @@ void speex_echo_reset(SpeexEchoState *st)
       st->W[i] = 0;
       st->X[i] = 0;
    }
+   for (i=0;i<=st->frame_size;i++)
+      st->power[i] = 0;
+   
+   st->adapted = 0;
+   st->adapt_rate = .01f;
+   st->sum_adapt = 0;
+   st->Sey = 0;
+   st->Syy = 0;
+   st->See = 0;
+
 }
 
 /** Destroys an echo canceller state */
@@ -308,9 +318,16 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
    Srr = inner_prod(st->d+st->frame_size, st->d+st->frame_size, st->frame_size);
    Sxx = inner_prod(st->x+st->frame_size, st->x+st->frame_size, st->frame_size);
    
-   st->Sey = .9*st->Sey + .1*Sey;
-   st->Syy = .9*st->Syy + .1*Syy;
-   st->See = .9*st->See + .1*See;
+   st->Sey = .98*st->Sey + .02*Sey;
+   st->Syy = .98*st->Syy + .02*Syy;
+   st->See = .98*st->See + .02*See;
+   
+   if (st->Sey/(1+st->Syy + .01*st->See) < -1)
+   {
+      fprintf (stderr, "reset at %d\n", st->cancel_count);
+      speex_echo_reset(st);
+      return;
+   }
    
    for (i=0;i<M*N;i++)
       Sww += st->W[i]*st->W[i];
@@ -319,6 +336,19 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
    ESR = .1*Syy / (1+See);
    if (ESR>1)
       ESR = 1;
+   
+   /*if (st->Sey/(1+st->Syy+.01*st->See) < -.09)
+   {
+      for (i=0;i<M*N;i++)
+         st->W[i] *= .95+0*max(0.8,1+Sey/(1+Syy)-.05);
+      fprintf (stderr, "corrected\n");
+   }*/
+   
+   /*if (st->Sey/(1+st->Syy+.01*st->See) < -.3)
+   {
+      st->adapted = 0;
+      st->sum_adapt = .1;
+   }*/
    
    /*if (Sey/(1+Syy) < -.09 && ESR > .3)
    {
@@ -339,7 +369,7 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
          fprintf(stderr, "Adapted at %d %f\n", st->cancel_count, st->sum_adapt);
       st->adapted = 1;
    }
-   printf ("%f %f %f %f %f %f %f %f %f %f %f %f\n", Srr, Syy, Sxx, See, ESR, SER, Sry, Sey, Sww, st->Sey, st->Syy, st->See);
+   //printf ("%f %f %f %f %f %f %f %f %f %f %f %f\n", Srr, Syy, Sxx, See, ESR, SER, Sry, Sey, Sww, st->Sey, st->Syy, st->See);
    for (i=0;i<=st->frame_size;i++)
    {
       st->fratio[i]  = (.2*ESR+.8*min(.005+ESR,st->fratio[i]));
@@ -389,6 +419,34 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
    /* Convert error to frequency domain */
    spx_drft_forward(st->fft_lookup, st->E);
 
+   float Wmag[M];
+   for (m=0;m<M;m++)
+      Wmag[m] = 0;
+   float WmagSum = 0;
+   for (m=0;m<M;m++)
+   {
+      for (i=0;i<N;i++)
+      {
+         st->W[m*N+i] *= 1-st->regul[i]*ESR;
+         Wmag[m] += st->W[m*N+i]*st->W[m*N+i];
+      }
+      Wmag[m] = sqrt(Wmag[m]+1e-3);
+      WmagSum += Wmag[m];
+   }
+   for (m=0;m<M;m++)
+   {
+      Wmag[m] *= 1./WmagSum;
+      Wmag[m] = .5+.5*Wmag[m];
+      //if (!st->adapted)
+      Wmag[m] = 1;
+      if (m==17 && !st->adapted)
+         Wmag[m] = 1;
+      else
+         Wmag[m] = .5;
+      Wmag[m] = 9./(9+M-m);
+      printf ("%f ", Wmag[m]);
+   }
+   printf ("\n");
    //float Ephi = 0;
    /* Compute weight gradient */
    for (j=0;j<M;j++)
@@ -401,15 +459,15 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
          //Ephi += st->PHI[i]*st->PHI[i];
          st->grad[j*N+i] = st->PHI[i];
       }
+      
+      for (i=0;i<N;i++)
+         st->W[j*N+i] += st->adapt_rate*Wmag[j]*st->PHI[i];
    }
    //printf ("%f \n", Ephi);
    /* Update weights */
-   for (i=0;i<M*N;i++)
+   /*for (i=0;i<M*N;i++)
       st->W[i] += st->adapt_rate*st->grad[i];
-   
-   for (m=0;m<M;m++)
-      for (i=0;i<N;i++)
-         st->W[m*N+i] *= 1-st->regul[i]*ESR;
+   */
    
    /* AUMDF weight constraint */
    for (j=0;j<M;j++)
