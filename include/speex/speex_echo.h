@@ -56,12 +56,14 @@ typedef struct SpeexEchoState {
    float *d;
    float *D;
    float *y;
+   float *y2;
    float *last_y;
    float *Yps;
    float *Y;
+   float *Y2;
    float *E;
    float *PHI;
-   float *W;
+   float * restrict W;
    float *power;
    float *power_1;
    float *grad;

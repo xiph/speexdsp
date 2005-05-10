@@ -18,7 +18,7 @@ int main()
    int i;
    int echo_fd, ref_fd, e_fd;
    float echo[NN], ref[NN], e[NN];
-   short noise[NN];
+   float noise[NN];
    short echo_buf[NN], ref_buf[NN], e_buf[NN];
    SpeexEchoState *st;
    SpeexPreprocessState *den;
@@ -40,8 +40,8 @@ int main()
       for (i=0;i<NN;i++)
          echo[i] = echo_buf[i];
 */
-      speex_echo_cancel(st, ref_buf, echo_buf, e_buf, NULL);
-      /*speex_denoise(den, e, noise);*/
+      speex_echo_cancel(st, ref_buf, echo_buf, e_buf, noise);
+      speex_preprocess(den, e_buf, noise);
       
  /*     for (i=0;i<NN;i++)
          e_buf[i] = e[i];

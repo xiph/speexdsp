@@ -140,6 +140,7 @@ SpeexEchoState *speex_echo_state_init(int frame_size, int filter_length)
    st->x = (float*)speex_alloc(N*sizeof(float));
    st->d = (float*)speex_alloc(N*sizeof(float));
    st->y = (float*)speex_alloc(N*sizeof(float));
+   st->y2 = (float*)speex_alloc(N*sizeof(float));
    st->Yps = (float*)speex_alloc(N*sizeof(float));
    st->last_y = (float*)speex_alloc(N*sizeof(float));
    st->Yf = (float*)speex_alloc((st->frame_size+1)*sizeof(float));
@@ -151,9 +152,10 @@ SpeexEchoState *speex_echo_state_init(int frame_size, int filter_length)
    st->X = (float*)speex_alloc(M*N*sizeof(float));
    st->D = (float*)speex_alloc(N*sizeof(float));
    st->Y = (float*)speex_alloc(N*sizeof(float));
+   st->Y2 = (float*)speex_alloc(N*sizeof(float));
    st->E = (float*)speex_alloc(N*sizeof(float));
    st->W = (float*)speex_alloc(M*N*sizeof(float));
-   st->PHI = (float*)speex_alloc(N*sizeof(float));
+   st->PHI = (float*)speex_alloc(M*N*sizeof(float));
    st->power = (float*)speex_alloc((frame_size+1)*sizeof(float));
    st->power_1 = (float*)speex_alloc((frame_size+1)*sizeof(float));
    st->grad = (float*)speex_alloc(N*M*sizeof(float));
@@ -304,6 +306,42 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
       out[i] = tmp_out;  
    }
    
+   /* This bit of code provides faster adaptation by doing a projection of the previous gradient on the 
+      "MMSE surface" */
+   if (1)
+   {
+      float Sge, Sgg, Syy;
+      float gain;
+      Syy = inner_prod(st->y+st->frame_size, st->y+st->frame_size, st->frame_size);
+      for (i=0;i<N;i++)
+         st->Y2[i] = 0;
+      for (j=0;j<M;j++)
+         spectral_mul_accum(&st->X[j*N], &st->PHI[j*N], st->Y2, N);
+      for (i=0;i<N;i++)
+         st->y2[i] = st->Y2[i];
+      spx_drft_backward(st->fft_lookup, st->y2);
+      for (i=0;i<N;i++)
+         st->y2[i] *= scale;
+      Sge = inner_prod(st->y2+st->frame_size, st->E+st->frame_size, st->frame_size);
+      Sgg = inner_prod(st->y2+st->frame_size, st->y2+st->frame_size, st->frame_size);
+      gain = Sge/(N+.03*Syy+Sgg);
+      if (gain>2)
+         gain = 2;
+      if (gain < -2)
+         gain = -2;
+      /*gain = 0;*/
+      /*printf ("%f\t", gain);*/
+      for (i=0;i<N;i++)
+         st->Y[i] += gain*st->Y2[i];
+      for (i=0;i<st->frame_size;i++)
+      {
+         st->y[i+st->frame_size] += gain*st->y2[i+st->frame_size];
+         st->E[i+st->frame_size] -= gain*st->y2[i+st->frame_size];
+      }
+      for (i=0;i<M*N;i++)
+         st->W[i] += gain*st->PHI[i];
+   }
+
    /* Compute power spectrum of output (D-Y) and filter response (Y) */
    for (i=0;i<N;i++)
       st->D[i] -= st->Y[i];
@@ -419,10 +457,10 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
       if (st->adapted)
       {
          for (i=0;i<=st->frame_size;i++)
-            st->power_1[i] = st->fratio[i] /(1.f+st->power[i]);
+            st->power_1[i] = st->adapt_rate*st->fratio[i] /(1.f+st->power[i]);
       } else {
          for (i=0;i<=st->frame_size;i++)
-            st->power_1[i] = 1.0f/(1.f+st->power[i]);
+            st->power_1[i] = st->adapt_rate/(1.f+st->power[i]);
       }
    }
 
@@ -442,11 +480,11 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
    /* Compute weight gradient */
    for (j=0;j<M;j++)
    {
-      weighted_spectral_mul_conj(st->power_1, &st->X[j*N], st->E, st->PHI, N);
-
-      for (i=0;i<N;i++)
-         st->W[j*N+i] += st->adapt_rate*st->PHI[i];
+      weighted_spectral_mul_conj(st->power_1, &st->X[j*N], st->E, st->PHI+N*j, N);
    }
+
+   for (i=0;i<M*N;i++)
+      st->W[i] += st->PHI[i];
    
    /* AUMDF weight constraint */
    for (j=0;j<M;j++)
