@@ -6,7 +6,7 @@
 \fontscheme pslatex
 \graphics default
 \paperfontsize default
-\spacing single 
+\spacing onehalf 
 \papersize letterpaper
 \paperpackage a4
 \use_geometry 0
@@ -28,7 +28,7 @@
 
 The Speex Codec Manual
 \newline 
-(version 1.1.6)
+(version 1.1.9)
 \layout Author
 
 Jean-Marc Valin
@@ -498,6 +498,81 @@ The voice activity detector (VAD) provided by the preprocessor is more advanced
  
 \layout Section
 \pagebreak_top 
+Compiling
+\layout Standard
+
+Compiling Speex under UNIX or any platform supported by autoconf (e.g.
+ Win32/cygwin) is as easy as typing:
+\layout LyX-Code
+
+% ./configure [options]
+\layout LyX-Code
+
+% make
+\layout LyX-Code
+
+% make install
+\layout Standard
+
+The options supported by the Speex configure script are:
+\layout Description
+
+--prefix=<path> Specifies where to install Speex
+\layout Description
+
+--enable-shared/--disable-shared Whether to compile shared libraries
+\layout Description
+
+--enable-static/--disable-static Whether to compile static libraries
+\layout Description
+
+--disable-wideband Disable the wideband part of Speex (typically to same
+ space)
+\layout Description
+
+--enable-valgrind Enable extra information when (and only when) running
+ with valgrind
+\layout Description
+
+--enable-sse Enable use of SSE instructions (x86 only)
+\layout Description
+
+--enable-fixed-point
+\begin_inset LatexCommand \index{fixed-point}
+
+\end_inset 
+
+ Compile Speex for a processor that does not have a floating point unit
+ (FPU)
+\layout Description
+
+--enable-arm4-asm Enable assembly specific to the ARMv4 architecture (gcc
+ only)
+\layout Description
+
+--enable-arm5e-asm Enable assembly specific to the ARMv5E architecture (gcc
+ only)
+\layout Description
+
+--enable-fixed-point-debug Use only for debugging the fixed-point
+\begin_inset LatexCommand \index{fixed-point}
+
+\end_inset 
+
+ code (very slow)
+\layout Description
+
+--enable-epic-48k Enable a special (and non-compatible) 4.8 kbps narrowband
+ mode
+\layout Description
+
+--enable-ti-c55x Enable support for the TI C5x family
+\layout Description
+
+--enable-16bit-precision Reduces precision to 16 bits in time-critical areas
+ (fixed-point only)
+\layout Section
+\pagebreak_top 
 Command-line encoder/decoder
 \begin_inset LatexCommand \label{sec:Command-line-encoder/decoder}
 
@@ -738,6 +813,11 @@ This section explains how to use the Speex API.
 \layout Subsection
 
 Encoding
+\begin_inset LatexCommand \label{sub:Encoding}
+
+\end_inset 
+
+
 \layout Standard
 
 In order to encode speech using Speex, you first need to:
@@ -875,6 +955,11 @@ That's about it for the encoder.
 \layout Subsection
 
 Decoding
+\begin_inset LatexCommand \label{sub:Decoding}
+
+\end_inset 
+
+
 \layout Standard
 
 In order to decode speech using Speex, you first need to:
@@ -993,9 +1078,19 @@ speex_decoder_destroy(dec_state);
 \layout Subsection
 
 Preprocessor
+\begin_inset LatexCommand \label{sub:Preprocessor}
+
+\end_inset 
+
+
 \layout Standard
 
-In order to use the Speex preprocessor, you first need to:
+In order to use the Speex preprocessor
+\begin_inset LatexCommand \index{preprocessor}
+
+\end_inset 
+
+, you first need to:
 \layout LyX-Code
 
 #include <speex/speex_preprocess.h>
@@ -1004,22 +1099,224 @@ In order to use the Speex preprocessor, you first need to:
 Then, a preprocessor state can be created as:
 \layout LyX-Code
 
-SpeexPreprocessState *state = speex_preprocess_state_init(frame_size, sampling_r
-ate);
+SpeexPreprocessState *preprocess_state = speex_preprocess_state_init(frame_size,
+ sampling_rate);
 \layout Standard
 
 It is recommended to use the same value for 
-\emph on 
+\family typewriter 
 frame_size
-\emph default 
+\family default 
  as is used by the encoder (20 
 \emph on 
 ms
 \emph default 
 ).
+\layout Standard
+
+For each input frame, you need to call:
+\layout LyX-Code
+
+speex_preprocess(preprocess_state, audio_frame, echo_residue);
+\layout Standard
+
+where 
+\family typewriter 
+audio_frame
+\family default 
+ is used both as input and output and 
+\family typewriter 
+echo_residue
+\family default 
+ is either an array filled by the echo canceller, or NULL if the preprocessor
+ is used without the echo canceller.
+\layout Standard
+
+In cases where the output audio is not useful for a certain frame, it is
+ possible to use instead:
+\layout LyX-Code
+
+speex_preprocess_estimate_update(preprocess_state, audio_frame, echo_residue);
+\layout Standard
+
+This call will update all the preprocessor internal state variables without
+ computing the output audio, thus saving some CPU cycles.
+\layout Standard
+
+The behaviour of the preprocessor can be changed using:
+\layout LyX-Code
+
+speex_preprocess_ctl(preprocess_state, request, ptr);
+\layout Standard
+
+which is used in the same way as the encoder and decoder equivalent.
+ Options are listed in Section .
+\layout Standard
+
+The preprocessor state can be destroyed using:
+\layout LyX-Code
+
+speex_preprocess_state_destroy(preprocess_state);
+\layout Subsection
+
+Echo Cancellation
+\begin_inset LatexCommand \label{sub:Echo-Cancellation}
+
+\end_inset 
+
+
+\layout Standard
+
+The Speex library now includes an echo cancellation
+\begin_inset LatexCommand \index{echo cancellation}
+
+\end_inset 
+
+ algorithm suitable for Acoustic Echo Cancellation
+\begin_inset LatexCommand \index{acoustic echo cancellation}
+
+\end_inset 
+
+ (AEC).
+ In order to use the echo canceller, you first need to
+\layout LyX-Code
+
+#include <speex/speex_echo.h>
+\layout Standard
+
+Then, an echo canceller state can be created by:
+\layout LyX-Code
+
+SpeexEchoState *echo_state = speex_echo_state_init(frame_size, filter_length);
+\layout Standard
+
+where 
+\family typewriter 
+frame_size
+\family default 
+ is the amount of data (in samples) you want to process at once and 
+\family typewriter 
+filter_length
+\family default 
+ is the length (in samples) of the echo cancelling filter you want to use
+ (also known as 
+\shape italic 
+tail length
+\shape default 
+
+\begin_inset LatexCommand \index{tail length}
+
+\end_inset 
+
+).
+ It is recommended to use a frame size in the order of 20 ms (or equal to
+ the codec frame size) and make sure it is easy to perform an FFT of that
+ size (powers of two are better than prime sizes).
+ The recommended tail length is approximately the third of the room reverberatio
+n time.
+ For example, in a small room, reverberation time is in the order of 300
+ ms, so a tail length of 100 ms is a good choice (800 samples at 8000 Hz
+ sampling rate).
+\layout Standard
+
+Once the echo canceller state is created, audio can be processed by:
+\layout LyX-Code
+
+speex_echo_cancel(echo_state, input_frame, echo_frame, output_frame, residue);
+\layout Standard
+
+where 
+\family typewriter 
+input_frame
+\family default 
+ is the audio as captured by the microphone, 
+\family typewriter 
+echo_frame
+\family default 
+ is the signal that was played in the speaker (and needs to be removed)
+ and 
+\family typewriter 
+output_frame
+\family default 
+ is the signal with echo removed.
+ The 
+\family typewriter 
+residue
+\family default 
+ parameter is optional (you can set it to NULL) and is used to return the
+ estimated power spectrum of the echo residue so it can be removed by the
+ preprocessor (if you with to use it).
+ 
+\layout Standard
+
+One important thing to keep in mind is the relationship between 
+\family typewriter 
+input_frame
+\family default 
+ and 
+\family typewriter 
+echo_frame
+\family default 
+.
+ It is important that, at any time, any echo that is present in the input
+ has already been sent to the echo canceller as 
+\family typewriter 
+echo_frame
+\family default 
+.
+ In other words, the echo canceller cannot remove a signal that it hasn't
+ yet received.
+ On the other hand, the delay between the input signal and the echo signal
+ must be small enough because otherwise part of the echo cancellation filter
+ is inefficient.
+ In the ideal case, you code would look like:
+\layout LyX-Code
+
+write_to_soundcard(echo_frame, frame_size);
+\layout LyX-Code
+
+read_from_soundcard(input_frame, frame_size);
+\layout LyX-Code
+
+speex_echo_cancel(echo_state, input_frame, echo_frame, output_frame, residue);
+\layout Standard
+
+As stated above, if you wish to further reduce the echo present in the signal,
+ you can do so by passing 
+\family typewriter 
+residue
+\family default 
+ as the last parameter of 
+\family typewriter 
+speex_preprocess()
+\family default 
+ function (see Section 
+\begin_inset LatexCommand \ref{sub:Preprocessor}
+
+\end_inset 
+
+).
+\layout Standard
+
+The echo cancellation state can be destroyed as:
+\layout LyX-Code
+
+speex_echo_state_destroy(echo_state);
+\layout Standard
+
+It is also possible to reset the state of the echo canceller so it can be
+ reused without the need to create another state as:
+\layout LyX-Code
+
+speex_echo_state_reset(echo_state);
 \layout Subsection
 
 Codec Options (speex_*_ctl)
+\begin_inset LatexCommand \label{sub:Codec-Options}
+
+\end_inset 
+
+
 \layout Standard
 
 The Speex encoder and decoder support many options and requests that can
@@ -1188,6 +1485,14 @@ SPEEX_SET_ABR* Set average bit-rate
 SPEEX_GET_ABR* Get average bit-rate (ABR) setting (integer in bps)
 \layout Description
 
+SPEEX_SET_PLC_TUNING* Tell the encoder to optimize encoding for a certain
+ percentage of packet loss (integer in percent)
+\layout Description
+
+SPEEX_GET_PLC_TUNING* Get the current tuning of the encoder for PLC (integer
+ in percent)
+\layout Description
+
 * applies only to the encoder
 \layout Description
 
@@ -1202,6 +1507,11 @@ SPEEX_GET_ABR* Get average bit-rate (ABR) setting (integer in bps)
 \layout Subsection
 
 Mode queries
+\begin_inset LatexCommand \label{sub:Mode-queries}
+
+\end_inset 
+
+
 \layout Standard
 
 Speex modes have a query system similar to the speex_encoder_ctl and speex_decod
@@ -1232,6 +1542,59 @@ ptr
 \emph default 
  (integer in bps).
  
+\layout Subsection
+
+Preprocessor options
+\begin_inset LatexCommand \label{sub:Preprocessor-options}
+
+\end_inset 
+
+
+\layout Description
+
+SPEEX_PREPROCESS_SET_DENOISE Turns denoising on(1) or off(2) (integer)
+\layout Description
+
+SPEEX_PREPROCESS_GET_DENOISE Get denoising status (integer)
+\layout Description
+
+SPEEX_PREPROCESS_SET_AGC Turns automatic gain control (AGC) on(1) or off(2)
+ (integer)
+\layout Description
+
+SPEEX_PREPROCESS_GET_AGC Get AGC status (integer)
+\layout Description
+
+SPEEX_PREPROCESS_SET_VAD Turns voice activity detector (VAD) on(1) or off(2)
+ (integer)
+\layout Description
+
+SPEEX_PREPROCESS_GET_VAD Get VAD status (integer)
+\layout Description
+
+SPEEX_PREPROCESS_SET_AGC_LEVEL
+\layout Description
+
+SPEEX_PREPROCESS_GET_AGC_LEVEL
+\layout Description
+
+SPEEX_PREPROCESS_SET_DEREVERB Turns reverberation removal on(1) or off(2)
+ (integer)
+\layout Description
+
+SPEEX_PREPROCESS_GET_DEREVERB Get reverberation removal status (integer)
+\layout Description
+
+SPEEX_PREPROCESS_SET_DEREVERB_LEVEL
+\layout Description
+
+SPEEX_PREPROCESS_GET_DEREVERB_LEVEL
+\layout Description
+
+SPEEX_PREPROCESS_SET_DEREVERB_DECAY
+\layout Description
+
+SPEEX_PREPROCESS_GET_DEREVERB_DECAY
 \layout Subsection
 
 Packing and in-band signalling
@@ -5564,7 +5927,8 @@ Vorbis is a great project but its goals are not the same as Speex.
  typically 2-4 times higher compression at equal quality.
 \layout Subsection*
 
-Isn't there a GPL implementation of the GSM-FR codec? Why is Speex necessary?
+Isn't there an open-source implementation of the GSM-FR codec? Why is Speex
+ necessary?
 \layout Standard
 
 First of all, it's not clear whether GSM-FR is covered by a Philips patent
@@ -5689,10 +6053,11 @@ For most kinds of compression, encoding is inherently slower than decoding.
 Why is Speex so slow on my iPaq (or insert any platform without an FPU)?
 \layout Standard
 
-Well, the parenthesis provides the answer: no FPU (floating-point unit).
- The Speex code makes heavy use of floating-point operations.
- On devices with no FPU, all floating-point instructions need to be emulated.
- This is a very time consuming operation.
+You probably didn't build Speex with the fixed-point option (--enable-fixed-poin
+t).
+ Even if you did, not all modes have been ported to use fixed-point arithmetic,
+ so the code may be slowed down by a few float operations left (e.g.
+ in the wideband mode).
 \layout Subsection*
 
 I'm getting unusual background noise (hiss) when using libspeex in my applicatio
@@ -5772,14 +6137,15 @@ I guess it all depends on the bit-rate used.
 Can Speex pass V.9x modem signals correctly?
 \layout Standard
 
-If I could do that I'd be very rich by now :-)
+If I could do that I'd be very rich by now :-) Seriously, that would break
+ fundamental laws of information theory.
 \layout Subsection*
 
 What is your (Jean-Marc) relationship with the University of Sherbrooke
  and how does Speex fit into that?
 \layout Standard
 
-Currently (2004/04/06), I'm doing my 
+Currently (2005/05/11), I'm doing my 
 \emph on 
 Ph.D.
 
@@ -5899,7 +6265,7 @@ IETF RTP Profile
 \layout Standard
 
 
-\begin_inset Include \verbatiminput{draft-herlein-avt-rtp-speex-00.txt}
+\begin_inset Include \verbatiminput{draft-herlein-speex-rtp-profile-02.txt}
 preview false
 
 \end_inset 
