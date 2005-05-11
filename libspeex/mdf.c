@@ -39,17 +39,15 @@
 #endif
 
 #include "misc.h"
-#include <speex/speex_echo.h>
+#include "speex/speex_echo.h"
 #include "smallft.h"
 #include <math.h>
-#include <stdio.h>
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
 #endif
 
 #define BETA .65
-/*#define BETA 0*/
 
 #define min(a,b) ((a)<(b) ? (a) : (b))
 #define max(a,b) ((a)>(b) ? (a) : (b))
@@ -162,7 +160,7 @@ SpeexEchoState *speex_echo_state_init(int frame_size, int filter_length)
    
    for (i=0;i<N*M;i++)
    {
-      st->W[i] = 0;
+      st->W[i] = st->PHI[i] = 0;
    }
    
    st->regul[0] = (.01+(10.)/((4.)*(4.)))/M;
@@ -329,8 +327,6 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
          gain = 2;
       if (gain < -2)
          gain = -2;
-      /*gain = 0;*/
-      /*printf ("%f\t", gain);*/
       for (i=0;i<N;i++)
          st->Y[i] += gain*st->Y2[i];
       for (i=0;i<st->frame_size;i++)
@@ -356,9 +352,7 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
       if (r>1)
          r = 1;
       st->fratio[j] = r;
-      /*printf ("%f ", r);*/
    }
-   /*printf ("\n");*/
 
    /* Compute a bunch of correlations */
    Sry = inner_prod(st->y+st->frame_size, st->d+st->frame_size, st->frame_size);
@@ -375,15 +369,11 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
    
    if (st->Sey/(1+st->Syy + .01*st->See) < -1)
    {
-      fprintf (stderr, "reset at %d\n", st->cancel_count);
+      /*fprintf (stderr, "reset at %d\n", st->cancel_count);*/
       speex_echo_reset(st);
       return;
    }
-   
-   /*for (i=0;i<M*N;i++)
-      Sww += st->W[i]*st->W[i];
-   */
-   
+
    SER = Srr / (1+Sxx);
    ESR = leak_estimate*Syy / (1+See);
    if (ESR>1)
@@ -411,21 +401,17 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
    
    /* We consider that the filter is adapted if the following is true*/
    if (ESR>.6 && st->sum_adapt > 1)
-   /*if (st->cancel_count > 40)*/
    {
-      if (!st->adapted)
-         fprintf(stderr, "Adapted at %d %f\n", st->cancel_count, st->sum_adapt);
+      /*if (!st->adapted)
+         fprintf(stderr, "Adapted at %d %f\n", st->cancel_count, st->sum_adapt);*/
       st->adapted = 1;
    }
-   /*printf ("%f %f %f %f %f %f %f %f %f %f %f %f\n", Srr, Syy, Sxx, See, ESR, SER, Sry, Sey, Sww, st->Sey, st->Syy, st->See);*/
+   
    for (i=0;i<=st->frame_size;i++)
    {
       st->fratio[i]  = (.2*ESR+.8*min(.005+ESR,st->fratio[i]));
-      /*printf ("%f ", st->fratio[i]);*/
-   }
-   /*printf ("\n");*/
-   
-   
+   }   
+
    if (st->adapted)
    {
       st->adapt_rate = .95f/(2+M);
@@ -502,14 +488,6 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
          spx_drft_forward(st->fft_lookup, &st->W[j*N]);
       }
    }
-   
-   /*if (st->cancel_count%100==0)
-   {
-      for (i=0;i<M*N;i++)
-         printf ("%f ", st->W[i]);
-      printf ("\n");
-   }*/
-
 
    /* Compute spectrum of estimated echo for use in an echo post-filter (if necessary)*/
    if (Yout)
