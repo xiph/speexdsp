@@ -176,7 +176,7 @@ SpeexEchoState *speex_echo_state_init(int frame_size, int filter_length)
 }
 
 /** Resets echo canceller state */
-void speex_echo_reset(SpeexEchoState *st)
+void speex_echo_state_reset(SpeexEchoState *st)
 {
    int i, M, N;
    st->cancel_count=0;
@@ -370,7 +370,7 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
    if (st->Sey/(1+st->Syy + .01*st->See) < -1)
    {
       /*fprintf (stderr, "reset at %d\n", st->cancel_count);*/
-      speex_echo_reset(st);
+      speex_echo_state_reset(st);
       return;
    }
 

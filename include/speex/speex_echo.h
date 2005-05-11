@@ -89,7 +89,7 @@ void speex_echo_state_destroy(SpeexEchoState *st);
 void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, float *Y);
 
 /** Reset the echo canceller state */
-void speex_echo_reset(SpeexEchoState *st);
+void speex_echo_state_reset(SpeexEchoState *st);
 
 #ifdef __cplusplus
 }
