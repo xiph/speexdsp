@@ -112,7 +112,7 @@ int speex_decode(void *state, SpeexBits *bits, float *out)
 {
    int i, ret;
    int N;
-   float short_out[MAX_IN_SAMPLES];
+   spx_int16_t short_out[MAX_IN_SAMPLES];
    speex_decoder_ctl(state, SPEEX_GET_FRAME_SIZE, &N);
    ret = (*((SpeexMode**)state))->dec(state, bits, short_out);
    for (i=0;i<N;i++)
