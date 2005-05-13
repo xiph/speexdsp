@@ -301,7 +301,7 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
          tmp_out = 32767;
       else if (tmp_out<-32768)
          tmp_out = -32768;
-      out[i] = tmp_out;  
+      out[i] = tmp_out;
    }
    
    /* This bit of code provides faster adaptation by doing a projection of the previous gradient on the 
@@ -322,11 +322,14 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
          st->y2[i] *= scale;
       Sge = inner_prod(st->y2+st->frame_size, st->E+st->frame_size, st->frame_size);
       Sgg = inner_prod(st->y2+st->frame_size, st->y2+st->frame_size, st->frame_size);
+      /* Compute projection gain */
       gain = Sge/(N+.03*Syy+Sgg);
       if (gain>2)
          gain = 2;
       if (gain < -2)
          gain = -2;
+      
+      /* Apply gain to weights, echo estimates, output */
       for (i=0;i<N;i++)
          st->Y[i] += gain*st->Y2[i];
       for (i=0;i<st->frame_size;i++)
@@ -367,6 +370,7 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
    st->Syy = .98*st->Syy + .02*Syy;
    st->See = .98*st->See + .02*See;
    
+   /* Check if filter is completely mis-adapted (if so, reset filter) */
    if (st->Sey/(1+st->Syy + .01*st->See) < -1)
    {
       /*fprintf (stderr, "reset at %d\n", st->cancel_count);*/
@@ -407,6 +411,7 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
       st->adapted = 1;
    }
    
+   /* Update frequency-dependent energy ratio with the total energy ratio */
    for (i=0;i<=st->frame_size;i++)
    {
       st->fratio[i]  = (.2*ESR+.8*min(.005+ESR,st->fratio[i]));
@@ -416,7 +421,7 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
    {
       st->adapt_rate = .95f/(2+M);
    } else {
-      /* Temporary adaption if filter is not adapted correctly */
+      /* Temporary adaption rate if filter is not adapted correctly */
       if (SER<.1)
          st->adapt_rate =.8/(2+M);
       else if (SER<1)
@@ -428,6 +433,8 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
       else
          st->adapt_rate = 0;
    }
+   
+   /* How much have we adapted so far? */
    st->sum_adapt += st->adapt_rate;
 
    /* Compute echo power in each frequency bin */
@@ -436,12 +443,15 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
       if (ss < .3/M)
          ss=.3/M;
       power_spectrum(&st->X[(M-1)*N], st->Xf, N);
+      /* Smooth echo energy estimate over time */
       for (j=0;j<=st->frame_size;j++)
          st->power[j] = (1-ss)*st->power[j] + ss*st->Xf[j];
       
       
+      /* Combine adaptation rate to the the inverse energy estimate */
       if (st->adapted)
       {
+         /* If filter is adapted, include the frequency-dependent ratio too */
          for (i=0;i<=st->frame_size;i++)
             st->power_1[i] = st->adapt_rate*st->fratio[i] /(1.f+st->power[i]);
       } else {
@@ -456,12 +466,8 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
 
    /* Do some regularization (prevents problems when system is ill-conditoned) */
    for (m=0;m<M;m++)
-   {
       for (i=0;i<N;i++)
-      {
          st->W[m*N+i] *= 1-st->regul[i]*ESR;
-      }
-   }
    
    /* Compute weight gradient */
    for (j=0;j<M;j++)
@@ -469,6 +475,7 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
       weighted_spectral_mul_conj(st->power_1, &st->X[j*N], st->E, st->PHI+N*j, N);
    }
 
+   /* Gradient descent */
    for (i=0;i<M*N;i++)
       st->W[i] += st->PHI[i];
    
@@ -494,20 +501,26 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
    {
       if (st->adapted)
       {
+         /* If the filter is adapted, take the filtered echo */
          for (i=0;i<st->frame_size;i++)
             st->last_y[i] = st->last_y[st->frame_size+i];
          for (i=0;i<st->frame_size;i++)
             st->last_y[st->frame_size+i] = st->y[st->frame_size+i];
       } else {
+         /* If filter isn't adapted yet, all we can do is take the echo signal directly */
          for (i=0;i<N;i++)
             st->last_y[i] = st->x[i];
       }
+      
+      /* Apply hanning window (should pre-compute it)*/
       for (i=0;i<N;i++)
          st->Yps[i] = (.5-.5*cos(2*M_PI*i/N))*st->last_y[i];
       
+      /* Compute power spectrum of the echo */
       spx_drft_forward(st->fft_lookup, st->Yps);
       power_spectrum(st->Yps, st->Yps, N);
       
+      /* Estimate residual echo */
       for (i=0;i<=st->frame_size;i++)
          Yout[i] = 2*leak_estimate*st->Yps[i];
    }
