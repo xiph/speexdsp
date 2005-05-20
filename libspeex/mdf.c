@@ -304,8 +304,8 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
       out[i] = tmp_out;
    }
    
-   /* This bit of code provides faster adaptation by doing a projection of the previous gradient on the 
-      "MMSE surface" */
+   /* This bit of code is optional and provides faster adaptation by doing a projection 
+      of the previous gradient on the "MMSE surface" */
    if (1)
    {
       float Sge, Sgg, Syy;
