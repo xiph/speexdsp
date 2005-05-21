@@ -423,9 +423,9 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
    } else {
       /* Temporary adaption rate if filter is not adapted correctly */
       if (SER<.1)
-         st->adapt_rate =.8/(2+M);
+         st->adapt_rate =.5/(2+M);
       else if (SER<1)
-         st->adapt_rate =.4/(2+M);
+         st->adapt_rate =.3/(2+M);
       else if (SER<10)
          st->adapt_rate =.2/(2+M);
       else if (SER<30)
