@@ -1,4 +1,4 @@
-/* Copyright (C) Jean-Marc Valin
+/* Copyright (C) 2003-2005 Jean-Marc Valin
 
    File: speex_echo.c
    Echo cancelling based on the MDF algorithm described in:
