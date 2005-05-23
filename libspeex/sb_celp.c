@@ -286,17 +286,17 @@ void *sb_encoder_init(const SpeexMode *m)
       st->lagWindow[i]=16384*exp(-.5*sqr(2*M_PI*st->lag_factor*i));
 
    st->autocorr = speex_alloc((st->lpcSize+1)*sizeof(spx_word16_t));
-   st->lpc = speex_alloc((st->lpcSize+1)*sizeof(spx_coef_t));
-   st->bw_lpc1 = speex_alloc((st->lpcSize+1)*sizeof(spx_coef_t));
-   st->bw_lpc2 = speex_alloc((st->lpcSize+1)*sizeof(spx_coef_t));
-   st->lsp = speex_alloc((st->lpcSize)*sizeof(spx_lsp_t));
-   st->qlsp = speex_alloc((st->lpcSize)*sizeof(spx_lsp_t));
-   st->old_lsp = speex_alloc((st->lpcSize)*sizeof(spx_lsp_t));
-   st->old_qlsp = speex_alloc((st->lpcSize)*sizeof(spx_lsp_t));
-   st->interp_lsp = speex_alloc((st->lpcSize)*sizeof(spx_lsp_t));
-   st->interp_qlsp = speex_alloc((st->lpcSize)*sizeof(spx_lsp_t));
-   st->interp_lpc = speex_alloc((st->lpcSize+1)*sizeof(spx_coef_t));
-   st->interp_qlpc = speex_alloc((st->lpcSize+1)*sizeof(spx_coef_t));
+   st->lpc = speex_alloc(st->lpcSize*sizeof(spx_coef_t));
+   st->bw_lpc1 = speex_alloc(st->lpcSize*sizeof(spx_coef_t));
+   st->bw_lpc2 = speex_alloc(st->lpcSize*sizeof(spx_coef_t));
+   st->lsp = speex_alloc(st->lpcSize*sizeof(spx_lsp_t));
+   st->qlsp = speex_alloc(st->lpcSize*sizeof(spx_lsp_t));
+   st->old_lsp = speex_alloc(st->lpcSize*sizeof(spx_lsp_t));
+   st->old_qlsp = speex_alloc(st->lpcSize*sizeof(spx_lsp_t));
+   st->interp_lsp = speex_alloc(st->lpcSize*sizeof(spx_lsp_t));
+   st->interp_qlsp = speex_alloc(st->lpcSize*sizeof(spx_lsp_t));
+   st->interp_lpc = speex_alloc(st->lpcSize*sizeof(spx_coef_t));
+   st->interp_qlpc = speex_alloc(st->lpcSize*sizeof(spx_coef_t));
    st->pi_gain = speex_alloc((st->nbSubframes)*sizeof(spx_word32_t));
 
    st->mem_sp = speex_alloc((st->lpcSize)*sizeof(spx_mem_t));
@@ -405,8 +405,7 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
       st->autocorr[i] = MULT16_16_Q14(st->autocorr[i],st->lagWindow[i]);
 
    /* Levinson-Durbin */
-   _spx_lpc(st->lpc+1, st->autocorr, st->lpcSize);
-   st->lpc[0] = (spx_coef_t)LPC_SCALING;
+   _spx_lpc(st->lpc, st->autocorr, st->lpcSize);
 
    /* LPC to LSPs (x-domain) transform */
    roots=lpc_to_lsp (st->lpc, st->lpcSize, st->lsp, 15, LSP_DELTA1, stack);
@@ -588,7 +587,7 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
          filters */
       st->pi_gain[sub]=LPC_SCALING;
       rh = LPC_SCALING;
-      for (i=1;i<=st->lpcSize;i+=2)
+      for (i=0;i<st->lpcSize;i+=2)
       {
          rh += st->interp_qlpc[i+1] - st->interp_qlpc[i];
          st->pi_gain[sub] += st->interp_qlpc[i] + st->interp_qlpc[i+1];
@@ -829,8 +828,8 @@ void *sb_decoder_init(const SpeexMode *m)
 
    st->qlsp = speex_alloc((st->lpcSize)*sizeof(spx_lsp_t));
    st->old_qlsp = speex_alloc((st->lpcSize)*sizeof(spx_lsp_t));
-   st->interp_qlsp = speex_alloc((st->lpcSize)*sizeof(spx_lsp_t));
-   st->interp_qlpc = speex_alloc((st->lpcSize+1)*sizeof(spx_coef_t));
+   st->interp_qlsp = speex_alloc(st->lpcSize*sizeof(spx_lsp_t));
+   st->interp_qlpc = speex_alloc(st->lpcSize*sizeof(spx_coef_t));
 
    st->pi_gain = speex_alloc((st->nbSubframes)*sizeof(spx_word32_t));
    st->mem_sp = speex_alloc((2*st->lpcSize)*sizeof(spx_mem_t));
@@ -1092,7 +1091,7 @@ int sb_decode(void *state, SpeexBits *bits, void *vout)
       
          st->pi_gain[sub]=LPC_SCALING;
          rh = LPC_SCALING;
-         for (i=1;i<=st->lpcSize;i+=2)
+         for (i=0;i<st->lpcSize;i+=2)
          {
             rh += st->interp_qlpc[i+1] - st->interp_qlpc[i];
             st->pi_gain[sub] += st->interp_qlpc[i] + st->interp_qlpc[i+1];

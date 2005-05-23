@@ -45,8 +45,7 @@ void bw_lpc(spx_word16_t gamma, const spx_coef_t *lpc_in, spx_coef_t *lpc_out, i
 {
    int i;
    spx_word16_t tmp=gamma;
-   lpc_out[0] = lpc_in[0];
-   for (i=1;i<order+1;i++)
+   for (i=0;i<order;i++)
    {
       lpc_out[i] = MULT16_16_P15(tmp,lpc_in[i]);
       tmp = MULT16_16_P15(tmp, gamma);
@@ -193,9 +192,9 @@ void filter_mem2(const spx_sig_t *x, const spx_coef_t *num, const spx_coef_t *de
       nyi = NEG16(yi);
       for (j=0;j<ord-1;j++)
       {
-         mem[j] = MAC16_16(MAC16_16(mem[j+1], num[j+1],xi), den[j+1],nyi);
+         mem[j] = MAC16_16(MAC16_16(mem[j+1], num[j],xi), den[j],nyi);
       }
-      mem[ord-1] = ADD32(MULT16_16(num[ord],xi), MULT16_16(den[ord],nyi));
+      mem[ord-1] = ADD32(MULT16_16(num[ord-1],xi), MULT16_16(den[ord-1],nyi));
       y[i] = SHL32(EXTEND32(yi),SIG_SHIFT);
    }
 }
@@ -212,9 +211,9 @@ void filter_mem2(const spx_sig_t *x, const spx_coef_t *num, const spx_coef_t *de
       nyi = NEG32(yi);
       for (j=0;j<ord-1;j++)
       {
-         mem[j] = MAC16_32_Q15(MAC16_32_Q15(mem[j+1], num[j+1],xi), den[j+1],nyi);
+         mem[j] = MAC16_32_Q15(MAC16_32_Q15(mem[j+1], num[j],xi), den[j],nyi);
       }
-      mem[ord-1] = SUB32(MULT16_32_Q15(num[ord],xi), MULT16_32_Q15(den[ord],yi));
+      mem[ord-1] = SUB32(MULT16_32_Q15(num[ord-1],xi), MULT16_32_Q15(den[ord-1],yi));
       y[i] = yi;
    }
 }
@@ -232,9 +231,9 @@ void iir_mem2(const spx_sig_t *x, const spx_coef_t *den, spx_sig_t *y, int N, in
       nyi = NEG16(yi);
       for (j=0;j<ord-1;j++)
       {
-         mem[j] = MAC16_16(mem[j+1],den[j+1],nyi);
+         mem[j] = MAC16_16(mem[j+1],den[j],nyi);
       }
-      mem[ord-1] = MULT16_16(den[ord],nyi);
+      mem[ord-1] = MULT16_16(den[ord-1],nyi);
       y[i] = SHL32(EXTEND32(yi),SIG_SHIFT);
    }
 }
@@ -251,9 +250,9 @@ void iir_mem2(const spx_sig_t *x, const spx_coef_t *den, spx_sig_t *y, int N, in
       nyi = NEG32(yi);
       for (j=0;j<ord-1;j++)
       {
-         mem[j] = MAC16_32_Q15(mem[j+1],den[j+1],nyi);
+         mem[j] = MAC16_32_Q15(mem[j+1],den[j],nyi);
       }
-      mem[ord-1] = MULT16_32_Q15(den[ord],nyi);
+      mem[ord-1] = MULT16_32_Q15(den[ord-1],nyi);
       y[i] = yi;
    }
 }
@@ -274,9 +273,9 @@ void fir_mem2(const spx_sig_t *x, const spx_coef_t *num, spx_sig_t *y, int N, in
       yi = EXTRACT16(PSHR32(SATURATE(x[i] + SHL32(mem[0],1),536870911),SIG_SHIFT));
       for (j=0;j<ord-1;j++)
       {
-         mem[j] = MAC16_16(mem[j+1], num[j+1],xi);
+         mem[j] = MAC16_16(mem[j+1], num[j],xi);
       }
-      mem[ord-1] = MULT16_16(num[ord],xi);
+      mem[ord-1] = MULT16_16(num[ord-1],xi);
       y[i] = SHL32(EXTEND32(yi),SIG_SHIFT);
    }
 }
@@ -292,9 +291,9 @@ void fir_mem2(const spx_sig_t *x, const spx_coef_t *num, spx_sig_t *y, int N, in
       yi = xi + SHL32(mem[0],2);
       for (j=0;j<ord-1;j++)
       {
-         mem[j] = MAC16_32_Q15(mem[j+1], num[j+1],xi);
+         mem[j] = MAC16_32_Q15(mem[j+1], num[j],xi);
       }
-      mem[ord-1] = MULT16_32_Q15(num[ord],xi);
+      mem[ord-1] = MULT16_32_Q15(num[ord-1],xi);
       y[i] = SATURATE(yi,805306368);
    }
 }
@@ -327,13 +326,13 @@ void filter_mem2(const spx_sig_t *x, const spx_coef_t *num, const spx_coef_t *de
    for (i=0;i<N;i++)
    {
       xi=x[i];
-      y[i] = num[0]*xi + mem[0];
+      y[i] = xi + mem[0];
       yi=y[i];
       for (j=0;j<ord-1;j++)
       {
-         mem[j] = mem[j+1] + num[j+1]*xi - den[j+1]*yi;
+         mem[j] = mem[j+1] + num[j]*xi - den[j]*yi;
       }
-      mem[ord-1] = num[ord]*xi - den[ord]*yi;
+      mem[ord-1] = num[ord-1]*xi - den[ord-1]*yi;
    }
 }
 
@@ -346,9 +345,9 @@ void iir_mem2(const spx_sig_t *x, const spx_coef_t *den, spx_sig_t *y, int N, in
       y[i] = x[i] + mem[0];
       for (j=0;j<ord-1;j++)
       {
-         mem[j] = mem[j+1] - den[j+1]*y[i];
+         mem[j] = mem[j+1] - den[j]*y[i];
       }
-      mem[ord-1] = - den[ord]*y[i];
+      mem[ord-1] = - den[ord-1]*y[i];
    }
 }
 
@@ -360,12 +359,12 @@ void fir_mem2(const spx_sig_t *x, const spx_coef_t *num, spx_sig_t *y, int N, in
    for (i=0;i<N;i++)
    {
       xi=x[i];
-      y[i] = num[0]*xi + mem[0];
+      y[i] = xi + mem[0];
       for (j=0;j<ord-1;j++)
       {
-         mem[j] = mem[j+1] + num[j+1]*xi;
+         mem[j] = mem[j+1] + num[j]*xi;
       }
-      mem[ord-1] = num[ord]*xi;
+      mem[ord-1] = num[ord-1]*xi;
    }
 }
 #endif
@@ -408,8 +407,10 @@ void compute_impulse_response(const spx_coef_t *ak, const spx_coef_t *awk1, cons
    ALLOC(mem1, ord, spx_mem_t);
    ALLOC(mem2, ord, spx_mem_t);
    
-   for (i=0;i<ord+1;i++)
-      y[i] = awk1[i];
+   y[0] = LPC_SCALING;
+   for (i=0;i<ord;i++)
+      y[i+1] = awk1[i];
+   i++;
    for (;i<N;i++)
       y[i] = VERY_SMALL;
    
@@ -423,11 +424,11 @@ void compute_impulse_response(const spx_coef_t *ak, const spx_coef_t *awk1, cons
       ny2i = NEG16(y[i]);
       for (j=0;j<ord-1;j++)
       {
-         mem1[j] = MAC16_16(mem1[j+1], awk2[j+1],ny1i);
-         mem2[j] = MAC16_16(mem2[j+1], ak[j+1],ny2i);
+         mem1[j] = MAC16_16(mem1[j+1], awk2[j],ny1i);
+         mem2[j] = MAC16_16(mem2[j+1], ak[j],ny2i);
       }
-      mem1[ord-1] = MULT16_16(awk2[ord],ny1i);
-      mem2[ord-1] = MULT16_16(ak[ord],ny2i);
+      mem1[ord-1] = MULT16_16(awk2[ord-1],ny1i);
+      mem2[ord-1] = MULT16_16(ak[ord-1],ny2i);
    }
 }
 

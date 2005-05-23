@@ -245,7 +245,7 @@ void filter_mem2(const spx_sig_t *x, const spx_coef_t *num, const spx_coef_t *de
          : "=r" (deadm), "=r" (deadn), "=r" (deadd), "=r" (deadidx),
       "=r" (xi), "=r" (nyi), "=r" (dead1), "=r" (dead2),
       "=r" (dead3), "=r" (dead4), "=r" (dead5), "=r" (dead6)
-         : "0" (mem), "1" (num+1), "2" (den+1), "3" (ord-1), "4" (xi), "5" (nyi)
+         : "0" (mem), "1" (num), "2" (den), "3" (ord-1), "4" (xi), "5" (nyi)
          : "cc", "memory");
    
    }
@@ -368,7 +368,7 @@ void iir_mem2(const spx_sig_t *x, const spx_coef_t *den, spx_sig_t *y, int N, in
          : "=r" (deadm), "=r" (deadd), "=r" (deadidx), "=r" (nyi),
       "=r" (dead1), "=r" (dead2), "=r" (dead3), "=r" (dead4),
       "=r" (dead5), "=r" (dead6)
-         : "0" (mem), "1" (den+1), "2" (ord-1), "3" (nyi)
+         : "0" (mem), "1" (den), "2" (ord-1), "3" (nyi)
          : "cc", "memory");
    
    }

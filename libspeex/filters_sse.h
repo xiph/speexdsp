@@ -42,8 +42,8 @@ void filter_mem2_10(const float *x, const float *_num, const float *_den, float 
    for (i=0;i<2;i++)
    {
       mem[i] = _mm_loadu_ps(_mem+4*i);
-      num[i] = _mm_loadu_ps(_num+4*i+1);
-      den[i] = _mm_loadu_ps(_den+4*i+1);
+      num[i] = _mm_loadu_ps(_num+4*i);
+      den[i] = _mm_loadu_ps(_den+4*i);
    }
    mem[2] = _mm_setr_ps(_mem[8], _mem[9], 0, 0);
    num[2] = _mm_setr_ps(_num[9], _num[10], 0, 0);
@@ -95,8 +95,8 @@ void filter_mem2_8(const float *x, const float *_num, const float *_den, float *
    for (i=0;i<2;i++)
    {
       mem[i] = _mm_loadu_ps(_mem+4*i);
-      num[i] = _mm_loadu_ps(_num+4*i+1);
-      den[i] = _mm_loadu_ps(_den+4*i+1);
+      num[i] = _mm_loadu_ps(_num+4*i);
+      den[i] = _mm_loadu_ps(_den+4*i);
    }
    
    for (i=0;i<N;i++)
@@ -149,7 +149,7 @@ void iir_mem2_10(const float *x, const float *_den, float *y, int N, int ord, fl
    for (i=0;i<2;i++)
    {
       mem[i] = _mm_loadu_ps(_mem+4*i);
-      den[i] = _mm_loadu_ps(_den+4*i+1);
+      den[i] = _mm_loadu_ps(_den+4*i);
    }
    mem[2] = _mm_setr_ps(_mem[8], _mem[9], 0, 0);
    den[2] = _mm_setr_ps(_den[9], _den[10], 0, 0);
@@ -198,7 +198,7 @@ void iir_mem2_8(const float *x, const float *_den, float *y, int N, int ord, flo
    for (i=0;i<2;i++)
    {
       mem[i] = _mm_loadu_ps(_mem+4*i);
-      den[i] = _mm_loadu_ps(_den+4*i+1);
+      den[i] = _mm_loadu_ps(_den+4*i);
    }
    
    for (i=0;i<N;i++)
@@ -246,7 +246,7 @@ void fir_mem2_10(const float *x, const float *_num, float *y, int N, int ord, fl
    for (i=0;i<2;i++)
    {
       mem[i] = _mm_loadu_ps(_mem+4*i);
-      num[i] = _mm_loadu_ps(_num+4*i+1);
+      num[i] = _mm_loadu_ps(_num+4*i);
    }
    mem[2] = _mm_setr_ps(_mem[8], _mem[9], 0, 0);
    num[2] = _mm_setr_ps(_num[9], _num[10], 0, 0);
@@ -294,7 +294,7 @@ void fir_mem2_8(const float *x, const float *_num, float *y, int N, int ord, flo
    for (i=0;i<2;i++)
    {
       mem[i] = _mm_loadu_ps(_mem+4*i);
-      num[i] = _mm_loadu_ps(_num+4*i+1);
+      num[i] = _mm_loadu_ps(_num+4*i);
    }
    
    for (i=0;i<N;i++)

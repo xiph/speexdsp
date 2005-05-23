@@ -275,9 +275,9 @@ int lpc_to_lsp (spx_coef_t *a,int lpcrdr,spx_lsp_t *freq,int nb,spx_word16_t del
 #ifdef FIXED_POINT
     *px++ = LPC_SCALING;
     *qx++ = LPC_SCALING;
-    for(i=1;i<=m;i++){
-       *px++ = SUB32(ADD32(EXTEND32(a[i]),EXTEND32(a[lpcrdr+1-i])), *p++);
-       *qx++ = ADD32(SUB32(EXTEND32(a[i]),EXTEND32(a[lpcrdr+1-i])), *q++);
+    for(i=0;i<m;i++){
+       *px++ = SUB32(ADD32(EXTEND32(a[i]),EXTEND32(a[lpcrdr-i-1])), *p++);
+       *qx++ = ADD32(SUB32(EXTEND32(a[i]),EXTEND32(a[lpcrdr-i-1])), *q++);
     }
     px = P;
     qx = Q;
@@ -298,9 +298,9 @@ int lpc_to_lsp (spx_coef_t *a,int lpcrdr,spx_lsp_t *freq,int nb,spx_word16_t del
 #else
     *px++ = LPC_SCALING;
     *qx++ = LPC_SCALING;
-    for(i=1;i<=m;i++){
-       *px++ = (a[i]+a[lpcrdr+1-i]) - *p++;
-       *qx++ = (a[i]-a[lpcrdr+1-i]) + *q++;
+    for(i=0;i<m;i++){
+       *px++ = (a[i]+a[lpcrdr-1-i]) - *p++;
+       *qx++ = (a[i]-a[lpcrdr-1-i]) + *q++;
     }
     px = P;
     qx = Q;
@@ -467,13 +467,15 @@ void lsp_to_lpc(spx_lsp_t *freq,spx_coef_t *ak,int lpcrdr, char *stack)
 	xout1 = xin1 + *(n4+1);
 	xout2 = xin2 - *(n4+2);
         /* FIXME: perhaps apply bandwidth expansion in case of overflow? */
-        /*FIXME: Is it OK to have a long constant? */
+	if (j>0)
+	{
         if (xout1 + xout2>SHL(32766,8))
-           ak[j] = 32767;
+           ak[j-1] = 32767;
         else if (xout1 + xout2 < -SHL(32766,8))
-           ak[j] = -32767;
+           ak[j-1] = -32767;
         else
-           ak[j] = EXTRACT16(PSHR32(ADD32(xout1,xout2),8));
+           ak[j-1] = EXTRACT16(PSHR32(ADD32(xout1,xout2),8));
+	} else {/*speex_warning_int("ak[0] = ", EXTRACT16(PSHR32(ADD32(xout1,xout2),8)));*/}
 	*(n4+1) = xin1;
 	*(n4+2) = xin2;
 
@@ -538,7 +540,8 @@ void lsp_to_lpc(spx_lsp_t *freq,spx_coef_t *ak,int lpcrdr, char *stack)
 	}
 	xout1 = xin1 + *(n4+1);
 	xout2 = xin2 - *(n4+2);
-	ak[j] = (xout1 + xout2)*0.5f;
+	if (j>0)
+	   ak[j-1] = (xout1 + xout2)*0.5f;
 	*(n4+1) = xin1;
 	*(n4+2) = xin2;
 
