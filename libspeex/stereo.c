@@ -84,6 +84,8 @@ void speex_encode_stereo_int(short *data, int frame_size, SpeexBits *bits)
    for (i=0;i<2*frame_size;i++)
       float_data[i] = data[i];
    speex_encode_stereo(float_data, frame_size, bits);
+   for (i=0;i<frame_size;i++)
+      data[i] = float_data[i];
 }
 
 void speex_decode_stereo(float *data, int frame_size, SpeexStereoState *stereo)
@@ -120,6 +122,8 @@ void speex_decode_stereo_int(short *data, int frame_size, SpeexStereoState *ster
    int i;
    /* FIXME: Do some dynamic allocation here */
    float float_data[2*MAX_IN_SAMPLES];
+   for (i=0;i<2*frame_size;i++)
+      float_data[i] = data[i];
    speex_decode_stereo(float_data, frame_size, stereo);
    for (i=0;i<frame_size;i++)
    {
