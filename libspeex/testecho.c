@@ -14,7 +14,7 @@
 
 #define NN 160
 
-int main()
+int main(int argc, char **argv)
 {
    int echo_fd, ref_fd, e_fd;
    float noise[NN+1];
@@ -22,9 +22,14 @@ int main()
    SpeexEchoState *st;
    SpeexPreprocessState *den;
 
-   echo_fd = open ("play.sw", O_RDONLY);
-   ref_fd  = open ("rec.sw",  O_RDONLY);
-   e_fd    = open ("echo.sw", O_WRONLY | O_CREAT | O_TRUNC, 0644);
+   if (argc != 4)
+   {
+      fprintf (stderr, "testecho mic_signal.sw speaker_signal.sw output.sw\n");
+      exit(1);
+   }
+   echo_fd = open (argv[2], O_RDONLY);
+   ref_fd  = open (argv[1],  O_RDONLY);
+   e_fd    = open (argv[3], O_WRONLY | O_CREAT | O_TRUNC, 0644);
 
    st = speex_echo_state_init(NN, 8*NN);
    den = speex_preprocess_state_init(NN, 8000);
