@@ -809,7 +809,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
 #ifdef FIXED_POINT
          {
             spx_word32_t f = DIV32(ener,PSHR32(ol_gain,SIG_SHIFT));
-            if (f<32768)
+            if (f<=32767)
                fine_gain = f;
             else
                fine_gain = 32767;

@@ -68,11 +68,11 @@ void signal_mul(const spx_sig_t *x, spx_sig_t *y, spx_word32_t scale, int len)
 void signal_div(const spx_sig_t *x, spx_sig_t *y, spx_word32_t scale, int len)
 {
    int i;
-   if (scale > SHL32(SIG_SCALING, 8))
+   if (scale > SHL32(EXTEND32(SIG_SCALING), 8))
    {
       spx_word16_t scale_1;
       scale = PSHR32(scale, SIG_SHIFT);
-      scale_1 = EXTRACT16(DIV32_16(SHL32(SIG_SCALING,7),scale));
+      scale_1 = EXTRACT16(DIV32_16(SHL32(EXTEND32(SIG_SCALING),7),scale));
       for (i=0;i<len;i++)
       {
          y[i] = SHR32(MULT16_16(scale_1, EXTRACT16(SHR32(x[i],SIG_SHIFT))),7);
@@ -80,7 +80,7 @@ void signal_div(const spx_sig_t *x, spx_sig_t *y, spx_word32_t scale, int len)
    } else {
       spx_word16_t scale_1;
       scale = PSHR32(scale, SIG_SHIFT-5);
-      scale_1 = DIV32_16(SHL32(SIG_SCALING,3),scale);
+      scale_1 = DIV32_16(SHL32(EXTEND32(SIG_SCALING),3),scale);
       for (i=0;i<len;i++)
       {
          y[i] = MULT16_16(scale_1, EXTRACT16(SHR32(x[i],SIG_SHIFT-2)));
@@ -573,9 +573,9 @@ CombFilterMem *mem
    {
       spx_word16_t g = gain_3tap_to_1tap(pitch_gain)+gain_3tap_to_1tap(mem->last_pitch_gain);
       if (g > 166)
-         comb_gain = MULT16_16_Q15(DIV32_16(SHL(165,15),g), comb_gain);
+         comb_gain = MULT16_16_Q15(DIV32_16(SHL32(EXTEND32(165),15),g), comb_gain);
       if (g < 64)
-         comb_gain = MULT16_16_Q15(SHL(g, 9), comb_gain);
+         comb_gain = MULT16_16_Q15(SHL16(g, 9), comb_gain);
    }
 #else
    {

@@ -172,12 +172,12 @@ static inline spx_word32_t cheb_poly_eva(spx_word32_t *coef,spx_word16_t x,int m
 
     /* Evaluate Chebyshev series formulation using iterative approach  */
     /* Evaluate polynomial and return value also free memory space */
-    sum = ADD32(coefn[m2], MULT16_16_P14(coefn[m2-1],x));
+    sum = ADD32(EXTEND32(coefn[m2]), EXTEND32(MULT16_16_P14(coefn[m2-1],x)));
     /*x *= 2;*/
     for(i=2;i<=m2;i++)
     {
        T[i] = SUB16(MULT16_16_Q13(x,T[i-1]), T[i-2]);
-       sum = ADD32(sum, MULT16_16_P14(coefn[m2-i],T[i]));
+       sum = ADD32(sum, EXTEND32(MULT16_16_P14(coefn[m2-i],T[i])));
        /*printf ("%f ", sum);*/
     }
     
@@ -469,9 +469,9 @@ void lsp_to_lpc(spx_lsp_t *freq,spx_coef_t *ak,int lpcrdr, char *stack)
         /* FIXME: perhaps apply bandwidth expansion in case of overflow? */
 	if (j>0)
 	{
-        if (xout1 + xout2>SHL(32766,8))
+        if (xout1 + xout2>SHL32(EXTEND32(32766),8))
            ak[j-1] = 32767;
-        else if (xout1 + xout2 < -SHL(32766,8))
+        else if (xout1 + xout2 < -SHL32(EXTEND32(32766),8))
            ak[j-1] = -32767;
         else
            ak[j-1] = EXTRACT16(PSHR32(ADD32(xout1,xout2),8));
@@ -580,7 +580,7 @@ void lsp_enforce_margin(spx_lsp_t *lsp, int len, spx_word16_t margin)
 void lsp_interpolate(spx_lsp_t *old_lsp, spx_lsp_t *new_lsp, spx_lsp_t *interp_lsp, int len, int subframe, int nb_subframes)
 {
    int i;
-   spx_word16_t tmp = DIV32_16(SHL32(1 + subframe,14),nb_subframes);
+   spx_word16_t tmp = DIV32_16(SHL32(EXTEND32(1 + subframe),14),nb_subframes);
    spx_word16_t tmp2 = 16384-tmp;
    for (i=0;i<len;i++)
    {
