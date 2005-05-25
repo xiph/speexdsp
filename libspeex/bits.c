@@ -243,10 +243,10 @@ void speex_bits_pack(SpeexBits *bits, int data, int nbBits)
    {
       int bit;
       bit = (d>>(nbBits-1))&1;
-      bits->chars[bits->charPtr] |= bit<<(7-bits->bitPtr);
+      bits->chars[bits->charPtr] |= bit<<(BITS_PER_CHAR-1-bits->bitPtr);
       bits->bitPtr++;
 
-      if (bits->bitPtr==8)
+      if (bits->bitPtr==BITS_PER_CHAR)
       {
          bits->bitPtr=0;
          bits->charPtr++;
