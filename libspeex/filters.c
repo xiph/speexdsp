@@ -68,16 +68,23 @@ void signal_mul(const spx_sig_t *x, spx_sig_t *y, spx_word32_t scale, int len)
 void signal_div(const spx_sig_t *x, spx_sig_t *y, spx_word32_t scale, int len)
 {
    int i;
-   spx_word16_t scale_1;
-
-   scale = PSHR32(scale, SIG_SHIFT);
-   if (scale<2)
-      scale_1 = 32767;
-   else
-      scale_1 = EXTRACT16(DIV32(32767,scale));
-   for (i=0;i<len;i++)
+   if (scale > SHL32(SIG_SCALING, 8))
    {
-      y[i] = MULT16_32_Q15(scale_1,x[i]);
+      spx_word16_t scale_1;
+      scale = PSHR32(scale, SIG_SHIFT);
+      scale_1 = EXTRACT16(DIV32_16(SHL32(SIG_SCALING,7),scale));
+      for (i=0;i<len;i++)
+      {
+         y[i] = SHR32(MULT16_16(scale_1, EXTRACT16(SHR32(x[i],SIG_SHIFT))),7);
+      }
+   } else {
+      spx_word16_t scale_1;
+      scale = PSHR32(scale, SIG_SHIFT-5);
+      scale_1 = DIV32_16(SHL32(SIG_SCALING,3),scale);
+      for (i=0;i<len;i++)
+      {
+         y[i] = MULT16_16(scale_1, EXTRACT16(SHR32(x[i],SIG_SHIFT-2)));
+      }
    }
 }
 
