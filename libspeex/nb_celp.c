@@ -97,13 +97,15 @@ void *nb_encoder_init(const SpeexMode *m)
    mode=(const SpeexNBMode *)m->mode;
 #if defined(VAR_ARRAYS) || defined (USE_ALLOCA)
    st = (EncState*)speex_alloc(sizeof(EncState));
+   if (!st)
+      return NULL;
    st->stack = NULL;
 #else
    st = (EncState*)speex_alloc(sizeof(EncState)+8000*sizeof(spx_sig_t));
-   st->stack = ((char*)st) + sizeof(EncState);
-#endif
    if (!st)
       return NULL;
+   st->stack = ((char*)st) + sizeof(EncState);
+#endif
    
    st->mode=m;
 
@@ -937,13 +939,15 @@ void *nb_decoder_init(const SpeexMode *m)
    mode=(const SpeexNBMode*)m->mode;
 #if defined(VAR_ARRAYS) || defined (USE_ALLOCA)
    st = (DecState *)speex_alloc(sizeof(DecState));
+   if (!st)
+      return NULL;
    st->stack = NULL;
 #else
    st = (DecState *)speex_alloc(sizeof(DecState)+4000*sizeof(spx_sig_t));
-   st->stack = ((char*)st) + sizeof(DecState);
-#endif
    if (!st)
       return NULL;
+   st->stack = ((char*)st) + sizeof(DecState);
+#endif
 
    st->mode=m;
 
