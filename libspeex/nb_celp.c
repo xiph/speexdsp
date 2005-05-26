@@ -58,6 +58,16 @@
 
 #define SUBMODE(x) st->submodes[st->submodeID]->x
 
+/* Default size for the encoder and decoder stack (can be changed at compile time).
+   This does not apply when using variable-size arrays or alloca. */
+#ifndef NB_ENC_STACK
+#define NB_ENC_STACK (8000*sizeof(spx_sig_t))
+#endif
+
+#ifndef NB_DEC_STACK
+#define NB_DEC_STACK (4000*sizeof(spx_sig_t))
+#endif
+
 
 #ifdef FIXED_POINT
 const spx_word32_t ol_gain_table[32]={18900, 25150, 33468, 44536, 59265, 78865, 104946, 139653, 185838, 247297, 329081, 437913, 582736, 775454, 1031906, 1373169, 1827293, 2431601, 3235761, 4305867, 5729870, 7624808, 10146425, 13501971, 17967238, 23909222, 31816294, 42338330, 56340132, 74972501, 99766822, 132760927};
@@ -101,7 +111,7 @@ void *nb_encoder_init(const SpeexMode *m)
       return NULL;
    st->stack = NULL;
 #else
-   st = (EncState*)speex_alloc(sizeof(EncState)+8000*sizeof(spx_sig_t));
+   st = (EncState*)speex_alloc(sizeof(EncState)+NB_ENC_STACK);
    if (!st)
       return NULL;
    st->stack = ((char*)st) + sizeof(EncState);
@@ -943,7 +953,7 @@ void *nb_decoder_init(const SpeexMode *m)
       return NULL;
    st->stack = NULL;
 #else
-   st = (DecState *)speex_alloc(sizeof(DecState)+4000*sizeof(spx_sig_t));
+   st = (DecState *)speex_alloc(sizeof(DecState)+NB_DEC_STACK);
    if (!st)
       return NULL;
    st->stack = ((char*)st) + sizeof(DecState);

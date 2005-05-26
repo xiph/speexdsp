@@ -46,6 +46,17 @@
 #include "ltp.h"
 #include "misc.h"
 
+/* Default size for the encoder and decoder stack (can be changed at compile time).
+   This does not apply when using variable-size arrays or alloca. */
+#ifndef SB_ENC_STACK
+#define SB_ENC_STACK (1000*sizeof(spx_sig_t))
+#endif
+
+#ifndef SB_DEC_STACK
+#define SB_DEC_STACK (6000*sizeof(spx_sig_t))
+#endif
+
+
 #ifdef DISABLE_WIDEBAND
 void *sb_encoder_init(const SpeexMode *m)
 {
@@ -222,7 +233,7 @@ void *sb_encoder_init(const SpeexMode *m)
       return NULL;
    st->stack = NULL;
 #else
-   st = (SBEncState*)speex_alloc(sizeof(SBEncState)+10000*sizeof(spx_sig_t));
+   st = (SBEncState*)speex_alloc(sizeof(SBEncState)+SB_ENC_STACK);
    if (!st)
       return NULL;
    st->stack = ((char*)st) + sizeof(SBEncState);
@@ -791,7 +802,7 @@ void *sb_decoder_init(const SpeexMode *m)
       return NULL;
    st->stack = NULL;
 #else   
-   st = (SBDecState*)speex_alloc(sizeof(SBDecState)+6000*sizeof(spx_sig_t));
+   st = (SBDecState*)speex_alloc(sizeof(SBDecState)+SB_DEC_STACK);
    if (!st)
       return NULL;
    st->stack = ((char*)st) + sizeof(SBDecState);
