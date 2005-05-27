@@ -30,6 +30,7 @@
    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#define OVERRIDE_NORMALIZE16
 int normalize16(const spx_sig_t *x, spx_word16_t *y, int max_scale, int len)
 {
    int i;
@@ -92,7 +93,7 @@ int normalize16(const spx_sig_t *x, spx_word16_t *y, int max_scale, int len)
    return sig_shift;
 }
 
-
+#define OVERRIDE_FILTER_MEM2
 void filter_mem2(const spx_sig_t *x, const spx_coef_t *num, const spx_coef_t *den, spx_sig_t *y, int N, int ord, spx_mem_t *mem)
 {
    int i,j;
@@ -251,6 +252,7 @@ void filter_mem2(const spx_sig_t *x, const spx_coef_t *num, const spx_coef_t *de
    }
 }
 
+#define OVERRIDE_IIR_MEM2
 void iir_mem2(const spx_sig_t *x, const spx_coef_t *den, spx_sig_t *y, int N, int ord, spx_mem_t *mem)
 {
    int i,j;

@@ -41,6 +41,14 @@
 #include "ltp.h"
 #include <math.h>
 
+#ifdef _USE_SSE
+#include "filters_sse.h"
+#elif defined (ARM4_ASM) || defined(ARM5E_ASM)
+#include "filters_arm4.h"
+#endif
+
+
+
 void bw_lpc(spx_word16_t gamma, const spx_coef_t *lpc_in, spx_coef_t *lpc_out, int order)
 {
    int i;
@@ -153,11 +161,8 @@ spx_word16_t compute_rms(const spx_sig_t *x, int len)
    return EXTRACT16(SHR32(SHL32(EXTEND32(spx_sqrt(1+DIV32(sum,len))),(sig_shift+3)),SIG_SHIFT));
 }
 
-#if defined(ARM4_ASM) || defined(ARM5E_ASM)
-#include "filters_arm4.h"
-#else
 
-
+#ifndef OVERRIDE_NORMALIZE16
 int normalize16(const spx_sig_t *x, spx_word16_t *y, spx_sig_t max_scale, int len)
 {
    int i;
@@ -185,7 +190,25 @@ int normalize16(const spx_sig_t *x, spx_word16_t *y, spx_sig_t max_scale, int le
    
    return sig_shift;
 }
+#endif
 
+#else
+
+spx_word16_t compute_rms(const spx_sig_t *x, int len)
+{
+   int i;
+   float sum=0;
+   for (i=0;i<len;i++)
+   {
+      sum += x[i]*x[i];
+   }
+   return sqrt(.1+sum/len);
+}
+#endif
+
+
+
+#ifndef OVERRIDE_FILTER_MEM2
 #ifdef PRECISION16
 void filter_mem2(const spx_sig_t *x, const spx_coef_t *num, const spx_coef_t *den, spx_sig_t *y, int N, int ord, spx_mem_t *mem)
 {
@@ -225,7 +248,9 @@ void filter_mem2(const spx_sig_t *x, const spx_coef_t *num, const spx_coef_t *de
    }
 }
 #endif
+#endif
 
+#ifndef OVERRIDE_IIR_MEM2
 #ifdef PRECISION16
 void iir_mem2(const spx_sig_t *x, const spx_coef_t *den, spx_sig_t *y, int N, int ord, spx_mem_t *mem)
 {
@@ -264,10 +289,9 @@ void iir_mem2(const spx_sig_t *x, const spx_coef_t *den, spx_sig_t *y, int N, in
    }
 }
 #endif
-
 #endif
 
-
+#ifndef OVERRIDE_FIR_MEM2
 #ifdef PRECISION16
 void fir_mem2(const spx_sig_t *x, const spx_coef_t *num, spx_sig_t *y, int N, int ord, spx_mem_t *mem)
 {
@@ -305,78 +329,13 @@ void fir_mem2(const spx_sig_t *x, const spx_coef_t *num, spx_sig_t *y, int N, in
    }
 }
 #endif
-
-#else
-
-
-
-spx_word16_t compute_rms(const spx_sig_t *x, int len)
-{
-   int i;
-   float sum=0;
-   for (i=0;i<len;i++)
-   {
-      sum += x[i]*x[i];
-   }
-   return sqrt(.1+sum/len);
-}
-
-#ifdef _USE_SSE
-#include "filters_sse.h"
-#else
-
-
-void filter_mem2(const spx_sig_t *x, const spx_coef_t *num, const spx_coef_t *den, spx_sig_t *y, int N, int ord,  spx_mem_t *mem)
-{
-   int i,j;
-   float xi,yi;
-   for (i=0;i<N;i++)
-   {
-      xi=x[i];
-      y[i] = xi + mem[0];
-      yi=y[i];
-      for (j=0;j<ord-1;j++)
-      {
-         mem[j] = mem[j+1] + num[j]*xi - den[j]*yi;
-      }
-      mem[ord-1] = num[ord-1]*xi - den[ord-1]*yi;
-   }
-}
-
-
-void iir_mem2(const spx_sig_t *x, const spx_coef_t *den, spx_sig_t *y, int N, int ord, spx_mem_t *mem)
-{
-   int i,j;
-   for (i=0;i<N;i++)
-   {
-      y[i] = x[i] + mem[0];
-      for (j=0;j<ord-1;j++)
-      {
-         mem[j] = mem[j+1] - den[j]*y[i];
-      }
-      mem[ord-1] = - den[ord-1]*y[i];
-   }
-}
-
-
-void fir_mem2(const spx_sig_t *x, const spx_coef_t *num, spx_sig_t *y, int N, int ord, spx_mem_t *mem)
-{
-   int i,j;
-   float xi;
-   for (i=0;i<N;i++)
-   {
-      xi=x[i];
-      y[i] = xi + mem[0];
-      for (j=0;j<ord-1;j++)
-      {
-         mem[j] = mem[j+1] + num[j]*xi;
-      }
-      mem[ord-1] = num[ord-1]*xi;
-   }
-}
 #endif
 
-#endif
+
+
+
+
+
 
 
 void syn_percep_zero(const spx_sig_t *xx, const spx_coef_t *ak, const spx_coef_t *awk1, const spx_coef_t *awk2, spx_sig_t *y, int N, int ord, char *stack)

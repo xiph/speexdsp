@@ -43,8 +43,9 @@
 #include "cb_search_sse.h"
 #elif defined(ARM4_ASM) || defined(ARM5E_ASM)
 #include "cb_search_arm4.h"
-#else
+#endif
 
+#ifndef OVERRIDE_COMPUTE_WEIGHTED_CODEBOOK
 static void compute_weighted_codebook(const signed char *shape_cb, const spx_word16_t *r, spx_word16_t *resp, spx_word16_t *resp2, spx_word32_t *E, int shape_cb_size, int subvect_size, char *stack)
 {
    int i, j, k;
@@ -79,7 +80,6 @@ static void compute_weighted_codebook(const signed char *shape_cb, const spx_wor
    }
 
 }
-
 #endif
 
 

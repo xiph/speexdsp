@@ -50,8 +50,9 @@
 #include "ltp_sse.h"
 #elif defined (ARM4_ASM) || defined(ARM5E_ASM)
 #include "ltp_arm4.h"
-#else
+#endif
 
+#ifndef OVERRIDE_INNER_PROD
 static spx_word32_t inner_prod(const spx_word16_t *x, const spx_word16_t *y, int len)
 {
    spx_word32_t sum=0;
@@ -68,7 +69,9 @@ static spx_word32_t inner_prod(const spx_word16_t *x, const spx_word16_t *y, int
    }
    return sum;
 }
+#endif
 
+#ifndef OVERRIDE_PITCH_XCORR
 #if 0 /* HINT: Enable this for machines with enough registers (i.e. not x86) */
 static void pitch_xcorr(const spx_word16_t *_x, const spx_word16_t *_y, spx_word32_t *corr, int len, int nb_pitch, char *stack)
 {
@@ -144,10 +147,8 @@ static void pitch_xcorr(const spx_word16_t *_x, const spx_word16_t *_y, spx_word
 
 }
 #endif
-
-
-
 #endif
+
 
 void open_loop_nbest_pitch(spx_sig_t *sw, int start, int end, int len, int *pitch, spx_word16_t *gain, int N, char *stack)
 {

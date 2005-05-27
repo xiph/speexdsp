@@ -47,7 +47,7 @@ static inline void _spx_mm_getr_ps (__m128 U, float *__Z, float *__Y, float *__X
 
 }
 
-
+#define OVERRIDE_COMPUTE_WEIGHTED_CODEBOOK
 static void compute_weighted_codebook(const signed char *shape_cb, const spx_sig_t *_r, float *resp, __m128 *resp2, __m128 *E, int shape_cb_size, int subvect_size, char *stack)
 {
    int i, j, k;

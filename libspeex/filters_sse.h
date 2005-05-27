@@ -128,7 +128,7 @@ void filter_mem2_8(const float *x, const float *_num, const float *_den, float *
 }
 
 
-
+#define OVERRIDE_FILTER_MEM2
 void filter_mem2(const float *x, const float *_num, const float *_den, float *y, int N, int ord, float *_mem)
 {
    if(ord==10)
@@ -227,6 +227,7 @@ void iir_mem2_8(const float *x, const float *_den, float *y, int N, int ord, flo
    _mm_storeu_ps(_mem+4, mem[1]);
 }
 
+#define OVERRIDE_IIR_MEM2
 void iir_mem2(const float *x, const float *_den, float *y, int N, int ord, float *_mem)
 {
    if(ord==10)
@@ -323,7 +324,7 @@ void fir_mem2_8(const float *x, const float *_num, float *y, int N, int ord, flo
    _mm_storeu_ps(_mem+4, mem[1]);
 }
 
-
+#define OVERRIDE_FIR_MEM2
 void fir_mem2(const float *x, const float *_num, float *y, int N, int ord, float *_mem)
 {
    if(ord==10)

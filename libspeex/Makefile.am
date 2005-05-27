@@ -55,6 +55,7 @@ noinst_HEADERS = lsp.h \
 	stack_alloc.h \
 	vq.h \
 	vq_arm4.h \
+	vq_sse.h \
 	modes.h \
 	sb_celp.h \
 	vbr.h \

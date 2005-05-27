@@ -29,6 +29,8 @@
    NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
+
+#define OVERRIDE_INNER_PROD
 static spx_word32_t inner_prod(const spx_word16_t *x, const spx_word16_t *y, int len)
 {
    spx_word32_t sum1=0,sum2=0;
@@ -78,7 +80,8 @@ static spx_word32_t inner_prod(const spx_word16_t *x, const spx_word16_t *y, int
                         );
    return (sum1+sum2)>>1;
 }
-         
+
+#define OVERRIDE_PITCH_XCORR
 static void pitch_xcorr(const spx_word16_t *_x, const spx_word16_t *_y, spx_word32_t *corr, int len, int nb_pitch, char *stack)
 {
    int i,j;

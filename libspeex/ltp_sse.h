@@ -32,6 +32,7 @@
 
 #include <xmmintrin.h>
 
+#define OVERRIDE_INNER_PROD
 static float inner_prod(const float *a, const float *b, int len)
 {
    int i;
@@ -50,6 +51,7 @@ static float inner_prod(const float *a, const float *b, int len)
    return ret;
 }
 
+#define OVERRIDE_PITCH_XCORR
 static void pitch_xcorr(const float *_x, const float *_y, float *corr, int len, int nb_pitch, char *stack)
 {
    int i, offset;
