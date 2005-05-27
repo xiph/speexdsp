@@ -222,7 +222,35 @@ void nb_encoder_destroy(void *state)
    EncState *st=(EncState *)state;
    /* Free all allocated memory */
 
+   speex_free (st->inBuf);
+   speex_free (st->excBuf);
+   speex_free (st->innov);
+   speex_free (st->interp_qlpc);
+   speex_free (st->qlsp);
+   speex_free (st->old_qlsp);
+   speex_free (st->interp_qlsp);
+   speex_free (st->swBuf);
+
+   speex_free (st->window);
+   speex_free (st->lagWindow);
+   speex_free (st->autocorr);
+   speex_free (st->lpc);
+   speex_free (st->lsp);
+
+   speex_free (st->interp_lpc);
+   speex_free (st->bw_lpc1);
+   speex_free (st->bw_lpc2);
+   speex_free (st->old_lsp);
+   speex_free (st->interp_lsp);
+   speex_free (st->mem_sp);
+   speex_free (st->mem_sw);
+   speex_free (st->mem_sw_whole);
+   speex_free (st->mem_exc);
+   speex_free (st->pi_gain);
+   speex_free (st->pitch);
+
    vbr_destroy(st->vbr);
+   speex_free (st->vbr);
 
    /*Free state memory... should be last*/
    speex_free(st);
@@ -1028,6 +1056,17 @@ void nb_decoder_destroy(void *state)
    DecState *st;
    st=(DecState*)state;
    
+   speex_free (st->inBuf);
+   speex_free (st->excBuf);
+   speex_free (st->innov);
+   speex_free (st->interp_qlpc);
+   speex_free (st->qlsp);
+   speex_free (st->old_qlsp);
+   speex_free (st->interp_qlsp);
+   speex_free (st->mem_sp);
+   speex_free (st->comb_mem);
+   speex_free (st->pi_gain);
+
    speex_free(state);
 }
 
