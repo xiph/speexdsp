@@ -241,7 +241,8 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
    float Sry=0,Srr=0,Syy=0,Sey=0,See=0,Sxx=0;
    float leak_estimate;
    
-   leak_estimate = .1+(.9/(1+2*st->sum_adapt));
+   /*leak_estimate = .1+(.9/(1+2*st->sum_adapt));*/
+   leak_estimate = (.1 + (1-st->sum_adapt)*(1-st->sum_adapt))/(.9*st->sum_adapt*st->sum_adapt + .1);
          
    N = st->window_size;
    M = st->M;
@@ -389,6 +390,7 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
       for (i=0;i<M*N;i++)
          st->W[i] *= .95;
       st->Sey *= .5;
+      st->sum_adapt*= .95;
       /*fprintf (stderr, "corrected down\n");*/
    }
 #endif
@@ -404,22 +406,27 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
 #endif
    
    /* We consider that the filter is adapted if the following is true*/
-   if (ESR>.6 && st->sum_adapt > 1)
+   if (ESR>.6 && st->sum_adapt > .7 && !st->adapted)
    {
-      /*if (!st->adapted)
-         fprintf(stderr, "Adapted at %d %f\n", st->cancel_count, st->sum_adapt);*/
+      /*fprintf(stderr, "Adapted at %d %f\n", st->cancel_count, st->sum_adapt);*/
       st->adapted = 1;
+   } else if (st->sum_adapt < .5 && st->adapted)
+   {
+      /*fprintf(stderr, "Un-adapted at %d %f\n", st->cancel_count, st->sum_adapt);*/
+      st->adapted = 0;
    }
    
    /* Update frequency-dependent energy ratio with the total energy ratio */
    for (i=0;i<=st->frame_size;i++)
    {
-      st->fratio[i]  = (.2*ESR+.8*min(.005+ESR,st->fratio[i]));
+      st->fratio[i]  = (.2*ESR+.8*min(ESR,st->fratio[i]));
    }   
 
    if (st->adapted)
    {
       st->adapt_rate = .95f/(2+M);
+      /* How much have we adapted so far? */
+      st->sum_adapt = (1-st->adapt_rate)*st->sum_adapt + st->adapt_rate;
    } else {
       /* Temporary adaption rate if filter is not adapted correctly */
       if (SER<.1)
@@ -432,10 +439,12 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
          st->adapt_rate =.08/(2+M);
       else
          st->adapt_rate = 0;
+      /* How much have we adapted so far? */
+      st->sum_adapt = (1-ESR*st->adapt_rate)*st->sum_adapt + ESR*st->adapt_rate;
    }
    
    /* How much have we adapted so far? */
-   st->sum_adapt += st->adapt_rate;
+   /*st->sum_adapt += st->adapt_rate;*/
 
    /* Compute echo power in each frequency bin */
    {
