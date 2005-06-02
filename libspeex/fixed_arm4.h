@@ -1,6 +1,6 @@
 /* Copyright (C) 2004 Jean-Marc Valin */
 /**
-   @file fixed_generic.h
+   @file fixed_arm4.h
    @brief ARM4 fixed-point operations
 */
 /*
