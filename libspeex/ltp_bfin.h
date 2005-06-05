@@ -62,7 +62,6 @@ static spx_word32_t inner_prod(const spx_word16_t *x, const spx_word16_t *y, int
 #define OVERRIDE_PITCH_XCORR
 static void pitch_xcorr(const spx_word16_t *_x, const spx_word16_t *_y, spx_word32_t *corr, int len, int nb_pitch, char *stack)
 {
-   int i;
    corr += nb_pitch - 1;
    __asm__ __volatile__ (
       "P2 = %0;\n\t"

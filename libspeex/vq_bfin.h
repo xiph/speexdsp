@@ -34,7 +34,7 @@
 #define OVERRIDE_VQ_NBEST
 void vq_nbest(spx_word16_t *in, const spx_word16_t *codebook, int len, int entries, spx_word32_t *E, int N, int *nbest, spx_word32_t *best_dist, char *stack)
 {
-   int i,j,k,used;
+   int i,k,used;
    used = 0;
    for (i=0;i<entries;i++)
    {
