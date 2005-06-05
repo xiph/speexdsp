@@ -61,6 +61,7 @@ noinst_HEADERS = lsp.h \
 	sb_celp.h \
 	vbr.h \
 	misc.h \
+	misc_bfin.h \
 	ltp_sse.h \
 	ltp_arm4.h \
 	ltp_bfin.h \

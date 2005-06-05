@@ -1,4 +1,4 @@
-/* Copyright (C) 2002 Jean-Marc Valin 
+/* Copyright (C) 2002-2005 Jean-Marc Valin 
    File: mics.c
    Various utility routines for Speex
 
@@ -34,10 +34,14 @@
 #include "config.h"
 #endif
 
-#include "misc.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include "misc.h"
+
+#ifdef BFIN_ASM
+#include "misc_bfin.h"
+#endif
 
 #ifndef RELEASE
 void print_vec(float *vec, int len, char *name)
@@ -138,10 +142,12 @@ void speex_free (void *ptr)
    free(ptr);
 }
 
+#ifndef OVERRIDE_SPEEX_MOVE
 void *speex_move (void *dest, void *src, int n)
 {
    return memmove(dest,src,n);
 }
+#endif
 
 void speex_error(const char *str)
 {
