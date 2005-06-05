@@ -48,6 +48,7 @@ libspeex_la_SOURCES = nb_celp.c \
 noinst_HEADERS = lsp.h \
 	nb_celp.h \
 	lpc.h \
+	lpc_bfin.h \
 	ltp.h \
 	quant_lsp.h \
 	cb_search.h \

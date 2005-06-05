@@ -53,7 +53,11 @@
 #include "config.h"
 #endif
 
+#include "lpc.h"
 
+#ifdef BFIN_ASM
+#include "lpc_bfin.h"
+#endif
 
 /* LPC analysis
  *
@@ -64,8 +68,6 @@
 
 /* Invented by N. Levinson in 1947, modified by J. Durbin in 1959.
  */
-
-#include "lpc.h"
 
 /* returns minimum mean square error    */
 spx_word32_t _spx_lpc(
@@ -122,6 +124,7 @@ int          p
  * for lags between 0 and lag-1, and x == 0 outside 0...n-1
  */
 
+#ifndef OVERRIDE_SPEEX_AUTOCORR
 void _spx_autocorr(
 const spx_word16_t *x,   /*  in: [0...n-1] samples x   */
 spx_word16_t       *ac,  /* out: [0...lag-1] ac values */
@@ -162,6 +165,7 @@ int          n
       ac[i] = SHR32(d, ac_shift);
    }
 }
+#endif
 
 
 #else
