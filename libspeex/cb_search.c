@@ -43,6 +43,8 @@
 #include "cb_search_sse.h"
 #elif defined(ARM4_ASM) || defined(ARM5E_ASM)
 #include "cb_search_arm4.h"
+#elif defined(BFIN_ASM)
+#include "cb_search_bfin.h"
 #endif
 
 #ifndef OVERRIDE_COMPUTE_WEIGHTED_CODEBOOK

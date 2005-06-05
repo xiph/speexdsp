@@ -159,6 +159,25 @@ void speex_warning_int(const char *str, int val)
    fprintf (stderr, "warning: %s %d\n", str, val);
 }
 
+#ifdef FIXED_POINT
+spx_word32_t speex_rand(spx_word16_t std, spx_int32_t *seed)
+{
+   *seed = 1664525 * *seed + 1013904223;
+   return MULT16_16(EXTRACT16(SHR32(*seed,16)),std);
+}
+#else
+spx_word16_t speex_rand(spx_word16_t std, spx_int32_t *seed)
+{
+   const unsigned int jflone = 0x3f800000;
+   const unsigned int jflmsk = 0x007fffff;
+   union {int i; float f;} ran;
+   *seed = 1664525 * *seed + 1013904223;
+   ran.i = jflone | (jflmsk & *seed);
+   ran.f -= 1;
+   return 1.7321*std*ran.f;
+}
+#endif
+
 void speex_rand_vec(float std, spx_sig_t *data, int len)
 {
    int i;
@@ -166,10 +185,11 @@ void speex_rand_vec(float std, spx_sig_t *data, int len)
       data[i]+=SIG_SCALING*3*std*((((float)rand())/RAND_MAX)-.5);
 }
 
-float speex_rand(float std)
+
+/*float speex_rand(float std)
 {
    return 3*std*((((float)rand())/RAND_MAX)-.5);
-}
+}*/
 
 void _speex_putc(int ch, void *file)
 {

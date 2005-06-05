@@ -53,7 +53,7 @@ int main(int argc, char **argv)
    speex_decoder_ctl(dec, SPEEX_SET_ENH, &tmp);
    tmp=0;
    speex_encoder_ctl(st, SPEEX_SET_VBR, &tmp);
-   tmp=4;
+   tmp=8;
    speex_encoder_ctl(st, SPEEX_SET_QUALITY, &tmp);
    tmp=1;
    speex_encoder_ctl(st, SPEEX_SET_COMPLEXITY, &tmp);
@@ -133,5 +133,5 @@ int main(int argc, char **argv)
    printf ("Total: %f MIPS\n", (float)(1e-6*50*spx_mips/snr_frames));
 #endif
    
-   return 1;
+   return 0;
 }

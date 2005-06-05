@@ -75,7 +75,7 @@ void speex_warning_int(const char *str, int val);
 
 void speex_rand_vec(float std, spx_sig_t *data, int len);
 
-float speex_rand(float std);
+spx_word32_t speex_rand(spx_word16_t std, spx_int32_t *seed);
 
 void _speex_putc(int ch, void *file);
 

@@ -53,6 +53,8 @@ typedef spx_word16_t spx_coef_t;
 typedef spx_word16_t spx_lsp_t;
 typedef spx_word32_t spx_sig_t;
 
+#define Q15ONE 32767
+
 #define LPC_SCALING  8192
 #define SIG_SCALING  16384
 #define LSP_SCALING  8192.
@@ -61,6 +63,7 @@ typedef spx_word32_t spx_sig_t;
 #define GAIN_SCALING_1 0.015625
 
 #define LPC_SHIFT    13
+#define LSP_SHIFT    13
 #define SIG_SHIFT    14
 
 #define VERY_SMALL 0
@@ -76,6 +79,10 @@ typedef spx_word32_t spx_sig_t;
 #include "fixed_arm5e.h"
 #elif defined (ARM4_ASM)
 #include "fixed_arm4.h"
+#elif defined (ARM5E_ASM)
+#include "fixed_arm5e.h"
+#elif defined (BFIN_ASM)
+#include "fixed_bfin.h"
 #endif
 
 #endif
@@ -91,14 +98,16 @@ typedef float spx_word16_t;
 typedef float spx_word32_t;
 typedef float spx_word64_t;
 
-#define LPC_SCALING  1.
-#define SIG_SCALING  1.
-#define LSP_SCALING  1.
-#define GAMMA_SCALING 1.
-#define GAIN_SCALING 1.
-#define GAIN_SCALING_1 1.
+#define Q15ONE 1.0f
+#define LPC_SCALING  1.f
+#define SIG_SCALING  1.f
+#define LSP_SCALING  1.f
+#define GAMMA_SCALING 1.f
+#define GAIN_SCALING 1.f
+#define GAIN_SCALING_1 1.f
 
 #define LPC_SHIFT    0
+#define LSP_SHIFT    0
 #define SIG_SHIFT    0
 
 #define VERY_SMALL 1e-15

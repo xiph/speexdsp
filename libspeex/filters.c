@@ -45,6 +45,8 @@
 #include "filters_sse.h"
 #elif defined (ARM4_ASM) || defined(ARM5E_ASM)
 #include "filters_arm4.h"
+#elif defined (BFIN_ASM)
+#include "filters_bfin.h"
 #endif
 
 
@@ -364,6 +366,7 @@ void residue_percep_zero(const spx_sig_t *xx, const spx_coef_t *ak, const spx_co
    fir_mem2(y, awk2, y, N, ord, mem);
 }
 
+#ifndef OVERRIDE_COMPUTE_IMPULSE_RESPONSE
 void compute_impulse_response(const spx_coef_t *ak, const spx_coef_t *awk1, const spx_coef_t *awk2, spx_word16_t *y, int N, int ord, char *stack)
 {
    int i,j;
@@ -397,6 +400,7 @@ void compute_impulse_response(const spx_coef_t *ak, const spx_coef_t *awk1, cons
       mem2[ord-1] = MULT16_16(ak[ord-1],ny2i);
    }
 }
+#endif
 
 void qmf_decomp(const spx_word16_t *xx, const spx_word16_t *aa, spx_sig_t *y1, spx_sig_t *y2, int N, int M, spx_word16_t *mem, char *stack)
 {

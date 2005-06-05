@@ -151,7 +151,8 @@ typedef struct DecState {
    spx_word16_t  last_pitch_gain; /**< Pitch gain of last correctly decoded frame */
    spx_word16_t  pitch_gain_buf[3];  /**< Pitch gain of last decoded frames */
    int    pitch_gain_buf_idx; /**< Tail of the buffer */
-
+   spx_int32_t seed;          /** Seed used for random number generation */
+   
    int    encode_submode;
    const SpeexSubmode * const *submodes; /**< Sub-mode data */
    int    submodeID;      /**< Activated sub-mode */

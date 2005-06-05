@@ -1033,7 +1033,8 @@ void *nb_decoder_init(const SpeexMode *m)
    st->count_lost=0;
    st->pitch_gain_buf[0] = st->pitch_gain_buf[1] = st->pitch_gain_buf[2] = 0;
    st->pitch_gain_buf_idx = 0;
-
+   st->seed = 1000;
+   
    st->sampling_rate=8000;
    st->last_ol_gain = 0;
 
@@ -1072,25 +1073,45 @@ void nb_decoder_destroy(void *state)
 
 #define median3(a, b, c)	((a) < (b) ? ((b) < (c) ? (b) : ((a) < (c) ? (c) : (a))) : ((c) < (b) ? (b) : ((c) < (a) ? (c) : (a))))
 
+#ifdef FIXED_POINT
+const spx_word16_t attenuation[10] = {32767, 31483, 27923, 22861, 17278, 12055, 7764, 4616, 2533, 1283};
+#else
+const spx_word16_t attenuation[10] = {1., 0.961, 0.852, 0.698, 0.527, 0.368, 0.237, 0.141, 0.077, 0.039};
+
+#endif
+
 static void nb_decode_lost(DecState *st, spx_word16_t *out, char *stack)
 {
    int i, sub;
    VARDECL(spx_coef_t *awk1);
    VARDECL(spx_coef_t *awk2);
    VARDECL(spx_coef_t *awk3);
-   float pitch_gain, fact;
+   spx_word16_t pitch_gain;
+   spx_word16_t fact;
    spx_word16_t gain_med;
+   spx_word16_t innov_gain;
+   
+   if (st->count_lost<10)
+      fact = attenuation[st->count_lost];
+   else
+      fact = 0;
 
-   fact = exp(-.04*st->count_lost*st->count_lost);
    gain_med = median3(st->pitch_gain_buf[0], st->pitch_gain_buf[1], st->pitch_gain_buf[2]);
    if (gain_med < st->last_pitch_gain)
       st->last_pitch_gain = gain_med;
    
+#ifdef FIXED_POINT
+   pitch_gain = st->last_pitch_gain;
+   if (pitch_gain>62)
+      pitch_gain = 62;
+   pitch_gain = SHL(pitch_gain, 9);
+#else   
    pitch_gain = GAIN_SCALING_1*st->last_pitch_gain;
    if (pitch_gain>.95)
       pitch_gain=.95;
+#endif
 
-   pitch_gain = fact*pitch_gain + VERY_SMALL;
+   pitch_gain = MULT16_16_Q15(fact,pitch_gain) + VERY_SMALL;
 
    /* Shift all buffers by one frame */
    /*speex_move(st->inBuf, st->inBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(spx_sig_t));*/
@@ -1134,22 +1155,13 @@ static void nb_decode_lost(DecState *st, spx_word16_t *out, char *stack)
       /* FIXME: THIS CAN BE IMPROVED */
       /*if (pitch_gain>.95)
         pitch_gain=.95;*/
-      {
-      float innov_gain=0;
       innov_gain = compute_rms(st->innov, st->frameSize);
       for (i=0;i<st->subframeSize;i++)
       {
-#if 0
-         exc[i] = pitch_gain * exc[i - st->last_pitch] + fact*sqrt(1-pitch_gain)*st->innov[i+offset];
-         /*Just so it give the same lost packets as with if 0*/
-         /*rand();*/
-#else
-         /*exc[i]=pitch_gain*exc[i-st->last_pitch] +  fact*st->innov[i+offset];*/
-         exc[i]=pitch_gain*(exc[i-st->last_pitch]+VERY_SMALL) + 
-         fact*sqrt(1-pitch_gain)*speex_rand(innov_gain);
-#endif
+         exc[i]= MULT16_32_Q15(pitch_gain, (exc[i-st->last_pitch]+VERY_SMALL)) + 
+               MULT16_32_Q15(fact, MULT16_32_Q15(sqrt(SHL(Q15ONE,15)-SHL(pitch_gain,15)),speex_rand(innov_gain, &st->seed)));
       }
-      }
+      
       for (i=0;i<st->subframeSize;i++)
          sp[i]=exc[i];
       
@@ -1180,7 +1192,7 @@ static void nb_decode_lost(DecState *st, spx_word16_t *out, char *stack)
    
    st->first = 0;
    st->count_lost++;
-   st->pitch_gain_buf[st->pitch_gain_buf_idx++] = GAIN_SCALING*pitch_gain;
+   st->pitch_gain_buf[st->pitch_gain_buf_idx++] = PSHR(pitch_gain,9);
    if (st->pitch_gain_buf_idx > 2) /* rollover */
       st->pitch_gain_buf_idx = 0;
 }
@@ -1314,8 +1326,8 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
    if (st->submodes[st->submodeID] == NULL)
    {
       VARDECL(spx_coef_t *lpc);
-      ALLOC(lpc, 11, spx_coef_t);
-      bw_lpc(GAMMA_SCALING*.93, st->interp_qlpc, lpc, 10);
+      ALLOC(lpc, st->lpcSize, spx_coef_t);
+      bw_lpc(GAMMA_SCALING*.93, st->interp_qlpc, lpc, st->lpcSize);
       {
          float innov_gain=0;
          float pgain=GAIN_SCALING_1*st->last_pitch_gain;
@@ -1353,13 +1365,17 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
    /*Damp memory if a frame was lost and the LSP changed too much*/
    if (st->count_lost)
    {
-      float lsp_dist=0, fact;
+      spx_word16_t fact;
+      spx_word32_t lsp_dist=0;
       for (i=0;i<st->lpcSize;i++)
-         lsp_dist += fabs(st->old_qlsp[i] - st->qlsp[i]);
-      lsp_dist /= LSP_SCALING;
+         lsp_dist = ADD32(lsp_dist, EXTEND32(ABS(st->old_qlsp[i] - st->qlsp[i])));
+#ifdef FIXED_POINT
+      fact = SHR16(19661,SHR32(lsp_dist,LSP_SHIFT+2));      
+#else
       fact = .6*exp(-.2*lsp_dist);
+#endif
       for (i=0;i<2*st->lpcSize;i++)
-         st->mem_sp[i] = (spx_mem_t)(st->mem_sp[i]*fact);
+         st->mem_sp[i] = MULT16_32_Q15(fact,st->mem_sp[i]);
    }
 
 
@@ -1544,9 +1560,12 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
          /* If we had lost frames, check energy of last received frame */
          if (st->count_lost && ol_gain < st->last_ol_gain)
          {
-            float fact = (float)ol_gain/(st->last_ol_gain+1);
+            /*float fact = (float)ol_gain/(st->last_ol_gain+1);
             for (i=0;i<st->subframeSize;i++)
-               exc[i]*=fact;
+            exc[i]*=fact;*/
+            spx_word16_t fact = DIV32_16(SHL32(EXTEND32(ol_gain),15),st->last_ol_gain+1);
+            for (i=0;i<st->subframeSize;i++)
+               exc[i] = MULT16_32_Q15(fact, exc[i]);
          }
 
          tmp = gain_3tap_to_1tap(pitch_gain);

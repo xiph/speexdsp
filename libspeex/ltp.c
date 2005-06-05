@@ -50,6 +50,8 @@
 #include "ltp_sse.h"
 #elif defined (ARM4_ASM) || defined(ARM5E_ASM)
 #include "ltp_arm4.h"
+#elif defined (BFIN_ASM)
+#include "ltp_bfin.h"
 #endif
 
 #ifndef OVERRIDE_INNER_PROD
@@ -672,9 +674,9 @@ int cdbk_offset
    gain_index = speex_bits_unpack_unsigned(bits, params->gain_bits);
    /*printf ("decode pitch: %d %d\n", pitch, gain_index);*/
 #ifdef FIXED_POINT
-   gain[0] = 32+(spx_word16_t)gain_cdbk[gain_index*3];
-   gain[1] = 32+(spx_word16_t)gain_cdbk[gain_index*3+1];
-   gain[2] = 32+(spx_word16_t)gain_cdbk[gain_index*3+2];
+   gain[0] = ADD16(32,(spx_word16_t)gain_cdbk[gain_index*3]);
+   gain[1] = ADD16(32,(spx_word16_t)gain_cdbk[gain_index*3+1]);
+   gain[2] = ADD16(32,(spx_word16_t)gain_cdbk[gain_index*3+2]);
 #else
    gain[0] = 0.015625*gain_cdbk[gain_index*3]+.5;
    gain[1] = 0.015625*gain_cdbk[gain_index*3+1]+.5;
@@ -683,19 +685,25 @@ int cdbk_offset
 
    if (count_lost && pitch > subframe_offset)
    {
-      float gain_sum;
+      spx_word16_t gain_sum;
       if (1) {
-	 float tmp = count_lost < 4 ? GAIN_SCALING_1*last_pitch_gain : 0.4 * GAIN_SCALING_1 * last_pitch_gain;
+#ifdef FIXED_POINT
+         spx_word16_t tmp = count_lost < 4 ? last_pitch_gain : SHR16(last_pitch_gain,1);
+         if (tmp>62)
+            tmp=62;
+#else
+         spx_word16_t tmp = count_lost < 4 ? last_pitch_gain : 0.5 * last_pitch_gain;
          if (tmp>.95)
             tmp=.95;
-         gain_sum = GAIN_SCALING_1*gain_3tap_to_1tap(gain);
+#endif
+         gain_sum = gain_3tap_to_1tap(gain);
 
-	 if (gain_sum > tmp) {
-	    float fact = tmp/gain_sum;
-	    for (i=0;i<3;i++)
-	       gain[i]*=fact;
-
-	 }
+         if (gain_sum > tmp)
+         {
+            spx_word16_t fact = DIV32_16(SHL32(EXTEND32(tmp),14),gain_sum);
+            for (i=0;i<3;i++)
+               gain[i]=MULT16_16_Q14(fact,gain[i]);
+         }
 
       }
 
