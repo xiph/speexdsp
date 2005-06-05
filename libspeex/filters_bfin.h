@@ -246,15 +246,131 @@ void filter_mem2(const spx_sig_t *_x, const spx_coef_t *num, const spx_coef_t *d
 
 
 #define OVERRIDE_IIR_MEM2
-void iir_mem2(const spx_sig_t *x, const spx_coef_t *den, spx_sig_t *y, int N, int ord, spx_mem_t *mem)
+void iir_mem2(const spx_sig_t *_x, const spx_coef_t *den, spx_sig_t *_y, int N, int ord, spx_mem_t *mem)
 {
-   int i;
-   spx_coef_t num2[12];
-   spx_coef_t *num;
-   num = (spx_coef_t*)((((int)num2)+4)&0xfffffffc);
-   for (i=0;i<10;i++)
-      num[i] = 0;
-   filter_mem2(x, num, den, y, N, ord, mem);
+   spx_word16_t x[N],y[N];
+   spx_word16_t *xx, *yy;
+   xx = x;
+   yy = y;
+   __asm__ __volatile__
+   (
+   /* Register setup */
+   "R0 = %5;\n\t"      /*ord */
+   
+   "P1 = %3;\n\t"
+   "I1 = P1;\n\t"
+   "B1 = P1;\n\t"
+   "L1 = 0;\n\t"
+   
+   "P3 = %0;\n\t"
+   "I3 = P3;\n\t"
+   "L3 = 0;\n\t"
+   
+   "P4 = %6;\n\t"
+   "P0 = %1;\n\t"
+   "P1 = %2;\n\t"
+   
+   /* First sample */
+   "R1 = [P4++];\n\t"
+   "R1 <<= 1;\n\t"
+   "R2 = [P0++];\n\t"
+   "R1 = R1 + R2;\n\t"
+   "[P1++] = R1;\n\t"
+   "R1 <<= 2;\n\t"
+   "W[P3] = R1.H;\n\t"
+   "R2 <<= 2;\n\t"
+
+   /* Samples 1 to ord-1 (using memory) */
+   "R0 += -1;\n\t"
+   "R3 = 0;\n\t"
+   "LC0 = R0;\n\t"
+   "LOOP filter_start%= LC0;\n\t"
+   "LOOP_BEGIN filter_start%=;\n\t"
+      "R3 += 1;\n\t"
+      "LC1 = R3;\n\t"
+      
+      "R1 = [P4++];\n\t"
+      "A1 = R1;\n\t"
+      "I1 = B1;\n\t"
+      "I3 = P3;\n\t"
+      "P3 += 2;\n\t"
+      "LOOP filter_start_inner%= LC1;\n\t"
+      "LOOP_BEGIN filter_start_inner%=;\n\t"
+         "R4.L = W[I1++];\n\t"
+         "R5.L = W[I3--];\n\t"
+      "LOOP_END filter_start_inner%=;\n\t"
+         "A1 -= R4.L*R5.L (IS);\n\t"
+   
+      "R1 = A1;\n\t"
+      "R1 <<= 1;\n\t"
+      "R2 = [P0++];\n\t"
+      "R1 = R1 + R2;\n\t"
+      "[P1++] = R1;\n\t"
+      "R1 <<= 2;\n\t"
+      "W[P3] = R1.H;\n\t"
+   "LOOP_END filter_start%=;\n\t"
+      "R2 <<= 2;\n\t"
+
+   /* Samples ord to N*/   
+   "R0 = %5;\n\t"
+   "R0 <<= 1;\n\t"
+   "I1 = B1;\n\t"
+   "L1 = R0;\n\t"
+   
+   "R0 = %5;\n\t"
+   "R2 = %4;\n\t"
+   "R2 = R2 - R0;\n\t"
+   "R6.L = W[I1++];\n\t"
+   "LC0 = R2;\n\t"
+   "LOOP filter_mid%= LC0;\n\t"
+   "LOOP_BEGIN filter_mid%=;\n\t"
+      "LC1 = R0;\n\t"
+      "A1 = 0;\n\t"
+      "I3 = P3;\n\t"
+      "P3 += 2;\n\t"
+      "R7.L = W[I3--];\n\t"
+      "LOOP filter_mid_inner%= LC1;\n\t"
+      "LOOP_BEGIN filter_mid_inner%=;\n\t"
+      "LOOP_END filter_mid_inner%=;\n\t"
+         "A1 -= R6.L*R7.L (IS) || R6.L = W[I1++] || R7.L = W[I3--];\n\t"
+      "R1 = A1;\n\t"
+      "R1 <<= 1;\n\t"
+      "R2 = [P0++];\n\t"
+      "R1 = R1 + R2;\n\t"
+      "[P1++] = R1;\n\t"
+      "R1 <<= 2;\n\t"
+      "W[P3] = R1.H;\n\t"
+   "LOOP_END filter_mid%=;\n\t"
+      "R2 <<= 2;\n\t"
+     
+   /* Update memory */
+   "P4 = %6;\n\t"
+   "R0 = %5;\n\t"
+   "LC0 = R0;\n\t"
+   "P0 = B0;\n\t"
+   "P1 = B1;\n\t"
+   "LOOP mem_update%= LC0;\n\t"
+   "LOOP_BEGIN mem_update%=;\n\t"
+      "A0 = 0;\n\t"
+      "I3 = P3;\n\t"
+      "I1 = P1;\n\t"
+      "P0 += 2;\n\t"
+      "P1 += 2;\n\t"
+      "R0 = LC0;LC1=R0;\n\t"
+      "R7.L = W[I3--];\n\t"
+      "R6.L = W[I1++];\n\t"
+      "LOOP mem_accum%= LC1;\n\t"
+      "LOOP_BEGIN mem_accum%=;\n\t"
+      "LOOP_END mem_accum%=;\n\t"
+         "A0 -= R6.L*R7.L (IS) || R6.L = W[I1++] || R7.L = W[I3--];\n\t"
+      "R0 = A0;\n\t"
+   "LOOP_END mem_update%=;\n\t"
+      "[P4++] = R0;\n\t"
+
+   : : "m" (yy), "m" (_x), "m" (_y), "m" (den), "m" (N), "m" (ord), "m" (mem)
+   : "R0", "R1", "R2", "R3", "R4", "R5", "R7", "P0", "P1", "P2", "P3", "P4", "B0", "B1", "I0", "I1", "I2", "I3", "L0", "L1", "L2", "L3", "memory"
+   );
+
 }
 
 #define OVERRIDE_FIR_MEM2
