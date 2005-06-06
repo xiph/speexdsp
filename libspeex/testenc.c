@@ -19,7 +19,6 @@ int main(int argc, char **argv)
    FILE *fin, *fout, *fbits=NULL;
    short in_short[FRAME_SIZE];
    short out_short[FRAME_SIZE];
-   float in_float[FRAME_SIZE];
    float sigpow,errpow,snr, seg_snr=0;
    int snr_frames = 0;
    char cbits[200];
@@ -82,8 +81,6 @@ int main(int argc, char **argv)
       fread(in_short, sizeof(short), FRAME_SIZE, fin);
       if (feof(fin))
          break;
-      for (i=0;i<FRAME_SIZE;i++)
-         in_float[i]=in_short[i];
       speex_bits_reset(&bits);
 
       speex_encode_int(st, in_short, &bits);

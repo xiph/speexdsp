@@ -1267,6 +1267,9 @@ int sb_encoder_ctl(void *state, int request, void *ptr)
          speex_encoder_ctl(state, SPEEX_SET_QUALITY, &q);
          break;
       }
+   case SPEEX_GET_VBR_QUALITY:
+      (*(float*)ptr) = st->vbr_quality;
+      break;
    case SPEEX_SET_ABR:
       st->abr_enabled = (*(int*)ptr);
       st->vbr_enabled = 1;
@@ -1436,6 +1439,9 @@ int sb_decoder_ctl(void *state, int request, void *ptr)
    case SPEEX_SET_ENH:
       speex_decoder_ctl(st->st_low, request, ptr);
       st->lpc_enh_enabled = *((int*)ptr);
+      break;
+   case SPEEX_GET_ENH:
+      *((int*)ptr) = st->lpc_enh_enabled;
       break;
    case SPEEX_SET_MODE:
    case SPEEX_SET_QUALITY:

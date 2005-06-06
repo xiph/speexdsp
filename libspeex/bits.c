@@ -45,14 +45,14 @@
 void speex_bits_init(SpeexBits *bits)
 {
    bits->chars = (char*)speex_alloc(MAX_BYTES_PER_FRAME);
+   if (!bits->chars)
+      return;
+
    bits->buf_size = MAX_BYTES_PER_FRAME;
 
-   bits->chars[0]=0;
-   bits->nbBits=0;
-   bits->charPtr=0;
-   bits->bitPtr=0;
    bits->owner=1;
-   bits->overflow=0;
+
+   speex_bits_reset(bits);
 }
 
 void speex_bits_init_buffer(SpeexBits *bits, void *buff, int buf_size)
@@ -60,12 +60,9 @@ void speex_bits_init_buffer(SpeexBits *bits, void *buff, int buf_size)
    bits->chars = (char*)buff;
    bits->buf_size = buf_size;
 
-   bits->chars[0]=0;
-   bits->nbBits=0;
-   bits->charPtr=0;
-   bits->bitPtr=0;
    bits->owner=0;
-   bits->overflow=0;
+
+   speex_bits_reset(bits);
 }
 
 void speex_bits_destroy(SpeexBits *bits)
@@ -96,7 +93,7 @@ void speex_bits_read_from(SpeexBits *bits, char *chars, int len)
    int i;
    if (len > bits->buf_size)
    {
-      speex_warning_int("Packet if larger than allocated buffer: ", len);
+      speex_warning_int("Packet is larger than allocated buffer: ", len);
       if (bits->owner)
       {
          char *tmp = (char*)speex_realloc(bits->chars, len);
