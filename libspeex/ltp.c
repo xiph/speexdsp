@@ -608,7 +608,10 @@ int plc_tuning
    
    if (N>end-start+1)
       N=end-start+1;
-   open_loop_nbest_pitch(sw, start, end, nsf, nbest, NULL, N, stack);
+   if (end != start)
+      open_loop_nbest_pitch(sw, start, end, nsf, nbest, NULL, N, stack);
+   else
+      nbest[0] = start;
    for (i=0;i<N;i++)
    {
       pitch=nbest[i];
