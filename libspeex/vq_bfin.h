@@ -36,7 +36,6 @@ void vq_nbest(spx_word16_t *in, const spx_word16_t *codebook, int len, int entri
 {
    if (N==1)
    {
-      int i;
       best_dist[0] = 2147483647;
       {
          spx_word32_t dist;
@@ -44,13 +43,14 @@ void vq_nbest(spx_word16_t *in, const spx_word16_t *codebook, int len, int entri
                (
             "LC0 = %8;\n\t"
             "R2 = 0;\n\t"
+            "I0 = %6;\n\t"
+            "B0 = %6;\n\t"
+            "L0 = %9;\n\t"
             "LOOP entries_loop%= LC0;\n\t"
             "LOOP_BEGIN entries_loop%=;\n\t"
                "%0 = [%4++];\n\t"
                "%0 >>= 1;\n\t"
                "A0 = %0;\n\t"
-               "I0 = %6;\n\t"
-               "L0 = 0;\n\t"
                "R0.L = W[%1++%7] || R1.L = W[I0++];\n\t"
                "LOOP vq_loop%= LC1 = %5;\n\t"
                "LOOP_BEGIN vq_loop%=;\n\t"
@@ -63,8 +63,8 @@ void vq_nbest(spx_word16_t *in, const spx_word16_t *codebook, int len, int entri
                "R2 += 1;\n\t"
             "LOOP_END entries_loop%=;\n\t"
             : "=&D" (dist), "=&a" (codebook), "=&d" (best_dist[0]), "=&d" (nbest[0]), "=&a" (E)
-            : "a" (len-1), "a" (in), "a" (2), "d" (entries), "1" (codebook), "4" (E), "2" (best_dist[0]), "3" (nbest[0])
-            : "R0", "R1", "R2", "I0", "L0", "A0", "cc", "memory"
+            : "a" (len-1), "a" (in), "a" (2), "d" (entries), "d" (len<<1), "1" (codebook), "4" (E), "2" (best_dist[0]), "3" (nbest[0])
+            : "R0", "R1", "R2", "I0", "L0", "B0", "A0", "cc", "memory"
                );
       }
    } else {

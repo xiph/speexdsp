@@ -50,7 +50,7 @@ int normalize16(const spx_sig_t *x, spx_word16_t *y, spx_sig_t max_scale, int le
       "R1 = ABS R1;\n\t"
       "%0 = MAX(%0, R1);\n\t"
    "LOOP_END norm_max%=;\n\t"
-   : "=d" (max_val)
+   : "=&d" (max_val)
    : "a" (x), "a" (len)
    : "R1"
    );
