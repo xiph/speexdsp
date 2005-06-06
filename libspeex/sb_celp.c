@@ -49,7 +49,7 @@
 /* Default size for the encoder and decoder stack (can be changed at compile time).
    This does not apply when using variable-size arrays or alloca. */
 #ifndef SB_ENC_STACK
-#define SB_ENC_STACK (1000*sizeof(spx_sig_t))
+#define SB_ENC_STACK (10000*sizeof(spx_sig_t))
 #endif
 
 #ifndef SB_DEC_STACK
