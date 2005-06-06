@@ -94,16 +94,16 @@ int          n
             "LOOP inner_prod%= LC1 = P3 >> 1;\n\t"
             "LOOP_BEGIN inner_prod%=;\n\t"
                "A0 += R0.L*R1.L , A1 += R0.L*R1.H (is) || R1.L = W[I1++];\n\t"
-            "LOOP_END inner_prod%=;\n\t"
                "A0 += R0.H*R1.H , A1 += R0.H*R1.L (is) || R1.H = W[I1++] || R0 = [I0++];\n\t"
+            "LOOP_END inner_prod%=;\n\t"
             "A0 = ASHIFT A0 by R4.L;\n\t"
             "A1 = ASHIFT A1 by R4.L;\n\t"
    
             "R2 = A0, R3 = A1;\n\t"
             "[P1--] = R2;\n\t"
             "[P1--] = R3;\n\t"
-         "LOOP_END pitch%=;\n\t"
             "P0 += 4;\n\t"
+         "LOOP_END pitch%=;\n\t"
    : : "m" (xs), "m" (x), "m" (ac32top), "m" (N_lag), "m" (lag_1), "m" (nshift)
    : "A0", "A1", "P0", "P1", "P2", "P3", "P4", "R0", "R1", "R2", "R3", "R4", "I0", "I1", "L0", "L1", "B0", "B1", "memory"
    );

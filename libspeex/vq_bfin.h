@@ -48,8 +48,8 @@ void vq_nbest(spx_word16_t *in, const spx_word16_t *codebook, int len, int entri
             "R0.L = W[%1++%4] || R1.L = W[I0++];\n\t"
             "LOOP vq_loop%= LC0 = %2;\n\t"
             "LOOP_BEGIN vq_loop%=;\n\t"
-            "LOOP_END vq_loop%=;\n\t"
                "%0 = (A0 -= R0.L*R1.L) (IS) || R0.L = W[%1++%4] || R1.L = W[I0++];\n\t"
+            "LOOP_END vq_loop%=;\n\t"
             "%0 = (A0 -= R0.L*R1.L) (IS);\n\t"
          : "=D" (dist), "=a" (codebook)
          : "a" (len-1), "a" (in), "a" (2), "1" (codebook), "0" (E[i])

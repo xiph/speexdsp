@@ -48,8 +48,8 @@ int normalize16(const spx_sig_t *x, spx_word16_t *y, spx_sig_t max_scale, int le
    "LOOP_BEGIN norm_max%=;\n\t"
       "R1 = [I0++];\n\t"
       "R1 = ABS R1;\n\t"
-   "LOOP_END norm_max%=;\n\t"
       "%0 = MAX(%0, R1);\n\t"
+   "LOOP_END norm_max%=;\n\t"
    : "=d" (max_val)
    : "a" (x), "a" (len)
    : "R1"
@@ -74,9 +74,8 @@ int normalize16(const spx_sig_t *x, spx_word16_t *y, spx_sig_t max_scale, int le
       "R1 = ASHIFT R0 by %2.L || R2 = [I0++];\n\t"
       "R3 = ASHIFT R2 by %2.L || R0 = [I0++];\n\t"
       "R3 = PACK(R3.L, R1.L);\n\t"
-   "LOOP_END norm_shift%=;\n\t"
       "[I1++] = R3;\n\t"
-   
+   "LOOP_END norm_shift%=;\n\t"
    : : "a" (x), "a" (y), "d" (-sig_shift), "a" (len)
    : "I0", "L0", "I1", "L1", "R0", "R1", "R2", "R3", "memory"
    );
@@ -152,8 +151,8 @@ void filter_mem2(const spx_sig_t *_x, const spx_coef_t *num, const spx_coef_t *d
          "A1 += R4.L*R5.L (IS);\n\t"
          "R4.L = W[I1++];\n\t"
          "R5.L = W[I3--];\n\t"
-      "LOOP_END filter_start_inner%=;\n\t"
          "A1 -= R4.L*R5.L (IS);\n\t"
+      "LOOP_END filter_start_inner%=;\n\t"
    
       "R1 = A1;\n\t"
       "R1 <<= 1;\n\t"
@@ -163,8 +162,8 @@ void filter_mem2(const spx_sig_t *_x, const spx_coef_t *num, const spx_coef_t *d
       "R1 <<= 2;\n\t"
       "W[P3] = R1.H;\n\t"
       "R2 <<= 2;\n\t"
-   "LOOP_END filter_start%=;\n\t"
       "W[P2] = R2.H;\n\t"
+   "LOOP_END filter_start%=;\n\t"
 
    /* Samples ord to N*/   
    "R0 = %7;\n\t"
@@ -194,8 +193,8 @@ void filter_mem2(const spx_sig_t *_x, const spx_coef_t *num, const spx_coef_t *d
       "LOOP filter_mid_inner%= LC1;\n\t"
       "LOOP_BEGIN filter_mid_inner%=;\n\t"
          "A1 += R4.L*R5.L (IS) || R4.L = W[I0++] || R5.L = W[I2--];\n\t"
-      "LOOP_END filter_mid_inner%=;\n\t"
          "A1 -= R6.L*R7.L (IS) || R6.L = W[I1++] || R7.L = W[I3--];\n\t"
+      "LOOP_END filter_mid_inner%=;\n\t"
       "R1 = A1;\n\t"
       "R1 <<= 1;\n\t"
       "R2 = [P0++];\n\t"
@@ -204,8 +203,8 @@ void filter_mem2(const spx_sig_t *_x, const spx_coef_t *num, const spx_coef_t *d
       "R1 <<= 2;\n\t"
       "W[P3] = R1.H;\n\t"
       "R2 <<= 2;\n\t"
-   "LOOP_END filter_mid%=;\n\t"
       "W[P2] = R2.H;\n\t"
+   "LOOP_END filter_mid%=;\n\t"
      
    /* Update memory */
    "P4 = %8;\n\t"
@@ -230,11 +229,11 @@ void filter_mem2(const spx_sig_t *_x, const spx_coef_t *num, const spx_coef_t *d
       "LOOP mem_accum%= LC1;\n\t"
       "LOOP_BEGIN mem_accum%=;\n\t"
          "A0 += R4.L*R5.L (IS) || R4.L = W[I0++] || R5.L = W[I2--];\n\t"
-      "LOOP_END mem_accum%=;\n\t"
          "A0 -= R6.L*R7.L (IS) || R6.L = W[I1++] || R7.L = W[I3--];\n\t"
+      "LOOP_END mem_accum%=;\n\t"
       "R0 = A0;\n\t"
-   "LOOP_END mem_update%=;\n\t"
       "[P4++] = R0;\n\t"
+   "LOOP_END mem_update%=;\n\t"
 
    : : "m" (xx), "m" (yy), "m" (_x), "m" (_y), "m" (num), "m" (den), "m" (N), "m" (ord), "m" (mem)
    : "R0", "R1", "R2", "R3", "R4", "R5", "R7", "P0", "P1", "P2", "P3", "P4", "B0", "B1", "I0", "I1", "I2", "I3", "L0", "L1", "L2", "L3", "memory"
@@ -298,8 +297,8 @@ void iir_mem2(const spx_sig_t *_x, const spx_coef_t *den, spx_sig_t *_y, int N, 
       "LOOP_BEGIN filter_start_inner%=;\n\t"
          "R4.L = W[I1++];\n\t"
          "R5.L = W[I3--];\n\t"
-      "LOOP_END filter_start_inner%=;\n\t"
          "A1 -= R4.L*R5.L (IS);\n\t"
+      "LOOP_END filter_start_inner%=;\n\t"
    
       "R1 = A1;\n\t"
       "R1 <<= 1;\n\t"
@@ -308,8 +307,8 @@ void iir_mem2(const spx_sig_t *_x, const spx_coef_t *den, spx_sig_t *_y, int N, 
       "[P1++] = R1;\n\t"
       "R1 <<= 2;\n\t"
       "W[P3] = R1.H;\n\t"
-   "LOOP_END filter_start%=;\n\t"
       "R2 <<= 2;\n\t"
+   "LOOP_END filter_start%=;\n\t"
 
    /* Samples ord to N*/   
    "R0 = %5;\n\t"
@@ -331,8 +330,8 @@ void iir_mem2(const spx_sig_t *_x, const spx_coef_t *den, spx_sig_t *_y, int N, 
       "R7.L = W[I3--];\n\t"
       "LOOP filter_mid_inner%= LC1;\n\t"
       "LOOP_BEGIN filter_mid_inner%=;\n\t"
-      "LOOP_END filter_mid_inner%=;\n\t"
          "A1 -= R6.L*R7.L (IS) || R6.L = W[I1++] || R7.L = W[I3--];\n\t"
+      "LOOP_END filter_mid_inner%=;\n\t"
       "R1 = A1;\n\t"
       "R1 <<= 1;\n\t"
       "R2 = [P0++];\n\t"
@@ -340,8 +339,8 @@ void iir_mem2(const spx_sig_t *_x, const spx_coef_t *den, spx_sig_t *_y, int N, 
       "[P1++] = R1;\n\t"
       "R1 <<= 2;\n\t"
       "W[P3] = R1.H;\n\t"
-   "LOOP_END filter_mid%=;\n\t"
       "R2 <<= 2;\n\t"
+   "LOOP_END filter_mid%=;\n\t"
      
    /* Update memory */
    "P4 = %6;\n\t"
@@ -361,11 +360,11 @@ void iir_mem2(const spx_sig_t *_x, const spx_coef_t *den, spx_sig_t *_y, int N, 
       "R6.L = W[I1++];\n\t"
       "LOOP mem_accum%= LC1;\n\t"
       "LOOP_BEGIN mem_accum%=;\n\t"
-      "LOOP_END mem_accum%=;\n\t"
          "A0 -= R6.L*R7.L (IS) || R6.L = W[I1++] || R7.L = W[I3--];\n\t"
+      "LOOP_END mem_accum%=;\n\t"
       "R0 = A0;\n\t"
-   "LOOP_END mem_update%=;\n\t"
       "[P4++] = R0;\n\t"
+   "LOOP_END mem_update%=;\n\t"
 
    : : "m" (yy), "m" (_x), "m" (_y), "m" (den), "m" (N), "m" (ord), "m" (mem)
    : "R0", "R1", "R2", "R3", "R4", "R5", "R7", "P0", "P1", "P2", "P3", "P4", "B0", "B1", "I0", "I1", "I2", "I3", "L0", "L1", "L2", "L3", "memory"

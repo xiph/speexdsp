@@ -38,9 +38,9 @@ void *speex_move (void *dest, void *src, int n)
          (
          "LOOP move%= LC0 = %2;\n\t"
          "LOOP_BEGIN move%=;\n\t"
-         "R0 = [%0++];\n\t"
+            "R0 = [%0++];\n\t"
+            "[%1++] = R0;\n\t"
          "LOOP_END move%=;\n\t"
-         "[%1++] = R0;\n\t"
    : "=a" (src), "=a" (dest)
    : "a" (n>>2), "0" (src), "1" (dest)
    : "R0", "memory"

@@ -49,8 +49,8 @@ static inline spx_word16_t DIV32_16(spx_word32_t a, spx_word16_t b)
          "DIVS (R0, R1);\n\t"
          "LOOP divide%= LC0 = P0;\n\t"
          "LOOP_BEGIN divide%=;\n\t"
+            "DIVQ (R0, R1);\n\t"
          "LOOP_END divide%=;\n\t"
-         "DIVQ (R0, R1);\n\t"
          "R0 = R0.L;\n\t"
          "%0 = R0;\n\t"
    : "=m" (res)
