@@ -53,10 +53,6 @@
 #define PSHR(a,shift) (SHR((a)+(1<<((shift)-1)),shift))
 #define SATURATE(x,a) (((x)>(a) ? (a) : (x)<-(a) ? -(a) : (x)))
 
-static inline spx_word32_t slow_saturate(spx_word32_t x, spx_word16_t a)
-{
-  return (((x)>(a) ? (a) : (x)<-(a) ? -(a) : (x)));
-}
 
 #define ADD16(a,b) ((spx_word16_t)((spx_word16_t)(a)+(spx_word16_t)(b)))
 #define SUB16(a,b) ((spx_word16_t)(a)-(spx_word16_t)(b))

@@ -490,11 +490,7 @@ int plc_tuning
          g[2]=ADD16((spx_word16_t)ptr[2],32);
 
          /* We favor "safe" pitch values to handle packet loss better */
-         gain_sum = g[1];
-         if (g[0]>0)
-            gain_sum += g[0];
-         if (g[2]>0)
-            gain_sum += g[2];
+         gain_sum = ADD16(ADD16(g[1],MAX16(g[0], 0)),MAX16(g[2], 0));
          if (gain_sum > 64)
          {
             gain_sum = SUB16(gain_sum, 64);

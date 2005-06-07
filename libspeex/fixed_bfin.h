@@ -59,6 +59,20 @@ static inline spx_word16_t DIV32_16(spx_word32_t a, spx_word16_t b)
    return res;
 }
 
+#undef MAX16
+static inline spx_word16_t MAX16(spx_word16_t a, spx_word16_t b)
+{
+   spx_word32_t res;
+   __asm__  (
+         "%1 = %1.L (X);\n\t"
+         "%2 = %2.L (X);\n\t"
+         "%0 = MAX(%1,%2);"
+   : "=d" (res)
+   : "%d" (a), "d" (b)
+   );
+   return res;
+}
+
 #undef MULT16_32_Q15
 static inline spx_word32_t MULT16_32_Q15(spx_word16_t a, spx_word32_t b)
 {
