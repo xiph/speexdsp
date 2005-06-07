@@ -151,7 +151,8 @@ static void pitch_xcorr(const spx_word16_t *_x, const spx_word16_t *_y, spx_word
 #endif
 #endif
 
-static spx_word32_t compute_pitch_error(spx_word32_t *C, spx_word16_t *g, spx_word16_t pitch_control)
+#ifndef OVERRIDE_COMPUTE_PITCH_ERROR
+static inline spx_word32_t compute_pitch_error(spx_word32_t *C, spx_word16_t *g, spx_word16_t pitch_control)
 {
    spx_word32_t sum = 0;
    sum = ADD32(sum,MULT16_32_Q15(MULT16_16_16(g[0],pitch_control),C[0]));
@@ -165,6 +166,8 @@ static spx_word32_t compute_pitch_error(spx_word32_t *C, spx_word16_t *g, spx_wo
    sum = SUB32(sum,MULT16_32_Q15(MULT16_16_16(g[2],g[2]),C[8]));
    return sum;
 }
+#endif
+
 void open_loop_nbest_pitch(spx_sig_t *sw, int start, int end, int len, int *pitch, spx_word16_t *gain, int N, char *stack)
 {
    int i,j,k;

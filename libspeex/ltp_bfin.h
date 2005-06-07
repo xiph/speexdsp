@@ -100,3 +100,59 @@ static void pitch_xcorr(const spx_word16_t *_x, const spx_word16_t *_y, spx_word
    : "A0", "A1", "P0", "P1", "P2", "P3", "P4", "R0", "R1", "R2", "R3", "I0", "I1", "L0", "L1", "B0", "B1", "memory"
    );
 }
+
+#define OVERRIDE_COMPUTE_PITCH_ERROR
+static inline spx_word32_t compute_pitch_error(spx_word32_t *C, spx_word16_t *g, spx_word16_t pitch_control)
+{
+   spx_word32_t sum;
+   __asm__ __volatile__
+         (
+         "A0 = A1 = 0;\n\t"
+         
+         "R0 = [%1++];\n\t"
+         "R1.L = %2.L*%5.L (IS);\n\t"
+         "R0 <<= 1;\n\t"
+         "A0 += R1.L*R0.H (IS), A1 += R1.L*R0.L (M,IS) || R0 = [%1++];\n\t"
+         
+         "R1.L = %3.L*%5.L (IS);\n\t"
+         "R0 <<= 1;\n\t"
+         "A0 += R1.L*R0.H (IS), A1 += R1.L*R0.L (M,IS) || R0 = [%1++];\n\t"
+         
+         "R1.L = %4.L*%5.L (IS);\n\t"
+         "R0 <<= 1;\n\t"
+         "A0 += R1.L*R0.H (IS), A1 += R1.L*R0.L (M,IS) || R0 = [%1++];\n\t"
+         
+         "R1.L = %2.L*%3.L (IS);\n\t"
+         "R0 <<= 1;\n\t"
+         "A0 -= R1.L*R0.H (IS), A1 -= R1.L*R0.L (M,IS) || R0 = [%1++];\n\t"
+
+         "R1.L = %4.L*%3.L (IS);\n\t"
+         "R0 <<= 1;\n\t"
+         "A0 -= R1.L*R0.H (IS), A1 -= R1.L*R0.L (M,IS) || R0 = [%1++];\n\t"
+         
+         "R1.L = %4.L*%2.L (IS);\n\t"
+         "R0 <<= 1;\n\t"
+         "A0 -= R1.L*R0.H (IS), A1 -= R1.L*R0.L (M,IS) || R0 = [%1++];\n\t"
+         
+         "R1.L = %2.L*%2.L (IS);\n\t"
+         "R0 <<= 1;\n\t"
+         "A0 -= R1.L*R0.H (IS), A1 -= R1.L*R0.L (M,IS) || R0 = [%1++];\n\t"
+
+         "R1.L = %3.L*%3.L (IS);\n\t"
+         "R0 <<= 1;\n\t"
+         "A0 -= R1.L*R0.H (IS), A1 -= R1.L*R0.L (M,IS) || R0 = [%1++];\n\t"
+         
+         "R1.L = %4.L*%4.L (IS);\n\t"
+         "R0 <<= 1;\n\t"
+         "A0 -= R1.L*R0.H (IS), A1 -= R1.L*R0.L (M,IS);\n\t"
+         
+         "A1 = A1 >>> 16;\n\t"
+         "A0 += A1;\n\t"
+         "%0 = A0;\n\t"
+   : "=&D" (sum), "=a" (C)
+   : "d" (g[0]), "d" (g[1]), "d" (g[2]), "d" (pitch_control), "1" (C)
+   : "R0", "R1", "R2", "A0"
+         );
+   return sum;
+}
+
