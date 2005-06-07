@@ -366,6 +366,10 @@ int   update_target
       for (j=0;j<N;j++)
       {
          spx_word16_t *x=ot[j]+subvect_size*i;
+         spx_word32_t tener = 0;
+         for (m=0;m<subvect_size;m++)
+            tener = MAC16_16(tener, x[m],x[m]);
+         tener = SHR32(tener,1);
          /*Find new n-best based on previous n-best j*/
          if (have_sign)
             vq_nbest_sign(x, resp2, subvect_size, shape_cb_size, E, N, best_index, best_dist, stack);
@@ -376,38 +380,12 @@ int   update_target
          for (k=0;k<N;k++)
          {
             spx_word16_t *ct;
-            spx_word32_t err=0;
+            spx_word32_t err;
             ct = ot[j];
             /*update target*/
 
-            /*previous target*/
-            for (m=i*subvect_size;m<(i+1)*subvect_size;m++)
-               t[m]=ct[m];
-
-            /* New code: update only enough of the target to calculate error*/
-            {
-               int rind;
-               spx_word16_t *res;
-               spx_word16_t sign=1;
-               rind = best_index[k];
-               if (rind>=shape_cb_size)
-               {
-                  sign=-1;
-                  rind-=shape_cb_size;
-               }
-               res = resp+rind*subvect_size;
-               if (sign>0)
-                  for (m=0;m<subvect_size;m++)
-                     t[subvect_size*i+m] = SUB16(t[subvect_size*i+m], res[m]);
-               else
-                  for (m=0;m<subvect_size;m++)
-                     t[subvect_size*i+m] = ADD16(t[subvect_size*i+m], res[m]);
-            }
+            err = odist[j]+best_dist[k]+tener;
             
-            /*compute error (distance)*/
-            err=odist[j];
-            for (m=i*subvect_size;m<(i+1)*subvect_size;m++)
-               err = MAC16_16(err, t[m],t[m]);
             /*update n-best list*/
             if (err<ndist[N-1] || ndist[N-1]<-1)
             {
