@@ -151,7 +151,20 @@ static void pitch_xcorr(const spx_word16_t *_x, const spx_word16_t *_y, spx_word
 #endif
 #endif
 
-
+static spx_word32_t compute_pitch_error(spx_word32_t *C, spx_word16_t *g, spx_word16_t pitch_control)
+{
+   spx_word32_t sum = 0;
+   sum = ADD32(sum,MULT16_32_Q15(MULT16_16_16(g[0],pitch_control),C[0]));
+   sum = ADD32(sum,MULT16_32_Q15(MULT16_16_16(g[1],pitch_control),C[1]));
+   sum = ADD32(sum,MULT16_32_Q15(MULT16_16_16(g[2],pitch_control),C[2]));
+   sum = SUB32(sum,MULT16_32_Q15(MULT16_16_16(g[0],g[1]),C[3]));
+   sum = SUB32(sum,MULT16_32_Q15(MULT16_16_16(g[2],g[1]),C[4]));
+   sum = SUB32(sum,MULT16_32_Q15(MULT16_16_16(g[2],g[0]),C[5]));
+   sum = SUB32(sum,MULT16_32_Q15(MULT16_16_16(g[0],g[0]),C[6]));
+   sum = SUB32(sum,MULT16_32_Q15(MULT16_16_16(g[1],g[1]),C[7]));
+   sum = SUB32(sum,MULT16_32_Q15(MULT16_16_16(g[2],g[2]),C[8]));
+   return sum;
+}
 void open_loop_nbest_pitch(spx_sig_t *sw, int start, int end, int len, int *pitch, spx_word16_t *gain, int N, char *stack)
 {
    int i,j,k;
@@ -447,6 +460,12 @@ int plc_tuning
       C[0] = MAC16_32_Q15(C[0],MULT16_16_16(plc_tuning,-327),C[0]);
       C[1] = MAC16_32_Q15(C[1],MULT16_16_16(plc_tuning,-327),C[1]);
       C[2] = MAC16_32_Q15(C[2],MULT16_16_16(plc_tuning,-327),C[2]);
+      C[0] = SHL32(C[0],1);
+      C[1] = SHL32(C[1],1);
+      C[2] = SHL32(C[2],1);
+      C[3] = SHL32(C[3],1);
+      C[4] = SHL32(C[4],1);
+      C[5] = SHL32(C[5],1);
 #else
       C[0]*=1-.01*plc_tuning;
       C[1]*=1-.01*plc_tuning;
@@ -458,20 +477,21 @@ int plc_tuning
       for (i=0;i<gain_cdbk_size;i++)
       {
          spx_word32_t sum=0;
-         spx_word16_t g0,g1,g2;
+         spx_word16_t g[3];
          spx_word16_t pitch_control=64;
          spx_word16_t gain_sum;
          
          ptr = gain_cdbk+3*i;
-         g0=ADD16((spx_word16_t)ptr[0],32);
-         g1=ADD16((spx_word16_t)ptr[1],32);
-         g2=ADD16((spx_word16_t)ptr[2],32);
+         g[0]=ADD16((spx_word16_t)ptr[0],32);
+         g[1]=ADD16((spx_word16_t)ptr[1],32);
+         g[2]=ADD16((spx_word16_t)ptr[2],32);
 
-         gain_sum = g1;
-         if (g0>0)
-            gain_sum += g0;
-         if (g2>0)
-            gain_sum += g2;
+         /* We favor "safe" pitch values to handle packet loss better */
+         gain_sum = g[1];
+         if (g[0]>0)
+            gain_sum += g[0];
+         if (g[2]>0)
+            gain_sum += g[2];
          if (gain_sum > 64)
          {
             gain_sum = SUB16(gain_sum, 64);
@@ -486,17 +506,8 @@ int plc_tuning
                pitch_control = 0;
          }
          
-         sum = ADD32(sum,MULT16_32_Q14(MULT16_16_16(g0,pitch_control),C[0]));
-         sum = ADD32(sum,MULT16_32_Q14(MULT16_16_16(g1,pitch_control),C[1]));
-         sum = ADD32(sum,MULT16_32_Q14(MULT16_16_16(g2,pitch_control),C[2]));
-         sum = SUB32(sum,MULT16_32_Q14(MULT16_16_16(g0,g1),C[3]));
-         sum = SUB32(sum,MULT16_32_Q14(MULT16_16_16(g2,g1),C[4]));
-         sum = SUB32(sum,MULT16_32_Q14(MULT16_16_16(g2,g0),C[5]));
-         sum = SUB32(sum,MULT16_32_Q15(MULT16_16_16(g0,g0),C[6]));
-         sum = SUB32(sum,MULT16_32_Q15(MULT16_16_16(g1,g1),C[7]));
-         sum = SUB32(sum,MULT16_32_Q15(MULT16_16_16(g2,g2),C[8]));
-         /* We could force "safe" pitch values to handle packet loss better */
-
+         sum = compute_pitch_error(C, g, pitch_control);
+         
          if (sum>best_sum || i==0)
          {
             best_sum=sum;
