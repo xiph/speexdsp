@@ -384,9 +384,79 @@ void fir_mem2(const spx_sig_t *x, const spx_coef_t *num, spx_sig_t *y, int N, in
    filter_mem2(x, num, den, y, N, ord, mem);
 }
 
-#define min(a,b) ((a)<(b) ? (a):(b))
 
 #define OVERRIDE_COMPUTE_IMPULSE_RESPONSE
+void compute_impulse_response(const spx_coef_t *ak, const spx_coef_t *awk1, const spx_coef_t *awk2, spx_word16_t *y, int N, int ord, char *stack)
+{
+   int i;
+   VARDECL(spx_word16_t *ytmp);
+   ALLOC(ytmp, N, spx_word16_t);
+   spx_word16_t *ytmp2 = ytmp;
+   y[0] = LPC_SCALING;
+   for (i=0;i<ord;i++)
+      y[i+1] = awk1[i];
+   i++;
+   for (;i<N;i++)
+      y[i] = 0;
+
+   N-=1;
+   __asm__ __volatile__
+   (
+         "I0 = %0;\n\t"
+         "I1 = %1;\n\t"
+         "L0 = 0;\n\t"
+         "L1 = 0;\n\t"
+         "L2 = 0;\n\t"
+         "L3 = 0;\n\t"
+         "R0 = 1;\n\t"
+         "R0 <<= 13;\n\t"
+         "W[I0] = R0.L;\n\t"
+         "R0 <<= 1;\n\t"
+         "W[I1] = R0.L;\n\t"
+         "R0 = %5;\n\t"
+         "LC0 = R0;\n\t"
+         "R2 = 0;\n\t"
+         "LOOP samples%= LC0;\n\t"
+         "LOOP_BEGIN samples%=;\n\t"
+            "R2 += 1;\n\t"
+            "R2 = MIN(R2, %4);\n\t"
+            "I0 = %0;\n\t"
+            "I1 = %1;\n\t"
+            "I2 = %2;\n\t"
+            "I3 = %3;\n\t"
+            "%0 += 2;\n\t"
+            "%1 += 2;\n\t"
+            "A0 = A1 = 0;\n\t"
+            "LC1 = R2;\n\t"
+            "LOOP filter%= LC1;\n\t"
+            "LOOP_BEGIN filter%=;\n\t"
+               "R0.L = W[I0--] || R1.L = W[I2++];\n\t"
+               "A0 -= R0.L*R1.L (IS);\n\t"
+               "R0.L = W[I1--] || R1.L = W[I3++];\n\t"
+               "A1 -= R0.L*R1.L (IS);\n\t"
+            "LOOP_END filter%=;\n\t"
+            "R0 = A0, R1 = A1;\n\t"
+            "R3 = W[%1] (X);\n\t"
+            "R3 <<= 13;\n\t"
+            "R0 = R0 + R3;\n\t"
+            "R3 = R0 >>> 13;\n\t"
+            "W[%0] = R3.L;\n\t"
+            "R0 <<= 1;\n\t"
+            "R1 = R1 + R0;\n\t"
+            "R1 >>>= 13;\n\t"
+            "W[%1] = R1.L;\n\t"
+         "LOOP_END samples%=;\n\t"
+   : "=a" (ytmp2), "=a" (y)
+   : "a" (awk2), "a" (ak), "d" (ord), "m" (N), "0" (ytmp2), "1" (y)
+   : "R0", "R1", "R2", "R3", "I0", "I1", "I2", "I3", "L0", "L1", "L2", "L3", "A0", "A1"
+   );
+}
+
+
+
+#if 0 /* Equivalent C function for filter_mem2 and compute_impulse_response */
+#define min(a,b) ((a)<(b) ? (a):(b))
+
 void compute_impulse_response(const spx_coef_t *ak, const spx_coef_t *awk1, const spx_coef_t *awk2, spx_word16_t *y, int N, int ord, char *stack)
 {
    int i,j;
@@ -417,8 +487,6 @@ void compute_impulse_response(const spx_coef_t *ak, const spx_coef_t *awk1, cons
 }
 
 
-
-#if 0 /* Equivalent C function for filter_mem2 */
 void filter_mem2(const spx_sig_t *_x, const spx_coef_t *num, const spx_coef_t *den, spx_sig_t *_y, int N, int ord, spx_mem_t *mem)
 {
    int i,j;
