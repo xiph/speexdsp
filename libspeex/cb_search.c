@@ -339,8 +339,8 @@ int   update_target
    {
       nind[i]=itmp+2*i*nb_subvect;
       oind[i]=itmp+(2*i+1)*nb_subvect;
-      for (j=0;j<nb_subvect;j++)
-         nind[i][j]=oind[i][j]=-1;
+      /*for (j=0;j<nb_subvect;j++)
+      nind[i][j]=oind[i][j]=VERY_LARGE32;*/
    }
    
    /* FIXME: make that adaptive? */
@@ -348,23 +348,20 @@ int   update_target
       t[i]=EXTRACT16(PSHR32(target[i],6));
 
    for (j=0;j<N;j++)
-      for (i=0;i<nsf;i++)
-         ot[j][i]=t[i];
-
-   /*for (i=0;i<nsf;i++)
-     printf ("%d\n", (int)t[i]);*/
+      speex_move(&ot[j][0], t, nsf*sizeof(spx_word16_t));
 
    /* Pre-compute codewords response and energy */
    compute_weighted_codebook(shape_cb, r, resp, resp2, E, shape_cb_size, subvect_size, stack);
 
    for (j=0;j<N;j++)
       odist[j]=0;
+   
    /*For all subvectors*/
    for (i=0;i<nb_subvect;i++)
    {
       /*"erase" nbest list*/
       for (j=0;j<N;j++)
-         ndist[j]=-2;
+         ndist[j]=VERY_LARGE32;
 
       /*For all n-bests of previous subvector*/
       for (j=0;j<N;j++)
@@ -391,11 +388,11 @@ int   update_target
             spx_word32_t err = ADD32(ADD32(odist[j],best_dist[k]),tener);
             
             /*update n-best list*/
-            if (err<ndist[N-1] || ndist[N-1]<-1)
+            if (err<ndist[N-1])
             {
                for (m=0;m<N;m++)
                {
-                  if (err < ndist[m] || ndist[m]<-1)
+                  if (err < ndist[m])
                   {
                      for (n=N-1;n>m;n--)
                      {
