@@ -84,6 +84,16 @@ static void compute_weighted_codebook(const signed char *shape_cb, const spx_wor
 }
 #endif
 
+#ifndef OVERRIDE_TARGET_UPDATE
+static inline void target_update(spx_word16_t *t, spx_word16_t g, spx_word16_t *r, int len)
+{
+   int n;
+   int q=0;
+   for (n=0;n<len;n++,q++)
+      t[n] = SUB32(t[n],MULT16_16_Q11_32(g,r[q]));
+}
+#endif
+
 
 
 static void split_cb_search_shape_sign_N1(
@@ -209,10 +219,10 @@ int   update_target
          q=subvect_size-m;
 #ifdef FIXED_POINT
          g=sign*shape_cb[rind*subvect_size+m];
-         for (n=subvect_size*(i+1);n<nsf;n++,q++)
-            t[n] = SUB32(t[n],MULT16_16_Q11_32(g,r[q]));
+         target_update(t+subvect_size*(i+1), g, r+q, nsf-subvect_size*(i+1));
 #else
          g=sign*0.03125*shape_cb[rind*subvect_size+m];
+         /*FIXME: I think that one too can be replaced by target_update */
          for (n=subvect_size*(i+1);n<nsf;n++,q++)
             t[n] = SUB32(t[n],g*r[q]);
 #endif
@@ -339,8 +349,6 @@ int   update_target
    {
       nind[i]=itmp+2*i*nb_subvect;
       oind[i]=itmp+(2*i+1)*nb_subvect;
-      /*for (j=0;j<nb_subvect;j++)
-      nind[i][j]=oind[i][j]=VERY_LARGE32;*/
    }
    
    /* FIXME: make that adaptive? */
@@ -413,11 +421,12 @@ int   update_target
       }
       for (j=0;j<N;j++)
       {
-         spx_word16_t *ct = ot[best_ntarget[j]];
+         //spx_word16_t *ct = ot[best_ntarget[j]];
          
          /*previous target (we don't care what happened before*/
          for (m=(i+1)*subvect_size;m<nsf;m++)
-            t[m]=ct[m];
+            nt[j][m]=ot[best_ntarget[j]][m];
+         
          /* New code: update the rest of the target only if it's worth it */
          for (m=0;m<subvect_size;m++)
          {
@@ -434,17 +443,15 @@ int   update_target
             q=subvect_size-m;
 #ifdef FIXED_POINT
             g=sign*shape_cb[rind*subvect_size+m];
-            for (n=subvect_size*(i+1);n<nsf;n++,q++)
-               t[n] = SUB32(t[n],MULT16_16_Q11_32(g,r[q]));
+            target_update(nt[j]+subvect_size*(i+1), g, r+q, nsf-subvect_size*(i+1));
 #else
             g=sign*0.03125*shape_cb[rind*subvect_size+m];
+            /*FIXME: I think that one too can be replaced by target_update */
             for (n=subvect_size*(i+1);n<nsf;n++,q++)
-               t[n] = SUB32(t[n],g*r[q]);
+               nt[j][n] = SUB32(nt[j][n],g*r[q]);
 #endif
          }
 
-         for (q=(i+1)*subvect_size;q<nsf;q++)
-            nt[j][q]=t[q];
          for (q=0;q<nb_subvect;q++)
             nind[j][q]=oind[best_ntarget[j]][q];
          nind[j][i]=best_nind[j];

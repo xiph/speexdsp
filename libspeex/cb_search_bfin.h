@@ -77,3 +77,27 @@ void compute_weighted_codebook(const signed char *shape_cb, const spx_word16_t *
       E++;
    }
 }
+
+#define OVERRIDE_TARGET_UPDATE
+static inline void target_update(spx_word16_t *t, spx_word16_t g, spx_word16_t *r, int len)
+{
+   __asm__ __volatile__
+         (
+         "I0 = %0;\n\t"
+         "I1 = %1;\n\t"
+         "L0 = 0;\n\t"
+         "L1 = 0;\n\t"
+         "LOOP tupdate%= LC0 = %3;\n\t"
+         "LOOP_BEGIN tupdate%=;\n\t"
+         "R0.L = W[I0] || R1.L = W[I1++];\n\t"
+         "R1 = (A1 = R1.L*%2.L) (IS);\n\t"
+         "R1 >>>= 11;\n\t"
+         "R0.L = R0.L - R1.L;\n\t"
+         "W[I0++] = R0.L;\n\t"
+         "LOOP_END tupdate%=;\n\t"
+   :
+   : "a" (t), "a" (r), "d" (g), "a" (len)
+   : "R0", "R1", "A1", "I0", "I1", "L0", "L1"
+         );
+}
+
