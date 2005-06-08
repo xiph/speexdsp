@@ -382,9 +382,9 @@ int   update_target
             spx_word16_t *ct;
             spx_word32_t err;
             ct = ot[j];
-            /*update target*/
-
-            err = odist[j]+best_dist[k]+tener;
+            
+            /* Compute total distance (including previous sub-vectors */
+            err = ADD32(ADD32(odist[j],best_dist[k]),tener);
             
             /*update n-best list*/
             if (err<ndist[N-1] || ndist[N-1]<-1)
