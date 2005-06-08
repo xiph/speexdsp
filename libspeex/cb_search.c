@@ -281,6 +281,8 @@ int   update_target
    int N=2;
    VARDECL(int *best_index);
    VARDECL(spx_word32_t *best_dist);
+   VARDECL(int *best_nind);
+   VARDECL(int *best_ntarget);
    int have_sign;
    N=complexity;
    if (N>10)
@@ -327,6 +329,8 @@ int   update_target
    nt=nt2;
    ALLOC(best_index, N, int);
    ALLOC(best_dist, N, spx_word32_t);
+   ALLOC(best_nind, N, int);
+   ALLOC(best_ntarget, N, int);
    ALLOC(ndist, N, spx_word32_t);
    ALLOC(odist, N, spx_word32_t);
    
@@ -369,7 +373,11 @@ int   update_target
          spx_word32_t tener = 0;
          for (m=0;m<subvect_size;m++)
             tener = MAC16_16(tener, x[m],x[m]);
+#ifdef FIXED_POINT
          tener = SHR32(tener,1);
+#else
+         tener *= .5;
+#endif
          /*Find new n-best based on previous n-best j*/
          if (have_sign)
             vq_nbest_sign(x, resp2, subvect_size, shape_cb_size, E, N, best_index, best_dist, stack);
@@ -379,71 +387,70 @@ int   update_target
          /*For all new n-bests*/
          for (k=0;k<N;k++)
          {
-            spx_word16_t *ct;
-            spx_word32_t err;
-            ct = ot[j];
-            
             /* Compute total distance (including previous sub-vectors */
-            err = ADD32(ADD32(odist[j],best_dist[k]),tener);
+            spx_word32_t err = ADD32(ADD32(odist[j],best_dist[k]),tener);
             
             /*update n-best list*/
             if (err<ndist[N-1] || ndist[N-1]<-1)
             {
-
-               /*previous target (we don't care what happened before*/
-               for (m=(i+1)*subvect_size;m<nsf;m++)
-                  t[m]=ct[m];
-               /* New code: update the rest of the target only if it's worth it */
-               for (m=0;m<subvect_size;m++)
-               {
-                  spx_word16_t g;
-                  int rind;
-                  spx_word16_t sign=1;
-                  rind = best_index[k];
-                  if (rind>=shape_cb_size)
-                  {
-                     sign=-1;
-                     rind-=shape_cb_size;
-                  }
-
-                  q=subvect_size-m;
-#ifdef FIXED_POINT
-                  g=sign*shape_cb[rind*subvect_size+m];
-                  for (n=subvect_size*(i+1);n<nsf;n++,q++)
-                     t[n] = SUB32(t[n],MULT16_16_Q11_32(g,r[q]));
-#else
-                  g=sign*0.03125*shape_cb[rind*subvect_size+m];
-                  for (n=subvect_size*(i+1);n<nsf;n++,q++)
-                     t[n] = SUB32(t[n],g*r[q]);
-#endif
-               }
-
-
                for (m=0;m<N;m++)
                {
                   if (err < ndist[m] || ndist[m]<-1)
                   {
                      for (n=N-1;n>m;n--)
                      {
-                        for (q=(i+1)*subvect_size;q<nsf;q++)
-                           nt[n][q]=nt[n-1][q];
-                        for (q=0;q<nb_subvect;q++)
-                           nind[n][q]=nind[n-1][q];
-                        ndist[n]=ndist[n-1];
+                        ndist[n] = ndist[n-1];
+                        best_nind[n] = best_nind[n-1];
+                        best_ntarget[n] = best_ntarget[n-1];
                      }
-                     for (q=(i+1)*subvect_size;q<nsf;q++)
-                        nt[m][q]=t[q];
-                     for (q=0;q<nb_subvect;q++)
-                        nind[m][q]=oind[j][q];
-                     nind[m][i]=best_index[k];
-                     ndist[m]=err;
+                     ndist[m] = err;
+                     best_nind[n] = best_index[k];
+                     best_ntarget[n] = j;
                      break;
                   }
                }
             }
          }
          if (i==0)
-           break;
+            break;
+      }
+      for (j=0;j<N;j++)
+      {
+         spx_word16_t *ct = ot[best_ntarget[j]];
+         
+         /*previous target (we don't care what happened before*/
+         for (m=(i+1)*subvect_size;m<nsf;m++)
+            t[m]=ct[m];
+         /* New code: update the rest of the target only if it's worth it */
+         for (m=0;m<subvect_size;m++)
+         {
+            spx_word16_t g;
+            int rind;
+            spx_word16_t sign=1;
+            rind = best_nind[j];
+            if (rind>=shape_cb_size)
+            {
+               sign=-1;
+               rind-=shape_cb_size;
+            }
+
+            q=subvect_size-m;
+#ifdef FIXED_POINT
+            g=sign*shape_cb[rind*subvect_size+m];
+            for (n=subvect_size*(i+1);n<nsf;n++,q++)
+               t[n] = SUB32(t[n],MULT16_16_Q11_32(g,r[q]));
+#else
+            g=sign*0.03125*shape_cb[rind*subvect_size+m];
+            for (n=subvect_size*(i+1);n<nsf;n++,q++)
+               t[n] = SUB32(t[n],g*r[q]);
+#endif
+         }
+
+         for (q=(i+1)*subvect_size;q<nsf;q++)
+            nt[j][q]=t[q];
+         for (q=0;q<nb_subvect;q++)
+            nind[j][q]=oind[best_ntarget[j]][q];
+         nind[j][i]=best_nind[j];
       }
 
       /*update old-new data*/
