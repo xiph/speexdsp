@@ -6,9 +6,9 @@ AM_CONFIG_HEADER([config.h])
 
 SPEEX_MAJOR_VERSION=1
 SPEEX_MINOR_VERSION=1
-SPEEX_MICRO_VERSION=9
+SPEEX_MICRO_VERSION=10
 SPEEX_EXTRA_VERSION=
-#SPEEX_VERSION=1.1.7
+#SPEEX_VERSION=
 SPEEX_VERSION=$SPEEX_MAJOR_VERSION.$SPEEX_MINOR_VERSION.$SPEEX_MICRO_VERSION$SPEEX_EXTRA_VERSION
 
 SPEEX_LT_CURRENT=3
@@ -109,14 +109,19 @@ AC_ARG_ENABLE(fixed-point, [  --enable-fixed-point    Compile as fixed-point],
   AC_DEFINE([FIXED_POINT], , [Compile as fixed-point])
 fi])
 
-AC_ARG_ENABLE(arm4-asm, [  --enable-arm4-asm       Make use of ARM4 assembly instructions],
+AC_ARG_ENABLE(arm4-asm, [  --enable-arm4-asm       Make use of ARM4 assembly optimizations],
 [if test "$enableval" = yes; then
-  AC_DEFINE([ARM4_ASM], , [Make use of ARM4 assembly instructions])
+  AC_DEFINE([ARM4_ASM], , [Make use of ARM4 assembly optimizations])
 fi])
 
-AC_ARG_ENABLE(arm5e-asm, [  --enable-arm5e-asm      Make use of ARM5E assembly instructions],
+AC_ARG_ENABLE(arm5e-asm, [  --enable-arm5e-asm      Make use of ARM5E assembly optimizations],
 [if test "$enableval" = yes; then
-  AC_DEFINE([ARM5_ASM], , [Make use of ARM5E assembly instructions])
+  AC_DEFINE([ARM5_ASM], , [Make use of ARM5E assembly optimizations])
+fi])
+
+AC_ARG_ENABLE(blackfin-asm, [  --enable-blackfin-asm      Make use of Blackfin assembly optimizations],
+[if test "$enableval" = yes; then
+  AC_DEFINE([BFIN_ASM], , [Make use of Blackfin assembly optimizations])
 fi])
 
 AC_ARG_ENABLE(fixed-point-debug, [  --enable-fixed-point-debug  Debug fixed-point implementation],
