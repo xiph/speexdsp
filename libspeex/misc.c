@@ -131,6 +131,10 @@ void *speex_alloc (int size)
 {
    return calloc(size,1);
 }
+void *speex_alloc_scratch (int size)
+{
+   return calloc(size,1);
+}
 
 void *speex_realloc (void *ptr, int size)
 {
@@ -138,6 +142,10 @@ void *speex_realloc (void *ptr, int size)
 }
 
 void speex_free (void *ptr)
+{
+   free(ptr);
+}
+void speex_free_scratch (void *ptr)
 {
    free(ptr);
 }

@@ -55,11 +55,17 @@ spx_uint32_t le_int(spx_uint32_t i);
 /** Speex wrapper for calloc. To do your own dynamic allocation, all you need to do is replace this function, speex_realloc and speex_free */
 void *speex_alloc (int size);
 
+/** Same as speex_alloc, except that the area is only needed inside a Speex call (might cause problem with wideband though) */
+void *speex_alloc_scratch (int size);
+
 /** Speex wrapper for realloc. To do your own dynamic allocation, all you need to do is replace this function, speex_alloc and speex_free */
 void *speex_realloc (void *ptr, int size);
 
 /** Speex wrapper for calloc. To do your own dynamic allocation, all you need to do is replace this function, speex_realloc and speex_alloc */
 void speex_free (void *ptr);
+
+/** Same as speex_alloc, except that the area is only needed inside a Speex call (might cause problem with wideband though) */
+void speex_free_scratch (void *ptr);
 
 /** Speex wrapper for mem_move */
 void *speex_move (void *dest, void *src, int n);

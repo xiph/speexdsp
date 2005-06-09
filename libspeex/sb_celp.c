@@ -227,16 +227,13 @@ void *sb_encoder_init(const SpeexMode *m)
    SBEncState *st;
    const SpeexSBMode *mode;
 
-#if defined(VAR_ARRAYS) || defined (USE_ALLOCA)
    st = (SBEncState*)speex_alloc(sizeof(SBEncState));
    if (!st)
       return NULL;
+#if defined(VAR_ARRAYS) || defined (USE_ALLOCA)
    st->stack = NULL;
 #else
-   st = (SBEncState*)speex_alloc(sizeof(SBEncState)+SB_ENC_STACK);
-   if (!st)
-      return NULL;
-   st->stack = ((char*)st) + sizeof(SBEncState);
+   st->stack = (char*)speex_alloc_scratch(SB_ENC_STACK);
 #endif
    st->mode = m;
    mode = (const SpeexSBMode*)m->mode;
@@ -337,6 +334,9 @@ void sb_encoder_destroy(void *state)
    SBEncState *st=(SBEncState*)state;
 
    speex_encoder_destroy(st->st_low);
+#if !(defined(VAR_ARRAYS) || defined (USE_ALLOCA))
+   speex_free_scratch(st->stack);
+#endif
 
    speex_free(st);
 }
@@ -796,16 +796,13 @@ void *sb_decoder_init(const SpeexMode *m)
 {
    SBDecState *st;
    const SpeexSBMode *mode;
-#if defined(VAR_ARRAYS) || defined (USE_ALLOCA)
    st = (SBDecState*)speex_alloc(sizeof(SBDecState));
    if (!st)
       return NULL;
+#if defined(VAR_ARRAYS) || defined (USE_ALLOCA)
    st->stack = NULL;
-#else   
-   st = (SBDecState*)speex_alloc(sizeof(SBDecState)+SB_DEC_STACK);
-   if (!st)
-      return NULL;
-   st->stack = ((char*)st) + sizeof(SBDecState);
+#else
+   st->stack = (char*)speex_alloc_scratch(SB_DEC_STACK);
 #endif
    st->mode = m;
    mode=(const SpeexSBMode*)m->mode;
@@ -862,7 +859,9 @@ void sb_decoder_destroy(void *state)
    SBDecState *st;
    st = (SBDecState*)state;
    speex_decoder_destroy(st->st_low);
-
+#if !(defined(VAR_ARRAYS) || defined (USE_ALLOCA))
+   speex_free_scratch(st->stack);
+#endif
    speex_free(state);
 }
 
