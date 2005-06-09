@@ -49,11 +49,12 @@ static spx_word32_t inner_prod(const spx_word16_t *x, const spx_word16_t *y, int
       "LOOP_BEGIN inner%=;\n\t"
          "A0 += R0.L*R1.L (IS) || R0.L = W[I0++] || R1.L = W[I1++];\n\t"
       "LOOP_END inner%=;\n\t"
+      "A0 += R0.L*R1.L (IS);\n\t"
       "A0 = A0 >>> 6;\n\t"
       "R0 = A0;\n\t"
       "%0 = R0;\n\t"
    : "=m" (sum)
-   : "m" (x), "m" (y), "m" (len)
+   : "m" (x), "m" (y), "d" (len-1)
    : "P0", "P1", "P2", "R0", "R1", "A0", "I0", "I1", "L0", "L1", "R3"
    );
    return sum;
@@ -68,7 +69,8 @@ static void pitch_xcorr(const spx_word16_t *_x, const spx_word16_t *_y, spx_word
       "I0 = P2;\n\t" /* x in I0 */
       "B0 = P2;\n\t" /* x in B0 */
       "R0 = %3;\n\t" /* len in R0 */
-      "P3 = %3;\n\t" /* len in R0 */
+      "P3 = %3;\n\t"
+      "P3 += -2;\n\t" /* len in R0 */
       "P4 = %4;\n\t" /* nb_pitch in R0 */
       "R1 = R0 << 1;\n\t" /* number of bytes in x */
       "L0 = R1;\n\t"
@@ -89,6 +91,8 @@ static void pitch_xcorr(const spx_word16_t *_x, const spx_word16_t *_y, spx_word
             "A0 += R0.L*R1.L , A1 += R0.L*R1.H (is) || R1.L = W[I1++];\n\t"
             "A0 += R0.H*R1.H , A1 += R0.H*R1.L (is) || R1.H = W[I1++] || R0 = [I0++];\n\t"
          "LOOP_END inner_prod%=;\n\t"
+         "A0 += R0.L*R1.L , A1 += R0.L*R1.H (is) || R1.L = W[I1++];\n\t"
+         "A0 += R0.H*R1.H , A1 += R0.H*R1.L (is) || R0 = [I0++];\n\t"
          "A0 = A0 >>> 6;\n\t"
          "A1 = A1 >>> 6;\n\t"
          "R2 = A0, R3 = A1;\n\t"

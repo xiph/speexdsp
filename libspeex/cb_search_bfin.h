@@ -56,7 +56,7 @@ void compute_weighted_codebook(const signed char *shape_cb, const spx_word16_t *
             "R0 = B[P4++] (X) || R1.L = W[I1--];\n\t"
             "LOOP inner%= LC1 = P0;\n\t"
             "LOOP_BEGIN inner%=;\n\t"
-               "A0 += R0.L*R1.L (IS) || R0 = B[P4++] (X) || R1.L = W[I1--];\n\t" /* Is there a danger of reading too far? */
+               "A0 += R0.L*R1.L (IS) || R0 = B[P4++] (X) || R1.L = W[I1--];\n\t"
             "LOOP_END inner%=;\n\t"
             "R0 = A0;\n\t"
             "R0 >>>= 11;\n\t"
@@ -89,11 +89,11 @@ static inline void target_update(spx_word16_t *t, spx_word16_t g, spx_word16_t *
          "L1 = 0;\n\t"
          "LOOP tupdate%= LC0 = %3;\n\t"
          "LOOP_BEGIN tupdate%=;\n\t"
-         "R0.L = W[I0] || R1.L = W[I1++];\n\t"
-         "R1 = (A1 = R1.L*%2.L) (IS);\n\t"
-         "R1 >>>= 11;\n\t"
-         "R0.L = R0.L - R1.L;\n\t"
-         "W[I0++] = R0.L;\n\t"
+            "R0.L = W[I0] || R1.L = W[I1++];\n\t"
+            "R1 = (A1 = R1.L*%2.L) (IS);\n\t"
+            "R1 >>>= 11;\n\t"
+            "R0.L = R0.L - R1.L;\n\t"
+            "W[I0++] = R0.L;\n\t"
          "LOOP_END tupdate%=;\n\t"
    :
    : "a" (t), "a" (r), "d" (g), "a" (len)
