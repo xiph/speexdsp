@@ -44,15 +44,15 @@ int normalize16(const spx_sig_t *x, spx_word16_t *y, spx_sig_t max_scale, int le
    "%0 = 0;\n\t"
    "I0 = %1;\n\t"
    "L0 = 0;\n\t"
+   "R1 = [I0++];\n\t"
    "LOOP norm_max%= LC0 = %2;\n\t"
    "LOOP_BEGIN norm_max%=;\n\t"
-      "R1 = [I0++];\n\t"
-      "R1 = ABS R1;\n\t"
-      "%0 = MAX(%0, R1);\n\t"
+      "R2 = ABS R1 || R1 = [I0++];\n\t"
+      "%0 = MAX(%0, R2);\n\t"
    "LOOP_END norm_max%=;\n\t"
    : "=&d" (max_val)
    : "a" (x), "a" (len)
-   : "R1"
+   : "R1", "R2"
    );
 
    sig_shift=0;
@@ -144,14 +144,11 @@ void filter_mem2(const spx_sig_t *_x, const spx_coef_t *num, const spx_coef_t *d
       "I3 = P3;\n\t"
       "P2 += 2;\n\t"
       "P3 += 2;\n\t"
+      "R4.L = W[I0++] || R5.L = W[I2--];\n\t"
       "LOOP filter_start_inner%= LC1;\n\t"
       "LOOP_BEGIN filter_start_inner%=;\n\t"
-         "R4.L = W[I0++];\n\t"
-         "R5.L = W[I2--];\n\t"
-         "A1 += R4.L*R5.L (IS);\n\t"
-         "R4.L = W[I1++];\n\t"
-         "R5.L = W[I3--];\n\t"
-         "A1 -= R4.L*R5.L (IS);\n\t"
+         "A1 += R4.L*R5.L (IS) || R4.L = W[I1++] || R5.L = W[I3--];\n\t"
+         "A1 -= R4.L*R5.L (IS) || R4.L = W[I0++] || R5.L = W[I2--];\n\t"
       "LOOP_END filter_start_inner%=;\n\t"
    
       "R1 = A1;\n\t"
