@@ -197,23 +197,21 @@ void filter_mem2(const spx_sig_t *_x, const spx_coef_t *num, const spx_coef_t *d
    "R0 = %5;\n\t"
    "LC0 = R0;\n\t"
    "P0 = B0;\n\t"
+   "A0 = A1 = 0;\n\t"
    "LOOP mem_update%= LC0;\n\t"
    "LOOP_BEGIN mem_update%=;\n\t"
-      "A0 = A1 = 0;\n\t"
       "I2 = P2;\n\t"
       "I0 = P0;\n\t"
       "P0 += 4;\n\t"
       "R0 = LC0;\n\t"
-      "LC1=R0;\n\t"
-      "R5 = [I2--];\n\t"
-      "R4 = [I0++];\n\t"
+      "LC1 = R0;\n\t"
+      "R5 = [I2--] || R4 = [I0++];\n\t"
       "LOOP mem_accum%= LC1;\n\t"
       "LOOP_BEGIN mem_accum%=;\n\t"
          "A0 += R4.L*R5.L (IS), A1 -= R4.H*R5.H (IS) || R4 = [I0++] || R5 = [I2--];\n\t"
       "LOOP_END mem_accum%=;\n\t"
-      "A0 += A1;\n\t"
-      "R0 = A0;\n\t"
-      "[P4++] = R0;\n\t"
+      "R0 = (A0 += A1);\n\t"
+      "A0 = A1 = 0 || [P4++] = R0;\n\t"
    "LOOP_END mem_update%=;\n\t"
 
    : : "m" (xy), "m" (_x), "m" (_y), "m" (numden), "m" (N), "m" (ord), "m" (mem)
@@ -228,10 +226,9 @@ void filter_mem2(const spx_sig_t *_x, const spx_coef_t *num, const spx_coef_t *d
 #define OVERRIDE_IIR_MEM2
 void iir_mem2(const spx_sig_t *_x, const spx_coef_t *den, spx_sig_t *_y, int N, int ord, spx_mem_t *mem)
 {
-   spx_word16_t x[N],y[N];
-   spx_word16_t *xx, *yy;
-   xx = x;
-   yy = y;
+   spx_word16_t y[N+2];
+   spx_word16_t *yy;
+   yy = y+2;
    __asm__ __volatile__
    (
    /* Register setup */
