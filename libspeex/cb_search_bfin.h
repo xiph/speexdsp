@@ -70,7 +70,7 @@ void compute_weighted_codebook(const signed char *shape_cb, const spx_word16_t *
          "[P4] = R1;\n\t"
          :
       : "m" (subvect_size), "m" (shape_cb), "m" (r), "m" (resp), "m" (E)
-      : "P0", "P1", "P2", "P3", "P4", "R0", "R1", "R2", "R3", "R4", "R5", "R6", "R7", "I0", "I1", "L0", "L1", "B0", "B1", "A0", "A1", "memory"
+      : "A0", "P0", "P1", "P2", "P3", "P4", "R0", "R1", "R2", "I0", "I1", "L0", "L1", "A0", "A1", "memory"
       );
       shape_cb += subvect_size;
       resp += subvect_size;

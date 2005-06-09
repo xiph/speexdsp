@@ -100,6 +100,7 @@ static void pitch_xcorr(const spx_word16_t *_x, const spx_word16_t *_y, spx_word
          "[P1--] = r3;\n\t"
          "P0 += 4;\n\t"
       "LOOP_END pitch%=;\n\t"
+      "L0 = 0;\n\t"
    : : "m" (_x), "m" (_y), "m" (corr), "m" (len), "m" (nb_pitch)
    : "A0", "A1", "P0", "P1", "P2", "P3", "P4", "R0", "R1", "R2", "R3", "I0", "I1", "L0", "L1", "B0", "B1", "memory"
    );

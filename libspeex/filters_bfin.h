@@ -213,9 +213,9 @@ void filter_mem2(const spx_sig_t *_x, const spx_coef_t *num, const spx_coef_t *d
       "R0 = (A0 += A1);\n\t"
       "A0 = A1 = 0 || [P4++] = R0;\n\t"
    "LOOP_END mem_update%=;\n\t"
-
+   "L0 = 0;\n\t"
    : : "m" (xy), "m" (_x), "m" (_y), "m" (numden), "m" (N), "m" (ord), "m" (mem)
-   : "R0", "R1", "R2", "R3", "R4", "R5", "R7", "P0", "P1", "P2", "P3", "P4", "B0", "I0", "I2", "L0", "L2", "M0", "memory"
+   : "A0", "A1", "R0", "R1", "R2", "R3", "R4", "R5", "P0", "P1", "P2", "P3", "P4", "B0", "I0", "I2", "L0", "L2", "M0", "memory"
    );
 
 }
@@ -297,7 +297,7 @@ void iir_mem2(const spx_sig_t *_x, const spx_coef_t *den, spx_sig_t *_y, int N, 
    "R0 = %5;\n\t"
    "R2 = %4;\n\t"
    "R2 = R2 - R0;\n\t"
-   "R6.L = W[I1++];\n\t"
+   "R4.L = W[I1++];\n\t"
    "LC0 = R2;\n\t"
    "LOOP filter_mid%= LC0;\n\t"
    "LOOP_BEGIN filter_mid%=;\n\t"
@@ -305,10 +305,10 @@ void iir_mem2(const spx_sig_t *_x, const spx_coef_t *den, spx_sig_t *_y, int N, 
       "A1 = 0;\n\t"
       "I3 = P3;\n\t"
       "P3 += 2;\n\t"
-      "R7.L = W[I3--];\n\t"
+      "R5.L = W[I3--];\n\t"
       "LOOP filter_mid_inner%= LC1;\n\t"
       "LOOP_BEGIN filter_mid_inner%=;\n\t"
-         "A1 -= R6.L*R7.L (IS) || R6.L = W[I1++] || R7.L = W[I3--];\n\t"
+         "A1 -= R4.L*R5.L (IS) || R4.L = W[I1++] || R5.L = W[I3--];\n\t"
       "LOOP_END filter_mid_inner%=;\n\t"
       "R1 = A1;\n\t"
       "R1 = R1 << 1 || R2 = [P0++];\n\t"
@@ -321,28 +321,26 @@ void iir_mem2(const spx_sig_t *_x, const spx_coef_t *den, spx_sig_t *_y, int N, 
    "P4 = %6;\n\t"
    "R0 = %5;\n\t"
    "LC0 = R0;\n\t"
-   "P0 = B0;\n\t"
    "P1 = B1;\n\t"
    "LOOP mem_update%= LC0;\n\t"
    "LOOP_BEGIN mem_update%=;\n\t"
       "A0 = 0;\n\t"
       "I3 = P3;\n\t"
       "I1 = P1;\n\t"
-      "P0 += 2;\n\t"
       "P1 += 2;\n\t"
       "R0 = LC0;\n\t"
       "LC1=R0;\n\t"
-      "R7.L = W[I3--] || R6.L = W[I1++];\n\t"
+      "R5.L = W[I3--] || R4.L = W[I1++];\n\t"
       "LOOP mem_accum%= LC1;\n\t"
       "LOOP_BEGIN mem_accum%=;\n\t"
-         "A0 -= R6.L*R7.L (IS) || R6.L = W[I1++] || R7.L = W[I3--];\n\t"
+         "A0 -= R4.L*R5.L (IS) || R4.L = W[I1++] || R5.L = W[I3--];\n\t"
       "LOOP_END mem_accum%=;\n\t"
       "R0 = A0;\n\t"
       "[P4++] = R0;\n\t"
    "LOOP_END mem_update%=;\n\t"
-
+   "L1 = 0;\n\t"
    : : "m" (yy), "m" (_x), "m" (_y), "m" (den), "m" (N), "m" (ord), "m" (mem)
-   : "R0", "R1", "R2", "R3", "R4", "R5", "R7", "P0", "P1", "P2", "P3", "P4", "B0", "B1", "I0", "I1", "I2", "I3", "L0", "L1", "L2", "L3", "memory"
+   : "A0", "A1", "R0", "R1", "R2", "R3", "R4", "R5", "P0", "P1", "P2", "P3", "P4", "B1", "I1", "I3", "L1", "L3", "memory"
    );
 
 }
@@ -422,7 +420,7 @@ void compute_impulse_response(const spx_coef_t *ak, const spx_coef_t *awk1, cons
          "LOOP_END samples%=;\n\t"
    : "=a" (ytmp2), "=a" (y)
    : "a" (awk2), "a" (ak), "d" (ord), "m" (N), "0" (ytmp2), "1" (y)
-   : "R0", "R1", "R2", "R3", "I0", "I1", "I2", "I3", "L0", "L1", "L2", "L3", "A0", "A1"
+   : "A0", "A1", "R0", "R1", "R2", "R3", "I0", "I1", "I2", "I3", "L0", "L1", "L2", "L3", "A0", "A1"
    );
 }
 
