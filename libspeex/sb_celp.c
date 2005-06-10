@@ -338,6 +338,44 @@ void sb_encoder_destroy(void *state)
    speex_free_scratch(st->stack);
 #endif
 
+   speex_free(st->x0d);
+   speex_free(st->x1d);
+   speex_free(st->high);
+   speex_free(st->y0);
+   speex_free(st->y1);
+
+   speex_free(st->h0_mem);
+   speex_free(st->h1_mem);
+   speex_free(st->g0_mem);
+   speex_free(st->g1_mem);
+
+   speex_free(st->buf);
+   speex_free(st->excBuf);
+   speex_free(st->res);
+   speex_free(st->sw);
+   speex_free(st->target);
+   speex_free(st->window);
+   speex_free(st->lagWindow);
+
+   speex_free(st->autocorr);
+   speex_free(st->lpc);
+   speex_free(st->bw_lpc1);
+   speex_free(st->bw_lpc2);
+   speex_free(st->lsp);
+   speex_free(st->qlsp);
+   speex_free(st->old_lsp);
+   speex_free(st->old_qlsp);
+   speex_free(st->interp_lsp);
+   speex_free(st->interp_qlsp);
+   speex_free(st->interp_lpc);
+   speex_free(st->interp_qlpc);
+   speex_free(st->pi_gain);
+
+   speex_free(st->mem_sp);
+   speex_free(st->mem_sp2);
+   speex_free(st->mem_sw);
+
+   
    speex_free(st);
 }
 
@@ -862,6 +900,22 @@ void sb_decoder_destroy(void *state)
 #if !(defined(VAR_ARRAYS) || defined (USE_ALLOCA))
    speex_free_scratch(st->stack);
 #endif
+
+   speex_free(st->x0d);
+   speex_free(st->x1d);
+   speex_free(st->high);
+   speex_free(st->y0);
+   speex_free(st->y1);
+   speex_free(st->g0_mem);
+   speex_free(st->g1_mem);
+   speex_free(st->exc);
+   speex_free(st->qlsp);
+   speex_free(st->old_qlsp);
+   speex_free(st->interp_qlsp);
+   speex_free(st->interp_qlpc);
+   speex_free(st->pi_gain);
+   speex_free(st->mem_sp);
+
    speex_free(state);
 }
 

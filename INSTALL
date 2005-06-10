@@ -4,5 +4,5 @@ Installing Speex is as easy as:
 % make
 % make install
 
-Note that if you are using the code from CVS, you will need to run "autogen.sh"
+Note that if you are using the code from SVN, you will need to run "autogen.sh"
 instead of "configure".
