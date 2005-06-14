@@ -10,7 +10,7 @@ m4data_DATA = speex.m4
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = speex.pc
 
-EXTRA_DIST = Speex.spec Speex.spec.in Speex.kdevelop speex.m4 speex.pc.in
+EXTRA_DIST = Speex.spec Speex.spec.in Speex.kdevelop speex.m4 speex.pc.in README.blackfin README.symbian
 
 #Fools KDevelop into including all files
 SUBDIRS = libspeex include @src@ doc win32 symbian
