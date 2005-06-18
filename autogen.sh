@@ -113,4 +113,4 @@ echo "  autoconf"
 autoconf || exit 1
 
 cd $olddir
-$srcdir/configure "$@" && echo
+$srcdir/configure --enable-maintainer-mode "$@" && echo
