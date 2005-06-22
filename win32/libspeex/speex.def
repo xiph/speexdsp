@@ -14,6 +14,7 @@ speex_decode
 speex_decoder_ctl
 speex_mode_query
 speex_lib_ctl
+speex_lib_get_mode
 speex_bits_init
 speex_bits_init_buffer
 speex_bits_destroy
