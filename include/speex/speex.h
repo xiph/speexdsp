@@ -301,6 +301,7 @@ void speex_encoder_destroy(void *state);
  @param state Encoder state
  @param in Frame that will be encoded with a +-2^15 range
  @param bits Bit-stream where the data will be written
+ @return 0 if frame needs not be transmitted (DTX only), 1 otherwise
  */
 int speex_encode(void *state, float *in, SpeexBits *bits);
 
@@ -309,6 +310,7 @@ int speex_encode(void *state, float *in, SpeexBits *bits);
  @param state Encoder state
  @param in Frame that will be encoded with a +-2^15 range
  @param bits Bit-stream where the data will be written
+ @return 0 if frame needs not be transmitted (DTX only), 1 otherwise
  */
 int speex_encode_int(void *state, spx_int16_t *in, SpeexBits *bits);
 
@@ -317,7 +319,7 @@ int speex_encode_int(void *state, spx_int16_t *in, SpeexBits *bits);
  * @param state Encoder state
  * @param request ioctl-type request (one of the SPEEX_* macros)
  * @param ptr Data exchanged to-from function
- * @return 0 if frame needs not be transmitted (DTX only), 1 otherwise
+ * @return 0 if no error, -1 if request in unknown
  */
 int speex_encoder_ctl(void *state, int request, void *ptr);
 
@@ -344,7 +346,7 @@ void speex_decoder_destroy(void *state);
  * @param state Decoder state
  * @param bits Bit-stream from which to decode the frame (NULL if the packet was lost)
  * @param out Where to write the decoded frame
- * @return return status (0 for no error, -1 for end of stream, -2 other)
+ * @return return status (0 for no error, -1 for end of stream, -2 corrupt stream)
  */
 int speex_decode(void *state, SpeexBits *bits, float *out);
 
@@ -354,7 +356,7 @@ int speex_decode(void *state, SpeexBits *bits, float *out);
  * @param state Decoder state
  * @param bits Bit-stream from which to decode the frame (NULL if the packet was lost)
  * @param out Where to write the decoded frame
- * @return return status (0 for no error, -1 for end of stream, -2 other)
+ * @return return status (0 for no error, -1 for end of stream, -2 corrupt stream)
  */
 int speex_decode_int(void *state, SpeexBits *bits, spx_int16_t *out);
 
@@ -363,7 +365,7 @@ int speex_decode_int(void *state, SpeexBits *bits, spx_int16_t *out);
  * @param state Decoder state
  * @param request ioctl-type request (one of the SPEEX_* macros)
  * @param ptr Data exchanged to-from function
- * @return 0 for no error, 1 if a terminator is reached, 2 for another error
+ * @return 0 if no error, -1 if request in unknown
  */
 int speex_decoder_ctl(void *state, int request, void *ptr);
 
