@@ -1,25 +1,22 @@
 Allocator override (speex_lib_ctl)
-Support alloca/variable size arrays
 Better error handling
 Fixed-point:
-  - Packet-loss concealment
   - Wideband
   - Initialization
   - Jitter buffer
 Echo cancellation:
-  - Re-enable denoiser hooks
-  - Improve doubletalk detector
+  - Int array for denoiser hooks
 Denoiser:
-  - Fix hyper-geometric approximation
+  - Smooth gain (remove musical noise)
+  - Better noise adaptation
   - Do some tuning
-VAD-NG:
+AGC:
   - Use median filtering instead of "non-linear mean"
 
 
 
 Features
 -Add maximum/minimum bit-rate control for VBR
--Get the encoder to use the rate of packet loss (more conservative pitch gains)
 -Improve error handling (with perror-like call?)
 
 Long-term quality improvements
