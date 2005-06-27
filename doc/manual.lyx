@@ -28,7 +28,7 @@
 
 The Speex Codec Manual
 \newline 
-(version 1.1.9)
+(version 1.1.11)
 \layout Author
 
 Jean-Marc Valin
@@ -1615,7 +1615,7 @@ Sometimes it is desirable to pack more than one frame per packet (or other
  In cases where the number of frames is not determined by an out-of-band
  mechanism, it is possible to include a terminator code.
  That terminator consists of the code 15 (decimal) encoded with 5 bits,
- as shown in figure 
+ as shown in Table 
 \begin_inset LatexCommand \ref{cap:quality_vs_bps}
 
 \end_inset 
