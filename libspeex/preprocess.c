@@ -90,24 +90,28 @@ static void conj_window(float *w, int len)
    which multiplied by xi/(1+xi) is the optimal gain
    in the loudness domain ( sqrt[amplitude] )
 */
-static float hypergeom_gain(float x)
+static inline float hypergeom_gain(float x)
 {
    int ind;
    float integer, frac;
    static const float table[21] = {
-      0.82157f, 1.02017f, 1.20461f, 1.37534f, 1.53363f, 1.68092f, 1.81865f, 
-      1.94811f, 2.07038f, 2.18638f, 2.29688f, 2.40255f, 2.50391f, 2.60144f, 
+      0.82157f, 1.02017f, 1.20461f, 1.37534f, 1.53363f, 1.68092f, 1.81865f,
+      1.94811f, 2.07038f, 2.18638f, 2.29688f, 2.40255f, 2.50391f, 2.60144f,
       2.69551f, 2.78647f, 2.87458f, 2.96015f, 3.04333f, 3.12431f, 3.20326f};
-   
+      
    if (x>9.5)
-      return 1+.12/x;
-
+      return 1+.1296/x;
+   
    integer = floor(2*x);
    frac = 2*x-integer;
    ind = (int)integer;
-   /*if (ind > 20 || ind < 0)
-   fprintf (stderr, "error: %d %f\n", ind, x);*/
+   
    return ((1-frac)*table[ind] + frac*table[ind+1])/sqrt(x+.0001f);
+}
+
+static inline float qcurve(float x)
+{
+   return 1.f/(1.f+.1f/(x*x));
 }
 
 SpeexPreprocessState *speex_preprocess_state_init(int frame_size, int sampling_rate)
@@ -654,7 +658,8 @@ int speex_preprocess(SpeexPreprocessState *st, spx_int16_t *x, float *echo)
    /* Compute a posteriori SNR */
    for (i=1;i<N;i++)
    {
-      st->post[i] = ps[i]/(1.f+NOISE_OVERCOMPENS*st->noise[i]+st->echo_noise[i]+st->reverb_estimate[i]) - 1.f;
+      float tot_noise = 1.f+ NOISE_OVERCOMPENS*st->noise[i] + st->echo_noise[i] + st->reverb_estimate[i];
+      st->post[i] = ps[i]/tot_noise - 1.f;
       if (st->post[i]>100.f)
          st->post[i]=100.f;
       /*if (st->post[i]<0)
@@ -675,32 +680,14 @@ int speex_preprocess(SpeexPreprocessState *st, spx_int16_t *x, float *echo)
       /* A priori update rate */
       float gamma;
       float min_gamma=0.12f;
-      gamma = 1.0f/st->nb_preprocess;
 
-      /*Make update rate smaller when there's no speech*/
-#if 0
-      if (mean_post<3.5 && mean_prior < 1)
-         min_gamma *= (mean_post+.5);
-      else
-         min_gamma *= 4.;
-#else
-      min_gamma = .1f*fabs(mean_prior - mean_post)*fabs(mean_prior - mean_post);
-      if (min_gamma>.15f)
-         min_gamma = .15f;
-      if (min_gamma<.02f)
-         min_gamma = .02f;
-#endif
-      /*min_gamma = .08;*/
-
-      /*if (gamma<min_gamma)*/
-         gamma=min_gamma;
-      gamma = .1;
       for (i=1;i<N;i++)
       {
-         
+         float gamma = .1+.9*st->prior[i]*st->prior[i]/((1+st->prior[i])*(1+st->prior[i]));
+         float tot_noise = 1.f+ NOISE_OVERCOMPENS*st->noise[i] + st->echo_noise[i] + st->reverb_estimate[i];
          /* A priori SNR update */
          st->prior[i] = gamma*max(0.0f,st->post[i]) +
-         (1.f-gamma)*st->gain[i]*st->gain[i]*st->old_ps[i]/(1.f+NOISE_OVERCOMPENS*st->noise[i]+st->echo_noise[i]+st->reverb_estimate[i]);
+               (1.f-gamma)* (.8*st->gain[i]*st->gain[i]*st->old_ps[i]/tot_noise + .2*st->prior[i]);
          
          if (st->prior[i]>100.f)
             st->prior[i]=100.f;
@@ -753,12 +740,12 @@ int speex_preprocess(SpeexPreprocessState *st, spx_int16_t *x, float *echo)
    } else {
       for (i=1;i<N-1;i++)
       {
-         if (st->update_prob[i]<.5f || st->ps[i] < st->noise[i])
+         if (st->update_prob[i]<.5f/* || st->ps[i] < st->noise[i]*/)
          {
             if (echo)
-               st->noise[i] = .90f*st->noise[i] + .1f*max(1.0f,st->ps[i]-echo[i]);
+               st->noise[i] = .95f*st->noise[i] + .05f*max(1.0f,st->ps[i]-echo[i]);
             else
-               st->noise[i] = .90f*st->noise[i] + .1f*st->ps[i];
+               st->noise[i] = .95f*st->noise[i] + .05f*st->ps[i];
          }
       }
    }
@@ -775,34 +762,10 @@ int speex_preprocess(SpeexPreprocessState *st, spx_int16_t *x, float *echo)
       {
          Zframe += st->zeta[i];         
       }
+      Zframe /= (freq_end-freq_start);
    }
 
-   Zframe /= N;
-   if (Zframe<ZMIN)
-   {
-      Pframe = 0;
-   } else {
-      if (Zframe > 1.5f*st->Zlast)
-      {
-         Pframe = 1.f;
-         st->Zpeak = Zframe;
-         if (st->Zpeak > 10.f)
-            st->Zpeak = 10.f;
-         if (st->Zpeak < 1.f)
-            st->Zpeak = 1.f;
-      } else {
-         if (Zframe < st->Zpeak*ZMIN)
-         {
-            Pframe = 0;
-         } else if (Zframe > st->Zpeak*ZMAX)
-         {
-            Pframe = 1;
-         } else {
-            Pframe = log(Zframe/(st->Zpeak*ZMIN)) / log(ZMAX/ZMIN);
-         }
-      }
-   }
-   st->Zlast = Zframe;
+   Pframe = qcurve(Zframe);
 
    /*fprintf (stderr, "%f\n", Pframe);*/
    /* Compute gain according to the Ephraim-Malah algorithm */
@@ -822,14 +785,7 @@ int speex_preprocess(SpeexPreprocessState *st, spx_int16_t *x, float *echo)
          zeta1 = st->zeta[i];
       else
          zeta1 = .25f*st->zeta[i-1] + .5f*st->zeta[i] + .25f*st->zeta[i+1];
-      if (zeta1<ZMIN)
-         P1 = 0.f;
-      else if (zeta1>ZMAX)
-         P1 = 1.f;
-      else
-         P1 = LOG_MIN_MAX_1 * log(ZMIN_1*zeta1);
-  
-      /*P1 = log(zeta1/ZMIN)/log(ZMAX/ZMIN);*/
+      P1 = qcurve (zeta1);
       
       /* FIXME: add global prob (P2) */
       q = 1-Pframe*P1;
@@ -839,16 +795,8 @@ int speex_preprocess(SpeexPreprocessState *st, spx_int16_t *x, float *echo)
       p=1.f/(1.f + (q/(1.f-q))*(1.f+st->prior[i])*exp(-theta));
       /*p=1;*/
 
-#if 0
-      /* log-spectral magnitude estimator */
-      if (theta<6)
-         MM = 0.74082*pow(theta+1,.61)/sqrt(.0001+theta);
-      else
-         MM=1;
-#else
       /* Optimal estimator for loudness domain */
       MM = hypergeom_gain(theta);
-#endif
 
       st->gain[i] = prior_ratio * MM;
       /*Put some (very arbitraty) limit on the gain*/
@@ -860,14 +808,24 @@ int speex_preprocess(SpeexPreprocessState *st, spx_int16_t *x, float *echo)
       st->reverb_estimate[i] = st->reverb_decay*st->reverb_estimate[i] + st->reverb_decay*st->reverb_level*st->gain[i]*st->gain[i]*st->ps[i];
       if (st->denoise_enabled)
       {
-         st->gain2[i]=p*p*st->gain[i];
+         st->gain2[i] = p*p*st->gain[i];
+         /*st->gain2[i]=(p*sqrt(st->gain[i])+.05*(1-p))*(p*sqrt(st->gain[i])+.05*(1-p));*/
+         /*st->gain2[i] = pow(st->gain[i], p) * pow(.2f,1.f-p);*/
       } else {
          st->gain2[i]=1.f;
       }
    }
+   
    st->gain2[0]=st->gain[0]=0.f;
    st->gain2[N-1]=st->gain[N-1]=0.f;
-
+   /*
+   for (i=30;i<N-2;i++)
+   {
+      st->gain[i] = st->gain2[i]*st->gain2[i] + (1-st->gain2[i])*.333*(.6*st->gain2[i-1]+st->gain2[i]+.6*st->gain2[i+1]+.4*st->gain2[i-2]+.4*st->gain2[i+2]);
+   }
+   for (i=30;i<N-2;i++)
+      st->gain2[i] = st->gain[i];
+   */
    if (st->agc_enabled)
       speex_compute_agc(st, mean_prior);
 
@@ -957,9 +915,9 @@ void speex_preprocess_estimate_update(SpeexPreprocessState *st, spx_int16_t *x, 
       if (st->update_prob[i]<.5f || st->ps[i] < st->noise[i])
       {
          if (echo)
-            st->noise[i] = .90f*st->noise[i] + .1f*max(1.0f,st->ps[i]-echo[i]);
+            st->noise[i] = .95f*st->noise[i] + .1f*max(1.0f,st->ps[i]-echo[i]);
          else
-            st->noise[i] = .90f*st->noise[i] + .1f*st->ps[i];
+            st->noise[i] = .95f*st->noise[i] + .1f*st->ps[i];
       }
    }
 
