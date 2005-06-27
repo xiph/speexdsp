@@ -420,7 +420,7 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
    /* Update frequency-dependent energy ratio with the total energy ratio */
    for (i=0;i<=st->frame_size;i++)
    {
-      st->fratio[i]  = (.2*ESR+.8*min(ESR,st->fratio[i]));
+      st->fratio[i]  = min(ESR,st->fratio[i]);
    }   
 
    if (st->adapted)
