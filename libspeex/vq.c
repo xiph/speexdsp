@@ -40,6 +40,7 @@
 
 #ifdef _USE_SSE
 #include <xmmintrin.h>
+#include "vq_sse.h"
 #elif defined(SHORTCUTS) && (defined(ARM4_ASM) || defined(ARM5E_ASM))
 #include "vq_arm4.h"
 #elif defined(BFIN_ASM)
