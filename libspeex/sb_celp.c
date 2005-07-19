@@ -272,7 +272,6 @@ void *sb_encoder_init(const SpeexMode *m)
    st->g0_mem=speex_alloc((QMF_ORDER)*sizeof(spx_word32_t));
    st->g1_mem=speex_alloc((QMF_ORDER)*sizeof(spx_word32_t));
 
-   st->buf=speex_alloc((st->windowSize)*sizeof(spx_sig_t));
    st->excBuf=speex_alloc((st->bufSize)*sizeof(spx_sig_t));
    st->exc = st->excBuf + st->bufSize - st->windowSize;
 
@@ -349,7 +348,6 @@ void sb_encoder_destroy(void *state)
    speex_free(st->g0_mem);
    speex_free(st->g1_mem);
 
-   speex_free(st->buf);
    speex_free(st->excBuf);
    speex_free(st->res);
    speex_free(st->sw);

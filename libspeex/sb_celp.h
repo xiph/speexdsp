@@ -66,7 +66,6 @@ typedef struct SBEncState {
 
    spx_sig_t *excBuf;              /**< High-band excitation */
    spx_sig_t *exc;                 /**< High-band excitation (for QMF only)*/
-   spx_sig_t *buf;                 /**< Temporary buffer */
    spx_sig_t *res;                 /**< Zero-input response (ringing) */
    spx_sig_t *sw;                  /**< Perceptually weighted signal */
    spx_sig_t *target;              /**< Weighted target signal (analysis by synthesis) */
