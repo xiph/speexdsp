@@ -1,7 +1,9 @@
-/* Copyright (C) 2002 Jean-Marc Valin
-   File: vq.h
-   Vector quantization
-
+/* Copyright (C) 2002 Jean-Marc Valin */
+/**
+   @file vq.h
+   @brief Vector quantization
+*/
+/*
    Redistribution and use in source and binary forms, with or without
    modification, are permitted provided that the following conditions
    are met:

@@ -15,6 +15,10 @@
  last mod: $Id: os_types.h 7524 2004-08-11 04:20:36Z conrad $
 
  ********************************************************************/
+/**
+   @file speex_types.h
+   @brief Speex types
+*/
 #ifndef _SPEEX_TYPES_H
 #define _SPEEX_TYPES_H
 

@@ -1,7 +1,9 @@
-/* Copyright (C) 2002 Jean-Marc Valin 
-   File: lpc.h
-   Functions for LPC (Linear Prediction Coefficients) analysis
-
+/* Copyright (C) 2002 Jean-Marc Valin */
+/**
+   @file lpc.h
+   @brief Functions for LPC (Linear Prediction Coefficients) analysis
+*/
+/*
    Redistribution and use in source and binary forms, with or without
    modification, are permitted provided that the following conditions
    are met:

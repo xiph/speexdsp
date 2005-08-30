@@ -14,16 +14,20 @@
  last mod: $Id: smallft.h,v 1.3 2003/09/16 18:35:45 jm Exp $
 
  ********************************************************************/
+/**
+   @file smallft.h
+   @brief Discrete Rotational Fourier Transform (DRFT)
+*/
 
 #ifndef _V_SMFT_H_
 #define _V_SMFT_H_
 
-/*#include "vorbis/codec.h"*/
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+/** Discrete Rotational Fourier Transform lookup */
 struct drft_lookup{
   int n;
   float *trigcache;

@@ -1,5 +1,5 @@
 /* Copyright (C) 2002-2005 Jean-Marc Valin 
-   File: mics.c
+   File: misc.c
    Various utility routines for Speex
 
    Redistribution and use in source and binary forms, with or without

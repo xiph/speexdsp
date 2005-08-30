@@ -1,8 +1,10 @@
-/* Copyright (C) 2005 Analog Devices
-   Author: Jean-Marc Valin 
-   File: cb_search_bfin.h
-   Fixed codebook functions (Blackfin version)
-
+/* Copyright (C) 2005 Analog Devices */
+/**
+   @author Jean-Marc Valin 
+   @file cb_search_bfin.h
+   @brief Fixed codebook functions (Blackfin version)
+*/
+/*
    Redistribution and use in source and binary forms, with or without
    modification, are permitted provided that the following conditions
    are met:

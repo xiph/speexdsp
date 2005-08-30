@@ -1,9 +1,10 @@
-/* Copyright (C) 2003 Epic Games 
-   Written by Jean-Marc Valin
-
-   File: speex_preprocess.h
-
-
+/* Copyright (C) 2003 Epic Games
+   Written by Jean-Marc Valin */
+/**
+   @file speex_preprocess.h
+   @brief Speex preprocessor
+*/
+/*
    Redistribution and use in source and binary forms, with or without
    modification, are permitted provided that the following conditions are
    met:
@@ -42,6 +43,7 @@ extern "C" {
 
 struct drft_lookup;
 
+/** Speex pre-processor state. */
 typedef struct SpeexPreprocessState {
    int    frame_size;        /**< Number of samples processed each time */
    int    ps_size;           /**< Number of points in the power spectrum */
@@ -119,25 +121,39 @@ int speex_preprocess_ctl(SpeexPreprocessState *st, int request, void *ptr);
 
 
 
+/** Set preprocessor denoiser state */
 #define SPEEX_PREPROCESS_SET_DENOISE 0
+/** Get preprocessor denoiser state */
 #define SPEEX_PREPROCESS_GET_DENOISE 1
 
+/** Set preprocessor Automatic Gain Control state */
 #define SPEEX_PREPROCESS_SET_AGC 2
+/** Get preprocessor Automatic Gain Control state */
 #define SPEEX_PREPROCESS_GET_AGC 3
 
+/** Set preprocessor Voice Activity Detection state */
 #define SPEEX_PREPROCESS_SET_VAD 4
+/** Get preprocessor Voice Activity Detection state */
 #define SPEEX_PREPROCESS_GET_VAD 5
 
+/** Set preprocessor Automatic Gain Control level */
 #define SPEEX_PREPROCESS_SET_AGC_LEVEL 6
+/** Get preprocessor Automatic Gain Control level */
 #define SPEEX_PREPROCESS_GET_AGC_LEVEL 7
 
+/** Set preprocessor dereverb state */
 #define SPEEX_PREPROCESS_SET_DEREVERB 8
+/** Get preprocessor dereverb state */
 #define SPEEX_PREPROCESS_GET_DEREVERB 9
 
+/** Set preprocessor dereverb level */
 #define SPEEX_PREPROCESS_SET_DEREVERB_LEVEL 10
+/** Get preprocessor dereverb level */
 #define SPEEX_PREPROCESS_GET_DEREVERB_LEVEL 11
 
+/** Set preprocessor dereverb decay */
 #define SPEEX_PREPROCESS_SET_DEREVERB_DECAY 12
+/** Get preprocessor dereverb decay */
 #define SPEEX_PREPROCESS_GET_DEREVERB_DECAY 13
 
 #ifdef __cplusplus

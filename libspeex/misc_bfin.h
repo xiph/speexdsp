@@ -1,8 +1,10 @@
-/* Copyright (C) 2005 Analog Devices
-   Author:  Jean-Marc Valin 
-   File: mics_bfin.h
-   Various utility routines for Speex
-
+/* Copyright (C) 2005 Analog Devices */
+/**
+   @file misc_bfin.h
+   @author Jean-Marc Valin 
+   @brief Various compatibility routines for Speex (Blackfin version)
+*/
+/*
    Redistribution and use in source and binary forms, with or without
    modification, are permitted provided that the following conditions
    are met:

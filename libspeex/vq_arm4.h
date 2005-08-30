@@ -1,7 +1,9 @@
-/* Copyright (C) 2004 Jean-Marc Valin 
-   File: vq_arm4.h
-   ARM4-optimized vq routine
-
+/* Copyright (C) 2004 Jean-Marc Valin */
+/**
+   @file vq_arm4.h
+   @brief ARM4-optimized vq routine
+*/
+/*
    Redistribution and use in source and binary forms, with or without
    modification, are permitted provided that the following conditions
    are met:

@@ -37,10 +37,10 @@
 
 #include "speex/speex_types.h"
 
-#define ABS(x) ((x) < 0 ? (-(x)) : (x))
-#define ABS16(x) ((x) < 0 ? (-(x)) : (x))
-#define MAX16(a,b) ((a) > (b) ? (a) : (b))
-#define ABS32(x) ((x) < 0 ? (-(x)) : (x))
+#define ABS(x) ((x) < 0 ? (-(x)) : (x))      /**< Absolute integer value. */
+#define ABS16(x) ((x) < 0 ? (-(x)) : (x))    /**< Absolute 16-bit value.  */
+#define MAX16(a,b) ((a) > (b) ? (a) : (b))   /**< Maximum 16-bit value.   */
+#define ABS32(x) ((x) < 0 ? (-(x)) : (x))    /**< Absolute 32-bit value.  */
 
 #ifdef FIXED_POINT
 

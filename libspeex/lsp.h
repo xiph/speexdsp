@@ -14,6 +14,10 @@ Modified by Jean-Marc Valin
     unit circle.
 
 \*---------------------------------------------------------------------------*/
+/**
+   @file lsp.h
+   @brief Line Spectral Pair (LSP) functions.
+*/
 /* Speex License:
 
    Redistribution and use in source and binary forms, with or without

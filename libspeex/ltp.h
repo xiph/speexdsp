@@ -1,7 +1,9 @@
-/* Copyright (C) 2002 Jean-Marc Valin 
-   File: ltp.h
-   Long-Term Prediction functions
-
+/* Copyright (C) 2002 Jean-Marc Valin */
+/**
+   @file ltp.h
+   @brief Long-Term Prediction functions
+*/
+/*
    Redistribution and use in source and binary forms, with or without
    modification, are permitted provided that the following conditions
    are met:
@@ -33,7 +35,8 @@
 #include <speex/speex_bits.h>
 #include "misc.h"
 
-typedef struct ltp_params {
+/** LTP parameters. */
+typedef struct {
    const signed char *gain_cdbk;
    int     gain_bits;
    int     pitch_bits;

@@ -1,8 +1,9 @@
-/* Copyright (C) 2002 Jean-Marc Valin 
-   File: vbr.h
-
-   VBR-related routines
-
+/* Copyright (C) 2002 Jean-Marc Valin */
+/**
+   @file vbr.h
+   @brief Variable Bit-Rate (VBR) related routines
+*/
+/*
    Redistribution and use in source and binary forms, with or without
    modification, are permitted provided that the following conditions
    are met:
@@ -44,6 +45,7 @@ extern const float vbr_nb_thresh[9][11];
 extern const float vbr_hb_thresh[5][11];
 extern const float vbr_uhb_thresh[2][11];
 
+/** VBR state. */
 typedef struct VBRState {
    float energy_alpha;
    float average_energy;

@@ -1,6 +1,9 @@
-/* Copyright (C) 2004 Jean-Marc Valin 
-   File: cb_search.c (SSE version)
-
+/* Copyright (C) 2004 Jean-Marc Valin */
+/**
+   @file cb_search_sse.h
+   @brief Fixed codebook functions (SSE version)
+*/
+/*
    Redistribution and use in source and binary forms, with or without
    modification, are permitted provided that the following conditions
    are met:

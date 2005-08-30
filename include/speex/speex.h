@@ -94,10 +94,10 @@ extern "C" {
 /** Get current bit-rate used by the encoder or decoder */
 #define SPEEX_GET_BITRATE 19
 
-/**Define a handler function for in-band Speex request*/
+/** Define a handler function for in-band Speex request*/
 #define SPEEX_SET_HANDLER 20
 
-/**Define a handler function for in-band user-defined request*/
+/** Define a handler function for in-band user-defined request*/
 #define SPEEX_SET_USER_HANDLER 22
 
 /** Set sampling rate used in bit-rate computation */
@@ -129,7 +129,7 @@ extern "C" {
 
 /** Set submode encoding in each frame (1 for yes, 0 for no, setting to no breaks the standard) */
 #define SPEEX_SET_SUBMODE_ENCODING 36
-/** */
+/** Get submode encoding in each frame */
 #define SPEEX_GET_SUBMODE_ENCODING 37
 
 /*#define SPEEX_SET_LOOKAHEAD 38*/
@@ -170,10 +170,15 @@ extern "C" {
 
 
 
+/** Get major Speex version */
 #define SPEEX_LIB_GET_MAJOR_VERSION 1
+/** Get minor Speex version */
 #define SPEEX_LIB_GET_MINOR_VERSION 3
+/** Get micro Speex version */
 #define SPEEX_LIB_GET_MICRO_VERSION 5
+/** Get extra Speex version */
 #define SPEEX_LIB_GET_EXTRA_VERSION 7
+/** Get Speex version string */
 #define SPEEX_LIB_GET_VERSION_STRING 9
 
 /*#define SPEEX_LIB_SET_ALLOC_FUNC 10

@@ -1,7 +1,9 @@
-/* Copyright (C) 2004 Jean-Marc Valin 
-   File: ltp.c
-   Lont-Term Prediction functions (SSE version)
-
+/* Copyright (C) 2004 Jean-Marc Valin */
+/**
+   @file ltp_arm4.h
+   @brief Long-Term Prediction functions (ARM4 version)
+*/
+/*
    Redistribution and use in source and binary forms, with or without
    modification, are permitted provided that the following conditions
    are met:

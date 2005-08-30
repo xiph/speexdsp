@@ -1,8 +1,10 @@
-/* Copyright (C) 2005 Analog Devices
-   Author:  Jean-Marc Valin 
-   File: vq_arm4.h
-   Blackfin-optimized vq routine
-
+/* Copyright (C) 2005 Analog Devices */
+/**
+   @file vq_bfin.h
+   @author Jean-Marc Valin 
+   @brief Blackfin-optimized vq routine
+*/
+/*
    Redistribution and use in source and binary forms, with or without
    modification, are permitted provided that the following conditions
    are met:

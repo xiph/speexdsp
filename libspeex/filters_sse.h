@@ -1,7 +1,9 @@
-/* Copyright (C) 2002 Jean-Marc Valin 
-   File: filters.c
-   Various analysis/synthesis filters
-
+/* Copyright (C) 2002 Jean-Marc Valin */
+/**
+   @file filters_sse.h
+   @brief Various analysis/synthesis filters (SSE version)
+*/
+/*
    Redistribution and use in source and binary forms, with or without
    modification, are permitted provided that the following conditions
    are met:

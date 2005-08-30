@@ -1,8 +1,9 @@
-/* Copyright (C) 2004 Jean-Marc Valin
-   File medfilter.h
-   Median filter
-
-
+/* Copyright (C) 2004 Jean-Marc Valin */
+/**
+   @file medfilter.h
+   @brief Median filter
+*/
+/*
    Redistribution and use in source and binary forms, with or without
    modification, are permitted provided that the following conditions
    are met:
@@ -35,6 +36,7 @@
 #ifndef MEDFILTER_H
 #define MEDFILTER_H
 
+/** Median filter. */
 typedef struct {
    int N;
    int filled;

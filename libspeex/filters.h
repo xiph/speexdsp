@@ -1,7 +1,9 @@
-/* Copyright (C) 2002 Jean-Marc Valin 
-   File: filters.h
-   Various analysis/synthesis filters
-
+/* Copyright (C) 2002 Jean-Marc Valin */
+/**
+   @file filters.h
+   @brief Various analysis/synthesis filters
+*/
+/*
    Redistribution and use in source and binary forms, with or without
    modification, are permitted provided that the following conditions
    are met:
@@ -45,7 +47,8 @@ int normalize16(const spx_sig_t *x, spx_word16_t *y, spx_sig_t max_scale, int le
 
 #endif
 
-typedef struct CombFilterMem {
+/** Combined filter memory. */
+typedef struct {
    int   last_pitch;
    spx_word16_t last_pitch_gain[3];
    spx_word16_t smooth_gain;
