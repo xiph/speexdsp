@@ -34,7 +34,7 @@ The Speex Codec Manual
 Jean-Marc Valin
 \layout Standard
 \pagebreak_top 
-Copyright (c) 2002-2004 Jean-Marc Valin/Xiph.org Foundation
+Copyright (c) 2002-2005 Jean-Marc Valin/Xiph.org Foundation
 \layout Standard
 
 Permission is granted to copy, distribute and/or modify this document under
@@ -449,7 +449,7 @@ look-ahead
  the frames.
 \layout Subsection
 
-Coding
+Codec
 \layout Subsection
 
 Preprocessor
@@ -496,6 +496,12 @@ Automatic gain control (AGC) is a feature that deals with the fact that
 The voice activity detector (VAD) provided by the preprocessor is more advanced
  than the one directly provided in the codec.
  
+\layout Subsection
+
+Adaptive Jitter Buffer
+\layout Subsection
+
+Acoustic Echo Canceller
 \layout Section
 \pagebreak_top 
 Compiling
@@ -534,7 +540,7 @@ The options supported by the Speex configure script are:
  with valgrind
 \layout Description
 
---enable-sse Enable use of SSE instructions (x86 only)
+--enable-sse Enable use of SSE instructions (x86/float only)
 \layout Description
 
 --enable-fixed-point
@@ -567,6 +573,10 @@ The options supported by the Speex configure script are:
 \layout Description
 
 --enable-ti-c55x Enable support for the TI C5x family
+\layout Description
+
+--enable-blackfin-asm Enable assembly specific to the Blackfin DSP architecture
+ (gcc only)
 \layout Description
 
 --enable-16bit-precision Reduces precision to 16 bits in time-critical areas
