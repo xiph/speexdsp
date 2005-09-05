@@ -138,7 +138,7 @@ SpeexHeader *speex_packet_to_header(char *packet, int size)
       }
    
    /*FIXME: Do we allow larger headers?*/
-   if (size < sizeof(SpeexHeader))
+   if (size < (int)sizeof(SpeexHeader))
    {
       speex_warning("Speex header too small");
       return NULL;

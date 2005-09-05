@@ -678,9 +678,6 @@ int speex_preprocess(SpeexPreprocessState *st, spx_int16_t *x, float *echo)
    /* Compute a priori SNR */
    {
       /* A priori update rate */
-      float gamma;
-      float min_gamma=0.12f;
-
       for (i=1;i<N;i++)
       {
          float gamma = .1+.9*st->prior[i]*st->prior[i]/((1+st->prior[i])*(1+st->prior[i]));

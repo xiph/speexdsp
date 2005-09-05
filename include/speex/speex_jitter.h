@@ -78,7 +78,7 @@ void speex_jitter_init(SpeexJitter *jitter, void *decoder, int sampling_rate);
 void speex_jitter_destroy(SpeexJitter *jitter);
 
 /** Put one packet into the jitter buffer */
-void speex_jitter_put(SpeexJitter *jitter, char *packet, int len, int time);
+void speex_jitter_put(SpeexJitter *jitter, char *packet, int len, int timestamp);
 
 /** Get on packet from the jitter buffer */
 void speex_jitter_get(SpeexJitter *jitter, short *out, int *current_timestamp);

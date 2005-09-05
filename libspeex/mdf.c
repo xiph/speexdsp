@@ -310,7 +310,7 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
       of the previous gradient on the "MMSE surface" */
    if (1)
    {
-      float Sge, Sgg, Syy;
+      float Sge, Sgg;
       float gain;
       Syy = inner_prod(st->y+st->frame_size, st->y+st->frame_size, st->frame_size);
       for (i=0;i<N;i++)
