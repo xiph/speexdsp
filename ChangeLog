@@ -1,3 +1,9 @@
+2005-09-07  Thomas Vander Stichele  <thomas at apestaart dot org>
+
+	* libspeex/cb_search.c: (split_cb_search_shape_sign_N1):
+	  add declaration for n, seems like an obvious build fix, slap
+	  me down if it's not
+
 2004-02-18 Jean-Marc Valin <jean-marc.valin@usherbrooke.ca>
 	Patch for compiling with mingw32 sent by j@thing.net 
 
