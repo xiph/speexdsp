@@ -112,7 +112,7 @@ int   complexity,
 int   update_target
 )
 {
-   int i,j,m,n,q;
+   int i,j,m,q;
    VARDECL(spx_word16_t *resp);
 #ifdef _USE_SSE
    VARDECL(__m128 *resp2);
