@@ -761,6 +761,7 @@ int speex_preprocess(SpeexPreprocessState *st, spx_int16_t *x, float *echo)
       }
       Zframe /= (freq_end-freq_start);
    }
+   st->Zlast = Zframe;
 
    Pframe = qcurve(Zframe);
 
