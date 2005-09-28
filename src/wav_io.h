@@ -33,10 +33,11 @@
 #define WAV_IO_H
 
 #include <stdio.h>
+#include "speex/speex_types.h"
 
 unsigned short be_short(unsigned short s);
 unsigned short le_short(unsigned short s);
-unsigned short le_int(unsigned int s);
+spx_uint32_t le_int(spx_uint32_t i);
 
 int read_wav_header(FILE *file, int *rate, int *channels, int *format, int *size);
 
