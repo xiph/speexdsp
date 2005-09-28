@@ -11,7 +11,7 @@ Group: Application/Devel
 Source: http://www.speex.org/download/%{name}-%{ver}.tar.gz
 URL: http://www.speex.org/
 Vendor: Speex
-Packager: Jean-Marc Valin (jean-marc.valin@hermes.usherb.ca)
+Packager: Jean-Marc Valin (jean-marc.valin@usherbrooke.ca)
 BuildRoot: /var/tmp/%{name}-build-root
 Docdir: /usr/share/doc
 
