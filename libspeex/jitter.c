@@ -59,7 +59,7 @@ void speex_jitter_init(SpeexJitter *jitter, void *decoder, int sampling_rate)
 
    jitter->dec = decoder;
    speex_decoder_ctl(decoder, SPEEX_GET_FRAME_SIZE, &jitter->frame_size);
-   jitter->frame_time = 1000*jitter->frame_size / sampling_rate;
+   jitter->frame_time = jitter->frame_size;
 
    speex_bits_init(&jitter->current_packet);
    jitter->valid_bits = 0;
