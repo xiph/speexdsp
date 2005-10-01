@@ -176,8 +176,10 @@ void speex_warning_int(const char *str, int val)
 #ifdef FIXED_POINT
 spx_word32_t speex_rand(spx_word16_t std, spx_int32_t *seed)
 {
+   spx_word32_t res;
    *seed = 1664525 * *seed + 1013904223;
-   return MULT16_16(EXTRACT16(SHR32(*seed,16)),std);
+   res = MULT16_16(EXTRACT16(SHR32(*seed,16)),std);
+   return SUB32(res, SHR(res, 3));
 }
 #else
 spx_word16_t speex_rand(spx_word16_t std, spx_int32_t *seed)
@@ -187,8 +189,8 @@ spx_word16_t speex_rand(spx_word16_t std, spx_int32_t *seed)
    union {int i; float f;} ran;
    *seed = 1664525 * *seed + 1013904223;
    ran.i = jflone | (jflmsk & *seed);
-   ran.f -= 1;
-   return 1.7321*std*ran.f;
+   ran.f -= 1.5;
+   return 3.4642*std*ran.f;
 }
 #endif
 
