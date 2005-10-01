@@ -1084,6 +1084,7 @@ const spx_word16_t attenuation[10] = {1., 0.961, 0.852, 0.698, 0.527, 0.368, 0.2
 static void nb_decode_lost(DecState *st, spx_word16_t *out, char *stack)
 {
    int i, sub;
+   int pitch_val;
    VARDECL(spx_coef_t *awk1);
    VARDECL(spx_coef_t *awk2);
    VARDECL(spx_coef_t *awk3);
@@ -1103,13 +1104,13 @@ static void nb_decode_lost(DecState *st, spx_word16_t *out, char *stack)
    
 #ifdef FIXED_POINT
    pitch_gain = st->last_pitch_gain;
-   if (pitch_gain>62)
-      pitch_gain = 62;
+   if (pitch_gain>48)
+      pitch_gain = 48;
    pitch_gain = SHL(pitch_gain, 9);
 #else   
    pitch_gain = GAIN_SCALING_1*st->last_pitch_gain;
-   if (pitch_gain>.95)
-      pitch_gain=.95;
+   if (pitch_gain>.75)
+      pitch_gain=.75;
 #endif
 
    pitch_gain = MULT16_16_Q15(fact,pitch_gain) + VERY_SMALL;
@@ -1157,10 +1158,13 @@ static void nb_decode_lost(DecState *st, spx_word16_t *out, char *stack)
       /*if (pitch_gain>.95)
         pitch_gain=.95;*/
       innov_gain = compute_rms(st->innov, st->frameSize);
+      pitch_val = st->last_pitch + SHR32((spx_int32_t)speex_rand(1+st->count_lost, &st->seed),SIG_SHIFT);
+      if (pitch_val > st->max_pitch)
+         pitch_val = st->max_pitch;
       for (i=0;i<st->subframeSize;i++)
       {
-         exc[i]= MULT16_32_Q15(pitch_gain, (exc[i-st->last_pitch]+VERY_SMALL)) + 
-               MULT16_32_Q15(fact, MULT16_32_Q15(sqrt(SHL(Q15ONE,15)-SHL(pitch_gain,15)),speex_rand(innov_gain, &st->seed)));
+         exc[i]= MULT16_32_Q15(pitch_gain, (exc[i-pitch_val]+VERY_SMALL)) + 
+               MULT16_32_Q15(fact, MULT16_32_Q15(SHL(Q15ONE,15)-SHL(MULT16_16(pitch_gain,pitch_gain),1),speex_rand(innov_gain, &st->seed)));
       }
       
       for (i=0;i<st->subframeSize;i++)
@@ -1669,6 +1673,18 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
          }
 
       }
+
+#ifndef FIXED_POINT
+      if (st->count_lost) 
+      {
+         spx_word16_t exc_ener;
+         spx_word16_t gain;
+         exc_ener = compute_rms (exc, st->subframeSize);
+         gain = ol_gain / exc_ener;
+         for (i=0;i<st->subframeSize;i++)
+            exc[i] *= gain;
+      }
+#endif
 
       for (i=0;i<st->subframeSize;i++)
          sp[i]=exc[i];

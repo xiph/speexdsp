@@ -135,6 +135,7 @@ typedef struct SBDecState {
 
    spx_mem_t *mem_sp;
    spx_word32_t *pi_gain;
+   spx_int32_t seed;
 
    int    encode_submode;
    const SpeexSubmode * const *submodes;
