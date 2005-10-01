@@ -321,7 +321,6 @@ void *sb_encoder_init(const SpeexMode *m)
    st->complexity=2;
    speex_encoder_ctl(st->st_low, SPEEX_GET_SAMPLING_RATE, &st->sampling_rate);
    st->sampling_rate*=2;
-
 #ifdef ENABLE_VALGRIND
    VALGRIND_MAKE_READABLE(st, (st->stack-(char*)st));
 #endif
@@ -883,6 +882,7 @@ void *sb_decoder_init(const SpeexMode *m)
    st->mem_sp = speex_alloc((2*st->lpcSize)*sizeof(spx_mem_t));
    
    st->lpc_enh_enabled=0;
+   st->seed = 1000;
 
 #ifdef ENABLE_VALGRIND
    VALGRIND_MAKE_READABLE(st, (st->stack-(char*)st));
@@ -961,8 +961,10 @@ static void sb_decode_lost(SBDecState *st, spx_word16_t *out, int dtx, char *sta
    /* Final signal synthesis from excitation */
    if (!dtx)
    {
+      spx_word16_t low_ener;
+      low_ener = .9*compute_rms(st->exc, st->frame_size);
       for (i=0;i<st->frame_size;i++)
-         st->exc[i] *= .9;
+         st->exc[i] = speex_rand(low_ener, &st->seed);
    }
 
    for (i=0;i<st->frame_size;i++)
@@ -1186,9 +1188,31 @@ int sb_decode(void *state, SpeexBits *bits, void *vout)
          g /= filter_ratio;
 #endif
          /* High-band excitation using the low-band excitation and a gain */
+         
+#if 0
          for (i=0;i<st->subframeSize;i++)
             exc[i]=mode->folding_gain*g*low_innov[offset+i];
-         /*speex_rand_vec(mode->folding_gain*g*sqrt(el/st->subframeSize), exc, st->subframeSize);*/
+#else
+         {
+            float tmp=1;
+            /*static tmp1=0,tmp2=0;
+            static int seed=1;
+            el = compute_rms(low_innov+offset, st->subframeSize);*/
+            for (i=0;i<st->subframeSize;i++)
+            {
+               float e=tmp*g*mode->folding_gain*low_innov[offset+i];
+               tmp *= -1;
+               exc[i] = e;
+               /*float r = speex_rand(g*el,&seed);
+               exc[i] = .5*(r+tmp2 + e-tmp1);
+               tmp1 = e;
+               tmp2 = r;*/               
+            }
+            
+         }
+         
+         /*speex_rand_vec(mode->folding_gain*g*el, exc, st->subframeSize);*/
+#endif    
       } else {
          spx_word16_t gc;
          spx_word32_t scale;
