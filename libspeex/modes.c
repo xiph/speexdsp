@@ -387,7 +387,7 @@ static const SpeexNBMode nb_mode = {
    0.9, 0.6, /* gamma1, gamma2 */
 #endif
    .012,   /*lag_factor*/
-   1.0002, /*lpc_floor*/
+   .0002, /*lpc_floor*/
 #ifdef EPIC_48K
    0,
 #endif
@@ -543,7 +543,7 @@ static const SpeexSBMode sb_wb_mode = {
    0.9, 0.6, /* gamma1, gamma2 */
 #endif
    .001,   /*lag_factor*/
-   1.0001, /*lpc_floor*/
+   .0001, /*lpc_floor*/
    0.9,
    {NULL, &wb_submode1, &wb_submode2, &wb_submode3, &wb_submode4, NULL, NULL, NULL},
    3,
@@ -589,7 +589,7 @@ static const SpeexSBMode sb_uwb_mode = {
    0.9, 0.6, /* gamma1, gamma2 */
 #endif
    .002,   /*lag_factor*/
-   1.0001, /*lpc_floor*/
+   .0001, /*lpc_floor*/
    0.7,
    {NULL, &wb_submode1, NULL, NULL, NULL, NULL, NULL, NULL},
    1,
@@ -677,7 +677,7 @@ static const SpeexNBMode nb_48k_mode = {
    0.9,    /*gamma1*/
    0.6,    /*gamma2*/
    .01,   /*lag_factor*/
-   1.0003, /*lpc_floor*/
+   .0003, /*lpc_floor*/
    1,
    {NULL, NULL, &nb_48k_submode, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL},
    2,

@@ -297,7 +297,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
       /* Compute auto-correlation */
       _spx_autocorr(w_sig, st->autocorr, st->lpcSize+1, st->windowSize);
    }
-   st->autocorr[0] = (spx_word16_t) (st->autocorr[0]*st->lpc_floor); /* Noise floor in auto-correlation domain */
+   st->autocorr[0] = ADD16(st->autocorr[0],(spx_word16_t) (st->autocorr[0]*st->lpc_floor)); /* Noise floor in auto-correlation domain */
 
    /* Lag windowing: equivalent to filtering in the power-spectrum domain */
    for (i=0;i<st->lpcSize+1;i++)
@@ -909,7 +909,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
             SUBMODE(innovation_quant)(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2, 
                                       SUBMODE(innovation_params), st->lpcSize, st->subframeSize, 
                                       innov2, syn_resp, bits, stack, st->complexity, 0);
-            signal_mul(innov2, innov2, (spx_word32_t) (ener*(1/2.2)), st->subframeSize);
+            signal_mul(innov2, innov2, (spx_word32_t) (ener*(1.f/2.2f)), st->subframeSize);
             for (i=0;i<st->subframeSize;i++)
                exc[i] = ADD32(exc[i],innov2[i]);
             stack = tmp_stack;
