@@ -29,6 +29,8 @@
    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+/*#define VORBIS_PSYCHO*/
+
 #ifdef VORBIS_PSYCHO
 
 
@@ -37,8 +39,20 @@
 
 struct drft_lookup lookup;
 
+/* FIXME: This is an horrible kludge */
+static void fft_init(int size)
+{
+   static initialized = -1;
+   if (size != initialized)
+   {
+      if (initialized != -1)
+         spx_drft_clear(&lookup);
+      spx_drft_init(&lookup, size);
+      initialized = size;
+   }
+}
 /* */
-void curve_to_lpc(float *curve, int len, float *ak, int ord)
+void curve_to_lpc(float *curve, int len, float *awk1, float *awk2, int ord)
 {
    int i;
    float ac[len*2];
@@ -49,8 +63,11 @@ void curve_to_lpc(float *curve, int len, float *ak, int ord)
    ac[0] = curve[0];
    ac[2*len-1] = curve[len-1];
    
+   fft_init(2*len);
    spx_drft_backward(&lookup, ac);
-   _spx_lpc(ak, ac, ord);
+   _spx_lpc(awk1, ac, ord);
+   for (i=0;i<ord;i++)
+      awk2[i] = 0;
 }
 
 
