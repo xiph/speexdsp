@@ -1104,13 +1104,13 @@ static void nb_decode_lost(DecState *st, spx_word16_t *out, char *stack)
    
 #ifdef FIXED_POINT
    pitch_gain = st->last_pitch_gain;
-   if (pitch_gain>48)
-      pitch_gain = 48;
+   if (pitch_gain>54)
+      pitch_gain = 54;
    pitch_gain = SHL(pitch_gain, 9);
 #else   
    pitch_gain = GAIN_SCALING_1*st->last_pitch_gain;
-   if (pitch_gain>.75)
-      pitch_gain=.75;
+   if (pitch_gain>.85)
+      pitch_gain=.85;
 #endif
 
    pitch_gain = MULT16_16_Q15(fact,pitch_gain) + VERY_SMALL;
@@ -1674,17 +1674,26 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
 
       }
 
-#ifndef FIXED_POINT
+      /* If the last packet was lost, re-scale the excitation to obtain the same energy as encoded in ol_gain */
       if (st->count_lost) 
       {
          spx_word16_t exc_ener;
+         spx_word32_t gain32;
          spx_word16_t gain;
          exc_ener = compute_rms (exc, st->subframeSize);
-         gain = ol_gain / exc_ener;
-         for (i=0;i<st->subframeSize;i++)
-            exc[i] *= gain;
-      }
+         gain32 = DIV32(ol_gain, ADD16(exc_ener,1));
+#ifdef FIXED_POINT
+         if (gain32 > 32768)
+            gain32 = 32768;
+         gain = EXTRACT16(gain32);
+#else
+         if (gain32 > 2)
+            gain32=2;
+         gain = gain32;
 #endif
+         for (i=0;i<st->subframeSize;i++)
+            exc[i] = MULT16_32_Q14(gain, exc[i]);
+      }
 
       for (i=0;i<st->subframeSize;i++)
          sp[i]=exc[i];
