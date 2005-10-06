@@ -42,7 +42,7 @@ struct drft_lookup lookup;
 /* FIXME: This is an horrible kludge */
 static void fft_init(int size)
 {
-   static initialized = -1;
+   static int initialized = -1;
    if (size != initialized)
    {
       if (initialized != -1)
@@ -51,6 +51,8 @@ static void fft_init(int size)
       initialized = size;
    }
 }
+
+
 /* */
 void curve_to_lpc(float *curve, int len, float *awk1, float *awk2, int ord)
 {
@@ -66,9 +68,64 @@ void curve_to_lpc(float *curve, int len, float *awk1, float *awk2, int ord)
    fft_init(2*len);
    spx_drft_backward(&lookup, ac);
    _spx_lpc(awk1, ac, ord);
+#if 0
    for (i=0;i<ord;i++)
       awk2[i] = 0;
+#else
+   /* Use the second (awk2) filter to correct the first one */
+   for (i=0;i<2*len;i++)
+      ac[i] = 0;   
+   for (i=0;i<ord;i++)
+      ac[i+1] = awk1[i];
+   ac[0] = 1;
+   spx_drft_forward(&lookup, ac);
+   /* Compute (power) response of awk1 (all zero) */
+   ac[0] *= ac[0];
+   for (i=1;i<len;i++)
+      ac[i] = ac[2*i-1]*ac[2*i-1] + ac[2*i]*ac[2*i];
+   ac[len] = ac[2*len-1]*ac[2*len-1];
+   /* Compute correction required */
+   for (i=0;i<len;i++)
+      curve[i] = 1. / (1e-6f+curve[i]*ac[i]);
+
+   for (i=0;i<2*len;i++)
+      ac[i] = 0;
+   for (i=1;i<len;i++)
+      ac[2*i-1] = curve[i];
+   ac[0] = curve[0];
+   ac[2*len-1] = curve[len-1];
+   
+   fft_init(2*len);
+   spx_drft_backward(&lookup, ac);
+   _spx_lpc(awk2, ac, ord);
+   
+#endif
 }
 
+#if 0
+#include <stdio.h>
+#include <math.h>
+
+#define ORDER 20
+
+int main()
+{
+   int i;
+   float curve[32];
+   float awk1[ORDER], awk2[ORDER];
+   for (i=0;i<32;i++)
+      scanf("%f ", &curve[i]);
+   for (i=0;i<32;i++)
+      curve[i] = pow(10.f, .1*curve[i]);
+   curve_to_lpc(curve, 32, awk1, awk2, ORDER);
+   for (i=0;i<ORDER;i++)
+      printf("%f ", awk1[i]);
+   printf ("\n");
+   for (i=0;i<ORDER;i++)
+      printf("%f ", awk2[i]);
+   printf ("\n");
+   return 0;
+}
+#endif
 
 #endif
