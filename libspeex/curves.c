@@ -1,5 +1,5 @@
-/* Copyright (C) 2005 Jean-Marc Valin / CSIRO
-   File: curves
+/* Copyright (C) 2005 Jean-Marc Valin, CSIRO, Christopher Montgomery
+   File: vorbis_psy.c
 
    Redistribution and use in source and binary forms, with or without
    modification, are permitted provided that the following conditions
@@ -36,6 +36,7 @@
 
 #include "smallft.h"
 #include "lpc.h"
+#include "vorbis_psy.h"
 
 struct drft_lookup lookup;
 
@@ -52,8 +53,12 @@ static void fft_init(int size)
    }
 }
 
+void compute_curve(float *audio, int len, float *curve)
+{
+   
+}
 
-/* */
+/* Transform a masking curve (power spectrum) into a pole-zero filter */
 void curve_to_lpc(float *curve, int len, float *awk1, float *awk2, int ord)
 {
    int i;
