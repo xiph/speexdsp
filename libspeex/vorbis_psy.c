@@ -53,7 +53,11 @@ static void fft_init(int size)
    }
 }
 
-void compute_curve(float *audio, int len, float *curve)
+VorbisPsy *vorbis_psy_init(int rate, int size)
+{
+}
+
+void compute_curve(VorbisPsy *psy, float *audio, int len, float *curve)
 {
    
 }
@@ -111,18 +115,19 @@ void curve_to_lpc(float *curve, int len, float *awk1, float *awk2, int ord)
 #include <stdio.h>
 #include <math.h>
 
-#define ORDER 20
+#define ORDER 10
+#define CURVE_SIZE 24
 
 int main()
 {
    int i;
-   float curve[32];
+   float curve[CURVE_SIZE];
    float awk1[ORDER], awk2[ORDER];
-   for (i=0;i<32;i++)
+   for (i=0;i<CURVE_SIZE;i++)
       scanf("%f ", &curve[i]);
-   for (i=0;i<32;i++)
+   for (i=0;i<CURVE_SIZE;i++)
       curve[i] = pow(10.f, .1*curve[i]);
-   curve_to_lpc(curve, 32, awk1, awk2, ORDER);
+   curve_to_lpc(curve, CURVE_SIZE, awk1, awk2, ORDER);
    for (i=0;i<ORDER;i++)
       printf("%f ", awk1[i]);
    printf ("\n");
