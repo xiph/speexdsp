@@ -107,7 +107,7 @@ void curve_to_lpc(float *curve, int len, float *awk1, float *awk2, int ord)
 #endif
 }
 
-#if 0
+#if 1
 #include <stdio.h>
 #include <math.h>
 
