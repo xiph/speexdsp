@@ -53,7 +53,7 @@ typedef struct SBEncState {
    int    bufSize;             /**< Buffer size */
    int    first;               /**< First frame? */
    float  lag_factor;          /**< Lag-windowing control parameter */
-   float  lpc_floor;           /**< Controls LPC analysis noise floor */
+   spx_word16_t  lpc_floor;           /**< Controls LPC analysis noise floor */
    spx_word16_t  gamma1;              /**< Perceptual weighting coef 1 */
    spx_word16_t  gamma2;              /**< Perceptual weighting coef 2 */
 

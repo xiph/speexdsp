@@ -119,6 +119,9 @@ typedef float spx_word64_t;
 #define VERY_LARGE32 1e15f
 #define VERY_LARGE16 1e15f
 
+#define QCONST16(x,bits) (x)
+#define QCONST32(x,bits) (x)
+
 #define NEG16(x) (-(x))
 #define NEG32(x) (-(x))
 #define EXTRACT16(x) (x)

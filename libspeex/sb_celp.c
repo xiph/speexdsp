@@ -445,8 +445,7 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
       /* Compute auto-correlation */
       _spx_autocorr(w_sig, st->autocorr, st->lpcSize+1, st->windowSize);
    }
-   
-   st->autocorr[0] = ADD16(st->autocorr[0],(spx_word16_t) (st->autocorr[0]*st->lpc_floor)); /* Noise floor in auto-correlation domain */
+   st->autocorr[0] = ADD16(st->autocorr[0],MULT16_16_Q15(st->autocorr[0],st->lpc_floor)); /* Noise floor in auto-correlation domain */
 
    /* Lag windowing: equivalent to filtering in the power-spectrum domain */
    for (i=0;i<st->lpcSize+1;i++)
