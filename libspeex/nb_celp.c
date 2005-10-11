@@ -48,6 +48,10 @@
 #include "misc.h"
 #include <speex/speex_callbacks.h>
 
+#ifdef VORBIS_PSYCHO
+#include "vorbis_psy.h"
+#endif
+
 #ifndef M_PI
 #define M_PI           3.14159265358979323846  /* pi */
 #endif
@@ -135,6 +139,12 @@ void *nb_encoder_init(const SpeexMode *m)
    st->encode_submode = 1;
 #ifdef EPIC_48K
    st->lbr_48k=mode->lbr48k;
+#endif
+
+#ifdef VORBIS_PSYCHO
+   st->psy = vorbis_psy_init(8000, 128);
+   st->curve = speex_alloc(64*sizeof(float));
+   st->old_curve = speex_alloc(64*sizeof(float));
 #endif
 
    /* Allocating input buffer */
@@ -251,6 +261,12 @@ void nb_encoder_destroy(void *state)
 
    vbr_destroy(st->vbr);
    speex_free (st->vbr);
+
+#ifdef VORBIS_PSYCHO
+   vorbis_psy_destroy(st->psy);
+   speex_free (st->curve);
+   speex_free (st->old_curve);
+#endif
 
    /*Free state memory... should be last*/
    speex_free(st);
@@ -420,6 +436,13 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
       }
 #endif
    }
+
+#ifdef VORBIS_PSYCHO
+   compute_curve(st->psy, st->frame+52, st->curve);
+   if (st->first)
+      for (i=0;i<64;i++)
+         st->old_curve[i] = st->curve[i];
+#endif
 
    /*VBR stuff*/
    if (st->vbr && (st->vbr_enabled||st->vad_enabled))
@@ -718,7 +741,15 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
          st->pi_gain[sub] = pi_g;
       }
 
-
+#ifdef VORBIS_PSYCHO
+      {
+         float curr_curve[64];
+         float fact = ((float)sub+1.0f)/st->nbSubframes;
+         for (i=0;i<64;i++)
+            curr_curve[i] = (1.0f-fact)*st->old_curve[i] + fact*st->curve[i];
+         curve_to_lpc(st->psy, curr_curve, st->bw_lpc1, st->bw_lpc2, 10);
+      }
+#else
       /* Compute bandwidth-expanded (unquantized) LPCs for perceptual weighting */
       bw_lpc(st->gamma1, st->interp_lpc, st->bw_lpc1, st->lpcSize);
       if (st->gamma2>=0)
@@ -729,6 +760,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
          for (i=1;i<=st->lpcSize;i++)
             st->bw_lpc2[i]=0;
       }
+#endif
 
       for (i=0;i<st->subframeSize;i++)
          real_exc[i] = exc[i];

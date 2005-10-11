@@ -30,22 +30,21 @@
 */
 
 #ifndef VORBIS_PSY_H
-#define VORBIS_PHY_H
+#define VORBIS_PSY_H
 
 #ifdef VORBIS_PSYCHO
 
 #include "smallft.h"
 
 typedef struct {
-   struct drft_lookup analysis_lookup;
-   struct drft_lookup curve_lookup;
-   
+   int size;
+   struct drft_lookup lookup;
 } VorbisPsy;
 
 VorbisPsy *vorbis_psy_init(int rate, int size);
 void vorbis_psy_destroy(VorbisPsy *psy);
-void compute_curve(VorbisPsy *psy, float *audio, int len, float *curve);
-void curve_to_lpc(float *curve, int len, float *awk1, float *awk2, int ord);
+void compute_curve(VorbisPsy *psy, float *audio, float *curve);
+void curve_to_lpc(VorbisPsy *psy, float *curve, float *awk1, float *awk2, int ord);
 
 #endif
 #endif

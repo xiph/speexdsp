@@ -33,40 +33,39 @@
 
 #ifdef VORBIS_PSYCHO
 
-
+#include "misc.h"
 #include "smallft.h"
 #include "lpc.h"
 #include "vorbis_psy.h"
 
-struct drft_lookup lookup;
-
-/* FIXME: This is an horrible kludge */
-static void fft_init(int size)
-{
-   static int initialized = -1;
-   if (size != initialized)
-   {
-      if (initialized != -1)
-         spx_drft_clear(&lookup);
-      spx_drft_init(&lookup, size);
-      initialized = size;
-   }
-}
-
 VorbisPsy *vorbis_psy_init(int rate, int size)
 {
+   VorbisPsy *psy = speex_alloc(sizeof(VorbisPsy));
+   psy->size = size;
+   spx_drft_init(&psy->lookup, size);
+   return psy;
 }
 
-void compute_curve(VorbisPsy *psy, float *audio, int len, float *curve)
+void vorbis_psy_destroy(VorbisPsy *psy)
 {
-   
+   spx_drft_clear(&psy->lookup);
+   speex_free(psy);
+}
+
+void compute_curve(VorbisPsy *psy, float *audio, float *curve)
+{
+   int len = psy->size >> 1;
+   int i;
+   for (i=0;i<len;i++)
+      curve[i] = 1.;
 }
 
 /* Transform a masking curve (power spectrum) into a pole-zero filter */
-void curve_to_lpc(float *curve, int len, float *awk1, float *awk2, int ord)
+void curve_to_lpc(VorbisPsy *psy, float *curve, float *awk1, float *awk2, int ord)
 {
    int i;
-   float ac[len*2];
+   float ac[psy->size];
+   int len = psy->size >> 1;
    for (i=0;i<2*len;i++)
       ac[i] = 0;
    for (i=1;i<len;i++)
@@ -74,8 +73,7 @@ void curve_to_lpc(float *curve, int len, float *awk1, float *awk2, int ord)
    ac[0] = curve[0];
    ac[2*len-1] = curve[len-1];
    
-   fft_init(2*len);
-   spx_drft_backward(&lookup, ac);
+   spx_drft_backward(&psy->lookup, ac);
    _spx_lpc(awk1, ac, ord);
 #if 0
    for (i=0;i<ord;i++)
@@ -87,7 +85,7 @@ void curve_to_lpc(float *curve, int len, float *awk1, float *awk2, int ord)
    for (i=0;i<ord;i++)
       ac[i+1] = awk1[i];
    ac[0] = 1;
-   spx_drft_forward(&lookup, ac);
+   spx_drft_forward(&psy->lookup, ac);
    /* Compute (power) response of awk1 (all zero) */
    ac[0] *= ac[0];
    for (i=1;i<len;i++)
@@ -104,14 +102,13 @@ void curve_to_lpc(float *curve, int len, float *awk1, float *awk2, int ord)
    ac[0] = curve[0];
    ac[2*len-1] = curve[len-1];
    
-   fft_init(2*len);
-   spx_drft_backward(&lookup, ac);
+   spx_drft_backward(&psy->lookup, ac);
    _spx_lpc(awk2, ac, ord);
    
 #endif
 }
 
-#if 1
+#if 0
 #include <stdio.h>
 #include <math.h>
 
