@@ -147,13 +147,13 @@ static int read_samples(FILE *fin,int frame_size, int bits, int channels, int ls
 void version()
 {
    printf ("speexenc (Speex encoder) version " SPEEX_VERSION " (compiled " __DATE__ ")\n");
-   printf ("Copyright (C) 2002-2003 Jean-Marc Valin\n");
+   printf ("Copyright (C) 2002-2005 Jean-Marc Valin\n");
 }
 
 void version_short()
 {
    printf ("speexenc version " SPEEX_VERSION "\n");
-   printf ("Copyright (C) 2002-2003 Jean-Marc Valin\n");
+   printf ("Copyright (C) 2002-2005 Jean-Marc Valin\n");
 }
 
 void usage()
