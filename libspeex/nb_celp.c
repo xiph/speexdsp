@@ -1193,6 +1193,8 @@ static void nb_decode_lost(DecState *st, spx_word16_t *out, char *stack)
       pitch_val = st->last_pitch + SHR32((spx_int32_t)speex_rand(1+st->count_lost, &st->seed),SIG_SHIFT);
       if (pitch_val > st->max_pitch)
          pitch_val = st->max_pitch;
+      if (pitch_val < st->min_pitch)
+         pitch_val = st->min_pitch;
       for (i=0;i<st->subframeSize;i++)
       {
          exc[i]= MULT16_32_Q15(pitch_gain, (exc[i-pitch_val]+VERY_SMALL)) + 
