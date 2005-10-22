@@ -52,6 +52,9 @@
 
 #define NB_BANDS 8
 
+#define SPEEX_PROB_START_DEFAULT    0.35f
+#define SPEEX_PROB_CONTINUE_DEFAULT 0.20f
+
 #define ZMIN .1
 #define ZMAX .316
 #define ZMIN_1 10
@@ -156,6 +159,9 @@ SpeexPreprocessState *speex_preprocess_state_init(int frame_size, int sampling_r
    st->dereverb_enabled = 0;
    st->reverb_decay = .5;
    st->reverb_level = .2;
+
+   st->speech_prob_start = SPEEX_PROB_START_DEFAULT;
+   st->speech_prob_continue = SPEEX_PROB_CONTINUE_DEFAULT;
 
    st->frame = (float*)speex_alloc(2*N*sizeof(float));
    st->ps = (float*)speex_alloc(N*sizeof(float));
@@ -451,7 +457,8 @@ static int speex_compute_vad(SpeexPreprocessState *st, float *ps, float mean_pri
       st->speech_prob = p0/(1e-25f+p1+p0);
       /*fprintf (stderr, "%f %f %f ", tot_loudness, st->loudness2, st->speech_prob);*/
 
-      if (st->speech_prob>.35 || (st->last_speech < 20 && st->speech_prob>.1))
+      if (st->speech_prob > st->speech_prob_start
+         || (st->last_speech < 20 && st->speech_prob > st->speech_prob_continue))
       {
          is_speech = 1;
          st->last_speech = 0;
@@ -991,6 +998,24 @@ int speex_preprocess_ctl(SpeexPreprocessState *state, int request, void *ptr)
       break;
    case SPEEX_PREPROCESS_GET_DEREVERB_DECAY:
       (*(float*)ptr) = st->reverb_decay;
+      break;
+
+   case SPEEX_PREPROCESS_SET_PROB_START:
+      st->speech_prob_start = (*(int*)ptr) / 100.0;
+      if ( st->speech_prob_start > 1 || st->speech_prob_start < 0 )
+         st->speech_prob_start = SPEEX_PROB_START_DEFAULT;
+      break;
+   case SPEEX_PREPROCESS_GET_PROB_START:
+      (*(int*)ptr) = st->speech_prob_start * 100;
+      break;
+
+   case SPEEX_PREPROCESS_SET_PROB_CONTINUE:
+      st->speech_prob_continue = (*(int*)ptr) / 100.0;
+      if ( st->speech_prob_continue > 1 || st->speech_prob_continue < 0 )
+         st->speech_prob_continue = SPEEX_PROB_CONTINUE_DEFAULT;
+      break;
+   case SPEEX_PREPROCESS_GET_PROB_CONTINUE:
+      (*(int*)ptr) = st->speech_prob_continue * 100;
       break;
 
       default:

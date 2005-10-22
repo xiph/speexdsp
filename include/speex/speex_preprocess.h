@@ -57,6 +57,8 @@ typedef struct SpeexPreprocessState {
    int    dereverb_enabled;
    float  reverb_decay;
    float  reverb_level;
+   float  speech_prob_start;
+   float  speech_prob_continue;
    
    float *frame;             /**< Processing frame (2*ps_size) */
    float *ps;                /**< Current power spectrum */
@@ -155,6 +157,12 @@ int speex_preprocess_ctl(SpeexPreprocessState *st, int request, void *ptr);
 #define SPEEX_PREPROCESS_SET_DEREVERB_DECAY 12
 /** Get preprocessor dereverb decay */
 #define SPEEX_PREPROCESS_GET_DEREVERB_DECAY 13
+
+#define SPEEX_PREPROCESS_SET_PROB_START 14
+#define SPEEX_PREPROCESS_GET_PROB_START 15
+
+#define SPEEX_PREPROCESS_SET_PROB_CONTINUE 16
+#define SPEEX_PREPROCESS_GET_PROB_CONTINUE 17
 
 #ifdef __cplusplus
 }
