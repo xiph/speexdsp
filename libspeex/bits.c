@@ -39,16 +39,18 @@
 #include <speex/speex_bits.h>
 #include "misc.h"
 
-/** Maximum size of the bit-stream (for fixed-size allocation) */
-#define MAX_BYTES_PER_FRAME (2000/BYTES_PER_CHAR)
+/* Maximum size of the bit-stream (for fixed-size allocation) */
+#ifndef MAX_CHARS_PER_FRAME
+#define MAX_CHARS_PER_FRAME (2000/BYTES_PER_CHAR)
+#endif
 
 void speex_bits_init(SpeexBits *bits)
 {
-   bits->chars = (char*)speex_alloc(MAX_BYTES_PER_FRAME);
+   bits->chars = (char*)speex_alloc(MAX_CHARS_PER_FRAME);
    if (!bits->chars)
       return;
 
-   bits->buf_size = MAX_BYTES_PER_FRAME;
+   bits->buf_size = MAX_CHARS_PER_FRAME;
 
    bits->owner=1;
 

@@ -39,6 +39,10 @@
 #include <stdio.h>
 #include "misc.h"
 
+#ifdef USER_MISC
+#include "user_misc.h"
+#endif
+
 #ifdef BFIN_ASM
 #include "misc_bfin.h"
 #endif
@@ -127,28 +131,40 @@ void speex_memset_bytes(char *dst, char src, int nbytes)
 }
 #endif
 
+#ifndef OVERRIDE_SPEEX_ALLOC
 void *speex_alloc (int size)
 {
    return calloc(size,1);
 }
+#endif
+
+#ifndef OVERRIDE_SPEEX_ALLOC_SCRATCH
 void *speex_alloc_scratch (int size)
 {
    return calloc(size,1);
 }
+#endif
 
+#ifndef OVERRIDE_SPEEX_REALLOC
 void *speex_realloc (void *ptr, int size)
 {
    return realloc(ptr, size);
 }
+#endif
 
+#ifndef OVERRIDE_SPEEX_FREE
 void speex_free (void *ptr)
 {
    free(ptr);
 }
+#endif
+
+#ifndef OVERRIDE_SPEEX_FREE_SCRATCH
 void speex_free_scratch (void *ptr)
 {
    free(ptr);
 }
+#endif
 
 #ifndef OVERRIDE_SPEEX_MOVE
 void *speex_move (void *dest, void *src, int n)
@@ -157,21 +173,27 @@ void *speex_move (void *dest, void *src, int n)
 }
 #endif
 
+#ifndef OVERRIDE_SPEEX_ERROR
 void speex_error(const char *str)
 {
    fprintf (stderr, "Fatal error: %s\n", str);
    exit(1);
 }
+#endif
 
+#ifndef OVERRIDE_SPEEX_WARNING
 void speex_warning(const char *str)
 {
    fprintf (stderr, "warning: %s\n", str);
 }
+#endif
 
+#ifndef OVERRIDE_SPEEX_WARNING_INT
 void speex_warning_int(const char *str, int val)
 {
    fprintf (stderr, "warning: %s %d\n", str, val);
 }
+#endif
 
 #ifdef FIXED_POINT
 spx_word32_t speex_rand(spx_word16_t std, spx_int32_t *seed)
@@ -207,8 +229,10 @@ void speex_rand_vec(float std, spx_sig_t *data, int len)
    return 3*std*((((float)rand())/RAND_MAX)-.5);
 }*/
 
+#ifndef OVERRIDE_SPEEX_PUTC
 void _speex_putc(int ch, void *file)
 {
    FILE *f = (FILE *)file;
    fprintf(f, "%c", ch);
 }
+#endif
