@@ -115,6 +115,20 @@
    typedef unsigned int spx_uint32_t;
    typedef long long int spx_int64_t;
 
+#elif defined(CONFIG_TI_C54X) || defined (CONFIG_TI_C55X)
+
+   typedef short spx_int16_t;
+   typedef unsigned short spx_uint16_t;
+   typedef long spx_int32_t;
+   typedef unsigned long spx_uint32_t;
+
+#elif defined(CONFIG_TI_C5X)
+
+   typedef short spx_int16_t;
+   typedef unsigned short spx_uint16_t;
+   typedef int spx_int32_t;
+   typedef unsigned int spx_uint32_t;
+
 #else
 
 #  include <speex/speex_config_types.h>
