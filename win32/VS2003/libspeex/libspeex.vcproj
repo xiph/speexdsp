@@ -23,11 +23,12 @@
 				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;HAVE_CONFIG_H"
 				MinimalRebuild="TRUE"
 				BasicRuntimeChecks="3"
-				RuntimeLibrary="5"
+				RuntimeLibrary="1"
 				UsePrecompiledHeader="0"
 				WarningLevel="4"
 				Detect64BitPortabilityProblems="TRUE"
-				DebugInformationFormat="4"/>
+				DebugInformationFormat="4"
+				CompileAs="1"/>
 			<Tool
 				Name="VCCustomBuildTool"/>
 			<Tool
@@ -258,6 +259,9 @@
 				RelativePath="..\..\..\libspeex\high_lsp_tables.c">
 			</File>
 			<File
+				RelativePath="..\..\..\libspeex\jitter.c">
+			</File>
+			<File
 				RelativePath="..\..\..\libspeex\lpc.c">
 			</File>
 			<File
@@ -273,6 +277,12 @@
 				RelativePath="..\..\..\libspeex\math_approx.c">
 			</File>
 			<File
+				RelativePath="..\..\..\libspeex\mdf.c">
+			</File>
+			<File
+				RelativePath="..\..\..\libspeex\medfilter.c">
+			</File>
+			<File
 				RelativePath="..\..\..\libspeex\misc.c">
 			</File>
 			<File
@@ -282,10 +292,19 @@
 				RelativePath="..\..\..\libspeex\nb_celp.c">
 			</File>
 			<File
+				RelativePath="..\..\..\libspeex\preprocess.c">
+			</File>
+			<File
 				RelativePath="..\..\..\libspeex\quant_lsp.c">
 			</File>
 			<File
 				RelativePath="..\..\..\libspeex\sb_celp.c">
+			</File>
+			<File
+				RelativePath="..\..\..\libspeex\smallft.c">
+			</File>
+			<File
+				RelativePath="..\..\..\libspeex\speex.c">
 			</File>
 			<File
 				RelativePath="..\..\..\libspeex\speex_callbacks.c">
