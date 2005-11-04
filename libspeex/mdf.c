@@ -113,11 +113,7 @@ SpeexEchoState *speex_echo_state_init(int frame_size, int filter_length)
    N = st->window_size;
    M = st->M = (filter_length+st->frame_size-1)/frame_size;
    st->cancel_count=0;
-   st->adapt_rate = .01f;
    st->sum_adapt = 0;
-   st->Sey = 0;
-   st->Syy = 0;
-   st->See = 0;
          
    st->fft_lookup = (struct drft_lookup*)speex_alloc(sizeof(struct drft_lookup));
    spx_drft_init(st->fft_lookup, N);
@@ -132,7 +128,6 @@ SpeexEchoState *speex_echo_state_init(int frame_size, int filter_length)
    st->Xf = (float*)speex_alloc((st->frame_size+1)*sizeof(float));
    st->Yh = (float*)speex_alloc((st->frame_size+1)*sizeof(float));
    st->Eh = (float*)speex_alloc((st->frame_size+1)*sizeof(float));
-   st->fratio = (float*)speex_alloc((st->frame_size+1)*sizeof(float));
 
    st->X = (float*)speex_alloc(M*N*sizeof(float));
    st->Y = (float*)speex_alloc(N*sizeof(float));
@@ -141,7 +136,6 @@ SpeexEchoState *speex_echo_state_init(int frame_size, int filter_length)
    st->PHI = (float*)speex_alloc(M*N*sizeof(float));
    st->power = (float*)speex_alloc((frame_size+1)*sizeof(float));
    st->power_1 = (float*)speex_alloc((frame_size+1)*sizeof(float));
-   st->grad = (float*)speex_alloc(N*M*sizeof(float));
    
    for (i=0;i<N*M;i++)
    {
@@ -150,7 +144,6 @@ SpeexEchoState *speex_echo_state_init(int frame_size, int filter_length)
 
    st->adapted = 0;
    st->Pey = st->Pyy = 0;
-   st->Pe = st->Py = 0;
    return st;
 }
 
@@ -159,7 +152,6 @@ void speex_echo_state_reset(SpeexEchoState *st)
 {
    int i, M, N;
    st->cancel_count=0;
-   st->adapt_rate = .01f;
    N = st->window_size;
    M = st->M;
    for (i=0;i<N*M;i++)
@@ -171,11 +163,8 @@ void speex_echo_state_reset(SpeexEchoState *st)
       st->power[i] = 0;
    
    st->adapted = 0;
-   st->adapt_rate = .01f;
    st->sum_adapt = 0;
-   st->Sey = 0;
-   st->Syy = 0;
-   st->See = 0;
+   st->Pey = st->Pyy = 0;
 
 }
 
@@ -194,7 +183,6 @@ void speex_echo_state_destroy(SpeexEchoState *st)
    speex_free(st->Xf);
    speex_free(st->Yh);
    speex_free(st->Eh);
-   speex_free(st->fratio);
 
    speex_free(st->X);
    speex_free(st->Y);
@@ -203,7 +191,6 @@ void speex_echo_state_destroy(SpeexEchoState *st)
    speex_free(st->PHI);
    speex_free(st->power);
    speex_free(st->power_1);
-   speex_free(st->grad);
 
    speex_free(st);
 }
@@ -327,11 +314,11 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
       /*printf ("%f\n", leak_estimate);*/
    }
    
-
+   float adapt_rate;
    if (!st->adapted)
    {
       float Sxx;
-      
+      adapt_rate;
       Sxx = inner_prod(st->x+st->frame_size, st->x+st->frame_size, st->frame_size);
 
       /* We consider that the filter is adapted if the following is true*/
@@ -339,18 +326,18 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
          st->adapted = 1;
 
       /* Temporary adaption rate if filter is not adapted correctly */
-      st->adapt_rate = .3f * Sxx / (1+See);
-      if (st->adapt_rate>.25)
-         st->adapt_rate = .25;
-      st->adapt_rate /= M;
+      adapt_rate = .3f * Sxx / (1+See);
+      if (adapt_rate>.25)
+         adapt_rate = .25;
+      adapt_rate /= M;
       
       /* How much have we adapted so far? */
-      st->sum_adapt += st->adapt_rate;
+      st->sum_adapt += adapt_rate;
    }
 
    if (st->adapted)
    {
-      st->adapt_rate = 1.f/M;
+      adapt_rate = 1.f/M;
       for (i=0;i<=st->frame_size;i++)
       {
          float r;
@@ -358,11 +345,11 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
          r = leak_estimate*st->Yf[i] / (1+st->Rf[i]);
          if (r>1)
             r = 1;
-         st->power_1[i] = st->adapt_rate*r/(1.f+st->power[i]);
+         st->power_1[i] = adapt_rate*r/(1.f+st->power[i]);
       }
    } else {
       for (i=0;i<=st->frame_size;i++)
-         st->power_1[i] = st->adapt_rate/(1.f+st->power[i]);      
+         st->power_1[i] = adapt_rate/(1.f+st->power[i]);      
    }
 
    /* Compute weight gradient */
