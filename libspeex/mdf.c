@@ -139,18 +139,17 @@ SpeexEchoState *speex_echo_state_init(int frame_size, int filter_length)
    st->x = (float*)speex_alloc(N*sizeof(float));
    st->d = (float*)speex_alloc(N*sizeof(float));
    st->y = (float*)speex_alloc(N*sizeof(float));
-   st->y2 = (float*)speex_alloc(N*sizeof(float));
    st->Yps = (float*)speex_alloc(N*sizeof(float));
    st->last_y = (float*)speex_alloc(N*sizeof(float));
    st->Yf = (float*)speex_alloc((st->frame_size+1)*sizeof(float));
    st->Rf = (float*)speex_alloc((st->frame_size+1)*sizeof(float));
    st->Xf = (float*)speex_alloc((st->frame_size+1)*sizeof(float));
+   st->Yh = (float*)speex_alloc((st->frame_size+1)*sizeof(float));
+   st->Eh = (float*)speex_alloc((st->frame_size+1)*sizeof(float));
    st->fratio = (float*)speex_alloc((st->frame_size+1)*sizeof(float));
 
    st->X = (float*)speex_alloc(M*N*sizeof(float));
-   st->D = (float*)speex_alloc(N*sizeof(float));
    st->Y = (float*)speex_alloc(N*sizeof(float));
-   st->Y2 = (float*)speex_alloc(N*sizeof(float));
    st->E = (float*)speex_alloc(N*sizeof(float));
    st->W = (float*)speex_alloc(M*N*sizeof(float));
    st->PHI = (float*)speex_alloc(M*N*sizeof(float));
@@ -207,10 +206,11 @@ void speex_echo_state_destroy(SpeexEchoState *st)
    speex_free(st->Yf);
    speex_free(st->Rf);
    speex_free(st->Xf);
+   speex_free(st->Yh);
+   speex_free(st->Eh);
    speex_free(st->fratio);
 
    speex_free(st->X);
-   speex_free(st->D);
    speex_free(st->Y);
    speex_free(st->E);
    speex_free(st->W);
@@ -271,11 +271,6 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
    for (i=0;i<N;i++)
       st->y[i] *= scale;
 
-   /* Transform d (reference signal) to frequency domain */
-   for (i=0;i<N;i++)
-      st->D[i]=st->d[i];
-   spx_drft_forward(st->fft_lookup, st->D);
-
    /* Compute error signal (signal with echo removed) */ 
    for (i=0;i<st->frame_size;i++)
    {
@@ -300,6 +295,11 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
    
    /* Convert error to frequency domain */
    spx_drft_forward(st->fft_lookup, st->E);
+   for (i=0;i<st->frame_size;i++)
+      st->y[i] = 0;
+   for (i=0;i<N;i++)
+      st->Y[i] = st->y[i];
+   spx_drft_forward(st->fft_lookup, st->Y);
    
    /* Compute power spectrum of error (E) and filter response (Y) */
    power_spectrum(st->E, st->Rf, N);
@@ -307,31 +307,27 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
 
    {
       float Pey = 0, Pyy=0, Pe=0,Py=0;
-      float Nscale;
       float alpha;
-      Nscale = 1./(st->frame_size+1);
       for (j=0;j<=st->frame_size;j++)
       {
-         float E, Y;
+         float E, Y, Eh, Yh;
          E = (st->Rf[j]);
          Y = (st->Yf[j]);
-         Pey += E*Y;
-         Pyy += Y*Y;
-         Pe += E;
-         Py += Y;
+         Eh = st->Eh[j] + E;
+         Yh = st->Yh[j] + Y;
+         Pey += Eh*Yh;
+         Pyy += Yh*Yh;
+         st->Eh[j] = .95*Eh - E;
+         st->Yh[j] = .95*Yh - Y;
       }
-      alpha = .1*Syy / (1+See);
-      if (alpha > .1)
-         alpha = .1;
+      alpha = .02*Syy / (1+See);
+      if (alpha > .02)
+         alpha = .02;
       st->Pey = (1-alpha)*st->Pey + alpha*Pey;
       st->Pyy = (1-alpha)*st->Pyy + alpha*Pyy;
-      st->Pe = (1-alpha)*st->Pe + alpha*Pe;
-      st->Py = (1-alpha)*st->Py + alpha*Py;
-      if (st->Pey < Nscale*st->Pe*st->Py)
-         st->Pey = Nscale*st->Pe*st->Py;
-      if (st->Pyy < Nscale*st->Py*st->Py)
-         st->Pyy = Nscale*st->Py*st->Py;
-      leak_estimate = (st->Pey - Nscale*st->Pe*st->Py) / max(1.f,st->Pyy - Nscale*st->Py*st->Py);
+      if (st->Pey<0)
+         st->Pey = 0;
+      leak_estimate = st->Pey / (1+st->Pyy);
       if (leak_estimate > 1)
          leak_estimate = 1;
       /*printf ("%f\n", leak_estimate);*/
@@ -483,7 +479,7 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
       
       /* Estimate residual echo */
       for (i=0;i<=st->frame_size;i++)
-         Yout[i] = leak_estimate*st->Yps[i];
+         Yout[i] = 2*leak_estimate*st->Yps[i];
    }
 
 }
