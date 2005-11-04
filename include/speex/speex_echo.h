@@ -47,11 +47,7 @@ typedef struct SpeexEchoState {
    int M;
    int cancel_count;
    int adapted;
-   float adapt_rate;
    float sum_adapt;
-   float Sey;
-   float Syy;
-   float See;
    
    float *x;
    float *X;
@@ -65,17 +61,13 @@ typedef struct SpeexEchoState {
    float *W;
    float *power;
    float *power_1;
-   float *grad;
    float *Rf;
    float *Yf;
    float *Xf;
    float *Eh;
    float *Yh;
-   float *fratio;
    float Pey;
    float Pyy;
-   float Pe;
-   float Py;
    struct drft_lookup *fft_lookup;
 
 
