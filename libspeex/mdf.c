@@ -205,7 +205,8 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
    float Syy=0,See=0;
    float leak_estimate;
    float ss;
-   
+   float adapt_rate;
+
    N = st->window_size;
    M = st->M;
    scale = 1.0f/N;
@@ -314,11 +315,9 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
       /*printf ("%f\n", leak_estimate);*/
    }
    
-   float adapt_rate;
    if (!st->adapted)
    {
       float Sxx;
-      adapt_rate;
       Sxx = inner_prod(st->x+st->frame_size, st->x+st->frame_size, st->frame_size);
 
       /* We consider that the filter is adapted if the following is true*/
@@ -405,7 +404,7 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
       
       /* Estimate residual echo */
       for (i=0;i<=st->frame_size;i++)
-         Yout[i] = 2*leak_estimate*st->Yps[i];
+         Yout[i] = 2.f*leak_estimate*st->Yps[i];
    }
 
 }
