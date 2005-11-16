@@ -47,7 +47,7 @@ int          n
    spx_word32_t ac0=1;
    spx_word32_t ac32[11], *ac32top;
    int shift, ac_shift;
-   ac32top = ac32+10;
+   ac32top = ac32+lag-1;
    int lag_1, N_lag;
    int nshift;
    lag_1 = lag-1;
