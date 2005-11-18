@@ -170,7 +170,8 @@ int speex_bits_write(SpeexBits *bits, char *chars, int max_nbytes)
    int i;
    int max_nchars = max_nbytes/BYTES_PER_CHAR;
    int charPtr, bitPtr, nbBits;
-   
+   printf ("%d %d %d\n", bits->bitPtr, bits->charPtr, bits->nbBits);
+
    /* Insert terminator, but save the data so we can put it back after */
    bitPtr=bits->bitPtr;
    charPtr=bits->charPtr;
@@ -187,6 +188,7 @@ int speex_bits_write(SpeexBits *bits, char *chars, int max_nbytes)
 #else
 #define HTOLS(A) ((((A) >> 8)&0xff)|(((A) & 0xff)<<8))
 #endif
+   printf ("%d %d %d %d\n", bits->bitPtr, bits->charPtr, bits->nbBits, max_nchars);
    for (i=0;i<max_nchars;i++)
       chars[i]=HTOLS(bits->chars[i]);
    return max_nchars*BYTES_PER_CHAR;
@@ -352,8 +354,8 @@ int speex_bits_nbytes(SpeexBits *bits)
 
 void speex_bits_insert_terminator(SpeexBits *bits)
 {
-   if (bits->bitPtr<BITS_PER_CHAR-1)
+   if (bits->bitPtr)
       speex_bits_pack(bits, 0, 1);
-   while (bits->bitPtr<BITS_PER_CHAR-1)
+   while (bits->bitPtr)
       speex_bits_pack(bits, 1, 1);
 }
