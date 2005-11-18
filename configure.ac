@@ -183,7 +183,9 @@ AC_OUTPUT([Makefile libspeex/Makefile src/Makefile doc/Makefile Speex.spec
            include/Makefile include/speex/Makefile speex.pc
            win32/Makefile win32/libspeex/Makefile win32/speexenc/Makefile
            win32/speexdec/Makefile symbian/Makefile 
-           include/speex/speex_config_types.h ])
+           include/speex/speex_config_types.h ti/Makefile 
+	   ti/speex_C54_test/Makefile ti/speex_C55_test/Makefile
+	   ti/speex_C64_test/Makefile ])
 
 if test "x$src" = "x"; then 
 echo "**IMPORTANT**"
