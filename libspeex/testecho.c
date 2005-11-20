@@ -38,7 +38,7 @@ int main(int argc, char **argv)
    {
       read(echo_fd, echo_buf, NN*2);
       speex_echo_cancel(st, ref_buf, echo_buf, e_buf, noise);
-      speex_preprocess(den, e_buf, noise);
+      /*speex_preprocess(den, e_buf, noise);*/
       write(e_fd, e_buf, NN*2);
    }
    speex_echo_state_destroy(st);

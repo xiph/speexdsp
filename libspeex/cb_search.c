@@ -424,8 +424,6 @@ int   update_target
       }
       for (j=0;j<N;j++)
       {
-         //spx_word16_t *ct = ot[best_ntarget[j]];
-         
          /*previous target (we don't care what happened before*/
          for (m=(i+1)*subvect_size;m<nsf;m++)
             nt[j][m]=ot[best_ntarget[j]][m];
