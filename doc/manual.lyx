@@ -1319,6 +1319,65 @@ It is also possible to reset the state of the echo canceller so it can be
 \layout LyX-Code
 
 speex_echo_state_reset(echo_state);
+\layout Subsubsection
+
+Troubleshooting
+\layout Standard
+
+There are several things that may prevent the echo canceller from working
+ properly.
+ One of them is a bug (or something suboptimal) in the code, but there are
+ many others you should consider first
+\layout Itemize
+
+Using a different soundcard to do the capture and plaback will *not* work,
+ regardless of what you may think.
+ The only exception to that is if the two cards can be made to have their
+ sampling clock 
+\begin_inset Quotes eld
+\end_inset 
+
+locked
+\begin_inset Quotes erd
+\end_inset 
+
+ on the same clock source.
+\layout Itemize
+
+The delay between the record and playback signals must be minimal.
+ Any signal played has to 
+\begin_inset Quotes eld
+\end_inset 
+
+appear
+\begin_inset Quotes erd
+\end_inset 
+
+ on the playback (far end) signal slightly before the echo canceller 
+\begin_inset Quotes eld
+\end_inset 
+
+sees
+\begin_inset Quotes erd
+\end_inset 
+
+ it in the near end signal, but excessive delay means that part of the filter
+ length is wasted.
+ In the worst situations, the delay is such that it is longer than the filter
+ length, in which case, no echo can be cancelled.
+\layout Itemize
+
+When it comes to echo tail length (filter length), longer is *not* better.
+ Actually, the longer the tail length, the longer it takes for the filter
+ to adapt.
+ Of course, a tail length that is too short will not cancel enough echo,
+ but the most common problem seen is that people set a very long tail length
+ and then wonder why no echo is being cancelled.
+\layout Itemize
+
+Non-linear distortion cannot (by definition) be modeled by the linear adaptive
+ filter used in the echo canceller and thus cannot be cancelled.
+ Use good audio gear and avoid saturation/clipping.
 \layout Subsection
 
 Codec Options (speex_*_ctl)
