@@ -208,6 +208,62 @@
 			<Tool
 				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
+		<Configuration
+			Name="Release_Dynamic|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="2"
+			CharacterSet="2"
+			WholeProgramOptimization="TRUE">
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="3"
+				GlobalOptimizations="TRUE"
+				InlineFunctionExpansion="2"
+				EnableIntrinsicFunctions="TRUE"
+				FavorSizeOrSpeed="1"
+				OptimizeForProcessor="2"
+				AdditionalIncludeDirectories="..\..\..\include;..\.."
+				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;HAVE_CONFIG_H"
+				StringPooling="TRUE"
+				ExceptionHandling="FALSE"
+				RuntimeLibrary="0"
+				BufferSecurityCheck="FALSE"
+				UsePrecompiledHeader="0"
+				WarningLevel="4"
+				Detect64BitPortabilityProblems="TRUE"
+				DebugInformationFormat="3"
+				CompileAs="1"
+				DisableSpecificWarnings="4244;4305;4311;4100;4127"/>
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCLinkerTool"
+				ModuleDefinitionFile="libspeex.def"
+				OptimizeReferences="2"
+				EnableCOMDATFolding="2"
+				OptimizeForWindows98="1"/>
+			<Tool
+				Name="VCMIDLTool"/>
+			<Tool
+				Name="VCPostBuildEventTool"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="VCResourceCompilerTool"/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCWebDeploymentTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+		</Configuration>
 	</Configurations>
 	<References>
 	</References>
@@ -260,6 +316,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\libspeex\jitter.c">
+			</File>
+			<File
+				RelativePath=".\libspeex.def">
 			</File>
 			<File
 				RelativePath="..\..\..\libspeex\lpc.c">
@@ -378,10 +437,25 @@
 				RelativePath="..\..\..\include\speex\speex_callbacks.h">
 			</File>
 			<File
+				RelativePath="..\..\..\include\speex\speex_echo.h">
+			</File>
+			<File
 				RelativePath="..\..\..\include\speex\speex_header.h">
 			</File>
 			<File
+				RelativePath="..\..\..\include\speex\speex_jitter.h">
+			</File>
+			<File
+				RelativePath="..\..\..\include\speex\speex_noglobals.h">
+			</File>
+			<File
+				RelativePath="..\..\..\include\speex\speex_preprocess.h">
+			</File>
+			<File
 				RelativePath="..\..\..\include\speex\speex_stereo.h">
+			</File>
+			<File
+				RelativePath="..\..\..\include\speex\speex_types.h">
 			</File>
 			<File
 				RelativePath="..\..\..\libspeex\stack_alloc.h">
