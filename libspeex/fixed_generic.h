@@ -35,8 +35,8 @@
 #ifndef FIXED_GENERIC_H
 #define FIXED_GENERIC_H
 
-#define QCONST16(x,bits) ((spx_word16_t)((x)*(1<<(bits))+(1<<((bits)-1))))
-#define QCONST32(x,bits) ((spx_word32_t)((x)*(1<<(bits))+(1<<((bits)-1))))
+#define QCONST16(x,bits) ((spx_word16_t)(.5+(x)*(1<<(bits))))
+#define QCONST32(x,bits) ((spx_word32_t)(.5+(x)*(1<<(bits))))
 
 #define NEG16(x) (-(x))
 #define NEG32(x) (-(x))
