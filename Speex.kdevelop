@@ -14,7 +14,7 @@
   </general>
   <kdevautoproject>
     <general>
-      <activetarget>src/Speex</activetarget>
+      <activetarget>libspeex/libspeex.la</activetarget>
       <useconfiguration>default</useconfiguration>
     </general>
     <run>
