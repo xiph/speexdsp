@@ -39,8 +39,8 @@
 #define SPEEX_MAJOR_VERSION 1         /**< Major Speex version. */
 #define SPEEX_MINOR_VERSION 1         /**< Minor Speex version. */
 #define SPEEX_MICRO_VERSION 11        /**< Micro Speex version. */
-#define SPEEX_EXTRA_VERSION ""        /**< Extra Speex version. */
-#define SPEEX_VERSION "speex-1.1.11"  /**< Speex version string. */
+#define SPEEX_EXTRA_VERSION ".1"        /**< Extra Speex version. */
+#define SPEEX_VERSION "speex-1.1.11.1"  /**< Speex version string. */
 #endif
 
 #include "arch.h"
