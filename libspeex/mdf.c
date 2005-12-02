@@ -41,6 +41,8 @@
 #include "misc.h"
 #include "speex/speex_echo.h"
 #include "smallft.h"
+#include "fftwrap.h"
+
 #include <math.h>
 
 #ifndef M_PI
@@ -114,10 +116,10 @@ SpeexEchoState *speex_echo_state_init(int frame_size, int filter_length)
    M = st->M = (filter_length+st->frame_size-1)/frame_size;
    st->cancel_count=0;
    st->sum_adapt = 0;
-         
-   st->fft_lookup = (struct drft_lookup*)speex_alloc(sizeof(struct drft_lookup));
-   spx_drft_init(st->fft_lookup, N);
+
+   st->fft_table = spx_fft_init(N);
    
+   st->e = (float*)speex_alloc(N*sizeof(float));
    st->x = (float*)speex_alloc(N*sizeof(float));
    st->d = (float*)speex_alloc(N*sizeof(float));
    st->y = (float*)speex_alloc(N*sizeof(float));
@@ -171,8 +173,9 @@ void speex_echo_state_reset(SpeexEchoState *st)
 /** Destroys an echo canceller state */
 void speex_echo_state_destroy(SpeexEchoState *st)
 {
-   spx_drft_clear(st->fft_lookup);
-   speex_free(st->fft_lookup);
+   spx_fft_destroy(st->fft_table);
+
+   speex_free(st->e);
    speex_free(st->x);
    speex_free(st->d);
    speex_free(st->y);
@@ -195,21 +198,18 @@ void speex_echo_state_destroy(SpeexEchoState *st)
    speex_free(st);
 }
 
-
 /** Performs echo cancellation on a frame */
 void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, float *Yout)
 {
    int i,j;
    int N,M;
-   float scale;
    float Syy=0,See=0;
    float leak_estimate;
    float ss;
    float adapt_rate;
-
+   
    N = st->window_size;
    M = st->M;
-   scale = 1.0f/N;
    st->cancel_count++;
    ss = 1.0f/st->cancel_count;
    if (ss < .4/M)
@@ -229,25 +229,15 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
    for (i=0;i<N*(M-1);i++)
       st->X[i]=st->X[i+N];
 
-   /* Copy new echo frame */
-   for (i=0;i<N;i++)
-      st->X[(M-1)*N+i]=st->x[i];
-
    /* Convert x (echo input) to frequency domain */
-   spx_drft_forward(st->fft_lookup, &st->X[(M-1)*N]);
-
+   spx_fft_float(st->fft_table, st->x, &st->X[(M-1)*N]);
    /* Compute filter response Y */
    for (i=0;i<N;i++)
       st->Y[i] = 0;
    for (j=0;j<M;j++)
       spectral_mul_accum(&st->X[j*N], &st->W[j*N], st->Y, N);
-   
-   /* Convert Y (filter response) to time domain */
-   for (i=0;i<N;i++)
-      st->y[i] = st->Y[i];
-   spx_drft_backward(st->fft_lookup, st->y);
-   for (i=0;i<N;i++)
-      st->y[i] *= scale;
+      
+   spx_ifft_float(st->fft_table, st->Y, st->y);
 
    /* Compute error signal (signal with echo removed) */ 
    for (i=0;i<st->frame_size;i++)
@@ -255,8 +245,8 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
       float tmp_out;
       tmp_out = (float)ref[i] - st->y[i+st->frame_size];
       
-      st->E[i] = 0;
-      st->E[i+st->frame_size] = tmp_out;
+      st->e[i] = 0;
+      st->e[i+st->frame_size] = tmp_out;
       
       /* Saturation */
       if (tmp_out>32767)
@@ -267,17 +257,15 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
    }
    
    /* Compute a bunch of correlations */
-   See = inner_prod(st->E+st->frame_size, st->E+st->frame_size, st->frame_size);
+   See = inner_prod(st->e+st->frame_size, st->e+st->frame_size, st->frame_size);
    Syy = inner_prod(st->y+st->frame_size, st->y+st->frame_size, st->frame_size);
    
    /* Convert error to frequency domain */
-   spx_drft_forward(st->fft_lookup, st->E);
+   spx_fft_float(st->fft_table, st->e, st->E);
    for (i=0;i<st->frame_size;i++)
       st->y[i] = 0;
-   for (i=0;i<N;i++)
-      st->Y[i] = st->y[i];
-   spx_drft_forward(st->fft_lookup, st->Y);
-   
+   spx_fft_float(st->fft_table, st->y, st->Y);
+
    /* Compute power spectrum of echo (X), error (E) and filter response (Y) */
    power_spectrum(st->E, st->Rf, N);
    power_spectrum(st->Y, st->Yf, N);
@@ -302,7 +290,7 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
          st->Eh[j] = .95*Eh - E;
          st->Yh[j] = .95*Yh - Y;
       }
-      alpha = .02*Syy / (1+See);
+      alpha = .02*Syy / (1e4+See);
       if (alpha > .02)
          alpha = .02;
       st->Pey = (1-alpha)*st->Pey + alpha*Pey;
@@ -348,7 +336,7 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
       }
    } else {
       for (i=0;i<=st->frame_size;i++)
-         st->power_1[i] = adapt_rate/(1.f+st->power[i]);      
+         st->power_1[i] = adapt_rate/(1.f+st->power[i]);
    }
 
    /* Compute weight gradient */
@@ -367,14 +355,13 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
       /* Remove the "if" to make this an MDF filter */
       if (j==M-1 || st->cancel_count%(M-1) == j)
       {
-         spx_drft_backward(st->fft_lookup, &st->W[j*N]);
-         for (i=0;i<N;i++)
-            st->W[j*N+i]*=scale;
+         float w[N];
+         spx_ifft_float(st->fft_table, &st->W[j*N], w);
          for (i=st->frame_size;i<N;i++)
          {
-            st->W[j*N+i]=0;
+            w[i]=0;
          }
-         spx_drft_forward(st->fft_lookup, &st->W[j*N]);
+         spx_fft_float(st->fft_table, w, &st->W[j*N]);
       }
    }
 
@@ -396,10 +383,10 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
       
       /* Apply hanning window (should pre-compute it)*/
       for (i=0;i<N;i++)
-         st->Yps[i] = (.5-.5*cos(2*M_PI*i/N))*st->last_y[i];
+         st->y[i] = (.5-.5*cos(2*M_PI*i/N))*st->last_y[i];
       
       /* Compute power spectrum of the echo */
-      spx_drft_forward(st->fft_lookup, st->Yps);
+      spx_fft_float(st->fft_table, st->y, st->Yps);
       power_spectrum(st->Yps, st->Yps, N);
       
       /* Estimate residual echo */

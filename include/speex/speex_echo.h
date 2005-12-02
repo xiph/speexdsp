@@ -38,7 +38,7 @@
 extern "C" {
 #endif
 
-struct drft_lookup;
+/*struct drft_lookup;*/
 
 /** Speex echo cancellation state. */
 typedef struct SpeexEchoState {
@@ -48,7 +48,7 @@ typedef struct SpeexEchoState {
    int cancel_count;
    int adapted;
    float sum_adapt;
-   
+   float *e;
    float *x;
    float *X;
    float *d;
@@ -68,7 +68,8 @@ typedef struct SpeexEchoState {
    float *Yh;
    float Pey;
    float Pyy;
-   struct drft_lookup *fft_lookup;
+   /*struct drft_lookup *fft_lookup;*/
+   void *fft_table;
 
 
 } SpeexEchoState;
