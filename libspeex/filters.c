@@ -493,7 +493,22 @@ void fir_mem_up(const spx_sig_t *x, const spx_word16_t *a, spx_sig_t *y, int N, 
       mem[i+1] = xx[i];
 }
 
-
+void filter_dc_notch(spx_sig_t *in, spx_word16_t radius, spx_sig_t *out, int len, spx_mem_t *mem)
+{
+   int i;
+   spx_word16_t num[3], den[3];
+   num[0] = num[2] = 1;
+   num[1] = -2;
+   den[0] = 1;
+   den[1] = -2*radius;
+   den[2] = radius*radius + .7*(1-radius)*(1-radius);
+   for (i=0;i<len;i++)
+   {
+      out[i] = mem[0] + num[0]*in[i];
+      mem[0] = mem[1] + num[1]*in[i] - den[1]*out[i];
+      mem[1] = num[2]*in[i] - den[2]*out[i];
+   }
+}
 
 void comb_filter_mem_init (CombFilterMem *mem)
 {
