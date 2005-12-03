@@ -55,6 +55,14 @@
 #define min(a,b) ((a)<(b) ? (a) : (b))
 #define max(a,b) ((a)>(b) ? (a) : (b))
 
+#ifdef FIXED_POINT
+#define WEIGHT_SCALING 128.f
+#define WEIGHT_SCALING_1 0.0078125f
+#else
+#define WEIGHT_SCALING 1.f
+#define WEIGHT_SCALING_1 1.f
+#endif
+
 /** Compute inner product of two real vectors */
 static inline float inner_prod(float *x, float *y, int N)
 {
@@ -236,7 +244,11 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
       st->Y[i] = 0;
    for (j=0;j<M;j++)
       spectral_mul_accum(&st->X[j*N], &st->W[j*N], st->Y, N);
-      
+   
+   /* Convert Y (filter response) to time domain */
+   for (i=0;i<N;i++)
+      st->Y[i] *= WEIGHT_SCALING_1;
+   
    spx_ifft_float(st->fft_table, st->Y, st->y);
 
    /* Compute error signal (signal with echo removed) */ 
@@ -332,11 +344,11 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
          r = leak_estimate*st->Yf[i] / (1+st->Rf[i]);
          if (r>1)
             r = 1;
-         st->power_1[i] = adapt_rate*r/(1.f+st->power[i]);
+         st->power_1[i] = WEIGHT_SCALING*adapt_rate*r/(1.f+st->power[i]);
       }
    } else {
       for (i=0;i<=st->frame_size;i++)
-         st->power_1[i] = adapt_rate/(1.f+st->power[i]);
+         st->power_1[i] = WEIGHT_SCALING*adapt_rate/(1.f+st->power[i]);      
    }
 
    /* Compute weight gradient */

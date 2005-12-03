@@ -134,15 +134,15 @@ void kiss_fftri(kiss_fftr_cfg st,const kiss_fft_cpx *freqdata,kiss_fft_scalar *t
 
     st->tmpbuf[0].r = freqdata[0].r + freqdata[ncfft].r;
     st->tmpbuf[0].i = freqdata[0].r - freqdata[ncfft].r;
-    C_FIXDIV(st->tmpbuf[0],2);
+    /*C_FIXDIV(st->tmpbuf[0],2);*/
 
     for (k = 1; k <= ncfft / 2; ++k) {
         kiss_fft_cpx fk, fnkc, fek, fok, tmp;
         fk = freqdata[k];
         fnkc.r = freqdata[ncfft - k].r;
         fnkc.i = -freqdata[ncfft - k].i;
-        C_FIXDIV( fk , 2 );
-        C_FIXDIV( fnkc , 2 );
+        /*C_FIXDIV( fk , 2 );
+        C_FIXDIV( fnkc , 2 );*/
 
         C_ADD (fek, fk, fnkc);
         C_SUB (tmp, fk, fnkc);
