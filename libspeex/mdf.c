@@ -368,12 +368,31 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
       if (j==M-1 || st->cancel_count%(M-1) == j)
       {
          float w[N];
+         float w2[N];
          spx_ifft_float(st->fft_table, &st->W[j*N], w);
+#if 0
          for (i=st->frame_size;i<N;i++)
          {
             w[i]=0;
          }
          spx_fft_float(st->fft_table, w, &st->W[j*N]);
+#else
+         for (i=0;i<st->frame_size;i++)
+         {
+            w[i]=0;
+         }
+         for (i=st->frame_size;i<N;i++)
+         {
+            w[i]*=4;
+         }
+         spx_fft_float(st->fft_table, w, w2);
+         for (i=0;i<N;i++)
+         {
+            w2[i]*=.25;
+         }
+         for (i=0;i<N;i++)
+            st->W[j*N+i] -= w2[i];
+#endif
       }
    }
 

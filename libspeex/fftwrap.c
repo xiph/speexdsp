@@ -32,16 +32,52 @@
 
 */
 
-/*#define USE_SMALLFT*/
+//#define USE_SMALLFT
 #define USE_KISS_FFT
 
 
 #include "misc.h"
-#include <math.h>
+
+
+#ifdef FIXED_POINT
+static int maximize_range(spx_word16_t *in, spx_word16_t *out, spx_word16_t bound, int len)
+{
+   int i, shift;
+   spx_word16_t max_val = 0;
+   for (i=0;i<len;i++)
+   {
+      if (in[i]>max_val)
+         max_val = in[i];
+      if (-in[i]>max_val)
+         max_val = -in[i];
+   }
+   shift=0;
+   while (max_val <= (bound>>1) && max_val != 0)
+   {
+      max_val <<= 1;
+      shift++;
+   }
+   for (i=0;i<len;i++)
+   {
+      out[i] = in[i] << shift;
+   }   
+   return shift;
+}
+
+static void renorm_range(spx_word16_t *in, spx_word16_t *out, int shift, int len)
+{
+   int i;
+   for (i=0;i<len;i++)
+   {
+      out[i] = (in[i] + (1<<(shift-1))) >> shift;
+   }
+}
+#endif
 
 #ifdef USE_SMALLFT
 
 #include "smallft.h"
+#include <math.h>
 
 void *spx_fft_init(int size)
 {
@@ -131,6 +167,7 @@ void spx_fft(void *table, spx_word16_t *in, spx_word16_t *out)
    struct kiss_config *t = (struct kiss_config *)table;
 #ifdef FIXED_POINT
    scale = 1;
+   shift = maximize_range(in, in, 32000, t->N);
 #else
    scale = 1./t->N;
 #endif
@@ -142,6 +179,10 @@ void spx_fft(void *table, spx_word16_t *in, spx_word16_t *out)
       out[(i<<1)] = scale*t->freq_data[i].i;
    }
    out[(i<<1)-1] = scale*t->freq_data[i].r;
+#ifdef FIXED_POINT
+   renorm_range(in, in, shift, t->N);
+   renorm_range(out, out, shift, t->N);
+#endif
 }
 
 void spx_ifft(void *table, spx_word16_t *in, spx_word16_t *out)
@@ -169,7 +210,9 @@ void spx_ifft(void *table, spx_word16_t *in, spx_word16_t *out)
 #endif
 
 
+int fixed_point = 1;
 #ifdef FIXED_POINT
+#include "smallft.h"
 
 
 void spx_fft_float(void *table, float *in, float *out)
@@ -188,6 +231,16 @@ void spx_fft_float(void *table, float *in, float *out)
    spx_fft(table, _in, _out);
    for (i=0;i<N;i++)
       out[i] = _out[i];
+   if (!fixed_point)
+   {
+      struct drft_lookup t;
+      spx_drft_init(&t, ((struct kiss_config *)table)->N);
+      float scale = 1./((struct kiss_config *)table)->N;
+      for (i=0;i<((struct kiss_config *)table)->N;i++)
+         out[i] = scale*in[i];
+      spx_drft_forward(&t, out);
+      spx_drft_clear(&t);
+   }
 }
 
 void spx_ifft_float(void *table, float *in, float *out)
@@ -206,6 +259,16 @@ void spx_ifft_float(void *table, float *in, float *out)
    spx_ifft(table, _in, _out);
    for (i=0;i<N;i++)
       out[i] = _out[i];
+   if (!fixed_point)
+   {
+      int i;
+      struct drft_lookup t;
+      spx_drft_init(&t, ((struct kiss_config *)table)->N);
+      for (i=0;i<((struct kiss_config *)table)->N;i++)
+         out[i] = in[i];
+      spx_drft_backward(&t, out);
+      spx_drft_clear(&t);
+   }
 }
 
 #else
