@@ -40,6 +40,9 @@
 extern long long spx_mips;
 #define MIPS_INC spx_mips++,
 
+#define QCONST16(x,bits) ((spx_word16_t)((x)*(1<<(bits))+(1<<((bits)-1))))
+#define QCONST32(x,bits) ((spx_word32_t)((x)*(1<<(bits))+(1<<((bits)-1))))
+
 #define VERIFY_SHORT(x) ((x)<=32767&&(x)>=-32768)
 #define VERIFY_INT(x) ((x)<=2147483647LL&&(x)>=-2147483648LL)
 
