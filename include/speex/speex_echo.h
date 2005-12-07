@@ -39,40 +39,7 @@ extern "C" {
 #endif
 
 /*struct drft_lookup;*/
-
-/** Speex echo cancellation state. */
-typedef struct SpeexEchoState {
-   int frame_size;           /**< Number of samples processed each time */
-   int window_size;
-   int M;
-   int cancel_count;
-   int adapted;
-   float sum_adapt;
-   float *e;
-   float *x;
-   float *X;
-   float *d;
-   float *y;
-   float *last_y;
-   float *Yps;
-   float *Y;
-   float *E;
-   float *PHI;
-   float *W;
-   float *power;
-   float *power_1;
-   float *Rf;
-   float *Yf;
-   float *Xf;
-   float *Eh;
-   float *Yh;
-   float Pey;
-   float Pyy;
-   /*struct drft_lookup *fft_lookup;*/
-   void *fft_table;
-
-
-} SpeexEchoState;
+typedef SpeexEchoState;
 
 
 /** Creates a new echo canceller state */

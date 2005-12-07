@@ -38,8 +38,10 @@
 #include "config.h"
 #endif
 
+#define MDF_C
+
 #include "misc.h"
-#include "speex/speex_echo.h"
+//#include "speex/speex_echo.h"
 #include "smallft.h"
 #include "fftwrap.h"
 
@@ -56,59 +58,132 @@
 #define max(a,b) ((a)>(b) ? (a) : (b))
 
 #ifdef FIXED_POINT
-#define WEIGHT_SCALING 128.f
-#define WEIGHT_SCALING_1 0.0078125f
+#define WEIGHT_SHIFT 11
+#define WEIGHT_SCALING 2048
+#define WEIGHT_SCALING_1 0.00048828f
+//#define WEIGHT_SCALING (100*16*128.f)
+//#define WEIGHT_SCALING_1 (.0625f*0.0078125f)
 #else
 #define WEIGHT_SCALING 1.f
 #define WEIGHT_SCALING_1 1.f
 #endif
 
+/** Speex echo cancellation state. */
+typedef struct {
+   int frame_size;           /**< Number of samples processed each time */
+   int window_size;
+   int M;
+   int cancel_count;
+   int adapted;
+   float sum_adapt;
+   spx_word16_t *e;
+   spx_word16_t *x;
+   spx_word16_t *X;
+   spx_word16_t *d;
+   spx_word16_t *y;
+   spx_word16_t *last_y;
+   spx_word32_t *Yps;
+   spx_word16_t *Y;
+   spx_word16_t *E;
+   spx_word16_t *PHI;
+   spx_word16_t *W;
+   spx_word32_t *power;
+   float *power_1;
+   spx_word32_t *Rf;
+   spx_word32_t *Yf;
+   spx_word32_t *Xf;
+   spx_word32_t *Eh;
+   spx_word32_t *Yh;
+   float Pey;
+   float Pyy;
+   /*struct drft_lookup *fft_lookup;*/
+   void *fft_table;
+
+
+} SpeexEchoState;
+
+
 /** Compute inner product of two real vectors */
-static inline float inner_prod(float *x, float *y, int N)
+static inline float inner_prod(spx_word16_t *x, spx_word16_t *y, int N)
 {
    int i;
    float ret=0;
    for (i=0;i<N;i++)
-      ret += x[i]*y[i];
+      ret += (1.f*x[i])*y[i];
    return ret;
 }
 
 /** Compute power spectrum of a half-complex (packed) vector */
-static inline void power_spectrum(float *X, float *ps, int N)
+static inline void power_spectrum(spx_word16_t *X, spx_word32_t *ps, int N)
 {
    int i, j;
-   ps[0]=X[0]*X[0];
+   ps[0]=MULT16_16(X[0],X[0]);
    for (i=1,j=1;i<N-1;i+=2,j++)
    {
-      ps[j] =  X[i]*X[i] + X[i+1]*X[i+1];
+      ps[j] =  MULT16_16(X[i],X[i]) + MULT16_16(X[i+1],X[i+1]);
    }
-   ps[j]=X[i]*X[i];
+   ps[j]=MULT16_16(X[i],X[i]);
 }
 
 /** Compute cross-power spectrum of a half-complex (packed) vectors and add to acc */
-static inline void spectral_mul_accum(float *X, float *Y, float *acc, int N)
+#ifdef FIXED_POINT
+static inline void spectral_mul_accum(spx_word16_t *X, spx_word16_t *Y, spx_word16_t *acc, int N, int M)
 {
-   int i;
-   acc[0] += X[0]*Y[0];
+   int i,j;
+   spx_word32_t tmp1=0,tmp2=0;
+   for (j=0;j<M;j++)
+   {
+      tmp1 = MAC16_16(tmp1, X[j*N],Y[j*N]);
+   }
+   acc[0] = SHR32(tmp1,WEIGHT_SHIFT);
    for (i=1;i<N-1;i+=2)
    {
-      acc[i] += (X[i]*Y[i] - X[i+1]*Y[i+1]);
-      acc[i+1] += (X[i+1]*Y[i] + X[i]*Y[i+1]);
+      tmp1 = tmp2 = 0;
+      for (j=0;j<M;j++)
+      {
+         tmp1 = SUB32(MAC16_16(tmp1, X[j*N+i],Y[j*N+i]), MULT16_16(X[j*N+i+1],Y[j*N+i+1]));
+         tmp2 = MAC16_16(MAC16_16(tmp2, X[j*N+i+1],Y[j*N+i]), X[j*N+i], Y[j*N+i+1]);
+      }
+      acc[i] = SHR32(tmp1,WEIGHT_SHIFT);
+      acc[i+1] = SHR32(tmp2,WEIGHT_SHIFT);
    }
-   acc[i] += X[i]*Y[i];
+   tmp1 = tmp2 = 0;
+   for (j=0;j<M;j++)
+   {
+      tmp1 = MAC16_16(tmp1, X[(j+1)*N-1],Y[(j+1)*N-1]);
+   }
+   acc[N-1] = SHR32(tmp1,WEIGHT_SHIFT);
 }
+#else
+static inline void spectral_mul_accum(spx_word16_t *X, spx_word16_t *Y, spx_word16_t *acc, int N, int M)
+{
+   int i,j;
+   for (i=0;i<N;i++)
+      acc[i] = 0;
+   for (j=0;j<M;j++)
+   {
+      acc[0] += X[0]*Y[0];
+      for (i=1;i<N-1;i+=2)
+      {
+         acc[i] += (X[i]*Y[i] - X[i+1]*Y[i+1]);
+         acc[i+1] += (X[i+1]*Y[i] + X[i]*Y[i+1]);
+      }
+      acc[i] += X[i]*Y[i];
+   }
+}
+#endif
 
 /** Compute weighted cross-power spectrum of a half-complex (packed) vector with conjugate */
-static inline void weighted_spectral_mul_conj(float *w, float *X, float *Y, float *prod, int N)
+static inline void weighted_spectral_mul_conj(float *w, spx_word16_t *X, spx_word16_t *Y, spx_word16_t *prod, int N)
 {
    int i, j;
-   prod[0] = w[0]*X[0]*Y[0];
+   prod[0] = w[0]*MULT16_16(X[0],Y[0]);
    for (i=1,j=1;i<N-1;i+=2,j++)
    {
-      prod[i] = w[j]*(X[i]*Y[i] + X[i+1]*Y[i+1]);
-      prod[i+1] = w[j]*(-X[i+1]*Y[i] + X[i]*Y[i+1]);
+      prod[i] = w[j]*MAC16_16(MULT16_16(X[i],Y[i]), X[i+1],Y[i+1]);
+      prod[i+1] = w[j]*MAC16_16(MULT16_16(-X[i+1],Y[i]), X[i],Y[i+1]);
    }
-   prod[i] = w[j]*X[i]*Y[i];
+   prod[i] = w[j]*MULT16_16(X[i],Y[i]);
 }
 
 
@@ -127,24 +202,24 @@ SpeexEchoState *speex_echo_state_init(int frame_size, int filter_length)
 
    st->fft_table = spx_fft_init(N);
    
-   st->e = (float*)speex_alloc(N*sizeof(float));
-   st->x = (float*)speex_alloc(N*sizeof(float));
-   st->d = (float*)speex_alloc(N*sizeof(float));
-   st->y = (float*)speex_alloc(N*sizeof(float));
-   st->Yps = (float*)speex_alloc(N*sizeof(float));
-   st->last_y = (float*)speex_alloc(N*sizeof(float));
-   st->Yf = (float*)speex_alloc((st->frame_size+1)*sizeof(float));
-   st->Rf = (float*)speex_alloc((st->frame_size+1)*sizeof(float));
-   st->Xf = (float*)speex_alloc((st->frame_size+1)*sizeof(float));
-   st->Yh = (float*)speex_alloc((st->frame_size+1)*sizeof(float));
-   st->Eh = (float*)speex_alloc((st->frame_size+1)*sizeof(float));
+   st->e = (spx_word16_t*)speex_alloc(N*sizeof(spx_word16_t));
+   st->x = (spx_word16_t*)speex_alloc(N*sizeof(spx_word16_t));
+   st->d = (spx_word16_t*)speex_alloc(N*sizeof(spx_word16_t));
+   st->y = (spx_word16_t*)speex_alloc(N*sizeof(spx_word16_t));
+   st->Yps = (spx_word32_t*)speex_alloc(N*sizeof(spx_word32_t));
+   st->last_y = (spx_word16_t*)speex_alloc(N*sizeof(spx_word16_t));
+   st->Yf = (spx_word32_t*)speex_alloc((st->frame_size+1)*sizeof(spx_word32_t));
+   st->Rf = (spx_word32_t*)speex_alloc((st->frame_size+1)*sizeof(spx_word32_t));
+   st->Xf = (spx_word32_t*)speex_alloc((st->frame_size+1)*sizeof(spx_word32_t));
+   st->Yh = (spx_word32_t*)speex_alloc((st->frame_size+1)*sizeof(spx_word32_t));
+   st->Eh = (spx_word32_t*)speex_alloc((st->frame_size+1)*sizeof(spx_word32_t));
 
-   st->X = (float*)speex_alloc(M*N*sizeof(float));
-   st->Y = (float*)speex_alloc(N*sizeof(float));
-   st->E = (float*)speex_alloc(N*sizeof(float));
-   st->W = (float*)speex_alloc(M*N*sizeof(float));
-   st->PHI = (float*)speex_alloc(M*N*sizeof(float));
-   st->power = (float*)speex_alloc((frame_size+1)*sizeof(float));
+   st->X = (spx_word16_t*)speex_alloc(M*N*sizeof(spx_word16_t));
+   st->Y = (spx_word16_t*)speex_alloc(N*sizeof(spx_word16_t));
+   st->E = (spx_word16_t*)speex_alloc(N*sizeof(spx_word16_t));
+   st->W = (spx_word16_t*)speex_alloc(M*N*sizeof(spx_word16_t));
+   st->PHI = (spx_word16_t*)speex_alloc(M*N*sizeof(spx_word16_t));
+   st->power = (spx_word32_t*)speex_alloc((frame_size+1)*sizeof(spx_word32_t));
    st->power_1 = (float*)speex_alloc((frame_size+1)*sizeof(float));
    
    for (i=0;i<N*M;i++)
@@ -206,6 +281,7 @@ void speex_echo_state_destroy(SpeexEchoState *st)
    speex_free(st);
 }
 
+extern int fixed_point;
 /** Performs echo cancellation on a frame */
 void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, float *Yout)
 {
@@ -238,26 +314,21 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
       st->X[i]=st->X[i+N];
 
    /* Convert x (echo input) to frequency domain */
-   spx_fft_float(st->fft_table, st->x, &st->X[(M-1)*N]);
+   spx_fft(st->fft_table, st->x, &st->X[(M-1)*N]);
+   
    /* Compute filter response Y */
-   for (i=0;i<N;i++)
-      st->Y[i] = 0;
-   for (j=0;j<M;j++)
-      spectral_mul_accum(&st->X[j*N], &st->W[j*N], st->Y, N);
+   spectral_mul_accum(st->X, st->W, st->Y, N, M);
    
-   /* Convert Y (filter response) to time domain */
-   for (i=0;i<N;i++)
-      st->Y[i] *= WEIGHT_SCALING_1;
-   
-   spx_ifft_float(st->fft_table, st->Y, st->y);
+   spx_ifft(st->fft_table, st->Y, st->y);
 
    /* Compute error signal (signal with echo removed) */ 
    for (i=0;i<st->frame_size;i++)
    {
-      float tmp_out;
-      tmp_out = (float)ref[i] - st->y[i+st->frame_size];
+      spx_word32_t tmp_out;
+      tmp_out = SUB32(EXTEND32(ref[i]), EXTEND32(st->y[i+st->frame_size]));
       
       st->e[i] = 0;
+      /* Do we need saturation? */
       st->e[i+st->frame_size] = tmp_out;
       
       /* Saturation */
@@ -273,10 +344,10 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
    Syy = inner_prod(st->y+st->frame_size, st->y+st->frame_size, st->frame_size);
    
    /* Convert error to frequency domain */
-   spx_fft_float(st->fft_table, st->e, st->E);
+   spx_fft(st->fft_table, st->e, st->E);
    for (i=0;i<st->frame_size;i++)
       st->y[i] = 0;
-   spx_fft_float(st->fft_table, st->y, st->Y);
+   spx_fft(st->fft_table, st->y, st->Y);
 
    /* Compute power spectrum of echo (X), error (E) and filter response (Y) */
    power_spectrum(st->E, st->Rf, N);
@@ -285,20 +356,20 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
    
    /* Smooth echo energy estimate over time */
    for (j=0;j<=st->frame_size;j++)
-      st->power[j] = (1-ss)*st->power[j] + ss*st->Xf[j];
+      st->power[j] = (1-ss)*st->power[j] + 1 + ss*st->Xf[j];
 
    {
       float Pey = 0, Pyy=0;
       float alpha;
       for (j=0;j<=st->frame_size;j++)
       {
-         float E, Y, Eh, Yh;
+         spx_word32_t E, Y, Eh, Yh;
          E = (st->Rf[j]);
          Y = (st->Yf[j]);
          Eh = st->Eh[j] + E;
          Yh = st->Yh[j] + Y;
-         Pey += Eh*Yh;
-         Pyy += Yh*Yh;
+         Pey += Eh*1.f*Yh;
+         Pyy += Yh*1.f*Yh;
          st->Eh[j] = .95*Eh - E;
          st->Yh[j] = .95*Yh - Y;
       }
@@ -341,16 +412,16 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
       {
          float r;
          /* Compute frequency-domain adaptation mask */
-         r = leak_estimate*st->Yf[i] / (1+st->Rf[i]);
+         r = leak_estimate*st->Yf[i] / (1.f+st->Rf[i]);
          if (r>1)
             r = 1;
          st->power_1[i] = WEIGHT_SCALING*adapt_rate*r/(1.f+st->power[i]);
+         /*printf ("%f ", st->power_1[i]);*/
       }
    } else {
       for (i=0;i<=st->frame_size;i++)
-         st->power_1[i] = WEIGHT_SCALING*adapt_rate/(1.f+st->power[i]);      
+         st->power_1[i] = WEIGHT_SCALING*adapt_rate/(1.f+st->power[i]);
    }
-
    /* Compute weight gradient */
    for (j=0;j<M;j++)
    {
@@ -359,24 +430,28 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
 
    /* Gradient descent */
    for (i=0;i<M*N;i++)
+   {
       st->W[i] += st->PHI[i];
+      //printf ("%f ", st->PHI[i]);
+   }
+   /*if (st->cancel_count==1100)
+      for (i=0;i<M*N;i++)
+   printf ("%f ", st->W[i]);*/
+   /*printf ("\n");*/
    
    /* AUMDF weight constraint */
    for (j=0;j<M;j++)
    {
       /* Remove the "if" to make this an MDF filter */
+      //if(1)
       if (j==M-1 || st->cancel_count%(M-1) == j)
       {
          float w[N];
+#ifdef FIXED_POINT
          float w2[N];
-         spx_ifft_float(st->fft_table, &st->W[j*N], w);
-#if 0
-         for (i=st->frame_size;i<N;i++)
-         {
-            w[i]=0;
-         }
-         spx_fft_float(st->fft_table, w, &st->W[j*N]);
-#else
+         for (i=0;i<N;i++)
+            w2[i] = .03125*st->W[j*N+i];
+         spx_ifft_float(st->fft_table, w2, w);
          for (i=0;i<st->frame_size;i++)
          {
             w[i]=0;
@@ -391,7 +466,17 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
             w2[i]*=.25;
          }
          for (i=0;i<N;i++)
-            st->W[j*N+i] -= w2[i];
+            st->W[j*N+i] -= 32*w2[i];
+#else
+         float w2[N];
+         fixed_point = 0;
+         spx_ifft_float(st->fft_table, &st->W[j*N], w);
+         for (i=st->frame_size;i<N;i++)
+         {
+            w[i]=0;
+         }
+         spx_fft_float(st->fft_table, w, &st->W[j*N]);
+         fixed_point=1;
 #endif
       }
    }
@@ -417,8 +502,8 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
          st->y[i] = (.5-.5*cos(2*M_PI*i/N))*st->last_y[i];
       
       /* Compute power spectrum of the echo */
-      spx_fft_float(st->fft_table, st->y, st->Yps);
-      power_spectrum(st->Yps, st->Yps, N);
+      spx_fft(st->fft_table, st->y, st->Y);
+      power_spectrum(st->Y, st->Yps, N);
       
       /* Estimate residual echo */
       for (i=0;i<=st->frame_size;i++)
