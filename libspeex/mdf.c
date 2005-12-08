@@ -290,15 +290,19 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
    int N,M;
    float Syy=0,See=0;
    float leak_estimate;
-   float ss;
+   spx_word16_t ss, ss_1;
    float adapt_rate=0;
    
    N = st->window_size;
    M = st->M;
    st->cancel_count++;
-   ss = 1.0f/st->cancel_count;
-   if (ss < .4/M)
-      ss=.4/M;
+#ifdef FIXED_POINT
+   ss=DIV32_16(11469,M);
+   ss_1 = SUB16(32767,ss);
+#else
+   ss=.35/M;
+   ss_1 = 1-ss;
+#endif
 
    /* Copy input data to buffer */
    for (i=0;i<st->frame_size;i++)
@@ -357,7 +361,7 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
    
    /* Smooth echo energy estimate over time */
    for (j=0;j<=st->frame_size;j++)
-      st->power[j] = (1-ss)*st->power[j] + 1 + ss*st->Xf[j];
+      st->power[j] = MULT16_32_Q15(ss_1,st->power[j]) + 1 + MULT16_32_Q15(ss,st->Xf[j]);
 
    {
       spx_float_t Pey = FLOAT_ZERO, Pyy=FLOAT_ZERO;
@@ -369,8 +373,13 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
          Yh = PSEUDOFLOAT(st->Yf[j] - st->Yh[j]);
          Pey = FLOAT_ADD(Pey,FLOAT_MULT(Eh,Yh));
          Pyy = FLOAT_ADD(Pyy,FLOAT_MULT(Yh,Yh));
+#ifdef FIXED_POINT
+         st->Eh[j] = MAC16_32_Q15(MULT16_32_Q15(31130,st->Eh[j]), 1638, st->Rf[j]);
+         st->Yh[j] = MAC16_32_Q15(MULT16_32_Q15(31130,st->Yh[j]), 1638, st->Yf[j]);
+#else
          st->Eh[j] = .95*st->Eh[j] + .05*st->Rf[j];
          st->Yh[j] = .95*st->Yh[j] + .05*st->Yf[j];
+#endif
       }
       alpha = .02*Syy / (1e4+See);
       if (alpha > .02)
