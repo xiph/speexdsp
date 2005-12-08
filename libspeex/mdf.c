@@ -87,7 +87,7 @@ typedef struct {
    spx_word16_t *PHI;
    spx_word16_t *W;
    spx_word32_t *power;
-   float *power_1;
+   spx_float_t *power_1;
    spx_word32_t *Rf;
    spx_word32_t *Yf;
    spx_word32_t *Xf;
@@ -175,16 +175,16 @@ static inline void spectral_mul_accum(spx_word16_t *X, spx_word16_t *Y, spx_word
 #endif
 
 /** Compute weighted cross-power spectrum of a half-complex (packed) vector with conjugate */
-static inline void weighted_spectral_mul_conj(float *w, spx_word16_t *X, spx_word16_t *Y, spx_word16_t *prod, int N)
+static inline void weighted_spectral_mul_conj(spx_float_t *w, spx_word16_t *X, spx_word16_t *Y, spx_word16_t *prod, int N)
 {
    int i, j;
-   prod[0] = w[0]*MULT16_16(X[0],Y[0]);
+   prod[0] = FLOAT_MUL32(w[0],MULT16_16(X[0],Y[0]));
    for (i=1,j=1;i<N-1;i+=2,j++)
    {
-      prod[i] = w[j]*MAC16_16(MULT16_16(X[i],Y[i]), X[i+1],Y[i+1]);
-      prod[i+1] = w[j]*MAC16_16(MULT16_16(-X[i+1],Y[i]), X[i],Y[i+1]);
+      prod[i] = FLOAT_MUL32(w[j],MAC16_16(MULT16_16(X[i],Y[i]), X[i+1],Y[i+1]));
+      prod[i+1] = FLOAT_MUL32(w[j],MAC16_16(MULT16_16(-X[i+1],Y[i]), X[i],Y[i+1]));
    }
-   prod[i] = w[j]*MULT16_16(X[i],Y[i]);
+   prod[i] = FLOAT_MUL32(w[j],MULT16_16(X[i],Y[i]));
 }
 
 
@@ -221,7 +221,7 @@ SpeexEchoState *speex_echo_state_init(int frame_size, int filter_length)
    st->W = (spx_word16_t*)speex_alloc(M*N*sizeof(spx_word16_t));
    st->PHI = (spx_word16_t*)speex_alloc(M*N*sizeof(spx_word16_t));
    st->power = (spx_word32_t*)speex_alloc((frame_size+1)*sizeof(spx_word32_t));
-   st->power_1 = (float*)speex_alloc((frame_size+1)*sizeof(float));
+   st->power_1 = (spx_float_t*)speex_alloc((frame_size+1)*sizeof(spx_float_t));
    
    for (i=0;i<N*M;i++)
    {
@@ -423,12 +423,12 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
          r = leak_estimate*st->Yf[i] / (1.f+st->Rf[i]);
          if (r>.5)
             r = .5;
-         st->power_1[i] = WEIGHT_SCALING*adapt_rate*r/(1.f+st->power[i]);
+         st->power_1[i] = FLOAT_DIV32(WEIGHT_SCALING*adapt_rate*r,ADD32(1,st->power[i]));
          /*printf ("%f ", st->power_1[i]);*/
       }
    } else {
       for (i=0;i<=st->frame_size;i++)
-         st->power_1[i] = WEIGHT_SCALING*adapt_rate/(1.f+st->power[i]);
+         st->power_1[i] = FLOAT_DIV32(WEIGHT_SCALING*adapt_rate,ADD32(1,st->power[i]));
    }
    /* Compute weight gradient */
    for (j=0;j<M;j++)
