@@ -44,8 +44,7 @@
 //#include "speex/speex_echo.h"
 #include "smallft.h"
 #include "fftwrap.h"
-
-#include <math.h>
+#include "pseudofloat.h"
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
@@ -292,7 +291,7 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
    float Syy=0,See=0;
    float leak_estimate;
    float ss;
-   float adapt_rate;
+   float adapt_rate=0;
    
    N = st->window_size;
    M = st->M;
@@ -361,25 +360,23 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
       st->power[j] = (1-ss)*st->power[j] + 1 + ss*st->Xf[j];
 
    {
-      float Pey = 0, Pyy=0;
+      spx_float_t Pey = FLOAT_ZERO, Pyy=FLOAT_ZERO;
       float alpha;
-      for (j=0;j<=st->frame_size;j++)
+      for (j=st->frame_size;j>=0;j--)
       {
-         spx_word32_t E, Y, Eh, Yh;
-         E = (st->Rf[j]);
-         Y = (st->Yf[j]);
-         Eh = st->Eh[j] + E;
-         Yh = st->Yh[j] + Y;
-         Pey += Eh*1.f*Yh;
-         Pyy += Yh*1.f*Yh;
-         st->Eh[j] = .95*Eh - E;
-         st->Yh[j] = .95*Yh - Y;
+         spx_float_t Eh, Yh;
+         Eh = PSEUDOFLOAT(st->Rf[j] - st->Eh[j]);
+         Yh = PSEUDOFLOAT(st->Yf[j] - st->Yh[j]);
+         Pey = FLOAT_ADD(Pey,FLOAT_MULT(Eh,Yh));
+         Pyy = FLOAT_ADD(Pyy,FLOAT_MULT(Yh,Yh));
+         st->Eh[j] = .95*st->Eh[j] + .05*st->Rf[j];
+         st->Yh[j] = .95*st->Yh[j] + .05*st->Yf[j];
       }
       alpha = .02*Syy / (1e4+See);
       if (alpha > .02)
          alpha = .02;
-      st->Pey = (1-alpha)*st->Pey + alpha*Pey;
-      st->Pyy = (1-alpha)*st->Pyy + alpha*Pyy;
+      st->Pey = (1-alpha)*st->Pey + alpha*REALFLOAT(Pey);
+      st->Pyy = (1-alpha)*st->Pyy + alpha*REALFLOAT(Pyy);
       if (st->Pey< .001*st->Pyy)
          st->Pey = .001*st->Pyy;
       leak_estimate = st->Pey / (1+st->Pyy);

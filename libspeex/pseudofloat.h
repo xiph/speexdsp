@@ -36,53 +36,95 @@
 #define PSEUDOFLOAT_H
 
 #include "misc.h"
+#include <math.h>
+
+#ifdef FIXED_POINT
 
 typedef struct {
    spx_int16_t m;
    spx_int16_t e;
 } spx_float_t;
 
-/*#define FLOAT_MULT(a,b) ((spx_float_t) {(spx_int16_t)((spx_int32_t)(a).m*(b).m>>15), (a).e+(b).e+15})
+#define FLOAT_ZERO {0,0}
 
-#define FLOAT_ADD(a,b) ( (a).e > (b).e ? (spx_float_t) {((a).m>>1) + ((a).m>>((a).e-(b).e+1)),(a).e+1} : (spx_float_t) {((b).m>>1) + ((a).m>>((b).e-(a).e+1)),(b).e+1})*/
-
+#define MIN(a,b) ((a)<(b)?(a):(b))
 static inline spx_float_t PSEUDOFLOAT(float x)
 {
    int e=0;
+   int sign=0;
+   if (x<0)
+   {
+      sign = 1;
+      x = -x;
+   }
    if (x==0)
       return (spx_float_t) {0,0};
    while (x>32767)
    {
+      //x >>= 1;
       x *= .5;
       e++;
    }
    while (x<16383)
    {
+      //x <<= 1;
       x *= 2;
       e--;
    }
-   return (spx_float_t) {x,e};
+   if (sign)
+      return (spx_float_t) {-x,e};
+   else      
+      return (spx_float_t) {x,e};
+}
+
+static inline float REALFLOAT(spx_float_t a)
+{
+   return a.m * pow(2,a.e);
 }
 
 static inline spx_float_t FLOAT_ADD(spx_float_t a, spx_float_t b)
 {
-   spx_float_t r = (a).e > (b).e ? (spx_float_t) {((a).m>>1) + ((a).m>>((a).e-(b).e+1)),(a).e+1} : (spx_float_t) {((b).m>>1) + ((a).m>>((b).e-(a).e+1)),(b).e+1};
-   if (r.m<16384)
+   if (a.m==0)
+      return b;
+   else if (b.m==0)
+      return a;
+   spx_float_t r = (a).e > (b).e ? (spx_float_t) {((a).m>>1) + ((b).m>>MIN(15,(a).e-(b).e+1)),(a).e+1} : (spx_float_t) {((b).m>>1) + ((a).m>>MIN(15,(b).e-(a).e+1)),(b).e+1};
+   if (r.m>0)
    {
-      r.m<<=1;
-      r.e-=1;
+      if (r.m<16384)
+      {
+         r.m<<=1;
+         r.e-=1;
+      }
+   } else {
+      if (r.m>-16384)
+      {
+         r.m<<=1;
+         r.e-=1;
+      }
    }
+   //printf ("%f + %f = %f\n", REALFLOAT(a), REALFLOAT(b), REALFLOAT(r));
    return r;
 }
 
 static inline spx_float_t FLOAT_MULT(spx_float_t a, spx_float_t b)
 {
    spx_float_t r = (spx_float_t) {(spx_int16_t)((spx_int32_t)(a).m*(b).m>>15), (a).e+(b).e+15};
-   if (r.m<16384)
+   if (r.m>0)
    {
-      r.m<<=1;
-      r.e-=1;
+      if (r.m<16384)
+      {
+         r.m<<=1;
+         r.e-=1;
+      }
+   } else {
+      if (r.m>-16384)
+      {
+         r.m<<=1;
+         r.e-=1;
+      }
    }
+   //printf ("%f * %f = %f\n", REALFLOAT(a), REALFLOAT(b), REALFLOAT(r));
    return r;   
 }
 
@@ -143,5 +185,16 @@ static inline spx_float_t FLOAT_DIV32(spx_word32_t a, spx_word32_t b)
    }
    return (spx_float_t) {DIV32_16(a,b),e};
 }
+
+#else
+
+#define spx_float_t float
+#define FLOAT_ZERO 0.f
+#define PSEUDOFLOAT(x) (x)
+#define FLOAT_MULT(a,b) ((a)*(b))
+#define FLOAT_ADD(a,b) ((a)+(b))
+#define REALFLOAT(x) (x)
+
+#endif
 
 #endif
