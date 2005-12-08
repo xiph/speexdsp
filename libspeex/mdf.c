@@ -169,6 +169,8 @@ static inline void spectral_mul_accum(spx_word16_t *X, spx_word16_t *Y, spx_word
          acc[i+1] += (X[i+1]*Y[i] + X[i]*Y[i+1]);
       }
       acc[i] += X[i]*Y[i];
+      X += N;
+      Y += N;
    }
 }
 #endif
@@ -413,8 +415,8 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
          float r;
          /* Compute frequency-domain adaptation mask */
          r = leak_estimate*st->Yf[i] / (1.f+st->Rf[i]);
-         if (r>1)
-            r = 1;
+         if (r>.5)
+            r = .5;
          st->power_1[i] = WEIGHT_SCALING*adapt_rate*r/(1.f+st->power[i]);
          /*printf ("%f ", st->power_1[i]);*/
       }
