@@ -65,6 +65,7 @@
 #else
 #define WEIGHT_SCALING 1.f
 #define WEIGHT_SCALING_1 1.f
+#define WEIGHT_SHIFT 0
 #endif
 
 /** Speex echo cancellation state. */
@@ -432,26 +433,27 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
 
    if (st->adapted)
    {
-      adapt_rate = 1.f/M;
+      spx_word16_t M_1;
+#ifdef FIXED_POINT
+      M_1 = DIV32_16(32767,M);
+#else
+      M_1 = 1.f/M;
+#endif
       for (i=0;i<=st->frame_size;i++)
       {
-#ifdef FIXED_POINT
-         float r;
-         /* Compute frequency-domain adaptation mask */
-         r = leak_estimate*st->Yf[i] / (1.f+st->Rf[i]);
-         if (r>.5)
-            r = .5;
-         st->power_1[i] = FLOAT_DIV32(WEIGHT_SCALING*adapt_rate*r,ADD32(1,st->power[i]));
-         /*printf ("%f ", st->power_1[i]);*/
-#else
-         float r, e;
+         spx_word32_t r, e;
          /* Compute frequency-domain adaptation mask */
          r = leak_estimate*st->Yf[i];
-         e = 1.f+st->Rf[i];
+         e = st->Rf[i]+1;
+#ifdef FIXED_POINT
+         if (r>SHR32(e,1))
+            r = SHR32(e,1);
+#else
          if (r>.5*e)
             r = .5*e;
-         st->power_1[i] = adapt_rate*r/(e*(1+st->power[i]));
 #endif
+         /*st->power_1[i] = adapt_rate*r/(e*(1+st->power[i]));*/
+         st->power_1[i] = FLOAT_SHL(FLOAT_DIV32_FLOAT(MULT16_32_Q15(M_1,r),FLOAT_MUL32U(e,st->power[i]+1)),WEIGHT_SHIFT);
       }
    } else {
       for (i=0;i<=st->frame_size;i++)

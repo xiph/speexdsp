@@ -162,6 +162,55 @@ static inline spx_int32_t FLOAT_MUL32(spx_float_t a, spx_word32_t b)
       return SHL32(MULT16_32_Q15(a.m, b),15+a.e);
 }
 
+static inline spx_float_t FLOAT_MUL32U(spx_word32_t a, spx_word32_t b)
+{
+   int e=0;
+   /* FIXME: Handle the sign */
+   if (a==0)
+      return (spx_float_t) {0,0};
+   while (a>32767)
+   {
+      a >>= 1;
+      e++;
+   }
+   while (a<16384)
+   {
+      a <<= 1;
+      e--;
+   }
+   while (b>32767)
+   {
+      b >>= 1;
+      e++;
+   }
+   while (b<16384)
+   {
+      b <<= 1;
+      e--;
+   }
+   return (spx_float_t) {MULT16_16_Q15(a,b),e+15};
+}
+
+static inline spx_float_t FLOAT_DIV32_FLOAT(spx_word32_t a, spx_float_t b)
+{
+   int e=0;
+   /* FIXME: Handle the sign */
+   if (a==0)
+      return (spx_float_t) {0,0};
+   while (a<SHL32(b.m,14))
+   {
+      a <<= 1;
+      e--;
+   }
+   while (a>=SHL32(b.m-1,15))
+   {
+      a >>= 1;
+      e++;
+   }
+   return (spx_float_t) {DIV32_16(a,b.m),e-b.e};
+}
+
+
 static inline spx_float_t FLOAT_DIV32(spx_word32_t a, spx_word32_t b)
 {
    int e=0;
@@ -196,6 +245,9 @@ static inline spx_float_t FLOAT_DIV32(spx_word32_t a, spx_word32_t b)
 #define FLOAT_DIV32(a,b) ((a)/(b))
 #define FLOAT_ADD(a,b) ((a)+(b))
 #define REALFLOAT(x) (x)
+#define FLOAT_DIV32_FLOAT(a,b) ((a)/(b))
+#define FLOAT_MUL32U(a,b) ((a)*(b))
+#define FLOAT_SHL(a,b) (a)
 
 #endif
 
