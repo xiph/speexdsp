@@ -101,7 +101,7 @@ typedef struct {
 
 } SpeexEchoState;
 
-
+#if 0
 /** Compute inner product of two real vectors */
 static inline float inner_prod(spx_word16_t *x, spx_word16_t *y, int N)
 {
@@ -111,7 +111,24 @@ static inline float inner_prod(spx_word16_t *x, spx_word16_t *y, int N)
       ret += (1.f*x[i])*y[i];
    return ret;
 }
-
+#else
+static inline spx_word32_t inner_prod(const spx_word16_t *x, const spx_word16_t *y, int len)
+{
+   spx_word32_t sum=0;
+   len >>= 2;
+   while(len--)
+   {
+      spx_word32_t part=0;
+      part = MAC16_16(part,*x++,*y++);
+      part = MAC16_16(part,*x++,*y++);
+      part = MAC16_16(part,*x++,*y++);
+      part = MAC16_16(part,*x++,*y++);
+      /* HINT: If you had a 40-bit accumulator, you could shift only at the end */
+      sum = ADD32(sum,SHR32(part,6));
+   }
+   return sum;
+}
+#endif
 /** Compute power spectrum of a half-complex (packed) vector */
 static inline void power_spectrum(spx_word16_t *X, spx_word32_t *ps, int N)
 {
@@ -288,7 +305,7 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
 {
    int i,j;
    int N,M;
-   float Syy=0,See=0;
+   spx_word32_t Syy,See;
    float leak_estimate;
    spx_word16_t ss, ss_1;
    float adapt_rate=0;
@@ -396,7 +413,7 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
    
    if (!st->adapted)
    {
-      float Sxx;
+      spx_word32_t Sxx;
       Sxx = inner_prod(st->x+st->frame_size, st->x+st->frame_size, st->frame_size);
 
       /* We consider that the filter is adapted if the following is true*/
@@ -418,6 +435,7 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
       adapt_rate = 1.f/M;
       for (i=0;i<=st->frame_size;i++)
       {
+#ifdef FIXED_POINT
          float r;
          /* Compute frequency-domain adaptation mask */
          r = leak_estimate*st->Yf[i] / (1.f+st->Rf[i]);
@@ -425,6 +443,15 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
             r = .5;
          st->power_1[i] = FLOAT_DIV32(WEIGHT_SCALING*adapt_rate*r,ADD32(1,st->power[i]));
          /*printf ("%f ", st->power_1[i]);*/
+#else
+         float r, e;
+         /* Compute frequency-domain adaptation mask */
+         r = leak_estimate*st->Yf[i];
+         e = 1.f+st->Rf[i];
+         if (r>.5*e)
+            r = .5*e;
+         st->power_1[i] = adapt_rate*r/(e*(1+st->power[i]));
+#endif
       }
    } else {
       for (i=0;i<=st->frame_size;i++)
