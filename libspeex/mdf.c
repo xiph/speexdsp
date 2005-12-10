@@ -102,17 +102,6 @@ typedef struct {
 
 } SpeexEchoState;
 
-#if 0
-/** Compute inner product of two real vectors */
-static inline float inner_prod(spx_word16_t *x, spx_word16_t *y, int N)
-{
-   int i;
-   float ret=0;
-   for (i=0;i<N;i++)
-      ret += (1.f*x[i])*y[i];
-   return ret;
-}
-#else
 static inline spx_word32_t inner_prod(const spx_word16_t *x, const spx_word16_t *y, int len)
 {
    spx_word32_t sum=0;
@@ -129,7 +118,7 @@ static inline spx_word32_t inner_prod(const spx_word16_t *x, const spx_word16_t 
    }
    return sum;
 }
-#endif
+
 /** Compute power spectrum of a half-complex (packed) vector */
 static inline void power_spectrum(spx_word16_t *X, spx_word32_t *ps, int N)
 {
@@ -399,7 +388,7 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
          st->Yh[j] = .95*st->Yh[j] + .05*st->Yf[j];
 #endif
       }
-      alpha = .02*Syy / (1e4+See);
+      alpha = .02*Syy / (SHR(10000,6)+See);
       if (alpha > .02)
          alpha = .02;
       st->Pey = (1-alpha)*st->Pey + alpha*REALFLOAT(Pey);
@@ -422,7 +411,7 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
          st->adapted = 1;
 
       /* Temporary adaption rate if filter is not adapted correctly */
-      adapt_rate = .2f * Sxx / (1e4+See);
+      adapt_rate = .2f * Sxx / (SHR(10000,6)+See);
       if (adapt_rate>.2)
          adapt_rate = .2;
       adapt_rate /= M;
