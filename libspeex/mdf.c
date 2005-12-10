@@ -59,12 +59,10 @@
 #ifdef FIXED_POINT
 #define WEIGHT_SHIFT 11
 #define WEIGHT_SCALING 2048
-#define WEIGHT_SCALING_1 0.00048828f
-//#define WEIGHT_SCALING (100*16*128.f)
-//#define WEIGHT_SCALING_1 (.0625f*0.0078125f)
+//#define WEIGHT_SCALING_1 0.00048828f
 #else
 #define WEIGHT_SCALING 1.f
-#define WEIGHT_SCALING_1 1.f
+//#define WEIGHT_SCALING_1 1.f
 #define WEIGHT_SHIFT 0
 #endif
 
@@ -98,8 +96,8 @@ typedef struct {
    float Pyy;
    /*struct drft_lookup *fft_lookup;*/
    void *fft_table;
-
-
+   spx_word16_t memX, memD, memE;
+   spx_word16_t preemph;
 } SpeexEchoState;
 
 static inline spx_word32_t inner_prod(const spx_word16_t *x, const spx_word16_t *y, int len)
@@ -234,7 +232,8 @@ SpeexEchoState *speex_echo_state_init(int frame_size, int filter_length)
    {
       st->W[i] = st->PHI[i] = 0;
    }
-
+   st->memX=st->memD=st->memE=0;
+   st->preemph = QCONST16(.8,15);
    st->adapted = 0;
    st->Pey = st->Pyy = 0;
    return st;
@@ -315,10 +314,12 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
    for (i=0;i<st->frame_size;i++)
    {
       st->x[i] = st->x[i+st->frame_size];
-      st->x[i+st->frame_size] = echo[i];
-
+      st->x[i+st->frame_size] = SHL16(SUB16(echo[i], MULT16_16_Q15(st->preemph, st->memX)),1);
+      st->memX = echo[i];
+      
       st->d[i] = st->d[i+st->frame_size];
-      st->d[i+st->frame_size] = ref[i];
+      st->d[i+st->frame_size] = SHL16(SUB16(ref[i], MULT16_16_Q15(st->preemph, st->memD)),1);
+      st->memD = ref[i];
    }
 
    /* Shift memory: this could be optimized eventually*/
@@ -337,18 +338,21 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
    for (i=0;i<st->frame_size;i++)
    {
       spx_word32_t tmp_out;
-      tmp_out = SUB32(EXTEND32(ref[i]), EXTEND32(st->y[i+st->frame_size]));
+      tmp_out = SUB32(EXTEND32(st->d[i+st->frame_size]), EXTEND32(st->y[i+st->frame_size]));
       
+      //printf ("%d\n", st->preemph);
       st->e[i] = 0;
       /* Do we need saturation? */
       st->e[i+st->frame_size] = tmp_out;
-      
+      tmp_out = SHR32(tmp_out,1);
       /* Saturation */
       if (tmp_out>32767)
          tmp_out = 32767;
       else if (tmp_out<-32768)
          tmp_out = -32768;
+      tmp_out = ADD32(tmp_out, EXTEND32(MULT16_16_Q15(st->preemph, st->memE)));
       out[i] = tmp_out;
+      st->memE = tmp_out;
    }
    
    /* Compute a bunch of correlations */
@@ -381,16 +385,16 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
          Pey = FLOAT_ADD(Pey,FLOAT_MULT(Eh,Yh));
          Pyy = FLOAT_ADD(Pyy,FLOAT_MULT(Yh,Yh));
 #ifdef FIXED_POINT
-         st->Eh[j] = MAC16_32_Q15(MULT16_32_Q15(31130,st->Eh[j]), 1638, st->Rf[j]);
-         st->Yh[j] = MAC16_32_Q15(MULT16_32_Q15(31130,st->Yh[j]), 1638, st->Yf[j]);
+         st->Eh[j] = MAC16_32_Q15(MULT16_32_Q15(32113,st->Eh[j]), 655, st->Rf[j]);
+         st->Yh[j] = MAC16_32_Q15(MULT16_32_Q15(32113,st->Yh[j]), 655, st->Yf[j]);
 #else
-         st->Eh[j] = .95*st->Eh[j] + .05*st->Rf[j];
-         st->Yh[j] = .95*st->Yh[j] + .05*st->Yf[j];
+         st->Eh[j] = .98*st->Eh[j] + .02*st->Rf[j];
+         st->Yh[j] = .98*st->Yh[j] + .02*st->Yf[j];
 #endif
       }
-      alpha = .02*Syy / (SHR(10000,6)+See);
-      if (alpha > .02)
-         alpha = .02;
+      alpha = .05*Syy / (SHR(10000,6)+See);
+      if (alpha > .008)
+         alpha = .008;
       st->Pey = (1-alpha)*st->Pey + alpha*REALFLOAT(Pey);
       st->Pyy = (1-alpha)*st->Pyy + alpha*REALFLOAT(Pyy);
       if (st->Pey< .001*st->Pyy)
@@ -415,7 +419,7 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
       if (adapt_rate>.2)
          adapt_rate = .2;
       adapt_rate /= M;
-      
+
       /* How much have we adapted so far? */
       st->sum_adapt += adapt_rate;
    }
@@ -442,11 +446,11 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
             r = .5*e;
 #endif
          /*st->power_1[i] = adapt_rate*r/(e*(1+st->power[i]));*/
-         st->power_1[i] = FLOAT_SHL(FLOAT_DIV32_FLOAT(MULT16_32_Q15(M_1,r),FLOAT_MUL32U(e,st->power[i]+1)),WEIGHT_SHIFT);
+         st->power_1[i] = FLOAT_SHL(FLOAT_DIV32_FLOAT(MULT16_32_Q15(M_1,r),FLOAT_MUL32U(e,st->power[i]+100)),WEIGHT_SHIFT);
       }
    } else {
       for (i=0;i<=st->frame_size;i++)
-         st->power_1[i] = FLOAT_DIV32(WEIGHT_SCALING*adapt_rate,ADD32(1,st->power[i]));
+         st->power_1[i] = FLOAT_DIV32(WEIGHT_SCALING*adapt_rate,ADD32(100,st->power[i]));
    }
    /* Compute weight gradient */
    for (j=0;j<M;j++)
