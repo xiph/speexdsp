@@ -233,7 +233,7 @@ SpeexEchoState *speex_echo_state_init(int frame_size, int filter_length)
       st->W[i] = st->PHI[i] = 0;
    }
    st->memX=st->memD=st->memE=0;
-   st->preemph = QCONST16(.8,15);
+   st->preemph = QCONST16(.9,15);
    st->adapted = 0;
    st->Pey = st->Pyy = 0;
    return st;
@@ -298,6 +298,9 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
    float leak_estimate;
    spx_word16_t ss, ss_1;
    float adapt_rate=0;
+   spx_float_t Pey = FLOAT_ZERO, Pyy=FLOAT_ZERO;
+   float alpha;
+   float RER;
    
    N = st->window_size;
    M = st->M;
@@ -340,7 +343,6 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
       spx_word32_t tmp_out;
       tmp_out = SUB32(EXTEND32(st->d[i+st->frame_size]), EXTEND32(st->y[i+st->frame_size]));
       
-      //printf ("%d\n", st->preemph);
       st->e[i] = 0;
       /* Do we need saturation? */
       st->e[i+st->frame_size] = tmp_out;
@@ -374,54 +376,43 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
    for (j=0;j<=st->frame_size;j++)
       st->power[j] = MULT16_32_Q15(ss_1,st->power[j]) + 1 + MULT16_32_Q15(ss,st->Xf[j]);
 
+   for (j=st->frame_size;j>=0;j--)
    {
-      spx_float_t Pey = FLOAT_ZERO, Pyy=FLOAT_ZERO;
-      float alpha;
-      for (j=st->frame_size;j>=0;j--)
-      {
-         spx_float_t Eh, Yh;
-         Eh = PSEUDOFLOAT(st->Rf[j] - st->Eh[j]);
-         Yh = PSEUDOFLOAT(st->Yf[j] - st->Yh[j]);
-         Pey = FLOAT_ADD(Pey,FLOAT_MULT(Eh,Yh));
-         Pyy = FLOAT_ADD(Pyy,FLOAT_MULT(Yh,Yh));
+      spx_float_t Eh, Yh;
+      Eh = PSEUDOFLOAT(st->Rf[j] - st->Eh[j]);
+      Yh = PSEUDOFLOAT(st->Yf[j] - st->Yh[j]);
+      Pey = FLOAT_ADD(Pey,FLOAT_MULT(Eh,Yh));
+      Pyy = FLOAT_ADD(Pyy,FLOAT_MULT(Yh,Yh));
 #ifdef FIXED_POINT
-         st->Eh[j] = MAC16_32_Q15(MULT16_32_Q15(32113,st->Eh[j]), 655, st->Rf[j]);
-         st->Yh[j] = MAC16_32_Q15(MULT16_32_Q15(32113,st->Yh[j]), 655, st->Yf[j]);
+      st->Eh[j] = MAC16_32_Q15(MULT16_32_Q15(32113,st->Eh[j]), 655, st->Rf[j]);
+      st->Yh[j] = MAC16_32_Q15(MULT16_32_Q15(32113,st->Yh[j]), 655, st->Yf[j]);
 #else
-         st->Eh[j] = .98*st->Eh[j] + .02*st->Rf[j];
-         st->Yh[j] = .98*st->Yh[j] + .02*st->Yf[j];
+      st->Eh[j] = .98*st->Eh[j] + .02*st->Rf[j];
+      st->Yh[j] = .98*st->Yh[j] + .02*st->Yf[j];
 #endif
-      }
-      alpha = .05*Syy / (SHR(10000,6)+See);
-      if (alpha > .008)
-         alpha = .008;
-      st->Pey = (1-alpha)*st->Pey + alpha*REALFLOAT(Pey);
-      st->Pyy = (1-alpha)*st->Pyy + alpha*REALFLOAT(Pyy);
-      if (st->Pey< .001*st->Pyy)
-         st->Pey = .001*st->Pyy;
-      leak_estimate = st->Pey / (1+st->Pyy);
-      if (leak_estimate > 1)
-         leak_estimate = 1;
-      /*printf ("%f\n", leak_estimate);*/
    }
+   alpha = .05*Syy / (SHR(10000,6)+See);
+   if (alpha > .008)
+      alpha = .008;
+   st->Pey = (1-alpha)*st->Pey + alpha*REALFLOAT(Pey);
+   st->Pyy = (1-alpha)*st->Pyy + alpha*REALFLOAT(Pyy);
    
-   if (!st->adapted)
+   /* We don't really hope to get better than 33 dB attenuation anyway */
+   if (st->Pey< .001*st->Pyy)
+      st->Pey = .001*st->Pyy;
+   leak_estimate = st->Pey / (1+st->Pyy);
+   if (leak_estimate > 1)
+      leak_estimate = 1;
+   /*printf ("%f\n", leak_estimate);*/
+   
+   RER = 3*leak_estimate*Syy / (SHR(10000,6)+See);
+   if (RER > .5)
+      RER = .5;
+   
+   /* We consider that the filter has had minimal adaptation if the following is true*/
+   if (!st->adapted && st->sum_adapt > 1)
    {
-      spx_word32_t Sxx;
-      Sxx = inner_prod(st->x+st->frame_size, st->x+st->frame_size, st->frame_size);
-
-      /* We consider that the filter is adapted if the following is true*/
-      if (st->sum_adapt > 1)
-         st->adapted = 1;
-
-      /* Temporary adaption rate if filter is not adapted correctly */
-      adapt_rate = .2f * Sxx / (SHR(10000,6)+See);
-      if (adapt_rate>.2)
-         adapt_rate = .2;
-      adapt_rate /= M;
-
-      /* How much have we adapted so far? */
-      st->sum_adapt += adapt_rate;
+      st->adapted = 1;
    }
 
    if (st->adapted)
@@ -436,8 +427,8 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
       {
          spx_word32_t r, e;
          /* Compute frequency-domain adaptation mask */
-         r = leak_estimate*st->Yf[i];
-         e = st->Rf[i]+1;
+         r = leak_estimate*SHL32(st->Yf[i],3);
+         e = SHL32(st->Rf[i],3)+1;
 #ifdef FIXED_POINT
          if (r>SHR32(e,1))
             r = SHR32(e,1);
@@ -445,12 +436,26 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
          if (r>.5*e)
             r = .5*e;
 #endif
+         r = MULT16_32_Q15(QCONST16(.8,15),r) + MULT16_32_Q15(QCONST16(.2,15),(spx_word32_t)(RER*e));
          /*st->power_1[i] = adapt_rate*r/(e*(1+st->power[i]));*/
-         st->power_1[i] = FLOAT_SHL(FLOAT_DIV32_FLOAT(MULT16_32_Q15(M_1,r),FLOAT_MUL32U(e,st->power[i]+100)),WEIGHT_SHIFT);
+         st->power_1[i] = FLOAT_SHL(FLOAT_DIV32_FLOAT(MULT16_32_Q15(M_1,r),FLOAT_MUL32U(e,st->power[i]+10)),WEIGHT_SHIFT);
       }
    } else {
+      spx_word32_t Sxx;
+      
+      Sxx = inner_prod(st->x+st->frame_size, st->x+st->frame_size, st->frame_size);
+      /* Temporary adaption rate if filter is not adapted correctly */
+      adapt_rate = .15f * Sxx / (SHR(10000,6)+See);
+      if (adapt_rate>.25)
+         adapt_rate = .25;
+      adapt_rate /= M;
+      
       for (i=0;i<=st->frame_size;i++)
-         st->power_1[i] = FLOAT_DIV32(WEIGHT_SCALING*adapt_rate,ADD32(100,st->power[i]));
+         st->power_1[i] = FLOAT_DIV32(WEIGHT_SCALING*adapt_rate,ADD32(10,st->power[i]));
+
+
+      /* How much have we adapted so far? */
+      st->sum_adapt += adapt_rate;
    }
    /* Compute weight gradient */
    for (j=0;j<M;j++)
@@ -462,18 +467,12 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
    for (i=0;i<M*N;i++)
    {
       st->W[i] += st->PHI[i];
-      //printf ("%f ", st->PHI[i]);
    }
-   /*if (st->cancel_count==1100)
-      for (i=0;i<M*N;i++)
-   printf ("%f ", st->W[i]);*/
-   /*printf ("\n");*/
    
    /* AUMDF weight constraint */
    for (j=0;j<M;j++)
    {
       /* Remove the "if" to make this an MDF filter */
-      //if(1)
       if (j==M-1 || st->cancel_count%(M-1) == j)
       {
          spx_word16_t w[N];
