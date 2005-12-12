@@ -139,7 +139,7 @@ static inline void spectral_mul_accum(spx_word16_t *X, spx_word16_t *Y, spx_word
    {
       tmp1 = MAC16_16(tmp1, X[j*N],Y[j*N]);
    }
-   acc[0] = SHR32(tmp1,WEIGHT_SHIFT);
+   acc[0] = PSHR32(tmp1,WEIGHT_SHIFT);
    for (i=1;i<N-1;i+=2)
    {
       tmp1 = tmp2 = 0;
@@ -148,15 +148,15 @@ static inline void spectral_mul_accum(spx_word16_t *X, spx_word16_t *Y, spx_word
          tmp1 = SUB32(MAC16_16(tmp1, X[j*N+i],Y[j*N+i]), MULT16_16(X[j*N+i+1],Y[j*N+i+1]));
          tmp2 = MAC16_16(MAC16_16(tmp2, X[j*N+i+1],Y[j*N+i]), X[j*N+i], Y[j*N+i+1]);
       }
-      acc[i] = SHR32(tmp1,WEIGHT_SHIFT);
-      acc[i+1] = SHR32(tmp2,WEIGHT_SHIFT);
+      acc[i] = PSHR32(tmp1,WEIGHT_SHIFT);
+      acc[i+1] = PSHR32(tmp2,WEIGHT_SHIFT);
    }
    tmp1 = tmp2 = 0;
    for (j=0;j<M;j++)
    {
       tmp1 = MAC16_16(tmp1, X[(j+1)*N-1],Y[(j+1)*N-1]);
    }
-   acc[N-1] = SHR32(tmp1,WEIGHT_SHIFT);
+   acc[N-1] = PSHR32(tmp1,WEIGHT_SHIFT);
 }
 #else
 static inline void spectral_mul_accum(spx_word16_t *X, spx_word16_t *Y, spx_word16_t *acc, int N, int M)
