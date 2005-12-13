@@ -317,11 +317,11 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
    for (i=0;i<st->frame_size;i++)
    {
       st->x[i] = st->x[i+st->frame_size];
-      st->x[i+st->frame_size] = SHL16(SUB16(echo[i], MULT16_16_Q15(st->preemph, st->memX)),1);
+      st->x[i+st->frame_size] = SHL16(SUB16(echo[i], MULT16_16_P15(st->preemph, st->memX)),1);
       st->memX = echo[i];
       
       st->d[i] = st->d[i+st->frame_size];
-      st->d[i+st->frame_size] = SHL16(SUB16(ref[i], MULT16_16_Q15(st->preemph, st->memD)),1);
+      st->d[i+st->frame_size] = SHL16(SUB16(ref[i], MULT16_16_P15(st->preemph, st->memD)),1);
       st->memD = ref[i];
    }
 
@@ -346,13 +346,13 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
       st->e[i] = 0;
       /* Do we need saturation? */
       st->e[i+st->frame_size] = tmp_out;
-      tmp_out = SHR32(tmp_out,1);
+      tmp_out = PSHR32(tmp_out,1);
       /* Saturation */
       if (tmp_out>32767)
          tmp_out = 32767;
       else if (tmp_out<-32768)
          tmp_out = -32768;
-      tmp_out = ADD32(tmp_out, EXTEND32(MULT16_16_Q15(st->preemph, st->memE)));
+      tmp_out = ADD32(tmp_out, EXTEND32(MULT16_16_P15(st->preemph, st->memE)));
       out[i] = tmp_out;
       st->memE = tmp_out;
    }
