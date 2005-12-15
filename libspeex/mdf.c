@@ -41,7 +41,7 @@
 #define MDF_C
 
 #include "misc.h"
-//#include "speex/speex_echo.h"
+#include "speex/speex_echo.h"
 #include "smallft.h"
 #include "fftwrap.h"
 #include "pseudofloat.h"
@@ -59,15 +59,13 @@
 #ifdef FIXED_POINT
 #define WEIGHT_SHIFT 11
 #define WEIGHT_SCALING 2048
-//#define WEIGHT_SCALING_1 0.00048828f
 #else
 #define WEIGHT_SCALING 1.f
-//#define WEIGHT_SCALING_1 1.f
 #define WEIGHT_SHIFT 0
 #endif
 
 /** Speex echo cancellation state. */
-typedef struct {
+struct SpeexEchoState_ {
    int frame_size;           /**< Number of samples processed each time */
    int window_size;
    int M;
@@ -98,7 +96,7 @@ typedef struct {
    void *fft_table;
    spx_word16_t memX, memD, memE;
    spx_word16_t preemph;
-} SpeexEchoState;
+};
 
 static inline spx_word32_t inner_prod(const spx_word16_t *x, const spx_word16_t *y, int len)
 {
@@ -516,7 +514,7 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
          for (i=0;i<st->frame_size;i++)
             st->last_y[i] = st->last_y[st->frame_size+i];
          for (i=0;i<st->frame_size;i++)
-            st->last_y[st->frame_size+i] = st->y[st->frame_size+i];
+            st->last_y[st->frame_size+i] = out[i];
       } else {
          /* If filter isn't adapted yet, all we can do is take the echo signal directly */
          for (i=0;i<N;i++)
@@ -533,7 +531,7 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
       
       /* Estimate residual echo */
       for (i=0;i<=st->frame_size;i++)
-         Yout[i] = 2.f*leak_estimate*st->Yps[i];
+         Yout[i] = N*N*max(.2,3.f*leak_estimate)*st->Yps[i];
    }
 
 }
