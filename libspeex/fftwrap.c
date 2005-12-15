@@ -157,20 +157,34 @@ void spx_fft_destroy(void *table)
    speex_free(table);
 }
 
+#ifdef FIXED_POINT
+
+void spx_fft(void *table, spx_word16_t *in, spx_word16_t *out)
+{
+   int i;
+   int shift;
+   struct kiss_config *t = (struct kiss_config *)table;
+   shift = maximize_range(in, in, 32000, t->N);
+   kiss_fftr(t->forward, in, t->freq_data);
+   out[0] = t->freq_data[0].r;
+   for (i=1;i<t->N>>1;i++)
+   {
+      out[(i<<1)-1] = t->freq_data[i].r;
+      out[(i<<1)] = t->freq_data[i].i;
+   }
+   out[(i<<1)-1] = t->freq_data[i].r;
+   renorm_range(in, in, shift, t->N);
+   renorm_range(out, out, shift, t->N);
+}
+
+#else
+
 void spx_fft(void *table, spx_word16_t *in, spx_word16_t *out)
 {
    int i;
    float scale;
-#ifdef FIXED_POINT
-   int shift;
-#endif
    struct kiss_config *t = (struct kiss_config *)table;
-#ifdef FIXED_POINT
-   scale = 1;
-   shift = maximize_range(in, in, 32000, t->N);
-#else
    scale = 1./t->N;
-#endif
    kiss_fftr(t->forward, in, t->freq_data);
    out[0] = scale*t->freq_data[0].r;
    for (i=1;i<t->N>>1;i++)
@@ -179,11 +193,8 @@ void spx_fft(void *table, spx_word16_t *in, spx_word16_t *out)
       out[(i<<1)] = scale*t->freq_data[i].i;
    }
    out[(i<<1)-1] = scale*t->freq_data[i].r;
-#ifdef FIXED_POINT
-   renorm_range(in, in, shift, t->N);
-   renorm_range(out, out, shift, t->N);
-#endif
 }
+#endif
 
 void spx_ifft(void *table, spx_word16_t *in, spx_word16_t *out)
 {
