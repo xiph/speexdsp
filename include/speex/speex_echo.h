@@ -39,8 +39,9 @@ extern "C" {
 #endif
 
 /*struct drft_lookup;*/
-typedef SpeexEchoState;
+struct SpeexEchoState_;
 
+typedef struct SpeexEchoState_ SpeexEchoState;
 
 /** Creates a new echo canceller state */
 SpeexEchoState *speex_echo_state_init(int frame_size, int filter_length);
