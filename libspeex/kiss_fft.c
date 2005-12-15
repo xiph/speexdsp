@@ -33,8 +33,7 @@ static size_t ntmpbuf=0;
             nbuf = (size_t)(n); \
         } \
    }while(0)
-
-
+        
 static void kf_bfly2(
         kiss_fft_cpx * Fout,
         const size_t fstride,
@@ -46,11 +45,17 @@ static void kf_bfly2(
     kiss_fft_cpx * tw1 = st->twiddles;
     kiss_fft_cpx t;
     Fout2 = Fout + m;
-    do{
-        if (!st->inverse) {
-        C_FIXDIV(*Fout,2); C_FIXDIV(*Fout2,2);
-	}
+    if (!st->inverse) {
+       int i;
+       kiss_fft_cpx *x=Fout;
+       for (i=0;i<2*m;i++)
+       {
+          x[i].r = SHR(x[i].r,1);
+          x[i].i = SHR(x[i].i,1);
+       }
+    }
 
+    do{
         C_MUL (t,  *Fout2 , *tw1);
         tw1 += fstride;
         C_SUB( *Fout2 ,  *Fout , t );
@@ -85,34 +90,53 @@ static void kf_bfly4(
           x[i].i = PSHR(x[i].i,2);
        }
     }
-    do {
-        C_MUL(scratch[0],Fout[m] , *tw1 );
-        C_MUL(scratch[1],Fout[m2] , *tw2 );
-        C_MUL(scratch[2],Fout[m3] , *tw3 );
+    if (st->inverse)
+    {
+       do {
+          C_MUL(scratch[0],Fout[m] , *tw1 );
+          C_MUL(scratch[1],Fout[m2] , *tw2 );
+          C_MUL(scratch[2],Fout[m3] , *tw3 );
+          
+          C_SUB( scratch[5] , *Fout, scratch[1] );
+          C_ADDTO(*Fout, scratch[1]);
+          C_ADD( scratch[3] , scratch[0] , scratch[2] );
+          C_SUB( scratch[4] , scratch[0] , scratch[2] );
+          C_SUB( Fout[m2], *Fout, scratch[3] );
+          tw1 += fstride;
+          tw2 += fstride*2;
+          tw3 += fstride*3;
+          C_ADDTO( *Fout , scratch[3] );
 
-        C_SUB( scratch[5] , *Fout, scratch[1] );
-        C_ADDTO(*Fout, scratch[1]);
-        C_ADD( scratch[3] , scratch[0] , scratch[2] );
-        C_SUB( scratch[4] , scratch[0] , scratch[2] );
-        C_SUB( Fout[m2], *Fout, scratch[3] );
-        tw1 += fstride;
-        tw2 += fstride*2;
-        tw3 += fstride*3;
-        C_ADDTO( *Fout , scratch[3] );
-
-        if(st->inverse) {
-            Fout[m].r = scratch[5].r - scratch[4].i;
-            Fout[m].i = scratch[5].i + scratch[4].r;
-            Fout[m3].r = scratch[5].r + scratch[4].i;
-            Fout[m3].i = scratch[5].i - scratch[4].r;
-        }else{
-            Fout[m].r = scratch[5].r + scratch[4].i;
-            Fout[m].i = scratch[5].i - scratch[4].r;
-            Fout[m3].r = scratch[5].r - scratch[4].i;
-            Fout[m3].i = scratch[5].i + scratch[4].r;
-        }
-        ++Fout;
-    }while(--k);
+          Fout[m].r = scratch[5].r - scratch[4].i;
+          Fout[m].i = scratch[5].i + scratch[4].r;
+          Fout[m3].r = scratch[5].r + scratch[4].i;
+          Fout[m3].i = scratch[5].i - scratch[4].r;
+          ++Fout;
+       } while(--k);
+    } else
+    {
+       do {
+          C_MUL(scratch[0],Fout[m] , *tw1 );
+          C_MUL(scratch[1],Fout[m2] , *tw2 );
+          C_MUL(scratch[2],Fout[m3] , *tw3 );
+          
+          C_SUB( scratch[5] , *Fout, scratch[1] );
+          C_ADDTO(*Fout, scratch[1]);
+          C_ADD( scratch[3] , scratch[0] , scratch[2] );
+          C_SUB( scratch[4] , scratch[0] , scratch[2] );
+          C_SUB( Fout[m2], *Fout, scratch[3] );
+          tw1 += fstride;
+          tw2 += fstride*2;
+          tw3 += fstride*3;
+          C_ADDTO( *Fout , scratch[3] );
+          
+          Fout[m].r = scratch[5].r + scratch[4].i;
+          Fout[m].i = scratch[5].i - scratch[4].r;
+          Fout[m3].r = scratch[5].r - scratch[4].i;
+          Fout[m3].i = scratch[5].i + scratch[4].r;
+          ++Fout;
+       }while(--k);
+    }
 }
 
 static void kf_bfly3(
