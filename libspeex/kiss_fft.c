@@ -14,6 +14,8 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 
 
 #include "_kiss_fft_guts.h"
+#include "misc.h"
+
 /* The guts header contains all the multiplication and addition macros that are defined for
  fixed or floating point complex numbers.  It also delares the kf_ internal functions.
  */
@@ -73,11 +75,17 @@ static void kf_bfly4(
 
     tw3 = tw2 = tw1 = st->twiddles;
 
+    if (!st->inverse) {
+       int i;
+       kiss_fft_cpx *x=Fout;
+       for (i=0;i<4*m;i++)
+       {
+          //C_FIXDIV(x[i],4);
+          x[i].r = PSHR(x[i].r,2);
+          x[i].i = PSHR(x[i].i,2);
+       }
+    }
     do {
-        if (!st->inverse) {
-        C_FIXDIV(*Fout,4); C_FIXDIV(Fout[m],4); C_FIXDIV(Fout[m2],4); C_FIXDIV(Fout[m3],4);
-	}
-
         C_MUL(scratch[0],Fout[m] , *tw1 );
         C_MUL(scratch[1],Fout[m2] , *tw2 );
         C_MUL(scratch[2],Fout[m3] , *tw3 );
