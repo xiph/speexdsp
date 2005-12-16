@@ -340,6 +340,34 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
    
    spx_ifft(st->fft_table, st->Y, st->y);
 
+#if 0
+   spectral_mul_accum(st->X, st->PHI, st->Y, N, M);   
+   spx_ifft(st->fft_table, st->Y, st->e);
+#endif
+
+   /* Compute error signal (for the output with de-emphasis) */ 
+   for (i=0;i<st->frame_size;i++)
+   {
+      spx_word32_t tmp_out;
+#if 0
+      spx_word16_t y = st->window[i+st->frame_size]*st->e[i+st->frame_size] + st->window[i]*st->y[i+st->frame_size];
+      tmp_out = SUB32(EXTEND32(st->d[i+st->frame_size]), EXTEND32(y));
+#else
+      tmp_out = SUB32(EXTEND32(st->d[i+st->frame_size]), EXTEND32(st->y[i+st->frame_size]));
+#endif
+
+      tmp_out = PSHR32(tmp_out,1);
+      /* Saturation */
+      if (tmp_out>32767)
+         tmp_out = 32767;
+      else if (tmp_out<-32768)
+         tmp_out = -32768;
+      tmp_out = ADD32(tmp_out, EXTEND32(MULT16_16_P15(st->preemph, st->memE)));
+      out[i] = tmp_out;
+      st->memE = tmp_out;
+   }
+
+   /* Compute error signal (filter update version) */ 
    for (i=0;i<st->frame_size;i++)
    {
       st->e[i] = 0;
@@ -456,6 +484,8 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
    for (i=0;i<M*N;i++)
    {
       st->W[i] += st->PHI[i];
+      /* Old value of W in PHI */
+      st->PHI[i] = st->W[i] - st->PHI[i];
    }
    
    /* AUMDF weight constraint */
@@ -496,32 +526,6 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
       }
    }
 
-#if 1
-   spectral_mul_accum(st->X, st->W, st->Y, N, M);   
-   spx_ifft(st->fft_table, st->Y, st->e);
-   
-   /* Compute error signal (signal with echo removed) */ 
-   for (i=0;i<st->frame_size;i++)
-   {
-      spx_word32_t tmp_out;
-#if 0
-      spx_word16_t y = st->window[i]*st->e[i+st->frame_size] + st->window[i+st->frame_size]*st->y[i+st->frame_size];
-      tmp_out = SUB32(EXTEND32(st->d[i+st->frame_size]), EXTEND32(y));
-#else
-      tmp_out = SUB32(EXTEND32(st->d[i+st->frame_size]), EXTEND32(st->e[i+st->frame_size]));
-#endif
-
-      tmp_out = PSHR32(tmp_out,1);
-      /* Saturation */
-      if (tmp_out>32767)
-         tmp_out = 32767;
-      else if (tmp_out<-32768)
-         tmp_out = -32768;
-      tmp_out = ADD32(tmp_out, EXTEND32(MULT16_16_P15(st->preemph, st->memE)));
-      out[i] = tmp_out;
-      st->memE = tmp_out;
-   }
-#endif
 
    /* Compute spectrum of estimated echo for use in an echo post-filter (if necessary)*/
    if (Yout)
