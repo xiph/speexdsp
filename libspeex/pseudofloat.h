@@ -61,13 +61,13 @@ static inline spx_float_t PSEUDOFLOAT(float x)
       return (spx_float_t) {0,0};
    while (x>32767)
    {
-      //x >>= 1;
+      /*x >>= 1;*/
       x *= .5;
       e++;
    }
    while (x<16383)
    {
-      //x <<= 1;
+      /*x <<= 1;*/
       x *= 2;
       e--;
    }
@@ -103,7 +103,7 @@ static inline spx_float_t FLOAT_ADD(spx_float_t a, spx_float_t b)
          r.e-=1;
       }
    }
-   //printf ("%f + %f = %f\n", REALFLOAT(a), REALFLOAT(b), REALFLOAT(r));
+   /*printf ("%f + %f = %f\n", REALFLOAT(a), REALFLOAT(b), REALFLOAT(r));*/
    return r;
 }
 
@@ -124,7 +124,7 @@ static inline spx_float_t FLOAT_MULT(spx_float_t a, spx_float_t b)
          r.e-=1;
       }
    }
-   //printf ("%f * %f = %f\n", REALFLOAT(a), REALFLOAT(b), REALFLOAT(r));
+   /*printf ("%f * %f = %f\n", REALFLOAT(a), REALFLOAT(b), REALFLOAT(r));*/
    return r;   
 }
 
