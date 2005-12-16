@@ -50,9 +50,6 @@
 #define M_PI 3.14159265358979323846
 #endif
 
-#undef BETA
-#define BETA .65
-
 #define min(a,b) ((a)<(b) ? (a) : (b))
 #define max(a,b) ((a)>(b) ? (a) : (b))
 
@@ -62,6 +59,20 @@
 #else
 #define WEIGHT_SCALING 1.f
 #define WEIGHT_SHIFT 0
+#endif
+
+#ifdef FIXED_POINT
+static const spx_float_t MAX_ALPHA = {16777, -21};
+static const spx_float_t ALPHA0 = {26214, -19};
+static const spx_float_t MIN_LEAK = {16777, -24};
+static const spx_float_t SPEC_AVERAGE = {20972, -20};
+static const spx_float_t SPEC_AVERAGE_1 = {32113,-15};
+#else
+static const spx_float_t MAX_ALPHA = .008;
+static const spx_float_t ALPHA0 = .05;
+static const spx_float_t MIN_LEAK = .001;
+static const spx_float_t SPEC_AVERAGE = .02;
+static const spx_float_t SPEC_AVERAGE_1 = .98;
 #endif
 
 /** Speex echo cancellation state. */
