@@ -291,10 +291,13 @@ static inline spx_float_t FLOAT_DIV32(spx_word32_t a, spx_word32_t b)
 #define FLOAT_MUL32(a,b) ((a)*(b))
 #define FLOAT_DIV32(a,b) ((a)/(b))
 #define FLOAT_ADD(a,b) ((a)+(b))
+#define FLOAT_SUB(a,b) ((a)-(b))
 #define REALFLOAT(x) (x)
 #define FLOAT_DIV32_FLOAT(a,b) ((a)/(b))
 #define FLOAT_MUL32U(a,b) ((a)*(b))
 #define FLOAT_SHL(a,b) (a)
+#define FLOAT_LT(a,b) ((a)<(b))
+#define FLOAT_GT(a,b) ((a)>(b))
 
 #endif
 

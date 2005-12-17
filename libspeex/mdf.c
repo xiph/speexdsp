@@ -431,6 +431,8 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
    st->Pey = FLOAT_ADD(FLOAT_MULT(alpha_1,st->Pey) , FLOAT_MULT(alpha,Pey));
    st->Pyy = FLOAT_ADD(FLOAT_MULT(alpha_1,st->Pyy) , FLOAT_MULT(alpha,Pyy));
    /* We don't really hope to get better than 33 dB attenuation anyway */
+   if (FLOAT_LT(st->Pyy, FLOAT_ONE))
+      st->Pyy = FLOAT_ONE;
    if (FLOAT_LT(st->Pey, FLOAT_MULT(MIN_LEAK,st->Pyy)))
       st->Pey = FLOAT_MULT(MIN_LEAK,st->Pyy);
    if (FLOAT_GT(st->Pey, st->Pyy))
