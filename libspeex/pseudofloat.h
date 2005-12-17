@@ -139,9 +139,7 @@ static inline int FLOAT_LT(spx_float_t a, spx_float_t b)
    if (a.m==0)
       return b.m<0;
    else if (b.m==0)
-      return a.m>0;
-   spx_float_t r = (a).e > (b).e ? (spx_float_t) {((a).m>>1) - ((b).m>>MIN(15,(a).e-(b).e+1)),(a).e+1} : (spx_float_t) {((b).m>>1) - ((a).m>>MIN(15,(b).e-(a).e+1)),(b).e+1};
-   
+      return a.m>0;   
    if ((a).e > (b).e)
       return ((a).m>>1) < ((b).m>>MIN(15,(a).e-(b).e+1));
    else 
@@ -280,6 +278,20 @@ static inline spx_float_t FLOAT_DIV32(spx_word32_t a, spx_word32_t b)
       e++;
    }
    return (spx_float_t) {DIV32_16(a,b),e};
+}
+
+static inline spx_float_t FLOAT_DIVU(spx_float_t a, spx_float_t b)
+{
+   int e=0;
+   spx_int32_t num;
+   num = a.m;
+   while (a.m >= b.m)
+   {
+      e++;
+      a.m >>= 1;
+   }
+   num = num << (15-e);
+   return (spx_float_t) {DIV32_16(num,b.m),a.e-b.e-15+e};
 }
 
 #else

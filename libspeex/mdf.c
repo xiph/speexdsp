@@ -437,7 +437,7 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
       st->Pey = FLOAT_MULT(MIN_LEAK,st->Pyy);
    if (FLOAT_GT(st->Pey, st->Pyy))
       st->Pey = st->Pyy;
-   leak_estimate = REALFLOAT(st->Pey) / (1+REALFLOAT(st->Pyy));
+   leak_estimate = REALFLOAT(FLOAT_DIVU(st->Pey, st->Pyy));
 #else
    alpha = .05*Syy / (SHR(10000,6)+See);
    if (alpha > .008)
