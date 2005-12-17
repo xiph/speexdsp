@@ -248,8 +248,7 @@ SpeexEchoState *speex_echo_state_init(int frame_size, int filter_length)
    st->memX=st->memD=st->memE=0;
    st->preemph = QCONST16(.9,15);
    st->adapted = 0;
-   st->Pey = FLOAT_ZERO;
-   st->Pyy = FLOAT_ZERO;
+   st->Pey = st->Pyy = FLOAT_ONE;
    return st;
 }
 
@@ -270,7 +269,7 @@ void speex_echo_state_reset(SpeexEchoState *st)
    
    st->adapted = 0;
    st->sum_adapt = 0;
-   st->Pey = st->Pyy = FLOAT_ZERO;
+   st->Pey = st->Pyy = FLOAT_ONE;
 
 }
 
@@ -313,7 +312,7 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
    float leak_estimate;
    spx_word16_t ss, ss_1;
    float adapt_rate=0;
-   spx_float_t Pey = FLOAT_ZERO, Pyy=FLOAT_ZERO;
+   spx_float_t Pey = FLOAT_ONE, Pyy=FLOAT_ONE;
    spx_float_t alpha;
    float RER;
    
@@ -434,6 +433,8 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
    /* We don't really hope to get better than 33 dB attenuation anyway */
    if (FLOAT_LT(st->Pey, FLOAT_MULT(MIN_LEAK,st->Pyy)))
       st->Pey = FLOAT_MULT(MIN_LEAK,st->Pyy);
+   if (FLOAT_GT(st->Pey, st->Pyy))
+      st->Pey = st->Pyy;
    leak_estimate = REALFLOAT(st->Pey) / (1+REALFLOAT(st->Pyy));
 #else
    alpha = .05*Syy / (SHR(10000,6)+See);
@@ -445,10 +446,10 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
    if (st->Pey< .001*st->Pyy)
       st->Pey = .001*st->Pyy;
    leak_estimate = st->Pey / (1+st->Pyy);
-#endif
-
    if (leak_estimate > 1)
       leak_estimate = 1;
+#endif
+
    /*printf ("%f\n", leak_estimate);*/
    
    RER = 3*leak_estimate*Syy / (SHR(10000,6)+See);
