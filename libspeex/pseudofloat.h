@@ -286,6 +286,8 @@ static inline spx_float_t FLOAT_DIV32(spx_word32_t a, spx_word32_t b)
 
 #define spx_float_t float
 #define FLOAT_ZERO 0.f
+#define FLOAT_ONE 1.f
+#define FLOAT_HALF 0.5f
 #define PSEUDOFLOAT(x) (x)
 #define FLOAT_MULT(a,b) ((a)*(b))
 #define FLOAT_MUL32(a,b) ((a)*(b))
