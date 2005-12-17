@@ -149,6 +149,11 @@ static inline int FLOAT_LT(spx_float_t a, spx_float_t b)
 
 }
 
+static inline int FLOAT_GT(spx_float_t a, spx_float_t b)
+{
+   return FLOAT_LT(b,a);
+}
+
 static inline spx_float_t FLOAT_MULT(spx_float_t a, spx_float_t b)
 {
    spx_float_t r = (spx_float_t) {(spx_int16_t)((spx_int32_t)(a).m*(b).m>>15), (a).e+(b).e+15};
