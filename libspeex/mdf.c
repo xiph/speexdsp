@@ -62,17 +62,17 @@
 #endif
 
 #ifdef FIXED_POINT
-static const spx_float_t MAX_ALPHA = {16777, -21};
-static const spx_float_t ALPHA0 = {26214, -19};
-static const spx_float_t MIN_LEAK = {16777, -24};
-static const spx_float_t SPEC_AVERAGE = {20972, -20};
-static const spx_float_t SPEC_AVERAGE_1 = {32113,-15};
+static const spx_float_t MAX_ALPHA = ((spx_float_t){16777, -21});
+static const spx_float_t ALPHA0 = ((spx_float_t){26214, -19});
+static const spx_float_t MIN_LEAK = ((spx_float_t){16777, -24});
+static const spx_float_t SPEC_AVERAGE = ((spx_float_t){20972, -20});
+static const spx_float_t SPEC_AVERAGE_1 = ((spx_float_t){32113,-15});
 #else
-static const spx_float_t MAX_ALPHA = .008;
-static const spx_float_t ALPHA0 = .05;
-static const spx_float_t MIN_LEAK = .001;
-static const spx_float_t SPEC_AVERAGE = .02;
-static const spx_float_t SPEC_AVERAGE_1 = .98;
+static const spx_float_t MAX_ALPHA = .008f;
+static const spx_float_t ALPHA0 = .05f;
+static const spx_float_t MIN_LEAK = .001f;
+static const spx_float_t SPEC_AVERAGE = .02f;
+static const spx_float_t SPEC_AVERAGE_1 = .98f;
 #endif
 
 /** Speex echo cancellation state. */
@@ -101,8 +101,8 @@ struct SpeexEchoState_ {
    spx_word32_t *Xf;
    spx_word32_t *Eh;
    spx_word32_t *Yh;
-   float Pey;
-   float Pyy;
+   spx_float_t Pey;
+   spx_float_t Pyy;
    float *window;
    /*struct drft_lookup *fft_lookup;*/
    void *fft_table;
@@ -248,7 +248,8 @@ SpeexEchoState *speex_echo_state_init(int frame_size, int filter_length)
    st->memX=st->memD=st->memE=0;
    st->preemph = QCONST16(.9,15);
    st->adapted = 0;
-   st->Pey = st->Pyy = 0;
+   st->Pey = FLOAT_ZERO;
+   st->Pyy = FLOAT_ZERO;
    return st;
 }
 
@@ -269,7 +270,7 @@ void speex_echo_state_reset(SpeexEchoState *st)
    
    st->adapted = 0;
    st->sum_adapt = 0;
-   st->Pey = st->Pyy = 0;
+   st->Pey = st->Pyy = FLOAT_ZERO;
 
 }
 
@@ -313,7 +314,7 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
    spx_word16_t ss, ss_1;
    float adapt_rate=0;
    spx_float_t Pey = FLOAT_ZERO, Pyy=FLOAT_ZERO;
-   float alpha;
+   spx_float_t alpha;
    float RER;
    
    N = st->window_size;
@@ -419,16 +420,33 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
       st->Yh[j] = .98*st->Yh[j] + .02*st->Yf[j];
 #endif
    }
+   
+#ifdef FIXED_POINT
+   spx_word32_t tmp;
+   tmp = MULT16_32_Q15(QCONST16(.05,15),Syy);
+   if (tmp > MULT16_32_Q15(QCONST16(.008,15),See))
+      tmp = MULT16_32_Q15(QCONST16(.008,15),See);
+   alpha = FLOAT_DIV32(tmp, SHR(10000,6)+See);
+   spx_float_t alpha_1 = FLOAT_SUB(FLOAT_ONE, alpha);
+   /*printf ("%f %f\n", REALFLOAT(alpha), REALFLOAT(alpha_1));*/
+   st->Pey = FLOAT_ADD(FLOAT_MULT(alpha_1,st->Pey) , FLOAT_MULT(alpha,Pey));
+   st->Pyy = FLOAT_ADD(FLOAT_MULT(alpha_1,st->Pyy) , FLOAT_MULT(alpha,Pyy));
+   /* We don't really hope to get better than 33 dB attenuation anyway */
+   if (FLOAT_LT(st->Pey, FLOAT_MULT(MIN_LEAK,st->Pyy)))
+      st->Pey = FLOAT_MULT(MIN_LEAK,st->Pyy);
+   leak_estimate = REALFLOAT(st->Pey) / (1+REALFLOAT(st->Pyy));
+#else
    alpha = .05*Syy / (SHR(10000,6)+See);
    if (alpha > .008)
       alpha = .008;
    st->Pey = (1-alpha)*st->Pey + alpha*REALFLOAT(Pey);
    st->Pyy = (1-alpha)*st->Pyy + alpha*REALFLOAT(Pyy);
-   
    /* We don't really hope to get better than 33 dB attenuation anyway */
    if (st->Pey< .001*st->Pyy)
       st->Pey = .001*st->Pyy;
    leak_estimate = st->Pey / (1+st->Pyy);
+#endif
+
    if (leak_estimate > 1)
       leak_estimate = 1;
    /*printf ("%f\n", leak_estimate);*/

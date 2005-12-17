@@ -45,7 +45,9 @@ typedef struct {
    spx_int16_t e;
 } spx_float_t;
 
-#define FLOAT_ZERO {0,0}
+#define FLOAT_ZERO ((spx_float_t){0,0})
+#define FLOAT_ONE ((spx_float_t){16384,-14})
+#define FLOAT_HALF ((spx_float_t){16384,-15})
 
 #define MIN(a,b) ((a)<(b)?(a):(b))
 static inline spx_float_t PSEUDOFLOAT(float x)
@@ -105,6 +107,46 @@ static inline spx_float_t FLOAT_ADD(spx_float_t a, spx_float_t b)
    }
    /*printf ("%f + %f = %f\n", REALFLOAT(a), REALFLOAT(b), REALFLOAT(r));*/
    return r;
+}
+
+static inline spx_float_t FLOAT_SUB(spx_float_t a, spx_float_t b)
+{
+   if (a.m==0)
+      return b;
+   else if (b.m==0)
+      return a;
+   spx_float_t r = (a).e > (b).e ? (spx_float_t) {((a).m>>1) - ((b).m>>MIN(15,(a).e-(b).e+1)),(a).e+1} : (spx_float_t) {((a).m>>MIN(15,(b).e-(a).e+1)) - ((b).m>>1) ,(b).e+1};
+   if (r.m>0)
+   {
+      if (r.m<16384)
+      {
+         r.m<<=1;
+         r.e-=1;
+      }
+   } else {
+      if (r.m>-16384)
+      {
+         r.m<<=1;
+         r.e-=1;
+      }
+   }
+   /*printf ("%f + %f = %f\n", REALFLOAT(a), REALFLOAT(b), REALFLOAT(r));*/
+   return r;
+}
+
+static inline int FLOAT_LT(spx_float_t a, spx_float_t b)
+{
+   if (a.m==0)
+      return b.m<0;
+   else if (b.m==0)
+      return a.m>0;
+   spx_float_t r = (a).e > (b).e ? (spx_float_t) {((a).m>>1) - ((b).m>>MIN(15,(a).e-(b).e+1)),(a).e+1} : (spx_float_t) {((b).m>>1) - ((a).m>>MIN(15,(b).e-(a).e+1)),(b).e+1};
+   
+   if ((a).e > (b).e)
+      return ((a).m>>1) < ((b).m>>MIN(15,(a).e-(b).e+1));
+   else 
+      return ((b).m>>1) > ((a).m>>MIN(15,(b).e-(a).e+1));
+
 }
 
 static inline spx_float_t FLOAT_MULT(spx_float_t a, spx_float_t b)
