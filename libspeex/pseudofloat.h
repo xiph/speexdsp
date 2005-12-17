@@ -312,6 +312,7 @@ static inline spx_float_t FLOAT_DIVU(spx_float_t a, spx_float_t b)
 #define FLOAT_SHL(a,b) (a)
 #define FLOAT_LT(a,b) ((a)<(b))
 #define FLOAT_GT(a,b) ((a)>(b))
+#define FLOAT_DIVU(a,b) ((a)/(b))
 
 #endif
 
