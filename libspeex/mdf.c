@@ -487,8 +487,13 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
       /* Temporary adaption rate if filter is not adapted correctly */
 
       tmp32 = MULT16_32_Q15(QCONST16(.15f, 15), Sxx);
+#ifdef FIXED_POINT
       if (Sxx > SHR32(See,2))
          Sxx = SHR32(See,2);
+#else
+      if (Sxx > .25See)
+         Sxx = .25*See;      
+#endif
       adapt_rate = FLOAT_EXTRACT16(FLOAT_SHL(FLOAT_DIV32(MULT16_32_Q15(M_1,Sxx), See),15));
       
       for (i=0;i<=st->frame_size;i++)
