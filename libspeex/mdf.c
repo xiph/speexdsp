@@ -495,7 +495,7 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
       if (Sxx > SHR32(See,2))
          Sxx = SHR32(See,2);
 #else
-      if (Sxx > .25See)
+      if (Sxx > .25*See)
          Sxx = .25*See;      
 #endif
       adapt_rate = FLOAT_EXTRACT16(FLOAT_SHL(FLOAT_DIV32(MULT16_32_Q15(M_1,Sxx), See),15));
