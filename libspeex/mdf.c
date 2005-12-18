@@ -82,7 +82,7 @@ struct SpeexEchoState_ {
    int M;
    int cancel_count;
    int adapted;
-   float sum_adapt;
+   spx_word32_t sum_adapt;
    spx_word16_t *e;
    spx_word16_t *x;
    spx_word16_t *X;
@@ -311,10 +311,11 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
    spx_word32_t Syy,See;
    spx_word16_t leak_estimate;
    spx_word16_t ss, ss_1;
-   float adapt_rate=0;
    spx_float_t Pey = FLOAT_ONE, Pyy=FLOAT_ONE;
    spx_float_t alpha;
    float RER;
+   spx_word32_t tmp32;
+   spx_word16_t M_1;
    
    N = st->window_size;
    M = st->M;
@@ -322,9 +323,11 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
 #ifdef FIXED_POINT
    ss=DIV32_16(11469,M);
    ss_1 = SUB16(32767,ss);
+   M_1 = DIV32_16(32767,M);
 #else
    ss=.35/M;
    ss_1 = 1-ss;
+   M_1 = 1.f/M;
 #endif
 
    /* Copy input data to buffer */
@@ -387,6 +390,7 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
 
    /* Compute a bunch of correlations */
    See = inner_prod(st->e+st->frame_size, st->e+st->frame_size, st->frame_size);
+   See = ADD32(See, SHR32(10000,6));
    Syy = inner_prod(st->y+st->frame_size, st->y+st->frame_size, st->frame_size);
    
    /* Convert error to frequency domain */
@@ -404,6 +408,7 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
    for (j=0;j<=st->frame_size;j++)
       st->power[j] = MULT16_32_Q15(ss_1,st->power[j]) + 1 + MULT16_32_Q15(ss,st->Xf[j]);
 
+   /* Compute filtered spectra and (cross-)correlations */
    for (j=st->frame_size;j>=0;j--)
    {
       spx_float_t Eh, Yh;
@@ -420,22 +425,23 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
 #endif
    }
    
-   spx_word32_t tmp;
-   tmp = MULT16_32_Q15(QCONST16(.05,15),Syy);
-   if (tmp > MULT16_32_Q15(QCONST16(.008,15),See))
-      tmp = MULT16_32_Q15(QCONST16(.008,15),See);
-   alpha = FLOAT_DIV32(tmp, SHR(10000,6)+See);
+   /* Compute correlation updatete rate */
+   tmp32 = MULT16_32_Q15(QCONST16(.05,15),Syy);
+   if (tmp32 > MULT16_32_Q15(QCONST16(.008,15),See))
+      tmp32 = MULT16_32_Q15(QCONST16(.008,15),See);
+   alpha = FLOAT_DIV32(tmp32, See);
    spx_float_t alpha_1 = FLOAT_SUB(FLOAT_ONE, alpha);
-   /*printf ("%f %f\n", REALFLOAT(alpha), REALFLOAT(alpha_1));*/
+   /* Update correlations (recursive average) */
    st->Pey = FLOAT_ADD(FLOAT_MULT(alpha_1,st->Pey) , FLOAT_MULT(alpha,Pey));
    st->Pyy = FLOAT_ADD(FLOAT_MULT(alpha_1,st->Pyy) , FLOAT_MULT(alpha,Pyy));
-   /* We don't really hope to get better than 33 dB attenuation anyway */
    if (FLOAT_LT(st->Pyy, FLOAT_ONE))
       st->Pyy = FLOAT_ONE;
+   /* We don't really hope to get better than 33 dB (MIN_LEAK-3dB) attenuation anyway */
    if (FLOAT_LT(st->Pey, FLOAT_MULT(MIN_LEAK,st->Pyy)))
       st->Pey = FLOAT_MULT(MIN_LEAK,st->Pyy);
    if (FLOAT_GT(st->Pey, st->Pyy))
       st->Pey = st->Pyy;
+   /* leak_estimate is the limear regression result */
    leak_estimate = FLOAT_EXTRACT16(FLOAT_SHL(FLOAT_DIVU(st->Pey, st->Pyy),14));
    if (leak_estimate > 16383)
       leak_estimate = 32767;
@@ -444,24 +450,18 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
 
    /*printf ("%f\n", leak_estimate);*/
    
-   RER = 3.*MULT16_32_Q15(leak_estimate,Syy) / (SHR(10000,6)+See);
+   RER = 3.*MULT16_32_Q15(leak_estimate,Syy) / See;
    if (RER > .5)
       RER = .5;
    
    /* We consider that the filter has had minimal adaptation if the following is true*/
-   if (!st->adapted && st->sum_adapt > 1)
+   if (!st->adapted && st->sum_adapt > QCONST32(1,15))
    {
       st->adapted = 1;
    }
 
    if (st->adapted)
    {
-      spx_word16_t M_1;
-#ifdef FIXED_POINT
-      M_1 = DIV32_16(32767,M);
-#else
-      M_1 = 1.f/M;
-#endif
       for (i=0;i<=st->frame_size;i++)
       {
          spx_word32_t r, e;
@@ -481,20 +481,22 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
       }
    } else {
       spx_word32_t Sxx;
-      
+      spx_word16_t adapt_rate=0;
+
       Sxx = inner_prod(st->x+st->frame_size, st->x+st->frame_size, st->frame_size);
       /* Temporary adaption rate if filter is not adapted correctly */
-      adapt_rate = .15f * Sxx / (SHR(10000,6)+See);
-      if (adapt_rate>.25)
-         adapt_rate = .25;
-      adapt_rate /= M;
+
+      tmp32 = MULT16_32_Q15(QCONST16(.15f, 15), Sxx);
+      if (Sxx > SHR32(See,2))
+         Sxx = SHR32(See,2);
+      adapt_rate = FLOAT_EXTRACT16(FLOAT_SHL(FLOAT_DIV32(MULT16_32_Q15(M_1,Sxx), See),15));
       
       for (i=0;i<=st->frame_size;i++)
-         st->power_1[i] = FLOAT_DIV32(WEIGHT_SCALING*adapt_rate,ADD32(10,st->power[i]));
+         st->power_1[i] = FLOAT_SHL(FLOAT_DIV32(EXTEND32(adapt_rate),ADD32(st->power[i],10)),WEIGHT_SHIFT-15);
 
 
       /* How much have we adapted so far? */
-      st->sum_adapt += adapt_rate;
+      st->sum_adapt = ADD32(st->sum_adapt,adapt_rate);
    }
    /* Compute weight gradient */
    for (j=0;j<M;j++)
