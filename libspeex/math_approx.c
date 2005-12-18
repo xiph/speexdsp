@@ -151,6 +151,10 @@ spx_word16_t spx_cos(spx_word16_t x)
 
 #else
 
+#ifndef M_PI
+#define M_PI           3.14159265358979323846  /* pi */
+#endif
+
 #define C1 0.9999932946f
 #define C2 -0.4999124376f
 #define C3 0.0414877472f
