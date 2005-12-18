@@ -309,7 +309,7 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
    int i,j;
    int N,M;
    spx_word32_t Syy,See;
-   float leak_estimate;
+   spx_word16_t leak_estimate;
    spx_word16_t ss, ss_1;
    float adapt_rate=0;
    spx_float_t Pey = FLOAT_ONE, Pyy=FLOAT_ONE;
@@ -420,7 +420,6 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
 #endif
    }
    
-#if 1
    spx_word32_t tmp;
    tmp = MULT16_32_Q15(QCONST16(.05,15),Syy);
    if (tmp > MULT16_32_Q15(QCONST16(.008,15),See))
@@ -437,24 +436,15 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
       st->Pey = FLOAT_MULT(MIN_LEAK,st->Pyy);
    if (FLOAT_GT(st->Pey, st->Pyy))
       st->Pey = st->Pyy;
-   leak_estimate = REALFLOAT(FLOAT_DIVU(st->Pey, st->Pyy));
-#else
-   alpha = .05*Syy / (SHR(10000,6)+See);
-   if (alpha > .008)
-      alpha = .008;
-   st->Pey = (1-alpha)*st->Pey + alpha*REALFLOAT(Pey);
-   st->Pyy = (1-alpha)*st->Pyy + alpha*REALFLOAT(Pyy);
-   /* We don't really hope to get better than 33 dB attenuation anyway */
-   if (st->Pey< .001*st->Pyy)
-      st->Pey = .001*st->Pyy;
-   leak_estimate = st->Pey / (1+st->Pyy);
-   if (leak_estimate > 1)
-      leak_estimate = 1;
-#endif
+   leak_estimate = FLOAT_EXTRACT16(FLOAT_SHL(FLOAT_DIVU(st->Pey, st->Pyy),14));
+   if (leak_estimate > 16383)
+      leak_estimate = 32767;
+   else
+      leak_estimate = SHL16(leak_estimate,1);
 
    /*printf ("%f\n", leak_estimate);*/
    
-   RER = 3*leak_estimate*Syy / (SHR(10000,6)+See);
+   RER = 3.*MULT16_32_Q15(leak_estimate,Syy) / (SHR(10000,6)+See);
    if (RER > .5)
       RER = .5;
    
@@ -476,7 +466,7 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
       {
          spx_word32_t r, e;
          /* Compute frequency-domain adaptation mask */
-         r = leak_estimate*SHL32(st->Yf[i],3);
+         r = MULT16_32_Q15(leak_estimate,SHL32(st->Yf[i],3));
          e = SHL32(st->Rf[i],3)+1;
 #ifdef FIXED_POINT
          if (r>SHR32(e,1))
