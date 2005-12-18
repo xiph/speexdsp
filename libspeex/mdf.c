@@ -103,7 +103,7 @@ struct SpeexEchoState_ {
    spx_word32_t *Yh;
    spx_float_t Pey;
    spx_float_t Pyy;
-   float *window;
+   spx_word16_t *window;
    /*struct drft_lookup *fft_lookup;*/
    void *fft_table;
    spx_word16_t memX, memD, memE;
@@ -237,10 +237,14 @@ SpeexEchoState *speex_echo_state_init(int frame_size, int filter_length)
    st->PHI = (spx_word16_t*)speex_alloc(M*N*sizeof(spx_word16_t));
    st->power = (spx_word32_t*)speex_alloc((frame_size+1)*sizeof(spx_word32_t));
    st->power_1 = (spx_float_t*)speex_alloc((frame_size+1)*sizeof(spx_float_t));
-   st->window = (float*)speex_alloc(N*sizeof(float));
+   st->window = (spx_word16_t*)speex_alloc(N*sizeof(spx_word16_t));
+#ifdef FIXED_POINT   
+   for (i=0;i<N;i++)
+      st->window[i] = 32767.*(.5-.5*cos(2*M_PI*i/N));
+#else
    for (i=0;i<N;i++)
       st->window[i] = .5-.5*cos(2*M_PI*i/N);
-
+#endif
    for (i=0;i<N*M;i++)
    {
       st->W[i] = st->PHI[i] = 0;
@@ -354,7 +358,7 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
    
    spx_ifft(st->fft_table, st->Y, st->y);
 
-#if 0
+#if 1
    spectral_mul_accum(st->X, st->PHI, st->Y, N, M);   
    spx_ifft(st->fft_table, st->Y, st->e);
 #endif
@@ -363,8 +367,8 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
    for (i=0;i<st->frame_size;i++)
    {
       spx_word32_t tmp_out;
-#if 0
-      spx_word16_t y = st->window[i+st->frame_size]*st->e[i+st->frame_size] + st->window[i]*st->y[i+st->frame_size];
+#if 1
+      spx_word16_t y = MULT16_16_Q15(st->window[i+st->frame_size],st->e[i+st->frame_size]) + MULT16_16_Q15(st->window[i],st->y[i+st->frame_size]);
       tmp_out = SUB32(EXTEND32(st->d[i+st->frame_size]), EXTEND32(y));
 #else
       tmp_out = SUB32(EXTEND32(st->d[i+st->frame_size]), EXTEND32(st->y[i+st->frame_size]));
@@ -574,7 +578,7 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
       
       /* Apply hanning window (should pre-compute it)*/
       for (i=0;i<N;i++)
-         st->y[i] = st->window[i]*st->last_y[i];
+         st->y[i] = MULT16_16_Q15(st->window[i],st->last_y[i]);
       
       /* Compute power spectrum of the echo */
       spx_fft(st->fft_table, st->y, st->Y);
