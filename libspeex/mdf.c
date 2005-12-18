@@ -321,7 +321,7 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
    spx_word16_t ss, ss_1;
    spx_float_t Pey = FLOAT_ONE, Pyy=FLOAT_ONE;
    spx_float_t alpha;
-   float RER;
+   spx_word16_t RER;
    spx_word32_t tmp32;
    spx_word16_t M_1;
    
@@ -457,11 +457,18 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
       leak_estimate = SHL16(leak_estimate,1);
 
    /*printf ("%f\n", leak_estimate);*/
-   
+#ifdef FIXED_POINT
+   tmp32 = MULT16_32_Q15(leak_estimate,Syy);
+   tmp32 = ADD32(tmp32, SHL32(tmp32,1));
+   if (tmp32 > SHR32(See,1))
+      tmp32 = SHR32(See,1);
+   RER = FLOAT_EXTRACT16(FLOAT_SHL(FLOAT_DIV32(tmp32,See),15));
+#else
    RER = 3.*MULT16_32_Q15(leak_estimate,Syy) / See;
    if (RER > .5)
       RER = .5;
-   
+#endif
+
    /* We consider that the filter has had minimal adaptation if the following is true*/
    if (!st->adapted && st->sum_adapt > QCONST32(1,15))
    {
@@ -483,7 +490,7 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
          if (r>.5*e)
             r = .5*e;
 #endif
-         r = MULT16_32_Q15(QCONST16(.8,15),r) + MULT16_32_Q15(QCONST16(.2,15),(spx_word32_t)(RER*e));
+         r = MULT16_32_Q15(QCONST16(.8,15),r) + MULT16_32_Q15(QCONST16(.2,15),(spx_word32_t)(MULT16_32_Q15(RER,e)));
          /*st->power_1[i] = adapt_rate*r/(e*(1+st->power[i]));*/
          st->power_1[i] = FLOAT_SHL(FLOAT_DIV32_FLOAT(MULT16_32_Q15(M_1,r),FLOAT_MUL32U(e,st->power[i]+10)),WEIGHT_SHIFT);
       }
@@ -563,7 +570,6 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
       }
    }
 
-
    /* Compute spectrum of estimated echo for use in an echo post-filter (if necessary)*/
    if (Yout)
    {
@@ -592,6 +598,5 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
       for (i=0;i<=st->frame_size;i++)
          Yout[i] = N*N*max(.2,3.f*leak_estimate)*st->Yps[i];
    }
-
 }
 
