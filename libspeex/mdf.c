@@ -45,6 +45,7 @@
 #include "smallft.h"
 #include "fftwrap.h"
 #include "pseudofloat.h"
+#include "math_approx.h"
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
@@ -239,8 +240,11 @@ SpeexEchoState *speex_echo_state_init(int frame_size, int filter_length)
    st->power_1 = (spx_float_t*)speex_alloc((frame_size+1)*sizeof(spx_float_t));
    st->window = (spx_word16_t*)speex_alloc(N*sizeof(spx_word16_t));
 #ifdef FIXED_POINT   
-   for (i=0;i<N;i++)
-      st->window[i] = 32767.*(.5-.5*cos(2*M_PI*i/N));
+   for (i=0;i<N>>1;i++)
+   {
+      st->window[i] = (16383-SHL16(spx_cos(DIV32_16(MULT16_16(25736,i<<1),N)),1));
+      st->window[N-i-1] = st->window[i];
+   }
 #else
    for (i=0;i<N;i++)
       st->window[i] = .5-.5*cos(2*M_PI*i/N);

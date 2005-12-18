@@ -128,4 +128,48 @@ spx_word16_t spx_acos(spx_word16_t x)
    return ret;
 }
 
+
+#define K1 8192
+#define K2 -4096
+#define K3 340
+#define K4 -10
+
+spx_word16_t spx_cos(spx_word16_t x)
+{
+   spx_word16_t x2;
+
+   if (x<12868)
+   {
+      x2 = MULT16_16_P13(x,x);
+      return ADD32(K1, MULT16_16_P13(x2, ADD32(K2, MULT16_16_P13(x2, ADD32(K3, MULT16_16_P13(K4, x2))))));
+   } else {
+      x = SUB16(25736,x);
+      x2 = MULT16_16_P13(x,x);
+      return SUB32(-K1, MULT16_16_P13(x2, ADD32(K2, MULT16_16_P13(x2, ADD32(K3, MULT16_16_P13(K4, x2))))));
+   }
+}
+
+#else
+
+#define C1 0.9999932946f
+#define C2 -0.4999124376f
+#define C3 0.0414877472f
+#define C4 -0.0012712095f
+
+
+#define SPX_PI_2 1.5707963268
+inline spx_word16_t spx_cos(spx_word16_t x)
+{
+   if (x<SPX_PI_2)
+   {
+      x *= x;
+      return C1 + x*(C2+x*(C3+C4*x));
+   } else {
+      x = M_PI-x;
+      x *= x;
+      return NEG16(C1 + x*(C2+x*(C3+C4*x)));
+   }
+}
+
+
 #endif

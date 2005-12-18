@@ -63,26 +63,6 @@ Heavily modified by Jean-Marc Valin (fixed-point, optimizations,
 
 #ifdef FIXED_POINT
 
-#define C1 8192
-#define C2 -4096
-#define C3 340
-#define C4 -10
-
-static spx_word16_t spx_cos(spx_word16_t x)
-{
-   spx_word16_t x2;
-
-   if (x<12868)
-   {
-      x2 = MULT16_16_P13(x,x);
-      return ADD32(C1, MULT16_16_P13(x2, ADD32(C2, MULT16_16_P13(x2, ADD32(C3, MULT16_16_P13(C4, x2))))));
-   } else {
-      x = SUB16(25736,x);
-      x2 = MULT16_16_P13(x,x);
-      return SUB32(-C1, MULT16_16_P13(x2, ADD32(C2, MULT16_16_P13(x2, ADD32(C3, MULT16_16_P13(C4, x2))))));
-      /*return SUB32(-C1, MULT16_16_Q13(x2, ADD32(C2, MULT16_16_Q13(C3, x2))));*/
-   }
-}
 
 
 #define FREQ_SCALE 16384
@@ -99,25 +79,6 @@ static spx_word16_t spx_cos(spx_word16_t x)
 #define C2 -0.49558072
 #define C3 0.03679168*/
 
-#define C1 0.9999932946f
-#define C2 -0.4999124376f
-#define C3 0.0414877472f
-#define C4 -0.0012712095f
-
-
-#define SPX_PI_2 1.5707963268
-static inline spx_word16_t spx_cos(spx_word16_t x)
-{
-   if (x<SPX_PI_2)
-   {
-      x *= x;
-      return C1 + x*(C2+x*(C3+C4*x));
-   } else {
-      x = M_PI-x;
-      x *= x;
-      return NEG16(C1 + x*(C2+x*(C3+C4*x)));
-   }
-}
 #define FREQ_SCALE 1.
 #define ANGLE2X(a) (spx_cos(a))
 #define X2ANGLE(x) (acos(x))

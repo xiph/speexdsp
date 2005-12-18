@@ -37,6 +37,8 @@
 
 #include "misc.h"
 
+spx_word16_t spx_cos(spx_word16_t x);
+
 #ifdef FIXED_POINT
 spx_word16_t spx_sqrt(spx_word32_t x);
 spx_word16_t spx_acos(spx_word16_t x);
