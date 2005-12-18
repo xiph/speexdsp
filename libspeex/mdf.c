@@ -420,7 +420,7 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
 #endif
    }
    
-#ifdef FIXED_POINT
+#if 1
    spx_word32_t tmp;
    tmp = MULT16_32_Q15(QCONST16(.05,15),Syy);
    if (tmp > MULT16_32_Q15(QCONST16(.008,15),See))
