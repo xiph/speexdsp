@@ -35,6 +35,8 @@
 #ifdef VORBIS_PSYCHO
 
 #include "smallft.h"
+#define P_BANDS 17      /* 62Hz to 16kHz */
+#define NOISE_COMPAND_LEVELS 40
 
 
 #define todB(x)   ((x)==0?-400.f:log((x)*(x))*4.34294480f)
@@ -69,7 +71,7 @@ typedef struct {
   float noiseoff[P_BANDS];
   float noisecompand[NOISE_COMPAND_LEVELS];
 
-} VorbisInfoPsy;
+} VorbisPsyInfo;
 
 
 
@@ -77,9 +79,9 @@ typedef struct {
   int n;
   int rate;
   struct drft_lookup lookup;
-  struct VorbisInfoPsy *vi;
+  VorbisPsyInfo *vi;
 
-
+  float *window;
   float *noiseoffset;
   long  *bark;
 

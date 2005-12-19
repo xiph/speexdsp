@@ -29,32 +29,26 @@
    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-/*#define VORBIS_PSYCHO*/
-
 #ifdef VORBIS_PSYCHO
 
 #include "misc.h"
 #include "smallft.h"
 #include "lpc.h"
 #include "vorbis_psy.h"
-#include "vorbis_masking.h"
 
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
 
 /* psychoacoustic setup ********************************************/
-#define P_BANDS 17      /* 62Hz to 16kHz */
-#define NOISE_COMPAND_LEVELS 40
 
-static float example_noise_compand = 
-
-static VorbisPsyInfo example_tuning={
+static VorbisPsyInfo example_tuning = {
   
   .5,.5,  
   3,3,15,
   
-  /*  63     125     250     500      1k      2k      4k      8k     16k*/
+  /*63     125     250     500      1k      2k      4k      8k     16k*/
+  // vorbis mode 4 style
   {-32,-32,-32,-32,-28,-24,-22,-16,-10, -6, -8, -8, -6, -6, -6, -4, -2},
   
   {
@@ -65,7 +59,7 @@ static VorbisPsyInfo example_tuning={
     11,12,13,14,15,16,17, 18,     /* 39dB */
   }
 
-} VorbisInfoPsy;
+};
 
 
 static void bark_noise_hybridmp(int n,const long *b,
@@ -278,6 +272,7 @@ VorbisPsy *vorbis_psy_init(int rate, int n)
   spx_drft_init(&p->lookup, n);
   p->bark = speex_alloc(n*sizeof(*p->bark));
   p->rate=rate;
+  p->vi = &example_tuning;
 
   /* BH4 window */
   p->window = speex_alloc(sizeof(*p->window)*n);
@@ -292,18 +287,18 @@ VorbisPsy *vorbis_psy_init(int rate, int n)
   for(i=0;i<n;i++){
     float bark=toBARK(rate/(2*n)*i); 
     
-    for(;lo+vi->noisewindowlomin<i && 
-	  toBARK(rate/(2*n)*lo)<(bark-vi->noisewindowlo);lo++);
+    for(;lo+p->vi->noisewindowlomin<i && 
+	  toBARK(rate/(2*n)*lo)<(bark-p->vi->noisewindowlo);lo++);
     
-    for(;hi<=n && (hi<i+vi->noisewindowhimin ||
-	  toBARK(rate/(2*n)*hi)<(bark+vi->noisewindowhi));hi++);
+    for(;hi<=n && (hi<i+p->vi->noisewindowhimin ||
+	  toBARK(rate/(2*n)*hi)<(bark+p->vi->noisewindowhi));hi++);
     
     p->bark[i]=((lo-1)<<16)+(hi-1);
 
   }
 
   /* set up rolling noise median */
-  p->noiseoffset=_ogg_malloc(n*sizeof(*p->noiseoffset));
+  p->noiseoffset=speex_alloc(n*sizeof(*p->noiseoffset));
   
   for(i=0;i<n;i++){
     float halfoc=toOC((i+.5)*rate/(2.*n))*2.;
@@ -316,8 +311,8 @@ VorbisPsy *vorbis_psy_init(int rate, int n)
     del=halfoc-inthalfoc;
     
     p->noiseoffset[i]=
-      vi->noiseoff[inthalfoc]*(1.-del) + 
-      vi->noiseoff[inthalfoc+1]*del;
+      p->vi->noiseoff[inthalfoc]*(1.-del) + 
+      p->vi->noiseoff[inthalfoc+1]*del;
     
   }
 #if 0
@@ -344,9 +339,8 @@ void vorbis_psy_destroy(VorbisPsy *p)
 
 void compute_curve(VorbisPsy *psy, float *audio, float *curve)
 {
-   int len = psy->size >> 1;
    int i;
-   float work[psy->size];
+   float work[psy->n];
 
    float scale=4.f/psy->n;
    float scale_dB;
@@ -355,7 +349,7 @@ void compute_curve(VorbisPsy *psy, float *audio, float *curve)
   
    /* window the PCM data; use a BH4 window, not vorbis */
    for(i=0;i<psy->n;i++)
-     work[i]=audio[i] * p->window[i];
+     work[i]=audio[i] * psy->window[i];
 
 #if 0
     if(vi->channels==2)
@@ -366,19 +360,19 @@ void compute_curve(VorbisPsy *psy, float *audio, float *curve)
 #endif
 
     /* FFT yields more accurate tonal estimation (not phase sensitive) */
-    drft_forward(&p->lookup,work);
+    spx_drft_forward(&psy->lookup,work);
 
     /* magnitudes */
     work[0]=scale_dB+todB(work[0]);
-    for(i=1;i<n-1;i+=2){
-      float temp = work[j]*work[j] + work[j+1]*work[j+1];
-      work[(j+1)>>1] = scale_dB+.5f * todB(temp);
+    for(i=1;i<psy->n-1;i+=2){
+      float temp = work[i]*work[i] + work[i+1]*work[i+1];
+      work[(i+1)>>1] = scale_dB+.5f * todB(temp);
     }
 
     /* derive a noise curve */
-    _vp_noisemask(p,work,curve);
+    _vp_noisemask(psy,work,curve);
 
-    for(i=0;i<(n>>1);i++)
+    for(i=0;i<((psy->n)>>1);i++)
       curve[i] = fromdB(curve[i]*2);
 
 }
@@ -387,8 +381,8 @@ void compute_curve(VorbisPsy *psy, float *audio, float *curve)
 void curve_to_lpc(VorbisPsy *psy, float *curve, float *awk1, float *awk2, int ord)
 {
    int i;
-   float ac[psy->size];
-   int len = psy->size >> 1;
+   float ac[psy->n];
+   int len = psy->n >> 1;
    for (i=0;i<2*len;i++)
       ac[i] = 0;
    for (i=1;i<len;i++)
