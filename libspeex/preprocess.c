@@ -280,7 +280,7 @@ void speex_preprocess_state_destroy(SpeexPreprocessState *st)
    speex_free(st);
 }
 
-static void update_noise(SpeexPreprocessState *st, float *ps, float *echo)
+static void update_noise(SpeexPreprocessState *st, float *ps, spx_int32_t *echo)
 {
    int i;
    float beta;
@@ -295,7 +295,7 @@ static void update_noise(SpeexPreprocessState *st, float *ps, float *echo)
          st->noise[i] = (1.f-beta)*st->noise[i] + beta*ps[i];
    } else {
       for (i=0;i<st->ps_size;i++)
-         st->noise[i] = (1.f-beta)*st->noise[i] + beta*max(1.f,ps[i]-echo[i]); 
+         st->noise[i] = (1.f-beta)*st->noise[i] + beta*max(1.f,ps[i]-st->frame_size*st->frame_size*4.0*echo[i]); 
 #if 0
       for (i=0;i<st->ps_size;i++)
          st->noise[i] = 0;
@@ -632,7 +632,7 @@ static void update_noise_prob(SpeexPreprocessState *st)
 
 #define NOISE_OVERCOMPENS 1.4
 
-int speex_preprocess(SpeexPreprocessState *st, spx_int16_t *x, float *echo)
+int speex_preprocess(SpeexPreprocessState *st, spx_int16_t *x, spx_int32_t *echo)
 {
    int i;
    int is_speech=1;
@@ -660,7 +660,7 @@ int speex_preprocess(SpeexPreprocessState *st, spx_int16_t *x, float *echo)
    /* Deal with residual echo if provided */
    if (echo)
       for (i=1;i<N;i++)
-         st->echo_noise[i] = (.3f*st->echo_noise[i] + echo[i]);
+         st->echo_noise[i] = (.3f*st->echo_noise[i] + st->frame_size*st->frame_size*4.0*echo[i]);
 
    /* Compute a posteriori SNR */
    for (i=1;i<N;i++)
@@ -747,7 +747,7 @@ int speex_preprocess(SpeexPreprocessState *st, spx_int16_t *x, float *echo)
          if (st->update_prob[i]<.5f/* || st->ps[i] < st->noise[i]*/)
          {
             if (echo)
-               st->noise[i] = .95f*st->noise[i] + .05f*max(1.0f,st->ps[i]-echo[i]);
+               st->noise[i] = .95f*st->noise[i] + .05f*max(1.0f,st->ps[i]-st->frame_size*st->frame_size*4.0*echo[i]);
             else
                st->noise[i] = .95f*st->noise[i] + .05f*st->ps[i];
          }
@@ -901,7 +901,7 @@ int speex_preprocess(SpeexPreprocessState *st, spx_int16_t *x, float *echo)
    return is_speech;
 }
 
-void speex_preprocess_estimate_update(SpeexPreprocessState *st, spx_int16_t *x, float *echo)
+void speex_preprocess_estimate_update(SpeexPreprocessState *st, spx_int16_t *x, spx_int32_t *echo)
 {
    int i;
    int N = st->ps_size;
@@ -920,7 +920,7 @@ void speex_preprocess_estimate_update(SpeexPreprocessState *st, spx_int16_t *x, 
       if (st->update_prob[i]<.5f || st->ps[i] < st->noise[i])
       {
          if (echo)
-            st->noise[i] = .95f*st->noise[i] + .1f*max(1.0f,st->ps[i]-echo[i]);
+            st->noise[i] = .95f*st->noise[i] + .1f*max(1.0f,st->ps[i]-st->frame_size*st->frame_size*4.0*echo[i]);
          else
             st->noise[i] = .95f*st->noise[i] + .1f*st->ps[i];
       }

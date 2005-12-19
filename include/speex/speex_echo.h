@@ -34,6 +34,8 @@
 #ifndef SPEEX_ECHO_H
 #define SPEEX_ECHO_H
 
+#include "misc.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -50,7 +52,7 @@ SpeexEchoState *speex_echo_state_init(int frame_size, int filter_length);
 void speex_echo_state_destroy(SpeexEchoState *st);
 
 /** Performs echo cancellation a frame */
-void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, float *Y);
+void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, spx_int32_t *Y);
 
 /** Reset the echo canceller state */
 void speex_echo_state_reset(SpeexEchoState *st);

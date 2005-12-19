@@ -113,10 +113,10 @@ SpeexPreprocessState *speex_preprocess_state_init(int frame_size, int sampling_r
 void speex_preprocess_state_destroy(SpeexPreprocessState *st);
 
 /** Preprocess a frame */
-int speex_preprocess(SpeexPreprocessState *st, spx_int16_t *x, float *echo);
+int speex_preprocess(SpeexPreprocessState *st, spx_int16_t *x, spx_int32_t *echo);
 
 /** Preprocess a frame */
-void speex_preprocess_estimate_update(SpeexPreprocessState *st, spx_int16_t *x, float *echo);
+void speex_preprocess_estimate_update(SpeexPreprocessState *st, spx_int16_t *x, spx_int32_t *echo);
 
 /** Used like the ioctl function to control the preprocessor parameters */
 int speex_preprocess_ctl(SpeexPreprocessState *st, int request, void *ptr);

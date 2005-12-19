@@ -312,7 +312,7 @@ void speex_echo_state_destroy(SpeexEchoState *st)
 
 extern int fixed_point;
 /** Performs echo cancellation on a frame */
-void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, float *Yout)
+void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, spx_int32_t *Yout)
 {
    int i,j;
    int N,M;
@@ -573,6 +573,7 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
    /* Compute spectrum of estimated echo for use in an echo post-filter (if necessary)*/
    if (Yout)
    {
+      spx_word16_t leak2;
       if (st->adapted)
       {
          /* If the filter is adapted, take the filtered echo */
@@ -594,9 +595,20 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
       spx_fft(st->fft_table, st->y, st->Y);
       power_spectrum(st->Y, st->Yps, N);
       
+#ifdef FIXED_POINT
+      if (leak_estimate > 16383)
+         leak2 = 32767;
+      else
+         leak2 = SHL16(leak_estimate, 1);
+#else
+      if (leak_estimate>.5)
+         leak2 = 1;
+      else
+         leak2 = 2*leak_estimate;
+#endif
       /* Estimate residual echo */
       for (i=0;i<=st->frame_size;i++)
-         Yout[i] = N*N*max(.2,3.f*leak_estimate)*st->Yps[i];
+         Yout[i] = MULT16_32_Q15(leak2,st->Yps[i]);
    }
 }
 

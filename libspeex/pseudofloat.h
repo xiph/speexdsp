@@ -50,7 +50,7 @@ typedef struct {
 #define FLOAT_HALF ((spx_float_t){16384,-15})
 
 #define MIN(a,b) ((a)<(b)?(a):(b))
-static inline spx_float_t PSEUDOFLOAT(float x)
+static inline spx_float_t PSEUDOFLOAT(spx_int32_t x)
 {
    int e=0;
    int sign=0;
@@ -63,14 +63,14 @@ static inline spx_float_t PSEUDOFLOAT(float x)
       return (spx_float_t) {0,0};
    while (x>32767)
    {
-      /*x >>= 1;*/
-      x *= .5;
+      x >>= 1;
+      /*x *= .5;*/
       e++;
    }
    while (x<16383)
    {
-      /*x <<= 1;*/
-      x *= 2;
+      x <<= 1;
+      /*x *= 2;*/
       e--;
    }
    if (sign)
