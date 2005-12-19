@@ -427,7 +427,7 @@ void curve_to_lpc(VorbisPsy *psy, float *curve, float *awk1, float *awk2, int or
    
    spx_drft_backward(&psy->lookup, ac);
    _spx_lpc(awk1, ac, ord);
-#if 0
+#if 1
    for (i=0;i<ord;i++)
       awk2[i] = 0;
 #else
