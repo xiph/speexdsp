@@ -439,6 +439,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
 
 #ifdef VORBIS_PSYCHO
    compute_curve(st->psy, st->frame+52, st->curve);
+   print_vec(st->curve, 64, "curve");
    if (st->first)
       for (i=0;i<64;i++)
          st->old_curve[i] = st->curve[i];
@@ -966,6 +967,14 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
       for (i=0;i<st->lpcSize;i++)
          st->old_qlsp[i] = st->qlsp[i];
    }
+
+#ifdef VORBIS_PSYCHO
+   if (st->submodeID>=1)
+   {
+      for (i=0;i<64;i++)
+         st->old_curve[i] = st->curve[i];
+   }
+#endif
 
    if (st->submodeID==1)
    {
