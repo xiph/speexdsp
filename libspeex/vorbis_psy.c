@@ -53,7 +53,8 @@ static VorbisPsyInfo example_tuning = {
   
   /*63     125     250     500      1k      2k      4k      8k     16k*/
   // vorbis mode 4 style
-  {-32,-32,-32,-32,-28,-24,-22,-16,-10, -6, -8, -8, -6, -6, -6, -4, -2},
+  //{-32,-32,-32,-32,-28,-24,-22,-20,-20, -20, -20, -8, -6, -6, -6, -6, -6},
+  { -4, -6, -6, -6, -6, -6, -6, -6, -8, -8,-10,-10, -8, -6, -4, -4, -2},
   
   {
     0, 1, 2, 3, 4, 5, 5,  5,     /* 7dB */
@@ -65,6 +66,40 @@ static VorbisPsyInfo example_tuning = {
 
 };
 
+
+
+/* there was no great place to put this.... */
+#include <stdio.h>
+static void _analysis_output(char *base,int i,float *v,int n,int bark,int dB){
+  int j;
+  FILE *of;
+  char buffer[80];
+
+  sprintf(buffer,"%s_%d.m",base,i);
+  of=fopen(buffer,"w");
+  
+  if(!of)perror("failed to open data dump file");
+  
+  for(j=0;j<n;j++){
+    if(bark){
+      float b=toBARK((4000.f*j/n)+.25);
+      fprintf(of,"%f ",b);
+    }else
+      fprintf(of,"%f ",(double)j);
+    
+    if(dB){
+      float val;
+      if(v[j]==0.)
+	val=-140.;
+      else
+	val=todB(v[j]);
+      fprintf(of,"%f\n",val);
+    }else{
+      fprintf(of,"%f\n",v[j]);
+    }
+  }
+  fclose(of);
+}
 
 static void bark_noise_hybridmp(int n,const long *b,
                                 const float *f,
@@ -238,21 +273,15 @@ static void _vp_noisemask(VorbisPsy *p,
 #if 0
   {
     static int seq=0;
-
+    
     float work2[n];
     for(i=0;i<n;i++){
       work2[i]=logmask[i]+work[i];
     }
     
-    if(seq&1)
-      _analysis_output("median2R",seq/2,work,n,1,0,0);
-    else
-      _analysis_output("median2L",seq/2,work,n,1,0,0);
-    
-    if(seq&1)
-      _analysis_output("envelope2R",seq/2,work2,n,1,0,0);
-    else
-      _analysis_output("envelope2L",seq/2,work2,n,1,0,0);
+    _analysis_output("logfreq",seq,logfreq,n,1,0);
+    _analysis_output("median",seq,work,n,1,0);
+    _analysis_output("envelope",seq,work2,n,1,0);
     seq++;
   }
 #endif
@@ -355,12 +384,14 @@ void compute_curve(VorbisPsy *psy, float *audio, float *curve)
    for(i=0;i<psy->n;i++)
      work[i]=audio[i] * psy->window[i];
 
-#if 0
-    if(vi->channels==2)
-      if(i==0)
-        _analysis_output("windowedL",seq,pcm,n,0,0,total-n/2);
-      else
-        _analysis_output("windowedR",seq,pcm,n,0,0,total-n/2);
+   #if 0
+   {
+     static int seq=0;
+     
+     _analysis_output("win",seq,work,psy->n,0,0);
+
+     seq++;
+   }
 #endif
 
     /* FFT yields more accurate tonal estimation (not phase sensitive) */
@@ -377,7 +408,7 @@ void compute_curve(VorbisPsy *psy, float *audio, float *curve)
     _vp_noisemask(psy,work,curve);
 
     for(i=0;i<((psy->n)>>1);i++)
-      curve[i] = fromdB(curve[i]*2);
+      curve[i] = fromdB(curve[i]);
 
 }
 
