@@ -97,7 +97,7 @@ const float exc_gain_quant_scal1[2]={0.70469, 1.05127};
 
 #endif
 
-
+#define EXTRA_BUFFER 100
 
 
 #define sqr(x) ((x)*(x))
@@ -142,14 +142,14 @@ void *nb_encoder_init(const SpeexMode *m)
 #endif
 
 #ifdef VORBIS_PSYCHO
-   st->psy = vorbis_psy_init(8000, 128);
-   st->curve = speex_alloc(64*sizeof(float));
-   st->old_curve = speex_alloc(64*sizeof(float));
+   st->psy = vorbis_psy_init(8000, 256);
+   st->curve = speex_alloc(128*sizeof(float));
+   st->old_curve = speex_alloc(128*sizeof(float));
 #endif
 
    /* Allocating input buffer */
-   st->inBuf = speex_alloc((st->windowSize)*sizeof(spx_sig_t));
-   st->frame = st->inBuf;
+   st->inBuf = speex_alloc((st->windowSize+EXTRA_BUFFER)*sizeof(spx_sig_t));
+   st->frame = st->inBuf+EXTRA_BUFFER;
    /* Allocating excitation buffer */
    st->excBuf = speex_alloc((mode->frameSize+mode->pitchEnd+1)*sizeof(spx_sig_t));
    st->exc = st->excBuf + mode->pitchEnd + 1;
@@ -295,9 +295,9 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
    stack=st->stack;
 
    /* Copy new data in input buffer */
-   speex_move(st->inBuf, st->inBuf+st->frameSize, (st->windowSize-st->frameSize)*sizeof(spx_sig_t));
+   speex_move(st->inBuf, st->inBuf+st->frameSize, (EXTRA_BUFFER+st->windowSize-st->frameSize)*sizeof(spx_sig_t));
    for (i=0;i<st->frameSize;i++)
-      st->inBuf[st->windowSize-st->frameSize+i] = SHL32(EXTEND32(in[i]), SIG_SHIFT);
+      st->inBuf[st->windowSize-st->frameSize+i+EXTRA_BUFFER] = SHL32(EXTEND32(in[i]), SIG_SHIFT);
 
    /* Move signals 1 frame towards the past */
    speex_move(st->excBuf, st->excBuf+st->frameSize, (st->max_pitch+1)*sizeof(spx_sig_t));
@@ -438,10 +438,10 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
    }
 
 #ifdef VORBIS_PSYCHO
-   compute_curve(st->psy, st->frame+52, st->curve);
-   print_vec(st->curve, 64, "curve");
+   compute_curve(st->psy, st->frame-16, st->curve);
+   print_vec(st->curve, 128, "curve");
    if (st->first)
-      for (i=0;i<64;i++)
+      for (i=0;i<128;i++)
          st->old_curve[i] = st->curve[i];
 #endif
 
@@ -744,9 +744,9 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
 
 #ifdef VORBIS_PSYCHO
       {
-         float curr_curve[64];
+         float curr_curve[128];
          float fact = ((float)sub+1.0f)/st->nbSubframes;
-         for (i=0;i<64;i++)
+         for (i=0;i<128;i++)
             curr_curve[i] = (1.0f-fact)*st->old_curve[i] + fact*st->curve[i];
          curve_to_lpc(st->psy, curr_curve, st->bw_lpc1, st->bw_lpc2, 10);
       }
@@ -971,7 +971,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
 #ifdef VORBIS_PSYCHO
    if (st->submodeID>=1)
    {
-      for (i=0;i<64;i++)
+      for (i=0;i<128;i++)
          st->old_curve[i] = st->curve[i];
    }
 #endif
