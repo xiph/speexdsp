@@ -37,27 +37,350 @@
 #include "smallft.h"
 #include "lpc.h"
 #include "vorbis_psy.h"
+#include "vorbis_masking.h"
 
-VorbisPsy *vorbis_psy_init(int rate, int size)
-{
-   VorbisPsy *psy = speex_alloc(sizeof(VorbisPsy));
-   psy->size = size;
-   spx_drft_init(&psy->lookup, size);
-   return psy;
+#include <stdlib.h>
+#include <math.h>
+#include <string.h>
+
+/* psychoacoustic setup ********************************************/
+#define P_BANDS 17      /* 62Hz to 16kHz */
+#define NOISE_COMPAND_LEVELS 40
+
+static float example_noise_compand = 
+
+static VorbisPsyInfo example_tuning={
+  
+  .5,.5,  
+  3,3,15,
+  
+  /*  63     125     250     500      1k      2k      4k      8k     16k*/
+  {-32,-32,-32,-32,-28,-24,-22,-16,-10, -6, -8, -8, -6, -6, -6, -4, -2},
+  
+  {
+    0, 1, 2, 3, 4, 5, 5,  5,     /* 7dB */
+    6, 6, 6, 5, 4, 4, 4,  4,     /* 15dB */
+    4, 4, 5, 5, 5, 6, 6,  6,     /* 23dB */
+    7, 7, 7, 8, 8, 8, 9, 10,     /* 31dB */
+    11,12,13,14,15,16,17, 18,     /* 39dB */
+  }
+
+} VorbisInfoPsy;
+
+
+static void bark_noise_hybridmp(int n,const long *b,
+                                const float *f,
+                                float *noise,
+                                const float offset,
+                                const int fixed){
+  
+  float *N=alloca(n*sizeof(*N));
+  float *X=alloca(n*sizeof(*N));
+  float *XX=alloca(n*sizeof(*N));
+  float *Y=alloca(n*sizeof(*N));
+  float *XY=alloca(n*sizeof(*N));
+
+  float tN, tX, tXX, tY, tXY;
+  int i;
+
+  int lo, hi;
+  float R, A, B, D;
+  float w, x, y;
+
+  tN = tX = tXX = tY = tXY = 0.f;
+
+  y = f[0] + offset;
+  if (y < 1.f) y = 1.f;
+
+  w = y * y * .5;
+    
+  tN += w;
+  tX += w;
+  tY += w * y;
+
+  N[0] = tN;
+  X[0] = tX;
+  XX[0] = tXX;
+  Y[0] = tY;
+  XY[0] = tXY;
+
+  for (i = 1, x = 1.f; i < n; i++, x += 1.f) {
+    
+    y = f[i] + offset;
+    if (y < 1.f) y = 1.f;
+
+    w = y * y;
+    
+    tN += w;
+    tX += w * x;
+    tXX += w * x * x;
+    tY += w * y;
+    tXY += w * x * y;
+
+    N[i] = tN;
+    X[i] = tX;
+    XX[i] = tXX;
+    Y[i] = tY;
+    XY[i] = tXY;
+  }
+  
+  for (i = 0, x = 0.f;; i++, x += 1.f) {
+    
+    lo = b[i] >> 16;
+    if( lo>=0 ) break;
+    hi = b[i] & 0xffff;
+    
+    tN = N[hi] + N[-lo];
+    tX = X[hi] - X[-lo];
+    tXX = XX[hi] + XX[-lo];
+    tY = Y[hi] + Y[-lo];    
+    tXY = XY[hi] - XY[-lo];
+    
+    A = tY * tXX - tX * tXY;
+    B = tN * tXY - tX * tY;
+    D = tN * tXX - tX * tX;
+    R = (A + x * B) / D;
+    if (R < 0.f)
+      R = 0.f;
+    
+    noise[i] = R - offset;
+  }
+  
+  for ( ;; i++, x += 1.f) {
+    
+    lo = b[i] >> 16;
+    hi = b[i] & 0xffff;
+    if(hi>=n)break;
+    
+    tN = N[hi] - N[lo];
+    tX = X[hi] - X[lo];
+    tXX = XX[hi] - XX[lo];
+    tY = Y[hi] - Y[lo];
+    tXY = XY[hi] - XY[lo];
+    
+    A = tY * tXX - tX * tXY;
+    B = tN * tXY - tX * tY;
+    D = tN * tXX - tX * tX;
+    R = (A + x * B) / D;
+    if (R < 0.f) R = 0.f;
+    
+    noise[i] = R - offset;
+  }
+  for ( ; i < n; i++, x += 1.f) {
+    
+    R = (A + x * B) / D;
+    if (R < 0.f) R = 0.f;
+    
+    noise[i] = R - offset;
+  }
+  
+  if (fixed <= 0) return;
+  
+  for (i = 0, x = 0.f;; i++, x += 1.f) {
+    hi = i + fixed / 2;
+    lo = hi - fixed;
+    if(lo>=0)break;
+
+    tN = N[hi] + N[-lo];
+    tX = X[hi] - X[-lo];
+    tXX = XX[hi] + XX[-lo];
+    tY = Y[hi] + Y[-lo];
+    tXY = XY[hi] - XY[-lo];
+    
+    
+    A = tY * tXX - tX * tXY;
+    B = tN * tXY - tX * tY;
+    D = tN * tXX - tX * tX;
+    R = (A + x * B) / D;
+
+    if (R - offset < noise[i]) noise[i] = R - offset;
+  }
+  for ( ;; i++, x += 1.f) {
+    
+    hi = i + fixed / 2;
+    lo = hi - fixed;
+    if(hi>=n)break;
+    
+    tN = N[hi] - N[lo];
+    tX = X[hi] - X[lo];
+    tXX = XX[hi] - XX[lo];
+    tY = Y[hi] - Y[lo];
+    tXY = XY[hi] - XY[lo];
+    
+    A = tY * tXX - tX * tXY;
+    B = tN * tXY - tX * tY;
+    D = tN * tXX - tX * tX;
+    R = (A + x * B) / D;
+    
+    if (R - offset < noise[i]) noise[i] = R - offset;
+  }
+  for ( ; i < n; i++, x += 1.f) {
+    R = (A + x * B) / D;
+    if (R - offset < noise[i]) noise[i] = R - offset;
+  }
 }
 
-void vorbis_psy_destroy(VorbisPsy *psy)
+static void _vp_noisemask(VorbisPsy *p,
+			  float *logfreq, 
+			  float *logmask){
+
+  int i,n=p->n;
+  float *work=alloca(n*sizeof(*work));
+
+  bark_noise_hybridmp(n,p->bark,logfreq,logmask,
+		      140.,-1);
+
+  for(i=0;i<n;i++)work[i]=logfreq[i]-logmask[i];
+
+  bark_noise_hybridmp(n,p->bark,work,logmask,0.,
+		      p->vi->noisewindowfixed);
+
+  for(i=0;i<n;i++)work[i]=logfreq[i]-work[i];
+  
+#if 0
+  {
+    static int seq=0;
+
+    float work2[n];
+    for(i=0;i<n;i++){
+      work2[i]=logmask[i]+work[i];
+    }
+    
+    if(seq&1)
+      _analysis_output("median2R",seq/2,work,n,1,0,0);
+    else
+      _analysis_output("median2L",seq/2,work,n,1,0,0);
+    
+    if(seq&1)
+      _analysis_output("envelope2R",seq/2,work2,n,1,0,0);
+    else
+      _analysis_output("envelope2L",seq/2,work2,n,1,0,0);
+    seq++;
+  }
+#endif
+
+  for(i=0;i<n;i++){
+    int dB=logmask[i]+.5;
+    if(dB>=NOISE_COMPAND_LEVELS)dB=NOISE_COMPAND_LEVELS-1;
+    if(dB<0)dB=0;
+    logmask[i]= work[i]+p->vi->noisecompand[dB]+p->noiseoffset[i];
+  }
+
+}
+
+VorbisPsy *vorbis_psy_init(int rate, int n)
 {
-   spx_drft_clear(&psy->lookup);
-   speex_free(psy);
+  long i,j,lo=-99,hi=1;
+  VorbisPsy *p = speex_alloc(sizeof(VorbisPsy));
+  memset(p,0,sizeof(*p));
+  
+  p->n = n;
+  spx_drft_init(&p->lookup, n);
+  p->bark = speex_alloc(n*sizeof(*p->bark));
+  p->rate=rate;
+
+  /* BH4 window */
+  p->window = speex_alloc(sizeof(*p->window)*n);
+  float a0 = .35875f;
+  float a1 = .48829f;
+  float a2 = .14128f;
+  float a3 = .01168f;
+  for(i=0;i<n;i++)
+    p->window[i] = a0 - a1*cos(2.*M_PI/n*(i+.5)) + a2*cos(4.*M_PI/n*(i+.5)) - a3*cos(6.*M_PI/n*(i+.5));
+
+  /* bark scale lookups */
+  for(i=0;i<n;i++){
+    float bark=toBARK(rate/(2*n)*i); 
+    
+    for(;lo+vi->noisewindowlomin<i && 
+	  toBARK(rate/(2*n)*lo)<(bark-vi->noisewindowlo);lo++);
+    
+    for(;hi<=n && (hi<i+vi->noisewindowhimin ||
+	  toBARK(rate/(2*n)*hi)<(bark+vi->noisewindowhi));hi++);
+    
+    p->bark[i]=((lo-1)<<16)+(hi-1);
+
+  }
+
+  /* set up rolling noise median */
+  p->noiseoffset=_ogg_malloc(n*sizeof(*p->noiseoffset));
+  
+  for(i=0;i<n;i++){
+    float halfoc=toOC((i+.5)*rate/(2.*n))*2.;
+    int inthalfoc;
+    float del;
+    
+    if(halfoc<0)halfoc=0;
+    if(halfoc>=P_BANDS-1)halfoc=P_BANDS-1;
+    inthalfoc=(int)halfoc;
+    del=halfoc-inthalfoc;
+    
+    p->noiseoffset[i]=
+      vi->noiseoff[inthalfoc]*(1.-del) + 
+      vi->noiseoff[inthalfoc+1]*del;
+    
+  }
+#if 0
+  _analysis_output_always("noiseoff0",ls,p->noiseoffset,n,1,0,0);
+#endif
+
+   return p;
+}
+
+void vorbis_psy_destroy(VorbisPsy *p)
+{
+  if(p){
+    spx_drft_clear(&p->lookup);
+    if(p->bark)
+      speex_free(p->bark);
+    if(p->noiseoffset)
+      speex_free(p->noiseoffset);
+    if(p->window)
+      speex_free(p->window);
+    memset(p,0,sizeof(*p));
+    speex_free(p);
+  }
 }
 
 void compute_curve(VorbisPsy *psy, float *audio, float *curve)
 {
    int len = psy->size >> 1;
    int i;
-   for (i=0;i<len;i++)
-      curve[i] = 1.;
+   float work[psy->size];
+
+   float scale=4.f/psy->n;
+   float scale_dB;
+
+   scale_dB=todB(scale);
+  
+   /* window the PCM data; use a BH4 window, not vorbis */
+   for(i=0;i<psy->n;i++)
+     work[i]=audio[i] * p->window[i];
+
+#if 0
+    if(vi->channels==2)
+      if(i==0)
+        _analysis_output("windowedL",seq,pcm,n,0,0,total-n/2);
+      else
+        _analysis_output("windowedR",seq,pcm,n,0,0,total-n/2);
+#endif
+
+    /* FFT yields more accurate tonal estimation (not phase sensitive) */
+    drft_forward(&p->lookup,work);
+
+    /* magnitudes */
+    work[0]=scale_dB+todB(work[0]);
+    for(i=1;i<n-1;i+=2){
+      float temp = work[j]*work[j] + work[j+1]*work[j+1];
+      work[(j+1)>>1] = scale_dB+.5f * todB(temp);
+    }
+
+    /* derive a noise curve */
+    _vp_noisemask(p,work,curve);
+
+    for(i=0;i<(n>>1);i++)
+      curve[i] = fromdB(curve[i]*2);
+
 }
 
 /* Transform a masking curve (power spectrum) into a pole-zero filter */

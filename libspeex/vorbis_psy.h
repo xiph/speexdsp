@@ -36,10 +36,55 @@
 
 #include "smallft.h"
 
+
+#define todB(x)   ((x)==0?-400.f:log((x)*(x))*4.34294480f)
+#define fromdB(x) (exp((x)*.11512925f))  
+
+/* The bark scale equations are approximations, since the original
+   table was somewhat hand rolled.  The below are chosen to have the
+   best possible fit to the rolled tables, thus their somewhat odd
+   appearance (these are more accurate and over a longer range than
+   the oft-quoted bark equations found in the texts I have).  The
+   approximations are valid from 0 - 30kHz (nyquist) or so.
+
+   all f in Hz, z in Bark */
+
+#define toBARK(n)   (13.1f*atan(.00074f*(n))+2.24f*atan((n)*(n)*1.85e-8f)+1e-4f*(n))
+#define fromBARK(z) (102.f*(z)-2.f*pow(z,2.f)+.4f*pow(z,3.f)+pow(1.46f,z)-1.f)
+
+/* Frequency to octave.  We arbitrarily declare 63.5 Hz to be octave
+   0.0 */
+
+#define toOC(n)     (log(n)*1.442695f-5.965784f)
+#define fromOC(o)   (exp(((o)+5.965784f)*.693147f))
+
+
 typedef struct {
-   int size;
-   struct drft_lookup lookup;
+
+  float noisewindowlo;
+  float noisewindowhi;
+  int   noisewindowlomin;
+  int   noisewindowhimin;
+  int   noisewindowfixed;
+  float noiseoff[P_BANDS];
+  float noisecompand[NOISE_COMPAND_LEVELS];
+
+} VorbisInfoPsy;
+
+
+
+typedef struct {
+  int n;
+  int rate;
+  struct drft_lookup lookup;
+  struct VorbisInfoPsy *vi;
+
+
+  float *noiseoffset;
+  long  *bark;
+
 } VorbisPsy;
+
 
 VorbisPsy *vorbis_psy_init(int rate, int size);
 void vorbis_psy_destroy(VorbisPsy *psy);
