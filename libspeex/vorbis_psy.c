@@ -48,7 +48,7 @@
 
 static VorbisPsyInfo example_tuning = {
   
-  .5,.5,  
+  1.,1.,  
   3,3,15,
   
   /*63     125     250     500      1k      2k      4k      8k     16k*/
@@ -270,7 +270,6 @@ static void _vp_noisemask(VorbisPsy *p,
 
   for(i=0;i<n;i++)work[i]=logfreq[i]-work[i];
   
-#if 0
   {
     static int seq=0;
     
@@ -279,12 +278,11 @@ static void _vp_noisemask(VorbisPsy *p,
       work2[i]=logmask[i]+work[i];
     }
     
-    _analysis_output("logfreq",seq,logfreq,n,1,0);
-    _analysis_output("median",seq,work,n,1,0);
-    _analysis_output("envelope",seq,work2,n,1,0);
+    _analysis_output("logfreq",seq,logfreq,n,0,0);
+    _analysis_output("median",seq,work,n,0,0);
+    _analysis_output("envelope",seq,work2,n,0,0);
     seq++;
   }
-#endif
 
   for(i=0;i<n;i++){
     int dB=logmask[i]+.5;
@@ -314,8 +312,8 @@ VorbisPsy *vorbis_psy_init(int rate, int n)
   float a2 = .14128f;
   float a3 = .01168f;
   for(i=0;i<n;i++)
-    p->window[i] = a0 - a1*cos(2.*M_PI/n*(i+.5)) + a2*cos(4.*M_PI/n*(i+.5)) - a3*cos(6.*M_PI/n*(i+.5));
-
+    p->window[i] = //a0 - a1*cos(2.*M_PI/n*(i+.5)) + a2*cos(4.*M_PI/n*(i+.5)) - a3*cos(6.*M_PI/n*(i+.5));
+      sin((i+.5)/n * M_PI)*sin((i+.5)/n * M_PI);
   /* bark scale lookups */
   for(i=0;i<n;i++){
     float bark=toBARK(rate/(2*n)*i); 
@@ -384,7 +382,6 @@ void compute_curve(VorbisPsy *psy, float *audio, float *curve)
    for(i=0;i<psy->n;i++)
      work[i]=audio[i] * psy->window[i];
 
-   #if 0
    {
      static int seq=0;
      
@@ -392,7 +389,6 @@ void compute_curve(VorbisPsy *psy, float *audio, float *curve)
 
      seq++;
    }
-   #endif
 
     /* FFT yields more accurate tonal estimation (not phase sensitive) */
     spx_drft_forward(&psy->lookup,work);
