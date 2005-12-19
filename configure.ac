@@ -93,6 +93,11 @@ AC_ARG_ENABLE(wideband, [  --disable-wideband      Disable wideband codec],
   AC_DEFINE([DISABLE_WIDEBAND], , [Disable wideband codec])
 fi])
 
+AC_ARG_ENABLE(vorbis-psy, [  --enable-vorbis-psy       Enable Vorbis-style psychoacoustics],
+[if test "$enableval" = yes; then
+  AC_DEFINE([VORBIS_PSYCHO], , [Enable Vorbis-style psychoacoustics])
+fi])
+
 AC_ARG_ENABLE(valgrind, [  --enable-valgrind       Enable valgrind extra checks],
 [if test "$enableval" = yes; then
   AC_DEFINE([ENABLE_VALGRIND], , [Enable valgrind extra checks])

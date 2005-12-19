@@ -29,6 +29,10 @@
    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #ifdef VORBIS_PSYCHO
 
 #include "misc.h"
@@ -218,7 +222,7 @@ static void _vp_noisemask(VorbisPsy *p,
 			  float *logfreq, 
 			  float *logmask){
 
-  int i,n=p->n;
+  int i,n=p->n/2;
   float *work=alloca(n*sizeof(*work));
 
   bark_noise_hybridmp(n,p->bark,logfreq,logmask,
