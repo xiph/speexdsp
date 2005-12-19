@@ -392,7 +392,7 @@ void compute_curve(VorbisPsy *psy, float *audio, float *curve)
 
      seq++;
    }
-#endif
+   #endif
 
     /* FFT yields more accurate tonal estimation (not phase sensitive) */
     spx_drft_forward(&psy->lookup,work);
