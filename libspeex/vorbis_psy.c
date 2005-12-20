@@ -402,9 +402,15 @@ void compute_curve(VorbisPsy *psy, float *audio, float *curve)
 
     /* derive a noise curve */
     _vp_noisemask(psy,work,curve);
-
+#define SIDE 10
+    for (i=0;i<SIDE;i++)
+    {
+       curve[i]=curve[SIDE];
+       curve[(psy->n>>1)-i]=curve[(psy->n>>1)-SIDE];
+    }
     for(i=0;i<((psy->n)>>1);i++)
-      curve[i] = fromdB(curve[i]);
+       //curve[i] = fromdB(.5*curve[i])*pow(1+i/12,.6);
+       curve[i] = fromdB(1.2*curve[i]+.2*i);
 
 }
 
@@ -423,7 +429,7 @@ void curve_to_lpc(VorbisPsy *psy, float *curve, float *awk1, float *awk2, int or
    
    spx_drft_backward(&psy->lookup, ac);
    _spx_lpc(awk1, ac, ord);
-#if 1
+#if 0
    for (i=0;i<ord;i++)
       awk2[i] = 0;
 #else
