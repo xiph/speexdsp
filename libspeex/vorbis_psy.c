@@ -48,8 +48,8 @@
 
 static VorbisPsyInfo example_tuning = {
   
-  1.,1.,  
-  3,3,15,
+  .5,.5,  
+  3,3,25,
   
   /*63     125     250     500      1k      2k      4k      8k     16k*/
   // vorbis mode 4 style
@@ -402,7 +402,7 @@ void compute_curve(VorbisPsy *psy, float *audio, float *curve)
 
     /* derive a noise curve */
     _vp_noisemask(psy,work,curve);
-#define SIDE 10
+#define SIDE 12
     for (i=0;i<SIDE;i++)
     {
        curve[i]=curve[SIDE];
