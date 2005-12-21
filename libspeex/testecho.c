@@ -17,7 +17,7 @@
 int main(int argc, char **argv)
 {
    int echo_fd, ref_fd, e_fd;
-   float noise[NN+1];
+   spx_int32_t noise[NN+1];
    short echo_buf[NN], ref_buf[NN], e_buf[NN];
    SpeexEchoState *st;
    SpeexPreprocessState *den;
