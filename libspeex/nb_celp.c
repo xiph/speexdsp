@@ -97,7 +97,11 @@ const float exc_gain_quant_scal1[2]={0.70469, 1.05127};
 
 #endif
 
+#ifdef VORBIS_PSYCHO
 #define EXTRA_BUFFER 100
+#else
+#define EXTRA_BUFFER 0
+#endif
 
 
 #define sqr(x) ((x)*(x))
@@ -439,7 +443,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
 
 #ifdef VORBIS_PSYCHO
    compute_curve(st->psy, st->frame-16, st->curve);
-   print_vec(st->curve, 128, "curve");
+   /*print_vec(st->curve, 128, "curve");*/
    if (st->first)
       for (i=0;i<128;i++)
          st->old_curve[i] = st->curve[i];
@@ -761,6 +765,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
          for (i=1;i<=st->lpcSize;i++)
             st->bw_lpc2[i]=0;
       }
+      /*print_vec(st->bw_lpc1, 10, "bw_lpc");*/
 #endif
 
       for (i=0;i<st->subframeSize;i++)
