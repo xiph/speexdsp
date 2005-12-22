@@ -42,15 +42,9 @@ struct kiss_fft_state{
    C_ADDTO( res , a)    : res += a
  * */
 #ifdef FIXED_POINT
-#if (FIXED_POINT==32)
-# define FRACBITS 31
-# define SAMPPROD int64_t
-#define SAMP_MAX 2147483647
-#else
 # define FRACBITS 15
 # define SAMPPROD int32_t 
 #define SAMP_MAX 32767
-#endif
 
 #define SAMP_MIN -SAMP_MAX
 
