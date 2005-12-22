@@ -32,7 +32,11 @@
 
 */
 
-//#define USE_SMALLFT
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
+/*#define USE_SMALLFT*/
 #define USE_KISS_FFT
 
 
