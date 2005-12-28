@@ -38,8 +38,6 @@
 #include "config.h"
 #endif
 
-#define MDF_C
-
 #include "misc.h"
 #include "speex/speex_echo.h"
 #include "smallft.h"
@@ -56,9 +54,9 @@
 
 #ifdef FIXED_POINT
 #define WEIGHT_SHIFT 11
-#define WEIGHT_SCALING 2048
+#define NORMALIZE_SCALEDOWN 5
+#define NORMALIZE_SCALEUP 3
 #else
-#define WEIGHT_SCALING 1.f
 #define WEIGHT_SHIFT 0
 #endif
 
@@ -542,7 +540,7 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
 #ifdef FIXED_POINT
          spx_word16_t w2[N];
          for (i=0;i<N;i++)
-            w2[i] = PSHR16(st->W[j*N+i],5);
+            w2[i] = PSHR16(st->W[j*N+i],NORMALIZE_SCALEDOWN);
          spx_ifft(st->fft_table, w2, w);
          for (i=0;i<st->frame_size;i++)
          {
@@ -550,15 +548,11 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
          }
          for (i=st->frame_size;i<N;i++)
          {
-            w[i]=SHL(w[i],2);
+            w[i]=SHL(w[i],NORMALIZE_SCALEUP);
          }
          spx_fft(st->fft_table, w, w2);
          for (i=0;i<N;i++)
-         {
-            w2[i]=PSHR(w2[i],4);
-         }
-         for (i=0;i<N;i++)
-            st->W[j*N+i] -= SHL16(w2[i],5);
+            st->W[j*N+i] -= SHL16(w2[i],NORMALIZE_SCALEDOWN-NORMALIZE_SCALEUP-1);
 #else
          spx_ifft(st->fft_table, &st->W[j*N], w);
          for (i=st->frame_size;i<N;i++)
