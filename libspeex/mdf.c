@@ -64,14 +64,10 @@
 static const spx_float_t MAX_ALPHA = ((spx_float_t){16777, -21});
 static const spx_float_t ALPHA0 = ((spx_float_t){26214, -19});
 static const spx_float_t MIN_LEAK = ((spx_float_t){16777, -24});
-static const spx_float_t SPEC_AVERAGE = ((spx_float_t){20972, -20});
-static const spx_float_t SPEC_AVERAGE_1 = ((spx_float_t){32113,-15});
 #else
 static const spx_float_t MAX_ALPHA = .008f;
 static const spx_float_t ALPHA0 = .05f;
 static const spx_float_t MIN_LEAK = .001f;
-static const spx_float_t SPEC_AVERAGE = .02f;
-static const spx_float_t SPEC_AVERAGE_1 = .98f;
 #endif
 
 /** Speex echo cancellation state. */
@@ -81,6 +77,10 @@ struct SpeexEchoState_ {
    int M;
    int cancel_count;
    int adapted;
+   spx_int32_t sampling_rate;
+   spx_word16_t spec_average;
+   spx_word16_t beta0;
+   spx_word16_t beta_max;
    spx_word32_t sum_adapt;
    spx_word16_t *e;
    spx_word16_t *x;
@@ -214,6 +214,16 @@ SpeexEchoState *speex_echo_state_init(int frame_size, int filter_length)
    M = st->M = (filter_length+st->frame_size-1)/frame_size;
    st->cancel_count=0;
    st->sum_adapt = 0;
+   /* FIXME: Make that an init option (new API call?) */
+   st->sampling_rate = 8000;
+   st->spec_average = DIV32_16(SHL32(st->frame_size, 15), st->sampling_rate);
+#ifdef FIXED_POINT
+   st->beta0 = DIV32_16(SHL32(st->frame_size, 16), st->sampling_rate);
+   st->beta_max = DIV32_16(SHL32(st->frame_size, 14), st->sampling_rate);
+#else
+   st->beta0 = (2.0f*st->frame_size)/st->sampling_rate;
+   st->beta_max = (.5f*st->frame_size)/st->sampling_rate;
+#endif
 
    st->fft_table = spx_fft_init(N);
    
@@ -413,6 +423,18 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
    /* Smooth echo energy estimate over time */
    for (j=0;j<=st->frame_size;j++)
       st->power[j] = MULT16_32_Q15(ss_1,st->power[j]) + 1 + MULT16_32_Q15(ss,st->Xf[j]);
+   if (0)
+   {
+      float scale2 = .5f/M;
+      for (j=0;j<=st->frame_size;j++)
+         st->power[j] = 0;
+      for (i=0;i<M;i++)
+      {
+         power_spectrum(&st->X[i*N], st->Xf, N);
+         for (j=0;j<=st->frame_size;j++)
+            st->power[j] += scale2*st->Xf[j];
+      }
+   }
 
    /* Compute filtered spectra and (cross-)correlations */
    for (j=st->frame_size;j>=0;j--)
@@ -423,18 +445,18 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
       Pey = FLOAT_ADD(Pey,FLOAT_MULT(Eh,Yh));
       Pyy = FLOAT_ADD(Pyy,FLOAT_MULT(Yh,Yh));
 #ifdef FIXED_POINT
-      st->Eh[j] = MAC16_32_Q15(MULT16_32_Q15(32113,st->Eh[j]), 655, st->Rf[j]);
-      st->Yh[j] = MAC16_32_Q15(MULT16_32_Q15(32113,st->Yh[j]), 655, st->Yf[j]);
+      st->Eh[j] = MAC16_32_Q15(MULT16_32_Q15(SUB16(32767,st->spec_average),st->Eh[j]), st->spec_average, st->Rf[j]);
+      st->Yh[j] = MAC16_32_Q15(MULT16_32_Q15(SUB16(32767,st->spec_average),st->Yh[j]), st->spec_average, st->Yf[j]);
 #else
-      st->Eh[j] = .98*st->Eh[j] + .02*st->Rf[j];
-      st->Yh[j] = .98*st->Yh[j] + .02*st->Yf[j];
+      st->Eh[j] = (1-st->spec_average)*st->Eh[j] + st->spec_average*st->Rf[j];
+      st->Yh[j] = (1-st->spec_average)*st->Yh[j] + st->spec_average*st->Yf[j];
 #endif
    }
    
    /* Compute correlation updatete rate */
-   tmp32 = MULT16_32_Q15(QCONST16(.05,15),Syy);
-   if (tmp32 > MULT16_32_Q15(QCONST16(.008,15),See))
-      tmp32 = MULT16_32_Q15(QCONST16(.008,15),See);
+   tmp32 = MULT16_32_Q15(st->beta0,Syy);
+   if (tmp32 > MULT16_32_Q15(st->beta_max,See))
+      tmp32 = MULT16_32_Q15(st->beta_max,See);
    alpha = FLOAT_DIV32(tmp32, See);
    spx_float_t alpha_1 = FLOAT_SUB(FLOAT_ONE, alpha);
    /* Update correlations (recursive average) */
