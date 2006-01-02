@@ -628,8 +628,9 @@ int main(int argc, char **argv)
 
    /*Write header*/
    {
-
-      op.packet = (unsigned char *)speex_header_to_packet(&header, (int*)&(op.bytes));
+      int packet_size;
+      op.packet = (unsigned char *)speex_header_to_packet(&header, &packet_size);
+      op.bytes = packet_size;
       op.b_o_s = 1;
       op.e_o_s = 0;
       op.granulepos = 0;
