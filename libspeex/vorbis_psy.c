@@ -406,7 +406,7 @@ void compute_curve(VorbisPsy *psy, float *audio, float *curve)
     for (i=0;i<SIDE;i++)
     {
        curve[i]=curve[SIDE];
-       curve[(psy->n>>1)-i]=curve[(psy->n>>1)-SIDE];
+       curve[(psy->n>>1)-i-1]=curve[(psy->n>>1)-SIDE];
     }
     for(i=0;i<((psy->n)>>1);i++)
        //curve[i] = fromdB(.5*curve[i])*pow(1+i/12,.6);
