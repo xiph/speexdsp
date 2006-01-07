@@ -90,8 +90,8 @@ static void kf_bfly4(
        for (i=0;i<4*m;i++)
        {
           //C_FIXDIV(x[i],4);
-          x[i].r = PSHR(x[i].r,2);
-          x[i].i = PSHR(x[i].i,2);
+          x[i].r = PSHR16(x[i].r,2);
+          x[i].i = PSHR16(x[i].i,2);
        }
     }
     if (st->inverse)
