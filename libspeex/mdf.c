@@ -1,11 +1,7 @@
-/* Copyright (C) 2003-2005 Jean-Marc Valin
+/* Copyright (C) 2003-2006 Jean-Marc Valin
 
-   File: speex_echo.c
-   Echo cancelling based on the MDF algorithm described in:
-
-   J. S. Soo, K. K. Pang Multidelay block frequency adaptive filter, 
-   IEEE Trans. Acoust. Speech Signal Process., Vol. ASSP-38, No. 2, 
-   February 1990.
+   File: mdf.c
+   Echo canceller based on the MDF algorithm (see below)
 
    Redistribution and use in source and binary forms, with or without
    modification, are permitted provided that the following conditions are
@@ -34,6 +30,33 @@
    POSSIBILITY OF SUCH DAMAGE.
 */
 
+/*
+   The echo canceller is based on the MDF algorithm described in:
+
+   J. S. Soo, K. K. Pang Multidelay block frequency adaptive filter, 
+   IEEE Trans. Acoust. Speech Signal Process., Vol. ASSP-38, No. 2, 
+   February 1990.
+   
+   We use the Alternatively Updated MDF (AUMDF) variant. Robustness to 
+   double-talk is achieved using a variable learning rate as described in:
+   
+   Valin, J.-M., On Adjusting the Learning Rate in Frequency Domain Echo 
+   Cancellation With Double-Talk. Submitted to IEEE Transactions on Speech 
+   and Audio Processing, 2006.
+   
+   About the fixed-point version:
+   All the signals are represented with 16-bit words. The filter weights 
+   are represented with 32-bit words, but only the top 16 bits are used
+   in most cases. The lower 16 bits are completely reliable (due to the
+   fact that the update is done only on the top bits), but help in the
+   adaptation -- probably by removing a "threshold effect" due to
+   quantization when the gradient is small.
+   
+   Another kludge that seems to work good: when performing the weight
+   update, we only move half the way toward the "goal" this seems to
+   reduce the effect of quantization noise in the update phase.
+   
+ */
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -64,11 +87,14 @@
 static const spx_float_t MAX_ALPHA = ((spx_float_t){16777, -21});
 static const spx_float_t ALPHA0 = ((spx_float_t){26214, -19});
 static const spx_float_t MIN_LEAK = ((spx_float_t){16777, -24});
+#define TOP16(x) ((x)>>16)
 #else
 static const spx_float_t MAX_ALPHA = .008f;
 static const spx_float_t ALPHA0 = .05f;
 static const spx_float_t MIN_LEAK = .001f;
+#define TOP16(x) (x)
 #endif
+
 
 /** Speex echo cancellation state. */
 struct SpeexEchoState_ {
@@ -91,8 +117,8 @@ struct SpeexEchoState_ {
    spx_word32_t *Yps;
    spx_word16_t *Y;
    spx_word16_t *E;
-   spx_word16_t *PHI;
-   spx_word16_t *W;
+   spx_word32_t *PHI;
+   spx_word32_t *W;
    spx_word32_t *power;
    spx_float_t *power_1;
    spx_word32_t *Rf;
@@ -103,7 +129,6 @@ struct SpeexEchoState_ {
    spx_float_t Pey;
    spx_float_t Pyy;
    spx_word16_t *window;
-   /*struct drft_lookup *fft_lookup;*/
    void *fft_table;
    spx_word16_t memX, memD, memE;
    spx_word16_t preemph;
@@ -140,13 +165,13 @@ static inline void power_spectrum(spx_word16_t *X, spx_word32_t *ps, int N)
 
 /** Compute cross-power spectrum of a half-complex (packed) vectors and add to acc */
 #ifdef FIXED_POINT
-static inline void spectral_mul_accum(spx_word16_t *X, spx_word16_t *Y, spx_word16_t *acc, int N, int M)
+static inline void spectral_mul_accum(spx_word16_t *X, spx_word32_t *Y, spx_word16_t *acc, int N, int M)
 {
    int i,j;
    spx_word32_t tmp1=0,tmp2=0;
    for (j=0;j<M;j++)
    {
-      tmp1 = MAC16_16(tmp1, X[j*N],Y[j*N]);
+      tmp1 = MAC16_16(tmp1, X[j*N],TOP16(Y[j*N]));
    }
    acc[0] = PSHR32(tmp1,WEIGHT_SHIFT);
    for (i=1;i<N-1;i+=2)
@@ -154,8 +179,8 @@ static inline void spectral_mul_accum(spx_word16_t *X, spx_word16_t *Y, spx_word
       tmp1 = tmp2 = 0;
       for (j=0;j<M;j++)
       {
-         tmp1 = SUB32(MAC16_16(tmp1, X[j*N+i],Y[j*N+i]), MULT16_16(X[j*N+i+1],Y[j*N+i+1]));
-         tmp2 = MAC16_16(MAC16_16(tmp2, X[j*N+i+1],Y[j*N+i]), X[j*N+i], Y[j*N+i+1]);
+         tmp1 = SUB32(MAC16_16(tmp1, X[j*N+i],TOP16(Y[j*N+i])), MULT16_16(X[j*N+i+1],TOP16(Y[j*N+i+1])));
+         tmp2 = MAC16_16(MAC16_16(tmp2, X[j*N+i+1],TOP16(Y[j*N+i])), X[j*N+i], TOP16(Y[j*N+i+1]));
       }
       acc[i] = PSHR32(tmp1,WEIGHT_SHIFT);
       acc[i+1] = PSHR32(tmp2,WEIGHT_SHIFT);
@@ -163,12 +188,12 @@ static inline void spectral_mul_accum(spx_word16_t *X, spx_word16_t *Y, spx_word
    tmp1 = tmp2 = 0;
    for (j=0;j<M;j++)
    {
-      tmp1 = MAC16_16(tmp1, X[(j+1)*N-1],Y[(j+1)*N-1]);
+      tmp1 = MAC16_16(tmp1, X[(j+1)*N-1],TOP16(Y[(j+1)*N-1]));
    }
    acc[N-1] = PSHR32(tmp1,WEIGHT_SHIFT);
 }
 #else
-static inline void spectral_mul_accum(spx_word16_t *X, spx_word16_t *Y, spx_word16_t *acc, int N, int M)
+static inline void spectral_mul_accum(spx_word16_t *X, spx_word32_t *Y, spx_word16_t *acc, int N, int M)
 {
    int i,j;
    for (i=0;i<N;i++)
@@ -189,7 +214,7 @@ static inline void spectral_mul_accum(spx_word16_t *X, spx_word16_t *Y, spx_word
 #endif
 
 /** Compute weighted cross-power spectrum of a half-complex (packed) vector with conjugate */
-static inline void weighted_spectral_mul_conj(spx_float_t *w, spx_word16_t *X, spx_word16_t *Y, spx_word16_t *prod, int N)
+static inline void weighted_spectral_mul_conj(spx_float_t *w, spx_word16_t *X, spx_word16_t *Y, spx_word32_t *prod, int N)
 {
    int i, j;
    prod[0] = FLOAT_MUL32(w[0],MULT16_16(X[0],Y[0]));
@@ -242,8 +267,8 @@ SpeexEchoState *speex_echo_state_init(int frame_size, int filter_length)
    st->X = (spx_word16_t*)speex_alloc(M*N*sizeof(spx_word16_t));
    st->Y = (spx_word16_t*)speex_alloc(N*sizeof(spx_word16_t));
    st->E = (spx_word16_t*)speex_alloc(N*sizeof(spx_word16_t));
-   st->W = (spx_word16_t*)speex_alloc(M*N*sizeof(spx_word16_t));
-   st->PHI = (spx_word16_t*)speex_alloc(M*N*sizeof(spx_word16_t));
+   st->W = (spx_word32_t*)speex_alloc(M*N*sizeof(spx_word32_t));
+   st->PHI = (spx_word32_t*)speex_alloc(M*N*sizeof(spx_word32_t));
    st->power = (spx_word32_t*)speex_alloc((frame_size+1)*sizeof(spx_word32_t));
    st->power_1 = (spx_float_t*)speex_alloc((frame_size+1)*sizeof(spx_float_t));
    st->window = (spx_word16_t*)speex_alloc(N*sizeof(spx_word16_t));
@@ -423,6 +448,9 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
    /* Smooth echo energy estimate over time */
    for (j=0;j<=st->frame_size;j++)
       st->power[j] = MULT16_32_Q15(ss_1,st->power[j]) + 1 + MULT16_32_Q15(ss,st->Xf[j]);
+   
+   /* Enable this to compute the power based only on the tail (would need to compute more 
+      efficiently to make this really useful */
    if (0)
    {
       float scale2 = .5f/M;
@@ -475,8 +503,9 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
       leak_estimate = 32767;
    else
       leak_estimate = SHL16(leak_estimate,1);
-
    /*printf ("%f\n", leak_estimate);*/
+   
+   /* Compute Residual to Error Ratio */
 #ifdef FIXED_POINT
    tmp32 = MULT16_32_Q15(leak_estimate,Syy);
    tmp32 = ADD32(tmp32, SHL32(tmp32,1));
@@ -512,7 +541,7 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
 #endif
          r = MULT16_32_Q15(QCONST16(.8,15),r) + MULT16_32_Q15(QCONST16(.2,15),(spx_word32_t)(MULT16_32_Q15(RER,e)));
          /*st->power_1[i] = adapt_rate*r/(e*(1+st->power[i]));*/
-         st->power_1[i] = FLOAT_SHL(FLOAT_DIV32_FLOAT(MULT16_32_Q15(M_1,r),FLOAT_MUL32U(e,st->power[i]+10)),WEIGHT_SHIFT);
+         st->power_1[i] = FLOAT_SHL(FLOAT_DIV32_FLOAT(MULT16_32_Q15(M_1,r),FLOAT_MUL32U(e,st->power[i]+10)),WEIGHT_SHIFT+16);
       }
    } else {
       spx_word32_t Sxx;
@@ -532,7 +561,7 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
       adapt_rate = FLOAT_EXTRACT16(FLOAT_SHL(FLOAT_DIV32(MULT16_32_Q15(M_1,Sxx), See),15));
       
       for (i=0;i<=st->frame_size;i++)
-         st->power_1[i] = FLOAT_SHL(FLOAT_DIV32(EXTEND32(adapt_rate),ADD32(st->power[i],10)),WEIGHT_SHIFT-15);
+         st->power_1[i] = FLOAT_SHL(FLOAT_DIV32(EXTEND32(adapt_rate),ADD32(st->power[i],10)),WEIGHT_SHIFT+1);
 
 
       /* How much have we adapted so far? */
@@ -552,9 +581,10 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
       st->PHI[i] = st->W[i] - st->PHI[i];
    }
    
-   /* AUMDF weight constraint */
+   /* Update weight to prevent circular convolution (MDF / AUMDF) */
    for (j=0;j<M;j++)
    {
+      /* This is a variant of the Alternatively Updated MDF (AUMDF) */
       /* Remove the "if" to make this an MDF filter */
       if (j==M-1 || st->cancel_count%(M-1) == j)
       {
@@ -562,7 +592,7 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
 #ifdef FIXED_POINT
          spx_word16_t w2[N];
          for (i=0;i<N;i++)
-            w2[i] = PSHR16(st->W[j*N+i],NORMALIZE_SCALEDOWN);
+            w2[i] = PSHR32(st->W[j*N+i],NORMALIZE_SCALEDOWN+16);
          spx_ifft(st->fft_table, w2, w);
          for (i=0;i<st->frame_size;i++)
          {
@@ -573,8 +603,9 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
             w[i]=SHL(w[i],NORMALIZE_SCALEUP);
          }
          spx_fft(st->fft_table, w, w2);
+         /* The "-1" in the shift is a sort of kludge that trades less efficient update speed for decrease noise */
          for (i=0;i<N;i++)
-            st->W[j*N+i] -= SHL16(w2[i],NORMALIZE_SCALEDOWN-NORMALIZE_SCALEUP-1);
+            st->W[j*N+i] -= SHL32(w2[i],16+NORMALIZE_SCALEDOWN-NORMALIZE_SCALEUP-1);
 #else
          spx_ifft(st->fft_table, &st->W[j*N], w);
          for (i=st->frame_size;i<N;i++)
