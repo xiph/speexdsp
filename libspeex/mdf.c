@@ -84,13 +84,9 @@
 #endif
 
 #ifdef FIXED_POINT
-static const spx_float_t MAX_ALPHA = ((spx_float_t){16777, -21});
-static const spx_float_t ALPHA0 = ((spx_float_t){26214, -19});
 static const spx_float_t MIN_LEAK = ((spx_float_t){16777, -24});
 #define TOP16(x) ((x)>>16)
 #else
-static const spx_float_t MAX_ALPHA = .008f;
-static const spx_float_t ALPHA0 = .05f;
 static const spx_float_t MIN_LEAK = .001f;
 #define TOP16(x) (x)
 #endif
@@ -132,7 +128,32 @@ struct SpeexEchoState_ {
    void *fft_table;
    spx_word16_t memX, memD, memE;
    spx_word16_t preemph;
+   spx_mem_t notch_mem[2];
 };
+
+static inline void filter_dc_notch16(spx_int16_t *in, spx_word16_t radius, spx_word16_t *out, int len, spx_mem_t *mem)
+{
+   int i;
+   spx_word16_t den2;
+#ifdef FIXED_POINT
+   den2 = MULT16_16_Q15(radius,radius) + MULT16_16_Q15(QCONST16(.7,15),MULT16_16_Q15(32767-radius,32767-radius));
+#else
+   den2 = radius*radius + .7*(1-radius)*(1-radius);
+#endif   
+   /*printf ("%d %d %d %d %d %d\n", num[0], num[1], num[2], den[0], den[1], den[2]);*/
+   for (i=0;i<len;i++)
+   {
+      spx_word16_t vin = in[i];
+      spx_word32_t vout = mem[0] + SHL32(EXTEND32(vin),15);
+#ifdef FIXED_POINT
+      mem[0] = mem[1] + SHL32(SHL32(-EXTEND32(vin),15) + MULT16_32_Q15(radius,vout),1);
+#else
+      mem[0] = mem[1] + 2*(-vin + radius*vout);
+#endif
+      mem[1] = SHL32(EXTEND32(vin),15) - MULT16_32_Q15(den2,vout);
+      out[i] = SATURATE32(PSHR32(MULT16_32_Q15(radius,vout),15),32767);
+   }
+}
 
 static inline spx_word32_t inner_prod(const spx_word16_t *x, const spx_word16_t *y, int len)
 {
@@ -288,6 +309,7 @@ SpeexEchoState *speex_echo_state_init(int frame_size, int filter_length)
    }
    st->memX=st->memD=st->memE=0;
    st->preemph = QCONST16(.9,15);
+   st->notch_mem[0] = st->notch_mem[1] = 0;
    st->adapted = 0;
    st->Pey = st->Pyy = FLOAT_ONE;
    return st;
@@ -371,16 +393,19 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
    M_1 = 1.f/M;
 #endif
 
+   filter_dc_notch16(ref, QCONST16(.95,15), st->d, st->frame_size, st->notch_mem);
    /* Copy input data to buffer */
    for (i=0;i<st->frame_size;i++)
    {
+      spx_word16_t tmp;
       st->x[i] = st->x[i+st->frame_size];
       st->x[i+st->frame_size] = SHL16(SUB16(echo[i], MULT16_16_P15(st->preemph, st->memX)),1);
       st->memX = echo[i];
       
+      tmp = st->d[i];
       st->d[i] = st->d[i+st->frame_size];
-      st->d[i+st->frame_size] = SHL16(SUB16(ref[i], MULT16_16_P15(st->preemph, st->memD)),1);
-      st->memD = ref[i];
+      st->d[i+st->frame_size] = SHL16(SUB16(tmp, MULT16_16_P15(st->preemph, st->memD)),1);
+      st->memD = tmp;
    }
 
    /* Shift memory: this could be optimized eventually*/
