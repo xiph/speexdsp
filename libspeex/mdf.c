@@ -63,7 +63,6 @@
 
 #include "misc.h"
 #include "speex/speex_echo.h"
-#include "smallft.h"
 #include "fftwrap.h"
 #include "pseudofloat.h"
 #include "math_approx.h"
@@ -399,12 +398,12 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
    {
       spx_word16_t tmp;
       st->x[i] = st->x[i+st->frame_size];
-      st->x[i+st->frame_size] = SHL16(SUB16(echo[i], MULT16_16_P15(st->preemph, st->memX)),1);
+      st->x[i+st->frame_size] = SUB16(echo[i], MULT16_16_P15(st->preemph, st->memX));
       st->memX = echo[i];
       
       tmp = st->d[i];
       st->d[i] = st->d[i+st->frame_size];
-      st->d[i+st->frame_size] = SHL16(SUB16(tmp, MULT16_16_P15(st->preemph, st->memD)),1);
+      st->d[i+st->frame_size] = SUB16(tmp, MULT16_16_P15(st->preemph, st->memD));
       st->memD = tmp;
    }
 
@@ -436,7 +435,6 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
       tmp_out = SUB32(EXTEND32(st->d[i+st->frame_size]), EXTEND32(st->y[i+st->frame_size]));
 #endif
 
-      tmp_out = PSHR32(tmp_out,1);
       /* Saturation */
       if (tmp_out>32767)
          tmp_out = 32767;
