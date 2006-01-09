@@ -89,7 +89,6 @@ static void kf_bfly4(
        kiss_fft_cpx *x=Fout;
        for (i=0;i<4*m;i++)
        {
-          //C_FIXDIV(x[i],4);
           x[i].r = PSHR16(x[i].r,2);
           x[i].i = PSHR16(x[i].i,2);
        }
