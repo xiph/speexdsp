@@ -127,6 +127,7 @@ struct SpeexEchoState_ {
    void *fft_table;
    spx_word16_t memX, memD, memE;
    spx_word16_t preemph;
+   spx_word16_t notch_radius;
    spx_mem_t notch_mem[2];
 };
 
@@ -308,6 +309,13 @@ SpeexEchoState *speex_echo_state_init(int frame_size, int filter_length)
    }
    st->memX=st->memD=st->memE=0;
    st->preemph = QCONST16(.9,15);
+   if (st->sampling_rate<12000)
+      st->notch_radius = QCONST16(.9, 15);
+   else if (st->sampling_rate<24000)
+      st->notch_radius = QCONST16(.982, 15);
+   else
+      st->notch_radius = QCONST16(.992, 15);
+
    st->notch_mem[0] = st->notch_mem[1] = 0;
    st->adapted = 0;
    st->Pey = st->Pyy = FLOAT_ONE;
@@ -392,7 +400,7 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
    M_1 = 1.f/M;
 #endif
 
-   filter_dc_notch16(ref, QCONST16(.95,15), st->d, st->frame_size, st->notch_mem);
+   filter_dc_notch16(ref, st->notch_radius, st->d, st->frame_size, st->notch_mem);
    /* Copy input data to buffer */
    for (i=0;i<st->frame_size;i++)
    {
