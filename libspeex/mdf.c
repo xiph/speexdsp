@@ -44,19 +44,26 @@
    Cancellation With Double-Talk. Submitted to IEEE Transactions on Speech 
    and Audio Processing, 2006.
    
+   There is no explicit double-talk detection, but a continuous variation
+   in the learning rate based on residual echo, double-talk and background
+   noise.
+   
    About the fixed-point version:
    All the signals are represented with 16-bit words. The filter weights 
    are represented with 32-bit words, but only the top 16 bits are used
-   in most cases. The lower 16 bits are completely reliable (due to the
+   in most cases. The lower 16 bits are completely unreliable (due to the
    fact that the update is done only on the top bits), but help in the
    adaptation -- probably by removing a "threshold effect" due to
-   quantization when the gradient is small.
+   quantization (rounding going to zero) when the gradient is small.
    
    Another kludge that seems to work good: when performing the weight
    update, we only move half the way toward the "goal" this seems to
-   reduce the effect of quantization noise in the update phase.
+   reduce the effect of quantization noise in the update phase. This
+   can be seen as applying a gradient descent on a "soft constraint"
+   instead of having a hard constraint.
    
- */
+*/
+
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
