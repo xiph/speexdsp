@@ -7,7 +7,7 @@
 	<key>CFBundleExecutable</key>
 	<string>Speex</string>
 	<key>CFBundleGetInfoString</key>
-	<string>Speex framework 1.1.11, Copyright © 2002-2005 Xiph.Org Foundation</string>
+	<string>Speex framework 1.1.12svn, Copyright © 2002-2006 Xiph.Org Foundation</string>
 	<key>CFBundleIconFile</key>
 	<string></string>
 	<key>CFBundleIdentifier</key>
@@ -17,13 +17,13 @@
 	<key>CFBundlePackageType</key>
 	<string>FMWK</string>
 	<key>CFBundleShortVersionString</key>
-	<string>1.1.11</string>
+	<string>1.1.12svn</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
 	<key>CFBundleVersion</key>
-	<string>1.1.11d1</string>
+	<string>1.1.12d1</string>
 	<key>NSHumanReadableCopyright</key>
-	<string>Speex framework 1.1.11, Copyright © 2002-2005 Xiph.Org Foundation</string>
+	<string>Speex framework 1.1.12svn, Copyright © 2002-2006 Xiph.Org Foundation</string>
 	<key>CSResourcesFileMapped</key>
 	<true/>
 </dict>
