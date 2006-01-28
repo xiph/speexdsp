@@ -121,7 +121,7 @@ fi])
 
 AC_ARG_ENABLE(arm5e-asm, [  --enable-arm5e-asm      Make use of ARM5E assembly optimizations],
 [if test "$enableval" = yes; then
-  AC_DEFINE([ARM5_ASM], , [Make use of ARM5E assembly optimizations])
+  AC_DEFINE([ARM5E_ASM], , [Make use of ARM5E assembly optimizations])
 fi])
 
 AC_ARG_ENABLE(blackfin-asm, [  --enable-blackfin-asm      Make use of Blackfin assembly optimizations],
