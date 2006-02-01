@@ -389,7 +389,7 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
    spx_word16_t leak_estimate;
    spx_word16_t ss, ss_1;
    spx_float_t Pey = FLOAT_ONE, Pyy=FLOAT_ONE;
-   spx_float_t alpha;
+   spx_float_t alpha, alpha_1;
    spx_word16_t RER;
    spx_word32_t tmp32;
    spx_word16_t M_1;
@@ -524,7 +524,7 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
    if (tmp32 > MULT16_32_Q15(st->beta_max,See))
       tmp32 = MULT16_32_Q15(st->beta_max,See);
    alpha = FLOAT_DIV32(tmp32, See);
-   spx_float_t alpha_1 = FLOAT_SUB(FLOAT_ONE, alpha);
+   alpha_1 = FLOAT_SUB(FLOAT_ONE, alpha);
    /* Update correlations (recursive average) */
    st->Pey = FLOAT_ADD(FLOAT_MULT(alpha_1,st->Pey) , FLOAT_MULT(alpha,Pey));
    st->Pyy = FLOAT_ADD(FLOAT_MULT(alpha_1,st->Pyy) , FLOAT_MULT(alpha,Pyy));
