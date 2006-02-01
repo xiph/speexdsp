@@ -278,9 +278,9 @@ static void _vp_noisemask(VorbisPsy *p,
       work2[i]=logmask[i]+work[i];
     }
     
-    _analysis_output("logfreq",seq,logfreq,n,0,0);
-    _analysis_output("median",seq,work,n,0,0);
-    _analysis_output("envelope",seq,work2,n,0,0);
+    //_analysis_output("logfreq",seq,logfreq,n,0,0);
+    //_analysis_output("median",seq,work,n,0,0);
+    //_analysis_output("envelope",seq,work2,n,0,0);
     seq++;
   }
 
@@ -385,7 +385,7 @@ void compute_curve(VorbisPsy *psy, float *audio, float *curve)
    {
      static int seq=0;
      
-     _analysis_output("win",seq,work,psy->n,0,0);
+     //_analysis_output("win",seq,work,psy->n,0,0);
 
      seq++;
    }
@@ -402,16 +402,20 @@ void compute_curve(VorbisPsy *psy, float *audio, float *curve)
 
     /* derive a noise curve */
     _vp_noisemask(psy,work,curve);
-#define SIDE 12
-    for (i=0;i<SIDE;i++)
+#define SIDEL 12
+    for (i=0;i<SIDEL;i++)
     {
-       curve[i]=curve[SIDE];
-       curve[(psy->n>>1)-i-1]=curve[(psy->n>>1)-SIDE];
+       curve[i]=curve[SIDEL];
+    }
+#define SIDEH 12
+    for (i=0;i<SIDEH;i++)
+    {
+       curve[(psy->n>>1)-i-1]=curve[(psy->n>>1)-SIDEH];
     }
     for(i=0;i<((psy->n)>>1);i++)
-       //curve[i] = fromdB(.5*curve[i])*pow(1+i/12,.6);
        curve[i] = fromdB(1.2*curve[i]+.2*i);
-
+       //curve[i] = fromdB(0.8*curve[i]+.35*i);
+       //curve[i] = fromdB(0.9*curve[i])*pow(1.0*i+45,1.3);
 }
 
 /* Transform a masking curve (power spectrum) into a pole-zero filter */
@@ -419,6 +423,7 @@ void curve_to_lpc(VorbisPsy *psy, float *curve, float *awk1, float *awk2, int or
 {
    int i;
    float ac[psy->n];
+   float tmp;
    int len = psy->n >> 1;
    for (i=0;i<2*len;i++)
       ac[i] = 0;
@@ -429,6 +434,12 @@ void curve_to_lpc(VorbisPsy *psy, float *curve, float *awk1, float *awk2, int or
    
    spx_drft_backward(&psy->lookup, ac);
    _spx_lpc(awk1, ac, ord);
+   tmp = 1.;
+   for (i=0;i<ord;i++)
+   {
+      tmp *= .99;
+      awk1[i] *= tmp;
+   }
 #if 0
    for (i=0;i<ord;i++)
       awk2[i] = 0;
@@ -458,7 +469,12 @@ void curve_to_lpc(VorbisPsy *psy, float *curve, float *awk1, float *awk2, int or
    
    spx_drft_backward(&psy->lookup, ac);
    _spx_lpc(awk2, ac, ord);
-   
+   tmp = 1;
+   for (i=0;i<ord;i++)
+   {
+      tmp *= .99;
+      awk2[i] *= tmp;
+   }
 #endif
 }
 
