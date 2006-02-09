@@ -53,7 +53,7 @@ static void *pcm_encoder_init(const SpeexMode *m)
    PCMState *st = (PCMState*)speex_alloc(sizeof(PCMState));
    st->mode = m;
    st->frame_size = 64;
-   
+   return st;
 }
 
 /** De-allocates encoder state resources*/
@@ -74,6 +74,7 @@ static int pcm_encode(void *state, void *vin, SpeexBits *bits)
       x = in[i];
       speex_bits_pack(bits, x, 16);
    }
+   return 0;
 }
 
 /** Initializes decoder state*/
@@ -81,7 +82,8 @@ static void *pcm_decoder_init(const SpeexMode *m)
 {
    PCMState *st = (PCMState*)speex_alloc(sizeof(PCMState));
    st->mode = m;
-   st->frame_size = 64;   
+   st->frame_size = 64;
+   return st;
 }
 
 /** De-allocates decoder state resources*/
@@ -102,6 +104,7 @@ static int pcm_decode(void *state, SpeexBits *bits, void *vout)
       x = speex_bits_unpack_signed(bits, 16);
       out[i] = x;
    }
+   return 0;
 }
 
 /** ioctl-like function for controlling a narrowband encoder */
@@ -121,6 +124,7 @@ static int pcm_encoder_ctl(void *state, int request, void *ptr)
          speex_warning_int("Unknown nb_ctl request: ", request);
          return -1;
    }
+   return 0;
 }
 
 /** ioctl-like function for controlling a narrowband decoder */
@@ -139,8 +143,8 @@ static int pcm_decoder_ctl(void *state, int request, void *ptr)
       default:
          speex_warning_int("Unknown nb_ctl request: ", request);
          return -1;
-
    }
+   return 0;
 }
 
 typedef struct {
@@ -150,7 +154,7 @@ static PCMMode pcmmode;
 
 int pcm_mode_query(const void *mode, int request, void *ptr)
 {
-   const PCMMode *m = (const PCMMode*)mode;
+   /*const PCMMode *m = (const PCMMode*)mode;*/
    
    switch (request)
    {

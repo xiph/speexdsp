@@ -248,9 +248,10 @@ void spx_fft_float(void *table, float *in, float *out)
       out[i] = _out[i];
    if (!fixed_point)
    {
+      float scale;
       struct drft_lookup t;
       spx_drft_init(&t, ((struct kiss_config *)table)->N);
-      float scale = 1./((struct kiss_config *)table)->N;
+      scale = 1./((struct kiss_config *)table)->N;
       for (i=0;i<((struct kiss_config *)table)->N;i++)
          out[i] = scale*in[i];
       spx_drft_forward(&t, out);

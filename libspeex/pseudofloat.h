@@ -79,18 +79,15 @@ static inline spx_float_t PSEUDOFLOAT(spx_int32_t x)
       return (spx_float_t) {x,e};
 }
 
-static inline float REALFLOAT(spx_float_t a)
-{
-   return a.m * pow(2,a.e);
-}
 
 static inline spx_float_t FLOAT_ADD(spx_float_t a, spx_float_t b)
 {
+   spx_float_t r;
    if (a.m==0)
       return b;
    else if (b.m==0)
       return a;
-   spx_float_t r = (a).e > (b).e ? (spx_float_t) {((a).m>>1) + ((b).m>>MIN(15,(a).e-(b).e+1)),(a).e+1} : (spx_float_t) {((b).m>>1) + ((a).m>>MIN(15,(b).e-(a).e+1)),(b).e+1};
+   r = (a).e > (b).e ? (spx_float_t) {((a).m>>1) + ((b).m>>MIN(15,(a).e-(b).e+1)),(a).e+1} : (spx_float_t) {((b).m>>1) + ((a).m>>MIN(15,(b).e-(a).e+1)),(b).e+1};
    if (r.m>0)
    {
       if (r.m<16384)
@@ -111,11 +108,12 @@ static inline spx_float_t FLOAT_ADD(spx_float_t a, spx_float_t b)
 
 static inline spx_float_t FLOAT_SUB(spx_float_t a, spx_float_t b)
 {
+   spx_float_t r;
    if (a.m==0)
       return b;
    else if (b.m==0)
       return a;
-   spx_float_t r = (a).e > (b).e ? (spx_float_t) {((a).m>>1) - ((b).m>>MIN(15,(a).e-(b).e+1)),(a).e+1} : (spx_float_t) {((a).m>>MIN(15,(b).e-(a).e+1)) - ((b).m>>1) ,(b).e+1};
+   r = (a).e > (b).e ? (spx_float_t) {((a).m>>1) - ((b).m>>MIN(15,(a).e-(b).e+1)),(a).e+1} : (spx_float_t) {((a).m>>MIN(15,(b).e-(a).e+1)) - ((b).m>>1) ,(b).e+1};
    if (r.m>0)
    {
       if (r.m<16384)
@@ -173,10 +171,6 @@ static inline spx_float_t FLOAT_MULT(spx_float_t a, spx_float_t b)
    return r;   
 }
 
-static inline spx_float_t FLOAT_SHR(spx_float_t a, int b)
-{
-   return (spx_float_t) {a.m,a.e-b};
-}
 
 static inline spx_float_t FLOAT_SHL(spx_float_t a, int b)
 {
@@ -189,14 +183,6 @@ static inline spx_int16_t FLOAT_EXTRACT16(spx_float_t a)
       return (a.m+(1<<(-a.e-1)))>>-a.e;
    else
       return a.m<<a.e;
-}
-
-static inline spx_int32_t FLOAT_EXTRACT32(spx_float_t a)
-{
-   if (a.e<0)
-      return ((spx_int32_t)a.m+(1<<(-a.e-1)))>>-a.e;
-   else
-      return ((spx_int32_t)a.m)<<a.e;
 }
 
 static inline spx_int32_t FLOAT_MUL32(spx_float_t a, spx_word32_t b)

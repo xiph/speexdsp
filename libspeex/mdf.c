@@ -123,6 +123,10 @@ struct SpeexEchoState_ {
    spx_word32_t *W;
    spx_word32_t *power;
    spx_float_t *power_1;
+   spx_word16_t *wtmp;
+#ifdef FIXED_POINT
+   spx_word16_t *wtmp2;
+#endif
    spx_word32_t *Rf;
    spx_word32_t *Yf;
    spx_word32_t *Xf;
@@ -300,7 +304,9 @@ SpeexEchoState *speex_echo_state_init(int frame_size, int filter_length)
    st->power = (spx_word32_t*)speex_alloc((frame_size+1)*sizeof(spx_word32_t));
    st->power_1 = (spx_float_t*)speex_alloc((frame_size+1)*sizeof(spx_float_t));
    st->window = (spx_word16_t*)speex_alloc(N*sizeof(spx_word16_t));
-#ifdef FIXED_POINT   
+   st->wtmp = (spx_word16_t*)speex_alloc(N*sizeof(spx_word16_t));
+#ifdef FIXED_POINT
+   st->wtmp2 = (spx_word16_t*)speex_alloc(N*sizeof(spx_word16_t));
    for (i=0;i<N>>1;i++)
    {
       st->window[i] = (16383-SHL16(spx_cos(DIV32_16(MULT16_16(25736,i<<1),N)),1));
@@ -375,7 +381,10 @@ void speex_echo_state_destroy(SpeexEchoState *st)
    speex_free(st->power);
    speex_free(st->power_1);
    speex_free(st->window);
-
+   speex_free(st->wtmp);
+#ifdef FIXED_POINT
+   speex_free(st->wtmp2);
+#endif
    speex_free(st);
 }
 
@@ -626,31 +635,29 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
       /* Remove the "if" to make this an MDF filter */
       if (j==M-1 || st->cancel_count%(M-1) == j)
       {
-         spx_word16_t w[N];
 #ifdef FIXED_POINT
-         spx_word16_t w2[N];
          for (i=0;i<N;i++)
-            w2[i] = PSHR32(st->W[j*N+i],NORMALIZE_SCALEDOWN+16);
-         spx_ifft(st->fft_table, w2, w);
+            st->wtmp2[i] = PSHR32(st->W[j*N+i],NORMALIZE_SCALEDOWN+16);
+         spx_ifft(st->fft_table, st->wtmp2, st->wtmp);
          for (i=0;i<st->frame_size;i++)
          {
-            w[i]=0;
+            st->wtmp[i]=0;
          }
          for (i=st->frame_size;i<N;i++)
          {
-            w[i]=SHL(w[i],NORMALIZE_SCALEUP);
+            st->wtmp[i]=SHL(st->wtmp[i],NORMALIZE_SCALEUP);
          }
-         spx_fft(st->fft_table, w, w2);
+         spx_fft(st->fft_table, st->wtmp, st->wtmp2);
          /* The "-1" in the shift is a sort of kludge that trades less efficient update speed for decrease noise */
          for (i=0;i<N;i++)
-            st->W[j*N+i] -= SHL32(w2[i],16+NORMALIZE_SCALEDOWN-NORMALIZE_SCALEUP-1);
+            st->W[j*N+i] -= SHL32(st->wtmp2[i],16+NORMALIZE_SCALEDOWN-NORMALIZE_SCALEUP-1);
 #else
-         spx_ifft(st->fft_table, &st->W[j*N], w);
+         spx_ifft(st->fft_table, &st->W[j*N], st->wtmp);
          for (i=st->frame_size;i<N;i++)
          {
-            w[i]=0;
+            st->wtmp[i]=0;
          }
-         spx_fft(st->fft_table, w, &st->W[j*N]);
+         spx_fft(st->fft_table, st->wtmp, &st->W[j*N]);
 #endif
       }
    }
