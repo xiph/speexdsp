@@ -34,7 +34,7 @@
 #ifndef SPEEX_ECHO_H
 #define SPEEX_ECHO_H
 
-#include "misc.h"
+#include "speex/speex_types.h"
 
 #ifdef __cplusplus
 extern "C" {
