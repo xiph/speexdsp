@@ -162,7 +162,7 @@ spx_word16_t spx_cos(spx_word16_t x)
 
 
 #define SPX_PI_2 1.5707963268
-inline spx_word16_t spx_cos(spx_word16_t x)
+spx_word16_t spx_cos(spx_word16_t x)
 {
    if (x<SPX_PI_2)
    {
