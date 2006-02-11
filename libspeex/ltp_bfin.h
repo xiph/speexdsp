@@ -90,11 +90,11 @@ static void pitch_xcorr(const spx_word16_t *_x, const spx_word16_t *_y, spx_word
          "R1 = [I1++];\n\t"
          "LOOP inner_prod%= LC1 = P3 >> 1;\n\t"
          "LOOP_BEGIN inner_prod%=;\n\t"
-            "A0 += R0.L*R1.L , A1 += R0.L*R1.H (is) || R1.L = W[I1++];\n\t"
-            "A0 += R0.H*R1.H , A1 += R0.H*R1.L (is) || R1.H = W[I1++] || R0 = [I0++];\n\t"
+            "A1 += R0.L*R1.H, A0 += R0.L*R1.L (IS) || R1.L = W[I1++];\n\t"
+            "A1 += R0.H*R1.L, A0 += R0.H*R1.H (IS) || R1.H = W[I1++] || R0 = [I0++];\n\t"
          "LOOP_END inner_prod%=;\n\t"
-         "A0 += R0.L*R1.L , A1 += R0.L*R1.H (is) || R1.L = W[I1++];\n\t"
-         "A0 += R0.H*R1.H , A1 += R0.H*R1.L (is) || R0 = [I0++];\n\t"
+         "A1 += R0.L*R1.H, A0 += R0.L*R1.L (IS) || R1.L = W[I1++];\n\t"
+         "A1 += R0.H*R1.L, A0 += R0.H*R1.H (IS) || R0 = [I0++];\n\t"
          "A0 = A0 >>> 6;\n\t"
          "A1 = A1 >>> 6;\n\t"
          "R2 = A0, R3 = A1;\n\t"
@@ -114,44 +114,44 @@ static inline spx_word32_t compute_pitch_error(spx_word32_t *C, spx_word16_t *g,
    spx_word32_t sum;
    __asm__ __volatile__
          (
-         "A0 = A1 = 0;\n\t"
+         "A1 = A0 = 0;\n\t"
          
          "R0 = [%1++];\n\t"
          "R1.L = %2.L*%5.L (IS);\n\t"
          "R0 <<= 1;\n\t"
-         "A0 += R1.L*R0.H (IS), A1 += R1.L*R0.L (M,IS) || R0 = [%1++];\n\t"
+         "A1 += R1.L*R0.L (M), A0 += R1.L*R0.H (IS) || R0 = [%1++];\n\t"
          
          "R1.L = %3.L*%5.L (IS);\n\t"
          "R0 <<= 1;\n\t"
-         "A0 += R1.L*R0.H (IS), A1 += R1.L*R0.L (M,IS) || R0 = [%1++];\n\t"
+         "A1 += R1.L*R0.L (M), A0 += R1.L*R0.H (IS) || R0 = [%1++];\n\t"
          
          "R1.L = %4.L*%5.L (IS);\n\t"
          "R0 <<= 1;\n\t"
-         "A0 += R1.L*R0.H (IS), A1 += R1.L*R0.L (M,IS) || R0 = [%1++];\n\t"
+         "A1 += R1.L*R0.L (M), A0 += R1.L*R0.H (IS) || R0 = [%1++];\n\t"
          
          "R1.L = %2.L*%3.L (IS);\n\t"
          "R0 <<= 1;\n\t"
-         "A0 -= R1.L*R0.H (IS), A1 -= R1.L*R0.L (M,IS) || R0 = [%1++];\n\t"
+         "A1 -= R1.L*R0.L (M), A0 -= R1.L*R0.H (IS) || R0 = [%1++];\n\t"
 
          "R1.L = %4.L*%3.L (IS);\n\t"
          "R0 <<= 1;\n\t"
-         "A0 -= R1.L*R0.H (IS), A1 -= R1.L*R0.L (M,IS) || R0 = [%1++];\n\t"
+         "A1 -= R1.L*R0.L (M), A0 -= R1.L*R0.H (IS) || R0 = [%1++];\n\t"
          
          "R1.L = %4.L*%2.L (IS);\n\t"
          "R0 <<= 1;\n\t"
-         "A0 -= R1.L*R0.H (IS), A1 -= R1.L*R0.L (M,IS) || R0 = [%1++];\n\t"
+         "A1 -= R1.L*R0.L (M), A0 -= R1.L*R0.H (IS) || R0 = [%1++];\n\t"
          
          "R1.L = %2.L*%2.L (IS);\n\t"
          "R0 <<= 1;\n\t"
-         "A0 -= R1.L*R0.H (IS), A1 -= R1.L*R0.L (M,IS) || R0 = [%1++];\n\t"
+         "A1 -= R1.L*R0.L (M), A0 -= R1.L*R0.H (IS) || R0 = [%1++];\n\t"
 
          "R1.L = %3.L*%3.L (IS);\n\t"
          "R0 <<= 1;\n\t"
-         "A0 -= R1.L*R0.H (IS), A1 -= R1.L*R0.L (M,IS) || R0 = [%1++];\n\t"
+         "A1 -= R1.L*R0.L (M), A0 -= R1.L*R0.H (IS) || R0 = [%1++];\n\t"
          
          "R1.L = %4.L*%4.L (IS);\n\t"
          "R0 <<= 1;\n\t"
-         "A0 -= R1.L*R0.H (IS), A1 -= R1.L*R0.L (M,IS);\n\t"
+         "A1 -= R1.L*R0.L (M), A0 -= R1.L*R0.H (IS);\n\t"
          
          "A1 = A1 >>> 16;\n\t"
          "A0 += A1;\n\t"
