@@ -704,3 +704,38 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
    }
 }
 
+
+int speex_echo_ctl(SpeexEchoState *st, int request, void *ptr)
+{
+   switch(request)
+   {
+      
+      case SPEEX_ECHO_GET_FRAME_SIZE:
+         (*(int*)ptr) = st->frame_size;
+         break;
+      case SPEEX_ECHO_SET_SAMPLING_RATE:
+         st->sampling_rate = (*(int*)ptr);
+         st->spec_average = DIV32_16(SHL32(st->frame_size, 15), st->sampling_rate);
+#ifdef FIXED_POINT
+         st->beta0 = DIV32_16(SHL32(st->frame_size, 16), st->sampling_rate);
+         st->beta_max = DIV32_16(SHL32(st->frame_size, 14), st->sampling_rate);
+#else
+         st->beta0 = (2.0f*st->frame_size)/st->sampling_rate;
+         st->beta_max = (.5f*st->frame_size)/st->sampling_rate;
+#endif
+         if (st->sampling_rate<12000)
+            st->notch_radius = QCONST16(.9, 15);
+         else if (st->sampling_rate<24000)
+            st->notch_radius = QCONST16(.982, 15);
+         else
+            st->notch_radius = QCONST16(.992, 15);
+         break;
+      case SPEEX_ECHO_GET_SAMPLING_RATE:
+         (*(int*)ptr) = st->sampling_rate;
+         break;
+      default:
+         speex_warning_int("Unknown speex_echo_ctl request: ", request);
+         return -1;
+   }
+   return 0;
+}

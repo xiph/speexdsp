@@ -40,6 +40,15 @@
 extern "C" {
 #endif
 
+/** Obtain frame size used by the AEC */
+#define SPEEX_ECHO_GET_FRAME_SIZE 3
+
+/** Set sampling rate */
+#define SPEEX_ECHO_SET_SAMPLING_RATE 24
+/** Get sampling rate */
+#define SPEEX_ECHO_GET_SAMPLING_RATE 25
+
+
 /*struct drft_lookup;*/
 struct SpeexEchoState_;
 
@@ -56,6 +65,15 @@ void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, 
 
 /** Reset the echo canceller state */
 void speex_echo_state_reset(SpeexEchoState *st);
+
+/** Used like the ioctl function to control the echo canceller parameters
+ *
+ * @param state Encoder state
+ * @param request ioctl-type request (one of the SPEEX_ECHO_* macros)
+ * @param ptr Data exchanged to-from function
+ * @return 0 if no error, -1 if request in unknown
+ */
+int speex_echo_ctl(SpeexEchoState *st, int request, void *ptr);
 
 #ifdef __cplusplus
 }
