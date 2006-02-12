@@ -477,6 +477,7 @@ int main(int argc, char **argv)
       rate=8000;
    } else if (modeID!=-1 && rate)
    {
+      mode = speex_lib_get_mode (modeID);
       if (rate>48000)
       {
          fprintf (stderr, "Error: sampling rate too high: %d Hz, try down-sampling\n", rate);
@@ -536,7 +537,8 @@ int main(int argc, char **argv)
       if (rate!=8000 && rate!=16000 && rate!=32000)
          fprintf (stderr, "Warning: Speex is only optimized for 8, 16 and 32 kHz. It will still work at %d Hz but your mileage may vary\n", rate); 
 
-   mode = speex_lib_get_mode (modeID);
+   if (!mode)
+      mode = speex_lib_get_mode (modeID);
 
    speex_init_header(&header, rate, 1, mode);
    header.frames_per_packet=nframes;
