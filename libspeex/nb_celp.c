@@ -1277,12 +1277,6 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
    st=(DecState*)state;
    stack=st->stack;
 
-   if (st->encode_submode)
-   {
-#ifdef EPIC_48K
-   if (!st->lbr_48k) {
-#endif
-
    /* Check if we're in DTX mode*/
    if (!bits && st->dtx_enabled)
    {
@@ -1295,6 +1289,12 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
          nb_decode_lost(st, out, stack);
          return 0;
       }
+
+      if (st->encode_submode)
+      {
+#ifdef EPIC_48K
+         if (!st->lbr_48k) {
+#endif
 
       /* Search for next narrowband block (handle requests, skip wideband blocks) */
       do {
@@ -1365,11 +1365,11 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
 
       /* Get the sub-mode that was used */
       st->submodeID = m;
-
-   }
 #ifdef EPIC_48K
-   }
+         }
 #endif
+      }
+
    }
 
    /* Shift all buffers by one frame */
