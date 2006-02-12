@@ -212,7 +212,7 @@ void speex_jitter_get(SpeexJitter *jitter, short *out, int *current_timestamp)
    {
       jitter->shortterm_margin[MAX_MARGIN-1] += jitter->shortterm_margin[MAX_MARGIN-2];
       jitter->longterm_margin[MAX_MARGIN-1] += jitter->longterm_margin[MAX_MARGIN-2];
-      for (i=MAX_MARGIN-2;i>=0;i--)
+      for (i=MAX_MARGIN-3;i>=0;i--)
       {
          jitter->shortterm_margin[i+1] = jitter->shortterm_margin[i];
          jitter->longterm_margin[i+1] = jitter->longterm_margin[i];         
