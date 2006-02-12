@@ -12,7 +12,8 @@
 #include "speex/speex_preprocess.h"
 
 
-#define NN 160
+#define NN 128
+#define TAIL 1024
 
 int main(int argc, char **argv)
 {
@@ -31,8 +32,10 @@ int main(int argc, char **argv)
    ref_fd  = open (argv[1],  O_RDONLY);
    e_fd    = open (argv[3], O_WRONLY | O_CREAT | O_TRUNC, 0644);
 
-   st = speex_echo_state_init(NN, 8*NN);
+   st = speex_echo_state_init(NN, TAIL);
    den = speex_preprocess_state_init(NN, 8000);
+   int tmp = 8000;
+   speex_echo_ctl(st, SPEEX_ECHO_SET_SAMPLING_RATE, &tmp);
 
    while (read(ref_fd, ref_buf, NN*2))
    {
