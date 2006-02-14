@@ -248,7 +248,7 @@ float vbr_analysis(VBRState *vbr, spx_word16_t *sig, int len, int pitch, float p
          qual-=0.5*(log(3.0 + vbr->consec_noise)-log(3));
       if (qual<0)
          qual=0;
-      qual += .3*log(ener/60000.0);
+      qual += .3*log(.0001+ener/60000.0);
    }
    if (qual<-1)
       qual=-1;
