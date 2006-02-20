@@ -125,9 +125,9 @@ void *nb_encoder_init(const SpeexMode *m)
    st->mode=m;
 
    st->frameSize = mode->frameSize;
-   st->windowSize = st->frameSize*3/2;
    st->nbSubframes=mode->frameSize/mode->subframeSize;
    st->subframeSize=mode->subframeSize;
+   st->windowSize = st->frameSize+st->subframeSize;
    st->lpcSize = mode->lpcSize;
    st->gamma1=mode->gamma1;
    st->gamma2=mode->gamma2;
@@ -164,14 +164,17 @@ void *nb_encoder_init(const SpeexMode *m)
 
    /* Asymmetric "pseudo-Hamming" window */
    {
-      int part1, part2;
-      part1=st->frameSize - (st->subframeSize>>1);
-      part2=(st->frameSize>>1) + (st->subframeSize>>1);
+      int part1, part2, part3;
+      part1=st->frameSize-st->subframeSize;
+      part2=st->subframeSize+10;
+      part3=st->subframeSize-10;
       st->window = speex_alloc((st->windowSize)*sizeof(spx_word16_t));
       for (i=0;i<part1;i++)
          st->window[i]=(spx_word16_t)(SIG_SCALING*(.54-.46*cos(M_PI*i/part1)));
       for (i=0;i<part2;i++)
-         st->window[part1+i]=(spx_word16_t)(SIG_SCALING*(.54+.46*cos(M_PI*i/part2)));
+         st->window[part1+i]=(spx_word16_t)(SIG_SCALING);
+      for (i=0;i<part3;i++)
+         st->window[part1+part2+i]=(spx_word16_t)(SIG_SCALING*sqrt(.504+.496*cos(M_PI*i/part3)));
    }
    /* Create the window for autocorrelation (lag-windowing) */
    st->lagWindow = speex_alloc((st->lpcSize+1)*sizeof(spx_word16_t));
