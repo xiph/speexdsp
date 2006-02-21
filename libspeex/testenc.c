@@ -48,7 +48,7 @@ int main(int argc, char **argv)
    callback.data = st;
    speex_decoder_ctl(dec, SPEEX_SET_HANDLER, &callback);
 
-   tmp=0;
+   tmp=1;
    speex_decoder_ctl(dec, SPEEX_SET_ENH, &tmp);
    tmp=0;
    speex_encoder_ctl(st, SPEEX_SET_VBR, &tmp);
@@ -59,7 +59,7 @@ int main(int argc, char **argv)
 
    speex_mode_query(&speex_nb_mode, SPEEX_MODE_FRAME_SIZE, &tmp);
    fprintf (stderr, "frame size: %d\n", tmp);
-   skip_group_delay = tmp / 2;
+   skip_group_delay = tmp / 4;
 
    if (argc != 4 && argc != 3)
    {
