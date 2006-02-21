@@ -49,23 +49,23 @@ int main(int argc, char **argv)
    callback.data = st;
    speex_decoder_ctl(dec, SPEEX_SET_HANDLER, &callback);
 
-   tmp=0;
+   tmp=1;
    speex_decoder_ctl(dec, SPEEX_SET_ENH, &tmp);
    tmp=0;
    speex_encoder_ctl(st, SPEEX_SET_VBR, &tmp);
    tmp=8;
    speex_encoder_ctl(st, SPEEX_SET_QUALITY, &tmp);
-   tmp=2;
-   speex_encoder_ctl(st, SPEEX_SET_COMPLEXITY, &tmp);
    tmp=3;
+   speex_encoder_ctl(st, SPEEX_SET_COMPLEXITY, &tmp);
+   /*tmp=3;
    speex_encoder_ctl(st, SPEEX_SET_HIGH_MODE, &tmp);
    tmp=6;
    speex_encoder_ctl(st, SPEEX_SET_LOW_MODE, &tmp);
-
+*/
 
    speex_mode_query(&speex_wb_mode, SPEEX_MODE_FRAME_SIZE, &tmp);
    fprintf (stderr, "frame size: %d\n", tmp);
-   skip_group_delay = 223;
+   skip_group_delay = 223-80;
 
    if (argc != 4 && argc != 3)
    {
