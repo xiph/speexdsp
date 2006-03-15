@@ -1016,6 +1016,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
    return 1;
 }
 
+#define PITCH_PERIODS 1
 
 void *nb_decoder_init(const SpeexMode *m)
 {
@@ -1058,8 +1059,8 @@ void *nb_decoder_init(const SpeexMode *m)
 
    st->inBuf = speex_alloc((st->frameSize)*sizeof(spx_sig_t));
    st->frame = st->inBuf;
-   st->excBuf = speex_alloc((st->frameSize + st->max_pitch + 1)*sizeof(spx_sig_t));
-   st->exc = st->excBuf + st->max_pitch + 1;
+   st->excBuf = speex_alloc((st->frameSize + PITCH_PERIODS*st->max_pitch + 1)*sizeof(spx_sig_t));
+   st->exc = st->excBuf + PITCH_PERIODS*st->max_pitch + 1;
    for (i=0;i<st->frameSize;i++)
       st->inBuf[i]=0;
    for (i=0;i<st->frameSize + st->max_pitch + 1;i++)
@@ -1166,7 +1167,7 @@ static void nb_decode_lost(DecState *st, spx_word16_t *out, char *stack)
 
    /* Shift all buffers by one frame */
    /*speex_move(st->inBuf, st->inBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(spx_sig_t));*/
-   speex_move(st->excBuf, st->excBuf+st->frameSize, (st->max_pitch + 1)*sizeof(spx_sig_t));
+   speex_move(st->excBuf, st->excBuf+st->frameSize, (PITCH_PERIODS*st->max_pitch + 1)*sizeof(spx_sig_t));
 
    ALLOC(awk1, (st->lpcSize+1), spx_coef_t);
    ALLOC(awk2, (st->lpcSize+1), spx_coef_t);
@@ -1376,7 +1377,7 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
    }
 
    /* Shift all buffers by one frame */
-   speex_move(st->excBuf, st->excBuf+st->frameSize, (st->max_pitch + 1)*sizeof(spx_sig_t));
+   speex_move(st->excBuf, st->excBuf+st->frameSize, (PITCH_PERIODS*st->max_pitch + 1)*sizeof(spx_sig_t));
 
    /* If null mode (no transmission), just set a couple things to zero*/
    if (st->submodes[st->submodeID] == NULL)
@@ -1507,7 +1508,7 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
    for (sub=0;sub<st->nbSubframes;sub++)
    {
       int offset;
-      spx_sig_t *sp, *exc;
+      spx_sig_t *exc, *sp;
       spx_word16_t tmp;
 
 #ifdef EPIC_48K
@@ -1522,40 +1523,11 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
 
       /* Offset relative to start of frame */
       offset = st->subframeSize*sub;
-      /* Original signal */
-      sp=st->frame+offset;
       /* Excitation */
       exc=st->exc+offset;
-      /* Excitation after post-filter*/
+      /* Original signal */
+      sp=st->frame+offset;
 
-      /* LSP interpolation (quantized and unquantized) */
-      lsp_interpolate(st->old_qlsp, st->qlsp, st->interp_qlsp, st->lpcSize, sub, st->nbSubframes);
-
-      /* Make sure the LSP's are stable */
-      lsp_enforce_margin(st->interp_qlsp, st->lpcSize, LSP_MARGIN);
-
-
-      /* Compute interpolated LPCs (unquantized) */
-      lsp_to_lpc(st->interp_qlsp, st->interp_qlpc, st->lpcSize, stack);
-
-      /* Compute enhanced synthesis filter */
-      if (st->lpc_enh_enabled)
-      {
-         bw_lpc(SUBMODE(lpc_enh_k1), st->interp_qlpc, awk1, st->lpcSize);
-         bw_lpc(SUBMODE(lpc_enh_k2), st->interp_qlpc, awk2, st->lpcSize);
-         bw_lpc(SUBMODE(lpc_enh_k3), st->interp_qlpc, awk3, st->lpcSize);
-      }
-
-      /* Compute analysis filter at w=pi */
-      {
-         spx_word32_t pi_g=LPC_SCALING;
-         for (i=0;i<st->lpcSize;i+=2)
-         {
-            /*pi_g += -st->interp_qlpc[i] +  st->interp_qlpc[i+1];*/
-            pi_g = ADD32(pi_g, SUB32(st->interp_qlpc[i+1],st->interp_qlpc[i]));
-         }
-         st->pi_gain[sub] = pi_g;
-      }
 
       /* Reset excitation */
       for (i=0;i<st->subframeSize;i++)
@@ -1752,8 +1724,62 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
       /* Signal synthesis */
       if (st->lpc_enh_enabled && SUBMODE(comb_gain)>0)
          comb_filter(exc, sp, st->interp_qlpc, st->lpcSize, st->subframeSize,
-                              pitch, pitch_gain, SUBMODE(comb_gain), st->comb_mem);
+                     pitch, pitch_gain, SUBMODE(comb_gain), st->comb_mem);
+      
 
+   }
+   
+#if 0 /* Disabled for now */
+   if (1)
+   {
+      multicomb(st->exc, st->frame, st->interp_qlpc, st->lpcSize, 2*st->subframeSize, pitch, pitch_gain, SUBMODE(comb_gain), stack);
+      multicomb(st->exc+80, st->frame+80, st->interp_qlpc, st->lpcSize, 2*st->subframeSize, pitch, pitch_gain, SUBMODE(comb_gain), stack);
+   }
+#endif
+
+   /*Loop on subframes */
+   for (sub=0;sub<st->nbSubframes;sub++)
+   {
+      int offset;
+      spx_sig_t *sp, *exc;
+      spx_word16_t tmp;
+
+      /* Offset relative to start of frame */
+      offset = st->subframeSize*sub;
+      /* Original signal */
+      sp=st->frame+offset;
+      /* Excitation */
+      exc=st->exc+offset;
+
+      /* LSP interpolation (quantized and unquantized) */
+      lsp_interpolate(st->old_qlsp, st->qlsp, st->interp_qlsp, st->lpcSize, sub, st->nbSubframes);
+
+      /* Make sure the LSP's are stable */
+      lsp_enforce_margin(st->interp_qlsp, st->lpcSize, LSP_MARGIN);
+
+
+      /* Compute interpolated LPCs (unquantized) */
+      lsp_to_lpc(st->interp_qlsp, st->interp_qlpc, st->lpcSize, stack);
+
+      /* Compute enhanced synthesis filter */
+      if (st->lpc_enh_enabled)
+      {
+         bw_lpc(SUBMODE(lpc_enh_k1), st->interp_qlpc, awk1, st->lpcSize);
+         bw_lpc(SUBMODE(lpc_enh_k2), st->interp_qlpc, awk2, st->lpcSize);
+         bw_lpc(SUBMODE(lpc_enh_k3), st->interp_qlpc, awk3, st->lpcSize);
+      }
+      
+      /* Compute analysis filter at w=pi */
+      {
+         spx_word32_t pi_g=LPC_SCALING;
+         for (i=0;i<st->lpcSize;i+=2)
+         {
+            /*pi_g += -st->interp_qlpc[i] +  st->interp_qlpc[i+1];*/
+            pi_g = ADD32(pi_g, SUB32(st->interp_qlpc[i+1],st->interp_qlpc[i]));
+         }
+         st->pi_gain[sub] = pi_g;
+      }
+      
       if (st->lpc_enh_enabled)
       {
          /* Use enhanced LPC filter */
@@ -1766,10 +1792,10 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
          for (i=0;i<st->lpcSize;i++)
             st->mem_sp[st->lpcSize+i] = 0;
          iir_mem2(sp, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, 
-                     st->mem_sp);
+                  st->mem_sp);
       }
+
    }
-   
    /*Copy output signal*/   
    for (i=0;i<st->frameSize;i++)
    {
