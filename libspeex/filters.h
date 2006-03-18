@@ -74,6 +74,20 @@ void residue_percep_zero(const spx_sig_t *xx, const spx_coef_t *ak, const spx_co
 
 void compute_impulse_response(const spx_coef_t *ak, const spx_coef_t *awk1, const spx_coef_t *awk2, spx_word16_t *y, int N, int ord, char *stack);
 
+#ifdef NEW_ENHANCER
+void multicomb(
+spx_sig_t *exc,          /*decoded excitation*/
+spx_sig_t *new_exc,      /*enhanced excitation*/
+spx_coef_t *ak,           /*LPC filter coefs*/
+int p,               /*LPC order*/
+int nsf,             /*sub-frame size*/
+int pitch,           /*pitch period*/
+spx_word16_t *pitch_gain,   /*pitch gain (3-tap)*/
+spx_word16_t  comb_gain,    /*gain of comb filter*/
+char *stack
+);
+#endif
+
 void comb_filter_mem_init (CombFilterMem *mem);
 
 void comb_filter(

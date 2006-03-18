@@ -55,7 +55,7 @@
 #endif
 
 #ifndef OVERRIDE_INNER_PROD
-static spx_word32_t inner_prod(const spx_word16_t *x, const spx_word16_t *y, int len)
+spx_word32_t inner_prod(const spx_word16_t *x, const spx_word16_t *y, int len)
 {
    spx_word32_t sum=0;
    len >>= 2;
@@ -75,7 +75,7 @@ static spx_word32_t inner_prod(const spx_word16_t *x, const spx_word16_t *y, int
 
 #ifndef OVERRIDE_PITCH_XCORR
 #if 0 /* HINT: Enable this for machines with enough registers (i.e. not x86) */
-static void pitch_xcorr(const spx_word16_t *_x, const spx_word16_t *_y, spx_word32_t *corr, int len, int nb_pitch, char *stack)
+void pitch_xcorr(const spx_word16_t *_x, const spx_word16_t *_y, spx_word32_t *corr, int len, int nb_pitch, char *stack)
 {
    int i,j;
    for (i=0;i<nb_pitch;i+=4)
@@ -138,7 +138,7 @@ static void pitch_xcorr(const spx_word16_t *_x, const spx_word16_t *_y, spx_word
 
 }
 #else
-static void pitch_xcorr(const spx_word16_t *_x, const spx_word16_t *_y, spx_word32_t *corr, int len, int nb_pitch, char *stack)
+void pitch_xcorr(const spx_word16_t *_x, const spx_word16_t *_y, spx_word32_t *corr, int len, int nb_pitch, char *stack)
 {
    int i;
    for (i=0;i<nb_pitch;i++)

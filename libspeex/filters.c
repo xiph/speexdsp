@@ -493,6 +493,155 @@ void fir_mem_up(const spx_sig_t *x, const spx_word16_t *a, spx_sig_t *y, int N, 
       mem[i+1] = xx[i];
 }
 
+#ifdef NEW_ENHANCER
+
+
+float shift_filt[3][7] = {{-9.9369e-04, 3.1831e-02, -1.3889e-01, 6.0910e-01, 6.0910e-01, -1.3889e-01, 3.1831e-02},
+                          {-0.0029937, 0.0345613, -0.1350474, 0.8904793, 0.2714479, -0.0710304, 0.0135403},
+                          {0.0135403, -0.0710304, 0.2714479, 0.8904793, -0.1350474, 0.0345613,  -0.0029937}};
+
+int interp_pitch(
+spx_sig_t *exc,          /*decoded excitation*/
+spx_sig_t *interp,          /*decoded excitation*/
+int pitch,               /*pitch period*/
+int len
+)
+{
+   int i,j,k;
+   spx_word32_t corr[4][7];
+   spx_word32_t maxcorr;
+   int maxi, maxj;
+   for (i=0;i<7;i++)
+   {
+      corr[0][i] = inner_prod(exc, exc-pitch-3+i, len);
+   }
+   for (i=0;i<3;i++)
+   {
+      for (j=0;j<7;j++)
+      {
+         corr[i+1][j] = 0;
+         for (k=0;k<7;k++)
+         {
+            if (j+k-3 >= 0 && j+k-3 < 7)
+               corr[i+1][j] += corr[0][j+k-3]*shift_filt[i][k];
+         }
+      }
+   }
+   maxi=maxj=-1;
+   maxcorr = -1e10;
+   for (i=0;i<4;i++)
+   {
+      for (j=0;j<7;j++)
+      {
+         if (corr[i][j] > maxcorr)
+         {
+            maxcorr = corr[i][j];
+            maxi=i;
+            maxj=j;
+         }
+      }
+   }
+   float frac = 0;
+   if (maxi==1)
+      frac = .5;
+   if (maxi==2)
+      frac = .25;
+   if (maxi==3)
+      frac = -.25;
+   for (i=0;i<len;i++)
+   {
+      interp[i] = 0;
+      if (maxi>0)
+      {
+         for (k=0;k<7;k++)
+         {
+            interp[i] += exc[i-(pitch-maxj+3)+k-3]*shift_filt[maxi-1][k];
+         }
+      } else {
+         interp[i] = exc[i-(pitch-maxj+3)];
+      }
+   }
+   //printf ("%d %d %d %f\n", pitch, maxi, maxj, pitch-maxj+3-frac);
+   return pitch-maxj+3;
+}
+      
+void multicomb(
+spx_sig_t *exc,          /*decoded excitation*/
+spx_sig_t *new_exc,      /*enhanced excitation*/
+spx_coef_t *ak,           /*LPC filter coefs*/
+int p,               /*LPC order*/
+int nsf,             /*sub-frame size*/
+int pitch,           /*pitch period*/
+spx_word16_t *pitch_gain,   /*pitch gain (3-tap)*/
+spx_word16_t  comb_gain,    /*gain of comb filter*/
+char *stack
+)
+{
+   int i; 
+   int pitch_period;
+   int pitch_tweak;
+   spx_sig_t iexc[4*nsf];
+   spx_coef_t *awk;
+   float tot_gain, curr_gain;
+   //spx_mem_t *wmem;
+   float old_ener, new_ener;
+   float corr[120];
+   /* Estimating pitch... */
+   
+   /* Weighted LPC */
+   //bw_lpc(QCONST16(.7,15), ak, awk, p);
+   //iir_mem2(exc, awk, new_exc, nsf, p, wmem);
+   
+   float ener_1 = 1.f/(1+inner_prod(exc, exc, nsf));
+   /* Correlation on weighted signal */
+   pitch_xcorr(exc, exc-139, corr, nsf, 120, stack);
+   int corr_pitch=139;
+   spx_word32_t max_corr=corr[119];
+   for (i=119;i>=0;i--)
+   {
+      /* Some tweaks to reduce pitch-doubling */
+      if (corr[i]>max_corr || (corr[i]>.6*max_corr && ABS(2*(i+20)-corr_pitch) < 3 )
+          || (corr[i]>.6*max_corr && ABS(3*(i+20)-corr_pitch) < 3 ) || (corr[i]>.6*max_corr && ABS(4*(i+20)-corr_pitch) < 4 )
+          || (corr[i]>.7*max_corr && ABS(5*(i+20)-corr_pitch) < 4 ))
+      {
+         if (corr[i] > max_corr)
+            max_corr = corr[i];
+         corr_pitch=i+20;
+      }
+   }
+   interp_pitch(exc, iexc, corr_pitch, 80);
+   interp_pitch(exc, iexc+nsf, 2*corr_pitch, 80);
+   interp_pitch(exc, iexc+2*nsf, 3*corr_pitch, 80);
+   interp_pitch(exc, iexc+3*nsf, 4*corr_pitch, 80);
+   
+   //printf ("%d %d %f\n", pitch, corr_pitch, max_corr*ener_1);
+   for (i=0;i<120;i++)
+      corr[i] *= ener_1;
+   //print_vec(corr, 120, "pitch");
+      
+   float pgain = .5*inner_prod(iexc,exc,nsf)/sqrt(1+inner_prod(iexc,iexc,nsf)*inner_prod(exc,exc,nsf)) + .5*inner_prod(iexc+nsf,exc,nsf)/sqrt(1+inner_prod(iexc+nsf,iexc+nsf,nsf)*inner_prod(exc,exc,nsf));
+   //printf ("%f\n", pgain);
+   if (pgain < 0)
+      pgain = 0;
+   if (pgain > 1)
+      pgain = 1;
+   tot_gain = comb_gain*2*(.5/sqrt(1.01-pgain*pgain)-.35);
+   if (tot_gain>1)
+      tot_gain=1;
+   if (comb_gain > tot_gain)
+      comb_gain = tot_gain;
+      
+   for (i=0;i<nsf;i++)
+      new_exc[i] = exc[i] + comb_gain*(iexc[i] + .2*iexc[i+nsf]);
+   new_ener = compute_rms(new_exc, nsf);
+   old_ener = compute_rms(exc, nsf);
+   float ngain = old_ener/(1+new_ener);
+      //printf ("%f\n", ngain);
+   for (i=0;i<nsf;i++)
+      new_exc[i] *= ngain;
+}
+#endif
+
 void comb_filter_mem_init (CombFilterMem *mem)
 {
    mem->last_pitch=0;

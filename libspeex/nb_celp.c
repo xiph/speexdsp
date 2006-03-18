@@ -1016,7 +1016,11 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
    return 1;
 }
 
+#ifdef NEW_ENHANCER
+#define PITCH_PERIODS 4
+#else
 #define PITCH_PERIODS 1
+#endif
 
 void *nb_decoder_init(const SpeexMode *m)
 {
@@ -1729,14 +1733,13 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
 
    }
    
-#if 0 /* Disabled for now */
+#ifdef NEW_ENHANCER
    if (1)
    {
       multicomb(st->exc, st->frame, st->interp_qlpc, st->lpcSize, 2*st->subframeSize, pitch, pitch_gain, SUBMODE(comb_gain), stack);
       multicomb(st->exc+80, st->frame+80, st->interp_qlpc, st->lpcSize, 2*st->subframeSize, pitch, pitch_gain, SUBMODE(comb_gain), stack);
    }
 #endif
-
    /*Loop on subframes */
    for (sub=0;sub<st->nbSubframes;sub++)
    {
