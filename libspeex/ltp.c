@@ -172,6 +172,7 @@ void open_loop_nbest_pitch(spx_sig_t *sw, int start, int end, int len, int *pitc
 {
    int i,j,k;
    VARDECL(spx_word32_t *best_score);
+   VARDECL(spx_word32_t *best_ener);
    spx_word32_t e0;
    VARDECL(spx_word32_t *corr);
    VARDECL(spx_word32_t *energy);
@@ -180,6 +181,7 @@ void open_loop_nbest_pitch(spx_sig_t *sw, int start, int end, int len, int *pitc
    spx_word16_t *swn;
 
    ALLOC(best_score, N, spx_word32_t);
+   ALLOC(best_ener, N, spx_word32_t);
    ALLOC(corr, end-start+1, spx_word32_t);
    ALLOC(energy, end-start+2, spx_word32_t);
    ALLOC(score, end-start+1, spx_word32_t);
@@ -195,6 +197,7 @@ void open_loop_nbest_pitch(spx_sig_t *sw, int start, int end, int len, int *pitc
    for (i=0;i<N;i++)
    {
         best_score[i]=-1;
+        best_ener[i]=0;
         pitch[i]=start;
    }
 
@@ -244,15 +247,30 @@ void open_loop_nbest_pitch(spx_sig_t *sw, int start, int end, int len, int *pitc
 #else
    for (i=start;i<=end;i++)
    {
-      float g = corr[i-start]/(1+energy[i-start]);
-      if (g>16)
-         g = 16;
-      else if (g<-16)
-         g = -16;
-      score[i-start] = g*corr[i-start];
+      float tmp = corr[i-start]*corr[i-start];
+      if (tmp*best_ener[N-1]>best_score[N-1]*(1+energy[i-start]))
+      {
+         for (j=0;j<N;j++)
+         {
+            if (tmp*best_ener[j]>best_score[j]*(1+energy[i-start]))
+            {
+               for (k=N-1;k>j;k--)
+               {
+                  best_score[k]=best_score[k-1];
+                  best_ener[k]=best_ener[k-1];
+                  pitch[k]=pitch[k-1];
+               }
+               best_score[j]=tmp;
+               best_ener[j]=energy[i-start]+1;
+               pitch[j]=i;
+               break;
+            }
+         }
+      }
    }
 #endif
 
+#ifdef FIXED_POINT
    /* Extract best scores */
    for (i=start;i<=end;i++)
    {
@@ -274,6 +292,7 @@ void open_loop_nbest_pitch(spx_sig_t *sw, int start, int end, int len, int *pitc
          }
       }
    }
+#endif
 
    /* Compute open-loop gain */
    if (gain)
