@@ -445,7 +445,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
    }
 
 #ifdef VORBIS_PSYCHO
-   compute_curve(st->psy, st->frame-16, st->curve);
+   compute_curve(st->psy, st->frame-256+st->windowSize, st->curve);
    /*print_vec(st->curve, 128, "curve");*/
    if (st->first)
       for (i=0;i<128;i++)
