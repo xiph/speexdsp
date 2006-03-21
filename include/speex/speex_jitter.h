@@ -43,6 +43,34 @@
 extern "C" {
 #endif
 
+struct JitterBuffer_;
+
+typedef struct JitterBuffer_ JitterBuffer;
+
+/*typedef struct {
+   void *data;
+   
+}  JitterBufferCallback;
+*/
+
+
+/** Initialise jitter buffer */
+void jitter_buffer_init(JitterBuffer *jitter, int tick);
+
+/** Destroy jitter buffer */
+void jitter_buffer_destroy(JitterBuffer *jitter);
+
+/** Put one packet into the jitter buffer */
+void jitter_buffer_put(JitterBuffer *jitter, char *packet, int len, int timestamp, int span);
+
+/** Get one packet from the jitter buffer */
+/*void jitter_buffer_get(JitterBuffer *jitter, short *out, int *current_timestamp);*/
+int jitter_buffer_get(JitterBuffer *jitter, char *out, int *length, int *current_timestamp);
+
+/** Get pointer timestamp of jitter buffer */
+int jitter_buffer_get_pointer_timestamp(JitterBuffer *jitter);
+
+
 #define SPEEX_JITTER_MAX_PACKET_SIZE 1500 /**< Maximum number of bytes per packet         */
 #define SPEEX_JITTER_MAX_BUFFER_SIZE 20   /**< Maximum number of packets in jitter buffer */
 
