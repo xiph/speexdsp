@@ -67,29 +67,48 @@ struct JitterBuffer_ {
 };
 
 /** Initialise jitter buffer */
-void jitter_buffer_init(JitterBuffer *jitter, int tick)
+JitterBuffer *jitter_buffer_init(int tick)
+{
+   JitterBuffer *jitter = speex_alloc(sizeof(JitterBuffer));
+   if (jitter)
+   {
+      int i;
+      for (i=0;i<SPEEX_JITTER_MAX_BUFFER_SIZE;i++)
+         jitter->buf[i]=NULL;
+      jitter->tick_size = tick;
+      jitter_buffer_reset(jitter);
+   }
+   return jitter;
+}
+
+/** Reset jitter buffer */
+void jitter_buffer_reset(JitterBuffer *jitter)
 {
    int i;
    for (i=0;i<SPEEX_JITTER_MAX_BUFFER_SIZE;i++)
    {
-      jitter->buf[i]=NULL;
+      if (jitter->buf[i])
+         speex_free(jitter->buf[i]);
       jitter->len[i]=-1;
       jitter->timestamp[i]=-1;
       jitter->span[i]=-1;
    }
-
-   jitter->tick_size = tick;
-
    jitter->pointer_timestamp = -jitter->tick_size * 4;
    jitter->reset_state = 1;
    jitter->lost_count = 0;
    jitter->loss_rate = 0;
+   for (i=0;i<MAX_MARGIN;i++)
+   {
+      jitter->shortterm_margin[i] = 0;
+      jitter->longterm_margin[i] = 0;
+   }
 
 }
 
 /** Destroy jitter buffer */
 void jitter_buffer_destroy(JitterBuffer *jitter)
 {
+   speex_free(jitter);
 }
 
 /** Put one packet into the jitter buffer */
@@ -102,19 +121,6 @@ void jitter_buffer_put(JitterBuffer *jitter, char *packet, int len, int timestam
    {
       jitter->reset_state=0;
       jitter->pointer_timestamp = timestamp-jitter->tick_size * 4;
-      for (i=0;i<MAX_MARGIN;i++)
-      {
-         jitter->shortterm_margin[i] = 0;
-         jitter->longterm_margin[i] = 0;
-      }
-      for (i=0;i<SPEEX_JITTER_MAX_BUFFER_SIZE;i++)
-      {
-         if (jitter->buf[i])
-            speex_free(jitter->buf[i]);
-         jitter->len[i]=-1;
-         jitter->timestamp[i]=-1;
-         jitter->span[i]=-1;
-      }
       fprintf(stderr, "reset to %d\n", timestamp);
    }
    
@@ -132,7 +138,7 @@ void jitter_buffer_put(JitterBuffer *jitter, char *packet, int len, int timestam
    /*Find an empty slot in the buffer*/
    for (i=0;i<SPEEX_JITTER_MAX_BUFFER_SIZE;i++)
    {
-      if (jitter->len[i]==-1)
+      if (jitter->buf[i]==NULL)
          break;
    }
 
@@ -272,7 +278,7 @@ int jitter_buffer_get(JitterBuffer *jitter, char *out, int *length, int *current
    /* Search the buffer for a packet with the right timestamp */
    for (i=0;i<SPEEX_JITTER_MAX_BUFFER_SIZE;i++)
    {
-      if (jitter->len[i]!=-1 && jitter->timestamp[i]==jitter->pointer_timestamp)
+      if (jitter->buf[i] && jitter->timestamp[i]==jitter->pointer_timestamp)
          break;
    }
    
@@ -287,7 +293,7 @@ int jitter_buffer_get(JitterBuffer *jitter, char *out, int *length, int *current
          *length = jitter->len[i];
       for (j=0;j<*length;j++)
          out[j] = jitter->buf[i][j];
-      return;
+      return 0;
    }
    
    

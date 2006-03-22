@@ -47,15 +47,16 @@ struct JitterBuffer_;
 
 typedef struct JitterBuffer_ JitterBuffer;
 
-/*typedef struct {
-   void *data;
-   
-}  JitterBufferCallback;
-*/
+#define JITTER_BUFFER_MISSING 1
+#define JITTER_BUFFER_MISSING_START 2
+#define JITTER_BUFFER_INCOMPLETE 4
 
 
 /** Initialise jitter buffer */
-void jitter_buffer_init(JitterBuffer *jitter, int tick);
+JitterBuffer *jitter_buffer_init(int tick);
+
+/** Reset jitter buffer */
+void jitter_buffer_reset(JitterBuffer *jitter);
 
 /** Destroy jitter buffer */
 void jitter_buffer_destroy(JitterBuffer *jitter);
