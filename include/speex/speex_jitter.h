@@ -71,6 +71,9 @@ int jitter_buffer_get(JitterBuffer *jitter, char *out, int *length, int *current
 /** Get pointer timestamp of jitter buffer */
 int jitter_buffer_get_pointer_timestamp(JitterBuffer *jitter);
 
+/** Advance by one tick */
+void jitter_buffer_tick(JitterBuffer *jitter);
+
 
 #define SPEEX_JITTER_MAX_PACKET_SIZE 1500 /**< Maximum number of bytes per packet         */
 #define SPEEX_JITTER_MAX_BUFFER_SIZE 20   /**< Maximum number of packets in jitter buffer */
@@ -79,25 +82,11 @@ int jitter_buffer_get_pointer_timestamp(JitterBuffer *jitter);
 
 /** Speex jitter-buffer state. */
 typedef struct SpeexJitter {
-   int buffer_size;                                                       /**< Buffer size                         */
-   int pointer_timestamp;                                                 /**< Pointer timestamp                   */
-
    SpeexBits current_packet;                                              /**< Current Speex packet                */
    int valid_bits;                                                        /**< True if Speex bits are valid        */
-
-   char buf[SPEEX_JITTER_MAX_BUFFER_SIZE][SPEEX_JITTER_MAX_PACKET_SIZE];  /**< Buffer of packets                   */
-   int timestamp[SPEEX_JITTER_MAX_BUFFER_SIZE];                           /**< Timestamp of packet                 */
-   int len[SPEEX_JITTER_MAX_BUFFER_SIZE];                                 /**< Number of bytes in packet           */
-
+   JitterBuffer *packets;
    void *dec;                                                             /**< Pointer to Speex decoder            */
    int frame_size;                                                        /**< Frame size of Speex decoder         */
-   int frame_time;                                                        /**< Frame time in [ms] of Speex decoder */
-   int reset_state;                                                       /**< True if Speex state was reset       */
-   
-   int lost_count;                                                        /**< Number of lost packets              */
-   float shortterm_margin[MAX_MARGIN];                                    /**< Short term margins                  */
-   float longterm_margin[MAX_MARGIN];                                     /**< Long term margins                   */
-   float loss_rate;                                                       /**< Loss rate                           */
 } SpeexJitter;
 
 /** Initialise jitter buffer */
