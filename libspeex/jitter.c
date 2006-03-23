@@ -89,11 +89,9 @@ void jitter_buffer_reset(JitterBuffer *jitter)
    {
       if (jitter->buf[i])
          speex_free(jitter->buf[i]);
-      jitter->len[i]=-1;
-      jitter->timestamp[i]=-1;
-      jitter->span[i]=-1;
    }
-   jitter->pointer_timestamp = -jitter->tick_size * 4;
+   /* Timestamp is actually undefined at this point */
+   jitter->pointer_timestamp = 0;
    jitter->reset_state = 1;
    jitter->lost_count = 0;
    jitter->loss_rate = 0;
@@ -117,21 +115,21 @@ void jitter_buffer_put(JitterBuffer *jitter, char *packet, int len, int timestam
    int i,j;
    int arrival_margin;
 
+   /*fprintf (stderr, "put packet %d %d\n", timestamp, span);*/
    if (jitter->reset_state)
    {
       jitter->reset_state=0;
-      jitter->pointer_timestamp = timestamp-jitter->tick_size * 4;
+      jitter->pointer_timestamp = timestamp;
       fprintf(stderr, "reset to %d\n", timestamp);
    }
    
    /* Cleanup buffer (remove old packets that weren't played) */
    for (i=0;i<SPEEX_JITTER_MAX_BUFFER_SIZE;i++)
    {
-      if (jitter->buf[i] || jitter->timestamp[i] + jitter->span[i] <= jitter->pointer_timestamp + jitter->tick_size)
+      if (jitter->buf[i] || jitter->timestamp[i] + jitter->span[i] <= jitter->pointer_timestamp)
       {
          speex_free(jitter->buf[i]);
          jitter->buf[i] = NULL;
-         jitter->len[i]=-1;
       }
    }
 
@@ -171,7 +169,7 @@ void jitter_buffer_put(JitterBuffer *jitter, char *packet, int len, int timestam
    jitter->len[i]=len;
    
    /* Adjust the buffer size depending on network conditions */
-   arrival_margin = (timestamp - jitter->pointer_timestamp - jitter->tick_size);
+   arrival_margin = (timestamp - jitter->pointer_timestamp);
    
    if (arrival_margin >= -LATE_BINS*jitter->tick_size)
    {
@@ -181,7 +179,7 @@ void jitter_buffer_put(JitterBuffer *jitter, char *packet, int len, int timestam
          jitter->shortterm_margin[i] *= .98;
          jitter->longterm_margin[i] *= .995;
       }
-      int_margin = (arrival_margin + LATE_BINS*jitter->tick_size)/jitter->tick_size;
+      int_margin = LATE_BINS + arrival_margin/jitter->tick_size;
       if (int_margin>MAX_MARGIN-1)
          int_margin = MAX_MARGIN-1;
       if (int_margin>=0)
@@ -195,7 +193,7 @@ void jitter_buffer_put(JitterBuffer *jitter, char *packet, int len, int timestam
 
 /** Get one packet from the jitter buffer */
 /*void jitter_buffer_get(JitterBuffer *jitter, short *out, int *current_timestamp);*/
-int jitter_buffer_get(JitterBuffer *jitter, char *out, int *length, int *current_timestamp)
+int jitter_buffer_get(JitterBuffer *jitter, char *out, int *length, int *current_timestamp, int *span)
 {
    int i, j;
    int ret;
@@ -205,7 +203,16 @@ int jitter_buffer_get(JitterBuffer *jitter, char *out, int *length, int *current
    float ontime_ratio_long;
    float early_ratio_short;
    float early_ratio_long;
+   int chunk_size;
+   int incomplete = 0;
    
+   /*fprintf (stderr, "get packet %d\n", jitter->pointer_timestamp);*/
+
+   if (span && *span)
+      chunk_size = *span;
+   else
+      chunk_size = jitter->tick_size;
+          
    late_ratio_short = 0;
    late_ratio_long = 0;
    for (i=0;i<LATE_BINS;i++)
@@ -227,6 +234,7 @@ int jitter_buffer_get(JitterBuffer *jitter, char *out, int *length, int *current
       /*fprintf (stderr, "%f %f\n", early_ratio_short + ontime_ratio_short + late_ratio_short, early_ratio_long + ontime_ratio_long + late_ratio_long);*/
    }
    
+   /* If too many packets are arriving late */
    if (late_ratio_short > .1 || late_ratio_long > .03)
    {
       jitter->shortterm_margin[MAX_MARGIN-1] += jitter->shortterm_margin[MAX_MARGIN-2];
@@ -238,18 +246,10 @@ int jitter_buffer_get(JitterBuffer *jitter, char *out, int *length, int *current
       }
       jitter->shortterm_margin[0] = 0;
       jitter->longterm_margin[0] = 0;            
-      /*fprintf (stderr, "interpolate frame\n");*/
-      if (current_timestamp)
-         *current_timestamp = jitter->pointer_timestamp;
-      *length = 0;
-      return;
-   }
-   
-   /* Increment timestamp */
-   jitter->pointer_timestamp += jitter->tick_size;
-   
-   if (late_ratio_short + ontime_ratio_short < .005 && late_ratio_long + ontime_ratio_long < .01 && early_ratio_short > .8)
+      jitter->pointer_timestamp -= jitter->tick_size;
+   } else if (late_ratio_short + ontime_ratio_short < .005 && late_ratio_long + ontime_ratio_long < .01 && early_ratio_short > .8)
    {
+      /* Many frames arriving early */
       jitter->shortterm_margin[0] += jitter->shortterm_margin[1];
       jitter->longterm_margin[0] += jitter->longterm_margin[1];
       for (i=1;i<MAX_MARGIN-1;i++)
@@ -262,48 +262,103 @@ int jitter_buffer_get(JitterBuffer *jitter, char *out, int *length, int *current
       /*fprintf (stderr, "drop frame\n");*/
       jitter->pointer_timestamp += jitter->tick_size;
    }
-
-   if (current_timestamp)
-      *current_timestamp = jitter->pointer_timestamp;
-
-   /* Send zeros while we fill in the buffer */
-   if (jitter->pointer_timestamp<0)
-   {
-      if (current_timestamp)
-         *current_timestamp = jitter->pointer_timestamp;
-      *length = 0;
-      return;
-   }
    
-   /* Search the buffer for a packet with the right timestamp */
+   /* Search the buffer for a packet with the right timestamp and spanning the whole current chunk */
    for (i=0;i<SPEEX_JITTER_MAX_BUFFER_SIZE;i++)
    {
-      if (jitter->buf[i] && jitter->timestamp[i]==jitter->pointer_timestamp)
+      if (jitter->buf[i] && jitter->timestamp[i]==jitter->pointer_timestamp && jitter->timestamp[i]+jitter->span[i]>=jitter->pointer_timestamp+chunk_size)
          break;
    }
    
-   /* If no match, try something close */
+   /* If no match, try for an "older" packet that still spans (fully) the current chunk */
+   if (i==SPEEX_JITTER_MAX_BUFFER_SIZE)
+   {
+      for (i=0;i<SPEEX_JITTER_MAX_BUFFER_SIZE;i++)
+      {
+         if (jitter->buf[i] && jitter->timestamp[i]<=jitter->pointer_timestamp && jitter->timestamp[i]+jitter->span[i]>=jitter->pointer_timestamp+chunk_size)
+            break;
+      }
+   }
+   
+   /* If still no match, try for an "older" packet that spans part of the current chunk */
+   if (i==SPEEX_JITTER_MAX_BUFFER_SIZE)
+   {
+      for (i=0;i<SPEEX_JITTER_MAX_BUFFER_SIZE;i++)
+      {
+         if (jitter->buf[i] && jitter->timestamp[i]<=jitter->pointer_timestamp && jitter->timestamp[i]+jitter->span[i]>jitter->pointer_timestamp)
+            break;
+      }
+   }
+   
+   /* If still no match, try for earliest packet possible */
+   if (i==SPEEX_JITTER_MAX_BUFFER_SIZE)
+   {
+      int found = 0;
+      int best_time;
+      int best_span;
+      int besti;
+      for (i=0;i<SPEEX_JITTER_MAX_BUFFER_SIZE;i++)
+      {
+         /* check if packet starts within current chunk */
+         if (jitter->buf[i] && jitter->timestamp[i]<jitter->pointer_timestamp+chunk_size && jitter->timestamp[i]>=jitter->pointer_timestamp)
+         {
+            if (!found || jitter->timestamp[i]<best_time || (jitter->timestamp[i]==best_time && jitter->span[i]>best_span))
+            {
+               best_time = jitter->timestamp[i];
+               best_span = jitter->span[i];
+               besti = i;
+               found = 1;
+            }
+         }
+      }
+      if (found)
+      {
+         i=besti;
+         incomplete = 1;
+         /*fprintf (stderr, "incomplete: %d %d %d %d\n", jitter->timestamp[i], jitter->pointer_timestamp, chunk_size, jitter->span[i]);*/
+      }
+   }
 
    /* If we find something */
    if (i!=SPEEX_JITTER_MAX_BUFFER_SIZE)
    {
+      /* We (ibviously) haven't lost this packet */
       jitter->lost_count = 0;
       jitter->loss_rate = .999*jitter->loss_rate;
+      /* Check for potential overflow */
       if (*length > jitter->len[i])
          *length = jitter->len[i];
+      /* Copy packet */
       for (j=0;j<*length;j++)
          out[j] = jitter->buf[i][j];
-      return 0;
+      /* Remove packet */
+      speex_free(jitter->buf[i]);
+      jitter->buf[i] = NULL;
+      /* Set timestamp and span (if requested) */
+      if (current_timestamp)
+         *current_timestamp = jitter->timestamp[i];
+      if (span)
+         *span = jitter->span[i];
+      /* Point at the end of the current packet */
+      jitter->pointer_timestamp = jitter->timestamp[i]+jitter->span[i];
+      if (incomplete)
+         return JITTER_BUFFER_INCOMPLETE;
+      else
+         return JITTER_BUFFER_OK;
    }
    
    
    /* If nothing */
+   /*fprintf (stderr, "not found\n");*/
    jitter->lost_count++;
    jitter->loss_rate = .999*jitter->loss_rate + .001;
    if (current_timestamp)
       *current_timestamp = jitter->pointer_timestamp;
+   if (span && *span == 0)
+      *span = jitter->tick_size;
+   jitter->pointer_timestamp += chunk_size;
    *length = 0;
-   return 1;
+   return JITTER_BUFFER_MISSING;
 
 }
 
@@ -368,13 +423,13 @@ void speex_jitter_get(SpeexJitter *jitter, short *out, int *current_timestamp)
       }
    }
 
-   ret = jitter_buffer_get(jitter->packets, packet, &length, current_timestamp);
+   ret = jitter_buffer_get(jitter->packets, packet, &length, current_timestamp, NULL);
    
-   if (ret != 0)
+   if (ret != JITTER_BUFFER_OK)
    {
       /* No packet found */
 
-      /*fprintf (stderr, "lost/late frame %d\n", jitter->pointer_timestamp);*/
+      /*fprintf (stderr, "lost/late frame\n");*/
       /*Packet is late or lost*/
       speex_decode_int(jitter->dec, NULL, out);
    } else {

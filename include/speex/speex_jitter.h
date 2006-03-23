@@ -47,10 +47,10 @@ struct JitterBuffer_;
 
 typedef struct JitterBuffer_ JitterBuffer;
 
+#define JITTER_BUFFER_OK 0
 #define JITTER_BUFFER_MISSING 1
-#define JITTER_BUFFER_MISSING_START 2
-#define JITTER_BUFFER_INCOMPLETE 4
-
+#define JITTER_BUFFER_INCOMPLETE 2
+#define JITTER_BUFFER_ERROR -1
 
 /** Initialise jitter buffer */
 JitterBuffer *jitter_buffer_init(int tick);
@@ -66,7 +66,7 @@ void jitter_buffer_put(JitterBuffer *jitter, char *packet, int len, int timestam
 
 /** Get one packet from the jitter buffer */
 /*void jitter_buffer_get(JitterBuffer *jitter, short *out, int *current_timestamp);*/
-int jitter_buffer_get(JitterBuffer *jitter, char *out, int *length, int *current_timestamp);
+int jitter_buffer_get(JitterBuffer *jitter, char *out, int *length, int *current_timestamp, int *span);
 
 /** Get pointer timestamp of jitter buffer */
 int jitter_buffer_get_pointer_timestamp(JitterBuffer *jitter);
