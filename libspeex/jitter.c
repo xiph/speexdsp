@@ -67,6 +67,7 @@ struct JitterBuffer_ {
 
    int tick_size;                                                         /**< Output granularity                  */
    int reset_state;                                                       /**< True if Speex state was reset       */
+   int buffer_margin;
    
    int lost_count;                                                        /**< Number of lost packets              */
    float shortterm_margin[MAX_MARGIN];                                    /**< Short term margins                  */
@@ -84,6 +85,7 @@ JitterBuffer *jitter_buffer_init(int tick)
       for (i=0;i<SPEEX_JITTER_MAX_BUFFER_SIZE;i++)
          jitter->buf[i]=NULL;
       jitter->tick_size = tick;
+      jitter->buffer_margin = 1;
       jitter_buffer_reset(jitter);
    }
    return jitter;
@@ -246,15 +248,15 @@ int jitter_buffer_get(JitterBuffer *jitter, char *out, int *length, spx_uint32_t
           
    late_ratio_short = 0;
    late_ratio_long = 0;
-   for (i=0;i<LATE_BINS;i++)
+   for (i=0;i<LATE_BINS+jitter->buffer_margin;i++)
    {
       late_ratio_short += jitter->shortterm_margin[i];
       late_ratio_long += jitter->longterm_margin[i];
    }
-   ontime_ratio_short = jitter->shortterm_margin[LATE_BINS];
-   ontime_ratio_long = jitter->longterm_margin[LATE_BINS];
+   ontime_ratio_short = jitter->shortterm_margin[LATE_BINS+jitter->buffer_margin];
+   ontime_ratio_long = jitter->longterm_margin[LATE_BINS+jitter->buffer_margin];
    early_ratio_short = early_ratio_long = 0;
-   for (i=LATE_BINS+1;i<MAX_MARGIN;i++)
+   for (i=LATE_BINS+1+jitter->buffer_margin;i<MAX_MARGIN;i++)
    {
       early_ratio_short += jitter->shortterm_margin[i];
       early_ratio_long += jitter->longterm_margin[i];
