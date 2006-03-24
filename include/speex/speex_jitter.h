@@ -62,11 +62,11 @@ void jitter_buffer_reset(JitterBuffer *jitter);
 void jitter_buffer_destroy(JitterBuffer *jitter);
 
 /** Put one packet into the jitter buffer */
-void jitter_buffer_put(JitterBuffer *jitter, char *packet, int len, int timestamp, int span);
+void jitter_buffer_put(JitterBuffer *jitter, char *packet, int len, spx_uint32_t timestamp, int span);
 
 /** Get one packet from the jitter buffer */
 /*void jitter_buffer_get(JitterBuffer *jitter, short *out, int *current_timestamp);*/
-int jitter_buffer_get(JitterBuffer *jitter, char *out, int *length, int *current_timestamp, int *span);
+int jitter_buffer_get(JitterBuffer *jitter, char *out, int *length, spx_uint32_t *current_timestamp, spx_uint32_t *returned_timestamp, int *span);
 
 /** Get pointer timestamp of jitter buffer */
 int jitter_buffer_get_pointer_timestamp(JitterBuffer *jitter);
@@ -74,11 +74,6 @@ int jitter_buffer_get_pointer_timestamp(JitterBuffer *jitter);
 /** Advance by one tick */
 void jitter_buffer_tick(JitterBuffer *jitter);
 
-
-#define SPEEX_JITTER_MAX_PACKET_SIZE 1500 /**< Maximum number of bytes per packet         */
-#define SPEEX_JITTER_MAX_BUFFER_SIZE 20   /**< Maximum number of packets in jitter buffer */
-
-#define MAX_MARGIN 12  /**< Number of bins in margin histogram */
 
 /** Speex jitter-buffer state. */
 typedef struct SpeexJitter {
