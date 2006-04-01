@@ -1063,7 +1063,7 @@ void *nb_decoder_init(const SpeexMode *m)
 
    st->inBuf = speex_alloc((st->frameSize)*sizeof(spx_sig_t));
    st->frame = st->inBuf;
-   st->excBuf = speex_alloc((st->frameSize + PITCH_PERIODS*st->max_pitch + 1)*sizeof(spx_sig_t));
+   st->excBuf = speex_alloc((st->frameSize + PITCH_PERIODS*st->max_pitch + 1 + 50)*sizeof(spx_sig_t));
    st->exc = st->excBuf + PITCH_PERIODS*st->max_pitch + 1;
    for (i=0;i<st->frameSize;i++)
       st->inBuf[i]=0;
@@ -1272,6 +1272,7 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
    int wideband;
    int m;
    char *stack;
+   VARDECL(spx_coef_t *ak);
    VARDECL(spx_coef_t *awk1);
    VARDECL(spx_coef_t *awk2);
    VARDECL(spx_coef_t *awk3);
@@ -1491,9 +1492,10 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
    }
 #endif
 
-   ALLOC(awk1, st->lpcSize+1, spx_coef_t);
-   ALLOC(awk2, st->lpcSize+1, spx_coef_t);
-   ALLOC(awk3, st->lpcSize+1, spx_coef_t);
+   ALLOC(ak, st->lpcSize, spx_coef_t);
+   ALLOC(awk1, st->lpcSize, spx_coef_t);
+   ALLOC(awk2, st->lpcSize, spx_coef_t);
+   ALLOC(awk3, st->lpcSize, spx_coef_t);
 
    if (st->submodeID==1)
    {
@@ -1734,11 +1736,8 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
    }
    
 #ifdef NEW_ENHANCER
-   if (1)
-   {
-      multicomb(st->exc, st->frame, st->interp_qlpc, st->lpcSize, 2*st->subframeSize, pitch, pitch_gain, SUBMODE(comb_gain), stack);
-      multicomb(st->exc+80, st->frame+80, st->interp_qlpc, st->lpcSize, 2*st->subframeSize, pitch, pitch_gain, SUBMODE(comb_gain), stack);
-   }
+   multicomb(st->exc-40, st->frame, st->interp_qlpc, st->lpcSize, 2*st->subframeSize, pitch, pitch_gain, SUBMODE(comb_gain), stack);
+   multicomb(st->exc+40, st->frame+80, st->interp_qlpc, st->lpcSize, 2*st->subframeSize, pitch, pitch_gain, SUBMODE(comb_gain), stack);
 #endif
    /*Loop on subframes */
    for (sub=0;sub<st->nbSubframes;sub++)
@@ -1760,9 +1759,13 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
       /* Make sure the LSP's are stable */
       lsp_enforce_margin(st->interp_qlsp, st->lpcSize, LSP_MARGIN);
 
-
       /* Compute interpolated LPCs (unquantized) */
-      lsp_to_lpc(st->interp_qlsp, st->interp_qlpc, st->lpcSize, stack);
+      lsp_to_lpc(st->interp_qlsp, ak, st->lpcSize, stack);
+
+#ifndef NEW_ENHANCER
+      for (i=0;i<st->lpcSize;i++)
+         st->interp_qlpc[i] = ak[i];
+#endif
 
       /* Compute enhanced synthesis filter */
       if (st->lpc_enh_enabled)
@@ -1797,6 +1800,9 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
          iir_mem2(sp, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, 
                   st->mem_sp);
       }
+      
+      for (i=0;i<st->lpcSize;i++)
+         st->interp_qlpc[i] = ak[i];
 
    }
    /*Copy output signal*/   
