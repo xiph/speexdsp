@@ -747,38 +747,29 @@ int cdbk_offset
    gain_val[0]=gain[0];
    gain_val[1]=gain[1];
    gain_val[2]=gain[2];
-
+   gain[0] = SHL16(gain[0],7);
+   gain[1] = SHL16(gain[1],7);
+   gain[2] = SHL16(gain[2],7);
+   for (i=0;i<nsf;i++)
+      exc[i]=0;
+   for (i=0;i<3;i++)
    {
-      spx_sig_t *e[3];
-      VARDECL(spx_sig_t *tmp2);
-      ALLOC(tmp2, 3*nsf, spx_sig_t);
-      e[0]=tmp2;
-      e[1]=tmp2+nsf;
-      e[2]=tmp2+2*nsf;
-      
-      for (i=0;i<3;i++)
-      {
-         int j;
-         int tmp1, tmp3;
-         int pp=pitch+1-i;
-         tmp1=nsf;
-         if (tmp1>pp)
-            tmp1=pp;
-         for (j=0;j<tmp1;j++)
-            e[i][j]=exc[j-pp];
-         tmp3=nsf;
-         if (tmp3>pp+pitch)
-            tmp3=pp+pitch;
-         for (j=tmp1;j<tmp3;j++)
-            e[i][j]=exc[j-pp-pitch];
-         for (j=tmp3;j<nsf;j++)
-            e[i][j]=0;
-      }
-
-      for (i=0;i<nsf;i++)
-         exc[i]=SHL32(ADD32(ADD32(MULT16_32_Q15(SHL16(gain[0],7),e[2][i]), MULT16_32_Q15(SHL16(gain[1],7),e[1][i])),
-                      MULT16_32_Q15(SHL16(gain[2],7),e[0][i])), 2);
+      int j;
+      int tmp1, tmp3;
+      int pp=pitch+1-i;
+      tmp1=nsf;
+      if (tmp1>pp)
+         tmp1=pp;
+      for (j=0;j<tmp1;j++)
+         exc[j]=MAC16_32_Q15(exc[j],gain[2-i],exc[j-pp]);
+      tmp3=nsf;
+      if (tmp3>pp+pitch)
+         tmp3=pp+pitch;
+      for (j=tmp1;j<tmp3;j++)
+         exc[j]=MAC16_32_Q15(exc[j],gain[2-i],exc[j-pp-pitch]);
    }
+   for (i=0;i<nsf;i++)
+      exc[i]=SHL32(exc[i], 2);
 }
 
 
