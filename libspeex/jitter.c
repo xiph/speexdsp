@@ -43,11 +43,10 @@
 #include <speex/speex_jitter.h>
 #include <stdio.h>
 
-#define LATE_BINS 8
-#define MAX_MARGIN 24                     /**< Number of bins in margin histogram */
+#define LATE_BINS 10
+#define MAX_MARGIN 30                     /**< Number of bins in margin histogram */
 
-#define SPEEX_JITTER_MAX_PACKET_SIZE 1500 /**< Maximum number of bytes per packet         */
-#define SPEEX_JITTER_MAX_BUFFER_SIZE 20   /**< Maximum number of packets in jitter buffer */
+#define SPEEX_JITTER_MAX_BUFFER_SIZE 200   /**< Maximum number of packets in jitter buffer */
 
 
 
@@ -184,7 +183,7 @@ void jitter_buffer_put(JitterBuffer *jitter, char *packet, int len, spx_uint32_t
    jitter->len[i]=len;
    
    /* Adjust the buffer size depending on network conditions */
-   arrival_margin = (timestamp - jitter->pointer_timestamp);
+   arrival_margin = (timestamp - jitter->pointer_timestamp) - jitter->buffer_margin*jitter->tick_size;
    
    if (arrival_margin >= -LATE_BINS*jitter->tick_size)
    {
@@ -248,15 +247,15 @@ int jitter_buffer_get(JitterBuffer *jitter, char *out, int *length, spx_uint32_t
           
    late_ratio_short = 0;
    late_ratio_long = 0;
-   for (i=0;i<LATE_BINS+jitter->buffer_margin;i++)
+   for (i=0;i<LATE_BINS;i++)
    {
       late_ratio_short += jitter->shortterm_margin[i];
       late_ratio_long += jitter->longterm_margin[i];
    }
-   ontime_ratio_short = jitter->shortterm_margin[LATE_BINS+jitter->buffer_margin];
-   ontime_ratio_long = jitter->longterm_margin[LATE_BINS+jitter->buffer_margin];
+   ontime_ratio_short = jitter->shortterm_margin[LATE_BINS];
+   ontime_ratio_long = jitter->longterm_margin[LATE_BINS];
    early_ratio_short = early_ratio_long = 0;
-   for (i=LATE_BINS+1+jitter->buffer_margin;i<MAX_MARGIN;i++)
+   for (i=LATE_BINS+1;i<MAX_MARGIN;i++)
    {
       early_ratio_short += jitter->shortterm_margin[i];
       early_ratio_long += jitter->longterm_margin[i];
@@ -389,6 +388,7 @@ int jitter_buffer_get(JitterBuffer *jitter, char *out, int *length, spx_uint32_t
    /* If nothing */
    /*fprintf (stderr, "not found\n");*/
    jitter->lost_count++;
+   /*fprintf (stderr, "m");*/
    /*fprintf (stderr, "lost_count = %d\n", jitter->lost_count);*/
    jitter->loss_rate = .999*jitter->loss_rate + .001;
    if (current_timestamp)
