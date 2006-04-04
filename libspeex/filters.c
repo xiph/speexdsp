@@ -426,12 +426,14 @@ void qmf_decomp(const spx_word16_t *xx, const spx_word16_t *aa, spx_sig_t *y1, s
       y2[k]=0;
       for (j=0;j<M2;j++)
       {
-         y1[k]=ADD32(y1[k],SHR(MULT16_16(a[j],ADD16(x[i+j],x2[i-j])),1));
-         y2[k]=SUB32(y2[k],SHR(MULT16_16(a[j],SUB16(x[i+j],x2[i-j])),1));
+         y1[k]=ADD32(y1[k],MULT16_16(a[j],ADD16(x[i+j],x2[i-j])));
+         y2[k]=SUB32(y2[k],MULT16_16(a[j],SUB16(x[i+j],x2[i-j])));
          j++;
-         y1[k]=ADD32(y1[k],SHR(MULT16_16(a[j],ADD16(x[i+j],x2[i-j])),1));
-         y2[k]=ADD32(y2[k],SHR(MULT16_16(a[j],SUB16(x[i+j],x2[i-j])),1));
+         y1[k]=ADD32(y1[k],MULT16_16(a[j],ADD16(x[i+j],x2[i-j])));
+         y2[k]=ADD32(y2[k],MULT16_16(a[j],SUB16(x[i+j],x2[i-j])));
       }
+      y1[k] = SHR(y1[k],1);
+      y2[k] = SHR(y2[k],1);
    }
    for (i=0;i<M-1;i++)
      mem[i]=SATURATE(PSHR(xx[N-i-1],1),16383);
@@ -450,7 +452,7 @@ void fir_mem_up(const spx_sig_t *x, const spx_word16_t *a, spx_sig_t *y, int N, 
    ALLOC(xx, M+N-1, spx_word16_t);
 
    for (i = 0; i < N/2; i++)
-      xx[2*i] = SHR(x[N/2-1-i],SIG_SHIFT+1);
+      xx[2*i] = PSHR(x[N/2-1-i],SIG_SHIFT+1);
    for (i = 0; i < M - 1; i += 2)
       xx[N+i] = mem[i+1];
 
