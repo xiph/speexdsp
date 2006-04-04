@@ -55,23 +55,24 @@
 #define LT32(a,b) (((spx_int32_t)((a)-(b)))<0)
 #define LE32(a,b) (((spx_int32_t)((a)-(b)))<=0)
 
+/** Jitter buffer structure */
 struct JitterBuffer_ {
-   int buffer_size;                                                       /**< Buffer size                         */
-   spx_uint32_t pointer_timestamp;                                        /**< Pointer timestamp                   */
+   spx_uint32_t pointer_timestamp;                                        /**< Timestamp of what we will *get* next */
+   spx_uint32_t current_timestamp;                                        /**< Timestamp of the local clock (what we will *play* next) */
 
-   char *buf[SPEEX_JITTER_MAX_BUFFER_SIZE];                               /**< Buffer of packets                   */
-   spx_uint32_t timestamp[SPEEX_JITTER_MAX_BUFFER_SIZE];                           /**< Timestamp of packet                 */
+   char *buf[SPEEX_JITTER_MAX_BUFFER_SIZE];                               /**< Buffer of packets (NULL if slot is free) */
+   spx_uint32_t timestamp[SPEEX_JITTER_MAX_BUFFER_SIZE];                  /**< Timestamp of packet                 */
    int span[SPEEX_JITTER_MAX_BUFFER_SIZE];                                /**< Timestamp of packet                 */
    int len[SPEEX_JITTER_MAX_BUFFER_SIZE];                                 /**< Number of bytes in packet           */
 
    int tick_size;                                                         /**< Output granularity                  */
-   int reset_state;                                                       /**< True if Speex state was reset       */
-   int buffer_margin;
+   int reset_state;                                                       /**< True if state was just reset        */
+   int buffer_margin;                                                     /**< How many frames we want to keep in the buffer (lower bound) */
    
-   int lost_count;                                                        /**< Number of lost packets              */
-   float shortterm_margin[MAX_MARGIN];                                    /**< Short term margins                  */
-   float longterm_margin[MAX_MARGIN];                                     /**< Long term margins                   */
-   float loss_rate;                                                       /**< Loss rate                           */
+   int lost_count;                                                        /**< Number of consecutive lost packets  */
+   float shortterm_margin[MAX_MARGIN];                                    /**< Short term margin histogram         */
+   float longterm_margin[MAX_MARGIN];                                     /**< Long term margin histogram          */
+   float loss_rate;                                                       /**< Average loss rate                   */
 };
 
 /** Initialise jitter buffer */
@@ -104,6 +105,7 @@ void jitter_buffer_reset(JitterBuffer *jitter)
    }
    /* Timestamp is actually undefined at this point */
    jitter->pointer_timestamp = 0;
+   jitter->current_timestamp = 0;
    jitter->reset_state = 1;
    jitter->lost_count = 0;
    jitter->loss_rate = 0;
@@ -132,13 +134,14 @@ void jitter_buffer_put(JitterBuffer *jitter, char *packet, int len, spx_uint32_t
    {
       jitter->reset_state=0;
       jitter->pointer_timestamp = timestamp;
+      jitter->current_timestamp = timestamp;
       /*fprintf(stderr, "reset to %d\n", timestamp);*/
    }
    
    /* Cleanup buffer (remove old packets that weren't played) */
    for (i=0;i<SPEEX_JITTER_MAX_BUFFER_SIZE;i++)
    {
-      if (jitter->buf[i] && jitter->timestamp[i] + jitter->span[i] <= jitter->pointer_timestamp)
+      if (jitter->buf[i] && LE32(jitter->timestamp[i] + jitter->span[i], jitter->pointer_timestamp))
       {
          /*fprintf (stderr, "cleaned (not played)\n");*/
          speex_free(jitter->buf[i]);
@@ -161,7 +164,7 @@ void jitter_buffer_put(JitterBuffer *jitter, char *packet, int len, spx_uint32_t
       i=0;
       for (j=1;j<SPEEX_JITTER_MAX_BUFFER_SIZE;j++)
       {
-         if (!jitter->buf[i] || jitter->timestamp[j]<earliest)
+         if (!jitter->buf[i] || LT32(jitter->timestamp[j],earliest))
          {
             earliest = jitter->timestamp[j];
             i=j;
@@ -183,7 +186,7 @@ void jitter_buffer_put(JitterBuffer *jitter, char *packet, int len, spx_uint32_t
    jitter->len[i]=len;
    
    /* Adjust the buffer size depending on network conditions */
-   arrival_margin = (timestamp - jitter->pointer_timestamp) - jitter->buffer_margin*jitter->tick_size;
+   arrival_margin = (timestamp - jitter->current_timestamp) - jitter->buffer_margin*jitter->tick_size;
    
    if (arrival_margin >= -LATE_BINS*jitter->tick_size)
    {
@@ -238,13 +241,20 @@ int jitter_buffer_get(JitterBuffer *jitter, char *out, int *length, spx_uint32_t
    int chunk_size;
    int incomplete = 0;
    
-   /*fprintf (stderr, "get packet %d\n", jitter->pointer_timestamp);*/
+   if (LT32(jitter->current_timestamp, jitter->pointer_timestamp-jitter->tick_size))
+   {
+      jitter->current_timestamp = jitter->pointer_timestamp;
+      speex_warning("did you forget to call jitter_buffer_tick() by any chance?");
+   }
+   /*fprintf (stderr, "get packet %d %d\n", jitter->pointer_timestamp, jitter->current_timestamp);*/
 
    if (span && *span)
       chunk_size = *span;
    else
       chunk_size = jitter->tick_size;
-          
+   
+   /* Compiling arrival statistics */
+   
    late_ratio_short = 0;
    late_ratio_long = 0;
    for (i=0;i<LATE_BINS;i++)
@@ -266,9 +276,11 @@ int jitter_buffer_get(JitterBuffer *jitter, char *out, int *length, spx_uint32_t
       /*fprintf (stderr, "%f %f\n", early_ratio_short + ontime_ratio_short + late_ratio_short, early_ratio_long + ontime_ratio_long + late_ratio_long);*/
    }
    
-   /* If too many packets are arriving late */
+   /* Adjusting the buffering */
+   
    if (late_ratio_short > .1 || late_ratio_long > .03)
    {
+      /* If too many packets are arriving late */
       jitter->shortterm_margin[MAX_MARGIN-1] += jitter->shortterm_margin[MAX_MARGIN-2];
       jitter->longterm_margin[MAX_MARGIN-1] += jitter->longterm_margin[MAX_MARGIN-2];
       for (i=MAX_MARGIN-3;i>=0;i--)
@@ -279,6 +291,8 @@ int jitter_buffer_get(JitterBuffer *jitter, char *out, int *length, spx_uint32_t
       jitter->shortterm_margin[0] = 0;
       jitter->longterm_margin[0] = 0;            
       jitter->pointer_timestamp -= jitter->tick_size;
+      jitter->current_timestamp -= jitter->tick_size;
+      /*fprintf (stderr, "i");*/
       /*fprintf (stderr, "interpolate (getting some slack)\n");*/
    } else if (late_ratio_short + ontime_ratio_short < .005 && late_ratio_long + ontime_ratio_long < .01 && early_ratio_short > .8)
    {
@@ -293,14 +307,18 @@ int jitter_buffer_get(JitterBuffer *jitter, char *out, int *length, spx_uint32_t
       jitter->shortterm_margin[MAX_MARGIN-1] = 0;
       jitter->longterm_margin[MAX_MARGIN-1] = 0;      
       /*fprintf (stderr, "drop frame\n");*/
+      /*fprintf (stderr, "d");*/
       jitter->pointer_timestamp += jitter->tick_size;
+      jitter->current_timestamp += jitter->tick_size;
       /*fprintf (stderr, "dropping packet (getting more aggressive)\n");*/
    }
+   
+   /* Searching for the packet that fits best */
    
    /* Search the buffer for a packet with the right timestamp and spanning the whole current chunk */
    for (i=0;i<SPEEX_JITTER_MAX_BUFFER_SIZE;i++)
    {
-      if (jitter->buf[i] && jitter->timestamp[i]==jitter->pointer_timestamp && jitter->timestamp[i]+jitter->span[i]>=jitter->pointer_timestamp+chunk_size)
+      if (jitter->buf[i] && jitter->timestamp[i]==jitter->pointer_timestamp && GE32(jitter->timestamp[i]+jitter->span[i],jitter->pointer_timestamp+chunk_size))
          break;
    }
    
@@ -309,7 +327,7 @@ int jitter_buffer_get(JitterBuffer *jitter, char *out, int *length, spx_uint32_t
    {
       for (i=0;i<SPEEX_JITTER_MAX_BUFFER_SIZE;i++)
       {
-         if (jitter->buf[i] && jitter->timestamp[i]<=jitter->pointer_timestamp && jitter->timestamp[i]+jitter->span[i]>=jitter->pointer_timestamp+chunk_size)
+         if (jitter->buf[i] && jitter->timestamp[i]<=jitter->pointer_timestamp && GE32(jitter->timestamp[i]+jitter->span[i],jitter->pointer_timestamp+chunk_size))
             break;
       }
    }
@@ -319,7 +337,7 @@ int jitter_buffer_get(JitterBuffer *jitter, char *out, int *length, spx_uint32_t
    {
       for (i=0;i<SPEEX_JITTER_MAX_BUFFER_SIZE;i++)
       {
-         if (jitter->buf[i] && jitter->timestamp[i]<=jitter->pointer_timestamp && jitter->timestamp[i]+jitter->span[i]>jitter->pointer_timestamp)
+         if (jitter->buf[i] && jitter->timestamp[i]<=jitter->pointer_timestamp && GT32(jitter->timestamp[i]+jitter->span[i],jitter->pointer_timestamp))
             break;
       }
    }
@@ -334,9 +352,9 @@ int jitter_buffer_get(JitterBuffer *jitter, char *out, int *length, spx_uint32_t
       for (i=0;i<SPEEX_JITTER_MAX_BUFFER_SIZE;i++)
       {
          /* check if packet starts within current chunk */
-         if (jitter->buf[i] && jitter->timestamp[i]<jitter->pointer_timestamp+chunk_size && jitter->timestamp[i]>=jitter->pointer_timestamp)
+         if (jitter->buf[i] && LT32(jitter->timestamp[i],jitter->pointer_timestamp+chunk_size) && GE32(jitter->timestamp[i],jitter->pointer_timestamp))
          {
-            if (!found || jitter->timestamp[i]<best_time || (jitter->timestamp[i]==best_time && jitter->span[i]>best_span))
+            if (!found || LT32(jitter->timestamp[i],best_time) || (jitter->timestamp[i]==best_time && GT32(jitter->span[i],best_span)))
             {
                best_time = jitter->timestamp[i];
                best_span = jitter->span[i];
@@ -385,7 +403,7 @@ int jitter_buffer_get(JitterBuffer *jitter, char *out, int *length, spx_uint32_t
    }
    
    
-   /* If nothing */
+   /* If we haven't found anything worth returning */
    /*fprintf (stderr, "not found\n");*/
    jitter->lost_count++;
    /*fprintf (stderr, "m");*/
@@ -411,7 +429,7 @@ int jitter_buffer_get_pointer_timestamp(JitterBuffer *jitter)
 
 void jitter_buffer_tick(JitterBuffer *jitter)
 {
-   jitter->pointer_timestamp += jitter->tick_size;
+   jitter->current_timestamp += jitter->tick_size;
 }
 
 
