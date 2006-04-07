@@ -252,6 +252,26 @@ void filter_mem2(const spx_sig_t *x, const spx_coef_t *num, const spx_coef_t *de
 #endif
 #endif
 
+void filter_mem16(const spx_word16_t *x, const spx_coef_t *num, const spx_coef_t *den, spx_word16_t *y, int N, int ord, spx_mem_t *mem)
+{
+   int i,j;
+   spx_word16_t xi,yi,nyi;
+
+   for (i=0;i<N;i++)
+   {
+      xi= x[i];
+      yi = EXTRACT16(SATURATE(ADD32(EXTEND32(x[i]),PSHR32(mem[0],LPC_SHIFT)),32767));
+      nyi = NEG16(yi);
+      for (j=0;j<ord-1;j++)
+      {
+         mem[j] = MAC16_16(MAC16_16(mem[j+1], num[j],xi), den[j],nyi);
+      }
+      mem[ord-1] = ADD32(MULT16_16(num[ord-1],xi), MULT16_16(den[ord-1],nyi));
+      y[i] = yi;
+   }
+}
+
+
 #ifndef OVERRIDE_IIR_MEM2
 #ifdef PRECISION16
 void iir_mem2(const spx_sig_t *x, const spx_coef_t *den, spx_sig_t *y, int N, int ord, spx_mem_t *mem)
@@ -292,6 +312,26 @@ void iir_mem2(const spx_sig_t *x, const spx_coef_t *den, spx_sig_t *y, int N, in
 }
 #endif
 #endif
+
+
+void iir_mem16(const spx_word16_t *x, const spx_coef_t *den, spx_word16_t *y, int N, int ord, spx_mem_t *mem)
+{
+   int i,j;
+   spx_word16_t yi,nyi;
+
+   for (i=0;i<N;i++)
+   {
+      yi = EXTRACT16(SATURATE(ADD32(EXTEND32(x[i]),PSHR32(mem[0],LPC_SHIFT)),32767));
+      nyi = NEG16(yi);
+      for (j=0;j<ord-1;j++)
+      {
+         mem[j] = MAC16_16(mem[j+1],den[j],nyi);
+      }
+      mem[ord-1] = MULT16_16(den[ord-1],nyi);
+      y[i] = yi;
+   }
+}
+
 
 #ifndef OVERRIDE_FIR_MEM2
 #ifdef PRECISION16
@@ -432,8 +472,8 @@ void qmf_decomp(const spx_word16_t *xx, const spx_word16_t *aa, spx_sig_t *y1, s
          y1[k]=ADD32(y1[k],MULT16_16(a[j],ADD16(x[i+j],x2[i-j])));
          y2[k]=ADD32(y2[k],MULT16_16(a[j],SUB16(x[i+j],x2[i-j])));
       }
-      y1[k] = SHR(y1[k],1);
-      y2[k] = SHR(y2[k],1);
+      y1[k] = SHR32(y1[k],1);
+      y2[k] = SHR32(y2[k],1);
    }
    for (i=0;i<M-1;i++)
      mem[i]=SATURATE(PSHR(xx[N-i-1],1),16383);
@@ -683,7 +723,7 @@ void comb_filter_mem_init (CombFilterMem *mem)
 
 void comb_filter(
 spx_sig_t *exc,          /*decoded excitation*/
-spx_sig_t *new_exc,      /*enhanced excitation*/
+spx_word16_t *_new_exc,      /*enhanced excitation*/
 spx_coef_t *ak,           /*LPC filter coefs*/
 int p,               /*LPC order*/
 int nsf,             /*sub-frame size*/
@@ -698,7 +738,9 @@ CombFilterMem *mem
    spx_word16_t gain;
    spx_word16_t step;
    spx_word16_t fact;
-
+   /* FIXME: This is a temporary kludge */
+   spx_sig_t new_exc[40];
+   
    /*Compute excitation amplitude prior to enhancement*/
    exc_energy = compute_rms(exc, nsf);
    /*for (i=0;i<nsf;i++)
@@ -781,4 +823,6 @@ CombFilterMem *mem
       new_exc[i] *= mem->smooth_gain;
    }
 #endif
+   for (i=0;i<nsf;i++)
+      _new_exc[i] = EXTRACT16(PSHR32(new_exc[i],SIG_SHIFT));
 }

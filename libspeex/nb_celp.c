@@ -264,6 +264,7 @@ void nb_encoder_destroy(void *state)
    speex_free (st->mem_sw);
    speex_free (st->mem_sw_whole);
    speex_free (st->mem_exc);
+   speex_free (st->mem_exc2);
    speex_free (st->pi_gain);
    speex_free (st->pitch);
 
@@ -1063,12 +1064,8 @@ void *nb_decoder_init(const SpeexMode *m)
    st->lpc_enh_enabled=0;
 
 
-   st->inBuf = speex_alloc((st->frameSize)*sizeof(spx_sig_t));
-   st->frame = st->inBuf;
    st->excBuf = speex_alloc((st->frameSize + PITCH_PERIODS*st->max_pitch + 1 + 50)*sizeof(spx_sig_t));
    st->exc = st->excBuf + PITCH_PERIODS*st->max_pitch + 1;
-   for (i=0;i<st->frameSize;i++)
-      st->inBuf[i]=0;
    for (i=0;i<st->frameSize + st->max_pitch + 1;i++)
       st->excBuf[i]=0;
    st->innov = speex_alloc((st->frameSize)*sizeof(spx_sig_t));
@@ -1114,7 +1111,6 @@ void nb_decoder_destroy(void *state)
    speex_free_scratch(st->stack);
 #endif
 
-   speex_free (st->inBuf);
    speex_free (st->excBuf);
    speex_free (st->innov);
    speex_free (st->interp_qlpc);
@@ -1182,11 +1178,12 @@ static void nb_decode_lost(DecState *st, spx_word16_t *out, char *stack)
    for (sub=0;sub<st->nbSubframes;sub++)
    {
       int offset;
-      spx_sig_t *sp, *exc;
+      spx_word16_t *sp;
+      spx_sig_t *exc;
       /* Offset relative to start of frame */
       offset = st->subframeSize*sub;
       /* Original signal */
-      sp=st->frame+offset;
+      sp=out+offset;
       /* Excitation */
       exc=st->exc+offset;
       /* Excitation after post-filter*/
@@ -1226,31 +1223,21 @@ static void nb_decode_lost(DecState *st, spx_word16_t *out, char *stack)
       }
       
       for (i=0;i<st->subframeSize;i++)
-         sp[i]=exc[i];
+         sp[i]=PSHR32(exc[i],SIG_SHIFT);
       
       /* Signal synthesis */
       if (st->lpc_enh_enabled)
       {
-         filter_mem2(sp, awk2, awk1, sp, st->subframeSize, st->lpcSize, 
+         filter_mem16(sp, awk2, awk1, sp, st->subframeSize, st->lpcSize, 
                      st->mem_sp+st->lpcSize);
-         filter_mem2(sp, awk3, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, 
+         filter_mem16(sp, awk3, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, 
                      st->mem_sp);
       } else {
          for (i=0;i<st->lpcSize;i++)
             st->mem_sp[st->lpcSize+i] = 0;
-         iir_mem2(sp, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, 
+         iir_mem16(sp, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, 
                      st->mem_sp);
       }      
-   }
-
-   for (i=0;i<st->frameSize;i++)
-   {
-      spx_word32_t sig = PSHR32(st->frame[i],SIG_SHIFT);
-      if (sig>32767)
-         sig = 32767;
-      if (sig<-32767)
-         sig = -32767;
-     out[i]=sig;
    }
    
    st->first = 0;
@@ -1406,18 +1393,10 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
 
       st->first=1;
 
-      /* Final signal synthesis from excitation */
-      iir_mem2(st->exc, lpc, st->frame, st->frameSize, st->lpcSize, st->mem_sp);
-
       for (i=0;i<st->frameSize;i++)
-      {
-         spx_word32_t sig = PSHR32(st->frame[i],SIG_SHIFT);
-         if (sig>32767)
-            sig = 32767;
-         if (sig<-32767)
-            sig = -32767;
-         out[i]=sig;
-      }
+         out[i] = st->exc[i];
+      /* Final signal synthesis from excitation */
+      iir_mem16(out, lpc, out, st->frameSize, st->lpcSize, st->mem_sp);
 
       st->count_lost=0;
       return 0;
@@ -1516,7 +1495,8 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
    for (sub=0;sub<st->nbSubframes;sub++)
    {
       int offset;
-      spx_sig_t *exc, *sp;
+      spx_sig_t *exc;
+      spx_word16_t *sp;
       spx_word16_t tmp;
 
 #ifdef EPIC_48K
@@ -1534,7 +1514,7 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
       /* Excitation */
       exc=st->exc+offset;
       /* Original signal */
-      sp=st->frame+offset;
+      sp=out+offset;
 
 
       /* Reset excitation */
@@ -1727,7 +1707,7 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
       }
 
       for (i=0;i<st->subframeSize;i++)
-         sp[i]=exc[i];
+         sp[i]=PSHR32(exc[i],SIG_SHIFT);
 
       /* Signal synthesis */
       if (st->lpc_enh_enabled && SUBMODE(comb_gain)>0)
@@ -1745,13 +1725,14 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
    for (sub=0;sub<st->nbSubframes;sub++)
    {
       int offset;
-      spx_sig_t *sp, *exc;
+      spx_word16_t *sp;
+      spx_sig_t *exc;
       spx_word16_t tmp;
 
       /* Offset relative to start of frame */
       offset = st->subframeSize*sub;
       /* Original signal */
-      sp=st->frame+offset;
+      sp=out+offset;
       /* Excitation */
       exc=st->exc+offset;
 
@@ -1791,31 +1772,21 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
       if (st->lpc_enh_enabled)
       {
          /* Use enhanced LPC filter */
-         filter_mem2(sp, awk2, awk1, sp, st->subframeSize, st->lpcSize, 
+         filter_mem16(sp, awk2, awk1, sp, st->subframeSize, st->lpcSize, 
                      st->mem_sp+st->lpcSize);
-         filter_mem2(sp, awk3, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, 
+         filter_mem16(sp, awk3, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, 
                      st->mem_sp);
       } else {
          /* Use regular filter */
          for (i=0;i<st->lpcSize;i++)
             st->mem_sp[st->lpcSize+i] = 0;
-         iir_mem2(sp, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, 
+         iir_mem16(sp, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, 
                   st->mem_sp);
       }
       
       for (i=0;i<st->lpcSize;i++)
          st->interp_qlpc[i] = ak[i];
 
-   }
-   /*Copy output signal*/   
-   for (i=0;i<st->frameSize;i++)
-   {
-      spx_word32_t sig = PSHR32(st->frame[i],SIG_SHIFT);
-      if (sig>32767)
-         sig = 32767;
-      if (sig<-32767)
-         sig = -32767;
-     out[i]=sig;
    }
 
    /*for (i=0;i<st->frameSize;i++)
@@ -2080,8 +2051,6 @@ int nb_decoder_ctl(void *state, int request, void *ptr)
             st->mem_sp[i]=0;
          for (i=0;i<st->frameSize + st->max_pitch + 1;i++)
             st->excBuf[i]=0;
-         for (i=0;i<st->frameSize;i++)
-            st->inBuf[i] = 0;
       }
       break;
    case SPEEX_SET_SUBMODE_ENCODING:
