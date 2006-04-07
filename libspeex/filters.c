@@ -160,7 +160,7 @@ spx_word16_t compute_rms(const spx_sig_t *x, int len)
       sum = ADD32(sum,SHR32(sum2,6));
    }
    
-   return EXTRACT16(SHR32(SHL32(EXTEND32(spx_sqrt(1+DIV32(sum,len))),(sig_shift+3)),SIG_SHIFT));
+   return EXTRACT16(PSHR32(SHL32(EXTEND32(spx_sqrt(1+DIV32(sum,len))),(sig_shift+3)),SIG_SHIFT));
 }
 
 
@@ -754,7 +754,11 @@ CombFilterMem *mem
    if (exc_energy > new_exc_energy)
       exc_energy = new_exc_energy;
    
-   gain = DIV32_16(SHL32(EXTEND32(exc_energy),15),ADD16(1,new_exc_energy));
+   if (new_exc_energy<1)
+      new_exc_energy=1;
+   if (exc_energy<1)
+      exc_energy=1;
+   gain = DIV32_16(SUB32(SHL32(exc_energy,15),1),new_exc_energy);
 
 #ifdef FIXED_POINT
    if (gain < 16384)

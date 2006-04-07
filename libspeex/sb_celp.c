@@ -466,7 +466,7 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
          /*If we can't find all LSP's, do some damage control and use a flat filter*/
          for (i=0;i<st->lpcSize;i++)
          {
-            st->lsp[i]=M_PI*((float)(i+1))/(st->lpcSize+1);
+            st->lsp[i]=LSP_SCALING*M_PI*((float)(i+1))/(st->lpcSize+1);
          }
       }
    }

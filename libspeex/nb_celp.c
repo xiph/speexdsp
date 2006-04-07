@@ -206,6 +206,7 @@ void *nb_encoder_init(const SpeexMode *m)
    st->mem_sw = speex_alloc((st->lpcSize)*sizeof(spx_mem_t));
    st->mem_sw_whole = speex_alloc((st->lpcSize)*sizeof(spx_mem_t));
    st->mem_exc = speex_alloc((st->lpcSize)*sizeof(spx_mem_t));
+   st->mem_exc2 = speex_alloc((st->lpcSize)*sizeof(spx_mem_t));
 
    st->pi_gain = speex_alloc((st->nbSubframes)*sizeof(spx_word32_t));
 
@@ -773,6 +774,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
 
       for (i=0;i<st->subframeSize;i++)
          real_exc[i] = exc[i];
+      fir_mem2(sp, st->interp_qlpc, real_exc, st->subframeSize, st->lpcSize, st->mem_exc2);
       
       if (st->complexity==0)
          response_bound >>= 1;

@@ -104,6 +104,7 @@ typedef struct EncState {
    spx_mem_t *mem_sw;         /**< Filter memory for perceptually-weighted signal */
    spx_mem_t *mem_sw_whole;   /**< Filter memory for perceptually-weighted signal (whole frame)*/
    spx_mem_t *mem_exc;        /**< Filter memory for excitation (whole frame) */
+   spx_mem_t *mem_exc2;        /**< Filter memory for excitation (whole frame) */
    spx_word32_t *pi_gain;        /**< Gain of LPC filter at theta=pi (fe/2) */
 
    VBRState *vbr;         /**< State of the VBR data */
