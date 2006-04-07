@@ -201,6 +201,8 @@ static const float h1[64] = {
 };
 #endif
 
+extern const spx_word16_t lpc_window[];
+
 static void mix_and_saturate(spx_word32_t *x0, spx_word32_t *x1, spx_word16_t *out, int len)
 {
    int i;
@@ -278,20 +280,7 @@ void *sb_encoder_init(const SpeexMode *m)
    st->res=speex_alloc((st->frame_size)*sizeof(spx_sig_t));
    st->sw=speex_alloc((st->frame_size)*sizeof(spx_sig_t));
    st->target=speex_alloc((st->frame_size)*sizeof(spx_sig_t));
-   /*Asymmetric "pseudo-Hamming" window*/
-   {
-      int part1, part2, part3;
-      part1=st->frame_size-st->subframeSize;
-      part2=st->subframeSize+10;
-      part3=st->subframeSize-10;
-      st->window = speex_alloc((st->windowSize)*sizeof(spx_word16_t));
-      for (i=0;i<part1;i++)
-         st->window[i]=(spx_word16_t)(SIG_SCALING*(.54-.46*cos(M_PI*i/part1)));
-      for (i=0;i<part2;i++)
-         st->window[part1+i]=(spx_word16_t)(SIG_SCALING);
-      for (i=0;i<part3;i++)
-         st->window[part1+part2+i]=(spx_word16_t)(SIG_SCALING*sqrt(.504+.496*cos(M_PI*i/part3)));
-   }
+   st->window= lpc_window;
 
    st->lagWindow = speex_alloc((st->lpcSize+1)*sizeof(spx_word16_t));
    for (i=0;i<st->lpcSize+1;i++)
@@ -354,7 +343,6 @@ void sb_encoder_destroy(void *state)
    speex_free(st->res);
    speex_free(st->sw);
    speex_free(st->target);
-   speex_free(st->window);
    speex_free(st->lagWindow);
 
    speex_free(st->autocorr);
