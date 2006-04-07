@@ -79,8 +79,7 @@ typedef struct EncState {
    float  lag_factor;     /**< Lag windowing Gaussian width */
    spx_word16_t  lpc_floor;      /**< Noise floor multiplier for A[0] in LPC analysis*/
    char  *stack;          /**< Pseudo-stack allocation for temporary memory */
-   spx_sig_t *inBuf;          /**< Input buffer (original signal) */
-   spx_sig_t *frame;          /**< Start of original frame */
+   spx_word16_t *winBuf;          /**< Input buffer (original signal) */
    spx_sig_t *excBuf;         /**< Excitation buffer */
    spx_sig_t *exc;            /**< Start of excitation frame */
    spx_sig_t *swBuf;          /**< Weighted signal buffer */
