@@ -204,7 +204,7 @@ void open_loop_nbest_pitch(spx_sig_t *sw, int start, int end, int len, int *pitc
 
    energy[0]=inner_prod(swn-start, swn-start, len);
    e0=inner_prod(swn, swn, len);
-   for (i=start;i<=end;i++)
+   for (i=start;i<end;i++)
    {
       /* Update energy for next pitch*/
       energy[i-start+1] = SUB32(ADD32(energy[i-start],SHR32(MULT16_16(swn[-i-1],swn[-i-1]),6)), SHR32(MULT16_16(swn[-i+len-1],swn[-i+len-1]),6));
