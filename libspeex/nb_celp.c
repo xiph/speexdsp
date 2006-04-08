@@ -695,7 +695,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
    for (sub=0;sub<st->nbSubframes;sub++)
    {
       int   offset;
-      spx_sig_t *sp, *sw, *exc;
+      spx_sig_t *sw, *exc;
       int pitch;
       int response_bound = st->subframeSize;
 #ifdef EPIC_48K
@@ -1713,7 +1713,6 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
       int offset;
       spx_word16_t *sp;
       spx_sig_t *exc;
-      spx_word16_t tmp;
 
       /* Offset relative to start of frame */
       offset = st->subframeSize*sub;

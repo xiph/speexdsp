@@ -128,7 +128,6 @@ void jitter_buffer_put(JitterBuffer *jitter, char *packet, int len, spx_uint32_t
 {
    int i,j;
    spx_int32_t arrival_margin;
-   //fprintf (stderr, "p");
    /*fprintf (stderr, "put packet %d %d\n", timestamp, span);*/
    if (jitter->reset_state)
    {
@@ -231,7 +230,6 @@ void jitter_buffer_put(JitterBuffer *jitter, char *packet, int len, spx_uint32_t
 int jitter_buffer_get(JitterBuffer *jitter, char *out, int *length, spx_uint32_t *current_timestamp, spx_uint32_t *returned_timestamp, int *span)
 {
    int i, j;
-   int ret;
    float late_ratio_short;
    float late_ratio_long;
    float ontime_ratio_short;
@@ -386,7 +384,6 @@ int jitter_buffer_get(JitterBuffer *jitter, char *out, int *length, spx_uint32_t
       /* Remove packet */
       speex_free(jitter->buf[i]);
       jitter->buf[i] = NULL;
-      //fprintf (stderr, "r");
       /* Set timestamp and span (if requested) */
       if (current_timestamp)
          *current_timestamp = jitter->pointer_timestamp;
@@ -438,8 +435,6 @@ void jitter_buffer_tick(JitterBuffer *jitter)
 
 void speex_jitter_init(SpeexJitter *jitter, void *decoder, int sampling_rate)
 {
-   int i;
-   
    jitter->dec = decoder;
    speex_decoder_ctl(decoder, SPEEX_GET_FRAME_SIZE, &jitter->frame_size);
 
