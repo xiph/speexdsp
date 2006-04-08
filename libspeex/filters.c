@@ -256,7 +256,10 @@ void filter_mem16(const spx_word16_t *x, const spx_coef_t *num, const spx_coef_t
 {
    int i,j;
    spx_word16_t xi,yi,nyi;
-
+#ifndef PRECISION16
+   for (i=0;i<ord;i++)
+      mem[i] = SHL32(mem[i],1);   
+#endif
    for (i=0;i<N;i++)
    {
       xi= x[i];
@@ -269,6 +272,10 @@ void filter_mem16(const spx_word16_t *x, const spx_coef_t *num, const spx_coef_t
       mem[ord-1] = ADD32(MULT16_16(num[ord-1],xi), MULT16_16(den[ord-1],nyi));
       y[i] = yi;
    }
+#ifndef PRECISION16
+   for (i=0;i<ord;i++)
+      mem[i] = SHR32(mem[i],1);   
+#endif
 }
 
 

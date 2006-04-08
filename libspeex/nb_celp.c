@@ -158,7 +158,7 @@ void *nb_encoder_init(const SpeexMode *m)
    /* Allocating excitation buffer */
    st->excBuf = speex_alloc((mode->frameSize+mode->pitchEnd+1)*sizeof(spx_sig_t));
    st->exc = st->excBuf + mode->pitchEnd + 1;
-   st->swBuf = speex_alloc((mode->frameSize+mode->pitchEnd+1)*sizeof(spx_sig_t));
+   st->swBuf = speex_alloc((mode->frameSize+mode->pitchEnd+1)*sizeof(spx_word16_t));
    st->sw = st->swBuf + mode->pitchEnd + 1;
 
    st->innov = speex_alloc((st->frameSize)*sizeof(spx_sig_t));
@@ -293,7 +293,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
 
    /* Move signals 1 frame towards the past */
    speex_move(st->excBuf, st->excBuf+st->frameSize, (st->max_pitch+1)*sizeof(spx_sig_t));
-   speex_move(st->swBuf, st->swBuf+st->frameSize, (st->max_pitch+1)*sizeof(spx_sig_t));
+   speex_move(st->swBuf, st->swBuf+st->frameSize, (st->max_pitch+1)*sizeof(spx_word16_t));
 
    {
       VARDECL(spx_word16_t *w_sig);
@@ -360,10 +360,10 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
          bw_lpc(st->gamma2, st->interp_lpc, st->bw_lpc2, st->lpcSize);
          
          for (i=0;i<st->windowSize-st->frameSize;i++)
-            st->sw[i] = SHL32(st->winBuf[i],SIG_SHIFT);
+            st->sw[i] = st->winBuf[i];
          for (;i<st->frameSize;i++)
-            st->sw[i] = SHL32(in[i-st->windowSize+st->frameSize],SIG_SHIFT);
-         filter_mem2(st->sw, st->bw_lpc1, st->bw_lpc2, st->sw, st->frameSize, st->lpcSize, st->mem_sw_whole);
+            st->sw[i] = in[i-st->windowSize+st->frameSize];
+         filter_mem16(st->sw, st->bw_lpc1, st->bw_lpc2, st->sw, st->frameSize, st->lpcSize, st->mem_sw_whole);
 
          open_loop_nbest_pitch(st->sw, st->min_pitch, st->max_pitch, st->frameSize, 
                                nol_pitch, nol_pitch_coef, 6, stack);
@@ -695,7 +695,8 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
    for (sub=0;sub<st->nbSubframes;sub++)
    {
       int   offset;
-      spx_sig_t *sw, *exc;
+      spx_word16_t *sw;
+      spx_sig_t *exc;
       int pitch;
       int response_bound = st->subframeSize;
 #ifdef EPIC_48K
@@ -764,13 +765,19 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
       for (i=0;i<st->subframeSize;i++)
          real_exc[i] = exc[i];
       {
-         /*FIXME: This is a kludge that will break eventually */
+         /*FIXME: This is a kludge that will break if we change the window size */
          if (sub==0)
+         {
             for (i=0;i<st->subframeSize;i++)
-               sw[i] = real_exc[i] = SHL32(st->winBuf[i],SIG_SHIFT);
-         else
+               real_exc[i] = SHL32(st->winBuf[i],SIG_SHIFT);
             for (i=0;i<st->subframeSize;i++)
-               sw[i] = real_exc[i] = SHL32(in[i+((sub-1)*st->subframeSize)],SIG_SHIFT);
+               sw[i] = st->winBuf[i];
+         } else {
+            for (i=0;i<st->subframeSize;i++)
+               real_exc[i] = SHL32(in[i+((sub-1)*st->subframeSize)],SIG_SHIFT);
+            for (i=0;i<st->subframeSize;i++)
+               sw[i] = in[i+((sub-1)*st->subframeSize)];
+         }
       }
       fir_mem2(real_exc, st->interp_qlpc, real_exc, st->subframeSize, st->lpcSize, st->mem_exc2);
       
@@ -804,7 +811,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
       /* Compute weighted signal */
       for (i=0;i<st->lpcSize;i++)
          mem[i]=st->mem_sw[i];
-      filter_mem2(sw, st->bw_lpc1, st->bw_lpc2, sw, st->subframeSize, st->lpcSize, mem);
+      filter_mem16(sw, st->bw_lpc1, st->bw_lpc2, sw, st->subframeSize, st->lpcSize, mem);
       
       if (st->complexity==0)
          for (i=0;i<st->lpcSize;i++)
@@ -812,7 +819,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
       
       /* Compute target signal */
       for (i=0;i<st->subframeSize;i++)
-         target[i]=sw[i]-res[i];
+         target[i]=SHL32(sw[i],SIG_SHIFT)-res[i];
 
       for (i=0;i<st->subframeSize;i++)
          exc[i]=0;
@@ -962,9 +969,11 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
       /* Final signal synthesis from excitation */
       iir_mem2(exc, st->interp_qlpc, res, st->subframeSize, st->lpcSize, st->mem_sp);
 
+      for (i=0;i<st->subframeSize;i++)
+         sw[i] = PSHR32(res[i], SIG_SHIFT);
       /* Compute weighted signal again, from synthesized speech (not sure it's the right thing) */
       if (st->complexity!=0)
-         filter_mem2(res, st->bw_lpc1, st->bw_lpc2, sw, st->subframeSize, st->lpcSize, st->mem_sw);
+         filter_mem16(sw, st->bw_lpc1, st->bw_lpc2, sw, st->subframeSize, st->lpcSize, st->mem_sw);
       
    }
 

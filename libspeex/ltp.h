@@ -51,13 +51,13 @@ typedef struct {
 spx_word32_t inner_prod(const spx_word16_t *x, const spx_word16_t *y, int len);
 void pitch_xcorr(const spx_word16_t *_x, const spx_word16_t *_y, spx_word32_t *corr, int len, int nb_pitch, char *stack);
 
-void open_loop_nbest_pitch(spx_sig_t *sw, int start, int end, int len, int *pitch, spx_word16_t *gain, int N, char *stack);
+void open_loop_nbest_pitch(spx_word16_t *sw, int start, int end, int len, int *pitch, spx_word16_t *gain, int N, char *stack);
 
 
 /** Finds the best quantized 3-tap pitch predictor by analysis by synthesis */
 int pitch_search_3tap(
 spx_sig_t target[],                 /* Target vector */
-spx_sig_t *sw,
+spx_word16_t *sw,
 spx_coef_t ak[],                     /* LPCs for this subframe */
 spx_coef_t awk1[],                   /* Weighted LPCs #1 for this subframe */
 spx_coef_t awk2[],                   /* Weighted LPCs #2 for this subframe */
@@ -98,7 +98,7 @@ int cdbk_offset
 /** Forced pitch delay and gain */
 int forced_pitch_quant(
 spx_sig_t target[],                 /* Target vector */
-spx_sig_t *sw,
+spx_word16_t *sw,
 spx_coef_t ak[],                     /* LPCs for this subframe */
 spx_coef_t awk1[],                   /* Weighted LPCs #1 for this subframe */
 spx_coef_t awk2[],                   /* Weighted LPCs #2 for this subframe */

@@ -168,7 +168,7 @@ static inline spx_word32_t compute_pitch_error(spx_word32_t *C, spx_word16_t *g,
 }
 #endif
 
-void open_loop_nbest_pitch(spx_sig_t *sw, int start, int end, int len, int *pitch, spx_word16_t *gain, int N, char *stack)
+void open_loop_nbest_pitch(spx_word16_t *sw, int start, int end, int len, int *pitch, spx_word16_t *gain, int N, char *stack)
 {
    int i,j,k;
    VARDECL(spx_word32_t *best_score);
@@ -177,22 +177,12 @@ void open_loop_nbest_pitch(spx_sig_t *sw, int start, int end, int len, int *pitc
    VARDECL(spx_word32_t *corr);
    VARDECL(spx_word32_t *energy);
    VARDECL(spx_word32_t *score);
-   VARDECL(spx_word16_t *swn2);
-   spx_word16_t *swn;
 
    ALLOC(best_score, N, spx_word32_t);
    ALLOC(best_ener, N, spx_word32_t);
    ALLOC(corr, end-start+1, spx_word32_t);
    ALLOC(energy, end-start+2, spx_word32_t);
    ALLOC(score, end-start+1, spx_word32_t);
-
-#ifdef FIXED_POINT
-   ALLOC(swn2, end+len, spx_word16_t);
-   normalize16(sw-end, swn2, 16384, end+len);
-   swn = swn2 + end;
-#else
-   swn = sw;
-#endif
 
    for (i=0;i<N;i++)
    {
@@ -201,18 +191,17 @@ void open_loop_nbest_pitch(spx_sig_t *sw, int start, int end, int len, int *pitc
         pitch[i]=start;
    }
 
-
-   energy[0]=inner_prod(swn-start, swn-start, len);
-   e0=inner_prod(swn, swn, len);
+   energy[0]=inner_prod(sw-start, sw-start, len);
+   e0=inner_prod(sw, sw, len);
    for (i=start;i<end;i++)
    {
       /* Update energy for next pitch*/
-      energy[i-start+1] = SUB32(ADD32(energy[i-start],SHR32(MULT16_16(swn[-i-1],swn[-i-1]),6)), SHR32(MULT16_16(swn[-i+len-1],swn[-i+len-1]),6));
+      energy[i-start+1] = SUB32(ADD32(energy[i-start],SHR32(MULT16_16(sw[-i-1],sw[-i-1]),6)), SHR32(MULT16_16(sw[-i+len-1],sw[-i+len-1]),6));
       if (energy[i-start+1] < 0)
          energy[i-start+1] = 0;
    }
 
-   pitch_xcorr(swn, swn-end, corr, len, end-start+1, stack);
+   pitch_xcorr(sw, sw-end, corr, len, end-start+1, stack);
 
 #ifdef FIXED_POINT
    {
@@ -584,7 +573,7 @@ int plc_tuning
 /** Finds the best quantized 3-tap pitch predictor by analysis by synthesis */
 int pitch_search_3tap(
 spx_sig_t target[],                 /* Target vector */
-spx_sig_t *sw,
+spx_word16_t *sw,
 spx_coef_t ak[],                     /* LPCs for this subframe */
 spx_coef_t awk1[],                   /* Weighted LPCs #1 for this subframe */
 spx_coef_t awk2[],                   /* Weighted LPCs #2 for this subframe */
@@ -776,7 +765,7 @@ int cdbk_offset
 /** Forced pitch delay and gain */
 int forced_pitch_quant(
 spx_sig_t target[],                 /* Target vector */
-spx_sig_t *sw,
+spx_word16_t *sw,
 spx_coef_t ak[],                     /* LPCs for this subframe */
 spx_coef_t awk1[],                   /* Weighted LPCs #1 for this subframe */
 spx_coef_t awk2[],                   /* Weighted LPCs #2 for this subframe */

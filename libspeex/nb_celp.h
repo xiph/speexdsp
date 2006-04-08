@@ -82,8 +82,8 @@ typedef struct EncState {
    spx_word16_t *winBuf;          /**< Input buffer (original signal) */
    spx_sig_t *excBuf;         /**< Excitation buffer */
    spx_sig_t *exc;            /**< Start of excitation frame */
-   spx_sig_t *swBuf;          /**< Weighted signal buffer */
-   spx_sig_t *sw;             /**< Start of weighted signal frame */
+   spx_word16_t *swBuf;          /**< Weighted signal buffer */
+   spx_word16_t *sw;             /**< Start of weighted signal frame */
    spx_sig_t *innov;          /**< Innovation for the frame */
    const spx_word16_t *window;         /**< Temporary (Hanning) window */
    spx_word16_t *autocorr;       /**< auto-correlation */
