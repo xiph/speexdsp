@@ -622,16 +622,17 @@ int plc_tuning
       return start;
    }
    
-   ALLOC(best_exc, nsf, spx_sig_t);
-   ALLOC(new_target, nsf, spx_sig_t);
-   ALLOC(best_target, nsf, spx_sig_t);
-   
    if (N>end-start+1)
       N=end-start+1;
    if (end != start)
       open_loop_nbest_pitch(sw, start, end, nsf, nbest, NULL, N, stack);
    else
       nbest[0] = start;
+   
+   ALLOC(best_exc, nsf, spx_sig_t);
+   ALLOC(new_target, nsf, spx_sig_t);
+   ALLOC(best_target, nsf, spx_sig_t);
+   
    for (i=0;i<N;i++)
    {
       pitch=nbest[i];
