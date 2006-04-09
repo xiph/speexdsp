@@ -1066,9 +1066,7 @@ void *nb_decoder_init(const SpeexMode *m)
    st->innov = speex_alloc((st->frameSize)*sizeof(spx_sig_t));
 
    st->interp_qlpc = speex_alloc(st->lpcSize*sizeof(spx_coef_t));
-   st->qlsp = speex_alloc(st->lpcSize*sizeof(spx_lsp_t));
    st->old_qlsp = speex_alloc(st->lpcSize*sizeof(spx_lsp_t));
-   st->interp_qlsp = speex_alloc(st->lpcSize*sizeof(spx_lsp_t));
    st->mem_sp = speex_alloc((5*st->lpcSize)*sizeof(spx_mem_t));
    st->comb_mem = speex_alloc(sizeof(CombFilterMem));
    comb_filter_mem_init (st->comb_mem);
@@ -1109,9 +1107,7 @@ void nb_decoder_destroy(void *state)
    speex_free (st->excBuf);
    speex_free (st->innov);
    speex_free (st->interp_qlpc);
-   speex_free (st->qlsp);
    speex_free (st->old_qlsp);
-   speex_free (st->interp_qlsp);
    speex_free (st->mem_sp);
    speex_free (st->comb_mem);
    speex_free (st->pi_gain);
@@ -1260,6 +1256,7 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
    VARDECL(spx_coef_t *awk1);
    VARDECL(spx_coef_t *awk2);
    VARDECL(spx_coef_t *awk3);
+   VARDECL(spx_lsp_t *qlsp);
    spx_word16_t pitch_average=0;
 #ifdef EPIC_48K
    int pitch_half[2];
@@ -1397,8 +1394,10 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
       return 0;
    }
 
+   ALLOC(qlsp, st->lpcSize, spx_lsp_t);
+
    /* Unquantize LSPs */
-   SUBMODE(lsp_unquant)(st->qlsp, st->lpcSize, bits);
+   SUBMODE(lsp_unquant)(qlsp, st->lpcSize, bits);
 
    /*Damp memory if a frame was lost and the LSP changed too much*/
    if (st->count_lost)
@@ -1406,7 +1405,7 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
       spx_word16_t fact;
       spx_word32_t lsp_dist=0;
       for (i=0;i<st->lpcSize;i++)
-         lsp_dist = ADD32(lsp_dist, EXTEND32(ABS(st->old_qlsp[i] - st->qlsp[i])));
+         lsp_dist = ADD32(lsp_dist, EXTEND32(ABS(st->old_qlsp[i] - qlsp[i])));
 #ifdef FIXED_POINT
       fact = SHR16(19661,SHR32(lsp_dist,LSP_SHIFT+2));      
 #else
@@ -1421,7 +1420,7 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
    if (st->first || st->count_lost)
    {
       for (i=0;i<st->lpcSize;i++)
-         st->old_qlsp[i] = st->qlsp[i];
+         st->old_qlsp[i] = qlsp[i];
    }
 
 #ifdef EPIC_48K
@@ -1722,7 +1721,8 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
       int offset;
       spx_word16_t *sp;
       spx_sig_t *exc;
-
+      VARDECL(spx_lsp_t *interp_qlsp);
+      ALLOC(interp_qlsp, st->lpcSize, spx_lsp_t);
       /* Offset relative to start of frame */
       offset = st->subframeSize*sub;
       /* Original signal */
@@ -1731,13 +1731,13 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
       exc=st->exc+offset;
 
       /* LSP interpolation (quantized and unquantized) */
-      lsp_interpolate(st->old_qlsp, st->qlsp, st->interp_qlsp, st->lpcSize, sub, st->nbSubframes);
+      lsp_interpolate(st->old_qlsp, qlsp, interp_qlsp, st->lpcSize, sub, st->nbSubframes);
 
       /* Make sure the LSP's are stable */
-      lsp_enforce_margin(st->interp_qlsp, st->lpcSize, LSP_MARGIN);
+      lsp_enforce_margin(interp_qlsp, st->lpcSize, LSP_MARGIN);
 
       /* Compute interpolated LPCs (unquantized) */
-      lsp_to_lpc(st->interp_qlsp, ak, st->lpcSize, stack);
+      lsp_to_lpc(interp_qlsp, ak, st->lpcSize, stack);
 
 #ifndef NEW_ENHANCER
       for (i=0;i<st->lpcSize;i++)
@@ -1788,7 +1788,7 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
 
    /* Store the LSPs for interpolation in the next frame */
    for (i=0;i<st->lpcSize;i++)
-      st->old_qlsp[i] = st->qlsp[i];
+      st->old_qlsp[i] = qlsp[i];
 
    /* The next frame will not be the first (Duh!) */
    st->first = 0;

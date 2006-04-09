@@ -151,10 +151,11 @@ typedef struct DecState {
    spx_sig_t *innov;          /**< Innovation for the frame */
    spx_lsp_t *qlsp;           /**< Quantized LSPs for current frame */
    spx_lsp_t *old_qlsp;       /**< Quantized LSPs for previous frame */
-   spx_lsp_t *interp_qlsp;    /**< Interpolated quantized LSPs */
    spx_coef_t *interp_qlpc;    /**< Interpolated quantized LPCs */
    spx_mem_t *mem_sp;         /**< Filter memory for synthesis signal */
    spx_word32_t *pi_gain;        /**< Gain of LPC filter at theta=pi (fe/2) */
+   
+   /* This is used in packet loss concealment */
    int    last_pitch;     /**< Pitch of last correctly decoded frame */
    spx_word16_t  last_pitch_gain; /**< Pitch gain of last correctly decoded frame */
    spx_word16_t  pitch_gain_buf[3];  /**< Pitch gain of last decoded frames */
