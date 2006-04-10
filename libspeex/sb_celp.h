@@ -88,6 +88,8 @@ typedef struct SBEncState {
    spx_mem_t *mem_sp2;
    spx_mem_t *mem_sw;              /**< Perceptual signal memory */
    spx_word32_t *pi_gain;
+   spx_sig_t *innov_save;      /** If non-NULL, innovation is copied here */
+   spx_sig_t *low_innov;       /** Lower-band innovation is copied here magically */
 
    float  vbr_quality;         /**< Quality setting for VBR encoding */
    int    vbr_enabled;         /**< 1 for enabling VBR, 0 otherwise */
@@ -135,6 +137,9 @@ typedef struct SBDecState {
 
    spx_mem_t *mem_sp;
    spx_word32_t *pi_gain;
+   spx_sig_t *innov_save;      /** If non-NULL, innovation is copied here */
+   spx_sig_t *low_innov;       /** Lower-band innovation is copied here magically */
+   
    spx_int32_t seed;
 
    int    encode_submode;

@@ -299,7 +299,10 @@ void *sb_encoder_init(const SpeexMode *m)
    st->interp_lpc = speex_alloc(st->lpcSize*sizeof(spx_coef_t));
    st->interp_qlpc = speex_alloc(st->lpcSize*sizeof(spx_coef_t));
    st->pi_gain = speex_alloc((st->nbSubframes)*sizeof(spx_word32_t));
-
+   st->low_innov = speex_alloc((st->frame_size)*sizeof(spx_word32_t));
+   speex_encoder_ctl(st->st_low, SPEEX_SET_INNOVATION_SAVE, st->low_innov);
+   st->innov_save = NULL;
+   
    st->mem_sp = speex_alloc((st->lpcSize)*sizeof(spx_mem_t));
    st->mem_sp2 = speex_alloc((st->lpcSize)*sizeof(spx_mem_t));
    st->mem_sw = speex_alloc((st->lpcSize)*sizeof(spx_mem_t));
@@ -378,7 +381,6 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
    VARDECL(spx_word16_t *syn_resp);
    VARDECL(spx_word32_t *low_pi_gain);
    VARDECL(spx_sig_t *low_exc);
-   VARDECL(spx_sig_t *low_innov);
    const SpeexSBMode *mode;
    int dtx;
    spx_word16_t *in = vin;
@@ -414,10 +416,8 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
 
    ALLOC(low_pi_gain, st->nbSubframes, spx_word32_t);
    ALLOC(low_exc, st->frame_size, spx_sig_t);
-   ALLOC(low_innov, st->frame_size, spx_sig_t);
    speex_encoder_ctl(st->st_low, SPEEX_GET_PI_GAIN, low_pi_gain);
    speex_encoder_ctl(st->st_low, SPEEX_GET_EXC, low_exc);
-   speex_encoder_ctl(st->st_low, SPEEX_GET_INNOV, low_innov);
    
    speex_encoder_ctl(st->st_low, SPEEX_GET_LOW_MODE, &dtx);
 
@@ -595,7 +595,7 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
 
    for (sub=0;sub<st->nbSubframes;sub++)
    {
-      spx_sig_t *exc, *sp, *res, *target, *sw;
+      spx_sig_t *exc, *sp, *res, *target, *sw, *innov_save=NULL;
       spx_word16_t filter_ratio;
       int offset;
       spx_word32_t rl, rh;
@@ -607,6 +607,13 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
       res=st->res+offset;
       target=st->target+offset;
       sw=st->sw+offset;
+      /* Pointer for saving innovation */
+      if (st->innov_save)
+      {
+         innov_save = st->innov_save+2*offset;
+         for (i=0;i<2*st->subframeSize;i++)
+            innov_save[i]=0;
+      }
       
       /* LSP interpolation (quantized and unquantized) */
       lsp_interpolate(st->old_lsp, st->lsp, st->interp_lsp, st->lpcSize, sub, st->nbSubframes);
@@ -647,7 +654,7 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
       if (!SUBMODE(innovation_quant)) {/* 1 for spectral folding excitation, 0 for stochastic */
          float g;
          spx_word16_t el;
-         el = compute_rms(low_innov+offset, st->subframeSize);
+         el = compute_rms(st->low_innov+offset, st->subframeSize);
 
          /* Gain to use if we want to use the low-band excitation for high-band */
          g=eh/(.01+el);
@@ -660,7 +667,7 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
             ALLOC(tmp_sig, st->subframeSize, spx_sig_t);
             for (i=0;i<st->lpcSize;i++)
                mem[i]=st->mem_sp[i];
-            iir_mem2(low_innov+offset, st->interp_qlpc, tmp_sig, st->subframeSize, st->lpcSize, mem);
+            iir_mem2(st->low_innov+offset, st->interp_qlpc, tmp_sig, st->subframeSize, st->lpcSize, mem);
             g2 = compute_rms(sp, st->subframeSize)/(.01+compute_rms(tmp_sig, st->subframeSize));
             /*fprintf (stderr, "gains: %f %f\n", g, g2);*/
             g = g2;
@@ -764,6 +771,12 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
          for (i=0;i<st->subframeSize;i++)
             exc[i] = ADD32(exc[i], innov[i]);
 
+         if (st->innov_save)
+         {
+            for (i=0;i<st->subframeSize;i++)
+               innov_save[2*i]=innov[i];
+         }
+         
          if (SUBMODE(double_codebook)) {
             char *tmp_stack=stack;
             VARDECL(spx_sig_t *innov2);
@@ -871,6 +884,11 @@ void *sb_decoder_init(const SpeexMode *m)
    st->pi_gain = speex_alloc((st->nbSubframes)*sizeof(spx_word32_t));
    st->mem_sp = speex_alloc((2*st->lpcSize)*sizeof(spx_mem_t));
    
+   st->low_innov = speex_alloc((st->frame_size)*sizeof(spx_word32_t));
+   speex_decoder_ctl(st->st_low, SPEEX_SET_INNOVATION_SAVE, st->low_innov);
+   st->innov_save = NULL;
+
+
    st->lpc_enh_enabled=0;
    st->seed = 1000;
 
@@ -1000,7 +1018,6 @@ int sb_decode(void *state, SpeexBits *bits, void *vout)
    char *stack;
    VARDECL(spx_word32_t *low_pi_gain);
    VARDECL(spx_sig_t *low_exc);
-   VARDECL(spx_sig_t *low_innov);
    VARDECL(spx_coef_t *awk1);
    VARDECL(spx_coef_t *awk2);
    VARDECL(spx_coef_t *awk3);
@@ -1093,10 +1110,8 @@ int sb_decode(void *state, SpeexBits *bits, void *vout)
 
    ALLOC(low_pi_gain, st->nbSubframes, spx_word32_t);
    ALLOC(low_exc, st->frame_size, spx_sig_t);
-   ALLOC(low_innov, st->frame_size, spx_sig_t);
    speex_decoder_ctl(st->st_low, SPEEX_GET_PI_GAIN, low_pi_gain);
    speex_decoder_ctl(st->st_low, SPEEX_GET_EXC, low_exc);
-   speex_decoder_ctl(st->st_low, SPEEX_GET_INNOV, low_innov);
 
    SUBMODE(lsp_unquant)(st->qlsp, st->lpcSize, bits);
    
@@ -1112,7 +1127,7 @@ int sb_decode(void *state, SpeexBits *bits, void *vout)
 
    for (sub=0;sub<st->nbSubframes;sub++)
    {
-      spx_sig_t *exc, *sp;
+      spx_sig_t *exc, *sp, *innov_save=NULL;
       spx_word16_t filter_ratio;
       spx_word16_t el=0;
       int offset;
@@ -1121,6 +1136,13 @@ int sb_decode(void *state, SpeexBits *bits, void *vout)
       offset = st->subframeSize*sub;
       sp=st->high+offset;
       exc=st->exc+offset;
+      /* Pointer for saving innovation */
+      if (st->innov_save)
+      {
+         innov_save = st->innov_save+2*offset;
+         for (i=0;i<2*st->subframeSize;i++)
+            innov_save[i]=0;
+      }
       
       /* LSP interpolation */
       lsp_interpolate(st->old_qlsp, st->qlsp, st->interp_qlsp, st->lpcSize, sub, st->nbSubframes);
@@ -1181,7 +1203,7 @@ int sb_decode(void *state, SpeexBits *bits, void *vout)
          
 #if 0
          for (i=0;i<st->subframeSize;i++)
-            exc[i]=mode->folding_gain*g*low_innov[offset+i];
+            exc[i]=mode->folding_gain*g*st->low_innov[offset+i];
 #else
          {
             float tmp=1;
@@ -1190,7 +1212,7 @@ int sb_decode(void *state, SpeexBits *bits, void *vout)
             el = compute_rms(low_innov+offset, st->subframeSize);*/
             for (i=0;i<st->subframeSize;i++)
             {
-               float e=tmp*g*mode->folding_gain*low_innov[offset+i];
+               float e=tmp*g*mode->folding_gain*st->low_innov[offset+i];
                tmp *= -1;
                exc[i] = e;
                /*float r = speex_rand(g*el,&seed);
@@ -1242,7 +1264,13 @@ int sb_decode(void *state, SpeexBits *bits, void *vout)
          }
 
       }
-
+      
+      if (st->innov_save)
+      {
+         for (i=0;i<st->subframeSize;i++)
+            innov_save[2*i]=exc[i];
+      }
+      
       for (i=0;i<st->subframeSize;i++)
          sp[i]=exc[i];
       if (st->lpc_enh_enabled)
@@ -1476,6 +1504,9 @@ int sb_encoder_ctl(void *state, int request, void *ptr)
    case SPEEX_GET_RELATIVE_QUALITY:
       (*(float*)ptr)=st->relative_quality;
       break;
+   case SPEEX_SET_INNOVATION_SAVE:
+      st->innov_save = ptr;
+      break;
    default:
       speex_warning_int("Unknown nb_ctl request: ", request);
       return -1;
@@ -1592,6 +1623,9 @@ int sb_decoder_ctl(void *state, int request, void *ptr)
       break;
    case SPEEX_GET_DTX_STATUS:
       speex_decoder_ctl(st->st_low, SPEEX_GET_DTX_STATUS, ptr);
+      break;
+   case SPEEX_SET_INNOVATION_SAVE:
+      st->innov_save = ptr;
       break;
    default:
       speex_warning_int("Unknown nb_ctl request: ", request);

@@ -84,7 +84,6 @@ typedef struct EncState {
    spx_sig_t *exc;            /**< Start of excitation frame */
    spx_word16_t *swBuf;          /**< Weighted signal buffer */
    spx_word16_t *sw;             /**< Start of weighted signal frame */
-   spx_sig_t *innov;          /**< Innovation for the frame */
    const spx_word16_t *window;         /**< Temporary (Hanning) window */
    spx_word16_t *autocorr;       /**< auto-correlation */
    spx_word16_t *lagWindow;      /**< Window applied to auto-correlation */
@@ -105,7 +104,8 @@ typedef struct EncState {
    spx_mem_t *mem_exc;        /**< Filter memory for excitation (whole frame) */
    spx_mem_t *mem_exc2;        /**< Filter memory for excitation (whole frame) */
    spx_word32_t *pi_gain;        /**< Gain of LPC filter at theta=pi (fe/2) */
-
+   spx_sig_t *innov_save;      /** If non-NULL, innovation is copied here */
+         
    VBRState *vbr;         /**< State of the VBR data */
    float  vbr_quality;    /**< Quality setting for VBR encoding */
    float  relative_quality; /**< Relative quality that will be needed by VBR */
@@ -148,12 +148,12 @@ typedef struct DecState {
    char  *stack;          /**< Pseudo-stack allocation for temporary memory */
    spx_sig_t *excBuf;         /**< Excitation buffer */
    spx_sig_t *exc;            /**< Start of excitation frame */
-   spx_sig_t *innov;          /**< Innovation for the frame */
    spx_lsp_t *qlsp;           /**< Quantized LSPs for current frame */
    spx_lsp_t *old_qlsp;       /**< Quantized LSPs for previous frame */
    spx_coef_t *interp_qlpc;    /**< Interpolated quantized LPCs */
    spx_mem_t *mem_sp;         /**< Filter memory for synthesis signal */
    spx_word32_t *pi_gain;        /**< Gain of LPC filter at theta=pi (fe/2) */
+   spx_sig_t *innov_save;      /** If non-NULL, innovation is copied here */
    
    /* This is used in packet loss concealment */
    int    last_pitch;     /**< Pitch of last correctly decoded frame */
