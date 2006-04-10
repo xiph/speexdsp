@@ -276,7 +276,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
    int ol_pitch;
    spx_word16_t ol_pitch_coef;
    spx_word32_t ol_gain;
-   VARDECL(spx_sig_t *res);
+   VARDECL(spx_word16_t *ringing);
    VARDECL(spx_sig_t *target);
    VARDECL(spx_mem_t *mem);
    char *stack;
@@ -683,10 +683,9 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
          st->old_qlsp[i] = st->qlsp[i];
    }
 
-   /* Filter response */
-   ALLOC(res, st->subframeSize, spx_sig_t);
    /* Target signal */
    ALLOC(target, st->subframeSize, spx_sig_t);
+   ALLOC(ringing, st->subframeSize, spx_word16_t);
    ALLOC(syn_resp, st->subframeSize, spx_word16_t);
    ALLOC(real_exc, st->subframeSize, spx_sig_t);
    ALLOC(mem, st->lpcSize, spx_mem_t);
@@ -787,25 +786,23 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
       for (i=response_bound;i<st->subframeSize;i++)
          syn_resp[i]=VERY_SMALL;
       
-      /* Reset excitation */
-      for (i=0;i<st->subframeSize;i++)
-         exc[i]=VERY_SMALL;
-
       /* Compute zero response of A(z/g1) / ( A(z/g2) * A(z) ) */
       for (i=0;i<st->lpcSize;i++)
-         mem[i]=st->mem_sp[i];
+         mem[i]=SHL32(st->mem_sp[i],1);
+      for (i=0;i<st->subframeSize;i++)
+         ringing[i] = VERY_SMALL;
 #ifdef SHORTCUTS2
-      iir_mem2(exc, st->interp_qlpc, exc, response_bound, st->lpcSize, mem);
+      iir_mem16(ringing, st->interp_qlpc, ringing, response_bound, st->lpcSize, mem);
       for (i=0;i<st->lpcSize;i++)
-         mem[i]=st->mem_sw[i];
-      filter_mem2(exc, st->bw_lpc1, st->bw_lpc2, res, response_bound, st->lpcSize, mem);
+         mem[i]=SHL32(st->mem_sw[i],1);
+      filter_mem16(ringing, st->bw_lpc1, st->bw_lpc2, ringing, response_bound, st->lpcSize, mem);
       for (i=response_bound;i<st->subframeSize;i++)
-         res[i]=0;
+         ringing[i]=0;
 #else
-      iir_mem2(exc, st->interp_qlpc, exc, st->subframeSize, st->lpcSize, mem);
+      iir_mem16(ringing, st->interp_qlpc, ringing, st->subframeSize, st->lpcSize, mem);
       for (i=0;i<st->lpcSize;i++)
-         mem[i]=st->mem_sw[i];
-      filter_mem2(exc, st->bw_lpc1, st->bw_lpc2, res, st->subframeSize, st->lpcSize, mem);
+         mem[i]=SHL32(st->mem_sw[i],1);
+      filter_mem16(ringing, st->bw_lpc1, st->bw_lpc2, ringing, st->subframeSize, st->lpcSize, mem);
 #endif
       
       /* Compute weighted signal */
@@ -819,8 +816,9 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
       
       /* Compute target signal */
       for (i=0;i<st->subframeSize;i++)
-         target[i]=SHL32(sw[i],SIG_SHIFT)-res[i];
+         target[i]=SHL32(sw[i]-PSHR32(ringing[i],1),SIG_SHIFT);
 
+      /* Reset excitation */
       for (i=0;i<st->subframeSize;i++)
          exc[i]=0;
 
@@ -965,12 +963,11 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
 
       }
 
-      /* Note that we re-use "res" as output (to be discarder anyway) */
-      /* Final signal synthesis from excitation */
-      iir_mem2(exc, st->interp_qlpc, res, st->subframeSize, st->lpcSize, st->mem_sp);
-
       for (i=0;i<st->subframeSize;i++)
-         sw[i] = PSHR32(res[i], SIG_SHIFT);
+         sw[i] = PSHR32(exc[i], SIG_SHIFT);
+      /* Final signal synthesis from excitation */
+      iir_mem16(sw, st->interp_qlpc, sw, st->subframeSize, st->lpcSize, st->mem_sp);
+
       /* Compute weighted signal again, from synthesized speech (not sure it's the right thing) */
       if (st->complexity!=0)
          filter_mem16(sw, st->bw_lpc1, st->bw_lpc2, sw, st->subframeSize, st->lpcSize, st->mem_sw);
@@ -1263,6 +1260,7 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
    int ol_pitch_id=0;
 #endif
    spx_word16_t *out = vout;
+   VARDECL(spx_lsp_t *interp_qlsp);
 
    st=(DecState*)state;
    stack=st->stack;
@@ -1711,6 +1709,8 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
 
    }
    
+   ALLOC(interp_qlsp, st->lpcSize, spx_lsp_t);
+
 #ifdef NEW_ENHANCER
    multicomb(st->exc-40, st->frame, st->interp_qlpc, st->lpcSize, 2*st->subframeSize, pitch, pitch_gain, SUBMODE(comb_gain), stack);
    multicomb(st->exc+40, st->frame+80, st->interp_qlpc, st->lpcSize, 2*st->subframeSize, pitch, pitch_gain, SUBMODE(comb_gain), stack);
@@ -1721,8 +1721,6 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
       int offset;
       spx_word16_t *sp;
       spx_sig_t *exc;
-      VARDECL(spx_lsp_t *interp_qlsp);
-      ALLOC(interp_qlsp, st->lpcSize, spx_lsp_t);
       /* Offset relative to start of frame */
       offset = st->subframeSize*sub;
       /* Original signal */

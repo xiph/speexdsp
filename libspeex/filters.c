@@ -236,6 +236,8 @@ void filter_mem2(const spx_sig_t *x, const spx_coef_t *num, const spx_coef_t *de
    int i,j;
    spx_sig_t xi,yi,nyi;
 
+   for (i=0;i<ord;i++)
+      mem[i] = SHR32(mem[i],1);   
    for (i=0;i<N;i++)
    {
       xi=SATURATE(x[i],805306368);
@@ -248,6 +250,8 @@ void filter_mem2(const spx_sig_t *x, const spx_coef_t *num, const spx_coef_t *de
       mem[ord-1] = SUB32(MULT16_32_Q15(num[ord-1],xi), MULT16_32_Q15(den[ord-1],yi));
       y[i] = yi;
    }
+   for (i=0;i<ord;i++)
+      mem[i] = SHL32(mem[i],1);   
 }
 #endif
 #endif
@@ -256,10 +260,6 @@ void filter_mem16(const spx_word16_t *x, const spx_coef_t *num, const spx_coef_t
 {
    int i,j;
    spx_word16_t xi,yi,nyi;
-#ifndef PRECISION16
-   for (i=0;i<ord;i++)
-      mem[i] = SHL32(mem[i],1);   
-#endif
    for (i=0;i<N;i++)
    {
       xi= x[i];
@@ -272,10 +272,6 @@ void filter_mem16(const spx_word16_t *x, const spx_coef_t *num, const spx_coef_t
       mem[ord-1] = ADD32(MULT16_16(num[ord-1],xi), MULT16_16(den[ord-1],nyi));
       y[i] = yi;
    }
-#ifndef PRECISION16
-   for (i=0;i<ord;i++)
-      mem[i] = SHR32(mem[i],1);   
-#endif
 }
 
 
@@ -304,6 +300,8 @@ void iir_mem2(const spx_sig_t *x, const spx_coef_t *den, spx_sig_t *y, int N, in
    int i,j;
    spx_word32_t xi,yi,nyi;
 
+   for (i=0;i<ord;i++)
+      mem[i] = SHR32(mem[i],1);   
    for (i=0;i<N;i++)
    {
       xi=SATURATE(x[i],805306368);
@@ -316,6 +314,8 @@ void iir_mem2(const spx_sig_t *x, const spx_coef_t *den, spx_sig_t *y, int N, in
       mem[ord-1] = MULT16_32_Q15(den[ord-1],nyi);
       y[i] = yi;
    }
+   for (i=0;i<ord;i++)
+      mem[i] = SHL32(mem[i],1);   
 }
 #endif
 #endif
@@ -365,6 +365,8 @@ void fir_mem2(const spx_sig_t *x, const spx_coef_t *num, spx_sig_t *y, int N, in
    int i,j;
    spx_word32_t xi,yi;
 
+   for (i=0;i<ord;i++)
+      mem[i] = SHR32(mem[i],1);   
    for (i=0;i<N;i++)
    {
       xi=SATURATE(x[i],805306368);
@@ -376,6 +378,8 @@ void fir_mem2(const spx_sig_t *x, const spx_coef_t *num, spx_sig_t *y, int N, in
       mem[ord-1] = MULT16_32_Q15(num[ord-1],xi);
       y[i] = SATURATE(yi,805306368);
    }
+   for (i=0;i<ord;i++)
+      mem[i] = SHL32(mem[i],1);   
 }
 #endif
 #endif
