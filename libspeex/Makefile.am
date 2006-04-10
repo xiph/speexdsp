@@ -27,7 +27,7 @@ noinst_HEADERS = lsp.h 	nb_celp.h 	lpc.h 	lpc_bfin.h 	ltp.h 	quant_lsp.h \
 		fftwrap.h pseudofloat.h
 
 
-libspeex_la_LDFLAGS = -version-info @SPEEX_LT_CURRENT@:@SPEEX_LT_REVISION@:@SPEEX_LT_AGE@
+libspeex_la_LDFLAGS = -no-undefined -version-info @SPEEX_LT_CURRENT@:@SPEEX_LT_REVISION@:@SPEEX_LT_AGE@
 
 noinst_PROGRAMS = testenc testenc_wb testenc_uwb testdenoise testecho
 testenc_SOURCES = testenc.c
