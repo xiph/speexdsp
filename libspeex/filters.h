@@ -38,6 +38,7 @@
 #include "misc.h"
 
 spx_word16_t compute_rms(const spx_sig_t *x, int len);
+spx_word16_t compute_rms16(const spx_word16_t *x, int len);
 void signal_mul(const spx_sig_t *x, spx_sig_t *y, spx_word32_t scale, int len);
 void signal_div(const spx_sig_t *x, spx_sig_t *y, spx_word32_t scale, int len);
 
@@ -65,6 +66,7 @@ void iir_mem2(const spx_sig_t *x, const spx_coef_t *den, spx_sig_t *y, int N, in
 
 void filter_mem16(const spx_word16_t *x, const spx_coef_t *num, const spx_coef_t *den, spx_word16_t *y, int N, int ord, spx_mem_t *mem);
 void iir_mem16(const spx_word16_t *x, const spx_coef_t *den, spx_word16_t *y, int N, int ord, spx_mem_t *mem);
+void fir_mem16(const spx_word16_t *x, const spx_coef_t *num, spx_word16_t *y, int N, int ord, spx_mem_t *mem);
 
 /* Apply bandwidth expansion on LPC coef */
 void bw_lpc(spx_word16_t , const spx_coef_t *lpc_in, spx_coef_t *lpc_out, int order);
@@ -80,7 +82,7 @@ void compute_impulse_response(const spx_coef_t *ak, const spx_coef_t *awk1, cons
 #ifdef NEW_ENHANCER
 void multicomb(
 spx_sig_t *exc,          /*decoded excitation*/
-spx_sig_t *new_exc,      /*enhanced excitation*/
+spx_word16_t *new_exc,      /*enhanced excitation*/
 spx_coef_t *ak,           /*LPC filter coefs*/
 int p,               /*LPC order*/
 int nsf,             /*sub-frame size*/

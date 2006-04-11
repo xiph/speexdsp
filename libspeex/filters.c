@@ -163,6 +163,24 @@ spx_word16_t compute_rms(const spx_sig_t *x, int len)
    return EXTRACT16(PSHR32(SHL32(EXTEND32(spx_sqrt(1+DIV32(sum,len))),(sig_shift+3)),SIG_SHIFT));
 }
 
+spx_word16_t compute_rms16(const spx_word16_t *x, int len)
+{
+   int i;
+   spx_word32_t sum=0;
+   spx_word16_t max_val=1;
+
+   for (i=0;i<len;i+=4)
+   {
+      spx_word32_t sum2=0;
+      sum2 = MAC16_16(sum2,x[i],x[i]);
+      sum2 = MAC16_16(sum2,x[i+1],x[i+1]);
+      sum2 = MAC16_16(sum2,x[i+2],x[i+2]);
+      sum2 = MAC16_16(sum2,x[i+3],x[i+3]);
+      sum = ADD32(sum,SHR32(sum2,6));
+   }
+   
+   return SHL16(spx_sqrt(1+DIV32(sum,len)),3);
+}
 
 #ifndef OVERRIDE_NORMALIZE16
 int normalize16(const spx_sig_t *x, spx_word16_t *y, spx_sig_t max_scale, int len)
@@ -205,6 +223,10 @@ spx_word16_t compute_rms(const spx_sig_t *x, int len)
       sum += x[i]*x[i];
    }
    return sqrt(.1+sum/len);
+}
+spx_word16_t compute_rms16(const spx_word16_t *x, int len)
+{
+   return compute_rms(x, len);
 }
 #endif
 
@@ -384,6 +406,23 @@ void fir_mem2(const spx_sig_t *x, const spx_coef_t *num, spx_sig_t *y, int N, in
 #endif
 #endif
 
+void fir_mem16(const spx_word16_t *x, const spx_coef_t *num, spx_word16_t *y, int N, int ord, spx_mem_t *mem)
+{
+   int i,j;
+   spx_word16_t xi,yi;
+
+   for (i=0;i<N;i++)
+   {
+      xi=x[i];
+      yi = EXTRACT16(SATURATE(ADD32(EXTEND32(x[i]),PSHR32(mem[0],LPC_SHIFT)),32767));
+      for (j=0;j<ord-1;j++)
+      {
+         mem[j] = MAC16_16(mem[j+1], num[j],xi);
+      }
+      mem[ord-1] = MULT16_16(num[ord-1],xi);
+      y[i] = yi;
+   }
+}
 
 
 
@@ -698,14 +737,14 @@ char *stack
    if (corr_pitch>40)
    {
       for (i=0;i<nsf;i++)
-         new_exc[i] = exc[i] + (.7*g1*gg1*iexc[i] + .3*g2*gg2*iexc[i+nsf]);
+         new_exc[i] = SHL32(exc[i] + (.7*g1*gg1*iexc[i] + .3*g2*gg2*iexc[i+nsf]),SIG_SHIFT);
    } else {
       for (i=0;i<nsf;i++)
-         new_exc[i] = exc[i] + (.6*g1*gg1*iexc[i] + .6*g2*gg2*iexc[i+nsf]);
+         new_exc[i] = SHL32(exc[i] + (.6*g1*gg1*iexc[i] + .6*g2*gg2*iexc[i+nsf]),SIG_SHIFT);
    }
-   new_ener = compute_rms(new_exc, nsf);
+   new_ener = compute_rms16(new_exc, nsf);
    old_ener = compute_rms(exc, nsf);
-   ngain = old_ener/(1+new_ener);
+   ngain = old_ener/(1.+new_ener);
    for (i=0;i<nsf;i++)
       new_exc[i] *= ngain;
 }

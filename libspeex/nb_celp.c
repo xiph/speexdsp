@@ -404,12 +404,15 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
          ol_pitch=0;
          ol_pitch_coef=0;
       }
+      
       /*Compute "real" excitation*/
+      /* FIXME: Are we breaking aliasing rules? */
+      spx_word16_t *exc16_alias = (spx_word16_t*)st->exc;
       for (i=0;i<st->windowSize-st->frameSize;i++)
-         st->exc[i] = SHL32(st->winBuf[i],SIG_SHIFT);
+         exc16_alias[i] = st->winBuf[i];
       for (;i<st->frameSize;i++)
-         st->exc[i] = SHL32(in[i-st->windowSize+st->frameSize],SIG_SHIFT);
-      fir_mem2(st->exc, st->interp_lpc, st->exc, st->frameSize, st->lpcSize, st->mem_exc);
+         exc16_alias[i] = in[i-st->windowSize+st->frameSize];
+      fir_mem16(exc16_alias, st->interp_lpc, exc16_alias, st->frameSize, st->lpcSize, st->mem_exc);
 
       /* Compute open-loop excitation gain */
 #ifdef EPIC_48K
@@ -431,7 +434,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
 
       } else {
 #endif
-         ol_gain = SHL32(EXTEND32(compute_rms(st->exc, st->frameSize)),SIG_SHIFT);
+         ol_gain = SHL32(EXTEND32(compute_rms16(exc16_alias, st->frameSize)),SIG_SHIFT);
 #ifdef EPIC_48K
       }
 #endif
