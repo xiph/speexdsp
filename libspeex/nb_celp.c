@@ -765,8 +765,6 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
       /*print_vec(st->bw_lpc1, 10, "bw_lpc");*/
 #endif
 
-      for (i=0;i<st->subframeSize;i++)
-         real_exc[i] = exc[i];
       {
          /*FIXME: This is a kludge that will break if we change the window size */
          if (sub==0)
@@ -1725,8 +1723,8 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
    ALLOC(interp_qlsp, st->lpcSize, spx_lsp_t);
 
 #ifdef NEW_ENHANCER
-   multicomb(st->exc-40, st->frame, st->interp_qlpc, st->lpcSize, 2*st->subframeSize, pitch, pitch_gain, SUBMODE(comb_gain), stack);
-   multicomb(st->exc+40, st->frame+80, st->interp_qlpc, st->lpcSize, 2*st->subframeSize, pitch, pitch_gain, SUBMODE(comb_gain), stack);
+   multicomb(st->exc-40, out, st->interp_qlpc, st->lpcSize, 2*st->subframeSize, pitch, pitch_gain, SUBMODE(comb_gain), stack);
+   multicomb(st->exc+40, out+80, st->interp_qlpc, st->lpcSize, 2*st->subframeSize, pitch, pitch_gain, SUBMODE(comb_gain), stack);
 #endif
    /*Loop on subframes */
    for (sub=0;sub<st->nbSubframes;sub++)

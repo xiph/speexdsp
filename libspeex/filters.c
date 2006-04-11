@@ -617,7 +617,7 @@ int len
       
 void multicomb(
 spx_sig_t *exc,          /*decoded excitation*/
-spx_sig_t *new_exc,      /*enhanced excitation*/
+spx_word16_t *new_exc,      /*enhanced excitation*/
 spx_coef_t *ak,           /*LPC filter coefs*/
 int p,               /*LPC order*/
 int nsf,             /*sub-frame size*/

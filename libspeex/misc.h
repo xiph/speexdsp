@@ -43,6 +43,30 @@
 #define SPEEX_VERSION "speex-1.1.12"  /**< Speex version string. */
 #endif
 
+/* A couple test to catch stupid option combinations */
+#ifdef FIXED_POINT
+
+#ifdef _USE_SSE
+#error SSE is only for floating-point
+#endif
+#if ((defined (ARM4_ASM)||defined (ARM4_ASM)) && defined(BFIN_ASM)) || (defined (ARM4_ASM)&&defined(ARM5E_ASM))
+#error Make up your mind. What CPU do you have?
+#endif
+#ifdef VORBIS_PSYCHO
+#error Vorbis-psy model currently not implemented in fixed-point
+#endif
+#else
+
+#if defined (ARM4_ASM) || defined(ARM5E_ASM) || defined(BFIN_ASM)
+#error I suppose you can have a [ARM4/ARM5E/Blackfin] that has float instructions?
+#endif
+#ifdef FIXED_POINT_DEBUG
+#error Don't you think enabling fixed-point is a good this to do if you want to debug that?
+#endif
+
+
+#endif
+
 #include "arch.h"
 
 #ifndef RELEASE
