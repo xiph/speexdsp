@@ -638,39 +638,31 @@ char *stack
    int corr_pitch;
    spx_word32_t max_corr;
    float max_ener;
-   /* Estimating pitch... */
    
-   /* Weighted LPC */
+   int nol_pitch[6];
+   spx_word16_t nol_pitch_coef[6];
+   spx_word16_t ol_pitch_coef;
    
-   /* Correlation on weighted signal */
-   pitch_xcorr(exc, exc-119, corr, nsf, 100, stack);
-   corr_pitch=119;
-   max_corr=corr[99];
-   max_ener = sqrt(1+inner_prod(exc-119, exc-119, nsf));
-   for (i=99;i>=0;i--)
+   open_loop_nbest_pitch(exc, 20, 120, nsf, 
+                         nol_pitch, nol_pitch_coef, 6, stack);
+   corr_pitch=nol_pitch[0];
+   ol_pitch_coef = nol_pitch_coef[0];
+   /*Try to remove pitch multiples*/
+   for (i=1;i<6;i++)
    {
-      float tmp1, tmp2;
-      tmp1 = corr[i]*max_ener;
-      tmp2 = max_corr*sqrt(1+inner_prod(exc-i-20, exc-i-20, nsf));
-      /* Some tweaks to reduce pitch-doubling */
-#if 1
-      if (corr[i]>max_corr || (corr[i]>.6*max_corr && ABS(2*(i+20)-corr_pitch) < 3 )
-          || (corr[i]>.6*max_corr && ABS(3*(i+20)-corr_pitch) < 3 ) || (corr[i]>.6*max_corr && ABS(4*(i+20)-corr_pitch) < 4 )
-          || (corr[i]>.7*max_corr && ABS(5*(i+20)-corr_pitch) < 4 ))
+#ifdef FIXED_POINT
+      if ((nol_pitch_coef[i]>MULT16_16_Q15(nol_pitch_coef[0],27853)) && 
 #else
-      if (tmp1>tmp2 || (tmp1>.6*tmp2 && ABS(2*(i+20)-corr_pitch) < 3 )
-          || (tmp1>.6*tmp2 && ABS(3*(i+20)-corr_pitch) < 3 ) || (tmp1>.6*tmp2 && ABS(4*(i+20)-corr_pitch) < 4 )
-          || (tmp1>.7*tmp2 && ABS(5*(i+20)-corr_pitch) < 4 ))
+      if ((nol_pitch_coef[i]>.6*nol_pitch_coef[0]) && 
 #endif
+         (ABS(2*nol_pitch[i]-corr_pitch)<=2 || ABS(3*nol_pitch[i]-corr_pitch)<=3 || 
+         ABS(4*nol_pitch[i]-corr_pitch)<=4 || ABS(5*nol_pitch[i]-corr_pitch)<=5))
       {
-         if (corr[i] > max_corr)
-         {
-            max_corr = corr[i];
-            max_ener = sqrt(1+inner_prod(exc-i-20, exc-i-20, nsf));
-         }
-         corr_pitch=i+20;
+         /*ol_pitch_coef=nol_pitch_coef[i];*/
+         corr_pitch = nol_pitch[i];
       }
    }
+
    interp_pitch(exc, iexc, corr_pitch, 80);
    if (corr_pitch>40)
       interp_pitch(exc, iexc+nsf, 2*corr_pitch, 80);
