@@ -1715,19 +1715,22 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
       for (i=0;i<st->subframeSize;i++)
          sp[i]=PSHR32(exc[i],SIG_SHIFT);
 
-      /* Signal synthesis */
+#ifndef NEW_ENHANCER
       if (st->lpc_enh_enabled && SUBMODE(comb_gain)>0)
          comb_filter(exc, sp, st->interp_qlpc, st->lpcSize, st->subframeSize,
                      pitch, pitch_gain, SUBMODE(comb_gain), st->comb_mem);
-      
+#endif      
 
    }
    
    ALLOC(interp_qlsp, st->lpcSize, spx_lsp_t);
 
 #ifdef NEW_ENHANCER
-   multicomb(st->exc-40, out, st->interp_qlpc, st->lpcSize, 2*st->subframeSize, pitch, pitch_gain, SUBMODE(comb_gain), stack);
-   multicomb(st->exc+40, out+80, st->interp_qlpc, st->lpcSize, 2*st->subframeSize, pitch, pitch_gain, SUBMODE(comb_gain), stack);
+   if (st->lpc_enh_enabled && SUBMODE(comb_gain)>0)
+   {
+      multicomb(st->exc-40, out, st->interp_qlpc, st->lpcSize, 2*st->subframeSize, pitch, pitch_gain, SUBMODE(comb_gain), stack);
+      multicomb(st->exc+40, out+80, st->interp_qlpc, st->lpcSize, 2*st->subframeSize, pitch, pitch_gain, SUBMODE(comb_gain), stack);
+   }
 #endif
    /*Loop on subframes */
    for (sub=0;sub<st->nbSubframes;sub++)

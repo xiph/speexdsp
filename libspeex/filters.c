@@ -167,8 +167,6 @@ spx_word16_t compute_rms16(const spx_word16_t *x, int len)
 {
    int i;
    spx_word32_t sum=0;
-   spx_word16_t max_val=1;
-
    for (i=0;i<len;i+=4)
    {
       spx_word32_t sum2=0;
@@ -598,8 +596,8 @@ float shift_filt[3][7] = {{-0.011915, 0.046995, -0.152373, 0.614108, 0.614108, -
 #endif
 
 int interp_pitch(
-spx_sig_t *exc,          /*decoded excitation*/
-spx_sig_t *interp,          /*decoded excitation*/
+spx_word16_t *exc,          /*decoded excitation*/
+spx_word16_t *interp,          /*decoded excitation*/
 int pitch,               /*pitch period*/
 int len
 )
@@ -616,16 +614,17 @@ int len
    {
       for (j=0;j<7;j++)
       {
-         corr[i+1][j] = 0;
+         float tmp=0;
          for (k=0;k<7;k++)
          {
             if (j+k-3 >= 0 && j+k-3 < 7)
-               corr[i+1][j] += corr[0][j+k-3]*shift_filt[i][k];
+               tmp += corr[0][j+k-3]*shift_filt[i][k];
          }
+         corr[i+1][j] = tmp;
       }
    }
    maxi=maxj=-1;
-   maxcorr = -1e10;
+   maxcorr = -1e9;
    for (i=0;i<4;i++)
    {
       for (j=0;j<7;j++)
@@ -640,22 +639,23 @@ int len
    }
    for (i=0;i<len;i++)
    {
-      interp[i] = 0;
+      float tmp = 0;
       if (maxi>0)
       {
          for (k=0;k<7;k++)
          {
-            interp[i] += exc[i-(pitch-maxj+3)+k-3]*shift_filt[maxi-1][k];
+            tmp += exc[i-(pitch-maxj+3)+k-3]*shift_filt[maxi-1][k];
          }
       } else {
-         interp[i] = exc[i-(pitch-maxj+3)];
+         tmp = exc[i-(pitch-maxj+3)];
       }
+      interp[i] = tmp;
    }
    return pitch-maxj+3;
 }
       
 void multicomb(
-spx_sig_t *exc,          /*decoded excitation*/
+spx_sig_t *_exc,          /*decoded excitation*/
 spx_word16_t *new_exc,      /*enhanced excitation*/
 spx_coef_t *ak,           /*LPC filter coefs*/
 int p,               /*LPC order*/
@@ -667,14 +667,27 @@ char *stack
 )
 {
    int i; 
-   spx_sig_t iexc[3*nsf];
+   spx_word16_t iexc[3*nsf];
    float old_ener, new_ener;
    int corr_pitch;
    
    int nol_pitch[6];
    spx_word16_t nol_pitch_coef[6];
    spx_word16_t ol_pitch_coef;
+   spx_word16_t *exc;
    
+#ifdef FIXED_POINT
+   VARDECL(spx_word16_t *exc2);
+   /* FIXME: Can it get uglier than that??? */
+   ALLOC(exc2, 500, spx_word16_t);
+   for (i=0;i<500;i++)
+      exc2[i] = 0;
+   exc = exc2+300;
+   for (i=-280;i<160;i++)
+      exc[i] = PSHR32(_exc[i], SIG_SHIFT);
+#else
+   exc = _exc;
+#endif
    open_loop_nbest_pitch(exc, 20, 120, nsf, 
                          nol_pitch, nol_pitch_coef, 6, stack);
    corr_pitch=nol_pitch[0];
@@ -683,7 +696,7 @@ char *stack
    for (i=1;i<6;i++)
    {
 #ifdef FIXED_POINT
-      if ((nol_pitch_coef[i]>MULT16_16_Q15(nol_pitch_coef[0],27853)) && 
+      if ((nol_pitch_coef[i]>MULT16_16_Q15(nol_pitch_coef[0],19661)) && 
 #else
       if ((nol_pitch_coef[i]>.6*nol_pitch_coef[0]) && 
 #endif
@@ -694,7 +707,6 @@ char *stack
          corr_pitch = nol_pitch[i];
       }
    }
-
    interp_pitch(exc, iexc, corr_pitch, 80);
    if (corr_pitch>40)
       interp_pitch(exc, iexc+nsf, 2*corr_pitch, 80);
@@ -705,16 +717,24 @@ char *stack
    
    /*printf ("%d %d %f\n", pitch, corr_pitch, max_corr*ener_1);*/
    
-   float gg1 = sqrt((1+inner_prod(exc,exc,nsf))/(1+inner_prod(iexc,iexc,nsf)));
-   float gg2 = sqrt((1+inner_prod(exc,exc,nsf))/(1+inner_prod(iexc+nsf,iexc+nsf,nsf)));
-   float pgain1 = inner_prod(iexc,exc,nsf)/sqrt(1+inner_prod(iexc,iexc,nsf)*inner_prod(exc,exc,nsf));
-   float pgain2 = inner_prod(iexc+nsf,exc,nsf)/sqrt(1+inner_prod(iexc+nsf,iexc+nsf,nsf)*inner_prod(exc,exc,nsf));
+   float gg1 = sqrt((1.+inner_prod(exc,exc,nsf))/(1000.+inner_prod(iexc,iexc,nsf)));
+   float gg2 = sqrt((1.+inner_prod(exc,exc,nsf))/(1000.+inner_prod(iexc+nsf,iexc+nsf,nsf)));
+   float pgain1 = inner_prod(iexc,exc,nsf)/sqrt(1000.+inner_prod(iexc,iexc,nsf)*1.*inner_prod(exc,exc,nsf));
+   float pgain2 = inner_prod(iexc+nsf,exc,nsf)/sqrt(1000.+inner_prod(iexc+nsf,iexc+nsf,nsf)*1.*inner_prod(exc,exc,nsf));
+   if (pgain1<0)
+      pgain1=0;
+   if (pgain2<0)
+      pgain2=0;
    float c1, c2;
    float g1, g2;
    float ngain;
    if (comb_gain>0)
    {
+#ifdef FIXED_POINT
+      c1 = .4*comb_gain/32768.+.07;
+#else
       c1 = .4*comb_gain+.07;
+#endif
       c2 = .5+1.72*(c1-.07);
    } else 
    {
@@ -726,19 +746,20 @@ char *stack
       g1 = 1;
    if (g2 > 1)
       g2 = 1;
+   //printf ("%d %f %f %f %f %d %d %d\n", corr_pitch, gg1, gg2, g1, g2, inner_prod(iexc+nsf,exc,nsf),inner_prod(iexc+nsf,iexc+nsf,nsf),inner_prod(exc,exc,nsf));
    if (corr_pitch>40)
    {
       for (i=0;i<nsf;i++)
-         new_exc[i] = SHL32(exc[i] + (.7*g1*gg1*iexc[i] + .3*g2*gg2*iexc[i+nsf]),SIG_SHIFT);
+         new_exc[i] = floor(.5+exc[i] + (.7*g1*gg1*iexc[i] + .3*g2*gg2*iexc[i+nsf]));
    } else {
       for (i=0;i<nsf;i++)
-         new_exc[i] = SHL32(exc[i] + (.6*g1*gg1*iexc[i] + .6*g2*gg2*iexc[i+nsf]),SIG_SHIFT);
+         new_exc[i] = floor(.5+exc[i] + (.6*g1*gg1*iexc[i] + .6*g2*gg2*iexc[i+nsf]));
    }
    new_ener = compute_rms16(new_exc, nsf);
-   old_ener = compute_rms(exc, nsf);
+   old_ener = compute_rms16(exc, nsf);
    ngain = old_ener/(1.+new_ener);
    for (i=0;i<nsf;i++)
-      new_exc[i] *= ngain;
+      new_exc[i] = floor(.5+new_exc[i]*ngain);
 }
 #endif
 
