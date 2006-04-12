@@ -667,16 +667,9 @@ char *stack
 )
 {
    int i; 
-   int pitch_period;
-   int pitch_tweak;
-   spx_sig_t iexc[4*nsf];
-   spx_coef_t *awk;
-   float tot_gain, curr_gain;
+   spx_sig_t iexc[3*nsf];
    float old_ener, new_ener;
-   float corr[100];
    int corr_pitch;
-   spx_word32_t max_corr;
-   float max_ener;
    
    int nol_pitch[6];
    spx_word16_t nol_pitch_coef[6];
@@ -709,7 +702,6 @@ char *stack
       interp_pitch(exc, iexc+nsf, -corr_pitch, 80);
 
    interp_pitch(exc, iexc+2*nsf, 2*corr_pitch, 80);
-   interp_pitch(exc, iexc+3*nsf, 3*corr_pitch, 80);
    
    /*printf ("%d %d %f\n", pitch, corr_pitch, max_corr*ener_1);*/
    
