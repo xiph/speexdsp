@@ -47,10 +47,21 @@ struct JitterBuffer_;
 
 typedef struct JitterBuffer_ JitterBuffer;
 
+typedef struct _JitterBufferPacket JitterBufferPacket;
+
+struct _JitterBufferPacket {
+   char        *data;
+   spx_uint32_t len;
+   spx_uint32_t timestamp;
+   spx_uint32_t span;
+};
+
+
 #define JITTER_BUFFER_OK 0
 #define JITTER_BUFFER_MISSING 1
 #define JITTER_BUFFER_INCOMPLETE 2
-#define JITTER_BUFFER_ERROR -1
+#define JITTER_BUFFER_INTERNAL_ERROR -1
+#define JITTER_BUFFER_BAD_ARGUMENT -2
 
 /** Initialise jitter buffer */
 JitterBuffer *jitter_buffer_init(int tick);
@@ -62,11 +73,11 @@ void jitter_buffer_reset(JitterBuffer *jitter);
 void jitter_buffer_destroy(JitterBuffer *jitter);
 
 /** Put one packet into the jitter buffer */
-void jitter_buffer_put(JitterBuffer *jitter, char *packet, int len, spx_uint32_t timestamp, int span);
+void jitter_buffer_put(JitterBuffer *jitter, const JitterBufferPacket *packet);
 
 /** Get one packet from the jitter buffer */
 /*void jitter_buffer_get(JitterBuffer *jitter, short *out, int *current_timestamp);*/
-int jitter_buffer_get(JitterBuffer *jitter, char *out, int *length, spx_uint32_t *current_timestamp, spx_uint32_t *returned_timestamp, int *span);
+int jitter_buffer_get(JitterBuffer *jitter, JitterBufferPacket *packet, spx_uint32_t *current_timestamp);
 
 /** Get pointer timestamp of jitter buffer */
 int jitter_buffer_get_pointer_timestamp(JitterBuffer *jitter);
@@ -91,10 +102,10 @@ void speex_jitter_init(SpeexJitter *jitter, void *decoder, int sampling_rate);
 void speex_jitter_destroy(SpeexJitter *jitter);
 
 /** Put one packet into the jitter buffer */
-void speex_jitter_put(SpeexJitter *jitter, char *packet, int len, int timestamp);
+void speex_jitter_put(SpeexJitter *jitter, const JitterBufferPacket *packet);
 
 /** Get one packet from the jitter buffer */
-void speex_jitter_get(SpeexJitter *jitter, short *out, int *current_timestamp);
+void speex_jitter_get(SpeexJitter *jitter, spx_int16_t *out, int *current_timestamp);
 
 /** Get pointer timestamp of jitter buffer */
 int speex_jitter_get_pointer_timestamp(SpeexJitter *jitter);
