@@ -105,7 +105,7 @@ void speex_jitter_destroy(SpeexJitter *jitter);
 void speex_jitter_put(SpeexJitter *jitter, const JitterBufferPacket *packet);
 
 /** Get one packet from the jitter buffer */
-void speex_jitter_get(SpeexJitter *jitter, spx_int16_t *out, int *current_timestamp);
+void speex_jitter_get(SpeexJitter *jitter, spx_int16_t *out, int *start_offset);
 
 /** Get pointer timestamp of jitter buffer */
 int speex_jitter_get_pointer_timestamp(SpeexJitter *jitter);

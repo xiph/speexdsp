@@ -227,7 +227,7 @@ void jitter_buffer_put(JitterBuffer *jitter, const JitterBufferPacket *packet)
 
 /** Get one packet from the jitter buffer */
 /*void jitter_buffer_get(JitterBuffer *jitter, short *out, int *current_timestamp);*/
-int jitter_buffer_get(JitterBuffer *jitter, JitterBufferPacket *packet, spx_uint32_t *current_timestamp)
+int jitter_buffer_get(JitterBuffer *jitter, JitterBufferPacket *packet, spx_uint32_t *start_offset)
 {
    int i, j;
    float late_ratio_short;
@@ -239,7 +239,7 @@ int jitter_buffer_get(JitterBuffer *jitter, JitterBufferPacket *packet, spx_uint
    int chunk_size;
    int incomplete = 0;
    
-   if (LT32(jitter->current_timestamp, jitter->pointer_timestamp-jitter->tick_size))
+   if (LT32(jitter->current_timestamp+jitter->tick_size, jitter->pointer_timestamp))
    {
       jitter->current_timestamp = jitter->pointer_timestamp;
       speex_warning("did you forget to call jitter_buffer_tick() by any chance?");
@@ -382,8 +382,8 @@ int jitter_buffer_get(JitterBuffer *jitter, JitterBufferPacket *packet, spx_uint
       speex_free(jitter->buf[i]);
       jitter->buf[i] = NULL;
       /* Set timestamp and span (if requested) */
-      if (current_timestamp)
-         *current_timestamp = jitter->pointer_timestamp;
+      if (start_offset)
+         *start_offset = jitter->timestamp[i]-jitter->pointer_timestamp;
       packet->timestamp = jitter->timestamp[i];
       packet->span = jitter->span[i];
       /* Point at the end of the current packet */
@@ -401,8 +401,8 @@ int jitter_buffer_get(JitterBuffer *jitter, JitterBufferPacket *packet, spx_uint
    /*fprintf (stderr, "m");*/
    /*fprintf (stderr, "lost_count = %d\n", jitter->lost_count);*/
    jitter->loss_rate = .999*jitter->loss_rate + .001;
-   if (current_timestamp)
-      *current_timestamp = jitter->pointer_timestamp;
+   if (start_offset)
+      *start_offset = 0;
    packet->timestamp = jitter->pointer_timestamp;
    packet->span = jitter->tick_size;
    jitter->pointer_timestamp += chunk_size;
