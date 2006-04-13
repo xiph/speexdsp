@@ -585,6 +585,17 @@ void fir_mem_up(const spx_sig_t *x, const spx_word16_t *a, spx_sig_t *y, int N, 
 
 #ifdef NEW_ENHANCER
 
+#ifdef FIXED_POINT
+#if 0
+spx_word16_t shift_filt[3][7] = {{-33,    1043,   -4551,   19959,   19959,   -4551,    1043},
+                                 {-98,    1133,   -4425,   29179,    8895,   -2328,     444},
+                                 {444,   -2328,    8895,   29179,   -4425,    1133,     -98}};
+#else
+spx_word16_t shift_filt[3][7] = {{-390,    1540,   -4993,   20123,   20123,   -4993,    1540},
+                                {-1064,    2817,   -6694,   31589,    6837,    -990,    -209},
+                                 {-209,    -990,    6837,   31589,   -6694,    2817,   -1064}};
+#endif
+#else
 #if 0
 float shift_filt[3][7] = {{-9.9369e-04, 3.1831e-02, -1.3889e-01, 6.0910e-01, 6.0910e-01, -1.3889e-01, 3.1831e-02},
                           {-0.0029937, 0.0345613, -0.1350474, 0.8904793, 0.2714479, -0.0710304, 0.0135403},
@@ -593,6 +604,7 @@ float shift_filt[3][7] = {{-9.9369e-04, 3.1831e-02, -1.3889e-01, 6.0910e-01, 6.0
 float shift_filt[3][7] = {{-0.011915, 0.046995, -0.152373, 0.614108, 0.614108, -0.152373, 0.046995},
                           {-0.0324855, 0.0859768, -0.2042986, 0.9640297, 0.2086420, -0.0302054, -0.0063646},
                           {-0.0063646, -0.0302054, 0.2086420, 0.9640297, -0.2042986, 0.0859768, -0.0324855}};
+#endif
 #endif
 
 int interp_pitch(
@@ -614,17 +626,17 @@ int len
    {
       for (j=0;j<7;j++)
       {
-         float tmp=0;
+         spx_word32_t tmp=0;
          for (k=0;k<7;k++)
          {
             if (j+k-3 >= 0 && j+k-3 < 7)
-               tmp += corr[0][j+k-3]*shift_filt[i][k];
+               tmp += MULT16_32_Q15(shift_filt[i][k],corr[0][j+k-3]);
          }
          corr[i+1][j] = tmp;
       }
    }
-   maxi=maxj=-1;
-   maxcorr = -1e9;
+   maxi=maxj=0;
+   maxcorr = corr[0][0];
    for (i=0;i<4;i++)
    {
       for (j=0;j<7;j++)
@@ -639,21 +651,27 @@ int len
    }
    for (i=0;i<len;i++)
    {
-      float tmp = 0;
+      spx_word32_t tmp = 0;
       if (maxi>0)
       {
          for (k=0;k<7;k++)
          {
-            tmp += exc[i-(pitch-maxj+3)+k-3]*shift_filt[maxi-1][k];
+            tmp += MULT16_16(exc[i-(pitch-maxj+3)+k-3],shift_filt[maxi-1][k]);
          }
       } else {
-         tmp = exc[i-(pitch-maxj+3)];
+         tmp = SHL32(exc[i-(pitch-maxj+3)],15);
       }
-      interp[i] = tmp;
+      interp[i] = PSHR32(tmp,15);
    }
    return pitch-maxj+3;
 }
       
+#ifdef FIXED_POINT
+#define GSCALE 256.
+#else
+#define GSCALE 1.
+#endif
+
 void multicomb(
 spx_sig_t *_exc,          /*decoded excitation*/
 spx_word16_t *new_exc,      /*enhanced excitation*/
@@ -668,14 +686,16 @@ char *stack
 {
    int i; 
    spx_word16_t iexc[3*nsf];
-   float old_ener, new_ener;
+   spx_word16_t old_ener, new_ener;
    int corr_pitch;
    
    int nol_pitch[6];
    spx_word16_t nol_pitch_coef[6];
    spx_word16_t ol_pitch_coef;
    spx_word16_t *exc;
-   
+   spx_word16_t iexc0_mag, iexc1_mag, exc_mag;
+   spx_word32_t corr0, corr1;
+   spx_word16_t gain0, gain1;
 #ifdef FIXED_POINT
    VARDECL(spx_word16_t *exc2);
    /* FIXME: Can it get uglier than that??? */
@@ -703,7 +723,6 @@ char *stack
          (ABS(2*nol_pitch[i]-corr_pitch)<=2 || ABS(3*nol_pitch[i]-corr_pitch)<=3 || 
          ABS(4*nol_pitch[i]-corr_pitch)<=4 || ABS(5*nol_pitch[i]-corr_pitch)<=5))
       {
-         /*ol_pitch_coef=nol_pitch_coef[i];*/
          corr_pitch = nol_pitch[i];
       }
    }
@@ -716,11 +735,15 @@ char *stack
    interp_pitch(exc, iexc+2*nsf, 2*corr_pitch, 80);
    
    /*printf ("%d %d %f\n", pitch, corr_pitch, max_corr*ener_1);*/
-   
-   float gg1 = sqrt((1.+inner_prod(exc,exc,nsf))/(1000.+inner_prod(iexc,iexc,nsf)));
-   float gg2 = sqrt((1.+inner_prod(exc,exc,nsf))/(1000.+inner_prod(iexc+nsf,iexc+nsf,nsf)));
-   float pgain1 = inner_prod(iexc,exc,nsf)/sqrt(1000.+inner_prod(iexc,iexc,nsf)*1.*inner_prod(exc,exc,nsf));
-   float pgain2 = inner_prod(iexc+nsf,exc,nsf)/sqrt(1000.+inner_prod(iexc+nsf,iexc+nsf,nsf)*1.*inner_prod(exc,exc,nsf));
+   iexc0_mag = spx_sqrt(1000+inner_prod(iexc,iexc,nsf));
+   iexc1_mag = spx_sqrt(1000+inner_prod(iexc+nsf,iexc+nsf,nsf));
+   exc_mag = spx_sqrt(1+inner_prod(exc,exc,nsf));
+   corr0  = inner_prod(iexc,exc,nsf);
+   corr1 = inner_prod(iexc+nsf,exc,nsf);
+   float gg1 = 1.*exc_mag/iexc0_mag;
+   float gg2 = 1.*exc_mag/iexc1_mag;
+   float pgain1 = 1.*corr0/iexc0_mag/exc_mag;
+   float pgain2 = 1.*corr1/iexc1_mag/exc_mag;
    if (pgain1<0)
       pgain1=0;
    if (pgain2<0)
@@ -753,17 +776,27 @@ char *stack
    /*printf ("%d %f %f %f %f %d %d %d\n", corr_pitch, gg1, gg2, g1, g2, inner_prod(iexc+nsf,exc,nsf),inner_prod(iexc+nsf,iexc+nsf,nsf),inner_prod(exc,exc,nsf));*/
    if (corr_pitch>40)
    {
-      for (i=0;i<nsf;i++)
-         new_exc[i] = floor(.5+exc[i] + (.7*g1*gg1*iexc[i] + .3*g2*gg2*iexc[i+nsf]));
+      gain0 = GSCALE*.7*g1*gg1;
+      gain1 = GSCALE*.3*g2*gg2;
    } else {
-      for (i=0;i<nsf;i++)
-         new_exc[i] = floor(.5+exc[i] + (.6*g1*gg1*iexc[i] + .6*g2*gg2*iexc[i+nsf]));
+      gain0 = GSCALE*.6*g1*gg1;
+      gain1 = GSCALE*.6*g2*gg2;
    }
+   for (i=0;i<nsf;i++)
+      new_exc[i] = ADD16(exc[i], EXTRACT16(PSHR32(ADD32(MULT16_16(gain0,iexc[i]), MULT16_16(gain1,iexc[i+nsf])),8)));
    new_ener = compute_rms16(new_exc, nsf);
    old_ener = compute_rms16(exc, nsf);
-   ngain = old_ener/(1.+new_ener);
+   
+   if (old_ener > new_ener)
+      old_ener = new_ener;
+
+   if (new_ener<1)
+      new_ener=1;
+   if (old_ener<1)
+      old_ener=1;
+   ngain = DIV32_16(SUB32(SHL32(old_ener,15),1),new_ener);
    for (i=0;i<nsf;i++)
-      new_exc[i] = floor(.5+new_exc[i]*ngain);
+      new_exc[i] = MULT16_16_Q15(ngain, new_exc[i]);
 }
 #endif
 
