@@ -1719,7 +1719,10 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
       gain = gain32;
 #endif
       for (i=0;i<st->frameSize;i++)
+      {
          st->exc[i] = MULT16_32_Q14(gain, st->exc[i]);
+         out[i]=PSHR32(st->exc[i],SIG_SHIFT);
+      }
    }
 
    /*Loop on subframes */
