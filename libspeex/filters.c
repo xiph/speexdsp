@@ -679,11 +679,11 @@ char *stack
 #ifdef FIXED_POINT
    VARDECL(spx_word16_t *exc2);
    /* FIXME: Can it get uglier than that??? */
-   ALLOC(exc2, 500, spx_word16_t);
-   for (i=0;i<500;i++)
+   ALLOC(exc2, 510, spx_word16_t);
+   for (i=0;i<510;i++)
       exc2[i] = 0;
    exc = exc2+300;
-   for (i=-280;i<160;i++)
+   for (i=-280;i<200;i++)
       exc[i] = PSHR32(_exc[i], SIG_SHIFT);
 #else
    exc = _exc;
@@ -725,6 +725,10 @@ char *stack
       pgain1=0;
    if (pgain2<0)
       pgain2=0;
+   if (pgain1>.99)
+      pgain1=.99;
+   if (pgain2>.99)
+      pgain2=.99;
    float c1, c2;
    float g1, g2;
    float ngain;
@@ -746,7 +750,7 @@ char *stack
       g1 = 1;
    if (g2 > 1)
       g2 = 1;
-   //printf ("%d %f %f %f %f %d %d %d\n", corr_pitch, gg1, gg2, g1, g2, inner_prod(iexc+nsf,exc,nsf),inner_prod(iexc+nsf,iexc+nsf,nsf),inner_prod(exc,exc,nsf));
+   /*printf ("%d %f %f %f %f %d %d %d\n", corr_pitch, gg1, gg2, g1, g2, inner_prod(iexc+nsf,exc,nsf),inner_prod(iexc+nsf,iexc+nsf,nsf),inner_prod(exc,exc,nsf));*/
    if (corr_pitch>40)
    {
       for (i=0;i<nsf;i++)
