@@ -1580,18 +1580,6 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
          }
 #endif
 
-         
-         /* If we had lost frames, check energy of last received frame */
-         if (st->count_lost && ol_gain < st->last_ol_gain)
-         {
-            /*float fact = (float)ol_gain/(st->last_ol_gain+1);
-            for (i=0;i<st->subframeSize;i++)
-            exc[i]*=fact;*/
-            spx_word16_t fact = DIV32_16(SHL32(EXTEND32(ol_gain),15),st->last_ol_gain+1);
-            for (i=0;i<st->subframeSize;i++)
-               exc[i] = MULT16_32_Q15(fact, exc[i]);
-         }
-
          tmp = gain_3tap_to_1tap(pitch_gain);
 
          pitch_average += tmp;
@@ -1691,32 +1679,12 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
 
       }
 
-      /* If the last packet was lost, re-scale the excitation to obtain the same energy as encoded in ol_gain */
-      if (st->count_lost) 
-      {
-         spx_word16_t exc_ener;
-         spx_word32_t gain32;
-         spx_word16_t gain;
-         exc_ener = compute_rms (exc, st->subframeSize);
-         gain32 = DIV32(ol_gain, ADD16(exc_ener,1));
-#ifdef FIXED_POINT
-         if (gain32 > 32768)
-            gain32 = 32768;
-         gain = EXTRACT16(gain32);
-#else
-         if (gain32 > 2)
-            gain32=2;
-         gain = gain32;
-#endif
-         for (i=0;i<st->subframeSize;i++)
-            exc[i] = MULT16_32_Q14(gain, exc[i]);
-      }
 
       for (i=0;i<st->subframeSize;i++)
          sp[i]=PSHR32(exc[i],SIG_SHIFT);
 
 #ifndef NEW_ENHANCER
-      if (st->lpc_enh_enabled && SUBMODE(comb_gain)>0)
+      if (st->lpc_enh_enabled && SUBMODE(comb_gain)>0 && !st->count_lost)
          comb_filter(exc, sp, st->interp_qlpc, st->lpcSize, st->subframeSize,
                      pitch, pitch_gain, SUBMODE(comb_gain), st->comb_mem);
 #endif      
@@ -1726,12 +1694,34 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
    ALLOC(interp_qlsp, st->lpcSize, spx_lsp_t);
 
 #ifdef NEW_ENHANCER
-   if (st->lpc_enh_enabled && SUBMODE(comb_gain)>0)
+   if (st->lpc_enh_enabled && SUBMODE(comb_gain)>0 && !st->count_lost)
    {
       multicomb(st->exc-40, out, st->interp_qlpc, st->lpcSize, 2*st->subframeSize, pitch, pitch_gain, SUBMODE(comb_gain), stack);
       multicomb(st->exc+40, out+80, st->interp_qlpc, st->lpcSize, 2*st->subframeSize, pitch, pitch_gain, SUBMODE(comb_gain), stack);
    }
 #endif
+   
+   /* If the last packet was lost, re-scale the excitation to obtain the same energy as encoded in ol_gain */
+   if (st->count_lost) 
+   {
+      spx_word16_t exc_ener;
+      spx_word32_t gain32;
+      spx_word16_t gain;
+      exc_ener = compute_rms (st->exc, st->frameSize);
+      gain32 = DIV32(ol_gain, ADD16(exc_ener,1));
+#ifdef FIXED_POINT
+      if (gain32 > 32768)
+         gain32 = 32768;
+      gain = EXTRACT16(gain32);
+#else
+      if (gain32 > 2)
+         gain32=2;
+      gain = gain32;
+#endif
+      for (i=0;i<st->frameSize;i++)
+         st->exc[i] = MULT16_32_Q14(gain, st->exc[i]);
+   }
+
    /*Loop on subframes */
    for (sub=0;sub<st->nbSubframes;sub++)
    {
