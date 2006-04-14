@@ -789,12 +789,8 @@ char *stack
    
    if (old_ener > new_ener)
       old_ener = new_ener;
-
-   if (new_ener<1)
-      new_ener=1;
-   if (old_ener<1)
-      old_ener=1;
-   ngain = DIV32_16(SUB32(SHL32(old_ener,15),1),new_ener);
+   ngain = DIV32_16(SHL32(EXTEND32(old_ener),15),ADD16(1,new_ener));
+   
    for (i=0;i<nsf;i++)
       new_exc[i] = MULT16_16_Q15(ngain, new_exc[i]);
 }
