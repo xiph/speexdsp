@@ -140,9 +140,13 @@ struct SpeexEchoState_ {
    spx_word16_t preemph;
    spx_word16_t notch_radius;
    spx_mem_t notch_mem[2];
+
+   /* NOTE: If you only use speex_echo_cancel() and want to save some memory, remove this */
+   spx_int16_t *play_buf;
+   int play_buf_pos;
 };
 
-static inline void filter_dc_notch16(spx_int16_t *in, spx_word16_t radius, spx_word16_t *out, int len, spx_mem_t *mem)
+static inline void filter_dc_notch16(const spx_int16_t *in, spx_word16_t radius, spx_word16_t *out, int len, spx_mem_t *mem)
 {
    int i;
    spx_word16_t den2;
@@ -332,6 +336,10 @@ SpeexEchoState *speex_echo_state_init(int frame_size, int filter_length)
    st->notch_mem[0] = st->notch_mem[1] = 0;
    st->adapted = 0;
    st->Pey = st->Pyy = FLOAT_ONE;
+   
+   st->play_buf = (spx_int16_t*)speex_alloc(2*st->frame_size*sizeof(spx_int16_t));
+   st->play_buf_pos = 0;
+
    return st;
 }
 
@@ -388,9 +396,40 @@ void speex_echo_state_destroy(SpeexEchoState *st)
    speex_free(st);
 }
 
-extern int fixed_point;
+void speex_echo_capture(SpeexEchoState *st, const spx_int16_t *rec, spx_int16_t *out, spx_int32_t *Yout)
+{
+   if (st->play_buf_pos>=st->frame_size)
+   {
+      st->play_buf_pos -= st->frame_size;
+   } else {
+      int i;
+      speex_warning("no playback frame available");
+      for (i=0;i<st->frame_size;i++)
+         st->play_buf[i] = 0;
+      if (st->play_buf_pos!=0)
+      {
+         speex_warning("internal playback buffer corruption?");
+         st->play_buf_pos = 0;
+      }
+   }
+   speex_echo_cancel(st, rec, st->play_buf+st->play_buf_pos, out, Yout);
+}
+
+void speex_echo_playback(SpeexEchoState *st, const spx_int16_t *play)
+{
+   if (st->play_buf_pos<=st->frame_size)
+   {
+      int i;
+      for (i=0;i<st->frame_size;i++)
+         st->play_buf[st->play_buf_pos+i] = play[i];
+      st->play_buf_pos += st->frame_size;
+   } else {
+      speex_warning("had to discard a playback frame");
+   }
+}
+
 /** Performs echo cancellation on a frame */
-void speex_echo_cancel(SpeexEchoState *st, spx_int16_t *ref, spx_int16_t *echo, spx_int16_t *out, spx_int32_t *Yout)
+void speex_echo_cancel(SpeexEchoState *st, const spx_int16_t *ref, const spx_int16_t *echo, spx_int16_t *out, spx_int32_t *Yout)
 {
    int i,j;
    int N,M;
