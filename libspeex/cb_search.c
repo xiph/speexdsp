@@ -88,9 +88,8 @@ static void compute_weighted_codebook(const signed char *shape_cb, const spx_wor
 static inline void target_update(spx_word16_t *t, spx_word16_t g, spx_word16_t *r, int len)
 {
    int n;
-   int q=0;
-   for (n=0;n<len;n++,q++)
-      t[n] = SUB32(t[n],MULT16_16_Q11_32(g,r[q]));
+   for (n=0;n<len;n++)
+      t[n] = SUB32(t[n],MULT16_16_Q11_32(g,r[n]));
 }
 #endif
 
@@ -113,9 +112,6 @@ int   update_target
 )
 {
    int i,j,m,q;
-#ifndef FIXED_POINT
-   int n;
-#endif
    VARDECL(spx_word16_t *resp);
 #ifdef _USE_SSE
    VARDECL(__m128 *resp2);
@@ -222,13 +218,10 @@ int   update_target
          q=subvect_size-m;
 #ifdef FIXED_POINT
          g=sign*shape_cb[rind*subvect_size+m];
-         target_update(t+subvect_size*(i+1), g, r+q, nsf-subvect_size*(i+1));
 #else
          g=sign*0.03125*shape_cb[rind*subvect_size+m];
-         /*FIXME: I think that one too can be replaced by target_update */
-         for (n=subvect_size*(i+1);n<nsf;n++,q++)
-            t[n] = SUB32(t[n],g*r[q]);
 #endif
+         target_update(t+subvect_size*(i+1), g, r+q, nsf-subvect_size*(i+1));
       }
    }
 
@@ -444,13 +437,10 @@ int   update_target
             q=subvect_size-m;
 #ifdef FIXED_POINT
             g=sign*shape_cb[rind*subvect_size+m];
-            target_update(nt[j]+subvect_size*(i+1), g, r+q, nsf-subvect_size*(i+1));
 #else
             g=sign*0.03125*shape_cb[rind*subvect_size+m];
-            /*FIXME: I think that one too can be replaced by target_update */
-            for (n=subvect_size*(i+1);n<nsf;n++,q++)
-               nt[j][n] = SUB32(nt[j][n],g*r[q]);
 #endif
+            target_update(nt[j]+subvect_size*(i+1), g, r+q, nsf-subvect_size*(i+1));
          }
 
          for (q=0;q<nb_subvect;q++)
