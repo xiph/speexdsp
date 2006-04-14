@@ -583,8 +583,9 @@ void speex_echo_cancel(SpeexEchoState *st, const spx_int16_t *ref, const spx_int
       st->Pey = FLOAT_MULT(MIN_LEAK,st->Pyy);
    if (FLOAT_GT(st->Pey, st->Pyy))
       st->Pey = st->Pyy;
-   /* leak_estimate is the limear regression result */
+   /* leak_estimate is the linear regression result */
    leak_estimate = FLOAT_EXTRACT16(FLOAT_SHL(FLOAT_DIVU(st->Pey, st->Pyy),14));
+   /* This looks like a stupid bug, but it's right (because we convert from Q14 to Q15) */
    if (leak_estimate > 16383)
       leak_estimate = 32767;
    else
