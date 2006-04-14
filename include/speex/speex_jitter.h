@@ -76,7 +76,6 @@ void jitter_buffer_destroy(JitterBuffer *jitter);
 void jitter_buffer_put(JitterBuffer *jitter, const JitterBufferPacket *packet);
 
 /** Get one packet from the jitter buffer */
-/*void jitter_buffer_get(JitterBuffer *jitter, short *out, int *current_timestamp);*/
 int jitter_buffer_get(JitterBuffer *jitter, JitterBufferPacket *packet, spx_uint32_t *current_timestamp);
 
 /** Get pointer timestamp of jitter buffer */

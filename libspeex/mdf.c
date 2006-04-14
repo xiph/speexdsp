@@ -390,7 +390,7 @@ void speex_echo_state_destroy(SpeexEchoState *st)
 
 extern int fixed_point;
 /** Performs echo cancellation on a frame */
-void speex_echo_cancel(SpeexEchoState *st, short *ref, short *echo, short *out, spx_int32_t *Yout)
+void speex_echo_cancel(SpeexEchoState *st, spx_int16_t *ref, spx_int16_t *echo, spx_int16_t *out, spx_int32_t *Yout)
 {
    int i,j;
    int N,M;
