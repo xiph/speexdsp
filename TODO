@@ -1,3 +1,10 @@
+Things to fix:
+Vorbis-psy
+ARM and Blackfin assembly (filters)
+Handle input buffer properly in nb_celp.c
+target_update() use of MULT16_16_Q11_32
+target_update() for float too
+
 Allocator override (speex_lib_ctl)
 Better error handling
 Fixed-point:
