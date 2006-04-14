@@ -341,9 +341,9 @@ int jitter_buffer_get(JitterBuffer *jitter, JitterBufferPacket *packet, spx_uint
    if (i==SPEEX_JITTER_MAX_BUFFER_SIZE)
    {
       int found = 0;
-      spx_uint32_t best_time;
-      int best_span;
-      int besti;
+      spx_uint32_t best_time=0;
+      int best_span=0;
+      int besti=0;
       for (i=0;i<SPEEX_JITTER_MAX_BUFFER_SIZE;i++)
       {
          /* check if packet starts within current chunk */

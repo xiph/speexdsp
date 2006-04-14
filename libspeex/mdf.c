@@ -188,7 +188,7 @@ static inline spx_word32_t inner_prod(const spx_word16_t *x, const spx_word16_t 
 }
 
 /** Compute power spectrum of a half-complex (packed) vector */
-static inline void power_spectrum(spx_word16_t *X, spx_word32_t *ps, int N)
+static inline void power_spectrum(const spx_word16_t *X, spx_word32_t *ps, int N)
 {
    int i, j;
    ps[0]=MULT16_16(X[0],X[0]);
@@ -201,7 +201,7 @@ static inline void power_spectrum(spx_word16_t *X, spx_word32_t *ps, int N)
 
 /** Compute cross-power spectrum of a half-complex (packed) vectors and add to acc */
 #ifdef FIXED_POINT
-static inline void spectral_mul_accum(spx_word16_t *X, spx_word32_t *Y, spx_word16_t *acc, int N, int M)
+static inline void spectral_mul_accum(const spx_word16_t *X, const spx_word32_t *Y, spx_word16_t *acc, int N, int M)
 {
    int i,j;
    spx_word32_t tmp1=0,tmp2=0;
@@ -229,7 +229,7 @@ static inline void spectral_mul_accum(spx_word16_t *X, spx_word32_t *Y, spx_word
    acc[N-1] = PSHR32(tmp1,WEIGHT_SHIFT);
 }
 #else
-static inline void spectral_mul_accum(spx_word16_t *X, spx_word32_t *Y, spx_word16_t *acc, int N, int M)
+static inline void spectral_mul_accum(const spx_word16_t *X, const spx_word32_t *Y, spx_word16_t *acc, int N, int M)
 {
    int i,j;
    for (i=0;i<N;i++)
@@ -250,7 +250,7 @@ static inline void spectral_mul_accum(spx_word16_t *X, spx_word32_t *Y, spx_word
 #endif
 
 /** Compute weighted cross-power spectrum of a half-complex (packed) vector with conjugate */
-static inline void weighted_spectral_mul_conj(spx_float_t *w, spx_word16_t *X, spx_word16_t *Y, spx_word32_t *prod, int N)
+static inline void weighted_spectral_mul_conj(const spx_float_t *w, const spx_word16_t *X, const spx_word16_t *Y, spx_word32_t *prod, int N)
 {
    int i, j;
    prod[0] = FLOAT_MUL32(w[0],MULT16_16(X[0],Y[0]));
