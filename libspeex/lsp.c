@@ -100,12 +100,9 @@ Heavily modified by Jean-Marc Valin (fixed-point, optimizations,
 #ifdef FIXED_POINT
 
 static inline spx_word32_t cheb_poly_eva(spx_word32_t *coef,spx_word16_t x,int m,char *stack)
-/*  float coef[]  	coefficients of the polynomial to be evaluated 	*/
-/*  float x   		the point where polynomial is to be evaluated 	*/
-/*  int m 		order of the polynomial 			*/
 {
     int i;
-    VARDECL(spx_word16_t *T);
+    spx_word16_t b0, b1;
     spx_word32_t sum;
     int m2=m>>1;
     VARDECL(spx_word16_t *coefn);
@@ -116,64 +113,51 @@ static inline spx_word32_t cheb_poly_eva(spx_word32_t *coef,spx_word16_t x,int m
     if (x<-16383)
        x = -16383;
 
-    /* Allocate memory for Chebyshev series formulation */
-    ALLOC(T, m2+1, spx_word16_t);
     ALLOC(coefn, m2+1, spx_word16_t);
 
     for (i=0;i<m2+1;i++)
     {
        coefn[i] = coef[i];
-       /*printf ("%f ", coef[i]);*/
     }
-    /*printf ("\n");*/
-
     /* Initialise values */
-    T[0]=16384;
-    T[1]=x;
+    b1=16384;
+    b0=x;
 
     /* Evaluate Chebyshev series formulation using iterative approach  */
-    /* Evaluate polynomial and return value also free memory space */
     sum = ADD32(EXTEND32(coefn[m2]), EXTEND32(MULT16_16_P14(coefn[m2-1],x)));
-    /*x *= 2;*/
     for(i=2;i<=m2;i++)
     {
-       T[i] = SUB16(MULT16_16_Q13(x,T[i-1]), T[i-2]);
-       sum = ADD32(sum, EXTEND32(MULT16_16_P14(coefn[m2-i],T[i])));
-       /*printf ("%f ", sum);*/
+       spx_word16_t tmp=b0;
+       b0 = SUB16(MULT16_16_Q13(x,b0), b1);
+       b1 = tmp;
+       sum = ADD32(sum, EXTEND32(MULT16_16_P14(coefn[m2-i],b0)));
     }
     
-    /*printf ("\n");*/
     return sum;
 }
 #else
-static float cheb_poly_eva(spx_word32_t *coef,float x,int m,char *stack)
-/*  float coef[]  	coefficients of the polynomial to be evaluated 	*/
-/*  float x   		the point where polynomial is to be evaluated 	*/
-/*  int m 		order of the polynomial 			*/
+
+static float cheb_poly_eva(spx_word32_t *coef, spx_word16_t x, int m, char *stack)
 {
-    int i;
-    VARDECL(float *T);
-    float sum;
-    int m2=m>>1;
+   int k;
+   float b0, b1, tmp;
+   int m2=m>>1;
 
-    /* Allocate memory for Chebyshev series formulation */
-    ALLOC(T, m2+1, float);
+   /* Initial conditions */
+   b0=0; /* b_(m+1) */
+   b1=0; /* b_(m+2) */
 
-    /* Initialise values */
-    T[0]=1;
-    T[1]=x;
+   x*=2;
 
-    /* Evaluate Chebyshev series formulation using iterative approach  */
-    /* Evaluate polynomial and return value also free memory space */
-    sum = coef[m2] + coef[m2-1]*x;
-    x *= 2;
-    for(i=2;i<=m2;i++)
-    {
-       T[i] = x*T[i-1] - T[i-2];
-       sum += coef[m2-i] * T[i];
-    }
-    
-    return sum;
+   /* Calculate the b_(k) */
+   for(k=m2;k>0;k--)
+   {
+      tmp=b0;                           /* tmp holds the previous value of b0 */
+      b0=x*b0-b1+coef[m2-k];    /* b0 holds its new value based on b0 and b1 */
+      b1=tmp;                           /* b1 holds the previous value of b0 */
+   }
+
+   return(-b1+.5*x*b0+coef[m2]);
 }
 #endif
 
