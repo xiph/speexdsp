@@ -286,6 +286,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
    int ol_pitch_id=0;
 #endif
    spx_word16_t *in = vin;
+   spx_word16_t *exc16_alias;
 
    st=(EncState *)state;
    stack=st->stack;
@@ -407,7 +408,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
       
       /*Compute "real" excitation*/
       /* FIXME: Are we breaking aliasing rules? */
-      spx_word16_t *exc16_alias = (spx_word16_t*)st->exc;
+      exc16_alias = (spx_word16_t*)st->exc;
       for (i=0;i<st->windowSize-st->frameSize;i++)
          exc16_alias[i] = st->winBuf[i];
       for (;i<st->frameSize;i++)
