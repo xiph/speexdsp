@@ -875,6 +875,7 @@ void *sb_decoder_init(const SpeexMode *m)
    st->g1_mem=speex_alloc((QMF_ORDER)*sizeof(spx_word32_t));
 
    st->exc=speex_alloc((st->frame_size)*sizeof(spx_sig_t));
+   st->excBuf=speex_alloc((st->subframeSize)*sizeof(spx_sig_t));
 
    st->qlsp = speex_alloc((st->lpcSize)*sizeof(spx_lsp_t));
    st->old_qlsp = speex_alloc((st->lpcSize)*sizeof(spx_lsp_t));
@@ -915,6 +916,7 @@ void sb_decoder_destroy(void *state)
    speex_free(st->g0_mem);
    speex_free(st->g1_mem);
    speex_free(st->exc);
+   speex_free(st->excBuf);
    speex_free(st->qlsp);
    speex_free(st->old_qlsp);
    speex_free(st->interp_qlsp);
@@ -943,9 +945,9 @@ static void sb_decode_lost(SBDecState *st, spx_word16_t *out, int dtx, char *sta
 
    st->first=1;
    
-   ALLOC(awk1, st->lpcSize+1, spx_coef_t);
-   ALLOC(awk2, st->lpcSize+1, spx_coef_t);
-   ALLOC(awk3, st->lpcSize+1, spx_coef_t);
+   ALLOC(awk1, st->lpcSize, spx_coef_t);
+   ALLOC(awk2, st->lpcSize, spx_coef_t);
+   ALLOC(awk3, st->lpcSize, spx_coef_t);
    
    if (st->lpc_enh_enabled)
    {
@@ -1018,6 +1020,7 @@ int sb_decode(void *state, SpeexBits *bits, void *vout)
    char *stack;
    VARDECL(spx_word32_t *low_pi_gain);
    VARDECL(spx_sig_t *low_exc);
+   VARDECL(spx_coef_t *ak);
    VARDECL(spx_coef_t *awk1);
    VARDECL(spx_coef_t *awk2);
    VARDECL(spx_coef_t *awk3);
@@ -1121,9 +1124,10 @@ int sb_decode(void *state, SpeexBits *bits, void *vout)
          st->old_qlsp[i] = st->qlsp[i];
    }
    
-   ALLOC(awk1, st->lpcSize+1, spx_coef_t);
-   ALLOC(awk2, st->lpcSize+1, spx_coef_t);
-   ALLOC(awk3, st->lpcSize+1, spx_coef_t);
+   ALLOC(ak, st->lpcSize, spx_coef_t);
+   ALLOC(awk1, st->lpcSize, spx_coef_t);
+   ALLOC(awk2, st->lpcSize, spx_coef_t);
+   ALLOC(awk3, st->lpcSize, spx_coef_t);
 
    for (sub=0;sub<st->nbSubframes;sub++)
    {
@@ -1150,8 +1154,12 @@ int sb_decode(void *state, SpeexBits *bits, void *vout)
       lsp_enforce_margin(st->interp_qlsp, st->lpcSize, LSP_MARGIN);
 
       /* LSP to LPC */
-      lsp_to_lpc(st->interp_qlsp, st->interp_qlpc, st->lpcSize, stack);
+      lsp_to_lpc(st->interp_qlsp, ak, st->lpcSize, stack);
 
+#ifndef NEW_ENHANCER
+      for (i=0;i<st->lpcSize;i++)
+         st->interp_qlpc[i] = ak[i];
+#endif
 
       if (st->lpc_enh_enabled)
       {
@@ -1271,8 +1279,12 @@ int sb_decode(void *state, SpeexBits *bits, void *vout)
             innov_save[2*i]=exc[i];
       }
       
+#ifndef NEW_ENHANCER
       for (i=0;i<st->subframeSize;i++)
-         sp[i]=exc[i];
+         st->excBuf[i]=exc[i];
+#endif
+      for (i=0;i<st->subframeSize;i++)
+         sp[i]=st->excBuf[i];
       if (st->lpc_enh_enabled)
       {
          /* Use enhanced LPC filter */
@@ -1287,7 +1299,12 @@ int sb_decode(void *state, SpeexBits *bits, void *vout)
          iir_mem2(sp, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, 
                      st->mem_sp);
       }
-      /*iir_mem2(exc, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, st->mem_sp);*/
+#ifdef NEW_ENHANCER
+      for (i=0;i<st->subframeSize;i++)
+         st->excBuf[i]=exc[i];
+      for (i=0;i<st->lpcSize;i++)
+         st->interp_qlpc[i] = ak[i];
+#endif
 
    }
 

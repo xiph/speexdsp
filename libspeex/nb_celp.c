@@ -1170,9 +1170,9 @@ static void nb_decode_lost(DecState *st, spx_word16_t *out, char *stack)
    /*speex_move(st->inBuf, st->inBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(spx_sig_t));*/
    speex_move(st->excBuf, st->excBuf+st->frameSize, (PITCH_PERIODS*st->max_pitch + 1)*sizeof(spx_sig_t));
 
-   ALLOC(awk1, (st->lpcSize+1), spx_coef_t);
-   ALLOC(awk2, (st->lpcSize+1), spx_coef_t);
-   ALLOC(awk3, (st->lpcSize+1), spx_coef_t);
+   ALLOC(awk1, st->lpcSize, spx_coef_t);
+   ALLOC(awk2, st->lpcSize, spx_coef_t);
+   ALLOC(awk3, st->lpcSize, spx_coef_t);
 
    for (sub=0;sub<st->nbSubframes;sub++)
    {
