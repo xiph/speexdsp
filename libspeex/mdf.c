@@ -398,21 +398,23 @@ void speex_echo_state_destroy(SpeexEchoState *st)
 
 void speex_echo_capture(SpeexEchoState *st, const spx_int16_t *rec, spx_int16_t *out, spx_int32_t *Yout)
 {
+   int i;
    if (st->play_buf_pos>=st->frame_size)
    {
+      speex_echo_cancel(st, rec, st->play_buf, out, Yout);
       st->play_buf_pos -= st->frame_size;
-   } else {
-      int i;
-      speex_warning("no playback frame available");
       for (i=0;i<st->frame_size;i++)
-         st->play_buf[i] = 0;
+         st->play_buf[i] = st->play_buf[i+st->frame_size];
+   } else {
+      speex_warning("no playback frame available");
       if (st->play_buf_pos!=0)
       {
          speex_warning("internal playback buffer corruption?");
          st->play_buf_pos = 0;
       }
+      for (i=0;i<st->frame_size;i++)
+         out[i] = rec[i];
    }
-   speex_echo_cancel(st, rec, st->play_buf+st->play_buf_pos, out, Yout);
 }
 
 void speex_echo_playback(SpeexEchoState *st, const spx_int16_t *play)
