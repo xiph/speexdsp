@@ -774,12 +774,12 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
          if (sub==0)
          {
             for (i=0;i<st->subframeSize;i++)
-               real_exc[i] = SHL32(st->winBuf[i],SIG_SHIFT);
+               real_exc[i] = SHL32(EXTEND32(st->winBuf[i]),SIG_SHIFT);
             for (i=0;i<st->subframeSize;i++)
                sw[i] = st->winBuf[i];
          } else {
             for (i=0;i<st->subframeSize;i++)
-               real_exc[i] = SHL32(in[i+((sub-1)*st->subframeSize)],SIG_SHIFT);
+               real_exc[i] = SHL32(EXTEND32(in[i+((sub-1)*st->subframeSize)]),SIG_SHIFT);
             for (i=0;i<st->subframeSize;i++)
                sw[i] = in[i+((sub-1)*st->subframeSize)];
          }
@@ -822,7 +822,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
       
       /* Compute target signal */
       for (i=0;i<st->subframeSize;i++)
-         target[i]=SHL32(sw[i]-PSHR32(ringing[i],1),SIG_SHIFT);
+         target[i]=SHL32(EXTEND32(SUB16(sw[i],PSHR32(ringing[i],1))),SIG_SHIFT);
 
       /* Reset excitation */
       for (i=0;i<st->subframeSize;i++)
