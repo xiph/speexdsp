@@ -784,15 +784,20 @@ char *stack
    }
    for (i=0;i<nsf;i++)
       new_exc[i] = ADD16(exc[i], EXTRACT16(PSHR32(ADD32(MULT16_16(gain0,iexc[i]), MULT16_16(gain1,iexc[i+nsf])),8)));
+   /* FIXME: compute_rms16 is currently not quite accurate enough (but close) */
    new_ener = compute_rms16(new_exc, nsf);
    old_ener = compute_rms16(exc, nsf);
    
+   if (old_ener < 1)
+      old_ener = 1;
+   if (new_ener < 1)
+      new_ener = 1;
    if (old_ener > new_ener)
       old_ener = new_ener;
-   ngain = DIV32_16(SHL32(EXTEND32(old_ener),15),ADD16(1,new_ener));
+   ngain = DIV32_16(SHL32(EXTEND32(old_ener),14),new_ener);
    
    for (i=0;i<nsf;i++)
-      new_exc[i] = MULT16_16_Q15(ngain, new_exc[i]);
+      new_exc[i] = MULT16_16_Q14(ngain, new_exc[i]);
 }
 #endif
 
