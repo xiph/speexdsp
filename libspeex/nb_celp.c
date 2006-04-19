@@ -1776,7 +1776,7 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
          st->pi_gain[sub] = pi_g;
       }
       
-      if (0&&st->lpc_enh_enabled)
+      if (st->lpc_enh_enabled)
       {
          /* Use enhanced LPC filter */
          filter_mem16(sp, awk2, awk1, sp, st->subframeSize, st->lpcSize, 
