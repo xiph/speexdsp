@@ -1680,14 +1680,15 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
 
       }
 
-
-      for (i=0;i<st->subframeSize;i++)
-         sp[i]=PSHR32(exc[i],SIG_SHIFT);
-
 #ifndef NEW_ENHANCER
       if (st->lpc_enh_enabled && SUBMODE(comb_gain)>0 && !st->count_lost)
+      {
          comb_filter(exc, sp, st->interp_qlpc, st->lpcSize, st->subframeSize,
                      pitch, pitch_gain, SUBMODE(comb_gain), st->comb_mem);
+      } else {
+         for (i=0;i<st->subframeSize;i++)
+            sp[i]=PSHR32(exc[i],SIG_SHIFT);
+      }
 #endif      
 
    }
@@ -1699,6 +1700,9 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
    {
       multicomb(st->exc-40, out, st->interp_qlpc, st->lpcSize, 2*st->subframeSize, pitch, pitch_gain, SUBMODE(comb_gain), stack);
       multicomb(st->exc+40, out+80, st->interp_qlpc, st->lpcSize, 2*st->subframeSize, pitch, pitch_gain, SUBMODE(comb_gain), stack);
+   } else {
+      for (i=0;i<st->frameSize;i++)
+         out[i]=PSHR32(st->exc[i-40],SIG_SHIFT);
    }
 #endif
    
@@ -1772,7 +1776,7 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
          st->pi_gain[sub] = pi_g;
       }
       
-      if (st->lpc_enh_enabled)
+      if (0&&st->lpc_enh_enabled)
       {
          /* Use enhanced LPC filter */
          filter_mem16(sp, awk2, awk1, sp, st->subframeSize, st->lpcSize, 
