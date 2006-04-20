@@ -276,6 +276,7 @@ void filter_mem2(const spx_sig_t *x, const spx_coef_t *num, const spx_coef_t *de
 #endif
 #endif
 
+#ifdef FIXED_POINT
 void filter_mem16(const spx_word16_t *x, const spx_coef_t *num, const spx_coef_t *den, spx_word16_t *y, int N, int ord, spx_mem_t *mem)
 {
    int i,j;
@@ -293,6 +294,12 @@ void filter_mem16(const spx_word16_t *x, const spx_coef_t *num, const spx_coef_t
       y[i] = yi;
    }
 }
+#else
+void filter_mem16(const spx_word16_t *x, const spx_coef_t *num, const spx_coef_t *den, spx_word16_t *y, int N, int ord, spx_mem_t *mem)
+{
+   filter_mem2(x, num, den, y, N, ord, mem);
+}
+#endif
 
 
 #ifndef OVERRIDE_IIR_MEM2
@@ -340,7 +347,7 @@ void iir_mem2(const spx_sig_t *x, const spx_coef_t *den, spx_sig_t *y, int N, in
 #endif
 #endif
 
-
+#ifdef FIXED_POINT
 void iir_mem16(const spx_word16_t *x, const spx_coef_t *den, spx_word16_t *y, int N, int ord, spx_mem_t *mem)
 {
    int i,j;
@@ -358,6 +365,12 @@ void iir_mem16(const spx_word16_t *x, const spx_coef_t *den, spx_word16_t *y, in
       y[i] = yi;
    }
 }
+#else
+void iir_mem16(const spx_word16_t *x, const spx_coef_t *den, spx_word16_t *y, int N, int ord, spx_mem_t *mem)
+{
+   iir_mem2(x, den, y, N, ord, mem);
+}
+#endif
 
 
 #ifndef OVERRIDE_FIR_MEM2
@@ -404,6 +417,7 @@ void fir_mem2(const spx_sig_t *x, const spx_coef_t *num, spx_sig_t *y, int N, in
 #endif
 #endif
 
+#ifdef FIXED_POINT
 void fir_mem16(const spx_word16_t *x, const spx_coef_t *num, spx_word16_t *y, int N, int ord, spx_mem_t *mem)
 {
    int i,j;
@@ -421,7 +435,12 @@ void fir_mem16(const spx_word16_t *x, const spx_coef_t *num, spx_word16_t *y, in
       y[i] = yi;
    }
 }
-
+#else
+void fir_mem16(const spx_word16_t *x, const spx_coef_t *num, spx_word16_t *y, int N, int ord, spx_mem_t *mem)
+{
+   fir_mem2(x, num, y, N, ord, mem);
+}
+#endif
 
 
 
