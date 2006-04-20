@@ -770,7 +770,9 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
 #endif
 
       {
-         /*FIXME: This is a kludge that will break if we change the window size */
+         /*FIXME: This will break if we change the window size */
+         if (st->windowSize-st->frameSize != st->subframeSize)
+            speex_error("windowSize-frameSize != subframeSize");
          if (sub==0)
          {
             for (i=0;i<st->subframeSize;i++)
