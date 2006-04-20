@@ -70,6 +70,7 @@ typedef struct EncState {
 
 #ifdef VORBIS_PSYCHO
    VorbisPsy *psy;
+   float *psy_window;
    float *curve;
    float *old_curve;
 #endif

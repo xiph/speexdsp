@@ -151,6 +151,7 @@ void *nb_encoder_init(const SpeexMode *m)
    st->psy = vorbis_psy_init(8000, 256);
    st->curve = speex_alloc(128*sizeof(float));
    st->old_curve = speex_alloc(128*sizeof(float));
+   st->psy_window = speex_alloc(256*sizeof(float));
 #endif
 
    /* Allocating input buffer */
@@ -261,6 +262,7 @@ void nb_encoder_destroy(void *state)
    vorbis_psy_destroy(st->psy);
    speex_free (st->curve);
    speex_free (st->old_curve);
+   speex_free (st->psy_window);
 #endif
 
    /*Free state memory... should be last*/
@@ -442,7 +444,11 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
    }
 
 #ifdef VORBIS_PSYCHO
-   compute_curve(st->psy, st->frame-256+st->windowSize, st->curve);
+   for(i=0;i<256-st->frameSize;i++)
+      st->psy_window[i] = st->psy_window[i+st->frameSize];
+   for(i=0;i<st->frameSize;i++)
+      st->psy_window[256-st->frameSize+i] = in[i];
+   compute_curve(st->psy, st->psy_window, st->curve);
    /*print_vec(st->curve, 128, "curve");*/
    if (st->first)
       for (i=0;i<128;i++)
