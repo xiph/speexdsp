@@ -549,7 +549,6 @@ int plc_tuning
    return err;
 }
 
-
 /** Finds the best quantized 3-tap pitch predictor by analysis by synthesis */
 int pitch_search_3tap(
 spx_sig_t target[],                 /* Target vector */
@@ -583,7 +582,7 @@ int plc_tuning
    int N;
    const ltp_params *params;
    VARDECL(int *nbest);
-
+   
    N=complexity;
    if (N>10)
       N=10;
@@ -631,7 +630,6 @@ int plc_tuning
          best_gain_index=cdbk_index;
       }
    }
-   
    /*printf ("pitch: %d %d\n", best_pitch, best_gain_index);*/
    speex_bits_pack(bits, best_pitch-start, params->pitch_bits);
    speex_bits_pack(bits, best_gain_index, params->gain_bits);
@@ -768,12 +766,17 @@ int plc_tuning
 {
    int i;
    float coef = GAIN_SCALING_1*pitch_coef;
+   VARDECL(spx_sig_t *res);
+   ALLOC(res, nsf, spx_sig_t);
    if (coef>.99)
       coef=.99;
    for (i=0;i<nsf;i++)
    {
       exc[i]=exc[i-start]*coef;
    }
+   syn_percep_zero(exc, ak, awk1, awk2, res, nsf, p, stack);
+   for (i=0;i<nsf;i++)
+      target[i]=SATURATE(SUB32(target[i],res[i]),805306368);
    return start;
 }
 
