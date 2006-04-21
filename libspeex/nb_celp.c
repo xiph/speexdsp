@@ -748,7 +748,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
          for (i=0;i<st->lpcSize;i+=2)
          {
             /*pi_g += -st->interp_qlpc[i] +  st->interp_qlpc[i+1];*/
-            pi_g = ADD32(pi_g, SUB32(st->interp_qlpc[i+1],st->interp_qlpc[i]));
+            pi_g = ADD32(pi_g, SUB32(EXTEND32(st->interp_qlpc[i+1]),EXTEND32(st->interp_qlpc[i])));
          }
          st->pi_gain[sub] = pi_g;
       }
@@ -1779,7 +1779,7 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
          for (i=0;i<st->lpcSize;i+=2)
          {
             /*pi_g += -st->interp_qlpc[i] +  st->interp_qlpc[i+1];*/
-            pi_g = ADD32(pi_g, SUB32(st->interp_qlpc[i+1],st->interp_qlpc[i]));
+            pi_g = ADD32(pi_g, SUB32(EXTEND32(st->interp_qlpc[i+1]),EXTEND32(st->interp_qlpc[i])));
          }
          st->pi_gain[sub] = pi_g;
       }
