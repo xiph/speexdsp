@@ -174,7 +174,7 @@ typedef float spx_word64_t;
 #endif
 
 
-#ifdef CONFIG_TI_C55X
+#if defined (CONFIG_TI_C54X) || defined (CONFIG_TI_C55X)
 
 /* 2 on TI C5x DSP */
 #define BYTES_PER_CHAR 2 

@@ -122,7 +122,7 @@
    typedef long spx_int32_t;
    typedef unsigned long spx_uint32_t;
 
-#elif defined(CONFIG_TI_C5X)
+#elif defined(CONFIG_TI_C6X)
 
    typedef short spx_int16_t;
    typedef unsigned short spx_uint16_t;
