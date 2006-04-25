@@ -786,8 +786,8 @@ char *stack
    {
       c1=c2=0;
    }
-   g1 = c1/pow(1-pgain1*pgain1, c2);
-   g2 = c1/pow(1-pgain2*pgain2, c2);
+   g1 = c1/(1-c2*pgain1*pgain1);
+   g2 = c1/(1-c2*pgain2*pgain2);
    if (g1>1)
       g1 = 1;
    if (g2 > 1)
