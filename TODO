@@ -1,9 +1,15 @@
-Things to fix:
-Vorbis-psy
-ARM and Blackfin assembly (filters)
-Handle input buffer properly in nb_celp.c
-target_update() use of MULT16_16_Q11_32
-target_update() for float too
+For 1.1.13:
+Input buffer in new enhancer
+make pseudofloat.h more portable
+convert rest of enhancer to fixed-point
+add win32 stuff to the distribution
+
+Later:
+reduce pitch search complexity in new enhancer
+use 16-bit version of the filters in ltp.c
+get rid of crap that shouldn't be exposed in speex.h
+
+Would be nice:
 
 Allocator override (speex_lib_ctl)
 Better error handling
@@ -11,8 +17,6 @@ Fixed-point:
   - Wideband
   - Initialization
   - Jitter buffer
-Echo cancellation:
-  - Int array for denoiser hooks
 Denoiser:
   - Smooth gain (remove musical noise)
   - Better noise adaptation
