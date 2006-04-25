@@ -777,7 +777,7 @@ char *stack
    if (comb_gain>0)
    {
 #ifdef FIXED_POINT
-      c1 = .4*comb_gain/32768.+.07;
+      c1 = (MULT16_16_Q15(QCONST16(.4,15),comb_gain)+QCONST16(.07,15))/32768.;
 #else
       c1 = .4*comb_gain+.07;
 #endif
@@ -786,13 +786,14 @@ char *stack
    {
       c1=c2=0;
    }
-   g1 = c1/(1-c2*pgain1*pgain1);
-   g2 = c1/(1-c2*pgain2*pgain2);
-   if (g1>1)
-      g1 = 1;
-   if (g2 > 1)
-      g2 = 1;
-   /*printf ("%d %f %f %f %f %d %d %d\n", corr_pitch, gg1, gg2, g1, g2, inner_prod(iexc+nsf,exc,nsf),inner_prod(iexc+nsf,iexc+nsf,nsf),inner_prod(exc,exc,nsf));*/
+   g1 = (1-c2*pgain1*pgain1);
+   if (g1<c1)
+      g1 = c1;
+   g2 = (1-c2*pgain2*pgain2);
+   if (g2<c1)
+      g2 = c1;
+   g1 = c1/g1;
+   g2 = c1/g2;
    if (corr_pitch>40)
    {
       gain0 = GSCALE*.7*g1*gg1;
