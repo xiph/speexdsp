@@ -771,14 +771,14 @@ char *stack
       pgain1=.99;
    if (pgain2>.99)
       pgain2=.99;
-   float c1, c2;
+   spx_word16_t c1, c2;
    float g1, g2;
    float ngain;
    if (comb_gain>0)
    {
 #ifdef FIXED_POINT
       c1 = (MULT16_16_Q15(QCONST16(.4,15),comb_gain)+QCONST16(.07,15));
-      c2 = .5+1.72*(c1/32768.-.07);
+      c2 = 32768.*(.5+1.72*(c1/32768.-.07));
 #else
       c1 = .4*comb_gain+.07;
       c2 = .5+1.72*(c1-.07);
@@ -787,10 +787,15 @@ char *stack
    {
       c1=c2=0;
    }
-   g1 = 32768.*(1-c2*pgain1*pgain1);
+#ifdef FIXED_POINT
+   g1 = 32768.*(1-c2/32768.*pgain1*pgain1);
+   g2 = 32768.*(1-c2/32768.*pgain2*pgain2);
+#else
+   g1 = 1-c2*pgain1*pgain1;
+   g2 = 1-c2*pgain2*pgain2;
+#endif
    if (g1<c1)
       g1 = c1;
-   g2 = 32768.*(1-c2*pgain2*pgain2);
    if (g2<c1)
       g2 = c1;
    g1 = c1/g1;
