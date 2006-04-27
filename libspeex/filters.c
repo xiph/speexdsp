@@ -715,6 +715,11 @@ char *stack
    spx_word16_t iexc0_mag, iexc1_mag, exc_mag;
    spx_word32_t corr0, corr1;
    spx_word16_t gain0, gain1;
+   spx_word16_t pgain1, pgain2;
+   spx_word16_t c1, c2;
+   spx_word16_t g1, g2;
+   spx_word16_t ngain;
+
 #ifdef FIXED_POINT
    VARDECL(spx_word16_t *exc2);
    /* FIXME: Can it get uglier than that??? */
@@ -763,7 +768,6 @@ char *stack
    corr1 = inner_prod(iexc+nsf,exc,nsf);
    if (corr1<0)
       corr1=0;
-   float pgain1, pgain2;
 #ifdef FIXED_POINT
    /* Doesn't cost much to limit the ratio and it makes the rest easier */
    if (SHL32(EXTEND32(iexc0_mag),7) < EXTEND32(exc_mag))
@@ -774,16 +778,13 @@ char *stack
    if (corr0 > MULT16_16(iexc0_mag,exc_mag))
       pgain1 = QCONST16(1., 14);
    else
-      pgain1 = DIV32_16(SHL32(DIV32(corr0, exc_mag),14),iexc0_mag)/16384.;
+      pgain1 = DIV32_16(SHL32(DIV32(corr0, exc_mag),14),iexc0_mag);
    if (corr1 > MULT16_16(iexc1_mag,exc_mag))
       pgain2 = QCONST16(1., 14);
    else
-      pgain2 = DIV32_16(SHL32(DIV32(corr1, exc_mag),14),iexc1_mag)/16384.;
+      pgain2 = DIV32_16(SHL32(DIV32(corr1, exc_mag),14),iexc1_mag);
    float gg1 = 1.*exc_mag/iexc0_mag;
    float gg2 = 1.*exc_mag/iexc1_mag;
-   spx_word16_t c1, c2;
-   spx_word16_t g1, g2;
-   spx_word16_t ngain;
    if (comb_gain>0)
    {
 #ifdef FIXED_POINT
@@ -798,8 +799,8 @@ char *stack
       c1=c2=0;
    }
 #ifdef FIXED_POINT
-   g1 = 32767.*(1-c2/32768.*pgain1*pgain1);
-   g2 = 32767.*(1-c2/32768.*pgain2*pgain2);
+   g1 = 32767 - MULT16_16_Q13(MULT16_16_Q15(c2, pgain1),pgain1);
+   g2 = 32767 - MULT16_16_Q13(MULT16_16_Q15(c2, pgain2),pgain2);
 #else
    g1 = 1-c2*pgain1*pgain1;
    g2 = 1-c2*pgain2*pgain2;
