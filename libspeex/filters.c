@@ -758,19 +758,29 @@ char *stack
    iexc1_mag = spx_sqrt(1000+inner_prod(iexc+nsf,iexc+nsf,nsf));
    exc_mag = spx_sqrt(1+inner_prod(exc,exc,nsf));
    corr0  = inner_prod(iexc,exc,nsf);
+   if (corr0<0)
+      corr0=0;
    corr1 = inner_prod(iexc+nsf,exc,nsf);
+   if (corr1<0)
+      corr1=0;
+   float pgain1, pgain2;
+#ifdef FIXED_POINT
+   /* Doesn't cost much to limit the ratio and it makes the rest easier */
+   if (SHL32(EXTEND32(iexc0_mag),7) < EXTEND32(exc_mag))
+      iexc0_mag = ADD16(1,PSHR16(exc_mag,7));
+   if (SHL32(EXTEND32(iexc1_mag),7) < EXTEND32(exc_mag))
+      iexc1_mag = ADD16(1,PSHR16(exc_mag,7));
+#endif
+   if (corr0 > MULT16_16(iexc0_mag,exc_mag))
+      pgain1 = QCONST16(1., 14);
+   else
+      pgain1 = DIV32_16(SHL32(DIV32(corr0, exc_mag),14),iexc0_mag)/16384.;
+   if (corr1 > MULT16_16(iexc1_mag,exc_mag))
+      pgain2 = QCONST16(1., 14);
+   else
+      pgain2 = DIV32_16(SHL32(DIV32(corr1, exc_mag),14),iexc1_mag)/16384.;
    float gg1 = 1.*exc_mag/iexc0_mag;
    float gg2 = 1.*exc_mag/iexc1_mag;
-   float pgain1 = 1.*corr0/iexc0_mag/exc_mag;
-   float pgain2 = 1.*corr1/iexc1_mag/exc_mag;
-   if (pgain1<0)
-      pgain1=0;
-   if (pgain2<0)
-      pgain2=0;
-   if (pgain1>.99)
-      pgain1=.99;
-   if (pgain2>.99)
-      pgain2=.99;
    spx_word16_t c1, c2;
    spx_word16_t g1, g2;
    spx_word16_t ngain;
