@@ -684,12 +684,6 @@ int len
    }
    return pitch-maxj+3;
 }
-      
-#ifdef FIXED_POINT
-#define GSCALE (256./16384)
-#else
-#define GSCALE 1.
-#endif
 
 void multicomb(
 spx_sig_t *_exc,          /*decoded excitation*/
@@ -770,10 +764,10 @@ char *stack
       corr1=0;
 #ifdef FIXED_POINT
    /* Doesn't cost much to limit the ratio and it makes the rest easier */
-   if (SHL32(EXTEND32(iexc0_mag),7) < EXTEND32(exc_mag))
-      iexc0_mag = ADD16(1,PSHR16(exc_mag,7));
-   if (SHL32(EXTEND32(iexc1_mag),7) < EXTEND32(exc_mag))
-      iexc1_mag = ADD16(1,PSHR16(exc_mag,7));
+   if (SHL32(EXTEND32(iexc0_mag),6) < EXTEND32(exc_mag))
+      iexc0_mag = ADD16(1,PSHR16(exc_mag,6));
+   if (SHL32(EXTEND32(iexc1_mag),6) < EXTEND32(exc_mag))
+      iexc1_mag = ADD16(1,PSHR16(exc_mag,6));
 #endif
    if (corr0 > MULT16_16(iexc0_mag,exc_mag))
       pgain1 = QCONST16(1., 14);
@@ -783,8 +777,11 @@ char *stack
       pgain2 = QCONST16(1., 14);
    else
       pgain2 = DIV32_16(SHL32(DIV32(corr1, exc_mag),14),iexc1_mag);
-   float gg1 = 1.*exc_mag/iexc0_mag;
-   float gg2 = 1.*exc_mag/iexc1_mag;
+   //float gg1 = 1.*exc_mag/iexc0_mag;
+   //float gg2 = 1.*exc_mag/iexc1_mag;
+   spx_word16_t gg1, gg2;
+   gg1 = DIV32_16(SHL32(EXTEND32(exc_mag),8), iexc0_mag);
+   gg2 = DIV32_16(SHL32(EXTEND32(exc_mag),8), iexc1_mag);
    if (comb_gain>0)
    {
 #ifdef FIXED_POINT
@@ -813,11 +810,11 @@ char *stack
    g2 = (spx_word16_t)DIV32_16(SHL32(EXTEND32(c1),14),(spx_word16_t)g2);
    if (corr_pitch>40)
    {
-      gain0 = GSCALE*.7*g1*gg1;
-      gain1 = GSCALE*.3*g2*gg2;
+      gain0 = MULT16_16_Q15(QCONST16(.7,15),MULT16_16_Q14(g1,gg1));
+      gain1 = MULT16_16_Q15(QCONST16(.3,15),MULT16_16_Q14(g2,gg2));
    } else {
-      gain0 = GSCALE*.6*g1*gg1;
-      gain1 = GSCALE*.6*g2*gg2;
+      gain0 = MULT16_16_Q15(QCONST16(.6,15),MULT16_16_Q14(g1,gg1));
+      gain1 = MULT16_16_Q15(QCONST16(.6,15),MULT16_16_Q14(g2,gg2));
    }
    for (i=0;i<nsf;i++)
       new_exc[i] = ADD16(exc[i], EXTRACT16(PSHR32(ADD32(MULT16_16(gain0,iexc[i]), MULT16_16(gain1,iexc[i+nsf])),8)));
