@@ -686,7 +686,7 @@ int len
 }
       
 #ifdef FIXED_POINT
-#define GSCALE 256.
+#define GSCALE (256./16384)
 #else
 #define GSCALE 1.
 #endif
@@ -772,13 +772,13 @@ char *stack
    if (pgain2>.99)
       pgain2=.99;
    spx_word16_t c1, c2;
-   float g1, g2;
-   float ngain;
+   spx_word16_t g1, g2;
+   spx_word16_t ngain;
    if (comb_gain>0)
    {
 #ifdef FIXED_POINT
       c1 = (MULT16_16_Q15(QCONST16(.4,15),comb_gain)+QCONST16(.07,15));
-      c2 = 32768.*(.5+1.72*(c1/32768.-.07));
+      c2 = QCONST16(.5,15)+MULT16_16_Q14(QCONST16(1.72,14),(c1-QCONST16(.07,15)));
 #else
       c1 = .4*comb_gain+.07;
       c2 = .5+1.72*(c1-.07);
@@ -788,8 +788,8 @@ char *stack
       c1=c2=0;
    }
 #ifdef FIXED_POINT
-   g1 = 32768.*(1-c2/32768.*pgain1*pgain1);
-   g2 = 32768.*(1-c2/32768.*pgain2*pgain2);
+   g1 = 32767.*(1-c2/32768.*pgain1*pgain1);
+   g2 = 32767.*(1-c2/32768.*pgain2*pgain2);
 #else
    g1 = 1-c2*pgain1*pgain1;
    g2 = 1-c2*pgain2*pgain2;
@@ -798,8 +798,8 @@ char *stack
       g1 = c1;
    if (g2<c1)
       g2 = c1;
-   g1 = c1/g1;
-   g2 = c1/g2;
+   g1 = (spx_word16_t)DIV32_16(SHL32(EXTEND32(c1),14),(spx_word16_t)g1);
+   g2 = (spx_word16_t)DIV32_16(SHL32(EXTEND32(c1),14),(spx_word16_t)g2);
    if (corr_pitch>40)
    {
       gain0 = GSCALE*.7*g1*gg1;
