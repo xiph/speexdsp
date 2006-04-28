@@ -1,10 +1,11 @@
 ; Code Composer Project File, Version 2.0 (do not modify or remove this line)
 
 [Project Settings]
-ProjectDir="C:\speextrunktest\ti\speex_C55_test\"
+ProjectDir="C:\speex_11234\ti\speex_C55_test\"
 ProjectType=Executable
 CPUFamily=TMS320C55XX
 Tool="Compiler"
+Tool="CustomBuilder"
 Tool="DspBiosBuilder"
 Tool="Linker"
 Config="Debug"
@@ -36,6 +37,7 @@ Source="..\..\libspeex\speex.c"
 Source="..\..\libspeex\speex_callbacks.c"
 Source="..\..\libspeex\vbr.c"
 Source="..\..\libspeex\vq.c"
+Source="..\..\libspeex\window.c"
 Source="..\..\ti\testenc-TI-C5x.c"
 Source="speex_C55_test.cmd"
 

@@ -1,10 +1,11 @@
 ; Code Composer Project File, Version 2.0 (do not modify or remove this line)
 
 [Project Settings]
-ProjectDir="C:\speextrunktest\ti\speex_C54_test\"
+ProjectDir="C:\speex_11234\ti\speex_C54_test\"
 ProjectType=Executable
 CPUFamily=TMS320C54XX
 Tool="Compiler"
+Tool="CustomBuilder"
 Tool="DspBiosBuilder"
 Tool="Linker"
 Config="Debug"
@@ -36,14 +37,15 @@ Source="..\..\libspeex\speex.c"
 Source="..\..\libspeex\speex_callbacks.c"
 Source="..\..\libspeex\vbr.c"
 Source="..\..\libspeex\vq.c"
+Source="..\..\libspeex\window.c"
 Source="..\..\ti\testenc-TI-C5x.c"
 Source="speex_C54_test.cmd"
 
 ["Compiler" Settings: "Debug"]
-Options=-g -q -o3 -fr"..\ti\speex_C54_test\Debug" -i"..\ti" -i"..\include" -d"_DEBUG" -d"CONFIG_TI_C55X" -d"CONFIG_TI_C54X" -d"HAVE_CONFIG_H" -d"NO_LONGLONG" -mf -ms
+Options=-g -q -o3 -fr"..\ti\speex_C54_test\Debug" -i"..\ti" -i"..\include" -d"_DEBUG" -d"CONFIG_TI_C54X" -d"HAVE_CONFIG_H" -d"NO_LONGLONG" -mf -ms
 
 ["Compiler" Settings: "Release"]
-Options=-q -o2 -fr"..\ti\speex_C54_test\Release" -i"..\ti" -i"..\include" -d"CONFIG_TI_C55X" -d"HAVE_CONFIG_H" -d"NO_LONGLONG" -mf -ms
+Options=-q -o2 -fr"..\ti\speex_C54_test\Release" -i"..\ti" -i"..\include" -d"CONFIG_TI_C54X" -d"HAVE_CONFIG_H" -d"NO_LONGLONG" -mf -ms
 
 ["DspBiosBuilder" Settings: "Debug"]
 Options=-v54

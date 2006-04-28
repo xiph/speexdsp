@@ -46,6 +46,25 @@
 #include <..\libspeex\arch.h>
 
 #undef DECODE_ONLY
+#define CHECK_RESULT  /* Compares original file with encoded/decoder file */
+#define TESTENC_BYTES_PER_FRAME 20  /* 8kbps */
+#define TESTENC_QUALITY 4 /* 8kbps */
+//#define TESTENC_BYTES_PER_FRAME 28  /* 11kbps */
+//#define TESTENC_QUALITY 5	      /* 11 kbps */
+
+/* For narrowband, QUALITY maps to these bit rates (see modes.c, manual.pdf) 
+ *   {1, 8, 2, 3, 3, 4, 4, 5, 5, 6, 7}
+ * 0 -> 2150
+ * 1 -> 3950
+ * 2 -> 5950
+ * 3 -> 8000
+ * 4 -> 8000
+ * 5 -> 11000
+ * 6 -> 11000
+ * 7 -> 15000
+ * 8 -> 15000
+ * 9 -> 18200
+ *10 -> 26400  */
 
 #ifdef FIXED_DEBUG
 extern long long spx_mips;
@@ -53,6 +72,8 @@ extern long long spx_mips;
 #include <math.h>
 
 #ifdef MANUAL_ALLOC
+/* Take all Speex space from this private heap */ 
+/* This is useful for multichannel applications */
 #pragma DATA_SECTION(spxHeap, ".myheap"); 
 static char spxHeap[SPEEX_PERSIST_STACK_SIZE];
 
@@ -95,25 +116,27 @@ void main()
 {
    char *outFile, *bitsFile;
    FILE *fout, *fbits=NULL;
-#ifndef DECODE_ONLY
+#if !defined(DECODE_ONLY) || defined(CHECK_RESULT)
    char *inFile;
    FILE *fin;
+   short in_short[FRAME_SIZE];
 #endif
    short out_short[FRAME_SIZE];
    short inout_byte[2*FRAME_SIZE];
 #ifndef DECODE_ONLY
-   short in_short[FRAME_SIZE];
+   int nbChars;
+#endif
+#ifdef CHECK_RESULT
    float sigpow,errpow,snr, seg_snr=0;
    int snr_frames = 0;
-   int nbChars;
    int i;
 #endif
-   char cbits[22];
+   char cbits[TESTENC_BYTES_PER_FRAME/2 + 2];  /* temp store for encoded data */
    void *st;
    void *dec;
    SpeexBits bits;
    int tmp;
-   unsigned int bitCount=0;
+   unsigned long bitCount=0;
    int skip_group_delay;
    SpeexCallback callback;
 
@@ -124,7 +147,7 @@ void main()
    asm("	STM	#0,SWWSR");
 #endif
 
-#ifndef DECODE_ONLY
+#ifdef CHECK_RESULT
    sigpow = 0;
    errpow = 0;
 #endif
@@ -156,24 +179,26 @@ void main()
    speex_decoder_ctl(dec, SPEEX_SET_ENH, &tmp);
    tmp=0;
    speex_encoder_ctl(st, SPEEX_SET_VBR, &tmp);
-   tmp=4;
+   tmp=TESTENC_QUALITY;
    speex_encoder_ctl(st, SPEEX_SET_QUALITY, &tmp);
-   tmp=1;
+   tmp=1;  /* Lowest */
    speex_encoder_ctl(st, SPEEX_SET_COMPLEXITY, &tmp);
 
    speex_mode_query(&speex_nb_mode, SPEEX_MODE_FRAME_SIZE, &tmp);
    fprintf (stderr, "frame size: %d\n", tmp);
-   skip_group_delay = tmp / 2;
+   skip_group_delay = tmp / 4;  /* algorithmic delay */
 
 #ifdef DECODE_ONLY
-   bitsFile = "c:\\speextrunktest\\samples\\malebitsin5x.dat";
+   bitsFile = "c:\\speextrunktest\\samples\\malebitsin.dat";
    fbits = fopen(bitsFile, "rb");
 #else
    bitsFile = "c:\\speextrunktest\\samples\\malebits.dat";
    fbits = fopen(bitsFile, "wb");
 #endif
+#if !defined(DECODE_ONLY) || defined(CHECK_RESULT)
    inFile = "c:\\speextrunktest\\samples\\male.snd";
    fin = fopen(inFile, "rb");
+#endif
    outFile = "c:\\speextrunktest\\samples\\maleout.snd";
    fout = fopen(outFile, "wb+");
  
@@ -189,7 +214,8 @@ void main()
       speex_bits_reset(&bits);
 
       speex_encode_int(st, in_short, &bits);
-      nbChars = speex_bits_write(&bits, cbits, sizeof(cbits))/BYTES_PER_CHAR;
+      nbChars = speex_bits_write(&bits, cbits, 
+                         sizeof(cbits)*BYTES_PER_CHAR) /BYTES_PER_CHAR;
       bitCount+=bits.nbBits;
 
       word2byte((short *) cbits, inout_byte, nbChars);
@@ -199,13 +225,13 @@ void main()
 #else /* DECODE_ONLY */
    while (!feof(fbits))
    {
-      fread(inout_byte, 1, 20, fbits);
+      fread(inout_byte, 1, TESTENC_BYTES_PER_FRAME, fbits);
 
       if (feof(fbits))
          break;
 
-      byte2word(inout_byte, (short *)cbits, 10);
-      speex_bits_read_from(&bits, cbits, 20);
+      byte2word(inout_byte, (short *)cbits, TESTENC_BYTES_PER_FRAME/2);
+      speex_bits_read_from(&bits, cbits, TESTENC_BYTES_PER_FRAME);
       bitCount+=160;
 #endif
       speex_decode_int(dec, &bits, out_short);
@@ -215,30 +241,25 @@ void main()
       fwrite(inout_byte, 2, FRAME_SIZE-skip_group_delay, fout);
       skip_group_delay = 0;
 #if 1
-   fprintf (stderr, "Bits so far: %u \n", bitCount);
+   fprintf (stderr, "Bits so far: %lu \n", bitCount);
 #endif
    }
-   fprintf (stderr, "Total encoded size: %u bits\n", bitCount);
+   fprintf (stderr, "Total encoded size: %lu bits\n", bitCount);
    speex_encoder_destroy(st);
    speex_decoder_destroy(dec);
 
-#ifndef DECODE_ONLY
+#ifdef CHECK_RESULT
    rewind(fin);
    rewind(fout);
 
-//   while ( FRAME_SIZE == fread(in_short, sizeof(short), FRAME_SIZE, fin) 
-//           &&
-//           FRAME_SIZE ==  fread(out_short, sizeof(short), FRAME_SIZE,fout) )
-   while ( bitCount > 0 )
+   while ( FRAME_SIZE == fread(inout_byte, 2, FRAME_SIZE, fin)) 
    {
 	float s=0, e=0;
 
-    fread(inout_byte, 2, FRAME_SIZE, fin);
     byte2word(inout_byte, in_short, FRAME_SIZE);
     fread(inout_byte, 2, FRAME_SIZE, fout);
     byte2word(inout_byte, out_short, FRAME_SIZE);
 
-    bitCount -= FRAME_SIZE;
         for (i=0;i<FRAME_SIZE;++i) {
             s += (float)in_short[i] * in_short[i];
             e += ((float)in_short[i]-out_short[i]) * ((float)in_short[i]-out_short[i]);
@@ -248,12 +269,7 @@ void main()
 	errpow += e;
 	snr_frames++;
    }
-   fclose(fin);
-#endif
-   fclose(fout);
-   fclose(fbits);
 
-#ifndef DECODE_ONLY
    snr = 10 * log10( sigpow / errpow );
    seg_snr /= snr_frames;
    fprintf(stderr,"SNR = %f\nsegmental SNR = %f\n",snr, seg_snr);
@@ -261,5 +277,10 @@ void main()
 #ifdef FIXED_DEBUG
    printf ("Total: %f MIPS\n", (float)(1e-6*50*spx_mips/snr_frames));
 #endif
-#endif   
+#endif /* CHECK_RESULT */
+#if !defined(DECODE_ONLY) || defined(CHECK_RESULT)
+   fclose(fin);
+#endif
+   fclose(fout);
+   fclose(fbits);
 }
