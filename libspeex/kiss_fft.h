@@ -34,8 +34,8 @@ extern "C" {
 
 
 #ifdef FIXED_POINT
-#include <sys/types.h>	
-#  define kiss_fft_scalar int16_t
+#include "misc.h"	
+#  define kiss_fft_scalar spx_int16_t
 #else
 # ifndef kiss_fft_scalar
 /*  default is float */

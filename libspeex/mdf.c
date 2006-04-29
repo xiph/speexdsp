@@ -90,7 +90,7 @@
 #endif
 
 #ifdef FIXED_POINT
-static const spx_float_t MIN_LEAK = ((spx_float_t){16777, -24});
+static const spx_float_t MIN_LEAK = {16777, -24};
 #define TOP16(x) ((x)>>16)
 #else
 static const spx_float_t MIN_LEAK = .001f;
