@@ -171,6 +171,7 @@ void jitter_buffer_put(JitterBuffer *jitter, const JitterBufferPacket *packet)
          }
       }
       speex_free(jitter->buf[i]);
+      jitter->buf[i]=NULL;
       if (jitter->lost_count>20)
       {
          jitter_buffer_reset(jitter);
