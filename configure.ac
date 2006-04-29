@@ -188,6 +188,13 @@ AC_OUTPUT([Makefile libspeex/Makefile src/Makefile doc/Makefile Speex.spec
            include/Makefile include/speex/Makefile speex.pc
            win32/Makefile win32/libspeex/Makefile win32/speexenc/Makefile
            win32/speexdec/Makefile symbian/Makefile 
+           win32/VS2003/Makefile win32/VS2005/Makefile
+           win32/VS2003/libspeex/Makefile
+           win32/VS2003/speexdec/Makefile
+           win32/VS2003/speexenc/Makefile
+           win32/VS2005/libspeex/Makefile
+           win32/VS2005/speexdec/Makefile
+           win32/VS2005/speexenc/Makefile
            include/speex/speex_config_types.h ti/Makefile 
 	   ti/speex_C54_test/Makefile ti/speex_C55_test/Makefile
 	   ti/speex_C64_test/Makefile ])
