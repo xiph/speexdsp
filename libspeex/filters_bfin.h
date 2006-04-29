@@ -620,6 +620,18 @@ void fir_mem2(const spx_sig_t *x, const spx_coef_t *num, spx_sig_t *y, int N, in
    filter_mem2(x, num, den, y, N, ord, mem);
 }
 
+#define OVERRIDE_FIR_MEM16
+void fir_mem16(const spx_word16_t *x, const spx_coef_t *num, spx_word16_t *y, int N, int ord, spx_mem_t *mem)
+{
+   int i;
+   spx_coef_t den2[12];
+   spx_coef_t *den;
+   den = (spx_coef_t*)((((int)den2)+4)&0xfffffffc);
+   for (i=0;i<10;i++)
+      den[i] = 0;
+   filter_mem16(x, num, den, y, N, ord, mem);
+}
+
 
 #define OVERRIDE_COMPUTE_IMPULSE_RESPONSE
 void compute_impulse_response(const spx_coef_t *ak, const spx_coef_t *awk1, const spx_coef_t *awk2, spx_word16_t *y, int N, int ord, char *stack)
