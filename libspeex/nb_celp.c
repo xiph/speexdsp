@@ -159,8 +159,8 @@ void *nb_encoder_init(const SpeexMode *m)
    /* Allocating excitation buffer */
    st->excBuf = speex_alloc((mode->frameSize+mode->pitchEnd+1)*sizeof(spx_sig_t));
    st->exc = st->excBuf + mode->pitchEnd + 1;
-   st->swBuf = speex_alloc((mode->frameSize+mode->pitchEnd+1)*sizeof(spx_word16_t));
-   st->sw = st->swBuf + mode->pitchEnd + 1;
+   st->swBuf = speex_alloc((mode->frameSize+mode->pitchEnd+2)*sizeof(spx_word16_t));
+   st->sw = st->swBuf + mode->pitchEnd + 2;
 
    st->window= lpc_window;
    
@@ -295,7 +295,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
 
    /* Move signals 1 frame towards the past */
    speex_move(st->excBuf, st->excBuf+st->frameSize, (st->max_pitch+1)*sizeof(spx_sig_t));
-   speex_move(st->swBuf, st->swBuf+st->frameSize, (st->max_pitch+1)*sizeof(spx_word16_t));
+   speex_move(st->swBuf, st->swBuf+st->frameSize, (st->max_pitch+2)*sizeof(spx_word16_t));
 
    {
       VARDECL(spx_word16_t *w_sig);
