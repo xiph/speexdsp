@@ -120,6 +120,7 @@ void jitter_buffer_reset(JitterBuffer *jitter)
 /** Destroy jitter buffer */
 void jitter_buffer_destroy(JitterBuffer *jitter)
 {
+   jitter_buffer_reset(jitter);
    speex_free(jitter);
 }
 
@@ -169,6 +170,7 @@ void jitter_buffer_put(JitterBuffer *jitter, const JitterBufferPacket *packet)
             i=j;
          }
       }
+      speex_free(jitter->buf[i]);
       if (jitter->lost_count>20)
       {
          jitter_buffer_reset(jitter);
@@ -454,7 +456,6 @@ void speex_jitter_get(SpeexJitter *jitter, short *out, int *current_timestamp)
    int i;
    int ret;
    char data[2048];
-   int length = 2048;
    JitterBufferPacket packet;
    packet.data = data;
    
@@ -481,7 +482,7 @@ void speex_jitter_get(SpeexJitter *jitter, short *out, int *current_timestamp)
       /*Packet is late or lost*/
       speex_decode_int(jitter->dec, NULL, out);
    } else {
-      speex_bits_read_from(&jitter->current_packet, packet.data, length);
+      speex_bits_read_from(&jitter->current_packet, packet.data, packet.len);
       /* Decode packet */
       ret = speex_decode_int(jitter->dec, &jitter->current_packet, out);
       if (ret == 0)
