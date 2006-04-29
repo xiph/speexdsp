@@ -1466,6 +1466,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\libspeex\mdf.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\libspeex\medfilter.c"
 				>
 			</File>
@@ -1577,6 +1581,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\libspeex\nb_celp.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\libspeex\pseudofloat.h"
 				>
 			</File>
 			<File
