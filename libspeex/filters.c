@@ -350,6 +350,7 @@ void iir_mem2(const spx_sig_t *x, const spx_coef_t *den, spx_sig_t *y, int N, in
 #endif
 
 #ifdef FIXED_POINT
+#ifndef OVERRIDE_IIR_MEM16
 void iir_mem16(const spx_word16_t *x, const spx_coef_t *den, spx_word16_t *y, int N, int ord, spx_mem_t *mem)
 {
    int i,j;
@@ -367,6 +368,7 @@ void iir_mem16(const spx_word16_t *x, const spx_coef_t *den, spx_word16_t *y, in
       y[i] = yi;
    }
 }
+#endif
 #else
 void iir_mem16(const spx_word16_t *x, const spx_coef_t *den, spx_word16_t *y, int N, int ord, spx_mem_t *mem)
 {
