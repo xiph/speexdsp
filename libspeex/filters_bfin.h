@@ -255,13 +255,11 @@ void filter_mem16(const spx_word16_t *_x, const spx_coef_t *num, const spx_coef_
    
    /* First sample */
    "R1 = [P4++];\n\t"
-   "R1 >>>= 13;\n\t" /* shift mem */
-  // "R2.H = 0;\n\t" /* FIXME: do we need this */
+   "R1 <<= 3;\n\t" /* shift mem */
+   "R1.L = R1 (RND);\n\t"
    "R2 = W[P0++];\n\t" /* load x[0] */
    "R1.L = R1.L + R2.L;\n\t"
    "W[P1++] = R1;\n\t" /* store y[0] */
-   //"R1 <<= 2;\n\t"
-   //"R2 <<= 2;\n\t"
    "R2 = PACK(R1.L, R2.L);\n\t" /* pack x16 and y16 */
    "[P2] = R2;\n\t"
                
@@ -287,7 +285,8 @@ void filter_mem16(const spx_word16_t *_x, const spx_coef_t *num, const spx_coef_
       "LOOP_END filter_start_inner%=;\n\t"
       "A0 += A1;\n\t"
       "R4 = A0;\n\t"
-      "R4 >>>= 13;\n\t" /* shift mem */
+      "R4 <<= 3;\n\t" /* shift mem */
+      "R4.L = R4 (RND);\n\t"
       "R2 = W[P0++];\n\t" /* load x */
       "R4.L = R4.L + R2.L;\n\t"
       "W[P1++] = R4;\n\t" /* store y */
@@ -324,7 +323,8 @@ void filter_mem16(const spx_word16_t *_x, const spx_coef_t *num, const spx_coef_
          "A1 -= R4.H*R5.H, A0 += R4.L*R5.L (IS) || R4 = [I0++] || R5 = [I2--];\n\t"
       "LOOP_END filter_mid_inner%=;\n\t"
       "R0 = (A0 += A1) || I2 += M0;\n\t"
-      "R0 = R0 >>> 13 || R5 = W[P0++];\n\t" /* load x */
+      "R0 = R0 << 3 || R5 = W[P0++];\n\t" /* load x */
+      "R0.L = R0 (RND);\n\t"
       "R0.L = R0.L + R5.L;\n\t"
       "R5 = PACK(R0.L, R5.L) || W[P1++] = R0;\n\t" /* shift y | store y */
       "A1 = A0 = 0 || [I2--] = R5\n\t"
@@ -511,13 +511,12 @@ void iir_mem16(const spx_word16_t *_x, const spx_coef_t *den, spx_word16_t *_y, 
    
    /* First sample */
    "R1 = [P4++];\n\t"
-   "R1 >>>= 13;\n\t"
+   "R1 <<= 3;\n\t"
+   "R1.L = R1 (RND);\n\t"
    "R2 = W[P0++];\n\t"
    "R1 = R1 + R2;\n\t"
    "W[P1++] = R1;\n\t"
-   //"R1 <<= 2;\n\t"
    "W[P3] = R1;\n\t"
-   //"R2 <<= 2;\n\t"
 
    /* Samples 1 to ord-1 (using memory) */
    "R0 += -1;\n\t"
@@ -541,13 +540,12 @@ void iir_mem16(const spx_word16_t *_x, const spx_coef_t *den, spx_word16_t *_y, 
       "LOOP_END filter_start_inner%=;\n\t"
    
       "R1 = A1;\n\t"
-      "R1 >>>= 13;\n\t"
+      "R1 <<= 3;\n\t"
+      "R1.L = R1 (RND);\n\t"
       "R2 = W[P0++];\n\t"
       "R1 = R1 + R2;\n\t"
       "W[P1++] = R1;\n\t"
-      //"R1 <<= 2;\n\t"
       "W[P3] = R1;\n\t"
-      //"R2 <<= 2;\n\t"
    "LOOP_END filter_start%=;\n\t"
 
    /* Samples ord to N*/   
@@ -573,7 +571,8 @@ void iir_mem16(const spx_word16_t *_x, const spx_coef_t *den, spx_word16_t *_y, 
          "A1 -= R4.L*R5.L (IS) || R4.L = W[I1++] || R5.L = W[I3--];\n\t"
       "LOOP_END filter_mid_inner%=;\n\t"
       "R1 = A1;\n\t"
-      "R1 = R1 >>> 13 || R2 = W[P0++];\n\t"
+      "R1 = R1 << 3 || R2 = W[P0++];\n\t"
+      "R1.L = R1 (RND);\n\t"
       "R1 = R1 + R2;\n\t"
       "W[P1++] = R1;\n\t"
       "W[P3] = R1;\n\t"
