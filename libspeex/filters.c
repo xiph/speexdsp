@@ -719,6 +719,7 @@ char *stack
    spx_word16_t c1, c2;
    spx_word16_t g1, g2;
    spx_word16_t ngain;
+   spx_word16_t gg1, gg2;
 
 #ifdef FIXED_POINT
    VARDECL(spx_word16_t *exc2);
@@ -783,9 +784,6 @@ char *stack
       pgain2 = QCONST16(1., 14);
    else
       pgain2 = DIV32_16(SHL32(DIV32(corr1, exc_mag),14),iexc1_mag);
-   //float gg1 = 1.*exc_mag/iexc0_mag;
-   //float gg2 = 1.*exc_mag/iexc1_mag;
-   spx_word16_t gg1, gg2;
    gg1 = DIV32_16(SHL32(EXTEND32(exc_mag),8), iexc0_mag);
    gg2 = DIV32_16(SHL32(EXTEND32(exc_mag),8), iexc1_mag);
    if (comb_gain>0)

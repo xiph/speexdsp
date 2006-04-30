@@ -1706,8 +1706,8 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
 #ifdef NEW_ENHANCER
    if (st->lpc_enh_enabled && SUBMODE(comb_gain)>0 && !st->count_lost)
    {
-      multicomb(st->exc-40, out, st->interp_qlpc, st->lpcSize, 2*st->subframeSize, pitch, pitch_gain, SUBMODE(comb_gain), stack);
-      multicomb(st->exc+40, out+80, st->interp_qlpc, st->lpcSize, 2*st->subframeSize, pitch, pitch_gain, SUBMODE(comb_gain), stack);
+      multicomb(st->exc-40, out, st->interp_qlpc, st->lpcSize, 2*st->subframeSize, best_pitch, pitch_gain, SUBMODE(comb_gain), stack);
+      multicomb(st->exc+40, out+80, st->interp_qlpc, st->lpcSize, 2*st->subframeSize, best_pitch, pitch_gain, SUBMODE(comb_gain), stack);
    } else {
       for (i=0;i<st->frameSize;i++)
          out[i]=PSHR32(st->exc[i-40],SIG_SHIFT);
