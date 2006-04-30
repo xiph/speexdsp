@@ -733,6 +733,8 @@ char *stack
 #else
    exc = _exc;
 #endif
+
+#if 0 /* Set to 1 to enable full pitch search */
    open_loop_nbest_pitch(exc, 20, 120, nsf, 
                          nol_pitch, nol_pitch_coef, 6, stack);
    corr_pitch=nol_pitch[0];
@@ -751,13 +753,16 @@ char *stack
          corr_pitch = nol_pitch[i];
       }
    }
+#else
+   corr_pitch = pitch;
+#endif
    interp_pitch(exc, iexc, corr_pitch, 80);
    if (corr_pitch>40)
       interp_pitch(exc, iexc+nsf, 2*corr_pitch, 80);
    else
       interp_pitch(exc, iexc+nsf, -corr_pitch, 80);
 
-   interp_pitch(exc, iexc+2*nsf, 2*corr_pitch, 80);
+   /*interp_pitch(exc, iexc+2*nsf, 2*corr_pitch, 80);*/
    
    /*printf ("%d %d %f\n", pitch, corr_pitch, max_corr*ener_1);*/
    iexc0_mag = spx_sqrt(1000+inner_prod(iexc,iexc,nsf));

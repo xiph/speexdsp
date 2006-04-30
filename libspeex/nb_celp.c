@@ -1231,10 +1231,13 @@ static void nb_decode_lost(DecState *st, spx_word16_t *out, char *stack)
          exc[i]= MULT16_32_Q15(pitch_gain, (exc[i-pitch_val]+VERY_SMALL)) + 
                MULT16_32_Q15(fact, MULT16_32_Q15(SHL(Q15ONE,15)-SHL(MULT16_16(pitch_gain,pitch_gain),1),speex_rand(innov_gain, &st->seed)));
       }
-      
+#ifdef NEW_ENHANCER
+      for (i=0;i<st->subframeSize;i++)
+         sp[i]=PSHR32(exc[i-st->subframeSize],SIG_SHIFT);
+#else
       for (i=0;i<st->subframeSize;i++)
          sp[i]=PSHR32(exc[i],SIG_SHIFT);
-      
+#endif 
       /* Signal synthesis */
       if (st->lpc_enh_enabled)
       {
@@ -1592,10 +1595,13 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
          tmp = gain_3tap_to_1tap(pitch_gain);
 
          pitch_average += tmp;
-         if (tmp>best_pitch_gain)
+         if ((tmp>best_pitch_gain&&ABS(2*best_pitch-pitch)>=3&&ABS(3*best_pitch-pitch)>=4&&ABS(4*best_pitch-pitch)>=5) 
+              || (tmp>MULT16_16_Q15(QCONST16(.6,15),best_pitch_gain)&&(ABS(best_pitch-2*pitch)<3||ABS(best_pitch-3*pitch)<4||ABS(best_pitch-4*pitch)<5)) 
+              || (MULT16_16_Q15(QCONST16(.67,15),tmp)>best_pitch_gain&&(ABS(2*best_pitch-pitch)<3||ABS(3*best_pitch-pitch)<4||ABS(4*best_pitch-pitch)<5)) )
          {
             best_pitch = pitch;
-	    best_pitch_gain = tmp;
+            if (tmp > best_pitch_gain)
+               best_pitch_gain = tmp;
          }
       } else {
          speex_error("No pitch prediction, what's wrong");
