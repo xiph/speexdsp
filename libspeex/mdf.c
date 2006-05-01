@@ -443,6 +443,7 @@ void speex_echo_cancel(SpeexEchoState *st, const spx_int16_t *ref, const spx_int
    spx_word16_t RER;
    spx_word32_t tmp32;
    spx_word16_t M_1;
+   int saturated=0;
    
    N = st->window_size;
    M = st->M;
@@ -506,6 +507,12 @@ void speex_echo_cancel(SpeexEchoState *st, const spx_int16_t *ref, const spx_int
       else if (tmp_out<-32768)
          tmp_out = -32768;
       tmp_out = ADD32(tmp_out, EXTEND32(MULT16_16_P15(st->preemph, st->memE)));
+      /* This is an arbitrary test for saturation */
+      if (ref[i] <= -32000 || ref[i] >= 32000)
+      {
+         tmp_out = 0;
+         saturated = 1;
+      }
       out[i] = tmp_out;
       st->memE = tmp_out;
    }
@@ -662,12 +669,15 @@ void speex_echo_cancel(SpeexEchoState *st, const spx_int16_t *ref, const spx_int
       weighted_spectral_mul_conj(st->power_1, &st->X[j*N], st->E, st->PHI+N*j, N);
    }
 
-   /* Gradient descent */
-   for (i=0;i<M*N;i++)
+   if (!saturated)
    {
-      st->W[i] += st->PHI[i];
-      /* Old value of W in PHI */
-      st->PHI[i] = st->W[i] - st->PHI[i];
+      /* Gradient descent */
+      for (i=0;i<M*N;i++)
+      {
+         st->W[i] += st->PHI[i];
+         /* Old value of W in PHI */
+         st->PHI[i] = st->W[i] - st->PHI[i];
+      }
    }
    
    /* Update weight to prevent circular convolution (MDF / AUMDF) */
