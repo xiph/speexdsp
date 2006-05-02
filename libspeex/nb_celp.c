@@ -46,6 +46,7 @@
 #include <speex/speex_bits.h>
 #include "vbr.h"
 #include "misc.h"
+#include "math_approx.h"
 #include <speex/speex_callbacks.h>
 
 #ifdef VORBIS_PSYCHO
@@ -352,7 +353,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
 
 
       /*Open-loop pitch*/
-      if (!st->submodes[st->submodeID] || st->vbr_enabled || st->vad_enabled || SUBMODE(forced_pitch_gain) ||
+      if (st->complexity>2 || !st->submodes[st->submodeID] || st->vbr_enabled || st->vad_enabled || SUBMODE(forced_pitch_gain) ||
           SUBMODE(lbr_pitch) != -1)
       {
          int nol_pitch[6];
@@ -437,7 +438,12 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
 
       } else {
 #endif
-         ol_gain = SHL32(EXTEND32(compute_rms16(exc16_alias, st->frameSize)),SIG_SHIFT);
+         spx_word16_t g = compute_rms16(exc16_alias, st->frameSize);
+         if (ol_pitch>0)
+            ol_gain = MULT16_16(g, MULT16_16_Q14(QCONST16(1.1,14),
+                                spx_sqrt(QCONST32(1.,28)-MULT16_32_Q15(QCONST16(.8,15),SHL32(MULT16_16(ol_pitch_coef,ol_pitch_coef),16)))));
+         else
+            ol_gain = SHL32(EXTEND32(g),SIG_SHIFT);
 #ifdef EPIC_48K
       }
 #endif
@@ -1034,7 +1040,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
 }
 
 #ifdef NEW_ENHANCER
-#define PITCH_PERIODS 4
+#define PITCH_PERIODS 3
 #else
 #define PITCH_PERIODS 1
 #endif
@@ -1250,7 +1256,8 @@ static void nb_decode_lost(DecState *st, spx_word16_t *out, char *stack)
             st->mem_sp[st->lpcSize+i] = 0;
          iir_mem16(sp, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, 
                      st->mem_sp);
-      }      
+      }
+      bw_lpc(QCONST16(.98,15), st->interp_qlpc, st->interp_qlpc, st->lpcSize);
    }
    
    st->first = 0;
@@ -1740,7 +1747,11 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
       for (i=0;i<st->frameSize;i++)
       {
          st->exc[i] = MULT16_32_Q14(gain, st->exc[i]);
+#ifdef NEW_ENHANCER
+         out[i]=PSHR32(st->exc[i-st->subframeSize],SIG_SHIFT);
+#else
          out[i]=PSHR32(st->exc[i],SIG_SHIFT);
+#endif
       }
    }
 
