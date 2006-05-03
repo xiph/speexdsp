@@ -446,10 +446,14 @@ void speex_jitter_destroy(SpeexJitter *jitter)
    speex_bits_destroy(&jitter->current_packet);
 }
 
-
-void speex_jitter_put(SpeexJitter *jitter, const JitterBufferPacket *packet)
+void speex_jitter_put(SpeexJitter *jitter, char *packet, int len, int timestamp)
 {
-   jitter_buffer_put(jitter->packets, packet);
+   JitterBufferPacket p;
+   p.data = packet;
+   p.len = len;
+   p.timestamp = timestamp;
+   p.span = jitter->frame_size;
+   jitter_buffer_put(jitter->packets, &p);
 }
 
 void speex_jitter_get(SpeexJitter *jitter, short *out, int *current_timestamp)
