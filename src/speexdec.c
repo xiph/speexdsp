@@ -453,6 +453,7 @@ int main(int argc, char **argv)
    int rate=0;
    int extra_headers;
    int wav_format=0;
+   int lookahead;
 
    enh_enabled = 1;
 
@@ -618,6 +619,7 @@ int main(int argc, char **argv)
             if (packet_count==0)
             {
                st = process_header(&op, enh_enabled, &frame_size, &rate, &nframes, forceMode, &channels, &stereo, &extra_headers, quiet);
+               speex_decoder_ctl(st, SPEEX_GET_LOOKAHEAD, &lookahead);
                if (!nframes)
                   nframes=1;
                if (!st)
@@ -690,15 +692,16 @@ int main(int argc, char **argv)
                      int frame_offset = 0;
                      int new_frame_size = frame_size;
                      /*printf ("packet %d %d\n", packet_no, skip_samples);*/
+                     /*fprintf (stderr, "packet %d %d %d\n", packet_no, skip_samples, lookahead);*/
                      if (packet_no == 1 && j==0 && skip_samples > 0)
                      {
                         /*printf ("chopping first packet\n");*/
-                        new_frame_size -= skip_samples;
-                        frame_offset = skip_samples;
+                        new_frame_size -= skip_samples+lookahead;
+                        frame_offset = skip_samples+lookahead;
                      }
                      if (packet_no == page_nb_packets && skip_samples < 0)
                      {
-                        int packet_length = nframes*frame_size+skip_samples;
+                        int packet_length = nframes*frame_size+skip_samples+lookahead;
                         new_frame_size = packet_length - j*frame_size;
                         if (new_frame_size<0)
                            new_frame_size = 0;

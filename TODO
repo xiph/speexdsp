@@ -1,11 +1,12 @@
 For 1.1.13:
 Input buffer in new enhancer
-make pseudofloat.h more portable
-convert rest of enhancer to fixed-point
-add win32 stuff to the distribution
+(remove the if's in loops in interp_pitch())
+Fix --force-nb
+Fix wideband PLC
+change filter structure in vorbis-psy (use the numerator=LPC version)
+Fix overflow in mdf
 
 Later:
-reduce pitch search complexity in new enhancer
 use 16-bit version of the filters in ltp.c
 get rid of crap that shouldn't be exposed in speex.h
 

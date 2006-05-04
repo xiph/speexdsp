@@ -57,9 +57,9 @@ int main(int argc, char **argv)
    tmp=1;
    speex_encoder_ctl(st, SPEEX_SET_COMPLEXITY, &tmp);
 
-   speex_mode_query(&speex_nb_mode, SPEEX_MODE_FRAME_SIZE, &tmp);
-   fprintf (stderr, "frame size: %d\n", tmp);
-   skip_group_delay = tmp / 4;
+   speex_encoder_ctl(st, SPEEX_GET_LOOKAHEAD, &skip_group_delay);
+   speex_decoder_ctl(dec, SPEEX_GET_LOOKAHEAD, &tmp);
+   skip_group_delay += tmp;
 
    if (argc != 4 && argc != 3)
    {

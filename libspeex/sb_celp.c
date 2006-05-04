@@ -1610,6 +1610,10 @@ int sb_decoder_ctl(void *state, int request, void *ptr)
    case SPEEX_GET_SUBMODE_ENCODING:
       (*(int*)ptr) = st->encode_submode;
       break;
+   case SPEEX_GET_LOOKAHEAD:
+      speex_decoder_ctl(st->st_low, SPEEX_GET_LOOKAHEAD, ptr);
+      (*(int*)ptr) = 2*(*(int*)ptr);
+      break;
    case SPEEX_GET_PI_GAIN:
       {
          int i;
