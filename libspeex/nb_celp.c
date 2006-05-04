@@ -1524,6 +1524,7 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
       int offset;
       spx_sig_t *exc;
       spx_word16_t *sp;
+      spx_sig_t *innov_save = NULL;
       spx_word16_t tmp;
 
 #ifdef EPIC_48K
@@ -1542,6 +1543,8 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
       exc=st->exc+offset;
       /* Original signal */
       sp=out+offset;
+      if (st->innov_save)
+         innov_save = st->innov_save+offset;
 
 
       /* Reset excitation */
@@ -1684,6 +1687,11 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
                exc[i]=ADD32(exc[i],innov[i]);
             /*print_vec(exc, 40, "innov");*/
          }
+         if (innov_save)
+         {
+            for (i=0;i<st->subframeSize;i++)
+               innov_save[i] = innov[i];
+         }
          /* Decode second codebook (only for some modes) */
          if (SUBMODE(double_codebook))
          {
@@ -1696,6 +1704,11 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
             signal_mul(innov2, innov2, MULT16_32_Q15(QCONST16(0.454545,15),ener), st->subframeSize);
             for (i=0;i<st->subframeSize;i++)
                exc[i] = ADD32(exc[i],innov2[i]);
+            if (innov_save)
+            {
+               for (i=0;i<st->subframeSize;i++)
+                  innov_save[i] = ADD32(innov_save[i],innov2[i]);
+            }
             stack = tmp_stack;
          }
 
@@ -2086,7 +2099,14 @@ int nb_decoder_ctl(void *state, int request, void *ptr)
    case SPEEX_GET_SUBMODE_ENCODING:
       (*(int*)ptr) = st->encode_submode;
       break;
-   case SPEEX_GET_PI_GAIN:
+   case SPEEX_GET_LOOKAHEAD:
+#ifdef NEW_ENHANCER
+      (*(int*)ptr)=st->subframeSize;
+#else
+      (*(int*)ptr)=0;
+#endif
+      break;
+      case SPEEX_GET_PI_GAIN:
       {
          int i;
          spx_word32_t *g = (spx_word32_t*)ptr;
