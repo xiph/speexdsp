@@ -313,7 +313,7 @@ static void *process_header(ogg_packet *op, int enh_enabled, int *frame_size, in
       fprintf (stderr, "Cannot read header\n");
       return NULL;
    }
-   if (header->mode >= SPEEX_NB_MODES)
+   if (header->mode >= SPEEX_NB_MODES || header->mode<0)
    {
       fprintf (stderr, "Mode number %d does not (yet/any longer) exist in this version\n", 
                header->mode);
@@ -600,6 +600,7 @@ int main(int argc, char **argv)
          page_nb_packets = ogg_page_packets(&og);
          if (page_granule>0 && frame_size)
          {
+            /* FIXME: shift the granule values if --force-* is specified */
             skip_samples = page_nb_packets*frame_size*nframes - (page_granule-last_granule);
             if (ogg_page_eos(&og))
                skip_samples = -skip_samples;
@@ -709,7 +710,7 @@ int main(int argc, char **argv)
                            new_frame_size = frame_size;
                         /*printf ("chopping end: %d %d %d\n", new_frame_size, packet_length, packet_no);*/
                      }
-                     if (new_frame_size)
+                     if (new_frame_size>0)
                      {  
 #if defined WIN32 || defined _WIN32
                         if (strlen(outFile)==0)
