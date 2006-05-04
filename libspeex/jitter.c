@@ -499,6 +499,7 @@ void speex_jitter_get(SpeexJitter *jitter, short *out, int *current_timestamp)
             out[i]=0;
       }
    }
+   jitter_buffer_tick(jitter->packets);
 }
 
 int speex_jitter_get_pointer_timestamp(SpeexJitter *jitter)
