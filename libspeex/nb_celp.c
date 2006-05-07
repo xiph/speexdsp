@@ -1151,9 +1151,6 @@ static void nb_decode_lost(DecState *st, spx_word16_t *out, char *stack)
 {
    int i, sub;
    int pitch_val;
-   VARDECL(spx_coef_t *awk1);
-   VARDECL(spx_coef_t *awk2);
-   VARDECL(spx_coef_t *awk3);
    spx_word16_t pitch_gain;
    spx_word16_t fact;
    spx_word16_t gain_med;
@@ -1185,10 +1182,6 @@ static void nb_decode_lost(DecState *st, spx_word16_t *out, char *stack)
    /*speex_move(st->inBuf, st->inBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(spx_sig_t));*/
    speex_move(st->excBuf, st->excBuf+st->frameSize, (PITCH_PERIODS*st->max_pitch + 1)*sizeof(spx_sig_t));
 
-   ALLOC(awk1, st->lpcSize, spx_coef_t);
-   ALLOC(awk2, st->lpcSize, spx_coef_t);
-   ALLOC(awk3, st->lpcSize, spx_coef_t);
-
    for (sub=0;sub<st->nbSubframes;sub++)
    {
       int offset;
@@ -1201,24 +1194,6 @@ static void nb_decode_lost(DecState *st, spx_word16_t *out, char *stack)
       /* Excitation */
       exc=st->exc+offset;
       /* Excitation after post-filter*/
-
-      /* Calculate perceptually enhanced LPC filter */
-      if (st->lpc_enh_enabled)
-      {
-         spx_word16_t k1,k2,k3;
-         if (st->submodes[st->submodeID] != NULL)
-         {
-            k1=SUBMODE(lpc_enh_k1);
-            k2=SUBMODE(lpc_enh_k2);
-            k3=SUBMODE(lpc_enh_k3);
-         } else {
-            k1=k2=.7*GAMMA_SCALING;
-            k3=.0;
-         }
-         bw_lpc(k1, st->interp_qlpc, awk1, st->lpcSize);
-         bw_lpc(k2, st->interp_qlpc, awk2, st->lpcSize);
-         bw_lpc(k3, st->interp_qlpc, awk3, st->lpcSize);
-      }
         
       /* Make up a plausible excitation */
       /* FIXME: THIS CAN BE IMPROVED */
@@ -1244,19 +1219,9 @@ static void nb_decode_lost(DecState *st, spx_word16_t *out, char *stack)
       for (i=0;i<st->subframeSize;i++)
          sp[i]=PSHR32(exc[i],SIG_SHIFT);
 #endif 
-      /* Signal synthesis */
-      if (st->lpc_enh_enabled)
-      {
-         filter_mem16(sp, awk2, awk1, sp, st->subframeSize, st->lpcSize, 
-                     st->mem_sp+st->lpcSize);
-         filter_mem16(sp, awk3, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, 
-                     st->mem_sp);
-      } else {
-         for (i=0;i<st->lpcSize;i++)
-            st->mem_sp[st->lpcSize+i] = 0;
-         iir_mem16(sp, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, 
-                     st->mem_sp);
-      }
+      iir_mem16(sp, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, 
+                st->mem_sp);
+
       bw_lpc(QCONST16(.98,15), st->interp_qlpc, st->interp_qlpc, st->lpcSize);
    }
    
@@ -1283,9 +1248,6 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
    char *stack;
    VARDECL(spx_sig_t *innov);
    VARDECL(spx_coef_t *ak);
-   VARDECL(spx_coef_t *awk1);
-   VARDECL(spx_coef_t *awk2);
-   VARDECL(spx_coef_t *awk3);
    VARDECL(spx_lsp_t *qlsp);
    spx_word16_t pitch_average=0;
 #ifdef EPIC_48K
@@ -1500,9 +1462,6 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
 #endif
 
    ALLOC(ak, st->lpcSize, spx_coef_t);
-   ALLOC(awk1, st->lpcSize, spx_coef_t);
-   ALLOC(awk2, st->lpcSize, spx_coef_t);
-   ALLOC(awk3, st->lpcSize, spx_coef_t);
    ALLOC(innov, st->subframeSize, spx_sig_t);
 
    if (st->submodeID==1)
@@ -1794,14 +1753,6 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
       for (i=0;i<st->lpcSize;i++)
          st->interp_qlpc[i] = ak[i];
 #endif
-
-      /* Compute enhanced synthesis filter */
-      if (st->lpc_enh_enabled)
-      {
-         bw_lpc(SUBMODE(lpc_enh_k1), st->interp_qlpc, awk1, st->lpcSize);
-         bw_lpc(SUBMODE(lpc_enh_k2), st->interp_qlpc, awk2, st->lpcSize);
-         bw_lpc(SUBMODE(lpc_enh_k3), st->interp_qlpc, awk3, st->lpcSize);
-      }
       
       /* Compute analysis filter at w=pi */
       {
@@ -1814,20 +1765,8 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
          st->pi_gain[sub] = pi_g;
       }
       
-      if (st->lpc_enh_enabled)
-      {
-         /* Use enhanced LPC filter */
-         filter_mem16(sp, awk2, awk1, sp, st->subframeSize, st->lpcSize, 
-                     st->mem_sp+st->lpcSize);
-         filter_mem16(sp, awk3, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, 
-                     st->mem_sp);
-      } else {
-         /* Use regular filter */
-         for (i=0;i<st->lpcSize;i++)
-            st->mem_sp[st->lpcSize+i] = 0;
-         iir_mem16(sp, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, 
-                  st->mem_sp);
-      }
+      iir_mem16(sp, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, 
+                st->mem_sp);
       
       for (i=0;i<st->lpcSize;i++)
          st->interp_qlpc[i] = ak[i];

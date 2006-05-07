@@ -91,10 +91,6 @@ typedef struct SpeexSubmode {
    innovation_unquant_func innovation_unquant; /**< Innovation un-quantization */
    const void             *innovation_params; /**< Innovation quantization parameters*/
 
-   /*Synthesis filter enhancement*/
-   spx_word16_t      lpc_enh_k1; /**< Enhancer constant */
-   spx_word16_t      lpc_enh_k2; /**< Enhancer constant */
-   spx_word16_t      lpc_enh_k3; /**< Enhancer constant */
    spx_word16_t      comb_gain;  /**< Gain of enhancer comb filter */
 
    int               bits_per_frame; /**< Number of bits per frame after encoding*/

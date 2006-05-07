@@ -930,9 +930,6 @@ void sb_decoder_destroy(void *state)
 static void sb_decode_lost(SBDecState *st, spx_word16_t *out, int dtx, char *stack)
 {
    int i;
-   VARDECL(spx_coef_t *awk1);
-   VARDECL(spx_coef_t *awk2);
-   VARDECL(spx_coef_t *awk3);
    int saved_modeid=0;
 
    if (dtx)
@@ -944,28 +941,6 @@ static void sb_decode_lost(SBDecState *st, spx_word16_t *out, int dtx, char *sta
    }
 
    st->first=1;
-   
-   ALLOC(awk1, st->lpcSize, spx_coef_t);
-   ALLOC(awk2, st->lpcSize, spx_coef_t);
-   ALLOC(awk3, st->lpcSize, spx_coef_t);
-   
-   if (st->lpc_enh_enabled)
-   {
-      spx_word16_t k1,k2,k3;
-      if (st->submodes[st->submodeID] != NULL)
-      {
-         k1=SUBMODE(lpc_enh_k1);
-         k2=SUBMODE(lpc_enh_k2);
-         k3=SUBMODE(lpc_enh_k3);
-      } else {
-         k1=k2=.7*GAMMA_SCALING;
-         k3 = 0;
-      }
-      bw_lpc(k1, st->interp_qlpc, awk1, st->lpcSize);
-      bw_lpc(k2, st->interp_qlpc, awk2, st->lpcSize);
-      bw_lpc(k3, st->interp_qlpc, awk3, st->lpcSize);
-      /*fprintf (stderr, "%f %f %f\n", k1, k2, k3);*/
-   }
    
    
    /* Final signal synthesis from excitation */
@@ -980,22 +955,9 @@ static void sb_decode_lost(SBDecState *st, spx_word16_t *out, int dtx, char *sta
    for (i=0;i<st->frame_size;i++)
       st->high[i]=st->exc[i];
 
-   if (st->lpc_enh_enabled)
-   {
-      /* Use enhanced LPC filter */
-      filter_mem2(st->high, awk2, awk1, st->high, st->frame_size, st->lpcSize, 
-                  st->mem_sp+st->lpcSize);
-      filter_mem2(st->high, awk3, st->interp_qlpc, st->high, st->frame_size, st->lpcSize, 
-                  st->mem_sp);
-   } else {
-      /* Use regular filter */
-      for (i=0;i<st->lpcSize;i++)
-         st->mem_sp[st->lpcSize+i] = 0;
-      iir_mem2(st->high, st->interp_qlpc, st->high, st->frame_size, st->lpcSize, 
-               st->mem_sp);
-   }
+   iir_mem2(st->high, st->interp_qlpc, st->high, st->frame_size, st->lpcSize, 
+            st->mem_sp);
    
-   /*iir_mem2(st->exc, st->interp_qlpc, st->high, st->frame_size, st->lpcSize, st->mem_sp);*/
    
    /* Reconstruct the original */
    fir_mem_up(st->x0d, h0, st->y0, st->full_frame_size, QMF_ORDER, st->g0_mem, stack);
@@ -1021,9 +983,6 @@ int sb_decode(void *state, SpeexBits *bits, void *vout)
    VARDECL(spx_word32_t *low_pi_gain);
    VARDECL(spx_sig_t *low_exc);
    VARDECL(spx_coef_t *ak);
-   VARDECL(spx_coef_t *awk1);
-   VARDECL(spx_coef_t *awk2);
-   VARDECL(spx_coef_t *awk3);
    int dtx;
    const SpeexSBMode *mode;
    spx_word16_t *out = vout;
@@ -1125,9 +1084,6 @@ int sb_decode(void *state, SpeexBits *bits, void *vout)
    }
    
    ALLOC(ak, st->lpcSize, spx_coef_t);
-   ALLOC(awk1, st->lpcSize, spx_coef_t);
-   ALLOC(awk2, st->lpcSize, spx_coef_t);
-   ALLOC(awk3, st->lpcSize, spx_coef_t);
 
    for (sub=0;sub<st->nbSubframes;sub++)
    {
@@ -1160,19 +1116,6 @@ int sb_decode(void *state, SpeexBits *bits, void *vout)
       for (i=0;i<st->lpcSize;i++)
          st->interp_qlpc[i] = ak[i];
 #endif
-
-      if (st->lpc_enh_enabled)
-      {
-         spx_word16_t k1,k2,k3;
-         k1=SUBMODE(lpc_enh_k1);
-         k2=SUBMODE(lpc_enh_k2);
-         k3=SUBMODE(lpc_enh_k3);
-         bw_lpc(k1, st->interp_qlpc, awk1, st->lpcSize);
-         bw_lpc(k2, st->interp_qlpc, awk2, st->lpcSize);
-         bw_lpc(k3, st->interp_qlpc, awk3, st->lpcSize);
-         /*fprintf (stderr, "%f %f %f\n", k1, k2, k3);*/
-      }
-
 
       /* Calculate reponse ratio between the low and high filter in the middle
          of the band (4000 Hz) */
@@ -1285,20 +1228,8 @@ int sb_decode(void *state, SpeexBits *bits, void *vout)
 #endif
       for (i=0;i<st->subframeSize;i++)
          sp[i]=st->excBuf[i];
-      if (st->lpc_enh_enabled)
-      {
-         /* Use enhanced LPC filter */
-         filter_mem2(sp, awk2, awk1, sp, st->subframeSize, st->lpcSize, 
-                     st->mem_sp+st->lpcSize);
-         filter_mem2(sp, awk3, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, 
-                     st->mem_sp);
-      } else {
-         /* Use regular filter */
-         for (i=0;i<st->lpcSize;i++)
-            st->mem_sp[st->lpcSize+i] = 0;
-         iir_mem2(sp, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, 
-                     st->mem_sp);
-      }
+      iir_mem2(sp, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, 
+               st->mem_sp);
 #ifdef NEW_ENHANCER
       for (i=0;i<st->subframeSize;i++)
          st->excBuf[i]=exc[i];
