@@ -84,6 +84,7 @@
 
 #define MAC16_16_Q11(c,a,b)     (ADD32((c),SHR(MULT16_16((a),(b)),11)))
 #define MAC16_16_Q13(c,a,b)     (ADD32((c),SHR(MULT16_16((a),(b)),13)))
+#define MAC16_16_P13(c,a,b)     (ADD32((c),SHR(ADD32(4096,MULT16_16((a),(b))),13)))
 
 #define MULT16_16_Q11_32(a,b) (SHR(MULT16_16((a),(b)),11))
 #define MULT16_16_Q13(a,b) (SHR(MULT16_16((a),(b)),13))
