@@ -166,18 +166,50 @@ spx_word16_t compute_rms(const spx_sig_t *x, int len)
 spx_word16_t compute_rms16(const spx_word16_t *x, int len)
 {
    int i;
-   spx_word32_t sum=0;
-   for (i=0;i<len;i+=4)
+   spx_word16_t max_val=10; 
+   int sig_shift;
+
+   for (i=0;i<len;i++)
    {
-      spx_word32_t sum2=0;
-      sum2 = MAC16_16(sum2,x[i],x[i]);
-      sum2 = MAC16_16(sum2,x[i+1],x[i+1]);
-      sum2 = MAC16_16(sum2,x[i+2],x[i+2]);
-      sum2 = MAC16_16(sum2,x[i+3],x[i+3]);
-      sum = ADD32(sum,SHR32(sum2,6));
+      spx_sig_t tmp = x[i];
+      if (tmp<0)
+         tmp = -tmp;
+      if (tmp > max_val)
+         max_val = tmp;
    }
-   
-   return SHL16(spx_sqrt(1+DIV32(sum,len)),3);
+   if (max_val>16383)
+   {
+      spx_word32_t sum=0;
+      for (i=0;i<len;i+=4)
+      {
+         spx_word32_t sum2=0;
+         sum2 = MAC16_16(sum2,PSHR16(x[i],1),PSHR16(x[i],1));
+         sum2 = MAC16_16(sum2,PSHR16(x[i+1],1),PSHR16(x[i+1],1));
+         sum2 = MAC16_16(sum2,PSHR16(x[i+2],1),PSHR16(x[i+2],1));
+         sum2 = MAC16_16(sum2,PSHR16(x[i+3],1),PSHR16(x[i+3],1));
+         sum = ADD32(sum,SHR32(sum2,6));
+      }
+      return SHL16(spx_sqrt(1+DIV32(sum,len)),4);
+   } else {
+      spx_word32_t sum=0;
+      int sig_shift=0;
+      if (max_val < 8192)
+         sig_shift=1;
+      if (max_val < 4096)
+         sig_shift=2;
+      if (max_val < 2048)
+         sig_shift=3;
+      for (i=0;i<len;i+=4)
+      {
+         spx_word32_t sum2=0;
+         sum2 = MAC16_16(sum2,SHL16(x[i],sig_shift),SHL16(x[i],sig_shift));
+         sum2 = MAC16_16(sum2,SHL16(x[i+1],sig_shift),SHL16(x[i+1],sig_shift));
+         sum2 = MAC16_16(sum2,SHL16(x[i+2],sig_shift),SHL16(x[i+2],sig_shift));
+         sum2 = MAC16_16(sum2,SHL16(x[i+3],sig_shift),SHL16(x[i+3],sig_shift));
+         sum = ADD32(sum,SHR32(sum2,6));
+      }
+      return SHL16(spx_sqrt(1+DIV32(sum,len)),3-sig_shift);   
+   }
 }
 
 #ifndef OVERRIDE_NORMALIZE16
@@ -565,7 +597,7 @@ void fir_mem_up(const spx_sig_t *x, const spx_word16_t *a, spx_sig_t *y, int N, 
    ALLOC(xx, M+N-1, spx_word16_t);
 
    for (i = 0; i < N/2; i++)
-      xx[2*i] = PSHR(x[N/2-1-i],SIG_SHIFT+1);
+      xx[2*i] = PSHR32(x[N/2-1-i],SIG_SHIFT);
    for (i = 0; i < M - 1; i += 2)
       xx[N+i] = mem[i+1];
 
@@ -584,19 +616,19 @@ void fir_mem_up(const spx_sig_t *x, const spx_word16_t *a, spx_sig_t *y, int N, 
          a1 = a[j+1];
          x1 = xx[N-2+j-i];
 
-         y0 = ADD32(y0,SHR(MULT16_16(a0, x1),1));
-         y1 = ADD32(y1,SHR(MULT16_16(a1, x1),1));
-         y2 = ADD32(y2,SHR(MULT16_16(a0, x0),1));
-         y3 = ADD32(y3,SHR(MULT16_16(a1, x0),1));
+         y0 = ADD32(y0,SHR(MULT16_16(a0, x1),2));
+         y1 = ADD32(y1,SHR(MULT16_16(a1, x1),2));
+         y2 = ADD32(y2,SHR(MULT16_16(a0, x0),2));
+         y3 = ADD32(y3,SHR(MULT16_16(a1, x0),2));
 
          a0 = a[j+2];
          a1 = a[j+3];
          x0 = xx[N+j-i];
 
-         y0 = ADD32(y0,SHR(MULT16_16(a0, x0),1));
-         y1 = ADD32(y1,SHR(MULT16_16(a1, x0),1));
-         y2 = ADD32(y2,SHR(MULT16_16(a0, x1),1));
-         y3 = ADD32(y3,SHR(MULT16_16(a1, x1),1));
+         y0 = ADD32(y0,SHR(MULT16_16(a0, x0),2));
+         y1 = ADD32(y1,SHR(MULT16_16(a1, x0),2));
+         y2 = ADD32(y2,SHR(MULT16_16(a0, x1),2));
+         y3 = ADD32(y3,SHR(MULT16_16(a1, x1),2));
       }
       y[i] = y0;
       y[i+1] = y1;
