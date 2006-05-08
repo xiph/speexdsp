@@ -683,12 +683,16 @@ int len
    {
       for (j=0;j<7;j++)
       {
+         int i1, i2;
+         i1 = 3-j;
+         if (i1<0)
+            i1 = 0;
+         i2 = 10-j;
+         if (i2>7)
+            i2 = 7;
          spx_word32_t tmp=0;
-         for (k=0;k<7;k++)
-         {
-            if (j+k-3 >= 0 && j+k-3 < 7)
-               tmp += MULT16_32_Q15(shift_filt[i][k],corr[0][j+k-3]);
-         }
+         for (k=i1;k<i2;k++)
+            tmp += MULT16_32_Q15(shift_filt[i][k],corr[0][j+k-3]);
          corr[i+1][j] = tmp;
       }
    }
