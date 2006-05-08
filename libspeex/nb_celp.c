@@ -283,7 +283,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
    VARDECL(spx_mem_t *mem);
    char *stack;
    VARDECL(spx_word16_t *syn_resp);
-   VARDECL(spx_sig_t *real_exc);
+   VARDECL(spx_word16_t *real_exc);
 #ifdef EPIC_48K
    int pitch_half[2];
    int ol_pitch_id=0;
@@ -703,7 +703,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
    ALLOC(innov, st->subframeSize, spx_sig_t);
    ALLOC(ringing, st->subframeSize, spx_word16_t);
    ALLOC(syn_resp, st->subframeSize, spx_word16_t);
-   ALLOC(real_exc, st->subframeSize, spx_sig_t);
+   ALLOC(real_exc, st->subframeSize, spx_word16_t);
    ALLOC(mem, st->lpcSize, spx_mem_t);
 
    /* Loop on sub-frames */
@@ -788,17 +788,13 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
          if (sub==0)
          {
             for (i=0;i<st->subframeSize;i++)
-               real_exc[i] = SHL32(EXTEND32(st->winBuf[i]),SIG_SHIFT);
-            for (i=0;i<st->subframeSize;i++)
-               sw[i] = st->winBuf[i];
+               real_exc[i] = sw[i] = st->winBuf[i];
          } else {
             for (i=0;i<st->subframeSize;i++)
-               real_exc[i] = SHL32(EXTEND32(in[i+((sub-1)*st->subframeSize)]),SIG_SHIFT);
-            for (i=0;i<st->subframeSize;i++)
-               sw[i] = in[i+((sub-1)*st->subframeSize)];
+               real_exc[i] = sw[i] = in[i+((sub-1)*st->subframeSize)];
          }
       }
-      fir_mem2(real_exc, st->interp_qlpc, real_exc, st->subframeSize, st->lpcSize, st->mem_exc2);
+      fir_mem16(real_exc, st->interp_qlpc, real_exc, st->subframeSize, st->lpcSize, st->mem_exc2);
       
       if (st->complexity==0)
          response_bound >>= 1;
@@ -905,9 +901,9 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
             innov[i]=0;
          
          for (i=0;i<st->subframeSize;i++)
-            real_exc[i] = SUB32(real_exc[i], exc[i]);
+            real_exc[i] = SUB16(real_exc[i], EXTRACT16(SHR32(exc[i],SIG_SHIFT)));
 
-         ener = SHL32(EXTEND32(compute_rms(real_exc, st->subframeSize)),SIG_SHIFT);
+         ener = SHL32(EXTEND32(compute_rms16(real_exc, st->subframeSize)),SIG_SHIFT);
          
          /*FIXME: Should use DIV32_16 and make sure result fits in 16 bits */
 #ifdef FIXED_POINT
