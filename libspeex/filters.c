@@ -734,7 +734,7 @@ spx_coef_t *ak,           /*LPC filter coefs*/
 int p,               /*LPC order*/
 int nsf,             /*sub-frame size*/
 int pitch,           /*pitch period*/
-spx_word16_t *pitch_gain,   /*pitch gain (3-tap)*/
+int max_pitch,
 spx_word16_t  comb_gain,    /*gain of comb filter*/
 char *stack
 )
@@ -759,12 +759,11 @@ char *stack
 
 #ifdef FIXED_POINT
    VARDECL(spx_word16_t *exc2);
-   /* FIXME: Can it get uglier than that??? */
-   ALLOC(exc2, 510, spx_word16_t);
-   for (i=0;i<510;i++)
+   ALLOC(exc2, 12+nsf+(nsf>>1)+2*max_pitch, spx_word16_t);
+   for (i=0;i<12+nsf+(nsf>>1)+2*max_pitch;i++)
       exc2[i] = 0;
-   exc = exc2+300;
-   for (i=-280;i<200;i++)
+   exc = exc2+6+2*max_pitch;
+   for (i=-2*max_pitch-6;i<nsf+(nsf>>1)+6;i++)
       exc[i] = PSHR32(_exc[i], SIG_SHIFT);
 #else
    exc = _exc;

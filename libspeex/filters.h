@@ -80,7 +80,7 @@ spx_coef_t *ak,           /*LPC filter coefs*/
 int p,               /*LPC order*/
 int nsf,             /*sub-frame size*/
 int pitch,           /*pitch period*/
-spx_word16_t *pitch_gain,   /*pitch gain (3-tap)*/
+int max_pitch,   /*pitch gain (3-tap)*/
 spx_word16_t  comb_gain,    /*gain of comb filter*/
 char *stack
 );
