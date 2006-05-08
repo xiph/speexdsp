@@ -1035,12 +1035,6 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
    return 1;
 }
 
-#ifdef OLD_ENHANCER
-#define PITCH_PERIODS 1
-#else
-#define PITCH_PERIODS 3
-#endif
-
 void *nb_decoder_init(const SpeexMode *m)
 {
    DecState *st;
@@ -1079,9 +1073,13 @@ void *nb_decoder_init(const SpeexMode *m)
 
    st->lpc_enh_enabled=0;
 
-
-   st->excBuf = speex_alloc((st->frameSize + PITCH_PERIODS*st->max_pitch + 1 + 50)*sizeof(spx_sig_t));
-   st->exc = st->excBuf + PITCH_PERIODS*st->max_pitch + 1;
+#ifdef OLD_ENHANCER
+   st->excBuf = speex_alloc((st->frameSize + st->max_pitch + 1)*sizeof(spx_sig_t));
+   st->exc = st->excBuf + st->max_pitch + 1;
+#else
+   st->excBuf = speex_alloc((st->frameSize + 2*st->max_pitch + st->subframeSize + 12)*sizeof(spx_sig_t));
+   st->exc = st->excBuf + 2*st->max_pitch + st->subframeSize + 6;
+#endif
    for (i=0;i<st->frameSize + st->max_pitch + 1;i++)
       st->excBuf[i]=0;
 
@@ -1178,9 +1176,11 @@ static void nb_decode_lost(DecState *st, spx_word16_t *out, char *stack)
    pitch_gain = MULT16_16_Q15(fact,pitch_gain) + VERY_SMALL;
 
    /* Shift all buffers by one frame */
-   /*speex_move(st->inBuf, st->inBuf+st->frameSize, (st->bufSize-st->frameSize)*sizeof(spx_sig_t));*/
-   speex_move(st->excBuf, st->excBuf+st->frameSize, (PITCH_PERIODS*st->max_pitch + 1)*sizeof(spx_sig_t));
-
+#ifdef OLD_ENHANCER
+   speex_move(st->excBuf, st->excBuf+st->frameSize, (st->max_pitch + 1)*sizeof(spx_sig_t));
+#else
+   speex_move(st->excBuf, st->excBuf+st->frameSize, (2*st->max_pitch + st->subframeSize + 12)*sizeof(spx_sig_t));
+#endif   
    for (sub=0;sub<st->nbSubframes;sub++)
    {
       int offset;
@@ -1355,7 +1355,11 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
    }
 
    /* Shift all buffers by one frame */
-   speex_move(st->excBuf, st->excBuf+st->frameSize, (PITCH_PERIODS*st->max_pitch + 1)*sizeof(spx_sig_t));
+#ifdef OLD_ENHANCER
+   speex_move(st->excBuf, st->excBuf+st->frameSize, (st->max_pitch + 1)*sizeof(spx_sig_t));
+#else
+   speex_move(st->excBuf, st->excBuf+st->frameSize, (2*st->max_pitch + st->subframeSize + 12)*sizeof(spx_sig_t));
+#endif   
 
    /* If null mode (no transmission), just set a couple things to zero*/
    if (st->submodes[st->submodeID] == NULL)
