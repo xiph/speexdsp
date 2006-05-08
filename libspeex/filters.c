@@ -640,7 +640,7 @@ void fir_mem_up(const spx_sig_t *x, const spx_word16_t *a, spx_sig_t *y, int N, 
       mem[i+1] = xx[i];
 }
 
-#ifdef NEW_ENHANCER
+#ifndef OLD_ENHANCER
 
 #ifdef FIXED_POINT
 #if 0
@@ -874,7 +874,8 @@ char *stack
    for (i=0;i<nsf;i++)
       new_exc[i] = MULT16_16_Q14(ngain, new_exc[i]);
 }
-#endif
+
+#else
 
 void comb_filter_mem_init (CombFilterMem *mem)
 {
@@ -994,3 +995,5 @@ CombFilterMem *mem
    for (i=0;i<nsf;i++)
       _new_exc[i] = EXTRACT16(PSHR32(new_exc[i],SIG_SHIFT));
 }
+
+#endif

@@ -167,7 +167,9 @@ typedef struct DecState {
    const SpeexSubmode * const *submodes; /**< Sub-mode data */
    int    submodeID;      /**< Activated sub-mode */
    int    lpc_enh_enabled; /**< 1 when LPC enhancer is on, 0 otherwise */
+#ifdef OLD_ENHANCER
    CombFilterMem *comb_mem;
+#endif
    SpeexCallback speex_callbacks[SPEEX_MAX_CALLBACKS];
 
    SpeexCallback user_callback;

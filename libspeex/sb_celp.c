@@ -1112,7 +1112,7 @@ int sb_decode(void *state, SpeexBits *bits, void *vout)
       /* LSP to LPC */
       lsp_to_lpc(st->interp_qlsp, ak, st->lpcSize, stack);
 
-#ifndef NEW_ENHANCER
+#ifdef OLD_ENHANCER
       for (i=0;i<st->lpcSize;i++)
          st->interp_qlpc[i] = ak[i];
 #endif
@@ -1222,7 +1222,7 @@ int sb_decode(void *state, SpeexBits *bits, void *vout)
             innov_save[2*i]=exc[i];
       }
       
-#ifndef NEW_ENHANCER
+#ifdef OLD_ENHANCER
       for (i=0;i<st->subframeSize;i++)
          st->excBuf[i]=exc[i];
 #endif
@@ -1230,7 +1230,7 @@ int sb_decode(void *state, SpeexBits *bits, void *vout)
          sp[i]=st->excBuf[i];
       iir_mem2(sp, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, 
                st->mem_sp);
-#ifdef NEW_ENHANCER
+#ifndef OLD_ENHANCER
       for (i=0;i<st->subframeSize;i++)
          st->excBuf[i]=exc[i];
       for (i=0;i<st->lpcSize;i++)

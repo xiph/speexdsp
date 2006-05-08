@@ -1039,10 +1039,10 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
    return 1;
 }
 
-#ifdef NEW_ENHANCER
-#define PITCH_PERIODS 3
-#else
+#ifdef OLD_ENHANCER
 #define PITCH_PERIODS 1
+#else
+#define PITCH_PERIODS 3
 #endif
 
 void *nb_decoder_init(const SpeexMode *m)
@@ -1092,9 +1092,10 @@ void *nb_decoder_init(const SpeexMode *m)
    st->interp_qlpc = speex_alloc(st->lpcSize*sizeof(spx_coef_t));
    st->old_qlsp = speex_alloc(st->lpcSize*sizeof(spx_lsp_t));
    st->mem_sp = speex_alloc((5*st->lpcSize)*sizeof(spx_mem_t));
+#ifdef OLD_ENHANCER
    st->comb_mem = speex_alloc(sizeof(CombFilterMem));
    comb_filter_mem_init (st->comb_mem);
-
+#endif
    st->pi_gain = speex_alloc((st->nbSubframes)*sizeof(spx_word32_t));
    st->last_pitch = 40;
    st->count_lost=0;
@@ -1132,7 +1133,9 @@ void nb_decoder_destroy(void *state)
    speex_free (st->interp_qlpc);
    speex_free (st->old_qlsp);
    speex_free (st->mem_sp);
+#ifdef OLD_ENHANCER
    speex_free (st->comb_mem);
+#endif
    speex_free (st->pi_gain);
 
    speex_free(state);
@@ -1212,12 +1215,12 @@ static void nb_decode_lost(DecState *st, spx_word16_t *out, char *stack)
          exc[i]= MULT16_32_Q15(pitch_gain, (exc[i-pitch_val]+VERY_SMALL)) + 
                MULT16_32_Q15(fact, MULT16_32_Q15(SHL(Q15ONE,15)-SHL(MULT16_16(pitch_gain,pitch_gain),1),speex_rand(innov_gain, &st->seed)));
       }
-#ifdef NEW_ENHANCER
-      for (i=0;i<st->subframeSize;i++)
-         sp[i]=PSHR32(exc[i-st->subframeSize],SIG_SHIFT);
-#else
+#ifdef OLD_ENHANCER
       for (i=0;i<st->subframeSize;i++)
          sp[i]=PSHR32(exc[i],SIG_SHIFT);
+#else
+      for (i=0;i<st->subframeSize;i++)
+         sp[i]=PSHR32(exc[i-st->subframeSize],SIG_SHIFT);
 #endif 
       iir_mem16(sp, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, 
                 st->mem_sp);
@@ -1673,7 +1676,7 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
 
       }
 
-#ifndef NEW_ENHANCER
+#ifdef OLD_ENHANCER
       if (st->lpc_enh_enabled && SUBMODE(comb_gain)>0 && !st->count_lost)
       {
          comb_filter(exc, sp, st->interp_qlpc, st->lpcSize, st->subframeSize,
@@ -1688,7 +1691,7 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
    
    ALLOC(interp_qlsp, st->lpcSize, spx_lsp_t);
 
-#ifdef NEW_ENHANCER
+#ifndef OLD_ENHANCER
    if (st->lpc_enh_enabled && SUBMODE(comb_gain)>0 && !st->count_lost)
    {
       multicomb(st->exc-st->subframeSize, out, st->interp_qlpc, st->lpcSize, 2*st->subframeSize, best_pitch, pitch_gain, SUBMODE(comb_gain), stack);
@@ -1719,10 +1722,10 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
       for (i=0;i<st->frameSize;i++)
       {
          st->exc[i] = MULT16_32_Q14(gain, st->exc[i]);
-#ifdef NEW_ENHANCER
-         out[i]=PSHR32(st->exc[i-st->subframeSize],SIG_SHIFT);
-#else
+#ifdef OLD_ENHANCER
          out[i]=PSHR32(st->exc[i],SIG_SHIFT);
+#else
+         out[i]=PSHR32(st->exc[i-st->subframeSize],SIG_SHIFT);
 #endif
       }
    }
@@ -1749,7 +1752,7 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
       /* Compute interpolated LPCs (unquantized) */
       lsp_to_lpc(interp_qlsp, ak, st->lpcSize, stack);
 
-#ifndef NEW_ENHANCER
+#ifdef OLD_ENHANCER
       for (i=0;i<st->lpcSize;i++)
          st->interp_qlpc[i] = ak[i];
 #endif
@@ -2039,10 +2042,10 @@ int nb_decoder_ctl(void *state, int request, void *ptr)
       (*(int*)ptr) = st->encode_submode;
       break;
    case SPEEX_GET_LOOKAHEAD:
-#ifdef NEW_ENHANCER
-      (*(int*)ptr)=st->subframeSize;
-#else
+#ifdef OLD_ENHANCER
       (*(int*)ptr)=0;
+#else
+      (*(int*)ptr)=st->subframeSize;
 #endif
       break;
    case SPEEX_GET_PI_GAIN:
