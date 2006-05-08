@@ -740,7 +740,7 @@ char *stack
 )
 {
    int i; 
-   spx_word16_t iexc[3*nsf];
+   VARDECL(spx_word16_t *iexc);
    spx_word16_t old_ener, new_ener;
    int corr_pitch;
    
@@ -769,6 +769,8 @@ char *stack
 #else
    exc = _exc;
 #endif
+
+   ALLOC(iexc, 2*nsf, spx_word16_t);
 
 #if 0 /* Set to 1 to enable full pitch search */
    open_loop_nbest_pitch(exc, 20, 120, nsf, 
