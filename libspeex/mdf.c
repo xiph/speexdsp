@@ -277,10 +277,10 @@ SpeexEchoState *speex_echo_state_init(int frame_size, int filter_length)
    st->sum_adapt = 0;
    /* FIXME: Make that an init option (new API call?) */
    st->sampling_rate = 8000;
-   st->spec_average = DIV32_16(SHL32(st->frame_size, 15), st->sampling_rate);
+   st->spec_average = DIV32_16(SHL32(EXTEND32(st->frame_size), 15), st->sampling_rate);
 #ifdef FIXED_POINT
-   st->beta0 = DIV32_16(SHL32(st->frame_size, 16), st->sampling_rate);
-   st->beta_max = DIV32_16(SHL32(st->frame_size, 14), st->sampling_rate);
+   st->beta0 = DIV32_16(SHL32(EXTEND32(st->frame_size), 16), st->sampling_rate);
+   st->beta_max = DIV32_16(SHL32(EXTEND32(st->frame_size), 14), st->sampling_rate);
 #else
    st->beta0 = (2.0f*st->frame_size)/st->sampling_rate;
    st->beta_max = (.5f*st->frame_size)/st->sampling_rate;
@@ -526,7 +526,7 @@ void speex_echo_cancel(SpeexEchoState *st, const spx_int16_t *ref, const spx_int
 
    /* Compute a bunch of correlations */
    See = inner_prod(st->e+st->frame_size, st->e+st->frame_size, st->frame_size);
-   See = ADD32(See, SHR32(10000,6));
+   See = ADD32(See, SHR32(EXTEND32(10000),6));
    Syy = inner_prod(st->y+st->frame_size, st->y+st->frame_size, st->frame_size);
    
    /* Convert error to frequency domain */
@@ -689,7 +689,7 @@ void speex_echo_cancel(SpeexEchoState *st, const spx_int16_t *ref, const spx_int
       {
 #ifdef FIXED_POINT
          for (i=0;i<N;i++)
-            st->wtmp2[i] = PSHR32(st->W[j*N+i],NORMALIZE_SCALEDOWN+16);
+            st->wtmp2[i] = EXTRACT16(PSHR32(st->W[j*N+i],NORMALIZE_SCALEDOWN+16));
          spx_ifft(st->fft_table, st->wtmp2, st->wtmp);
          for (i=0;i<st->frame_size;i++)
          {
@@ -697,12 +697,12 @@ void speex_echo_cancel(SpeexEchoState *st, const spx_int16_t *ref, const spx_int
          }
          for (i=st->frame_size;i<N;i++)
          {
-            st->wtmp[i]=SHL(st->wtmp[i],NORMALIZE_SCALEUP);
+            st->wtmp[i]=SHL16(st->wtmp[i],NORMALIZE_SCALEUP);
          }
          spx_fft(st->fft_table, st->wtmp, st->wtmp2);
          /* The "-1" in the shift is a sort of kludge that trades less efficient update speed for decrease noise */
          for (i=0;i<N;i++)
-            st->W[j*N+i] -= SHL32(st->wtmp2[i],16+NORMALIZE_SCALEDOWN-NORMALIZE_SCALEUP-1);
+            st->W[j*N+i] -= SHL32(EXTEND32(st->wtmp2[i]),16+NORMALIZE_SCALEDOWN-NORMALIZE_SCALEUP-1);
 #else
          spx_ifft(st->fft_table, &st->W[j*N], st->wtmp);
          for (i=st->frame_size;i<N;i++)
@@ -767,10 +767,10 @@ int speex_echo_ctl(SpeexEchoState *st, int request, void *ptr)
          break;
       case SPEEX_ECHO_SET_SAMPLING_RATE:
          st->sampling_rate = (*(int*)ptr);
-         st->spec_average = DIV32_16(SHL32(st->frame_size, 15), st->sampling_rate);
+         st->spec_average = DIV32_16(SHL32(EXTEND32(st->frame_size), 15), st->sampling_rate);
 #ifdef FIXED_POINT
-         st->beta0 = DIV32_16(SHL32(st->frame_size, 16), st->sampling_rate);
-         st->beta_max = DIV32_16(SHL32(st->frame_size, 14), st->sampling_rate);
+         st->beta0 = DIV32_16(SHL32(EXTEND32(st->frame_size), 16), st->sampling_rate);
+         st->beta_max = DIV32_16(SHL32(EXTEND32(st->frame_size), 14), st->sampling_rate);
 #else
          st->beta0 = (2.0f*st->frame_size)/st->sampling_rate;
          st->beta_max = (.5f*st->frame_size)/st->sampling_rate;
