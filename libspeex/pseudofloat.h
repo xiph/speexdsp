@@ -264,12 +264,12 @@ static inline spx_float_t FLOAT_DIV32_FLOAT(spx_word32_t a, spx_float_t b)
    {
       return FLOAT_ZERO;
    }
-   while (a<SHL32(b.m,14))
+   while (a<SHL32(EXTEND32(b.m),14))
    {
       a <<= 1;
       e--;
    }
-   while (a>=SHL32(b.m-1,15))
+   while (a>=SHL32(EXTEND32(b.m-1),15))
    {
       a >>= 1;
       e++;
