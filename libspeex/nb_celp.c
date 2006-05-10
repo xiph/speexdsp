@@ -410,7 +410,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
       }
       
       /*Compute "real" excitation*/
-      /* FIXME: Are we breaking aliasing rules? */
+      /* FIXME: Are we breaking aliasing rules here? */
       exc16_alias = (spx_word16_t*)st->exc;
       for (i=0;i<st->windowSize-st->frameSize;i++)
          exc16_alias[i] = st->winBuf[i];
@@ -436,17 +436,16 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
       
          ol_gain=SHR(sqrt(1+ol_gain2/st->frameSize),SIG_SHIFT);
 
-      } else {
+      } else
 #endif
+      {
          spx_word16_t g = compute_rms16(exc16_alias, st->frameSize);
          if (ol_pitch>0)
             ol_gain = MULT16_16(g, MULT16_16_Q14(QCONST16(1.1,14),
                                 spx_sqrt(QCONST32(1.,28)-MULT16_32_Q15(QCONST16(.8,15),SHL32(MULT16_16(ol_pitch_coef,ol_pitch_coef),16)))));
          else
             ol_gain = SHL32(EXTEND32(g),SIG_SHIFT);
-#ifdef EPIC_48K
       }
-#endif
    }
 
 #ifdef VORBIS_PSYCHO
@@ -1372,7 +1371,7 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
          float pgain=GAIN_SCALING_1*st->last_pitch_gain;
          if (pgain>.6)
             pgain=.6;
-         /* This was innov, not exc */
+         /* FIXME: This was innov, not exc */
 	 innov_gain = compute_rms(st->exc, st->frameSize);
          for (i=0;i<st->frameSize;i++)
             st->exc[i]=VERY_SMALL;
