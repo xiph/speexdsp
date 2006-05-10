@@ -463,13 +463,40 @@ void speex_echo_cancel(SpeexEchoState *st, const spx_int16_t *ref, const spx_int
    for (i=0;i<st->frame_size;i++)
    {
       spx_word16_t tmp;
+      spx_word32_t tmp32;
       st->x[i] = st->x[i+st->frame_size];
-      st->x[i+st->frame_size] = SUB16(echo[i], MULT16_16_P15(st->preemph, st->memX));
+      tmp32 = SUB32(EXTEND32(echo[i]), EXTEND32(MULT16_16_P15(st->preemph, st->memX)));
+#ifdef FIXED_POINT
+      if (tmp32 > 32767)
+      {
+         tmp32 = 32767;
+         saturated = 1;
+      }      
+      if (tmp32 < -32767)
+      {
+         tmp32 = -32767;
+         saturated = 1;
+      }      
+#endif
+      st->x[i+st->frame_size] = EXTRACT16(tmp32);
       st->memX = echo[i];
       
       tmp = st->d[i];
       st->d[i] = st->d[i+st->frame_size];
-      st->d[i+st->frame_size] = SUB16(tmp, MULT16_16_P15(st->preemph, st->memD));
+      tmp32 = SUB32(EXTEND32(tmp), EXTEND32(MULT16_16_P15(st->preemph, st->memD)));
+#ifdef FIXED_POINT
+      if (tmp32 > 32767)
+      {
+         tmp32 = 32767;
+         saturated = 1;
+      }      
+      if (tmp32 < -32767)
+      {
+         tmp32 = -32767;
+         saturated = 1;
+      }
+#endif
+      st->d[i+st->frame_size] = tmp32;
       st->memD = tmp;
    }
 
