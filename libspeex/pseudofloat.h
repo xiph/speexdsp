@@ -78,12 +78,16 @@ static inline spx_float_t PSEUDOFLOAT(spx_int32_t x)
    }
    if (sign)
    {
-      spx_float_t r = {-x,e};
+      spx_float_t r;
+      r.m = -x;
+      r.e = e;
       return r;
    }
    else      
    {
-      spx_float_t r = {x,e};
+      spx_float_t r;
+      r.m = x;
+      r.e = e;
       return r;
    }
 }
@@ -179,7 +183,9 @@ static inline int FLOAT_GT(spx_float_t a, spx_float_t b)
 
 static inline spx_float_t FLOAT_MULT(spx_float_t a, spx_float_t b)
 {
-   spx_float_t r = {(spx_int16_t)((spx_int32_t)(a).m*(b).m>>15), (a).e+(b).e+15};
+   spx_float_t r;
+   r.m = (spx_int16_t)((spx_int32_t)(a).m*(b).m>>15);
+   r.e = (a).e+(b).e+15;
    if (r.m>0)
    {
       if (r.m<16384)
@@ -201,8 +207,10 @@ static inline spx_float_t FLOAT_MULT(spx_float_t a, spx_float_t b)
 
 static inline spx_float_t FLOAT_SHL(spx_float_t a, int b)
 {
-  spx_float_t r = {a.m,a.e+b};
-  return r;
+   spx_float_t r;
+   r.m = a.m;
+   r.e = a.e+b;
+   return r;
 }
 
 static inline spx_int16_t FLOAT_EXTRACT16(spx_float_t a)
