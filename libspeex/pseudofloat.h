@@ -208,7 +208,7 @@ static inline spx_float_t FLOAT_SHL(spx_float_t a, int b)
 static inline spx_int16_t FLOAT_EXTRACT16(spx_float_t a)
 {
    if (a.e<0)
-      return (a.m+(1<<(-a.e-1)))>>-a.e;
+      return EXTRACT16((EXTEND32(a.m)+(1<<(-a.e-1)))>>-a.e);
    else
       return a.m<<a.e;
 }

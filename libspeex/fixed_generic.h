@@ -40,8 +40,8 @@
 
 #define NEG16(x) (-(x))
 #define NEG32(x) (-(x))
-#define EXTRACT16(x) ((spx_word16_t)x)
-#define EXTEND32(x) ((spx_word32_t)x)
+#define EXTRACT16(x) ((spx_word16_t)(x))
+#define EXTEND32(x) ((spx_word32_t)(x))
 #define SHR16(a,shift) ((a) >> (shift))
 #define SHL16(a,shift) ((a) << (shift))
 #define SHR32(a,shift) ((a) >> (shift))
