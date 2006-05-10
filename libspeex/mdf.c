@@ -170,15 +170,13 @@ static inline void filter_dc_notch16(const spx_int16_t *in, spx_word16_t radius,
    }
 }
 
-static inline spx_word32_t inner_prod(const spx_word16_t *x, const spx_word16_t *y, int len)
+static inline spx_word32_t mdf_inner_prod(const spx_word16_t *x, const spx_word16_t *y, int len)
 {
    spx_word32_t sum=0;
-   len >>= 2;
+   len >>= 1;
    while(len--)
    {
       spx_word32_t part=0;
-      part = MAC16_16(part,*x++,*y++);
-      part = MAC16_16(part,*x++,*y++);
       part = MAC16_16(part,*x++,*y++);
       part = MAC16_16(part,*x++,*y++);
       /* HINT: If you had a 40-bit accumulator, you could shift only at the end */
@@ -467,6 +465,7 @@ void speex_echo_cancel(SpeexEchoState *st, const spx_int16_t *ref, const spx_int
       st->x[i] = st->x[i+st->frame_size];
       tmp32 = SUB32(EXTEND32(echo[i]), EXTEND32(MULT16_16_P15(st->preemph, st->memX)));
 #ifdef FIXED_POINT
+      /*FIXME: If saturation occurs here, we need to freeze adaptation for M frames (not just one) */
       if (tmp32 > 32767)
       {
          tmp32 = 32767;
@@ -552,9 +551,9 @@ void speex_echo_cancel(SpeexEchoState *st, const spx_int16_t *ref, const spx_int
    }
 
    /* Compute a bunch of correlations */
-   See = inner_prod(st->e+st->frame_size, st->e+st->frame_size, st->frame_size);
+   See = mdf_inner_prod(st->e+st->frame_size, st->e+st->frame_size, st->frame_size);
    See = ADD32(See, SHR32(EXTEND32(10000),6));
-   Syy = inner_prod(st->y+st->frame_size, st->y+st->frame_size, st->frame_size);
+   Syy = mdf_inner_prod(st->y+st->frame_size, st->y+st->frame_size, st->frame_size);
    
    /* Convert error to frequency domain */
    spx_fft(st->fft_table, st->e, st->E);
@@ -670,7 +669,7 @@ void speex_echo_cancel(SpeexEchoState *st, const spx_int16_t *ref, const spx_int
       spx_word32_t Sxx;
       spx_word16_t adapt_rate=0;
 
-      Sxx = inner_prod(st->x+st->frame_size, st->x+st->frame_size, st->frame_size);
+      Sxx = mdf_inner_prod(st->x+st->frame_size, st->x+st->frame_size, st->frame_size);
       /* Temporary adaption rate if filter is not adapted correctly */
 
       tmp32 = MULT16_32_Q15(QCONST16(.15f, 15), Sxx);
