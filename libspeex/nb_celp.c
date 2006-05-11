@@ -1070,7 +1070,7 @@ void *nb_decoder_init(const SpeexMode *m)
    st->submodes=mode->submodes;
    st->submodeID=mode->defaultSubmode;
 
-   st->lpc_enh_enabled=0;
+   st->lpc_enh_enabled=1;
 
 #ifdef OLD_ENHANCER
    st->excBuf = speex_alloc((st->frameSize + st->max_pitch + 1)*sizeof(spx_sig_t));
