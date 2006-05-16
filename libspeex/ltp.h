@@ -79,10 +79,11 @@ int plc_tuning
 
 /*Unquantize adaptive codebook and update pitch contribution*/
 void pitch_unquant_3tap(
-spx_sig_t exc[],                    /* Excitation */
+spx_word16_t exc[],             /* Input excitation */
+spx_word32_t exc_out[],         /* Output excitation */
 int   start,                    /* Smallest pitch value allowed */
 int   end,                      /* Largest pitch value allowed */
-spx_word16_t pitch_coef,               /* Voicing (pitch) coefficient */
+spx_word16_t pitch_coef,        /* Voicing (pitch) coefficient */
 const void *par,
 int   nsf,                      /* Number of samples in subframe */
 int *pitch_val,
@@ -120,10 +121,11 @@ int plc_tuning
 
 /** Unquantize forced pitch delay and gain */
 void forced_pitch_unquant(
-spx_sig_t exc[],                    /* Excitation */
+spx_word16_t exc[],             /* Input excitation */
+spx_word32_t exc_out[],         /* Output excitation */
 int   start,                    /* Smallest pitch value allowed */
 int   end,                      /* Largest pitch value allowed */
-spx_word16_t pitch_coef,               /* Voicing (pitch) coefficient */
+spx_word16_t pitch_coef,        /* Voicing (pitch) coefficient */
 const void *par,
 int   nsf,                      /* Number of samples in subframe */
 int *pitch_val,

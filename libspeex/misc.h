@@ -113,11 +113,8 @@ void speex_warning(const char *str);
 /** Print warning message with integer argument to stderr */
 void speex_warning_int(const char *str, int val);
 
-/** Generate a vector of random numbers */
-void speex_rand_vec(float std, spx_sig_t *data, int len);
-
 /** Generate a random number */
-spx_word32_t speex_rand(spx_word16_t std, spx_int32_t *seed);
+spx_word16_t speex_rand(spx_word16_t std, spx_int32_t *seed);
 
 /** Speex wrapper for putc */
 void _speex_putc(int ch, void *file);

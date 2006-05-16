@@ -603,5 +603,9 @@ SpeexBits *bits,
 char *stack
 )
 {
-   speex_rand_vec(1, exc, nsf);
+   int i;
+   /* FIXME: This is bad, but I don't think the function ever gets called anyway */
+   spx_int32_t seed = 0;
+   for (i=0;i<nsf;i++)
+      exc[i]=SHL32(EXTEND32(speex_rand(1, &seed)),SIG_SHIFT);
 }

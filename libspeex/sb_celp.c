@@ -380,7 +380,7 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
    VARDECL(spx_sig_t *innov);
    VARDECL(spx_word16_t *syn_resp);
    VARDECL(spx_word32_t *low_pi_gain);
-   VARDECL(spx_sig_t *low_exc);
+   VARDECL(spx_word16_t *low_exc);
    const SpeexSBMode *mode;
    int dtx;
    spx_word16_t *in = vin;
@@ -415,7 +415,7 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
 
 
    ALLOC(low_pi_gain, st->nbSubframes, spx_word32_t);
-   ALLOC(low_exc, st->frame_size, spx_sig_t);
+   ALLOC(low_exc, st->frame_size, spx_word16_t);
    speex_encoder_ctl(st->st_low, SPEEX_GET_PI_GAIN, low_pi_gain);
    speex_encoder_ctl(st->st_low, SPEEX_GET_EXC, low_exc);
    
@@ -640,7 +640,7 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
       
       rl = low_pi_gain[sub];
 #ifdef FIXED_POINT
-      filter_ratio=DIV32_16(SHL(rl+82,2),SHR(82+rh,5));
+      filter_ratio=PDIV32_16(SHL(rl+82,2),SHR(82+rh,5));
 #else
       filter_ratio=(rl+.01)/(rh+.01);
 #endif
@@ -657,7 +657,7 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
          el = compute_rms(st->low_innov+offset, st->subframeSize);
 
          /* Gain to use if we want to use the low-band excitation for high-band */
-         g=eh/(.01+el);
+         g=eh/(1.+el);
          
 #if 0
          {
@@ -696,9 +696,9 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
          spx_word16_t gc;
          spx_word32_t scale;
          spx_word16_t el;
-         el = compute_rms(low_exc+offset, st->subframeSize);
+         el = compute_rms16(low_exc+offset, st->subframeSize);
 
-         gc = DIV32_16(MULT16_16(filter_ratio,1+eh),1+el);
+         gc = PDIV32_16(MULT16_16(filter_ratio,1+eh),1+el);
 
          /* This is a kludge that cleans up a historical bug */
          if (st->subframeSize==80)
@@ -724,7 +724,7 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
          if (st->subframeSize==80)
             gc *= 1.4142;
 
-         scale = SHL(MULT16_16(DIV32_16(SHL(gc,SIG_SHIFT-4),filter_ratio),(1+el)),4);
+         scale = SHL(MULT16_16(PDIV32_16(SHL(gc,SIG_SHIFT-4),filter_ratio),(1+el)),4);
 
          compute_impulse_response(st->interp_qlpc, st->bw_lpc1, st->bw_lpc2, syn_resp, st->subframeSize, st->lpcSize, stack);
 
@@ -981,7 +981,7 @@ int sb_decode(void *state, SpeexBits *bits, void *vout)
    int ret;
    char *stack;
    VARDECL(spx_word32_t *low_pi_gain);
-   VARDECL(spx_sig_t *low_exc);
+   VARDECL(spx_word16_t *low_exc);
    VARDECL(spx_coef_t *ak);
    int dtx;
    const SpeexSBMode *mode;
@@ -1071,7 +1071,7 @@ int sb_decode(void *state, SpeexBits *bits, void *vout)
       st->exc[i]=0;
 
    ALLOC(low_pi_gain, st->nbSubframes, spx_word32_t);
-   ALLOC(low_exc, st->frame_size, spx_sig_t);
+   ALLOC(low_exc, st->frame_size, spx_word16_t);
    speex_decoder_ctl(st->st_low, SPEEX_GET_PI_GAIN, low_pi_gain);
    speex_decoder_ctl(st->st_low, SPEEX_GET_EXC, low_exc);
 
@@ -1130,7 +1130,7 @@ int sb_decode(void *state, SpeexBits *bits, void *vout)
 
          rl = low_pi_gain[sub];
 #ifdef FIXED_POINT
-         filter_ratio=DIV32_16(SHL(rl+82,2),SHR(82+rh,5));
+         filter_ratio=PDIV32_16(SHL(rl+82,2),SHR(82+rh,5));
 #else
          filter_ratio=(rl+.01)/(rh+.01);
 #endif
@@ -1174,14 +1174,13 @@ int sb_decode(void *state, SpeexBits *bits, void *vout)
             
          }
          
-         /*speex_rand_vec(mode->folding_gain*g*el, exc, st->subframeSize);*/
 #endif    
       } else {
          spx_word16_t gc;
          spx_word32_t scale;
          int qgc = speex_bits_unpack_unsigned(bits, 4);
 
-         el = compute_rms(low_exc+offset, st->subframeSize);
+         el = compute_rms16(low_exc+offset, st->subframeSize);
 
 #ifdef FIXED_POINT
          gc = MULT16_32_Q15(28626,gc_quant_bound[qgc]);
@@ -1192,7 +1191,7 @@ int sb_decode(void *state, SpeexBits *bits, void *vout)
          if (st->subframeSize==80)
             gc *= 1.4142;
 
-         scale = SHL(MULT16_16(DIV32_16(SHL(gc,SIG_SHIFT-4),filter_ratio),(1+el)),4);
+         scale = SHL(MULT16_16(PDIV32_16(SHL(gc,SIG_SHIFT-4),filter_ratio),(1+el)),4);
 
          SUBMODE(innovation_unquant)(exc, SUBMODE(innovation_params), st->subframeSize, 
                                 bits, stack);

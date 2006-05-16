@@ -98,6 +98,8 @@
 #define MUL_16_32_R15(a,bh,bl) ADD32(MULT16_16((a),(bh)), SHR(MULT16_16((a),(bl)),15))
 
 #define DIV32_16(a,b) ((spx_word16_t)(((spx_word32_t)(a))/((spx_word16_t)(b))))
+#define PDIV32_16(a,b) ((spx_word16_t)(((spx_word32_t)(a)+((spx_word16_t)(b)>>1))/((spx_word16_t)(b))))
 #define DIV32(a,b) (((spx_word32_t)(a))/((spx_word32_t)(b)))
+#define PDIV32(a,b) (((spx_word32_t)(a)+((spx_word16_t)(b)>>1))/((spx_word32_t)(b)))
 
 #endif

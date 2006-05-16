@@ -643,10 +643,11 @@ int plc_tuning
 }
 
 void pitch_unquant_3tap(
-spx_sig_t exc[],                    /* Excitation */
+spx_word16_t exc[],             /* Input excitation */
+spx_word32_t exc_out[],         /* Output excitation */
 int   start,                    /* Smallest pitch value allowed */
 int   end,                      /* Largest pitch value allowed */
-spx_word16_t pitch_coef,               /* Voicing (pitch) coefficient */
+spx_word16_t pitch_coef,        /* Voicing (pitch) coefficient */
 const void *par,
 int   nsf,                      /* Number of samples in subframe */
 int *pitch_val,
@@ -719,7 +720,7 @@ int cdbk_offset
    gain[1] = SHL16(gain[1],7);
    gain[2] = SHL16(gain[2],7);
    for (i=0;i<nsf;i++)
-      exc[i]=0;
+      exc_out[i]=0;
    for (i=0;i<3;i++)
    {
       int j;
@@ -729,15 +730,15 @@ int cdbk_offset
       if (tmp1>pp)
          tmp1=pp;
       for (j=0;j<tmp1;j++)
-         exc[j]=MAC16_32_Q15(exc[j],gain[2-i],exc[j-pp]);
+         exc_out[j]=MAC16_16(exc_out[j],gain[2-i],exc[j-pp]);
       tmp3=nsf;
       if (tmp3>pp+pitch)
          tmp3=pp+pitch;
       for (j=tmp1;j<tmp3;j++)
-         exc[j]=MAC16_32_Q15(exc[j],gain[2-i],exc[j-pp-pitch]);
+         exc_out[j]=MAC16_16(exc_out[j],gain[2-i],exc[j-pp-pitch]);
    }
-   for (i=0;i<nsf;i++)
-      exc[i]=SHL32(exc[i], 2);
+   /*for (i=0;i<nsf;i++)
+   exc[i]=PSHR32(exc32[i],13);*/
 }
 
 
@@ -765,14 +766,18 @@ int plc_tuning
 )
 {
    int i;
-   float coef = GAIN_SCALING_1*pitch_coef;
    VARDECL(spx_sig_t *res);
    ALLOC(res, nsf, spx_sig_t);
-   if (coef>.99)
-      coef=.99;
+#ifdef FIXED_POINT
+   if (pitch_coef>63)
+      pitch_coef=63;
+#else
+   if (pitch_coef>.99)
+      pitch_coef=.99;
+#endif
    for (i=0;i<nsf;i++)
    {
-      exc[i]=exc[i-start]*coef;
+      exc[i]=MULT16_32_Q15(SHL16(pitch_coef, 9),exc[i-start]);
    }
    syn_percep_zero(exc, ak, awk1, awk2, res, nsf, p, stack);
    for (i=0;i<nsf;i++)
@@ -782,10 +787,11 @@ int plc_tuning
 
 /** Unquantize forced pitch delay and gain */
 void forced_pitch_unquant(
-spx_sig_t exc[],                    /* Excitation */
+spx_word16_t exc[],             /* Input excitation */
+spx_word32_t exc_out[],         /* Output excitation */
 int   start,                    /* Smallest pitch value allowed */
 int   end,                      /* Largest pitch value allowed */
-spx_word16_t pitch_coef,               /* Voicing (pitch) coefficient */
+spx_word16_t pitch_coef,        /* Voicing (pitch) coefficient */
 const void *par,
 int   nsf,                      /* Number of samples in subframe */
 int *pitch_val,
@@ -799,12 +805,17 @@ int cdbk_offset
 )
 {
    int i;
-   float coef = GAIN_SCALING_1*pitch_coef;
-   if (coef>.99)
-      coef=.99;
+#ifdef FIXED_POINT
+   if (pitch_coef>63)
+      pitch_coef=63;
+#else
+   if (pitch_coef>.99)
+      pitch_coef=.99;
+#endif
    for (i=0;i<nsf;i++)
    {
-      exc[i]=exc[i-start]*coef;
+      exc_out[i]=MULT16_16(exc[i-start],SHL16(pitch_coef,7));
+      exc[i] = PSHR(exc_out[i],13);
    }
    *pitch_val = start;
    gain_val[0]=gain_val[2]=0;

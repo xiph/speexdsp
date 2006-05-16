@@ -74,7 +74,7 @@ void compute_impulse_response(const spx_coef_t *ak, const spx_coef_t *awk1, cons
 
 #ifndef OLD_ENHANCER
 void multicomb(
-spx_sig_t *exc,          /*decoded excitation*/
+spx_word16_t *exc,          /*decoded excitation*/
 spx_word16_t *new_exc,      /*enhanced excitation*/
 spx_coef_t *ak,           /*LPC filter coefs*/
 int p,               /*LPC order*/

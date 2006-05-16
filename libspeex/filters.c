@@ -82,7 +82,7 @@ void signal_div(const spx_sig_t *x, spx_sig_t *y, spx_word32_t scale, int len)
    {
       spx_word16_t scale_1;
       scale = PSHR32(scale, SIG_SHIFT);
-      scale_1 = EXTRACT16(DIV32_16(SHL32(EXTEND32(SIG_SCALING),7),scale));
+      scale_1 = EXTRACT16(PDIV32_16(SHL32(EXTEND32(SIG_SCALING),7),scale));
       for (i=0;i<len;i++)
       {
          y[i] = SHR32(MULT16_16(scale_1, EXTRACT16(SHR32(x[i],SIG_SHIFT))),7);
@@ -160,14 +160,13 @@ spx_word16_t compute_rms(const spx_sig_t *x, int len)
       sum = ADD32(sum,SHR32(sum2,6));
    }
    
-   return EXTRACT16(PSHR32(SHL32(EXTEND32(spx_sqrt(1+DIV32(sum,len))),(sig_shift+3)),SIG_SHIFT));
+   return EXTRACT16(PSHR32(SHL32(EXTEND32(spx_sqrt(DIV32(sum,len))),(sig_shift+3)),SIG_SHIFT));
 }
 
 spx_word16_t compute_rms16(const spx_word16_t *x, int len)
 {
    int i;
    spx_word16_t max_val=10; 
-   int sig_shift;
 
    for (i=0;i<len;i++)
    {
@@ -189,7 +188,7 @@ spx_word16_t compute_rms16(const spx_word16_t *x, int len)
          sum2 = MAC16_16(sum2,PSHR16(x[i+3],1),PSHR16(x[i+3],1));
          sum = ADD32(sum,SHR32(sum2,6));
       }
-      return SHL16(spx_sqrt(1+DIV32(sum,len)),4);
+      return SHL16(spx_sqrt(DIV32(sum,len)),4);
    } else {
       spx_word32_t sum=0;
       int sig_shift=0;
@@ -208,7 +207,7 @@ spx_word16_t compute_rms16(const spx_word16_t *x, int len)
          sum2 = MAC16_16(sum2,SHL16(x[i+3],sig_shift),SHL16(x[i+3],sig_shift));
          sum = ADD32(sum,SHR32(sum2,6));
       }
-      return SHL16(spx_sqrt(1+DIV32(sum,len)),3-sig_shift);   
+      return SHL16(spx_sqrt(DIV32(sum,len)),3-sig_shift);   
    }
 }
 
@@ -728,7 +727,7 @@ int len
 }
 
 void multicomb(
-spx_sig_t *_exc,          /*decoded excitation*/
+spx_word16_t *exc,          /*decoded excitation*/
 spx_word16_t *new_exc,      /*enhanced excitation*/
 spx_coef_t *ak,           /*LPC filter coefs*/
 int p,               /*LPC order*/
@@ -744,10 +743,6 @@ char *stack
    spx_word16_t old_ener, new_ener;
    int corr_pitch;
    
-   int nol_pitch[6];
-   spx_word16_t nol_pitch_coef[6];
-   spx_word16_t ol_pitch_coef;
-   spx_word16_t *exc;
    spx_word16_t iexc0_mag, iexc1_mag, exc_mag;
    spx_word32_t corr0, corr1;
    spx_word16_t gain0, gain1;
@@ -757,21 +752,10 @@ char *stack
    spx_word16_t ngain;
    spx_word16_t gg1, gg2;
 
-#ifdef FIXED_POINT
-   VARDECL(spx_word16_t *exc2);
-   ALLOC(exc2, 12+nsf+(nsf>>1)+2*max_pitch, spx_word16_t);
-   for (i=0;i<12+nsf+(nsf>>1)+2*max_pitch;i++)
-      exc2[i] = 0;
-   exc = exc2+6+2*max_pitch;
-   for (i=-2*max_pitch-6;i<nsf+(nsf>>1)+6;i++)
-      exc[i] = PSHR32(_exc[i], SIG_SHIFT);
-#else
-   exc = _exc;
-#endif
-
-   ALLOC(iexc, 2*nsf, spx_word16_t);
-
 #if 0 /* Set to 1 to enable full pitch search */
+   int nol_pitch[6];
+   spx_word16_t nol_pitch_coef[6];
+   spx_word16_t ol_pitch_coef;
    open_loop_nbest_pitch(exc, 20, 120, nsf, 
                          nol_pitch, nol_pitch_coef, 6, stack);
    corr_pitch=nol_pitch[0];
@@ -793,8 +777,11 @@ char *stack
 #else
    corr_pitch = pitch;
 #endif
+   
+   ALLOC(iexc, 2*nsf, spx_word16_t);
+   
    interp_pitch(exc, iexc, corr_pitch, 80);
-   if (corr_pitch>40)
+   if (corr_pitch>max_pitch)
       interp_pitch(exc, iexc+nsf, 2*corr_pitch, 80);
    else
       interp_pitch(exc, iexc+nsf, -corr_pitch, 80);
@@ -821,13 +808,13 @@ char *stack
    if (corr0 > MULT16_16(iexc0_mag,exc_mag))
       pgain1 = QCONST16(1., 14);
    else
-      pgain1 = DIV32_16(SHL32(DIV32(corr0, exc_mag),14),iexc0_mag);
+      pgain1 = PDIV32_16(SHL32(PDIV32(corr0, exc_mag),14),iexc0_mag);
    if (corr1 > MULT16_16(iexc1_mag,exc_mag))
       pgain2 = QCONST16(1., 14);
    else
-      pgain2 = DIV32_16(SHL32(DIV32(corr1, exc_mag),14),iexc1_mag);
-   gg1 = DIV32_16(SHL32(EXTEND32(exc_mag),8), iexc0_mag);
-   gg2 = DIV32_16(SHL32(EXTEND32(exc_mag),8), iexc1_mag);
+      pgain2 = PDIV32_16(SHL32(PDIV32(corr1, exc_mag),14),iexc1_mag);
+   gg1 = PDIV32_16(SHL32(EXTEND32(exc_mag),8), iexc0_mag);
+   gg2 = PDIV32_16(SHL32(EXTEND32(exc_mag),8), iexc1_mag);
    if (comb_gain>0)
    {
 #ifdef FIXED_POINT
@@ -852,9 +839,9 @@ char *stack
       g1 = c1;
    if (g2<c1)
       g2 = c1;
-   g1 = (spx_word16_t)DIV32_16(SHL32(EXTEND32(c1),14),(spx_word16_t)g1);
-   g2 = (spx_word16_t)DIV32_16(SHL32(EXTEND32(c1),14),(spx_word16_t)g2);
-   if (corr_pitch>40)
+   g1 = (spx_word16_t)PDIV32_16(SHL32(EXTEND32(c1),14),(spx_word16_t)g1);
+   g2 = (spx_word16_t)PDIV32_16(SHL32(EXTEND32(c1),14),(spx_word16_t)g2);
+   if (corr_pitch>max_pitch)
    {
       gain0 = MULT16_16_Q15(QCONST16(.7,15),MULT16_16_Q14(g1,gg1));
       gain1 = MULT16_16_Q15(QCONST16(.3,15),MULT16_16_Q14(g2,gg2));
@@ -874,7 +861,7 @@ char *stack
       new_ener = 1;
    if (old_ener > new_ener)
       old_ener = new_ener;
-   ngain = DIV32_16(SHL32(EXTEND32(old_ener),14),new_ener);
+   ngain = PDIV32_16(SHL32(EXTEND32(old_ener),14),new_ener);
    
    for (i=0;i<nsf;i++)
       new_exc[i] = MULT16_16_Q14(ngain, new_exc[i]);

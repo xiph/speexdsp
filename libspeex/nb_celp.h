@@ -147,8 +147,8 @@ typedef struct DecState {
    spx_word16_t  last_ol_gain;   /**< Open-loop gain for previous frame */
 
    char  *stack;          /**< Pseudo-stack allocation for temporary memory */
-   spx_sig_t *excBuf;         /**< Excitation buffer */
-   spx_sig_t *exc;            /**< Start of excitation frame */
+   spx_word16_t *excBuf;         /**< Excitation buffer */
+   spx_word16_t *exc;            /**< Start of excitation frame */
    spx_lsp_t *qlsp;           /**< Quantized LSPs for current frame */
    spx_lsp_t *old_qlsp;       /**< Quantized LSPs for previous frame */
    spx_coef_t *interp_qlpc;    /**< Interpolated quantized LPCs */
@@ -175,8 +175,8 @@ typedef struct DecState {
    SpeexCallback user_callback;
 
    /*Vocoder data*/
-   float  voc_m1;
-   float  voc_m2;
+   spx_word16_t  voc_m1;
+   spx_word32_t  voc_m2;
    float  voc_mean;
    int    voc_offset;
 
