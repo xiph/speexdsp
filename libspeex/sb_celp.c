@@ -724,7 +724,7 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
          if (st->subframeSize==80)
             gc *= 1.4142;
 
-         scale = SHL(MULT16_16(PDIV32_16(SHL(gc,SIG_SHIFT-4),filter_ratio),(1+el)),4);
+         scale = SHL32(MULT16_16(PDIV32_16(SHL32(EXTEND32(gc),SIG_SHIFT-6),filter_ratio),(1+el)),6);
 
          compute_impulse_response(st->interp_qlpc, st->bw_lpc1, st->bw_lpc2, syn_resp, st->subframeSize, st->lpcSize, stack);
 
@@ -1191,7 +1191,7 @@ int sb_decode(void *state, SpeexBits *bits, void *vout)
          if (st->subframeSize==80)
             gc *= 1.4142;
 
-         scale = SHL(MULT16_16(PDIV32_16(SHL(gc,SIG_SHIFT-4),filter_ratio),(1+el)),4);
+         scale = SHL(MULT16_16(PDIV32_16(SHL(gc,SIG_SHIFT-6),filter_ratio),(1+el)),6);
 
          SUBMODE(innovation_unquant)(exc, SUBMODE(innovation_params), st->subframeSize, 
                                 bits, stack);

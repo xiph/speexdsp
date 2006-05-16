@@ -170,7 +170,7 @@ static inline short ADD16(int a, int b)
    }
    res = a+b;
    if (!VERIFY_SHORT(res))
-      fprintf (stderr, "ADD16: output is not short: %d\n", res);
+      fprintf (stderr, "ADD16: output is not short: %d+%d=%d\n", a,b,res);
    spx_mips++;
    return res;
 }
@@ -197,7 +197,9 @@ static inline int ADD32(long long a, long long b)
    }
    res = a+b;
    if (!VERIFY_INT(res))
+   {
       fprintf (stderr, "ADD32: output is not int: %d\n", (int)res);
+   }
    spx_mips++;
    return res;
 }
@@ -440,7 +442,7 @@ static inline int DIV32(long long a, long long b)
    spx_mips+=36;
    return res;
 }
-
-
+#define PDIV32(a,b) DIV32(ADD32((a),(b)>>1),b)
+#define PDIV32_16(a,b) DIV32_16(ADD32((a),(b)>>1),b)
 
 #endif

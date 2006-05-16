@@ -94,7 +94,7 @@ int          p
       for (j = 0; j < i; j++) 
          rr = SUB32(rr,MULT16_16(lpc[j],ac[i - j]));
 #ifdef FIXED_POINT
-      r = DIV32_16(rr+PSHR32(error,1),ADD16(error,4));
+      r = DIV32_16(rr+PSHR32(error,1),ADD16(error,8));
 #else
       r = rr/(error+.003*ac[0]);
 #endif

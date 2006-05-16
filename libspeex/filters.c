@@ -85,15 +85,25 @@ void signal_div(const spx_sig_t *x, spx_sig_t *y, spx_word32_t scale, int len)
       scale_1 = EXTRACT16(PDIV32_16(SHL32(EXTEND32(SIG_SCALING),7),scale));
       for (i=0;i<len;i++)
       {
-         y[i] = SHR32(MULT16_16(scale_1, EXTRACT16(SHR32(x[i],SIG_SHIFT))),7);
+         y[i] = PSHR32(MULT16_16(scale_1, EXTRACT16(SHR32(x[i],SIG_SHIFT))),7);
       }
-   } else {
+   } else if (scale > SHR32(EXTEND32(SIG_SCALING), 2)) {
       spx_word16_t scale_1;
       scale = PSHR32(scale, SIG_SHIFT-5);
       scale_1 = DIV32_16(SHL32(EXTEND32(SIG_SCALING),3),scale);
       for (i=0;i<len;i++)
       {
          y[i] = MULT16_16(scale_1, EXTRACT16(SHR32(x[i],SIG_SHIFT-2)));
+      }
+   } else {
+      spx_word16_t scale_1;
+      scale = PSHR32(scale, SIG_SHIFT-7);
+      if (scale < 5)
+         scale = 5;
+      scale_1 = DIV32_16(SHL32(EXTEND32(SIG_SCALING),3),scale);
+      for (i=0;i<len;i++)
+      {
+         y[i] = SHL32(MULT16_16(scale_1, EXTRACT16(SHR32(x[i],SIG_SHIFT-2))),2);
       }
    }
 }
@@ -526,14 +536,13 @@ void compute_impulse_response(const spx_coef_t *ak, const spx_coef_t *awk1, cons
    i++;
    for (;i<N;i++)
       y[i] = VERY_SMALL;
-   
    for (i=0;i<ord;i++)
       mem1[i] = mem2[i] = 0;
    for (i=0;i<N;i++)
    {
       y1 = ADD16(y[i], EXTRACT16(PSHR32(mem1[0],LPC_SHIFT)));
       ny1i = NEG16(y1);
-      y[i] = ADD16(SHL16(y1,1), EXTRACT16(PSHR32(mem2[0],LPC_SHIFT)));
+      y[i] = PSHR32(ADD32(SHL32(EXTEND32(y1),LPC_SHIFT+1),mem2[0]),LPC_SHIFT);
       ny2i = NEG16(y[i]);
       for (j=0;j<ord-1;j++)
       {

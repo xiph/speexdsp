@@ -70,7 +70,7 @@ static void compute_weighted_codebook(const signed char *shape_cb, const spx_wor
          for (k=0;k<=j;k++)
             resj = MAC16_16(resj,shape[k],r[j-k]);
 #ifdef FIXED_POINT
-         res16 = EXTRACT16(SHR32(resj, 11));
+         res16 = EXTRACT16(SHR32(resj, 13));
 #else
          res16 = 0.03125f*resj;
 #endif
@@ -89,7 +89,7 @@ static inline void target_update(spx_word16_t *t, spx_word16_t g, spx_word16_t *
 {
    int n;
    for (n=0;n<len;n++)
-      t[n] = SUB32(t[n],MULT16_16_Q11_32(g,r[n]));
+      t[n] = SUB16(t[n],PSHR32(MULT16_16(g,r[n]),13));
 }
 #endif
 
@@ -154,7 +154,7 @@ int   update_target
    
    /* FIXME: make that adaptive? */
    for (i=0;i<nsf;i++)
-      t[i]=EXTRACT16(PSHR32(target[i],6));
+      t[i]=EXTRACT16(PSHR32(target[i],8));
 
    compute_weighted_codebook(shape_cb, r, resp, resp2, E, shape_cb_size, subvect_size, stack);
 
@@ -349,7 +349,7 @@ int   update_target
    
    /* FIXME: make that adaptive? */
    for (i=0;i<nsf;i++)
-      t[i]=EXTRACT16(PSHR32(target[i],6));
+      t[i]=EXTRACT16(PSHR32(target[i],8));
 
    for (j=0;j<N;j++)
       speex_move(&ot[j][0], t, nsf*sizeof(spx_word16_t));
