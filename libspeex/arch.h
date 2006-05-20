@@ -158,6 +158,8 @@ typedef float spx_word32_t;
 #define MULT16_16_Q14(a,b)     ((a)*(b))
 #define MULT16_16_Q15(a,b)     ((a)*(b))
 #define MULT16_16_P15(a,b)     ((a)*(b))
+#define MULT16_16_P13(a,b)     ((a)*(b))
+#define MULT16_16_P14(a,b)     ((a)*(b))
 
 #define DIV32_16(a,b)     (((spx_word32_t)(a))/(spx_word16_t)(b))
 #define PDIV32_16(a,b)     (((spx_word32_t)(a))/(spx_word16_t)(b))
