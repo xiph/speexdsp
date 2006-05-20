@@ -158,8 +158,8 @@ void *nb_encoder_init(const SpeexMode *m)
    /* Allocating input buffer */
    st->winBuf = speex_alloc((st->windowSize-st->frameSize)*sizeof(spx_word16_t));
    /* Allocating excitation buffer */
-   st->excBuf = speex_alloc((mode->frameSize+mode->pitchEnd+1)*sizeof(spx_sig_t));
-   st->exc = st->excBuf + mode->pitchEnd + 1;
+   st->excBuf = speex_alloc((mode->frameSize+mode->pitchEnd+2)*sizeof(spx_word16_t));
+   st->exc = st->excBuf + mode->pitchEnd + 2;
    st->swBuf = speex_alloc((mode->frameSize+mode->pitchEnd+2)*sizeof(spx_word16_t));
    st->sw = st->swBuf + mode->pitchEnd + 2;
 
@@ -278,8 +278,9 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
    spx_word16_t ol_pitch_coef;
    spx_word32_t ol_gain;
    VARDECL(spx_word16_t *ringing);
-   VARDECL(spx_sig_t *target);
+   VARDECL(spx_word16_t *target);
    VARDECL(spx_sig_t *innov);
+   VARDECL(spx_word32_t *exc32);
    VARDECL(spx_mem_t *mem);
    char *stack;
    VARDECL(spx_word16_t *syn_resp);
@@ -289,13 +290,12 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
    int ol_pitch_id=0;
 #endif
    spx_word16_t *in = vin;
-   spx_word16_t *exc16_alias;
 
    st=(EncState *)state;
    stack=st->stack;
 
    /* Move signals 1 frame towards the past */
-   speex_move(st->excBuf, st->excBuf+st->frameSize, (st->max_pitch+1)*sizeof(spx_sig_t));
+   speex_move(st->excBuf, st->excBuf+st->frameSize, (st->max_pitch+2)*sizeof(spx_word16_t));
    speex_move(st->swBuf, st->swBuf+st->frameSize, (st->max_pitch+2)*sizeof(spx_word16_t));
 
    {
@@ -410,13 +410,11 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
       }
       
       /*Compute "real" excitation*/
-      /* FIXME: Are we breaking aliasing rules here? */
-      exc16_alias = (spx_word16_t*)st->exc;
       for (i=0;i<st->windowSize-st->frameSize;i++)
-         exc16_alias[i] = st->winBuf[i];
+         st->exc[i] = st->winBuf[i];
       for (;i<st->frameSize;i++)
-         exc16_alias[i] = in[i-st->windowSize+st->frameSize];
-      fir_mem16(exc16_alias, st->interp_lpc, exc16_alias, st->frameSize, st->lpcSize, st->mem_exc);
+         st->exc[i] = in[i-st->windowSize+st->frameSize];
+      fir_mem16(st->exc, st->interp_lpc, st->exc, st->frameSize, st->lpcSize, st->mem_exc);
 
       /* Compute open-loop excitation gain */
 #ifdef EPIC_48K
@@ -424,8 +422,8 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
       {
          float ol1=0,ol2=0;
          float ol_gain2;
-         ol1 = compute_rms(st->exc, st->frameSize>>1);
-         ol2 = compute_rms(st->exc+(st->frameSize>>1), st->frameSize>>1);
+         ol1 = compute_rms16(st->exc, st->frameSize>>1);
+         ol2 = compute_rms16(st->exc+(st->frameSize>>1), st->frameSize>>1);
          ol1 *= ol1*(st->frameSize>>1);
          ol2 *= ol2*(st->frameSize>>1);
 
@@ -439,7 +437,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
       } else
 #endif
       {
-         spx_word16_t g = compute_rms16(exc16_alias, st->frameSize);
+         spx_word16_t g = compute_rms16(st->exc, st->frameSize);
          if (ol_pitch>0)
             ol_gain = MULT16_16(g, MULT16_16_Q14(QCONST16(1.1,14),
                                 spx_sqrt(QCONST32(1.,28)-MULT16_32_Q15(QCONST16(.8,15),SHL32(MULT16_16(ol_pitch_coef,ol_pitch_coef),16)))));
@@ -698,8 +696,9 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
    }
 
    /* Target signal */
-   ALLOC(target, st->subframeSize, spx_sig_t);
+   ALLOC(target, st->subframeSize, spx_word16_t);
    ALLOC(innov, st->subframeSize, spx_sig_t);
+   ALLOC(exc32, st->subframeSize, spx_word32_t);
    ALLOC(ringing, st->subframeSize, spx_word16_t);
    ALLOC(syn_resp, st->subframeSize, spx_word16_t);
    ALLOC(real_exc, st->subframeSize, spx_word16_t);
@@ -710,7 +709,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
    {
       int   offset;
       spx_word16_t *sw;
-      spx_sig_t *exc;
+      spx_word16_t *exc;
       spx_sig_t *innov_save = NULL;
       int pitch;
       int response_bound = st->subframeSize;
@@ -831,7 +830,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
       
       /* Compute target signal */
       for (i=0;i<st->subframeSize;i++)
-         target[i]=SHL32(EXTEND32(SUB16(sw[i],PSHR32(ringing[i],1))),SIG_SHIFT);
+         target[i]=SUB16(sw[i],PSHR32(ringing[i],1));
 
       /* Reset excitation */
       for (i=0;i<st->subframeSize;i++)
@@ -871,7 +870,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
          if (st->lbr_48k)
          {
             pitch = SUBMODE(ltp_quant)(target, sw, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2,
-                                       exc, SUBMODE(ltp_params), pit_min, pit_max, ol_pitch_coef,
+                                       exc32, SUBMODE(ltp_params), pit_min, pit_max, ol_pitch_coef,
                                        st->lpcSize, st->subframeSize, bits, stack, 
                                        exc, syn_resp, st->complexity, ol_pitch_id, st->plc_tuning);
          } else {
@@ -879,7 +878,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
 
          /* Perform pitch search */
          pitch = SUBMODE(ltp_quant)(target, sw, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2,
-                                    exc, SUBMODE(ltp_params), pit_min, pit_max, ol_pitch_coef,
+                                    exc32, SUBMODE(ltp_params), pit_min, pit_max, ol_pitch_coef,
                                     st->lpcSize, st->subframeSize, bits, stack, 
                                     exc, syn_resp, st->complexity, 0, st->plc_tuning);
 #ifdef EPIC_48K
@@ -900,7 +899,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
             innov[i]=0;
          
          for (i=0;i<st->subframeSize;i++)
-            real_exc[i] = SUB16(real_exc[i], EXTRACT16(SHR32(exc[i],SIG_SHIFT)));
+            real_exc[i] = SUB16(real_exc[i], PSHR32(exc32[i],SIG_SHIFT-1));
 
          ener = SHL32(EXTEND32(compute_rms16(real_exc, st->subframeSize)),SIG_SHIFT);
          
@@ -951,7 +950,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
             signal_mul(innov, innov, ener, st->subframeSize);
 
             for (i=0;i<st->subframeSize;i++)
-               exc[i] = ADD32(exc[i],innov[i]);
+               exc[i] = EXTRACT16(PSHR32(ADD32(SHL32(exc32[i],1),innov[i]),SIG_SHIFT));
          } else {
             speex_error("No fixed codebook");
          }
@@ -969,13 +968,13 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
             for (i=0;i<st->subframeSize;i++)
                innov2[i]=0;
             for (i=0;i<st->subframeSize;i++)
-               target[i]=MULT16_32_Q13(QCONST16(2.2,13), target[i]);
+               target[i]=MULT16_16_P13(QCONST16(2.2,13), target[i]);
             SUBMODE(innovation_quant)(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2, 
                                       SUBMODE(innovation_params), st->lpcSize, st->subframeSize, 
                                       innov2, syn_resp, bits, stack, st->complexity, 0);
             signal_mul(innov2, innov2, MULT16_32_Q15(QCONST16(0.454545,15),ener), st->subframeSize);
             for (i=0;i<st->subframeSize;i++)
-               exc[i] = ADD32(exc[i],innov2[i]);
+               exc[i] = ADD32(exc[i],PSHR32(innov2[i],SIG_SHIFT));
             if (innov_save)
             {
                for (i=0;i<st->subframeSize;i++)
@@ -987,7 +986,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
       }
 
       for (i=0;i<st->subframeSize;i++)
-         sw[i] = PSHR32(exc[i], SIG_SHIFT);
+         sw[i] = exc[i];
       /* Final signal synthesis from excitation */
       iir_mem16(sw, st->interp_qlpc, sw, st->subframeSize, st->lpcSize, st->mem_sp);
 
@@ -1668,7 +1667,7 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
             SUBMODE(innovation_unquant)(innov2, SUBMODE(innovation_params), st->subframeSize, bits, stack);
             signal_mul(innov2, innov2, MULT16_32_Q15(QCONST16(0.454545,15),ener), st->subframeSize);
             for (i=0;i<st->subframeSize;i++)
-               exc[i] = ADD32(exc[i],PSHR32(innov2[i],SIG_SHIFT));
+               exc[i] = ADD16(exc[i],PSHR32(innov2[i],SIG_SHIFT));
             if (innov_save)
             {
                for (i=0;i<st->subframeSize;i++)
@@ -1962,7 +1961,7 @@ int nb_encoder_ctl(void *state, int request, void *ptr)
          int i;
          spx_word16_t *e = (spx_word16_t*)ptr;
          for (i=0;i<st->frameSize;i++)
-            e[i]=PSHR32(st->exc[i],SIG_SHIFT);
+            e[i]=st->exc[i];
       }
       break;
    case SPEEX_GET_RELATIVE_QUALITY:

@@ -96,7 +96,7 @@ static inline void target_update(spx_word16_t *t, spx_word16_t g, spx_word16_t *
 
 
 static void split_cb_search_shape_sign_N1(
-spx_sig_t target[],			/* target vector */
+spx_word16_t target[],			/* target vector */
 spx_coef_t ak[],			/* LPCs for this subframe */
 spx_coef_t awk1[],			/* Weighted LPCs for this subframe */
 spx_coef_t awk2[],			/* Weighted LPCs for this subframe */
@@ -154,7 +154,7 @@ int   update_target
    
    /* FIXME: make that adaptive? */
    for (i=0;i<nsf;i++)
-      t[i]=EXTRACT16(PSHR32(target[i],8));
+      t[i]=target[i];
 
    compute_weighted_codebook(shape_cb, r, resp, resp2, E, shape_cb_size, subvect_size, stack);
 
@@ -237,14 +237,14 @@ int   update_target
       ALLOC(r2, nsf, spx_sig_t);
       syn_percep_zero(e, ak, awk1, awk2, r2, nsf,p, stack);
       for (j=0;j<nsf;j++)
-         target[j]=SUB32(target[j],r2[j]);
+         target[j]=SUB16(target[j],EXTRACT16(PSHR32(r2[j],8)));
    }
 }
 
 
 
 void split_cb_search_shape_sign(
-spx_sig_t target[],			/* target vector */
+spx_word16_t target[],			/* target vector */
 spx_coef_t ak[],			/* LPCs for this subframe */
 spx_coef_t awk1[],			/* Weighted LPCs for this subframe */
 spx_coef_t awk2[],			/* Weighted LPCs for this subframe */
@@ -349,7 +349,7 @@ int   update_target
    
    /* FIXME: make that adaptive? */
    for (i=0;i<nsf;i++)
-      t[i]=EXTRACT16(PSHR32(target[i],8));
+      t[i]=target[i];
 
    for (j=0;j<N;j++)
       speex_move(&ot[j][0], t, nsf*sizeof(spx_word16_t));
@@ -504,7 +504,7 @@ int   update_target
    {
       syn_percep_zero(e, ak, awk1, awk2, r2, nsf,p, stack);
       for (j=0;j<nsf;j++)
-         target[j]=SUB32(target[j],r2[j]);
+         target[j]=SUB16(target[j],EXTRACT16(PSHR32(r2[j],8)));
    }
 }
 
@@ -567,7 +567,7 @@ char *stack
 }
 
 void noise_codebook_quant(
-spx_sig_t target[],			/* target vector */
+spx_word16_t target[],			/* target vector */
 spx_coef_t ak[],			/* LPCs for this subframe */
 spx_coef_t awk1[],			/* Weighted LPCs for this subframe */
 spx_coef_t awk2[],			/* Weighted LPCs for this subframe */
@@ -585,13 +585,14 @@ int   update_target
    int i;
    VARDECL(spx_sig_t *tmp);
    ALLOC(tmp, nsf, spx_sig_t);
-   residue_percep_zero(target, ak, awk1, awk2, tmp, nsf, p, stack);
+   for (i=0;i<nsf;i++)
+      tmp[i]=PSHR32(EXTEND32(target),SIG_SHIFT);
+   residue_percep_zero(tmp, ak, awk1, awk2, tmp, nsf, p, stack);
 
    for (i=0;i<nsf;i++)
       exc[i]+=tmp[i];
    for (i=0;i<nsf;i++)
       target[i]=0;
-
 }
 
 

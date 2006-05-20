@@ -56,7 +56,7 @@ void open_loop_nbest_pitch(spx_word16_t *sw, int start, int end, int len, int *p
 
 /** Finds the best quantized 3-tap pitch predictor by analysis by synthesis */
 int pitch_search_3tap(
-spx_sig_t target[],                 /* Target vector */
+spx_word16_t target[],                 /* Target vector */
 spx_word16_t *sw,
 spx_coef_t ak[],                     /* LPCs for this subframe */
 spx_coef_t awk1[],                   /* Weighted LPCs #1 for this subframe */
@@ -70,7 +70,7 @@ int   p,                        /* Number of LPC coeffs */
 int   nsf,                      /* Number of samples in subframe */
 SpeexBits *bits,
 char *stack,
-spx_sig_t *exc2,
+spx_word16_t *exc2,
 spx_word16_t *r,
 int   complexity,
 int   cdbk_offset,
@@ -98,7 +98,7 @@ int cdbk_offset
 
 /** Forced pitch delay and gain */
 int forced_pitch_quant(
-spx_sig_t target[],                 /* Target vector */
+spx_word16_t target[],                 /* Target vector */
 spx_word16_t *sw,
 spx_coef_t ak[],                     /* LPCs for this subframe */
 spx_coef_t awk1[],                   /* Weighted LPCs #1 for this subframe */
@@ -112,7 +112,7 @@ int   p,                        /* Number of LPC coeffs */
 int   nsf,                      /* Number of samples in subframe */
 SpeexBits *bits,
 char *stack,
-spx_sig_t *exc2,
+spx_word16_t *exc2,
 spx_word16_t *r,
 int complexity,
 int cdbk_offset,

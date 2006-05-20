@@ -40,7 +40,7 @@
 spx_word16_t compute_rms(const spx_sig_t *x, int len);
 spx_word16_t compute_rms16(const spx_word16_t *x, int len);
 void signal_mul(const spx_sig_t *x, spx_sig_t *y, spx_word32_t scale, int len);
-void signal_div(const spx_sig_t *x, spx_sig_t *y, spx_word32_t scale, int len);
+void signal_div(const spx_word16_t *x, spx_word16_t *y, spx_word32_t scale, int len);
 
 #ifdef FIXED_POINT
 

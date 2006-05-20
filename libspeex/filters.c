@@ -75,7 +75,7 @@ void signal_mul(const spx_sig_t *x, spx_sig_t *y, spx_word32_t scale, int len)
    }
 }
 
-void signal_div(const spx_sig_t *x, spx_sig_t *y, spx_word32_t scale, int len)
+void signal_div(const spx_word16_t *x, spx_word16_t *y, spx_word32_t scale, int len)
 {
    int i;
    if (scale > SHL32(EXTEND32(SIG_SCALING), 8))
@@ -85,7 +85,7 @@ void signal_div(const spx_sig_t *x, spx_sig_t *y, spx_word32_t scale, int len)
       scale_1 = EXTRACT16(PDIV32_16(SHL32(EXTEND32(SIG_SCALING),7),scale));
       for (i=0;i<len;i++)
       {
-         y[i] = PSHR32(MULT16_16(scale_1, EXTRACT16(SHR32(x[i],SIG_SHIFT))),7);
+         y[i] = MULT16_16_P15(scale_1, x[i]);
       }
    } else if (scale > SHR32(EXTEND32(SIG_SCALING), 2)) {
       spx_word16_t scale_1;
@@ -93,7 +93,7 @@ void signal_div(const spx_sig_t *x, spx_sig_t *y, spx_word32_t scale, int len)
       scale_1 = DIV32_16(SHL32(EXTEND32(SIG_SCALING),3),scale);
       for (i=0;i<len;i++)
       {
-         y[i] = MULT16_16(scale_1, EXTRACT16(SHR32(x[i],SIG_SHIFT-2)));
+         y[i] = PSHR32(MULT16_16(scale_1, SHL16(x[i],2)),8);
       }
    } else {
       spx_word16_t scale_1;
@@ -103,7 +103,7 @@ void signal_div(const spx_sig_t *x, spx_sig_t *y, spx_word32_t scale, int len)
       scale_1 = DIV32_16(SHL32(EXTEND32(SIG_SCALING),3),scale);
       for (i=0;i<len;i++)
       {
-         y[i] = SHL32(MULT16_16(scale_1, EXTRACT16(SHR32(x[i],SIG_SHIFT-2))),2);
+         y[i] = PSHR32(MULT16_16(scale_1, SHL16(x[i],2)),6);
       }
    }
 }

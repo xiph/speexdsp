@@ -152,18 +152,18 @@ void pitch_xcorr(const spx_word16_t *_x, const spx_word16_t *_y, spx_word32_t *c
 #endif
 
 #ifndef OVERRIDE_COMPUTE_PITCH_ERROR
-static inline spx_word32_t compute_pitch_error(spx_word32_t *C, spx_word16_t *g, spx_word16_t pitch_control)
+static inline spx_word32_t compute_pitch_error(spx_word16_t *C, spx_word16_t *g, spx_word16_t pitch_control)
 {
    spx_word32_t sum = 0;
-   sum = ADD32(sum,MULT16_32_Q15(MULT16_16_16(g[0],pitch_control),C[0]));
-   sum = ADD32(sum,MULT16_32_Q15(MULT16_16_16(g[1],pitch_control),C[1]));
-   sum = ADD32(sum,MULT16_32_Q15(MULT16_16_16(g[2],pitch_control),C[2]));
-   sum = SUB32(sum,MULT16_32_Q15(MULT16_16_16(g[0],g[1]),C[3]));
-   sum = SUB32(sum,MULT16_32_Q15(MULT16_16_16(g[2],g[1]),C[4]));
-   sum = SUB32(sum,MULT16_32_Q15(MULT16_16_16(g[2],g[0]),C[5]));
-   sum = SUB32(sum,MULT16_32_Q15(MULT16_16_16(g[0],g[0]),C[6]));
-   sum = SUB32(sum,MULT16_32_Q15(MULT16_16_16(g[1],g[1]),C[7]));
-   sum = SUB32(sum,MULT16_32_Q15(MULT16_16_16(g[2],g[2]),C[8]));
+   sum = ADD32(sum,MULT16_16(MULT16_16_16(g[0],pitch_control),C[0]));
+   sum = ADD32(sum,MULT16_16(MULT16_16_16(g[1],pitch_control),C[1]));
+   sum = ADD32(sum,MULT16_16(MULT16_16_16(g[2],pitch_control),C[2]));
+   sum = SUB32(sum,MULT16_16(MULT16_16_16(g[0],g[1]),C[3]));
+   sum = SUB32(sum,MULT16_16(MULT16_16_16(g[2],g[1]),C[4]));
+   sum = SUB32(sum,MULT16_16(MULT16_16_16(g[2],g[0]),C[5]));
+   sum = SUB32(sum,MULT16_16(MULT16_16_16(g[0],g[0]),C[6]));
+   sum = SUB32(sum,MULT16_16(MULT16_16_16(g[1],g[1]),C[7]));
+   sum = SUB32(sum,MULT16_16(MULT16_16_16(g[2],g[2]),C[8]));
    return sum;
 }
 #endif
@@ -282,7 +282,7 @@ void open_loop_nbest_pitch(spx_word16_t *sw, int start, int end, int len, int *p
 
 /** Finds the best quantized 3-tap pitch predictor by analysis by synthesis */
 static spx_word64_t pitch_gain_search_3tap(
-const spx_sig_t target[],       /* Target vector */
+const spx_word16_t target[],       /* Target vector */
 const spx_coef_t ak[],          /* LPCs for this subframe */
 const spx_coef_t awk1[],        /* Weighted LPCs #1 for this subframe */
 const spx_coef_t awk2[],        /* Weighted LPCs #2 for this subframe */
@@ -293,19 +293,18 @@ int   p,                        /* Number of LPC coeffs */
 int   nsf,                      /* Number of samples in subframe */
 SpeexBits *bits,
 char *stack,
-const spx_sig_t *exc2,
+const spx_word16_t *exc2,
 const spx_word16_t *r,
-spx_sig_t *new_target,
+spx_word16_t *new_target,
 int  *cdbk_index,
 int cdbk_offset,
 int plc_tuning
 )
 {
    int i,j;
-   VARDECL(spx_sig_t *tmp1);
-   VARDECL(spx_sig_t *tmp2);
-   spx_sig_t *x[3];
-   spx_sig_t *e[3];
+   VARDECL(spx_word16_t *tmp1);
+   VARDECL(spx_word16_t *e);
+   spx_word16_t *x[3];
    spx_word32_t corr[3];
    spx_word32_t A[3][3];
    int   gain_cdbk_size;
@@ -317,125 +316,58 @@ int plc_tuning
    params = (const ltp_params*) par;
    gain_cdbk_size = 1<<params->gain_bits;
    gain_cdbk = params->gain_cdbk + 3*gain_cdbk_size*cdbk_offset;
-   ALLOC(tmp1, 3*nsf, spx_sig_t);
-   ALLOC(tmp2, 3*nsf, spx_sig_t);
+   ALLOC(tmp1, 3*nsf, spx_word16_t);
+   ALLOC(e, nsf, spx_word16_t);
 
    x[0]=tmp1;
    x[1]=tmp1+nsf;
    x[2]=tmp1+2*nsf;
    
-   e[0]=tmp2;
-   e[1]=tmp2+nsf;
-   e[2]=tmp2+2*nsf;
-   for (i=2;i>=0;i--)
    {
-      int pp=pitch+1-i;
+      int pp=pitch-1;
       for (j=0;j<nsf;j++)
       {
          if (j-pp<0)
-            e[i][j]=exc2[j-pp];
+            e[j]=exc2[j-pp];
          else if (j-pp-pitch<0)
-            e[i][j]=exc2[j-pp-pitch];
+            e[j]=exc2[j-pp-pitch];
          else
-            e[i][j]=0;
+            e[j]=0;
       }
-
-      if (i==2)
-         syn_percep_zero(e[i], ak, awk1, awk2, x[i], nsf, p, stack);
-      else {
-         for (j=0;j<nsf-1;j++)
-            x[i][j+1]=x[i+1][j];
-         x[i][0]=0;
-         for (j=0;j<nsf;j++)
-         {
-            x[i][j]=ADD32(x[i][j],SHL32(MULT16_32_Q15(r[j], e[i][0]),1));
-         }
-      }
+      spx_mem_t mm[p];
+      for (j=0;j<p;j++)
+         mm[j] = 0;
+      iir_mem16(e, ak, e, nsf, p, mm);
+      for (j=0;j<p;j++)
+         mm[j] = 0;
+      filter_mem16(e, awk1, awk2, e, nsf, p, mm);
+      for (j=0;j<nsf;j++)
+         x[2][j] = e[j];
    }
-
-#ifdef FIXED_POINT
+   for (i=1;i>=0;i--)
    {
-      /* If using fixed-point, we need to normalize the signals first */
-      spx_word16_t *y[3];
-      VARDECL(spx_word16_t *ytmp);
-      VARDECL(spx_word16_t *t);
-
-      spx_sig_t max_val=1;
-      int sig_shift;
-      
-      ALLOC(ytmp, 3*nsf, spx_word16_t);
-#if 0
-      ALLOC(y[0], nsf, spx_word16_t);
-      ALLOC(y[1], nsf, spx_word16_t);
-      ALLOC(y[2], nsf, spx_word16_t);
-#else
-      y[0] = ytmp;
-      y[1] = ytmp+nsf;
-      y[2] = ytmp+2*nsf;
-#endif
-      ALLOC(t, nsf, spx_word16_t);
-      for (j=0;j<3;j++)
-      {
-         for (i=0;i<nsf;i++)
-         {
-            spx_sig_t tmp = x[j][i];
-            if (tmp<0)
-               tmp = -tmp;
-            if (tmp > max_val)
-               max_val = tmp;
-         }
-      }
-      for (i=0;i<nsf;i++)
-      {
-         spx_sig_t tmp = target[i];
-         if (tmp<0)
-            tmp = -tmp;
-         if (tmp > max_val)
-            max_val = tmp;
-      }
-
-      sig_shift=0;
-      while (max_val>16384)
-      {
-         sig_shift++;
-         max_val >>= 1;
-      }
-
-      for (j=0;j<3;j++)
-      {
-         for (i=0;i<nsf;i++)
-         {
-            y[j][i] = EXTRACT16(SHR32(x[j][i],sig_shift));
-         }
-      }
-      for (i=0;i<nsf;i++)
-      {
-         t[i] = EXTRACT16(SHR32(target[i],sig_shift));
-      }
-
-      for (i=0;i<3;i++)
-         corr[i]=inner_prod(y[i],t,nsf);
-      
-      for (i=0;i<3;i++)
-         for (j=0;j<=i;j++)
-            A[i][j]=A[j][i]=inner_prod(y[i],y[j],nsf);
+      spx_word16_t e0=exc2[-pitch-1+i];
+      x[i][0]=MULT16_16_Q14(r[0], e0);
+      for (j=0;j<nsf-1;j++)
+         x[i][j+1]=ADD32(x[i+1][j],MULT16_16_P14(r[j+1], e0));
    }
-#else
-   {
-      for (i=0;i<3;i++)
-         corr[i]=inner_prod(x[i],target,nsf);
-      
-      for (i=0;i<3;i++)
-         for (j=0;j<=i;j++)
-            A[i][j]=A[j][i]=inner_prod(x[i],x[j],nsf);
-   }
-#endif
+
+   for (i=0;i<3;i++)
+      corr[i]=inner_prod(x[i],target,nsf);
+   for (i=0;i<3;i++)
+      for (j=0;j<=i;j++)
+         A[i][j]=A[j][i]=inner_prod(x[i],x[j],nsf);
 
    {
       spx_word32_t C[9];
       const signed char *ptr=gain_cdbk;
       int best_cdbk=0;
       spx_word32_t best_sum=0;
+#ifdef FIXED_POINT
+      spx_word16_t C16[9];
+#else
+      spx_word16_t *C16=C;
+#endif      
       C[0]=corr[2];
       C[1]=corr[1];
       C[2]=corr[0];
@@ -459,6 +391,7 @@ int plc_tuning
       C[3] = SHL32(C[3],1);
       C[4] = SHL32(C[4],1);
       C[5] = SHL32(C[5],1);
+      normalize16(C, C16, 32767, 9);
 #else
       C[0]*=1-.01*plc_tuning;
       C[1]*=1-.01*plc_tuning;
@@ -495,7 +428,7 @@ int plc_tuning
                pitch_control = 0;
          }
          
-         sum = compute_pitch_error(C, g, pitch_control);
+         sum = compute_pitch_error(C16, g, pitch_control);
          
          if (sum>best_sum || i==0)
          {
@@ -516,28 +449,35 @@ int plc_tuning
       *cdbk_index=best_cdbk;
    }
 
-#ifdef FIXED_POINT
    for (i=0;i<nsf;i++)
-     exc[i]=SHL32(ADD32(ADD32(MULT16_32_Q15(SHL16(gain[0],7),e[2][i]), MULT16_32_Q15(SHL16(gain[1],7),e[1][i])),
-                        MULT16_32_Q15(SHL16(gain[2],7),e[0][i])), 2);
-   
+      exc[i]=0;
+   for (i=0;i<3;i++)
+   {
+      int j;
+      int tmp1, tmp3;
+      int pp=pitch+1-i;
+      tmp1=nsf;
+      if (tmp1>pp)
+         tmp1=pp;
+      for (j=0;j<tmp1;j++)
+         exc[j]=MAC16_16(exc[j],SHL16(gain[2-i],7),exc2[j-pp]);
+      tmp3=nsf;
+      if (tmp3>pp+pitch)
+         tmp3=pp+pitch;
+      for (j=tmp1;j<tmp3;j++)
+         exc[j]=MAC16_16(exc[j],SHL16(gain[2-i],7),exc2[j-pp-pitch]);
+   }
    err=0;
+#ifdef FIXED_POINT
    for (i=0;i<nsf;i++)
    {
       spx_word16_t perr2;
-      spx_sig_t tmp = SHL32(ADD32(ADD32(MULT16_32_Q15(SHL16(gain[0],7),x[2][i]),MULT16_32_Q15(SHL16(gain[1],7),x[1][i])),
-                                  MULT16_32_Q15(SHL16(gain[2],7),x[0][i])),2);
-      spx_sig_t perr=SUB32(target[i],tmp);
-      new_target[i] = SUB32(target[i], tmp);
-      perr2 = EXTRACT16(PSHR32(perr,15));
-      err = ADD64(err,MULT16_16(perr2,perr2));
-      
+      spx_word32_t tmp = ADD32(ADD32(MULT16_16(gain[0],x[2][i]),MULT16_16(gain[1],x[1][i])),
+                            MULT16_16(gain[2],x[0][i]));
+      new_target[i] = SUB16(target[i], EXTRACT16(PSHR32(tmp,6)));
    }
+   err = inner_prod(new_target, new_target, nsf);
 #else
-   for (i=0;i<nsf;i++)
-      exc[i]=gain[0]*e[2][i]+gain[1]*e[1][i]+gain[2]*e[0][i];
-   
-   err=0;
    for (i=0;i<nsf;i++)
    {
       spx_sig_t tmp = gain[2]*x[0][i]+gain[1]*x[1][i]+gain[0]*x[2][i];
@@ -551,7 +491,7 @@ int plc_tuning
 
 /** Finds the best quantized 3-tap pitch predictor by analysis by synthesis */
 int pitch_search_3tap(
-spx_sig_t target[],                 /* Target vector */
+spx_word16_t target[],                 /* Target vector */
 spx_word16_t *sw,
 spx_coef_t ak[],                     /* LPCs for this subframe */
 spx_coef_t awk1[],                   /* Weighted LPCs #1 for this subframe */
@@ -565,7 +505,7 @@ int   p,                        /* Number of LPC coeffs */
 int   nsf,                      /* Number of samples in subframe */
 SpeexBits *bits,
 char *stack,
-spx_sig_t *exc2,
+spx_word16_t *exc2,
 spx_word16_t *r,
 int complexity,
 int cdbk_offset,
@@ -575,8 +515,8 @@ int plc_tuning
    int i,j;
    int cdbk_index, pitch=0, best_gain_index=0;
    VARDECL(spx_sig_t *best_exc);
-   VARDECL(spx_sig_t *new_target);
-   VARDECL(spx_sig_t *best_target);
+   VARDECL(spx_word16_t *new_target);
+   VARDECL(spx_word16_t *best_target);
    int best_pitch=0;
    spx_word64_t err, best_err=-1;
    int N;
@@ -609,8 +549,8 @@ int plc_tuning
       nbest[0] = start;
    
    ALLOC(best_exc, nsf, spx_sig_t);
-   ALLOC(new_target, nsf, spx_sig_t);
-   ALLOC(best_target, nsf, spx_sig_t);
+   ALLOC(new_target, nsf, spx_word16_t);
+   ALLOC(best_target, nsf, spx_word16_t);
    
    for (i=0;i<N;i++)
    {
@@ -744,7 +684,7 @@ int cdbk_offset
 
 /** Forced pitch delay and gain */
 int forced_pitch_quant(
-spx_sig_t target[],                 /* Target vector */
+spx_word16_t target[],                 /* Target vector */
 spx_word16_t *sw,
 spx_coef_t ak[],                     /* LPCs for this subframe */
 spx_coef_t awk1[],                   /* Weighted LPCs #1 for this subframe */
@@ -758,7 +698,7 @@ int   p,                        /* Number of LPC coeffs */
 int   nsf,                      /* Number of samples in subframe */
 SpeexBits *bits,
 char *stack,
-spx_sig_t *exc2,
+spx_word16_t *exc2,
 spx_word16_t *r,
 int complexity,
 int cdbk_offset,
@@ -775,13 +715,17 @@ int plc_tuning
    if (pitch_coef>.99)
       pitch_coef=.99;
 #endif
-   for (i=0;i<nsf;i++)
+   for (i=0;i<nsf&&i<start;i++)
+   {
+      exc[i]=MULT16_16(SHL16(pitch_coef, 7),exc2[i-start]);
+   }
+   for (;i<nsf;i++)
    {
       exc[i]=MULT16_32_Q15(SHL16(pitch_coef, 9),exc[i-start]);
    }
    syn_percep_zero(exc, ak, awk1, awk2, res, nsf, p, stack);
    for (i=0;i<nsf;i++)
-      target[i]=SATURATE(SUB32(target[i],res[i]),805306368);
+      target[i]=EXTRACT16(SATURATE(SUB32(EXTEND32(target[i]),PSHR32(res[i],SIG_SHIFT-1)),32700));
    return start;
 }
 

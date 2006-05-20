@@ -81,8 +81,8 @@ typedef struct EncState {
    spx_word16_t  lpc_floor;      /**< Noise floor multiplier for A[0] in LPC analysis*/
    char  *stack;          /**< Pseudo-stack allocation for temporary memory */
    spx_word16_t *winBuf;          /**< Input buffer (original signal) */
-   spx_sig_t *excBuf;         /**< Excitation buffer */
-   spx_sig_t *exc;            /**< Start of excitation frame */
+   spx_word16_t *excBuf;         /**< Excitation buffer */
+   spx_word16_t *exc;            /**< Start of excitation frame */
    spx_word16_t *swBuf;          /**< Weighted signal buffer */
    spx_word16_t *sw;             /**< Start of weighted signal frame */
    const spx_word16_t *window;         /**< Temporary (Hanning) window */
