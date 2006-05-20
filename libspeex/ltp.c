@@ -281,7 +281,7 @@ void open_loop_nbest_pitch(spx_word16_t *sw, int start, int end, int len, int *p
 
 
 /** Finds the best quantized 3-tap pitch predictor by analysis by synthesis */
-static spx_word64_t pitch_gain_search_3tap(
+static spx_word32_t pitch_gain_search_3tap(
 const spx_word16_t target[],       /* Target vector */
 const spx_coef_t ak[],          /* LPCs for this subframe */
 const spx_coef_t awk1[],        /* Weighted LPCs #1 for this subframe */
@@ -310,7 +310,7 @@ int plc_tuning
    int   gain_cdbk_size;
    const signed char *gain_cdbk;
    spx_word16_t gain[3];
-   spx_word64_t err;
+   spx_word32_t err;
 
    const ltp_params *params;
    params = (const ltp_params*) par;
@@ -518,7 +518,7 @@ int plc_tuning
    VARDECL(spx_word16_t *new_target);
    VARDECL(spx_word16_t *best_target);
    int best_pitch=0;
-   spx_word64_t err, best_err=-1;
+   spx_word32_t err, best_err=-1;
    int N;
    const ltp_params *params;
    VARDECL(int *nbest);

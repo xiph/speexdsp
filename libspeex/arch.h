@@ -46,13 +46,6 @@
 
 typedef spx_int16_t spx_word16_t;
 typedef spx_int32_t   spx_word32_t;
-#ifdef _MSC_VER
-typedef __int64      spx_word64_t;
-#elif defined NO_LONGLONG
-typedef double    spx_word64_t;
-#else
-typedef long long    spx_word64_t;
-#endif
 typedef spx_word32_t spx_mem_t;
 typedef spx_word16_t spx_coef_t;
 typedef spx_word16_t spx_lsp_t;
@@ -103,7 +96,6 @@ typedef float spx_lsp_t;
 typedef float spx_sig_t;
 typedef float spx_word16_t;
 typedef float spx_word32_t;
-typedef float spx_word64_t;
 
 #define Q15ONE 1.0f
 #define LPC_SCALING  1.f
@@ -146,7 +138,6 @@ typedef float spx_word64_t;
 #define SUB16(a,b) ((a)-(b))
 #define ADD32(a,b) ((a)+(b))
 #define SUB32(a,b) ((a)-(b))
-#define ADD64(a,b) ((a)+(b))
 #define MULT16_16_16(a,b)     ((a)*(b))
 #define MULT16_16(a,b)     ((spx_word32_t)(a)*(spx_word32_t)(b))
 #define MAC16_16(c,a,b)     ((c)+(spx_word32_t)(a)*(spx_word32_t)(b))

@@ -61,7 +61,6 @@
 #define SUB16(a,b) ((spx_word16_t)(a)-(spx_word16_t)(b))
 #define ADD32(a,b) ((spx_word32_t)(a)+(spx_word32_t)(b))
 #define SUB32(a,b) ((spx_word32_t)(a)-(spx_word32_t)(b))
-#define ADD64(a,b) ((spx_word64_t)(a)+(spx_word64_t)(b))
 
 
 /* result fits in 16 bits */
