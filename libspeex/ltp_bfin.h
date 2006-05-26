@@ -109,52 +109,41 @@ void pitch_xcorr(const spx_word16_t *_x, const spx_word16_t *_y, spx_word32_t *c
 }
 
 #define OVERRIDE_COMPUTE_PITCH_ERROR
-static inline spx_word32_t compute_pitch_error(spx_word32_t *C, spx_word16_t *g, spx_word16_t pitch_control)
+static inline spx_word32_t compute_pitch_error(spx_word16_t *C, spx_word16_t *g, spx_word16_t pitch_control)
 {
    spx_word32_t sum;
    __asm__ __volatile__
          (
-         "A1 = A0 = 0;\n\t"
+         "A0 = 0;\n\t"
          
-         "R0 = [%1++];\n\t"
+         "R0 = W[%1++];\n\t"
          "R1.L = %2.L*%5.L (IS);\n\t"
-         "R0 <<= 1;\n\t"
-         "A1 += R1.L*R0.L (M), A0 += R1.L*R0.H (IS) || R0 = [%1++];\n\t"
+         "A0 += R1.L*R0.L (IS) || R0 = W[%1++];\n\t"
          
          "R1.L = %3.L*%5.L (IS);\n\t"
-         "R0 <<= 1;\n\t"
-         "A1 += R1.L*R0.L (M), A0 += R1.L*R0.H (IS) || R0 = [%1++];\n\t"
+         "A0 += R1.L*R0.L (IS) || R0 = W[%1++];\n\t"
          
          "R1.L = %4.L*%5.L (IS);\n\t"
-         "R0 <<= 1;\n\t"
-         "A1 += R1.L*R0.L (M), A0 += R1.L*R0.H (IS) || R0 = [%1++];\n\t"
+         "A0 += R1.L*R0.L (IS) || R0 = W[%1++];\n\t"
          
          "R1.L = %2.L*%3.L (IS);\n\t"
-         "R0 <<= 1;\n\t"
-         "A1 -= R1.L*R0.L (M), A0 -= R1.L*R0.H (IS) || R0 = [%1++];\n\t"
+         "A0 -= R1.L*R0.L (IS) || R0 = W[%1++];\n\t"
 
          "R1.L = %4.L*%3.L (IS);\n\t"
-         "R0 <<= 1;\n\t"
-         "A1 -= R1.L*R0.L (M), A0 -= R1.L*R0.H (IS) || R0 = [%1++];\n\t"
+         "A0 -= R1.L*R0.L (IS) || R0 = W[%1++];\n\t"
          
          "R1.L = %4.L*%2.L (IS);\n\t"
-         "R0 <<= 1;\n\t"
-         "A1 -= R1.L*R0.L (M), A0 -= R1.L*R0.H (IS) || R0 = [%1++];\n\t"
+         "A0 -= R1.L*R0.L (IS) || R0 = W[%1++];\n\t"
          
          "R1.L = %2.L*%2.L (IS);\n\t"
-         "R0 <<= 1;\n\t"
-         "A1 -= R1.L*R0.L (M), A0 -= R1.L*R0.H (IS) || R0 = [%1++];\n\t"
+         "A0 -= R1.L*R0.L (IS) || R0 = W[%1++];\n\t"
 
          "R1.L = %3.L*%3.L (IS);\n\t"
-         "R0 <<= 1;\n\t"
-         "A1 -= R1.L*R0.L (M), A0 -= R1.L*R0.H (IS) || R0 = [%1++];\n\t"
+         "A0 -= R1.L*R0.L (IS) || R0 = W[%1++];\n\t"
          
          "R1.L = %4.L*%4.L (IS);\n\t"
-         "R0 <<= 1;\n\t"
-         "A1 -= R1.L*R0.L (M), A0 -= R1.L*R0.H (IS);\n\t"
+         "A0 -= R1.L*R0.L (IS);\n\t"
          
-         "A1 = A1 >>> 16;\n\t"
-         "A0 += A1;\n\t"
          "%0 = A0;\n\t"
    : "=&D" (sum), "=a" (C)
    : "d" (g[0]), "d" (g[1]), "d" (g[2]), "d" (pitch_control), "1" (C)
