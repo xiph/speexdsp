@@ -511,7 +511,7 @@ void iir_mem16(const spx_word16_t *_x, const spx_coef_t *den, spx_word16_t *_y, 
    
    /* First sample */
    "R1 = [P4++];\n\t"
-   "R1 <<= 3;\n\t"
+   "R1 = R1 << 3 (S);\n\t"
    "R1.L = R1 (RND);\n\t"
    "R2 = W[P0++];\n\t"
    "R1 = R1 + R2;\n\t"
