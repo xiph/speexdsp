@@ -86,19 +86,9 @@ typedef struct EncState {
    spx_word16_t *swBuf;          /**< Weighted signal buffer */
    spx_word16_t *sw;             /**< Start of weighted signal frame */
    const spx_word16_t *window;         /**< Temporary (Hanning) window */
-   spx_word16_t *autocorr;       /**< auto-correlation */
    spx_word16_t *lagWindow;      /**< Window applied to auto-correlation */
-   spx_coef_t *lpc;            /**< LPCs for current frame */
-   spx_lsp_t *lsp;            /**< LSPs for current frame */
-   spx_lsp_t *qlsp;           /**< Quantized LSPs for current frame */
    spx_lsp_t *old_lsp;        /**< LSPs for previous frame */
    spx_lsp_t *old_qlsp;       /**< Quantized LSPs for previous frame */
-   spx_lsp_t *interp_lsp;     /**< Interpolated LSPs */
-   spx_lsp_t *interp_qlsp;    /**< Interpolated quantized LSPs */
-   spx_coef_t *interp_lpc;     /**< Interpolated LPCs */
-   spx_coef_t *interp_qlpc;    /**< Interpolated quantized LPCs */
-   spx_coef_t *bw_lpc1;        /**< LPCs after bandwidth expansion by gamma1 for perceptual weighting*/
-   spx_coef_t *bw_lpc2;        /**< LPCs after bandwidth expansion by gamma2 for perceptual weighting*/
    spx_mem_t *mem_sp;         /**< Filter memory for signal synthesis */
    spx_mem_t *mem_sw;         /**< Filter memory for perceptually-weighted signal */
    spx_mem_t *mem_sw_whole;   /**< Filter memory for perceptually-weighted signal (whole frame)*/
@@ -149,7 +139,6 @@ typedef struct DecState {
    char  *stack;          /**< Pseudo-stack allocation for temporary memory */
    spx_word16_t *excBuf;         /**< Excitation buffer */
    spx_word16_t *exc;            /**< Start of excitation frame */
-   spx_lsp_t *qlsp;           /**< Quantized LSPs for current frame */
    spx_lsp_t *old_qlsp;       /**< Quantized LSPs for previous frame */
    spx_coef_t *interp_qlpc;    /**< Interpolated quantized LPCs */
    spx_mem_t *mem_sp;         /**< Filter memory for synthesis signal */
