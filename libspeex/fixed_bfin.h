@@ -36,6 +36,30 @@
 #ifndef FIXED_BFIN_H
 #define FIXED_BFIN_H
 
+#undef PDIV32_16
+static inline spx_word16_t PDIV32_16(spx_word32_t a, spx_word16_t b)
+{
+   spx_word32_t res, bb;
+   bb = b;
+   __asm__  (
+         "P0 = 15;\n\t"
+         "R0 = %1;\n\t"
+         "R1 = %2;\n\t"
+         //"R0 = R0 + R1;\n\t"
+         "R0 <<= 1;\n\t"
+         "DIVS (R0, R1);\n\t"
+         "LOOP divide%= LC0 = P0;\n\t"
+         "LOOP_BEGIN divide%=;\n\t"
+            "DIVQ (R0, R1);\n\t"
+         "LOOP_END divide%=;\n\t"
+         "R0 = R0.L;\n\t"
+         "%0 = R0;\n\t"
+   : "=m" (res)
+   : "m" (a+(b>>1)), "m" (bb)
+   : "P0", "R0", "R1", "cc");
+   return res;
+}
+
 #undef DIV32_16
 static inline spx_word16_t DIV32_16(spx_word32_t a, spx_word16_t b)
 {
