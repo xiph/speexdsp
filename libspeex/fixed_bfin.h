@@ -41,6 +41,7 @@ static inline spx_word16_t PDIV32_16(spx_word32_t a, spx_word16_t b)
 {
    spx_word32_t res, bb;
    bb = b;
+   a += b>>1;
    __asm__  (
          "P0 = 15;\n\t"
          "R0 = %1;\n\t"
@@ -55,7 +56,7 @@ static inline spx_word16_t PDIV32_16(spx_word32_t a, spx_word16_t b)
          "R0 = R0.L;\n\t"
          "%0 = R0;\n\t"
    : "=m" (res)
-   : "m" (a+(b>>1)), "m" (bb)
+   : "m" (a), "m" (bb)
    : "P0", "R0", "R1", "cc");
    return res;
 }
