@@ -324,6 +324,8 @@ int plc_tuning
    x[2]=tmp1+2*nsf;
    
    {
+      VARDECL(spx_mem_t *mm);
+      ALLOC(mm, p, spx_mem_t);
       int pp=pitch-1;
       for (j=0;j<nsf;j++)
       {
@@ -334,7 +336,6 @@ int plc_tuning
          else
             e[j]=0;
       }
-      spx_mem_t mm[p];
       for (j=0;j<p;j++)
          mm[j] = 0;
       iir_mem16(e, ak, e, nsf, p, mm);
