@@ -39,7 +39,6 @@ int normalize16(const spx_sig_t *x, spx_word16_t *y, spx_sig_t max_scale, int le
 {
    spx_sig_t max_val=1;
    int sig_shift;
-
    __asm__ 
    (
    "%0 = 0;\n\t"
@@ -77,6 +76,14 @@ int normalize16(const spx_sig_t *x, spx_word16_t *y, spx_sig_t max_scale, int le
       "R3 = PACK(R3.L, R1.L);\n\t"
       "[I1++] = R3;\n\t"
    "LOOP_END norm_shift%=;\n\t"
+   "R3 = 1;\n\t"
+   "R2 = %3;\n\t"
+   "R2 = R2 & R3;\n\t"
+   "cc = R2 == 0;\n\t"
+   "if cc jump even_jump%=;\n\t"
+      "R1 = ASHIFT R0 by %2.L;\n\t"
+      "W[I1++] = R1.L;\n\t"
+   "even_jump%=:"
    : : "a" (x), "a" (y), "d" (-sig_shift), "a" (len)
    : "I0", "L0", "I1", "L1", "R0", "R1", "R2", "R3", "memory"
    );
