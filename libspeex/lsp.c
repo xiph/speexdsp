@@ -2,7 +2,6 @@
 Original copyright
 	FILE........: AKSLSPD.C
 	TYPE........: Turbo C
-	COMPANY.....: Voicetronix
 	AUTHOR......: David Rowe
 	DATE CREATED: 24/2/93
 
@@ -99,13 +98,16 @@ Heavily modified by Jean-Marc Valin (fixed-point, optimizations,
 
 #ifdef FIXED_POINT
 
-static inline spx_word32_t cheb_poly_eva(spx_word32_t *coef,spx_word16_t x,int m,char *stack)
+static inline spx_word32_t cheb_poly_eva(
+  spx_word16_t *coef, /* P or Q coefs in Q13 format               */
+  spx_word16_t     x, /* cos of freq (-1.0 to 1.0) in Q14 format  */
+  int              m, /* LPC order/2                              */
+  char         *stack
+)
 {
     int i;
     spx_word16_t b0, b1;
     spx_word32_t sum;
-    int m2=m>>1;
-    VARDECL(spx_word16_t *coefn);
 
     /*Prevents overflows*/
     if (x>16383)
@@ -113,28 +115,23 @@ static inline spx_word32_t cheb_poly_eva(spx_word32_t *coef,spx_word16_t x,int m
     if (x<-16383)
        x = -16383;
 
-    ALLOC(coefn, m2+1, spx_word16_t);
-
-    for (i=0;i<m2+1;i++)
-    {
-       coefn[i] = coef[i];
-    }
     /* Initialise values */
     b1=16384;
     b0=x;
 
-    /* Evaluate Chebyshev series formulation using iterative approach  */
-    sum = ADD32(EXTEND32(coefn[m2]), EXTEND32(MULT16_16_P14(coefn[m2-1],x)));
-    for(i=2;i<=m2;i++)
+    /* Evaluate Chebyshev series formulation usin g iterative approach  */
+    sum = ADD32(EXTEND32(coef[m]), EXTEND32(MULT16_16_P14(coef[m-1],x)));
+    for(i=2;i<=m;i++)
     {
        spx_word16_t tmp=b0;
        b0 = SUB16(MULT16_16_Q13(x,b0), b1);
        b1 = tmp;
-       sum = ADD32(sum, EXTEND32(MULT16_16_P14(coefn[m2-i],b0)));
+       sum = ADD32(sum, EXTEND32(MULT16_16_P14(coef[m-i],b0)));
     }
     
     return sum;
 }
+
 #else
 
 static float cheb_poly_eva(spx_word32_t *coef, spx_word16_t x, int m, char *stack)
@@ -194,11 +191,13 @@ int lpc_to_lsp (spx_coef_t *a,int lpcrdr,spx_lsp_t *freq,int nb,spx_word16_t del
     int i,j,m,flag,k;
     VARDECL(spx_word32_t *Q);                 	/* ptrs for memory allocation 		*/
     VARDECL(spx_word32_t *P);
+    VARDECL(spx_word16_t *Q16);         /* ptrs for memory allocation 		*/
+    VARDECL(spx_word16_t *P16);
     spx_word32_t *px;                	/* ptrs of respective P'(z) & Q'(z)	*/
     spx_word32_t *qx;
     spx_word32_t *p;
     spx_word32_t *q;
-    spx_word32_t *pt;                	/* ptr used for cheb_poly_eval()
+    spx_word16_t *pt;                	/* ptr used for cheb_poly_eval()
 				whether P' or Q' 			*/
     int roots=0;              	/* DR 8/2/94: number of roots found 	*/
     flag = 1;                	/*  program is searching for a root when,
@@ -260,20 +259,31 @@ int lpc_to_lsp (spx_coef_t *a,int lpcrdr,spx_lsp_t *freq,int nb,spx_word16_t del
     px = P;             	/* re-initialise ptrs 			*/
     qx = Q;
 
+    /* now that we have computed P and Q convert to 16 bits to
+       speed up cheb_poly_eval */
+
+    ALLOC(P16, m+1, spx_word16_t);
+    ALLOC(Q16, m+1, spx_word16_t);
+
+    for (i=0;i<m+1;i++)
+    {
+       P16[i] = P[i];
+       Q16[i] = Q[i];
+    }
+
     /* Search for a zero in P'(z) polynomial first and then alternate to Q'(z).
     Keep alternating between the two polynomials as each zero is found 	*/
 
     xr = 0;             	/* initialise xr to zero 		*/
     xl = FREQ_SCALE;               	/* start at point xl = 1 		*/
 
-
     for(j=0;j<lpcrdr;j++){
 	if(j&1)            	/* determines whether P' or Q' is eval. */
-	    pt = qx;
+	    pt = Q16;
 	else
-	    pt = px;
+	    pt = P16;
 
-	psuml = cheb_poly_eva(pt,xl,lpcrdr,stack);	/* evals poly. at xl 	*/
+	psuml = cheb_poly_eva(pt,xl,m,stack);	/* evals poly. at xl 	*/
 	flag = 1;
 	while(flag && (xr >= -FREQ_SCALE)){
            spx_word16_t dd;
@@ -288,7 +298,7 @@ int lpc_to_lsp (spx_coef_t *a,int lpcrdr,spx_lsp_t *freq,int nb,spx_word16_t del
               dd *= .5;
 #endif
            xr = SUB16(xl, dd);                        	/* interval spacing 	*/
-	    psumr = cheb_poly_eva(pt,xr,lpcrdr,stack);/* poly(xl-delta_x) 	*/
+	    psumr = cheb_poly_eva(pt,xr,m,stack);/* poly(xl-delta_x) 	*/
 	    temp_psumr = psumr;
 	    temp_xr = xr;
 
@@ -312,7 +322,7 @@ int lpc_to_lsp (spx_coef_t *a,int lpcrdr,spx_lsp_t *freq,int nb,spx_word16_t del
 #else
                     xm = .5*(xl+xr);        	/* bisect the interval 	*/
 #endif
-		    psumm=cheb_poly_eva(pt,xm,lpcrdr,stack);
+		    psumm=cheb_poly_eva(pt,xm,m,stack);
 		    /*if(psumm*psuml>0.)*/
 		    if(!SIGN_CHANGE(psumm,psuml))
                     {
