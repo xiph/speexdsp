@@ -325,8 +325,8 @@ int plc_tuning
    
    {
       VARDECL(spx_mem_t *mm);
-      ALLOC(mm, p, spx_mem_t);
       int pp=pitch-1;
+      ALLOC(mm, p, spx_mem_t);
       for (j=0;j<nsf;j++)
       {
          if (j-pp<0)
