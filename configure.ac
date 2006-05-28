@@ -127,6 +127,7 @@ fi])
 AC_ARG_ENABLE(blackfin-asm, [  --enable-blackfin-asm      Make use of Blackfin assembly optimizations],
 [if test "$enableval" = yes; then
   AC_DEFINE([BFIN_ASM], , [Make use of Blackfin assembly optimizations])
+  LDFLAGS="-Wl,-elf2flt=-s100000"
 fi])
 
 AC_ARG_ENABLE(fixed-point-debug, [  --enable-fixed-point-debug  Debug fixed-point implementation],
