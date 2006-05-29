@@ -298,7 +298,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
       VARDECL(spx_word16_t *w_sig);
       VARDECL(spx_word16_t *autocorr);
       ALLOC(w_sig, st->windowSize, spx_word16_t);
-      ALLOC(autocorr, st->lpcSize, spx_word16_t);
+      ALLOC(autocorr, st->lpcSize+1, spx_word16_t);
       /* Window for analysis */
       for (i=0;i<st->windowSize-st->frameSize;i++)
          w_sig[i] = EXTRACT16(SHR32(MULT16_16(st->winBuf[i],st->window[i]),SIG_SHIFT));
