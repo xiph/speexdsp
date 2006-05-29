@@ -4,6 +4,7 @@
 	Version="8.00"
 	Name="speexenc"
 	ProjectGUID="{CD6043D1-D5E7-46D0-854F-00BB1BC308FC}"
+	RootNamespace="speexenc"
 	Keyword="Win32Proj"
 	>
 	<Platforms>
@@ -126,7 +127,7 @@
 				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="1"
 				AdditionalIncludeDirectories="..\..\..\include;..\..\..\..\libogg\include;..\..\..\libspeex;..\.."
-				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE;HAVE_CONFIG_H: USE_ALLOCA"
+				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE;HAVE_CONFIG_H"
 				StringPooling="true"
 				ExceptionHandling="0"
 				RuntimeLibrary="0"
