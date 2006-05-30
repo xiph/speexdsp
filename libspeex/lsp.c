@@ -138,7 +138,6 @@ static float cheb_poly_eva(spx_word32_t *coef, spx_word16_t x, int m, char *stac
 {
    int k;
    float b0, b1, tmp;
-   int m2=m>>1;
 
    /* Initial conditions */
    b0=0; /* b_(m+1) */
@@ -147,14 +146,14 @@ static float cheb_poly_eva(spx_word32_t *coef, spx_word16_t x, int m, char *stac
    x*=2;
 
    /* Calculate the b_(k) */
-   for(k=m2;k>0;k--)
+   for(k=m;k>0;k--)
    {
       tmp=b0;                           /* tmp holds the previous value of b0 */
-      b0=x*b0-b1+coef[m2-k];    /* b0 holds its new value based on b0 and b1 */
+      b0=x*b0-b1+coef[m-k];    /* b0 holds its new value based on b0 and b1 */
       b1=tmp;                           /* b1 holds the previous value of b0 */
    }
 
-   return(-b1+.5*x*b0+coef[m2]);
+   return(-b1+.5*x*b0+coef[m]);
 }
 #endif
 
