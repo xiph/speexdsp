@@ -382,24 +382,23 @@ int plc_tuning
       /*plc_tuning *= 2;*/
       if (plc_tuning<2)
          plc_tuning=2;
+      if (plc_tuning>30)
+         plc_tuning=30;
 #ifdef FIXED_POINT
-      C[0] = MAC16_32_Q15(C[0],MULT16_16_16(plc_tuning,-327),C[0]);
-      C[1] = MAC16_32_Q15(C[1],MULT16_16_16(plc_tuning,-327),C[1]);
-      C[2] = MAC16_32_Q15(C[2],MULT16_16_16(plc_tuning,-327),C[2]);
       C[0] = SHL32(C[0],1);
       C[1] = SHL32(C[1],1);
       C[2] = SHL32(C[2],1);
       C[3] = SHL32(C[3],1);
       C[4] = SHL32(C[4],1);
       C[5] = SHL32(C[5],1);
+      C[6] = MAC16_32_Q15(C[6],MULT16_16_16(plc_tuning,655),C[6]);
+      C[7] = MAC16_32_Q15(C[7],MULT16_16_16(plc_tuning,655),C[7]);
+      C[8] = MAC16_32_Q15(C[8],MULT16_16_16(plc_tuning,655),C[8]);
       normalize16(C, C16, 32767, 9);
 #else
-      C[0]*=1-.01*plc_tuning;
-      C[1]*=1-.01*plc_tuning;
-      C[2]*=1-.01*plc_tuning;
-      C[6]*=.5*(1+.01*plc_tuning);
-      C[7]*=.5*(1+.01*plc_tuning);
-      C[8]*=.5*(1+.01*plc_tuning);
+      C[6]*=.5*(1+.02*plc_tuning);
+      C[7]*=.5*(1+.02*plc_tuning);
+      C[8]*=.5*(1+.02*plc_tuning);
 #endif
       for (i=0;i<gain_cdbk_size;i++)
       {
@@ -414,20 +413,15 @@ int plc_tuning
          g[2]=ADD16((spx_word16_t)ptr[2],32);
 
          /* We favor "safe" pitch values to handle packet loss better */
-         gain_sum = ADD16(ADD16(g[1],MAX16(g[0], 0)),MAX16(g[2], 0));
-         if (gain_sum > 64)
-         {
-            gain_sum = SUB16(gain_sum, 64);
-            if (gain_sum > 127)
-               gain_sum = 127;
+         gain_sum = ADD16(ADD16(ABS16(g[1]),ABS16(g[0])),ABS16(g[2]));
+         gain_sum = SUB16(gain_sum, 60);
+         if (gain_sum < 0)
+            gain_sum = 0;
 #ifdef FIXED_POINT
-            pitch_control =  SUB16(64,EXTRACT16(PSHR32(MULT16_16(64,MULT16_16_16(plc_tuning, gain_sum)),10)));
+         pitch_control =  SUB16(64,EXTRACT16(PSHR32(gain_sum,3)));
 #else
-            pitch_control = 64*(1.-.001*plc_tuning*gain_sum);
+         pitch_control = 64*(1.-.002*gain_sum);
 #endif
-            if (pitch_control < 0)
-               pitch_control = 0;
-         }
          
          sum = compute_pitch_error(C16, g, pitch_control);
          
