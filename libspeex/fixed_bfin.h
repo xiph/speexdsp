@@ -66,6 +66,10 @@ static inline spx_word16_t DIV32_16(spx_word32_t a, spx_word16_t b)
 {
    spx_word32_t res, bb;
    bb = b;
+   /* Make the roundinf consistent with the C version 
+      (do we need to do that?)*/
+   if (a<0) 
+      a += (b-1);
    __asm__  (
          "P0 = 15;\n\t"
          "R0 = %1;\n\t"
