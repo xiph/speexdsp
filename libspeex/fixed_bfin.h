@@ -108,14 +108,12 @@ static inline spx_word32_t MULT16_32_Q15(spx_word16_t a, spx_word32_t b)
    spx_word32_t res;
    __asm__
    (
-         "%1 <<= 1;\n\t"
-         "A1 = %2.L*%1.L (M,IS);\n\t"
-         "A1 = A1 >>> 16;\n\t"
-         "R1 = (A1 += %2.L*%1.H) (IS);\n\t"
-         "%0 = R1;\n\t"
-   : "=&d" (res), "=&d" (b)
+         "A1 = %2.L*%1.L (M);\n\t"
+         "A1 = A1 >>> 15;\n\t"
+         "%0 = (A1 += %2.L*%1.H) ;\n\t"
+   : "=&W" (res), "=&d" (b)
    : "d" (a), "1" (b)
-   : "A1", "R1"
+   : "A1"
    );
    return res;
 }
@@ -126,14 +124,13 @@ static inline spx_word32_t MAC16_32_Q15(spx_word32_t c, spx_word16_t a, spx_word
    spx_word32_t res;
    __asm__
          (
-         "%1 <<= 1;\n\t"
-         "A1 = %2.L*%1.L (M,IS);\n\t"
-         "A1 = A1 >>> 16;\n\t"
-         "R1 = (A1 += %2.L*%1.H) (IS);\n\t"
-         "%0 = R1 + %4;\n\t"
-   : "=&d" (res), "=&d" (b)
+         "A1 = %2.L*%1.L (M);\n\t"
+         "A1 = A1 >>> 15;\n\t"
+         "%0 = (A1 += %2.L*%1.H);\n\t"
+         "%0 = %0 + %4;\n\t"
+   : "=&W" (res), "=&d" (b)
    : "d" (a), "1" (b), "d" (c)
-   : "A1", "R1"
+   : "A1"
          );
    return res;
 }
@@ -144,14 +141,13 @@ static inline spx_word32_t MULT16_32_Q14(spx_word16_t a, spx_word32_t b)
    spx_word32_t res;
    __asm__
          (
-         "%2 <<= 2;\n\t"
-         "A1 = %1.L*%2.L (M,IS);\n\t"
-         "A1 = A1 >>> 16;\n\t"
-         "R1 = (A1 += %1.L*%2.H) (IS);\n\t"
-         "%0 = R1;\n\t"
-   : "=d" (res), "=d" (a), "=d" (b)
+         "%2 <<= 1;\n\t"
+         "A1 = %1.L*%2.L (M);\n\t"
+         "A1 = A1 >>> 15;\n\t"
+         "%0 = (A1 += %1.L*%2.H);\n\t"
+   : "=W" (res), "=d" (a), "=d" (b)
    : "1" (a), "2" (b)
-   : "A1", "R1"
+   : "A1"
          );
    return res;
 }
@@ -162,14 +158,14 @@ static inline spx_word32_t MAC16_32_Q14(spx_word32_t c, spx_word16_t a, spx_word
    spx_word32_t res;
    __asm__
          (
-         "%1 <<= 2;\n\t"
-         "A1 = %2.L*%1.L (M,IS);\n\t"
-         "A1 = A1 >>> 16;\n\t"
-         "R1 = (A1 += %2.L*%1.H) (IS);\n\t"
-         "%0 = R1 + %4;\n\t"
-   : "=&d" (res), "=&d" (b)
+         "%1 <<= 1;\n\t"
+         "A1 = %2.L*%1.L (M);\n\t"
+         "A1 = A1 >>> 15;\n\t"
+         "%0 = (A1 += %2.L*%1.H);\n\t"
+         "%0 = %0 + %4;\n\t"
+   : "=&W" (res), "=&d" (b)
    : "d" (a), "1" (b), "d" (c)
-   : "A1", "R1"
+   : "A1"
          );
    return res;
 }
