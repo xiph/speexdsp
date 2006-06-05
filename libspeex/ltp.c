@@ -218,7 +218,12 @@ void open_loop_nbest_pitch(spx_word16_t *sw, int start, int end, int len, int *p
          /* Instead of dividing the tmp by the energy, we multiply on the other side */
          if (MULT16_16(tmp,best_ener[N-1])>MULT16_16(best_score[N-1],ADD16(1,ener16[i-start])))
          {
-            for (j=0;j<N;j++)
+            /* We can safely put it last and then check */
+            best_score[N-1]=tmp;
+            best_ener[N-1]=ener16[i-start]+1;
+            pitch[N-1]=i;
+            /* Check if it comes in front of others */
+            for (j=0;j<N-1;j++)
             {
                if (MULT16_16(tmp,best_ener[j])>MULT16_16(best_score[j],ADD16(1,ener16[i-start])))
                {
