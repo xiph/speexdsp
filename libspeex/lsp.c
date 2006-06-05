@@ -1,7 +1,6 @@
 /*---------------------------------------------------------------------------*\
 Original copyright
-	FILE........: AKSLSPD.C
-	TYPE........: Turbo C
+	FILE........: lsp.c
 	AUTHOR......: David Rowe
 	DATE CREATED: 24/2/93
 
@@ -43,6 +42,43 @@ Heavily modified by Jean-Marc Valin (fixed-point, optimizations,
    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+/*---------------------------------------------------------------------------*\
+
+  Introduction to Line Spectrum Pairs (LSPs)
+  ------------------------------------------
+
+  LSPs are used to encode the LPC filter coefficients {ak} for
+  transmission over the channel.  LSPs have several properties (like
+  less sensitivity to quantisation noise) that make them superior to
+  direct quantisation of {ak}.
+
+  A(z) is a polynomial of order lpcrdr with {ak} as the coefficients.
+
+  A(z) is transformed to P(z) and Q(z) (using a substitution and some
+  algebra), to obtain something like:
+
+    A(z) = 0.5[P(z)(z+z^-1) + Q(z)(z-z^-1)]  (1)
+
+  As you can imagine A(z) has complex zeros all over the z-plane. P(z)
+  and Q(z) have the very neat property of only having zeros _on_ the
+  unit circle.  So to find them we take a test point z=exp(jw) and
+  evaluate P (exp(jw)) and Q(exp(jw)) using a grid of points between 0
+  and pi.
+
+  The zeros (roots) of P(z) also happen to alternate, which is why we
+  swap coefficients as we find roots.  So the process of finding the
+  LSP frequencies is basically finding the roots of 5th order
+  polynomials.
+
+  The root so P(z) and Q(z) occur in symmetrical pairs at +/-w, hence
+  the name Line Spectrum Pairs (LSPs).
+
+  To convert back to ak we just evaluate (1), "clocking" an impulse
+  thru it lpcrdr times gives us the impulse response of A(z) which is
+  {ak}.
+
+\*---------------------------------------------------------------------------*/
+
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -62,8 +98,6 @@ Heavily modified by Jean-Marc Valin (fixed-point, optimizations,
 
 #ifdef FIXED_POINT
 
-
-
 #define FREQ_SCALE 16384
 
 /*#define ANGLE2X(a) (32768*cos(((a)/8192.)))*/
@@ -71,6 +105,10 @@ Heavily modified by Jean-Marc Valin (fixed-point, optimizations,
 
 /*#define X2ANGLE(x) (acos(.00006103515625*(x))*LSP_SCALING)*/
 #define X2ANGLE(x) (spx_acos(x))
+
+#ifdef BFIN_ASM
+#include "lsp_bfin.h"
+#endif
 
 #else
 
@@ -87,17 +125,18 @@ Heavily modified by Jean-Marc Valin (fixed-point, optimizations,
 
 /*---------------------------------------------------------------------------*\
 
-	FUNCTION....: cheb_poly_eva()
+   FUNCTION....: cheb_poly_eva()
 
-	AUTHOR......: David Rowe
-	DATE CREATED: 24/2/93
+   AUTHOR......: David Rowe
+   DATE CREATED: 24/2/93
 
-    This function evaluates a series of Chebyshev polynomials
+   This function evaluates a series of Chebyshev polynomials
 
 \*---------------------------------------------------------------------------*/
 
 #ifdef FIXED_POINT
 
+#ifndef OVERRIDE_CHEB_POLY_EVA
 static inline spx_word32_t cheb_poly_eva(
   spx_word16_t *coef, /* P or Q coefs in Q13 format               */
   spx_word16_t     x, /* cos of freq (-1.0 to 1.0) in Q14 format  */
@@ -131,6 +170,7 @@ static inline spx_word32_t cheb_poly_eva(
     
     return sum;
 }
+#endif
 
 #else
 
@@ -159,10 +199,10 @@ static float cheb_poly_eva(spx_word32_t *coef, spx_word16_t x, int m, char *stac
 
 /*---------------------------------------------------------------------------*\
 
-	FUNCTION....: lpc_to_lsp()
+    FUNCTION....: lpc_to_lsp()
 
-	AUTHOR......: David Rowe
-	DATE CREATED: 24/2/93
+    AUTHOR......: David Rowe
+    DATE CREATED: 24/2/93
 
     This function converts LPC coefficients to LSP
     coefficients.
@@ -347,7 +387,6 @@ int lpc_to_lsp (spx_coef_t *a,int lpcrdr,spx_lsp_t *freq,int nb,spx_word16_t del
     return(roots);
 }
 
-
 /*---------------------------------------------------------------------------*\
 
 	FUNCTION....: lsp_to_lpc()
@@ -355,8 +394,7 @@ int lpc_to_lsp (spx_coef_t *a,int lpcrdr,spx_lsp_t *freq,int nb,spx_word16_t del
 	AUTHOR......: David Rowe
 	DATE CREATED: 24/2/93
 
-    lsp_to_lpc: This function converts LSP coefficients to LPC
-    coefficients.
+        Converts LSP coefficients to LPC coefficients.
 
 \*---------------------------------------------------------------------------*/
 
@@ -366,77 +404,119 @@ void lsp_to_lpc(spx_lsp_t *freq,spx_coef_t *ak,int lpcrdr, char *stack)
 /*  float *freq 	array of LSP frequencies in the x domain	*/
 /*  float *ak 		array of LPC coefficients 			*/
 /*  int lpcrdr  	order of LPC coefficients 			*/
-
-
 {
     int i,j;
-    spx_word32_t xout1,xout2,xin1,xin2;
-    VARDECL(spx_word32_t *Wp);
-    spx_word32_t *pw,*n1,*n2,*n3,*n4=NULL;
+    spx_word32_t xout1,xout2,xin;
+    spx_word32_t mult, a;
     VARDECL(spx_word16_t *freqn);
+    VARDECL(spx_word32_t **xp);
+    VARDECL(spx_word32_t *xpmem);
+    VARDECL(spx_word32_t **xq);
+    VARDECL(spx_word32_t *xqmem);
     int m = lpcrdr>>1;
+
+    /* 
     
+       Reconstruct P(z) and Q(z) by cascading second order polynomials
+       in form 1 - 2cos(w)z(-1) + z(-2), where w is the LSP frequency.
+       In the time domain this is:
+
+       y(n) = x(n) - 2cos(w)x(n-1) + x(n-2)
+    
+       This is what the ALLOCS below are trying to do:
+
+         int xp[m+1][lpcrdr+1+2]; // P matrix in QIMP
+         int xq[m+1][lpcrdr+1+2]; // Q matrix in QIMP
+
+       These matrices store the output of each stage on each row.  The
+       final (m-th) row has the output of the final (m-th) cascaded
+       2nd order filter.  The first row is the impulse input to the
+       system (not written as it is known).
+
+       The version below takes advantage of the fact that a lot of the
+       outputs are zero or known, for example if we put an inpulse
+       into the first section the "clock" it 10 times only the first 3
+       outputs samples are non-zero (it's an FIR filter).
+    */
+
+    ALLOC(xp, (m+1), spx_word32_t*);
+    ALLOC(xpmem, (m+1)*(lpcrdr+1+2), spx_word32_t);
+
+    ALLOC(xq, (m+1), spx_word32_t*);
+    ALLOC(xqmem, (m+1)*(lpcrdr+1+2), spx_word32_t);
+    
+    for(i=0; i<=m; i++) {
+      xp[i] = xpmem + i*(lpcrdr+1+2);
+      xq[i] = xqmem + i*(lpcrdr+1+2);
+    }
+
+    /* work out 2cos terms in Q14 */
+
     ALLOC(freqn, lpcrdr, spx_word16_t);
-    for (i=0;i<lpcrdr;i++)
+    for (i=0;i<lpcrdr;i++) 
        freqn[i] = ANGLE2X(freq[i]);
 
-    ALLOC(Wp, 4*m+2, spx_word32_t);
-    pw = Wp;
+    #define QIMP  21   /* scaling for impulse */
 
-
-    /* initialise contents of array */
-
-    for(i=0;i<=4*m+1;i++){       	/* set contents of buffer to 0 */
-	*pw++ = 0;
+    xin = 1<<(QIMP-1); /* 0.5 in QIMP format */
+   
+    /* first col and last non-zero values of each row are trivial */
+    
+    for(i=0;i<=m;i++) {
+     xp[i][1] = 0;
+     xp[i][2] = xin;
+     xp[i][2+2*i] = xin;
+     xq[i][1] = 0;
+     xq[i][2] = xin;
+     xq[i][2+2*i] = xin;
     }
 
-    /* Set pointers up */
+    /* 2nd row (first output row) is trivial */
 
-    pw = Wp;
-    xin1 = 1048576;
-    xin2 = 1048576;
+    xp[1][3] = -MULT16_32_Q14(freqn[0],xp[0][2]);
+    xq[1][3] = -MULT16_32_Q14(freqn[1],xq[0][2]);
 
-    /* reconstruct P(z) and Q(z) by  cascading second order
-      polynomials in form 1 - 2xz(-1) +z(-2), where x is the
-      LSP coefficient */
+    xout1 = xout2 = 0;
 
-    for(j=0;j<=lpcrdr;j++){
-       spx_word16_t *fr=freqn;
-	for(i=0;i<m;i++){
-	    n1 = pw+(i<<2);
-	    n2 = n1 + 1;
-	    n3 = n2 + 1;
-	    n4 = n3 + 1;
-	    xout1 = ADD32(SUB32(xin1, MULT16_32_Q14(*fr,*n1)), *n2);
-            fr++;
-            xout2 = ADD32(SUB32(xin2, MULT16_32_Q14(*fr,*n3)), *n4);
-            fr++;
-	    *n2 = *n1;
-	    *n4 = *n3;
-	    *n1 = xin1;
-	    *n3 = xin2;
-	    xin1 = xout1;
-	    xin2 = xout2;
-	}
-	xout1 = xin1 + *(n4+1);
-	xout2 = xin2 - *(n4+2);
-        /* FIXME: perhaps apply bandwidth expansion in case of overflow? */
-	if (j>0)
-	{
-        if (xout1 + xout2>SHL32(EXTEND32(32766),8))
-           ak[j-1] = 32767;
-        else if (xout1 + xout2 < -SHL32(EXTEND32(32766),8))
-           ak[j-1] = -32767;
-        else
-           ak[j-1] = EXTRACT16(PSHR32(ADD32(xout1,xout2),8));
-	} else {/*speex_warning_int("ak[0] = ", EXTRACT16(PSHR32(ADD32(xout1,xout2),8)));*/}
-	*(n4+1) = xin1;
-	*(n4+2) = xin2;
+    /* now generate remaining rows */
 
-	xin1 = 0;
-	xin2 = 0;
+    for(i=1;i<m;i++) {
+
+      for(j=1;j<2*(i+1)-1;j++) {
+	mult = MULT16_32_Q14(freqn[2*i],xp[i][j+1]);
+	xp[i+1][j+2] = ADD32(SUB32(xp[i][j+2], mult), xp[i][j]);
+	mult = MULT16_32_Q14(freqn[2*i+1],xq[i][j+1]);
+	xq[i+1][j+2] = ADD32(SUB32(xq[i][j+2], mult), xq[i][j]);
+      }
+
+      /* for last col xp[i][j+2] = xq[i][j+2] = 0 */
+
+      mult = MULT16_32_Q14(freqn[2*i],xp[i][j+1]);
+      xp[i+1][j+2] = SUB32(xp[i][j], mult);
+      mult = MULT16_32_Q14(freqn[2*i+1],xq[i][j+1]);
+      xq[i+1][j+2] = SUB32(xq[i][j], mult);
     }
+
+    /* process last row to extra a{k} */
+
+    for(j=1;j<=lpcrdr;j++) {
+      int shift = QIMP-13;
+
+      /* final filter sections */
+      a = PSHR32(xp[m][j+2] + xout1 + xq[m][j+2] - xout2, shift); 
+      xout1 = xp[m][j+2];
+      xout2 = xq[m][j+2];
+      
+      /* hard limit ak's to +/- 32767 */
+
+      if (a < -32767) a = 32767;
+      if (a > 32767) a = 32767;
+      ak[j-1] = (short)a;
+     
+    }
+
 }
+
 #else
 
 void lsp_to_lpc(spx_lsp_t *freq,spx_coef_t *ak,int lpcrdr, char *stack)

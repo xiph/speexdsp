@@ -24,7 +24,7 @@ noinst_HEADERS = lsp.h 	nb_celp.h 	lpc.h 	lpc_bfin.h 	ltp.h 	quant_lsp.h \
 				ltp_bfin.h 	filters_sse.h 	filters_arm4.h 	filters_bfin.h 	math_approx.h \
 				smallft.h 	arch.h 	fixed_arm4.h 	fixed_arm5e.h 	fixed_bfin.h 	fixed_debug.h \
 				fixed_generic.h 	cb_search_sse.h 	cb_search_arm4.h 	cb_search_bfin.h vorbis_psy.h \
-		fftwrap.h pseudofloat.h
+		fftwrap.h pseudofloat.h lsp_bfin.h
 
 
 libspeex_la_LDFLAGS = -no-undefined -version-info @SPEEX_LT_CURRENT@:@SPEEX_LT_REVISION@:@SPEEX_LT_AGE@
