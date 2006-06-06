@@ -315,7 +315,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
       /* Levinson-Durbin */
       _spx_lpc(lpc, autocorr, st->lpcSize);
       /* LPC to LSPs (x-domain) transform */
-      roots=lpc_to_lsp (lpc, st->lpcSize, lsp, 15, LSP_DELTA1, stack);
+      roots=lpc_to_lsp (lpc, st->lpcSize, lsp, 10, LSP_DELTA1, stack);
       /* Check if we found all the roots */
       if (roots!=st->lpcSize)
       {

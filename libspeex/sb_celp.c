@@ -445,10 +445,10 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
    _spx_lpc(st->lpc, st->autocorr, st->lpcSize);
 
    /* LPC to LSPs (x-domain) transform */
-   roots=lpc_to_lsp (st->lpc, st->lpcSize, st->lsp, 15, LSP_DELTA1, stack);
+   roots=lpc_to_lsp (st->lpc, st->lpcSize, st->lsp, 10, LSP_DELTA1, stack);
    if (roots!=st->lpcSize)
    {
-      roots = lpc_to_lsp (st->lpc, st->lpcSize, st->lsp, 11, LSP_DELTA2, stack);
+      roots = lpc_to_lsp (st->lpc, st->lpcSize, st->lsp, 10, LSP_DELTA2, stack);
       if (roots!=st->lpcSize) {
          /*If we can't find all LSP's, do some damage control and use a flat filter*/
          for (i=0;i<st->lpcSize;i++)
