@@ -358,7 +358,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
             st->sw[i] = st->winBuf[i];
          for (;i<st->frameSize;i++)
             st->sw[i] = in[i-st->windowSize+st->frameSize];
-         filter_mem16(st->sw, bw_lpc1, bw_lpc2, st->sw, st->frameSize, st->lpcSize, st->mem_sw_whole);
+         filter_mem16(st->sw, bw_lpc1, bw_lpc2, st->sw, st->frameSize, st->lpcSize, st->mem_sw_whole, stack);
 
          open_loop_nbest_pitch(st->sw, st->min_pitch, st->max_pitch, st->frameSize, 
                                nol_pitch, nol_pitch_coef, 6, stack);
@@ -406,7 +406,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
          st->exc[i] = st->winBuf[i];
       for (;i<st->frameSize;i++)
          st->exc[i] = in[i-st->windowSize+st->frameSize];
-      fir_mem16(st->exc, interp_lpc, st->exc, st->frameSize, st->lpcSize, st->mem_exc);
+      fir_mem16(st->exc, interp_lpc, st->exc, st->frameSize, st->lpcSize, st->mem_exc, stack);
 
       /* Compute open-loop excitation gain */
 #ifdef EPIC_48K
@@ -784,7 +784,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
                real_exc[i] = sw[i] = in[i+((sub-1)*st->subframeSize)];
          }
       }
-      fir_mem16(real_exc, interp_qlpc, real_exc, st->subframeSize, st->lpcSize, st->mem_exc2);
+      fir_mem16(real_exc, interp_qlpc, real_exc, st->subframeSize, st->lpcSize, st->mem_exc2, stack);
       
       if (st->complexity==0)
          response_bound >>= 1;
@@ -798,23 +798,23 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
       for (i=0;i<st->subframeSize;i++)
          ringing[i] = VERY_SMALL;
 #ifdef SHORTCUTS2
-      iir_mem16(ringing, interp_qlpc, ringing, response_bound, st->lpcSize, mem);
+      iir_mem16(ringing, interp_qlpc, ringing, response_bound, st->lpcSize, mem, stack);
       for (i=0;i<st->lpcSize;i++)
          mem[i]=SHL32(st->mem_sw[i],1);
-      filter_mem16(ringing, st->bw_lpc1, st->bw_lpc2, ringing, response_bound, st->lpcSize, mem);
+      filter_mem16(ringing, st->bw_lpc1, st->bw_lpc2, ringing, response_bound, st->lpcSize, mem, stack);
       for (i=response_bound;i<st->subframeSize;i++)
          ringing[i]=0;
 #else
-      iir_mem16(ringing, interp_qlpc, ringing, st->subframeSize, st->lpcSize, mem);
+      iir_mem16(ringing, interp_qlpc, ringing, st->subframeSize, st->lpcSize, mem, stack);
       for (i=0;i<st->lpcSize;i++)
          mem[i]=SHL32(st->mem_sw[i],1);
-      filter_mem16(ringing, bw_lpc1, bw_lpc2, ringing, st->subframeSize, st->lpcSize, mem);
+      filter_mem16(ringing, bw_lpc1, bw_lpc2, ringing, st->subframeSize, st->lpcSize, mem, stack);
 #endif
       
       /* Compute weighted signal */
       for (i=0;i<st->lpcSize;i++)
          mem[i]=st->mem_sw[i];
-      filter_mem16(sw, bw_lpc1, bw_lpc2, sw, st->subframeSize, st->lpcSize, mem);
+      filter_mem16(sw, bw_lpc1, bw_lpc2, sw, st->subframeSize, st->lpcSize, mem, stack);
       
       if (st->complexity==0)
          for (i=0;i<st->lpcSize;i++)
@@ -980,11 +980,11 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
       for (i=0;i<st->subframeSize;i++)
          sw[i] = exc[i];
       /* Final signal synthesis from excitation */
-      iir_mem16(sw, interp_qlpc, sw, st->subframeSize, st->lpcSize, st->mem_sp);
+      iir_mem16(sw, interp_qlpc, sw, st->subframeSize, st->lpcSize, st->mem_sp, stack);
 
       /* Compute weighted signal again, from synthesized speech (not sure it's the right thing) */
       if (st->complexity!=0)
-         filter_mem16(sw, bw_lpc1, bw_lpc2, sw, st->subframeSize, st->lpcSize, st->mem_sw);
+         filter_mem16(sw, bw_lpc1, bw_lpc2, sw, st->subframeSize, st->lpcSize, st->mem_sw, stack);
       
    }
 
@@ -1210,7 +1210,7 @@ static void nb_decode_lost(DecState *st, spx_word16_t *out, char *stack)
          sp[i]=exc[i-st->subframeSize];
 #endif 
       iir_mem16(sp, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, 
-                st->mem_sp);
+                st->mem_sp, stack);
 
       bw_lpc(QCONST16(.98,15), st->interp_qlpc, st->interp_qlpc, st->lpcSize);
    }
@@ -1377,7 +1377,7 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
       for (i=0;i<st->frameSize;i++)
          out[i] = st->exc[i];
       /* Final signal synthesis from excitation */
-      iir_mem16(out, lpc, out, st->frameSize, st->lpcSize, st->mem_sp);
+      iir_mem16(out, lpc, out, st->frameSize, st->lpcSize, st->mem_sp, stack);
 
       st->count_lost=0;
       return 0;
@@ -1763,7 +1763,7 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
       }
       
       iir_mem16(sp, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, 
-                st->mem_sp);
+                st->mem_sp, stack);
       
       for (i=0;i<st->lpcSize;i++)
          st->interp_qlpc[i] = ak[i];

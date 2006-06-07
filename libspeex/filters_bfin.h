@@ -230,7 +230,7 @@ void filter_mem2(const spx_sig_t *_x, const spx_coef_t *num, const spx_coef_t *d
 
 
 #define OVERRIDE_FILTER_MEM16
-void filter_mem16(const spx_word16_t *_x, const spx_coef_t *num, const spx_coef_t *den, spx_word16_t *_y, int N, int ord, spx_mem_t *mem)
+void filter_mem16(const spx_word16_t *_x, const spx_coef_t *num, const spx_coef_t *den, spx_word16_t *_y, int N, int ord, spx_mem_t *mem, char *stack)
 {
    spx_word32_t xy2[N+1];
    spx_word32_t *xy = xy2+1;
@@ -493,7 +493,7 @@ void iir_mem2(const spx_sig_t *_x, const spx_coef_t *den, spx_sig_t *_y, int N, 
 
 
 #define OVERRIDE_IIR_MEM16
-void iir_mem16(const spx_word16_t *_x, const spx_coef_t *den, spx_word16_t *_y, int N, int ord, spx_mem_t *mem)
+void iir_mem16(const spx_word16_t *_x, const spx_coef_t *den, spx_word16_t *_y, int N, int ord, spx_mem_t *mem, char *stack)
 {
    spx_word16_t y[N+2];
    spx_word16_t *yy;
@@ -627,7 +627,7 @@ void fir_mem2(const spx_sig_t *x, const spx_coef_t *num, spx_sig_t *y, int N, in
 }
 
 #define OVERRIDE_FIR_MEM16
-void fir_mem16(const spx_word16_t *x, const spx_coef_t *num, spx_word16_t *y, int N, int ord, spx_mem_t *mem)
+void fir_mem16(const spx_word16_t *x, const spx_coef_t *num, spx_word16_t *y, int N, int ord, spx_mem_t *mem, char *stack)
 {
    int i;
    spx_coef_t den2[12];
@@ -635,7 +635,7 @@ void fir_mem16(const spx_word16_t *x, const spx_coef_t *num, spx_word16_t *y, in
    den = (spx_coef_t*)((((int)den2)+4)&0xfffffffc);
    for (i=0;i<10;i++)
       den[i] = 0;
-   filter_mem16(x, num, den, y, N, ord, mem);
+   filter_mem16(x, num, den, y, N, ord, mem, stack);
 }
 
 

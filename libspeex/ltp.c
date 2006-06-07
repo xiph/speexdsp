@@ -343,10 +343,10 @@ int plc_tuning
       }
       for (j=0;j<p;j++)
          mm[j] = 0;
-      iir_mem16(e, ak, e, nsf, p, mm);
+      iir_mem16(e, ak, e, nsf, p, mm, stack);
       for (j=0;j<p;j++)
          mm[j] = 0;
-      filter_mem16(e, awk1, awk2, e, nsf, p, mm);
+      filter_mem16(e, awk1, awk2, e, nsf, p, mm, stack);
       for (j=0;j<nsf;j++)
          x[2][j] = e[j];
    }
