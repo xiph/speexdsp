@@ -32,8 +32,6 @@
    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <stdio.h>
-
 #define OVERRIDE_NORMALIZE16
 int normalize16(const spx_sig_t *x, spx_word16_t *y, spx_sig_t max_scale, int len)
 {
@@ -66,26 +64,17 @@ int normalize16(const spx_sig_t *x, spx_word16_t *y, spx_sig_t max_scale, int le
    (
    "I0 = %0;\n\t"
    "L0 = 0;\n\t"
-   "I1 = %1;\n\t"
-   "L1 = 0;\n\t"
+   "P1 = %1;\n\t"
    "R0 = [I0++];\n\t"
-   "LOOP norm_shift%= LC0 = %3 >> 1;\n\t"
+   "LOOP norm_shift%= LC0 = %3;\n\t"
    "LOOP_BEGIN norm_shift%=;\n\t"
-      "R1 = ASHIFT R0 by %2.L || R2 = [I0++];\n\t"
-      "R3 = ASHIFT R2 by %2.L || R0 = [I0++];\n\t"
-      "R3 = PACK(R3.L, R1.L);\n\t"
-      "[I1++] = R3;\n\t"
+      "R1 = ASHIFT R0 by %2.L || R0 = [I0++];\n\t"
+      "W[P1++] = R1;\n\t"
    "LOOP_END norm_shift%=;\n\t"
-   "R3 = 1;\n\t"
-   "R2 = %3;\n\t"
-   "R2 = R2 & R3;\n\t"
-   "cc = R2 == 0;\n\t"
-   "if cc jump even_jump%=;\n\t"
-      "R1 = ASHIFT R0 by %2.L;\n\t"
-      "W[I1++] = R1.L;\n\t"
-   "even_jump%=:"
-   : : "a" (x), "a" (y), "d" (-sig_shift), "a" (len)
-   : "I0", "L0", "I1", "L1", "R0", "R1", "R2", "R3", "memory"
+   "R1 = ASHIFT R0 by %2.L;\n\t"
+   "W[P1++] = R1;\n\t"
+   : : "a" (x), "a" (y), "d" (-sig_shift), "a" (len-1)
+   : "I0", "L0", "P1", "R0", "R1", "memory"
    );
    return sig_shift;
 }
