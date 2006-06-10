@@ -74,7 +74,8 @@ spx_word16_t *exc2,
 spx_word16_t *r,
 int   complexity,
 int   cdbk_offset,
-int plc_tuning
+int plc_tuning,
+spx_word32_t *cumul_gain
 );
 
 /*Unquantize adaptive codebook and update pitch contribution*/
@@ -116,7 +117,8 @@ spx_word16_t *exc2,
 spx_word16_t *r,
 int complexity,
 int cdbk_offset,
-int plc_tuning
+int plc_tuning,
+spx_word32_t *cumul_gain
 );
 
 /** Unquantize forced pitch delay and gain */

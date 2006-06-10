@@ -58,7 +58,7 @@ typedef struct EncState {
    int    min_pitch;      /**< Minimum pitch value allowed */
    int    max_pitch;      /**< Maximum pitch value allowed */
 
-   int    safe_pitch;     /**< Don't use too large values for pitch (in case we lose a packet) */
+   spx_word32_t cumul_gain; /**< Product of previously used pitch gains (Q10) */
    int    bounded_pitch;  /**< Next frame should not rely on previous frames for pitch */
    int    ol_pitch;       /**< Open-loop pitch */
    int    ol_voiced;      /**< Open-loop voiced/non-voiced decision */

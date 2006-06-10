@@ -155,6 +155,8 @@ void *nb_encoder_init(const SpeexMode *m)
    st->psy_window = speex_alloc(256*sizeof(float));
 #endif
 
+   st->cumul_gain = 1024;
+
    /* Allocating input buffer */
    st->winBuf = speex_alloc((st->windowSize-st->frameSize)*sizeof(spx_word16_t));
    /* Allocating excitation buffer */
@@ -864,7 +866,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
             pitch = SUBMODE(ltp_quant)(target, sw, interp_qlpc, bw_lpc1, bw_lpc2,
                                        exc32, SUBMODE(ltp_params), pit_min, pit_max, ol_pitch_coef,
                                        st->lpcSize, st->subframeSize, bits, stack, 
-                                       exc, syn_resp, st->complexity, ol_pitch_id, st->plc_tuning);
+                                       exc, syn_resp, st->complexity, ol_pitch_id, st->plc_tuning, &st->cumul_gain);
          } else {
 #endif
 
@@ -872,7 +874,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
          pitch = SUBMODE(ltp_quant)(target, sw, interp_qlpc, bw_lpc1, bw_lpc2,
                                     exc32, SUBMODE(ltp_params), pit_min, pit_max, ol_pitch_coef,
                                     st->lpcSize, st->subframeSize, bits, stack, 
-                                    exc, syn_resp, st->complexity, 0, st->plc_tuning);
+                                    exc, syn_resp, st->complexity, 0, st->plc_tuning, &st->cumul_gain);
 #ifdef EPIC_48K
          }
 #endif

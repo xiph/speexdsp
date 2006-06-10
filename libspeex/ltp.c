@@ -292,7 +292,8 @@ const spx_coef_t ak[],          /* LPCs for this subframe */
 const spx_coef_t awk1[],        /* Weighted LPCs #1 for this subframe */
 const spx_coef_t awk2[],        /* Weighted LPCs #2 for this subframe */
 spx_sig_t exc[],                /* Excitation */
-const void *par,
+const signed char *gain_cdbk,
+int gain_cdbk_size,
 int   pitch,                    /* Pitch value */
 int   p,                        /* Number of LPC coeffs */
 int   nsf,                      /* Number of samples in subframe */
@@ -302,8 +303,8 @@ const spx_word16_t *exc2,
 const spx_word16_t *r,
 spx_word16_t *new_target,
 int  *cdbk_index,
-int cdbk_offset,
-int plc_tuning
+int plc_tuning,
+spx_word32_t cumul_gain
 )
 {
    int i,j;
@@ -312,18 +313,16 @@ int plc_tuning
    spx_word16_t *x[3];
    spx_word32_t corr[3];
    spx_word32_t A[3][3];
-   int   gain_cdbk_size;
-   const signed char *gain_cdbk;
    spx_word16_t gain[3];
    spx_word32_t err;
+   spx_word16_t max_gain=128;
 
-   const ltp_params *params;
-   params = (const ltp_params*) par;
-   gain_cdbk_size = 1<<params->gain_bits;
-   gain_cdbk = params->gain_cdbk + 3*gain_cdbk_size*cdbk_offset;
    ALLOC(tmp1, 3*nsf, spx_word16_t);
    ALLOC(e, nsf, spx_word16_t);
 
+   if (cumul_gain > 262144)
+      max_gain = 31;
+   
    x[0]=tmp1;
    x[1]=tmp1+nsf;
    x[2]=tmp1+2*nsf;
@@ -368,7 +367,7 @@ int plc_tuning
       spx_word32_t C[9];
       const signed char *ptr=gain_cdbk;
       int best_cdbk=0;
-      spx_word32_t best_sum=0;
+      spx_word32_t best_sum=-VERY_LARGE32;
 #ifdef FIXED_POINT
       spx_word16_t C16[9];
 #else
@@ -412,39 +411,29 @@ int plc_tuning
          spx_word16_t pitch_control=64;
          spx_word16_t gain_sum;
          
-         ptr = gain_cdbk+3*i;
+         ptr = gain_cdbk+4*i;
          g[0]=ADD16((spx_word16_t)ptr[0],32);
          g[1]=ADD16((spx_word16_t)ptr[1],32);
          g[2]=ADD16((spx_word16_t)ptr[2],32);
-
-         /* We favor "safe" pitch values to handle packet loss better */
-         gain_sum = ADD16(ADD16(ABS16(g[1]),ABS16(g[0])),ABS16(g[2]));
-         gain_sum = SUB16(gain_sum, 60);
-         if (gain_sum < 0)
-            gain_sum = 0;
-#ifdef FIXED_POINT
-         pitch_control =  SUB16(64,EXTRACT16(PSHR32(gain_sum,3)));
-#else
-         pitch_control = 64*(1.-.002*gain_sum);
-#endif
+         gain_sum = (spx_word16_t)ptr[3];
          
          sum = compute_pitch_error(C16, g, pitch_control);
          
-         if (sum>best_sum || i==0)
+         if (sum>best_sum && gain_sum<=max_gain)
          {
             best_sum=sum;
             best_cdbk=i;
          }
       }
 #ifdef FIXED_POINT
-      gain[0] = ADD16(32,(spx_word16_t)gain_cdbk[best_cdbk*3]);
-      gain[1] = ADD16(32,(spx_word16_t)gain_cdbk[best_cdbk*3+1]);
-      gain[2] = ADD16(32,(spx_word16_t)gain_cdbk[best_cdbk*3+2]);
+      gain[0] = ADD16(32,(spx_word16_t)gain_cdbk[best_cdbk*4]);
+      gain[1] = ADD16(32,(spx_word16_t)gain_cdbk[best_cdbk*4+1]);
+      gain[2] = ADD16(32,(spx_word16_t)gain_cdbk[best_cdbk*4+2]);
       /*printf ("%d %d %d %d\n",gain[0],gain[1],gain[2], best_cdbk);*/
 #else
-      gain[0] = 0.015625*gain_cdbk[best_cdbk*3]  + .5;
-      gain[1] = 0.015625*gain_cdbk[best_cdbk*3+1]+ .5;
-      gain[2] = 0.015625*gain_cdbk[best_cdbk*3+2]+ .5;
+      gain[0] = 0.015625*gain_cdbk[best_cdbk*4]  + .5;
+      gain[1] = 0.015625*gain_cdbk[best_cdbk*4+1]+ .5;
+      gain[2] = 0.015625*gain_cdbk[best_cdbk*4+2]+ .5;
 #endif
       *cdbk_index=best_cdbk;
    }
@@ -509,7 +498,8 @@ spx_word16_t *exc2,
 spx_word16_t *r,
 int complexity,
 int cdbk_offset,
-int plc_tuning
+int plc_tuning,
+spx_word32_t *cumul_gain
 )
 {
    int i,j;
@@ -521,6 +511,13 @@ int plc_tuning
    spx_word32_t err, best_err=-1;
    int N;
    const ltp_params *params;
+   const signed char *gain_cdbk;
+   int   gain_cdbk_size;
+   
+   params = (const ltp_params*) par;
+   gain_cdbk_size = 1<<params->gain_bits;
+   gain_cdbk = params->gain_cdbk + 4*gain_cdbk_size*cdbk_offset;
+   
    VARDECL(int *nbest);
    
    N=complexity;
@@ -557,8 +554,8 @@ int plc_tuning
       pitch=nbest[i];
       for (j=0;j<nsf;j++)
          exc[j]=0;
-      err=pitch_gain_search_3tap(target, ak, awk1, awk2, exc, par, pitch, p, nsf,
-                                 bits, stack, exc2, r, new_target, &cdbk_index, cdbk_offset, plc_tuning);
+      err=pitch_gain_search_3tap(target, ak, awk1, awk2, exc, gain_cdbk, gain_cdbk_size, pitch, p, nsf,
+                                 bits, stack, exc2, r, new_target, &cdbk_index, plc_tuning, *cumul_gain);
       if (err<best_err || best_err<0)
       {
          for (j=0;j<nsf;j++)
@@ -573,6 +570,12 @@ int plc_tuning
    /*printf ("pitch: %d %d\n", best_pitch, best_gain_index);*/
    speex_bits_pack(bits, best_pitch-start, params->pitch_bits);
    speex_bits_pack(bits, best_gain_index, params->gain_bits);
+#ifdef FIXED_POINT
+   *cumul_gain = MULT16_32_Q13(SHL16(params->gain_cdbk[4*best_gain_index+3],8), MAX32(1024,*cumul_gain));
+#else
+   *cumul_gain = 0.03125*MAX32(1024,*cumul_gain)*params->gain_cdbk[4*best_gain_index+3];
+#endif
+   /*printf ("%f\n", cumul_gain);*/
    /*printf ("encode pitch: %d %d\n", best_pitch, best_gain_index);*/
    for (i=0;i<nsf;i++)
       exc[i]=best_exc[i];
@@ -610,20 +613,20 @@ int cdbk_offset
 
    params = (const ltp_params*) par;
    gain_cdbk_size = 1<<params->gain_bits;
-   gain_cdbk = params->gain_cdbk + 3*gain_cdbk_size*cdbk_offset;
+   gain_cdbk = params->gain_cdbk + 4*gain_cdbk_size*cdbk_offset;
 
    pitch = speex_bits_unpack_unsigned(bits, params->pitch_bits);
    pitch += start;
    gain_index = speex_bits_unpack_unsigned(bits, params->gain_bits);
    /*printf ("decode pitch: %d %d\n", pitch, gain_index);*/
 #ifdef FIXED_POINT
-   gain[0] = ADD16(32,(spx_word16_t)gain_cdbk[gain_index*3]);
-   gain[1] = ADD16(32,(spx_word16_t)gain_cdbk[gain_index*3+1]);
-   gain[2] = ADD16(32,(spx_word16_t)gain_cdbk[gain_index*3+2]);
+   gain[0] = ADD16(32,(spx_word16_t)gain_cdbk[gain_index*4]);
+   gain[1] = ADD16(32,(spx_word16_t)gain_cdbk[gain_index*4+1]);
+   gain[2] = ADD16(32,(spx_word16_t)gain_cdbk[gain_index*4+2]);
 #else
-   gain[0] = 0.015625*gain_cdbk[gain_index*3]+.5;
-   gain[1] = 0.015625*gain_cdbk[gain_index*3+1]+.5;
-   gain[2] = 0.015625*gain_cdbk[gain_index*3+2]+.5;
+   gain[0] = 0.015625*gain_cdbk[gain_index*4]+.5;
+   gain[1] = 0.015625*gain_cdbk[gain_index*4+1]+.5;
+   gain[2] = 0.015625*gain_cdbk[gain_index*4+2]+.5;
 #endif
 
    if (count_lost && pitch > subframe_offset)
@@ -702,7 +705,8 @@ spx_word16_t *exc2,
 spx_word16_t *r,
 int complexity,
 int cdbk_offset,
-int plc_tuning
+int plc_tuning,
+spx_word32_t *cumul_gain
 )
 {
    int i;

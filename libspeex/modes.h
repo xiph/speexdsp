@@ -57,7 +57,7 @@ typedef void (*lsp_unquant_func)(spx_lsp_t *, int, SpeexBits *);
 /** Long-term predictor quantization */
 typedef int (*ltp_quant_func)(spx_word16_t *, spx_word16_t *, spx_coef_t *, spx_coef_t *, 
                               spx_coef_t *, spx_sig_t *, const void *, int, int, spx_word16_t, 
-                              int, int, SpeexBits*, char *, spx_word16_t *, spx_word16_t *, int, int, int);
+                              int, int, SpeexBits*, char *, spx_word16_t *, spx_word16_t *, int, int, int, spx_word32_t *);
 
 /** Long-term un-quantize */
 typedef void (*ltp_unquant_func)(spx_word16_t *, spx_word32_t *, int, int, spx_word16_t, const void *, int, int *,
@@ -84,7 +84,7 @@ typedef struct SpeexSubmode {
    /*Lont-term predictor functions*/
    ltp_quant_func    ltp_quant; /**< Long-term predictor (pitch) quantizer */
    ltp_unquant_func  ltp_unquant; /**< Long-term predictor (pitch) un-quantizer */
-   const void             *ltp_params; /**< Pitch parameters (options) */
+   const void       *ltp_params; /**< Pitch parameters (options) */
 
    /*Quantization of innovation*/
    innovation_quant_func innovation_quant; /**< Innovation quantization */
