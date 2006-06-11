@@ -391,6 +391,7 @@ void speex_echo_state_destroy(SpeexEchoState *st)
 #ifdef FIXED_POINT
    speex_free(st->wtmp2);
 #endif
+   speex_free(st->play_buf);
    speex_free(st);
 }
 
