@@ -221,11 +221,17 @@ void filter_mem2(const spx_sig_t *_x, const spx_coef_t *num, const spx_coef_t *d
 #define OVERRIDE_FILTER_MEM16
 void filter_mem16(const spx_word16_t *_x, const spx_coef_t *num, const spx_coef_t *den, spx_word16_t *_y, int N, int ord, spx_mem_t *mem, char *stack)
 {
-   spx_word32_t xy2[N+1];
-   spx_word32_t *xy = xy2+1;
-   spx_word32_t numden_a[2*ord+2];
-   spx_word16_t *numden = (spx_word16_t*) numden_a;
+   VARDECL(spx_word32_t *xy2);
+   VARDECL(spx_word32_t *numden_a);
+   spx_word32_t *xy;
+   spx_word16_t *numden;
    int i;
+
+   ALLOC(xy2, (N+1), spx_word32_t);
+   ALLOC(numden_a, (2*ord+2), spx_word32_t);
+   xy = xy2+1;  
+   numden = (spx_word16_t*) numden_a;
+
    for (i=0;i<ord;i++)
    {
       numden[2*i] = num[i];
@@ -484,9 +490,12 @@ void iir_mem2(const spx_sig_t *_x, const spx_coef_t *den, spx_sig_t *_y, int N, 
 #define OVERRIDE_IIR_MEM16
 void iir_mem16(const spx_word16_t *_x, const spx_coef_t *den, spx_word16_t *_y, int N, int ord, spx_mem_t *mem, char *stack)
 {
-   spx_word16_t y[N+2];
+   VARDECL(spx_word16_t *y);
    spx_word16_t *yy;
+
+   ALLOC(y, (N+2), spx_word16_t);
    yy = y+2;
+
    __asm__ __volatile__
    (
    /* Register setup */
