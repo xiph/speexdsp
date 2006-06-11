@@ -3,7 +3,7 @@ Speex has been ported to the Blackfin DSP, for the STAMP development board.
 This port has been tested on the STAMP development board and requires the 
 toolchain available at http://blackfin.uclinux.org/
 
-In order to cross-compile for uclinux:
+1/ In order to cross-compile for uClinux from the Speex tarball:
 
   ./configure --enable-blackfin-asm --enable-fixed-point --host=bfin-uclinux
   cd libspeex
@@ -12,6 +12,10 @@ In order to cross-compile for uclinux:
 The --enable-blackfin-asm option is not required, but it speeds up Speex by
 approximately a factor of two.
 
-If you're getting a crash when enabling --enable-blackfin-asm then your
-toolchain (assembler in fact) is probably too old (a bug was fixed in the
-June 3rd 2005 build)
+2/ In order to cross-compile for uClinux from the Speex SVN:
+
+  svn co http://svn.xiph.org/trunk/speex speex-trunk
+  cd speex-trunk
+  ./autogen.sh --enable-blackfin-asm --enable-fixed-point --host=bfin-uclinux
+  cd libspeex
+  make
