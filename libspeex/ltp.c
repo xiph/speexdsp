@@ -456,8 +456,6 @@ spx_word32_t cumul_gain
       for (j=tmp1;j<tmp3;j++)
          exc[j]=MAC16_16(exc[j],SHL16(gain[2-i],7),exc2[j-pp-pitch]);
    }
-   err=0;
-#ifdef FIXED_POINT
    for (i=0;i<nsf;i++)
    {
       spx_word16_t perr2;
@@ -466,14 +464,6 @@ spx_word32_t cumul_gain
       new_target[i] = SUB16(target[i], EXTRACT16(PSHR32(tmp,6)));
    }
    err = inner_prod(new_target, new_target, nsf);
-#else
-   for (i=0;i<nsf;i++)
-   {
-      spx_sig_t tmp = gain[2]*x[0][i]+gain[1]*x[1][i]+gain[0]*x[2][i];
-      new_target[i] = target[i] - tmp;
-      err+=new_target[i]*new_target[i];
-   }
-#endif
 
    return err;
 }
