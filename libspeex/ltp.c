@@ -504,11 +504,11 @@ spx_word32_t *cumul_gain
    const signed char *gain_cdbk;
    int   gain_cdbk_size;
    
+   VARDECL(int *nbest);
+   
    params = (const ltp_params*) par;
    gain_cdbk_size = 1<<params->gain_bits;
    gain_cdbk = params->gain_cdbk + 4*gain_cdbk_size*cdbk_offset;
-   
-   VARDECL(int *nbest);
    
    N=complexity;
    if (N>10)
