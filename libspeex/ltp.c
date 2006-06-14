@@ -168,6 +168,7 @@ static inline spx_word32_t compute_pitch_error(spx_word16_t *C, spx_word16_t *g,
 }
 #endif
 
+#ifndef OVERRIDE_OPEN_LOOP_NBEST_PITCH
 void open_loop_nbest_pitch(spx_word16_t *sw, int start, int end, int len, int *pitch, spx_word16_t *gain, int N, char *stack)
 {
    int i,j,k;
@@ -283,7 +284,44 @@ void open_loop_nbest_pitch(spx_word16_t *sw, int start, int end, int len, int *p
        }
    }
 }
+#endif
 
+#ifndef OVERRIDE_PITCH_GAIN_SEARCH_3TAP_VQ
+static int pitch_gain_search_3tap_vq(
+  const signed char *gain_cdbk,
+  int                gain_cdbk_size,
+  spx_word16_t      *C16,
+  spx_word16_t       max_gain
+)
+{
+  const signed char *ptr=gain_cdbk;
+  int                best_cdbk=0;
+  spx_word32_t       best_sum=-VERY_LARGE32;
+  spx_word32_t       sum=0;
+  spx_word16_t       g[3];
+  spx_word16_t       pitch_control=64;
+  spx_word16_t       gain_sum;
+  int                i;
+
+  for (i=0;i<gain_cdbk_size;i++) {
+         
+    ptr = gain_cdbk+4*i;
+    g[0]=ADD16((spx_word16_t)ptr[0],32);
+    g[1]=ADD16((spx_word16_t)ptr[1],32);
+    g[2]=ADD16((spx_word16_t)ptr[2],32);
+    gain_sum = (spx_word16_t)ptr[3];
+         
+    sum = compute_pitch_error(C16, g, pitch_control);
+         
+    if (sum>best_sum && gain_sum<=max_gain) {
+      best_sum=sum;
+      best_cdbk=i;
+    }
+  }
+
+  return best_cdbk;
+}
+#endif
 
 /** Finds the best quantized 3-tap pitch predictor by analysis by synthesis */
 static spx_word32_t pitch_gain_search_3tap(
@@ -316,6 +354,7 @@ spx_word32_t cumul_gain
    spx_word16_t gain[3];
    spx_word32_t err;
    spx_word16_t max_gain=128;
+   int          best_cdbk=0;
 
    ALLOC(tmp1, 3*nsf, spx_word16_t);
    ALLOC(e, nsf, spx_word16_t);
@@ -365,9 +404,6 @@ spx_word32_t cumul_gain
 
    {
       spx_word32_t C[9];
-      const signed char *ptr=gain_cdbk;
-      int best_cdbk=0;
-      spx_word32_t best_sum=-VERY_LARGE32;
 #ifdef FIXED_POINT
       spx_word16_t C16[9];
 #else
@@ -404,27 +440,9 @@ spx_word32_t cumul_gain
       C[7]*=.5*(1+.02*plc_tuning);
       C[8]*=.5*(1+.02*plc_tuning);
 #endif
-      for (i=0;i<gain_cdbk_size;i++)
-      {
-         spx_word32_t sum=0;
-         spx_word16_t g[3];
-         spx_word16_t pitch_control=64;
-         spx_word16_t gain_sum;
-         
-         ptr = gain_cdbk+4*i;
-         g[0]=ADD16((spx_word16_t)ptr[0],32);
-         g[1]=ADD16((spx_word16_t)ptr[1],32);
-         g[2]=ADD16((spx_word16_t)ptr[2],32);
-         gain_sum = (spx_word16_t)ptr[3];
-         
-         sum = compute_pitch_error(C16, g, pitch_control);
-         
-         if (sum>best_sum && gain_sum<=max_gain)
-         {
-            best_sum=sum;
-            best_cdbk=i;
-         }
-      }
+
+      best_cdbk = pitch_gain_search_3tap_vq(gain_cdbk, gain_cdbk_size, C16, max_gain);
+
 #ifdef FIXED_POINT
       gain[0] = ADD16(32,(spx_word16_t)gain_cdbk[best_cdbk*4]);
       gain[1] = ADD16(32,(spx_word16_t)gain_cdbk[best_cdbk*4+1]);
