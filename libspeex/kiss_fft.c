@@ -32,7 +32,7 @@ static size_t ntmpbuf=0;
 #define CHECKBUF(buf,nbuf,n) \
     do { \
         if ( nbuf < (size_t)(n) ) {\
-            free(buf); \
+            speex_free(buf); \
             buf = (kiss_fft_cpx*)KISS_FFT_MALLOC(sizeof(kiss_fft_cpx)*(n)); \
             nbuf = (size_t)(n); \
         } \
@@ -404,7 +404,7 @@ void kiss_fft_stride(kiss_fft_cfg st,const kiss_fft_cpx *fin,kiss_fft_cpx *fout,
     if (fin == fout) {
         CHECKBUF(tmpbuf,ntmpbuf,st->nfft);
         kf_work(tmpbuf,fin,1,in_stride, st->factors,st);
-        memcpy(fout,tmpbuf,sizeof(kiss_fft_cpx)*st->nfft);
+        speex_move(fout,tmpbuf,sizeof(kiss_fft_cpx)*st->nfft);
     }else{
         kf_work( fout, fin, 1,in_stride, st->factors,st );
     }
@@ -421,10 +421,10 @@ void kiss_fft(kiss_fft_cfg cfg,const kiss_fft_cpx *fin,kiss_fft_cpx *fout)
  */ 
 void kiss_fft_cleanup(void)
 {
-    free(scratchbuf);
+    speex_free(scratchbuf);
     scratchbuf = NULL;
     nscratchbuf=0;
-    free(tmpbuf);
+    speex_free(tmpbuf);
     tmpbuf=NULL;
     ntmpbuf=0;
 }
