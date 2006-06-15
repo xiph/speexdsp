@@ -184,22 +184,23 @@ void main()
    tmp=1;  /* Lowest */
    speex_encoder_ctl(st, SPEEX_SET_COMPLEXITY, &tmp);
 
-   speex_mode_query(&speex_nb_mode, SPEEX_MODE_FRAME_SIZE, &tmp);
-   fprintf (stderr, "frame size: %d\n", tmp);
-   skip_group_delay = tmp / 4;  /* algorithmic delay */
+   speex_encoder_ctl(st, SPEEX_GET_LOOKAHEAD, &skip_group_delay);
+   speex_decoder_ctl(dec, SPEEX_GET_LOOKAHEAD, &tmp);
+   skip_group_delay += tmp;
+   fprintf (stderr, "decoder lookahead = %d\n", skip_group_delay);
 
 #ifdef DECODE_ONLY
    bitsFile = "c:\\speextrunktest\\samples\\malebitsin.dat";
    fbits = fopen(bitsFile, "rb");
 #else
-   bitsFile = "c:\\speextrunktest\\samples\\malebits.dat";
+   bitsFile = "c:\\speextrunktest\\samples\\malebits5x.dat";
    fbits = fopen(bitsFile, "wb");
 #endif
 #if !defined(DECODE_ONLY) || defined(CHECK_RESULT)
    inFile = "c:\\speextrunktest\\samples\\male.snd";
    fin = fopen(inFile, "rb");
 #endif
-   outFile = "c:\\speextrunktest\\samples\\maleout.snd";
+   outFile = "c:\\speextrunktest\\samples\\maleout5x.snd";
    fout = fopen(outFile, "wb+");
  
    speex_bits_init(&bits);
