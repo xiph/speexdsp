@@ -476,7 +476,6 @@ spx_word32_t cumul_gain
    }
    for (i=0;i<nsf;i++)
    {
-      spx_word16_t perr2;
       spx_word32_t tmp = ADD32(ADD32(MULT16_16(gain[0],x[2][i]),MULT16_16(gain[1],x[1][i])),
                             MULT16_16(gain[2],x[0][i]));
       new_target[i] = SUB16(target[i], EXTRACT16(PSHR32(tmp,6)));
