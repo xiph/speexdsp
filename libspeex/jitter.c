@@ -270,7 +270,7 @@ int jitter_buffer_get(JitterBuffer *jitter, JitterBufferPacket *packet, spx_uint
    }
    if (0&&jitter->pointer_timestamp%1000==0)
    {
-      fprintf (stderr, "%f %f %f %f %f %f\n", early_ratio_short, early_ratio_long, ontime_ratio_short, ontime_ratio_long, late_ratio_short, late_ratio_long);
+      /*fprintf (stderr, "%f %f %f %f %f %f\n", early_ratio_short, early_ratio_long, ontime_ratio_short, ontime_ratio_long, late_ratio_short, late_ratio_long);*/
       /*fprintf (stderr, "%f %f\n", early_ratio_short + ontime_ratio_short + late_ratio_short, early_ratio_long + ontime_ratio_long + late_ratio_long);*/
    }
    
@@ -372,7 +372,7 @@ int jitter_buffer_get(JitterBuffer *jitter, JitterBufferPacket *packet, spx_uint
    /* If we find something */
    if (i!=SPEEX_JITTER_MAX_BUFFER_SIZE)
    {
-      /* We (ibviously) haven't lost this packet */
+      /* We (obviously) haven't lost this packet */
       jitter->lost_count = 0;
       jitter->loss_rate = .999*jitter->loss_rate;
       /* Check for potential overflow */
