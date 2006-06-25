@@ -77,44 +77,45 @@ typedef struct EncState {
 
    spx_word16_t  gamma1;         /**< Perceptual filter: A(z/gamma1) */
    spx_word16_t  gamma2;         /**< Perceptual filter: A(z/gamma2) */
-   float  lag_factor;     /**< Lag windowing Gaussian width */
+   float  lag_factor;            /**< Lag windowing Gaussian width */
    spx_word16_t  lpc_floor;      /**< Noise floor multiplier for A[0] in LPC analysis*/
-   char  *stack;          /**< Pseudo-stack allocation for temporary memory */
-   spx_word16_t *winBuf;          /**< Input buffer (original signal) */
+   char  *stack;                 /**< Pseudo-stack allocation for temporary memory */
+   spx_word16_t *winBuf;         /**< Input buffer (original signal) */
    spx_word16_t *excBuf;         /**< Excitation buffer */
    spx_word16_t *exc;            /**< Start of excitation frame */
    spx_word16_t *swBuf;          /**< Weighted signal buffer */
    spx_word16_t *sw;             /**< Start of weighted signal frame */
-   const spx_word16_t *window;         /**< Temporary (Hanning) window */
+   const spx_word16_t *window;   /**< Temporary (Hanning) window */
    spx_word16_t *lagWindow;      /**< Window applied to auto-correlation */
-   spx_lsp_t *old_lsp;        /**< LSPs for previous frame */
-   spx_lsp_t *old_qlsp;       /**< Quantized LSPs for previous frame */
-   spx_mem_t *mem_sp;         /**< Filter memory for signal synthesis */
-   spx_mem_t *mem_sw;         /**< Filter memory for perceptually-weighted signal */
-   spx_mem_t *mem_sw_whole;   /**< Filter memory for perceptually-weighted signal (whole frame)*/
-   spx_mem_t *mem_exc;        /**< Filter memory for excitation (whole frame) */
-   spx_mem_t *mem_exc2;        /**< Filter memory for excitation (whole frame) */
+   spx_lsp_t *old_lsp;           /**< LSPs for previous frame */
+   spx_lsp_t *old_qlsp;          /**< Quantized LSPs for previous frame */
+   spx_mem_t *mem_sp;            /**< Filter memory for signal synthesis */
+   spx_mem_t *mem_sw;            /**< Filter memory for perceptually-weighted signal */
+   spx_mem_t *mem_sw_whole;      /**< Filter memory for perceptually-weighted signal (whole frame)*/
+   spx_mem_t *mem_exc;           /**< Filter memory for excitation (whole frame) */
+   spx_mem_t *mem_exc2;          /**< Filter memory for excitation (whole frame) */
    spx_word32_t *pi_gain;        /**< Gain of LPC filter at theta=pi (fe/2) */
-   spx_sig_t *innov_save;      /** If non-NULL, innovation is copied here */
+   spx_sig_t *innov_save;        /** If non-NULL, innovation is copied here */
          
-   VBRState *vbr;         /**< State of the VBR data */
-   float  vbr_quality;    /**< Quality setting for VBR encoding */
-   float  relative_quality; /**< Relative quality that will be needed by VBR */
-   int    vbr_enabled;    /**< 1 for enabling VBR, 0 otherwise */
-   int    vad_enabled;    /**< 1 for enabling VAD, 0 otherwise */
-   int    dtx_enabled;    /**< 1 for enabling DTX, 0 otherwise */
-   int    dtx_count;      /**< Number of consecutive DTX frames */
-   int    abr_enabled;    /**< ABR setting (in bps), 0 if off */
+   VBRState *vbr;                /**< State of the VBR data */
+   float  vbr_quality;           /**< Quality setting for VBR encoding */
+   float  relative_quality;      /**< Relative quality that will be needed by VBR */
+   int    vbr_enabled;           /**< 1 for enabling VBR, 0 otherwise */
+   spx_int32_t vbr_max;          /**< Max bit-rate allowed in VBR mode */
+   int    vad_enabled;           /**< 1 for enabling VAD, 0 otherwise */
+   int    dtx_enabled;           /**< 1 for enabling DTX, 0 otherwise */
+   int    dtx_count;             /**< Number of consecutive DTX frames */
+   spx_int32_t abr_enabled;      /**< ABR setting (in bps), 0 if off */
    float  abr_drift;
    float  abr_drift2;
    float  abr_count;
-   int    complexity;     /**< Complexity setting (0-10 from least complex to most complex) */
+   int    complexity;            /**< Complexity setting (0-10 from least complex to most complex) */
    int    sampling_rate;
    int    plc_tuning;
    int    encode_submode;
    const SpeexSubmode * const *submodes; /**< Sub-mode data */
-   int    submodeID;      /**< Activated sub-mode */
-   int    submodeSelect;  /**< Mode chosen by the user (may differ from submodeID if VAD is on) */
+   int    submodeID;             /**< Activated sub-mode */
+   int    submodeSelect;         /**< Mode chosen by the user (may differ from submodeID if VAD is on) */
 } EncState;
 
 /**Structure representing the full state of the narrowband decoder*/

@@ -178,6 +178,7 @@ void usage()
    printf (" --quality n        Encoding quality (0-10), default 8\n"); 
    printf (" --bitrate n        Encoding bit-rate (use bit-rate n or lower)\n"); 
    printf (" --vbr              Enable variable bit-rate (VBR)\n"); 
+   printf (" --vbr-max-bitrate  Set max VBR bit-rate allowed\n"); 
    printf (" --abr rate         Enable average bit-rate (ABR) at rate bps\n"); 
    printf (" --vad              Enable voice activity detection (VAD)\n"); 
    printf (" --dtx              Enable file-based discontinuous transmission (DTX)\n"); 
@@ -218,6 +219,7 @@ int main(int argc, char **argv)
    int frame_size;
    int quiet=0;
    int vbr_enabled=0;
+   spx_int32_t vbr_max=0;
    int abr_enabled=0;
    int vad_enabled=0;
    int dtx_enabled=0;
@@ -233,6 +235,7 @@ int main(int argc, char **argv)
       {"ultra-wideband", no_argument, NULL, 0},
       {"narrowband", no_argument, NULL, 0},
       {"vbr", no_argument, NULL, 0},
+      {"vbr-max-bitrate", required_argument, NULL, 0},
       {"abr", required_argument, NULL, 0},
       {"vad", no_argument, NULL, 0},
       {"dtx", no_argument, NULL, 0},
@@ -311,6 +314,14 @@ int main(int argc, char **argv)
          } else if (strcmp(long_options[option_index].name,"vbr")==0)
          {
             vbr_enabled=1;
+         } else if (strcmp(long_options[option_index].name,"vbr-max-bitrate")==0)
+         {
+            vbr_max=atoi(optarg);
+            if (vbr_max<1)
+            {
+               fprintf (stderr, "Invalid VBR max bit-rate value: %d\n", vbr_max);
+               exit(1);
+            }
          } else if (strcmp(long_options[option_index].name,"abr")==0)
          {
             abr_enabled=atoi(optarg);
@@ -584,7 +595,11 @@ int main(int argc, char **argv)
    if (quality >= 0)
    {
       if (vbr_enabled)
+      {
+         if (vbr_max>0)
+            speex_encoder_ctl(st, SPEEX_SET_VBR_MAX_BITRATE, &vbr_max);
          speex_encoder_ctl(st, SPEEX_SET_VBR_QUALITY, &vbr_quality);
+      }
       else
          speex_encoder_ctl(st, SPEEX_SET_QUALITY, &quality);
    }

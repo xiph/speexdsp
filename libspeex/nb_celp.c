@@ -195,6 +195,7 @@ void *nb_encoder_init(const SpeexMode *m)
    vbr_init(st->vbr);
    st->vbr_quality = 8;
    st->vbr_enabled = 0;
+   st->vbr_max = 0;
    st->vad_enabled = 0;
    st->dtx_enabled = 0;
    st->abr_enabled = 0;
@@ -521,7 +522,17 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
          }
 
          speex_encoder_ctl(state, SPEEX_SET_MODE, &mode);
-
+         if (st->vbr_max>0)
+         {
+            spx_int32_t rate;
+            speex_encoder_ctl(state, SPEEX_GET_BITRATE, &rate);
+            if (rate > st->vbr_max)
+            {
+               rate = st->vbr_max;
+               speex_encoder_ctl(state, SPEEX_SET_BITRATE, &rate);
+            }
+         }
+         
          if (st->abr_enabled)
          {
             int bitrate;
@@ -1833,12 +1844,13 @@ int nb_encoder_ctl(void *state, int request, void *ptr)
          st->complexity=0;
       break;
    case SPEEX_GET_COMPLEXITY:
-      (*(int*)ptr) = st->complexity;
+      (*(spx_int32_t*)ptr) = st->complexity;
       break;
    case SPEEX_SET_BITRATE:
       {
-         int i=10, rate, target;
-         target = (*(int*)ptr);
+         int i=10;
+         spx_int32_t rate, target;
+         target = (*(spx_int32_t*)ptr);
          while (i>=0)
          {
             speex_encoder_ctl(st, SPEEX_SET_QUALITY, &i);
@@ -1893,6 +1905,14 @@ int nb_encoder_ctl(void *state, int request, void *ptr)
    case SPEEX_GET_PLC_TUNING:
       (*(int*)ptr)=(st->plc_tuning);
       break;
+   case SPEEX_SET_VBR_MAX_BITRATE:
+      st->vbr_max = (*(spx_int32_t*)ptr);
+      break;
+   case SPEEX_GET_VBR_MAX_BITRATE:
+      (*(spx_int32_t*)ptr) = st->vbr_max;
+      break;
+         
+   /* This is all internal stuff past this point */
    case SPEEX_GET_PI_GAIN:
       {
          int i;
