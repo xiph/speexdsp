@@ -308,6 +308,7 @@ void *sb_encoder_init(const SpeexMode *m)
 
    st->vbr_quality = 8;
    st->vbr_enabled = 0;
+   st->vbr_max = 0;
    st->vad_enabled = 0;
    st->abr_enabled = 0;
    st->relative_quality=0;
@@ -1351,7 +1352,8 @@ int sb_encoder_ctl(void *state, int request, void *ptr)
       break;
    case SPEEX_SET_BITRATE:
       {
-         int i=10, rate, target;
+         int i=10;
+         spx_int32_t rate, target;
          target = (*(int*)ptr);
          while (i>=0)
          {
@@ -1408,6 +1410,42 @@ int sb_encoder_ctl(void *state, int request, void *ptr)
       speex_encoder_ctl(st->st_low, SPEEX_GET_LOOKAHEAD, ptr);
       (*(int*)ptr) = 2*(*(int*)ptr) + QMF_ORDER - 1;
       break;
+   case SPEEX_SET_PLC_TUNING:
+      speex_encoder_ctl(st->st_low, SPEEX_SET_PLC_TUNING, ptr);
+      break;
+   case SPEEX_GET_PLC_TUNING:
+      speex_encoder_ctl(st->st_low, SPEEX_GET_PLC_TUNING, ptr);
+      break;
+   case SPEEX_SET_VBR_MAX_BITRATE:
+      {
+         int high_mode;
+         spx_int32_t high_rate;
+         st->vbr_max = (*(spx_int32_t*)ptr);
+         if (SPEEX_SET_VBR_MAX_BITRATE<1)
+            speex_encoder_ctl(st->st_low, SPEEX_SET_VBR_MAX_BITRATE, &st->vbr_max);
+         else {
+            if (st->vbr_max > 42200)
+            {
+               high_mode = 4;
+            } else if (st->vbr_max > 27800)
+            {
+               high_mode = 3;
+            } else if (st->vbr_max > 20600)
+            {
+               high_mode = 2;
+            } else high_mode = 1;
+            high_rate = st->sampling_rate*st->submodes[high_mode]->bits_per_frame/st->full_frame_size;
+            high_rate = st->vbr_max - high_rate;
+            speex_encoder_ctl(st->st_low, SPEEX_SET_VBR_MAX_BITRATE, &high_rate);
+         }
+      }
+      break;
+   case SPEEX_GET_VBR_MAX_BITRATE:
+      (*(spx_int32_t*)ptr) = st->vbr_max;
+      break;
+
+
+   /* This is all internal stuff past this point */
    case SPEEX_GET_PI_GAIN:
       {
          int i;

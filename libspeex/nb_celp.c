@@ -1911,7 +1911,8 @@ int nb_encoder_ctl(void *state, int request, void *ptr)
    case SPEEX_GET_VBR_MAX_BITRATE:
       (*(spx_int32_t*)ptr) = st->vbr_max;
       break;
-         
+
+
    /* This is all internal stuff past this point */
    case SPEEX_GET_PI_GAIN:
       {

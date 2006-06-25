@@ -48,20 +48,20 @@
 
 /**Structure representing the full state of the narrowband encoder*/
 typedef struct EncState {
-   const SpeexMode *mode;       /**< Mode corresponding to the state */
-   int    first;          /**< Is this the first frame? */
-   int    frameSize;      /**< Size of frames */
-   int    subframeSize;   /**< Size of sub-frames */
-   int    nbSubframes;    /**< Number of sub-frames */
-   int    windowSize;     /**< Analysis (LPC) window length */
-   int    lpcSize;        /**< LPC order */
-   int    min_pitch;      /**< Minimum pitch value allowed */
-   int    max_pitch;      /**< Maximum pitch value allowed */
+   const SpeexMode *mode;        /**< Mode corresponding to the state */
+   int    first;                 /**< Is this the first frame? */
+   int    frameSize;             /**< Size of frames */
+   int    subframeSize;          /**< Size of sub-frames */
+   int    nbSubframes;           /**< Number of sub-frames */
+   int    windowSize;            /**< Analysis (LPC) window length */
+   int    lpcSize;               /**< LPC order */
+   int    min_pitch;             /**< Minimum pitch value allowed */
+   int    max_pitch;             /**< Maximum pitch value allowed */
 
-   spx_word32_t cumul_gain; /**< Product of previously used pitch gains (Q10) */
-   int    bounded_pitch;  /**< Next frame should not rely on previous frames for pitch */
-   int    ol_pitch;       /**< Open-loop pitch */
-   int    ol_voiced;      /**< Open-loop voiced/non-voiced decision */
+   spx_word32_t cumul_gain;      /**< Product of previously used pitch gains (Q10) */
+   int    bounded_pitch;         /**< Next frame should not rely on previous frames for pitch */
+   int    ol_pitch;              /**< Open-loop pitch */
+   int    ol_voiced;             /**< Open-loop voiced/non-voiced decision */
    int   *pitch;
 
 #ifdef EPIC_48K
@@ -95,7 +95,7 @@ typedef struct EncState {
    spx_mem_t *mem_exc;           /**< Filter memory for excitation (whole frame) */
    spx_mem_t *mem_exc2;          /**< Filter memory for excitation (whole frame) */
    spx_word32_t *pi_gain;        /**< Gain of LPC filter at theta=pi (fe/2) */
-   spx_sig_t *innov_save;        /** If non-NULL, innovation is copied here */
+   spx_sig_t *innov_save;        /**< If non-NULL, innovation is copied here */
          
    VBRState *vbr;                /**< State of the VBR data */
    float  vbr_quality;           /**< Quality setting for VBR encoding */
@@ -121,42 +121,42 @@ typedef struct EncState {
 /**Structure representing the full state of the narrowband decoder*/
 typedef struct DecState {
    const SpeexMode *mode;       /**< Mode corresponding to the state */
-   int    first;          /**< Is this the first frame? */
-   int    count_lost;     /**< Was the last frame lost? */
-   int    frameSize;      /**< Size of frames */
-   int    subframeSize;   /**< Size of sub-frames */
-   int    nbSubframes;    /**< Number of sub-frames */
-   int    lpcSize;        /**< LPC order */
-   int    min_pitch;      /**< Minimum pitch value allowed */
-   int    max_pitch;      /**< Maximum pitch value allowed */
+   int    first;                /**< Is this the first frame? */
+   int    count_lost;           /**< Was the last frame lost? */
+   int    frameSize;            /**< Size of frames */
+   int    subframeSize;         /**< Size of sub-frames */
+   int    nbSubframes;          /**< Number of sub-frames */
+   int    lpcSize;              /**< LPC order */
+   int    min_pitch;            /**< Minimum pitch value allowed */
+   int    max_pitch;            /**< Maximum pitch value allowed */
    int    sampling_rate;
 
 #ifdef EPIC_48K
    int    lbr_48k;
 #endif
 
-   spx_word16_t  last_ol_gain;   /**< Open-loop gain for previous frame */
+   spx_word16_t  last_ol_gain;  /**< Open-loop gain for previous frame */
 
-   char  *stack;          /**< Pseudo-stack allocation for temporary memory */
-   spx_word16_t *excBuf;         /**< Excitation buffer */
-   spx_word16_t *exc;            /**< Start of excitation frame */
-   spx_lsp_t *old_qlsp;       /**< Quantized LSPs for previous frame */
-   spx_coef_t *interp_qlpc;    /**< Interpolated quantized LPCs */
-   spx_mem_t *mem_sp;         /**< Filter memory for synthesis signal */
-   spx_word32_t *pi_gain;        /**< Gain of LPC filter at theta=pi (fe/2) */
-   spx_sig_t *innov_save;      /** If non-NULL, innovation is copied here */
+   char  *stack;                /**< Pseudo-stack allocation for temporary memory */
+   spx_word16_t *excBuf;        /**< Excitation buffer */
+   spx_word16_t *exc;           /**< Start of excitation frame */
+   spx_lsp_t *old_qlsp;         /**< Quantized LSPs for previous frame */
+   spx_coef_t *interp_qlpc;     /**< Interpolated quantized LPCs */
+   spx_mem_t *mem_sp;           /**< Filter memory for synthesis signal */
+   spx_word32_t *pi_gain;       /**< Gain of LPC filter at theta=pi (fe/2) */
+   spx_sig_t *innov_save;       /** If non-NULL, innovation is copied here */
    
    /* This is used in packet loss concealment */
-   int    last_pitch;     /**< Pitch of last correctly decoded frame */
+   int    last_pitch;           /**< Pitch of last correctly decoded frame */
    spx_word16_t  last_pitch_gain; /**< Pitch gain of last correctly decoded frame */
-   spx_word16_t  pitch_gain_buf[3];  /**< Pitch gain of last decoded frames */
-   int    pitch_gain_buf_idx; /**< Tail of the buffer */
-   spx_int32_t seed;          /** Seed used for random number generation */
+   spx_word16_t  pitch_gain_buf[3]; /**< Pitch gain of last decoded frames */
+   int    pitch_gain_buf_idx;   /**< Tail of the buffer */
+   spx_int32_t seed;            /** Seed used for random number generation */
    
    int    encode_submode;
    const SpeexSubmode * const *submodes; /**< Sub-mode data */
-   int    submodeID;      /**< Activated sub-mode */
-   int    lpc_enh_enabled; /**< 1 when LPC enhancer is on, 0 otherwise */
+   int    submodeID;            /**< Activated sub-mode */
+   int    lpc_enh_enabled;      /**< 1 when LPC enhancer is on, 0 otherwise */
    SpeexCallback speex_callbacks[SPEEX_MAX_CALLBACKS];
 
    SpeexCallback user_callback;
