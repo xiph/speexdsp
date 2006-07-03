@@ -110,7 +110,7 @@ typedef struct EncState {
    float  abr_drift2;
    float  abr_count;
    int    complexity;            /**< Complexity setting (0-10 from least complex to most complex) */
-   int    sampling_rate;
+   spx_int32_t sampling_rate;
    int    plc_tuning;
    int    encode_submode;
    const SpeexSubmode * const *submodes; /**< Sub-mode data */
@@ -129,7 +129,7 @@ typedef struct DecState {
    int    lpcSize;              /**< LPC order */
    int    min_pitch;            /**< Minimum pitch value allowed */
    int    max_pitch;            /**< Maximum pitch value allowed */
-   int    sampling_rate;
+   spx_int32_t sampling_rate;
 
 #ifdef EPIC_48K
    int    lbr_48k;

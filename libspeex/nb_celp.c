@@ -1795,12 +1795,14 @@ int nb_encoder_ctl(void *state, int request, void *ptr)
       (*(int*)ptr) = st->dtx_enabled;
       break;
    case SPEEX_SET_ABR:
-      st->abr_enabled = (*(int*)ptr);
-      st->vbr_enabled = 1;
+      st->abr_enabled = (*(spx_int32_t*)ptr);
+      st->vbr_enabled = st->abr_enabled!=0;
+      if (st->vbr_enabled) 
       {
-         int i=10, rate, target;
+         int i=10;
+         spx_int32_t rate, target;
          float vbr_qual;
-         target = (*(int*)ptr);
+         target = (*(spx_int32_t*)ptr);
          while (i>=0)
          {
             speex_encoder_ctl(st, SPEEX_SET_QUALITY, &i);
@@ -1820,7 +1822,7 @@ int nb_encoder_ctl(void *state, int request, void *ptr)
       
       break;
    case SPEEX_GET_ABR:
-      (*(int*)ptr) = st->abr_enabled;
+      (*(spx_int32_t*)ptr) = st->abr_enabled;
       break;
    case SPEEX_SET_VBR_QUALITY:
       st->vbr_quality = (*(float*)ptr);
@@ -1863,15 +1865,15 @@ int nb_encoder_ctl(void *state, int request, void *ptr)
       break;
    case SPEEX_GET_BITRATE:
       if (st->submodes[st->submodeID])
-         (*(int*)ptr) = st->sampling_rate*SUBMODE(bits_per_frame)/st->frameSize;
+         (*(spx_int32_t*)ptr) = st->sampling_rate*SUBMODE(bits_per_frame)/st->frameSize;
       else
-         (*(int*)ptr) = st->sampling_rate*(NB_SUBMODE_BITS+1)/st->frameSize;
+         (*(spx_int32_t*)ptr) = st->sampling_rate*(NB_SUBMODE_BITS+1)/st->frameSize;
       break;
    case SPEEX_SET_SAMPLING_RATE:
-      st->sampling_rate = (*(int*)ptr);
+      st->sampling_rate = (*(spx_int32_t*)ptr);
       break;
    case SPEEX_GET_SAMPLING_RATE:
-      (*(int*)ptr)=st->sampling_rate;
+      (*(spx_int32_t*)ptr)=st->sampling_rate;
       break;
    case SPEEX_RESET_STATE:
       {
@@ -1968,15 +1970,15 @@ int nb_decoder_ctl(void *state, int request, void *ptr)
       break;
    case SPEEX_GET_BITRATE:
       if (st->submodes[st->submodeID])
-         (*(int*)ptr) = st->sampling_rate*SUBMODE(bits_per_frame)/st->frameSize;
+         (*(spx_int32_t*)ptr) = st->sampling_rate*SUBMODE(bits_per_frame)/st->frameSize;
       else
-         (*(int*)ptr) = st->sampling_rate*(NB_SUBMODE_BITS+1)/st->frameSize;
+         (*(spx_int32_t*)ptr) = st->sampling_rate*(NB_SUBMODE_BITS+1)/st->frameSize;
       break;
    case SPEEX_SET_SAMPLING_RATE:
-      st->sampling_rate = (*(int*)ptr);
+      st->sampling_rate = (*(spx_int32_t*)ptr);
       break;
    case SPEEX_GET_SAMPLING_RATE:
-      (*(int*)ptr)=st->sampling_rate;
+      (*(spx_int32_t*)ptr)=st->sampling_rate;
       break;
    case SPEEX_SET_HANDLER:
       {

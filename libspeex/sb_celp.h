@@ -93,7 +93,7 @@ typedef struct SBEncState {
    float  vbr_quality;            /**< Quality setting for VBR encoding */
    int    vbr_enabled;            /**< 1 for enabling VBR, 0 otherwise */
    spx_int32_t vbr_max;           /**< Max bit-rate allowed in VBR mode */
-   int    abr_enabled;            /**< ABR setting (in bps), 0 if off */
+   spx_int32_t abr_enabled;            /**< ABR setting (in bps), 0 if off */
    float  abr_drift;
    float  abr_drift2;
    float  abr_count;
@@ -105,7 +105,7 @@ typedef struct SBEncState {
    int    submodeID;
    int    submodeSelect;
    int    complexity;
-   int    sampling_rate;
+   spx_int32_t sampling_rate;
 
 } SBEncState;
 
@@ -120,7 +120,7 @@ typedef struct SBDecState {
    int    nbSubframes;
    int    lpcSize;
    int    first;
-   int    sampling_rate;
+   spx_int32_t sampling_rate;
    int    lpc_enh_enabled;
 
    char  *stack;
