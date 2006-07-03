@@ -92,8 +92,9 @@ typedef struct SBEncState {
 
    float  vbr_quality;            /**< Quality setting for VBR encoding */
    int    vbr_enabled;            /**< 1 for enabling VBR, 0 otherwise */
-   spx_int32_t vbr_max;           /**< Max bit-rate allowed in VBR mode */
-   spx_int32_t abr_enabled;            /**< ABR setting (in bps), 0 if off */
+   spx_int32_t vbr_max;           /**< Max bit-rate allowed in VBR mode (total) */
+   spx_int32_t vbr_max_high;      /**< Max bit-rate allowed in VBR mode for the high-band */
+   spx_int32_t abr_enabled;       /**< ABR setting (in bps), 0 if off */
    float  abr_drift;
    float  abr_drift2;
    float  abr_count;

@@ -309,6 +309,7 @@ void *sb_encoder_init(const SpeexMode *m)
    st->vbr_quality = 8;
    st->vbr_enabled = 0;
    st->vbr_max = 0;
+   st->vbr_max_high = 20000;  /* We just need a big value here */
    st->vad_enabled = 0;
    st->abr_enabled = 0;
    st->relative_quality=0;
@@ -512,7 +513,7 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
             else
                thresh = (st->vbr_quality-v1)   * mode->vbr_thresh[modeid][v1+1] + 
                         (1+v1-st->vbr_quality) * mode->vbr_thresh[modeid][v1];
-            if (st->relative_quality >= thresh)
+            if (st->relative_quality >= thresh && st->sampling_rate*st->submodes[modeid]->bits_per_frame/st->full_frame_size <= st->vbr_max_high)
                break;
             modeid--;
          }
@@ -1419,25 +1420,28 @@ int sb_encoder_ctl(void *state, int request, void *ptr)
       break;
    case SPEEX_SET_VBR_MAX_BITRATE:
       {
-         int high_mode;
-         spx_int32_t high_rate;
          st->vbr_max = (*(spx_int32_t*)ptr);
          if (SPEEX_SET_VBR_MAX_BITRATE<1)
+         {
             speex_encoder_ctl(st->st_low, SPEEX_SET_VBR_MAX_BITRATE, &st->vbr_max);
-         else {
-            if (st->vbr_max > 42200)
+            st->vbr_max_high = 17600;
+         } else {
+            spx_int32_t low_rate;
+            /* FIXME: Need to adapt that to ultra-wideband */
+            if (st->vbr_max >= 42200)
             {
-               high_mode = 4;
-            } else if (st->vbr_max > 27800)
+               st->vbr_max_high = 17600;
+            } else if (st->vbr_max >= 27800)
             {
-               high_mode = 3;
+               st->vbr_max_high = 9600;
             } else if (st->vbr_max > 20600)
             {
-               high_mode = 2;
-            } else high_mode = 1;
-            high_rate = st->sampling_rate*st->submodes[high_mode]->bits_per_frame/st->full_frame_size;
-            high_rate = st->vbr_max - high_rate;
-            speex_encoder_ctl(st->st_low, SPEEX_SET_VBR_MAX_BITRATE, &high_rate);
+               st->vbr_max_high = 5600;
+            } else {
+               st->vbr_max_high = 1800;
+            }
+            low_rate = st->vbr_max - st->vbr_max_high;
+            speex_encoder_ctl(st->st_low, SPEEX_SET_VBR_MAX_BITRATE, &low_rate);
          }
       }
       break;
