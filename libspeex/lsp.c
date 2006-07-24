@@ -458,7 +458,7 @@ void lsp_to_lpc(spx_lsp_t *freq,spx_coef_t *ak,int lpcrdr, char *stack)
 
     #define QIMP  21   /* scaling for impulse */
 
-    xin = 1<<(QIMP-1); /* 0.5 in QIMP format */
+    xin = SHL32(EXTEND32(1), (QIMP-1)); /* 0.5 in QIMP format */
    
     /* first col and last non-zero values of each row are trivial */
     
