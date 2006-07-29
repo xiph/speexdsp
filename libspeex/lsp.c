@@ -4,8 +4,8 @@ Original copyright
 	AUTHOR......: David Rowe
 	DATE CREATED: 24/2/93
 
-Heavily modified by Jean-Marc Valin (fixed-point, optimizations, 
-                                     additional functions, ...)
+Heavily modified by Jean-Marc Valin (c) 2002-2006 (fixed-point, 
+                       optimizations, additional functions, ...)
 
    This file contains functions for converting Linear Prediction
    Coefficients (LPC) to Line Spectral Pair (LSP) and back. Note that the

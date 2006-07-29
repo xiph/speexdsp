@@ -1,4 +1,4 @@
-/* Copyright (C) 2005 Jean-Marc Valin 
+/* Copyright (C) 2005-2006 Jean-Marc Valin 
    File: fftwrap.c
 
    Wrapper for various FFTs 

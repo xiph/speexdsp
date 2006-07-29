@@ -41,8 +41,9 @@
    double-talk is achieved using a variable learning rate as described in:
    
    Valin, J.-M., On Adjusting the Learning Rate in Frequency Domain Echo 
-   Cancellation With Double-Talk. Submitted to IEEE Transactions on Speech 
-   and Audio Processing, 2006.
+   Cancellation With Double-Talk. To appear in IEEE Transactions on Audio,
+   Speech and Language Processing, 2006.
+   http://people.xiph.org/~jm/papers/valin_taslp2006.pdf
    
    There is no explicit double-talk detection, but a continuous variation
    in the learning rate based on residual echo, double-talk and background

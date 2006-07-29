@@ -1,4 +1,4 @@
-/* Copyright (C) 2002 Jean-Marc Valin */
+/* Copyright (C) 2002-2006 Jean-Marc Valin */
 /**
    @file modes.h
    @brief Describes the different modes of the codec
