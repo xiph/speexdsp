@@ -51,6 +51,7 @@
 		73814B9F0907FC9900C478FC /* vbr.c in Sources */ = {isa = PBXBuildFile; fileRef = 73814B520907FC9900C478FC /* vbr.c */; };
 		73814BA40907FC9900C478FC /* vq.c in Sources */ = {isa = PBXBuildFile; fileRef = 73814B570907FC9900C478FC /* vq.c */; };
 		8D07F2C00486CC7A007CD1D0 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 089C1666FE841158C02AAC07 /* InfoPlist.strings */; };
+		BFF73DD00A78AA170078A4A8 /* window.c in Sources */ = {isa = PBXBuildFile; fileRef = BFF73DCF0A78AA170078A4A8 /* window.c */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXBuildStyle section */
@@ -166,6 +167,7 @@
 		73814B580907FC9900C478FC /* vq.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = vq.h; path = ../libspeex/vq.h; sourceTree = SOURCE_ROOT; };
 		8D07F2C70486CC7A007CD1D0 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		8D07F2C80486CC7A007CD1D0 /* Speex.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Speex.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		BFF73DCF0A78AA170078A4A8 /* window.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = window.c; path = ../libspeex/window.c; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -223,6 +225,7 @@
 				73814B0E0907FC9900C478FC /* cb_search_arm4.h */,
 				73814B0F0907FC9900C478FC /* cb_search_bfin.h */,
 				73814B100907FC9900C478FC /* cb_search_sse.h */,
+				BFF73DCF0A78AA170078A4A8 /* window.c */,
 				73814B110907FC9900C478FC /* cb_search.c */,
 				73814B120907FC9900C478FC /* cb_search.h */,
 				73814B130907FC9900C478FC /* exc_5_64_table.c */,
@@ -460,6 +463,7 @@
 				73814B990907FC9900C478FC /* stereo.c in Sources */,
 				73814B9F0907FC9900C478FC /* vbr.c in Sources */,
 				73814BA40907FC9900C478FC /* vq.c in Sources */,
+				BFF73DD00A78AA170078A4A8 /* window.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
