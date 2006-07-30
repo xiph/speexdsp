@@ -74,7 +74,7 @@ void highpass(const spx_word16_t *x, spx_word16_t *y, int len, int filtID, spx_m
 #endif
    const spx_word16_t *den, *num;
    den = Pcoef[filtID]; num = Zcoef[filtID];
-   //return;
+   /*return;*/
    for (i=0;i<len;i++)
    {
       spx_word16_t xi, yi, nyi;
