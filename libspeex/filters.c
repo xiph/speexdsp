@@ -62,6 +62,30 @@ void bw_lpc(spx_word16_t gamma, const spx_coef_t *lpc_in, spx_coef_t *lpc_out, i
    }
 }
 
+void highpass(const spx_word16_t *x, spx_word16_t *y, int len, int filtID, spx_mem_t *mem)
+{
+   int i;
+#ifdef FIXED_POINT
+   const spx_word16_t Pcoef[4][3] = {{16384, -31313, 14991}, {16384, -31569, 15249}, {16384, -31677, 15328}, {16384, -32313, 15947}};
+   const spx_word16_t Zcoef[4][3] = {{15672, -31344, 15672}, {15802, -31601, 15802}, {15847, -31694, 15847}, {16162, -32322, 16162}};
+#else
+   const spx_word16_t Pcoef[4][3] = {{1.00000, -1.91120, 0.91498}, {1.00000, -1.92683, 0.93071}, {1.00000, -1.93338, 0.93553}, {1.00000, -1.97226, 0.97332}};
+   const spx_word16_t Zcoef[4][3] = {{0.95654, -1.91309, 0.95654}, {0.96446, -1.92879, 0.96446}, {0.96723, -1.93445, 0.96723}, {0.98645, -1.97277, 0.98645}};
+#endif
+   const spx_word16_t *den, *num;
+   den = Pcoef[filtID]; num = Zcoef[filtID];
+   //return;
+   for (i=0;i<len;i++)
+   {
+      spx_word16_t xi, yi, nyi;
+      xi = x[i];
+      yi = EXTRACT16(SATURATE(PSHR32(ADD32(MULT16_16(num[0], x[i]),mem[0]),15),32767));
+      nyi = NEG16(yi);
+      mem[0] = MAC16_16(MAC16_16(mem[1], num[1],xi), den[1],nyi);
+      mem[1] = ADD32(MULT16_16(num[2],xi), MULT16_16(den[2],nyi));
+      y[i] = yi;
+   }
+}
 
 #ifdef FIXED_POINT
 
