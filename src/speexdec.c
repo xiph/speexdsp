@@ -732,7 +732,7 @@ int main(int argc, char **argv)
 
    }
 
-   if (wav_format)
+   if (fout && wav_format)
    {
       if (fseek(fout,4,SEEK_SET)==0)
       {
