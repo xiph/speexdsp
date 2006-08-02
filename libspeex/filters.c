@@ -77,13 +77,11 @@ void highpass(const spx_word16_t *x, spx_word16_t *y, int len, int filtID, spx_m
    /*return;*/
    for (i=0;i<len;i++)
    {
-      spx_word16_t xi, yi, nyi;
+      spx_word16_t yi;
       spx_word32_t vout = ADD32(MULT16_16(num[0], x[i]),mem[0]);
-      xi = x[i];
       yi = EXTRACT16(SATURATE(PSHR32(vout,14),32767));
-      nyi = NEG16(yi);
-      mem[0] = ADD32(MAC16_16(mem[1], num[1],xi), MULT16_32_Q14(-den[1],vout));
-      mem[1] = ADD32(MULT16_16(num[2],xi), MULT16_32_Q14(-den[2],vout));
+      mem[0] = ADD32(MAC16_16(mem[1], num[1],x[i]), MULT16_32_Q14(-den[1],vout));
+      mem[1] = ADD32(MULT16_16(num[2],x[i]), MULT16_32_Q14(-den[2],vout));
       y[i] = yi;
    }
 }
