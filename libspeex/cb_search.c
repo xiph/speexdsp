@@ -514,7 +514,8 @@ spx_sig_t *exc,
 const void *par,                      /* non-overlapping codebook */
 int   nsf,                      /* number of samples in subframe */
 SpeexBits *bits,
-char *stack
+char *stack,
+spx_int32_t *seed
 )
 {
    int i,j;
@@ -601,12 +602,12 @@ spx_sig_t *exc,
 const void *par,                      /* non-overlapping codebook */
 int   nsf,                      /* number of samples in subframe */
 SpeexBits *bits,
-char *stack
+char *stack,
+spx_int32_t *seed
 )
 {
    int i;
    /* FIXME: This is bad, but I don't think the function ever gets called anyway */
-   static spx_int32_t seed = 0;
    for (i=0;i<nsf;i++)
-      exc[i]=SHL32(EXTEND32(speex_rand(1, &seed)),SIG_SHIFT);
+      exc[i]=SHL32(EXTEND32(speex_rand(1, seed)),SIG_SHIFT);
 }

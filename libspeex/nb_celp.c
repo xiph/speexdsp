@@ -1593,7 +1593,7 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
          if (SUBMODE(innovation_unquant))
          {
             /*Fixed codebook contribution*/
-            SUBMODE(innovation_unquant)(innov, SUBMODE(innovation_params), st->subframeSize, bits, stack);
+            SUBMODE(innovation_unquant)(innov, SUBMODE(innovation_params), st->subframeSize, bits, stack, &st->seed);
          } else {
             speex_error("No fixed codebook");
          }
@@ -1653,7 +1653,7 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
             ALLOC(innov2, st->subframeSize, spx_sig_t);
             for (i=0;i<st->subframeSize;i++)
                innov2[i]=0;
-            SUBMODE(innovation_unquant)(innov2, SUBMODE(innovation_params), st->subframeSize, bits, stack);
+            SUBMODE(innovation_unquant)(innov2, SUBMODE(innovation_params), st->subframeSize, bits, stack, &st->seed);
             signal_mul(innov2, innov2, MULT16_32_Q15(QCONST16(0.454545,15),ener), st->subframeSize);
             for (i=0;i<st->subframeSize;i++)
                exc[i] = ADD16(exc[i],PSHR32(innov2[i],SIG_SHIFT));

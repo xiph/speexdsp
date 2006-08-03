@@ -1195,7 +1195,7 @@ int sb_decode(void *state, SpeexBits *bits, void *vout)
          scale = SHL(MULT16_16(PDIV32_16(SHL(gc,SIG_SHIFT-6),filter_ratio),(1+el)),6);
 
          SUBMODE(innovation_unquant)(exc, SUBMODE(innovation_params), st->subframeSize, 
-                                bits, stack);
+                                     bits, stack, &st->seed);
 
          signal_mul(exc,exc,scale,st->subframeSize);
 
@@ -1206,7 +1206,7 @@ int sb_decode(void *state, SpeexBits *bits, void *vout)
             for (i=0;i<st->subframeSize;i++)
                innov2[i]=0;
             SUBMODE(innovation_unquant)(innov2, SUBMODE(innovation_params), st->subframeSize, 
-                                bits, stack);
+                                        bits, stack, &st->seed);
             for (i=0;i<st->subframeSize;i++)
                innov2[i]*=scale/(float)SIG_SCALING*(1/2.5);
             for (i=0;i<st->subframeSize;i++)
