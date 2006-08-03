@@ -256,6 +256,8 @@ void *sb_encoder_init(const SpeexMode *m)
    
    i=9;
    speex_encoder_ctl(st->st_low, SPEEX_SET_QUALITY, &i);
+   i=1;
+   speex_encoder_ctl(st->st_low, SPEEX_SET_WIDEBAND, &i);
 
    st->lag_factor = mode->lag_factor;
    st->lpc_floor = mode->lpc_floor;
@@ -833,6 +835,7 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
 
 void *sb_decoder_init(const SpeexMode *m)
 {
+   int tmp;
    SBDecState *st;
    const SpeexSBMode *mode;
    st = (SBDecState*)speex_alloc(sizeof(SBDecState));
@@ -859,6 +862,8 @@ void *sb_decoder_init(const SpeexMode *m)
    st->lpcSize=mode->lpcSize;
    speex_decoder_ctl(st->st_low, SPEEX_GET_SAMPLING_RATE, &st->sampling_rate);
    st->sampling_rate*=2;
+   tmp=1;
+   speex_decoder_ctl(st->st_low, SPEEX_SET_WIDEBAND, &tmp);
 
    st->submodes=mode->submodes;
    st->submodeID=mode->defaultSubmode;
@@ -1448,6 +1453,12 @@ int sb_encoder_ctl(void *state, int request, void *ptr)
    case SPEEX_GET_VBR_MAX_BITRATE:
       (*(spx_int32_t*)ptr) = st->vbr_max;
       break;
+   case SPEEX_SET_HIGHPASS:
+      speex_encoder_ctl(st->st_low, SPEEX_SET_HIGHPASS, ptr);
+      break;
+   case SPEEX_GET_HIGHPASS:
+      speex_encoder_ctl(st->st_low, SPEEX_GET_HIGHPASS, ptr);
+      break;
 
 
    /* This is all internal stuff past this point */
@@ -1485,6 +1496,10 @@ int sb_encoder_ctl(void *state, int request, void *ptr)
    case SPEEX_SET_INNOVATION_SAVE:
       st->innov_save = ptr;
       break;
+   case SPEEX_SET_WIDEBAND:
+      speex_encoder_ctl(st->st_low, SPEEX_SET_WIDEBAND, ptr);
+      break;
+
    default:
       speex_warning_int("Unknown nb_ctl request: ", request);
       return -1;
@@ -1575,6 +1590,13 @@ int sb_decoder_ctl(void *state, int request, void *ptr)
       speex_decoder_ctl(st->st_low, SPEEX_GET_LOOKAHEAD, ptr);
       (*(int*)ptr) = 2*(*(int*)ptr);
       break;
+   case SPEEX_SET_HIGHPASS:
+      speex_decoder_ctl(st->st_low, SPEEX_SET_HIGHPASS, ptr);
+      break;
+   case SPEEX_GET_HIGHPASS:
+      speex_decoder_ctl(st->st_low, SPEEX_GET_HIGHPASS, ptr);
+      break;
+
    case SPEEX_GET_PI_GAIN:
       {
          int i;
@@ -1609,6 +1631,10 @@ int sb_decoder_ctl(void *state, int request, void *ptr)
    case SPEEX_SET_INNOVATION_SAVE:
       st->innov_save = ptr;
       break;
+   case SPEEX_SET_WIDEBAND:
+      speex_decoder_ctl(st->st_low, SPEEX_SET_WIDEBAND, ptr);
+      break;
+
    default:
       speex_warning_int("Unknown nb_ctl request: ", request);
       return -1;

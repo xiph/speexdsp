@@ -205,7 +205,9 @@ void *nb_encoder_init(const SpeexMode *m)
    st->complexity=2;
    st->sampling_rate=8000;
    st->dtx_count=0;
-
+   st->isWideband = 0;
+   st->highpass_enabled = 1;
+   
 #ifdef ENABLE_VALGRIND
    VALGRIND_MAKE_READABLE(st, (st->stack-(char*)st));
 #endif
@@ -297,6 +299,9 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
    speex_move(st->excBuf, st->excBuf+st->frameSize, (st->max_pitch+2)*sizeof(spx_word16_t));
    speex_move(st->swBuf, st->swBuf+st->frameSize, (st->max_pitch+2)*sizeof(spx_word16_t));
 
+   if (st->highpass_enabled)
+      highpass(in, in, st->frameSize, (st->isWideband?HIGHPASS_WIDEBAND:HIGHPASS_NARROWBAND)|HIGHPASS_INPUT, st->mem_hp);
+   
    {
       VARDECL(spx_word16_t *w_sig);
       VARDECL(spx_word16_t *autocorr);
@@ -1102,6 +1107,9 @@ void *nb_decoder_init(const SpeexMode *m)
    st->voc_m1=st->voc_m2=st->voc_mean=0;
    st->voc_offset=0;
    st->dtx_enabled=0;
+   st->isWideband = 0;
+   st->highpass_enabled = 1;
+
 #ifdef ENABLE_VALGRIND
    VALGRIND_MAKE_READABLE(st, (st->stack-(char*)st));
 #endif
@@ -1206,6 +1214,7 @@ static void nb_decode_lost(DecState *st, spx_word16_t *out, char *stack)
 
       bw_lpc(QCONST16(.98,15), st->interp_qlpc, st->interp_qlpc, st->lpcSize);
    }
+   highpass(out, out, st->frameSize, HIGHPASS_NARROWBAND|HIGHPASS_OUTPUT, st->mem_hp);
    
    st->first = 0;
    st->count_lost++;
@@ -1734,6 +1743,8 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
 
    }
 
+   if (st->highpass_enabled)
+      highpass(out, out, st->frameSize, (st->isWideband?HIGHPASS_WIDEBAND:HIGHPASS_NARROWBAND)|HIGHPASS_OUTPUT, st->mem_hp);
    /*for (i=0;i<st->frameSize;i++)
      printf ("%d\n", (int)st->frame[i]);*/
 
@@ -1913,7 +1924,12 @@ int nb_encoder_ctl(void *state, int request, void *ptr)
    case SPEEX_GET_VBR_MAX_BITRATE:
       (*(spx_int32_t*)ptr) = st->vbr_max;
       break;
-
+   case SPEEX_SET_HIGHPASS:
+      st->highpass_enabled = (*(spx_int32_t*)ptr);
+      break;
+   case SPEEX_GET_HIGHPASS:
+      (*(spx_int32_t*)ptr) = st->highpass_enabled;
+      break;
 
    /* This is all internal stuff past this point */
    case SPEEX_GET_PI_GAIN:
@@ -1937,6 +1953,9 @@ int nb_encoder_ctl(void *state, int request, void *ptr)
       break;
    case SPEEX_SET_INNOVATION_SAVE:
       st->innov_save = ptr;
+      break;
+   case SPEEX_SET_WIDEBAND:
+      st->isWideband = *((int*)ptr);
       break;
    default:
       speex_warning_int("Unknown nb_ctl request: ", request);
@@ -2014,6 +2033,13 @@ int nb_decoder_ctl(void *state, int request, void *ptr)
    case SPEEX_GET_LOOKAHEAD:
       (*(int*)ptr)=st->subframeSize;
       break;
+   case SPEEX_SET_HIGHPASS:
+      st->highpass_enabled = (*(spx_int32_t*)ptr);
+      break;
+   case SPEEX_GET_HIGHPASS:
+      (*(spx_int32_t*)ptr) = st->highpass_enabled;
+      break;
+
    case SPEEX_GET_PI_GAIN:
       {
          int i;
@@ -2035,6 +2061,9 @@ int nb_decoder_ctl(void *state, int request, void *ptr)
       break;
    case SPEEX_SET_INNOVATION_SAVE:
       st->innov_save = ptr;
+      break;
+   case SPEEX_SET_WIDEBAND:
+      st->isWideband = *((int*)ptr);
       break;
    default:
       speex_warning_int("Unknown nb_ctl request: ", request);
