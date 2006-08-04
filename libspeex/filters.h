@@ -53,6 +53,8 @@ int normalize16(const spx_sig_t *x, spx_word16_t *y, spx_sig_t max_scale, int le
 #define HIGHPASS_WIDEBAND 2
 #define HIGHPASS_INPUT 0
 #define HIGHPASS_OUTPUT 1
+#define HIGHPASS_IRS 4
+
 void highpass(const spx_word16_t *x, spx_word16_t *y, int len, int filtID, spx_mem_t *mem);
 
 
