@@ -392,7 +392,7 @@ static int speex_compute_vad(SpeexPreprocessState *st, float *ps, float mean_pri
          
          /*speech_var = sqrt(speech_var*noise_var);
            noise_var = speech_var;*/
-         if (speech_var < .05f*speech_var)
+         if (noise_var < .05f*speech_var)
             noise_var = .05f*speech_var; 
          if (speech_var < .05f*noise_var)
             speech_var = .05f*noise_var;
