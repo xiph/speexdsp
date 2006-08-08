@@ -50,36 +50,36 @@ spx_word16_t spx_sqrt(spx_word32_t x)
    int k=0;
    spx_word32_t rt;
 
-   if (x==0)
+   if (x<=0)
       return 0;
 #if 1
-   if (x>16777216)
+   if (x>=16777216)
    {
       x>>=10;
       k+=5;
    }
-   if (x>1048576)
+   if (x>=1048576)
    {
       x>>=6;
       k+=3;
    }
-   if (x>262144)
+   if (x>=262144)
    {
       x>>=4;
       k+=2;
    }
-   if (x>32768)
+   if (x>=32768)
    {
       x>>=2;
       k+=1;
    }
-   if (x>16384)
+   if (x>=16384)
    {
       x>>=2;
       k+=1;
    }
 #else
-   while (x>16384)
+   while (x>=16384)
    {
       x>>=2;
       k++;
@@ -91,6 +91,8 @@ spx_word16_t spx_sqrt(spx_word32_t x)
       k--;
    }
    rt = ADD16(C0, MULT16_16_Q14(x, ADD16(C1, MULT16_16_Q14(x, ADD16(C2, MULT16_16_Q14(x, (C3)))))));
+   if (rt > 16383)
+      rt = 16383;
    if (k>0)
       rt <<= k;
    else
