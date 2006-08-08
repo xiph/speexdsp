@@ -36,6 +36,7 @@
 #define PSEUDOFLOAT_H
 
 #include "misc.h"
+#include "math_approx.h"
 #include <math.h>
 
 #ifdef FIXED_POINT
@@ -334,6 +335,22 @@ static inline spx_float_t FLOAT_DIVU(spx_float_t a, spx_float_t b)
    return r;
 }
 
+static inline spx_float_t FLOAT_SQRT(spx_float_t a)
+{
+   spx_float_t r;
+   spx_int32_t m;
+   m = a.m << 14;
+   r.e = a.e - 14;
+   if (r.e & 1)
+   {
+      r.e -= 1;
+      m <<= 1;
+   }
+   r.e >>= 1;
+   r.m = spx_sqrt(m);
+   return r;
+}
+
 #else
 
 #define spx_float_t float
@@ -354,6 +371,7 @@ static inline spx_float_t FLOAT_DIVU(spx_float_t a, spx_float_t b)
 #define FLOAT_LT(a,b) ((a)<(b))
 #define FLOAT_GT(a,b) ((a)>(b))
 #define FLOAT_DIVU(a,b) ((a)/(b))
+#define FLOAT_SQRT(a) (spx_sqrt(a))
 
 #endif
 
