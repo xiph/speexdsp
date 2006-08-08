@@ -136,6 +136,7 @@ struct SpeexEchoState_ {
    spx_float_t Pey;
    spx_float_t Pyy;
    spx_word16_t *window;
+   spx_word16_t *prop;
    void *fft_table;
    spx_word16_t memX, memD, memE;
    spx_word16_t preemph;
@@ -307,6 +308,7 @@ SpeexEchoState *speex_echo_state_init(int frame_size, int filter_length)
    st->power = (spx_word32_t*)speex_alloc((frame_size+1)*sizeof(spx_word32_t));
    st->power_1 = (spx_float_t*)speex_alloc((frame_size+1)*sizeof(spx_float_t));
    st->window = (spx_word16_t*)speex_alloc(N*sizeof(spx_word16_t));
+   st->prop = (spx_word16_t*)speex_alloc(M*sizeof(spx_word16_t));
    st->wtmp = (spx_word16_t*)speex_alloc(N*sizeof(spx_word16_t));
 #ifdef FIXED_POINT
    st->wtmp2 = (spx_word16_t*)speex_alloc(N*sizeof(spx_word16_t));
@@ -323,6 +325,24 @@ SpeexEchoState *speex_echo_state_init(int frame_size, int filter_length)
    {
       st->W[i] = st->PHI[i] = 0;
    }
+   
+   {
+      spx_word32_t sum = 0;
+      /* Ratio of ~10 between adaptation rate of first and last block */
+      spx_word16_t decay = QCONST16(exp(-2.4/M),15);
+      st->prop[M-1] = QCONST16(.7, 15);
+      sum = EXTEND32(st->prop[M-1]);
+      for (i=M-2;i>=0;i--)
+      {
+         st->prop[i] = MULT16_16_Q15(st->prop[i+1], decay);
+         sum = ADD32(sum, EXTEND32(st->prop[i]));
+      }
+      for (i=M-1;i>=0;i--)
+      {
+         st->prop[i] = DIV32(SHL32(EXTEND32(st->prop[i]),15),sum);
+      }
+   }
+   
    st->memX=st->memD=st->memE=0;
    st->preemph = QCONST16(.9,15);
    if (st->sampling_rate<12000)
@@ -388,6 +408,7 @@ void speex_echo_state_destroy(SpeexEchoState *st)
    speex_free(st->power);
    speex_free(st->power_1);
    speex_free(st->window);
+   speex_free(st->prop);
    speex_free(st->wtmp);
 #ifdef FIXED_POINT
    speex_free(st->wtmp2);
@@ -442,7 +463,6 @@ void speex_echo_cancel(SpeexEchoState *st, const spx_int16_t *ref, const spx_int
    spx_float_t alpha, alpha_1;
    spx_word16_t RER;
    spx_word32_t tmp32;
-   spx_word16_t M_1;
    int saturated=0;
    
    N = st->window_size;
@@ -451,11 +471,9 @@ void speex_echo_cancel(SpeexEchoState *st, const spx_int16_t *ref, const spx_int
 #ifdef FIXED_POINT
    ss=DIV32_16(11469,M);
    ss_1 = SUB16(32767,ss);
-   M_1 = DIV32_16(32767,M);
 #else
    ss=.35/M;
    ss_1 = 1-ss;
-   M_1 = 1.f/M;
 #endif
 
    filter_dc_notch16(ref, st->notch_radius, st->d, st->frame_size, st->notch_mem);
@@ -669,7 +687,7 @@ void speex_echo_cancel(SpeexEchoState *st, const spx_int16_t *ref, const spx_int
 #endif
          r = MULT16_32_Q15(QCONST16(.7,15),r) + MULT16_32_Q15(QCONST16(.3,15),(spx_word32_t)(MULT16_32_Q15(RER,e)));
          /*st->power_1[i] = adapt_rate*r/(e*(1+st->power[i]));*/
-         st->power_1[i] = FLOAT_SHL(FLOAT_DIV32_FLOAT(MULT16_32_Q15(M_1,r),FLOAT_MUL32U(e,st->power[i]+10)),WEIGHT_SHIFT+16);
+         st->power_1[i] = FLOAT_SHL(FLOAT_DIV32_FLOAT(r,FLOAT_MUL32U(e,st->power[i]+10)),WEIGHT_SHIFT+16);
       }
    } else {
       /* Temporary adaption rate if filter is not yet adapted enough */
@@ -681,9 +699,9 @@ void speex_echo_cancel(SpeexEchoState *st, const spx_int16_t *ref, const spx_int
          Sxx = SHR32(See,2);
 #else
       if (Sxx > .25*See)
-         Sxx = .25*See;      
+         Sxx = .25*See;
 #endif
-      adapt_rate = FLOAT_EXTRACT16(FLOAT_SHL(FLOAT_DIV32(MULT16_32_Q15(M_1,Sxx), See),15));
+      adapt_rate = FLOAT_EXTRACT16(FLOAT_SHL(FLOAT_DIV32(Sxx, See),15));
       
       for (i=0;i<=st->frame_size;i++)
          st->power_1[i] = FLOAT_SHL(FLOAT_DIV32(EXTEND32(adapt_rate),ADD32(st->power[i],10)),WEIGHT_SHIFT+1);
@@ -696,11 +714,9 @@ void speex_echo_cancel(SpeexEchoState *st, const spx_int16_t *ref, const spx_int
    for (j=M-1;j>=0;j--)
    {
       weighted_spectral_mul_conj(st->power_1, &st->X[j*N], st->E, st->PHI+N*j, N);
-#if 0
-      float decay = .3;
-      float prop = .6*M*(1-exp(-decay))*exp(-(M-j-1)*decay);
+#if 1
       for (i=0;i<N;i++)
-         st->PHI[j*N+i] *= prop;
+         st->PHI[j*N+i] = MULT16_32_Q15(st->prop[j], st->PHI[j*N+i]);
 #endif
    }
 
