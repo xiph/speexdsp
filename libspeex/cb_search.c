@@ -107,7 +107,6 @@ spx_sig_t *exc,
 spx_word16_t *r,
 SpeexBits *bits,
 char *stack,
-int   complexity,
 int   update_target
 )
 {
@@ -125,15 +124,9 @@ int   update_target
    const signed char *shape_cb;
    int shape_cb_size, subvect_size, nb_subvect;
    const split_cb_params *params;
-   int N=2;
    int best_index;
    spx_word32_t best_dist;
    int have_sign;
-   N=complexity;
-   if (N>10)
-      N=10;
-   if (N<1)
-      N=1;
    
    params = (const split_cb_params *) par;
    subvect_size = params->subvect_size;
@@ -295,10 +288,11 @@ int   update_target
       N=10;
    if (N<1)
       N=1;
-   
+   /* Complexity isn't as important for the codebooks as it is for the pitch */
+   N=(2*N)/3;
    if (N==1)
    {
-      split_cb_search_shape_sign_N1(target,ak,awk1,awk2,par,p,nsf,exc,r,bits,stack,complexity,update_target);
+      split_cb_search_shape_sign_N1(target,ak,awk1,awk2,par,p,nsf,exc,r,bits,stack,update_target);
       return;
    }
    ALLOC(ot2, N, spx_word16_t*);
