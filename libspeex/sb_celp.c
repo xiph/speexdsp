@@ -1445,6 +1445,8 @@ int sb_encoder_ctl(void *state, int request, void *ptr)
             } else {
                st->vbr_max_high = 1800;
             }
+            if (st->subframeSize==80)
+               st->vbr_max_high = 1800;
             low_rate = st->vbr_max - st->vbr_max_high;
             speex_encoder_ctl(st->st_low, SPEEX_SET_VBR_MAX_BITRATE, &low_rate);
          }
