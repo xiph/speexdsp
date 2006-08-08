@@ -299,7 +299,7 @@ void version_short()
    printf ("Copyright (C) 2002-2006 Jean-Marc Valin\n");
 }
 
-static void *process_header(ogg_packet *op, int enh_enabled, int *frame_size, int *rate, int *nframes, int forceMode, int *channels, SpeexStereoState *stereo, int *extra_headers, int quiet)
+static void *process_header(ogg_packet *op, int enh_enabled, int *frame_size, int *granule_frame_size, int *rate, int *nframes, int forceMode, int *channels, SpeexStereoState *stereo, int *extra_headers, int quiet)
 {
    void *st;
    const SpeexMode *mode;
@@ -351,6 +351,7 @@ static void *process_header(ogg_packet *op, int enh_enabled, int *frame_size, in
    }
    speex_decoder_ctl(st, SPEEX_SET_ENH, &enh_enabled);
    speex_decoder_ctl(st, SPEEX_GET_FRAME_SIZE, frame_size);
+   *granule_frame_size = *frame_size;
 
    if (!(*channels==1))
    {
@@ -365,10 +366,17 @@ static void *process_header(ogg_packet *op, int enh_enabled, int *frame_size, in
    if (forceMode!=-1)
    {
       if (header->mode < forceMode)
+      {
          *rate <<= (forceMode - header->mode);
+         *granule_frame_size >>= (forceMode - header->mode);
+      }
       if (header->mode > forceMode)
+      {
          *rate >>= (header->mode - forceMode);
+         *granule_frame_size <<= (header->mode - forceMode);
+      }
    }
+
 
    speex_decoder_ctl(st, SPEEX_SET_SAMPLING_RATE, rate);
 
@@ -409,7 +417,7 @@ int main(int argc, char **argv)
    FILE *fin, *fout=NULL;
    short out[MAX_FRAME_SIZE];
    short output[MAX_FRAME_SIZE];
-   int frame_size=0;
+   int frame_size=0, granule_frame_size=0;
    void *st=NULL;
    SpeexBits bits;
    int packet_count=0;
@@ -601,7 +609,7 @@ int main(int argc, char **argv)
          if (page_granule>0 && frame_size)
          {
             /* FIXME: shift the granule values if --force-* is specified */
-            skip_samples = page_nb_packets*frame_size*nframes - (page_granule-last_granule);
+            skip_samples = frame_size*(page_nb_packets*granule_frame_size*nframes - (page_granule-last_granule))/granule_frame_size;
             if (ogg_page_eos(&og))
                skip_samples = -skip_samples;
             /*else if (!ogg_page_bos(&og))
@@ -619,7 +627,7 @@ int main(int argc, char **argv)
             /*If first packet, process as Speex header*/
             if (packet_count==0)
             {
-               st = process_header(&op, enh_enabled, &frame_size, &rate, &nframes, forceMode, &channels, &stereo, &extra_headers, quiet);
+               st = process_header(&op, enh_enabled, &frame_size, &granule_frame_size, &rate, &nframes, forceMode, &channels, &stereo, &extra_headers, quiet);
                speex_decoder_ctl(st, SPEEX_GET_LOOKAHEAD, &lookahead);
                if (!nframes)
                   nframes=1;
