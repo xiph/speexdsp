@@ -91,10 +91,10 @@
 #endif
 
 #ifdef FIXED_POINT
-static const spx_float_t MIN_LEAK = {16777, -24};
+static const spx_float_t MIN_LEAK = {16777, -19};
 #define TOP16(x) ((x)>>16)
 #else
-static const spx_float_t MIN_LEAK = .001f;
+static const spx_float_t MIN_LEAK = .032f;
 #define TOP16(x) (x)
 #endif
 
@@ -435,7 +435,7 @@ void speex_echo_cancel(SpeexEchoState *st, const spx_int16_t *ref, const spx_int
 {
    int i,j;
    int N,M;
-   spx_word32_t Syy,See;
+   spx_word32_t Syy,See,Sxx;
    spx_word16_t leak_estimate;
    spx_word16_t ss, ss_1;
    spx_float_t Pey = FLOAT_ONE, Pyy=FLOAT_ONE;
@@ -556,7 +556,8 @@ void speex_echo_cancel(SpeexEchoState *st, const spx_int16_t *ref, const spx_int
    See = mdf_inner_prod(st->e+st->frame_size, st->e+st->frame_size, st->frame_size);
    See = ADD32(See, SHR32(EXTEND32(10000),6));
    Syy = mdf_inner_prod(st->y+st->frame_size, st->y+st->frame_size, st->frame_size);
-   
+   Sxx = mdf_inner_prod(st->x+st->frame_size, st->x+st->frame_size, st->frame_size);
+
    /* Convert error to frequency domain */
    spx_fft(st->fft_table, st->e, st->E);
    for (i=0;i<st->frame_size;i++)
@@ -604,6 +605,9 @@ void speex_echo_cancel(SpeexEchoState *st, const spx_int16_t *ref, const spx_int
 #endif
    }
    
+   Pyy = FLOAT_SQRT(Pyy);
+   Pey = FLOAT_DIVU(Pey,Pyy);
+
    /* Compute correlation updatete rate */
    tmp32 = MULT16_32_Q15(st->beta0,Syy);
    if (tmp32 > MULT16_32_Q15(st->beta_max,See))
@@ -636,8 +640,8 @@ void speex_echo_cancel(SpeexEchoState *st, const spx_int16_t *ref, const spx_int
    if (tmp32 > SHR32(See,1))
       tmp32 = SHR32(See,1);
    RER = FLOAT_EXTRACT16(FLOAT_SHL(FLOAT_DIV32(tmp32,See),15));
-#else
-   RER = 3.*MULT16_32_Q15(leak_estimate,Syy) / See;
+#else   
+   RER = (.0001*Sxx + 3.*MULT16_32_Q15(leak_estimate,Syy)) / See;
    if (RER > .5)
       RER = .5;
 #endif
@@ -663,16 +667,13 @@ void speex_echo_cancel(SpeexEchoState *st, const spx_int16_t *ref, const spx_int
          if (r>.5*e)
             r = .5*e;
 #endif
-         r = MULT16_32_Q15(QCONST16(.8,15),r) + MULT16_32_Q15(QCONST16(.2,15),(spx_word32_t)(MULT16_32_Q15(RER,e)));
+         r = MULT16_32_Q15(QCONST16(.7,15),r) + MULT16_32_Q15(QCONST16(.3,15),(spx_word32_t)(MULT16_32_Q15(RER,e)));
          /*st->power_1[i] = adapt_rate*r/(e*(1+st->power[i]));*/
          st->power_1[i] = FLOAT_SHL(FLOAT_DIV32_FLOAT(MULT16_32_Q15(M_1,r),FLOAT_MUL32U(e,st->power[i]+10)),WEIGHT_SHIFT+16);
       }
    } else {
-      spx_word32_t Sxx;
+      /* Temporary adaption rate if filter is not yet adapted enough */
       spx_word16_t adapt_rate=0;
-
-      Sxx = mdf_inner_prod(st->x+st->frame_size, st->x+st->frame_size, st->frame_size);
-      /* Temporary adaption rate if filter is not adapted correctly */
 
       tmp32 = MULT16_32_Q15(QCONST16(.15f, 15), Sxx);
 #ifdef FIXED_POINT
@@ -692,9 +693,15 @@ void speex_echo_cancel(SpeexEchoState *st, const spx_int16_t *ref, const spx_int
       st->sum_adapt = ADD32(st->sum_adapt,adapt_rate);
    }
    /* Compute weight gradient */
-   for (j=0;j<M;j++)
+   for (j=M-1;j>=0;j--)
    {
       weighted_spectral_mul_conj(st->power_1, &st->X[j*N], st->E, st->PHI+N*j, N);
+#if 0
+      float decay = .3;
+      float prop = .6*M*(1-exp(-decay))*exp(-(M-j-1)*decay);
+      for (i=0;i<N;i++)
+         st->PHI[j*N+i] *= prop;
+#endif
    }
 
    if (!saturated)
