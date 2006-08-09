@@ -628,11 +628,11 @@ int main(int argc, char **argv)
             if (packet_count==0)
             {
                st = process_header(&op, enh_enabled, &frame_size, &granule_frame_size, &rate, &nframes, forceMode, &channels, &stereo, &extra_headers, quiet);
+               if (!st)
+                  exit(1);
                speex_decoder_ctl(st, SPEEX_GET_LOOKAHEAD, &lookahead);
                if (!nframes)
                   nframes=1;
-               if (!st)
-                  exit(1);
                fout = out_file_open(outFile, rate, &channels);
 
             } else if (packet_count==1)
