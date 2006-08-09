@@ -145,7 +145,7 @@ int   update_target
    ALLOC(t, nsf, spx_word16_t);
    ALLOC(e, nsf, spx_sig_t);
    
-   /* FIXME: make that adaptive? */
+   /* FIXME: Do we still need to copy the target? */
    for (i=0;i<nsf;i++)
       t[i]=target[i];
 
@@ -341,7 +341,6 @@ int   update_target
       oind[i]=itmp+(2*i+1)*nb_subvect;
    }
    
-   /* FIXME: make that adaptive? */
    for (i=0;i<nsf;i++)
       t[i]=target[i];
 

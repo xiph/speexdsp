@@ -1432,7 +1432,6 @@ int sb_encoder_ctl(void *state, int request, void *ptr)
             st->vbr_max_high = 17600;
          } else {
             spx_int32_t low_rate;
-            /* FIXME: Need to adapt that to ultra-wideband */
             if (st->vbr_max >= 42200)
             {
                st->vbr_max_high = 17600;
