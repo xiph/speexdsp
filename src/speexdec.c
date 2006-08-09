@@ -584,6 +584,7 @@ int main(int argc, char **argv)
    
    speex_bits_init(&bits);
    /*Main decoding loop*/
+   int skeleton_serialno = -1;
    while (1)
    {
       char *data;
@@ -602,6 +603,10 @@ int main(int argc, char **argv)
             ogg_stream_init(&os, ogg_page_serialno(&og));
             stream_init = 1;
          }
+	 if (ogg_page_serialno(&og) != os.serialno) {
+	    /* so that both skeleton & speex pages are read. */
+	    os.serialno = ogg_page_serialno(&og);
+	 }
          /*Add page to the bitstream*/
          ogg_stream_pagein(&os, &og);
          page_granule = ogg_page_granulepos(&og);
@@ -624,6 +629,11 @@ int main(int argc, char **argv)
          packet_no=0;
          while (!eos && ogg_stream_packetout(&os, &op)==1)
          {
+	    if (!memcmp(op.packet, "fishead", 7) || !memcmp(op.packet, "fisbone", 7)) {
+	       /* skipping the skeleotn packets, also saving the skeleton stream serial number. */
+	       skeleton_serialno = os.serialno;
+	       break;
+	    }
             /*If first packet, process as Speex header*/
             if (packet_count==0)
             {
@@ -649,9 +659,9 @@ int main(int argc, char **argv)
                   lost=1;
 
                /*End of stream condition*/
-               if (op.e_o_s)
+               if (op.e_o_s && os.serialno != skeleton_serialno) /* don't set eos for skeleton e_o_s */
                   eos=1;
-
+	       
                /*Copy Ogg packet to Speex bitstream*/
                speex_bits_read_from(&bits, (char*)op.packet, op.bytes);
                for (j=0;j!=nframes;j++)
