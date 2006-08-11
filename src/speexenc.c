@@ -59,6 +59,8 @@
 #include <fcntl.h>
 #endif
 
+#include "skeleton.h"
+
 
 void comment_init(char **comments, int* length, char *vendor_string);
 void comment_add(char **comments, int* length, char *tag, char *val);
@@ -144,6 +146,40 @@ static int read_samples(FILE *fin,int frame_size, int bits, int channels, int ls
    return nb_read;
 }
 
+void add_fishead_packet (ogg_stream_state *os) {
+
+   fishead_packet fp;
+
+   memset(&fp, 0, sizeof(fp));
+   fp.ptime_n = 0;
+   fp.ptime_d = 1000;
+   fp.btime_n = 0;
+   fp.btime_d = 1000;
+
+   add_fishead_to_stream(os, &fp);
+}
+
+/*
+ * Adds the fishead packets in the skeleton output stream along with the e_o_s packet
+ */
+void add_fisbone_packet (ogg_stream_state *os, spx_int32_t serialno, SpeexHeader *header) {
+
+   fisbone_packet fp;
+
+   memset(&fp, 0, sizeof(fp));
+   fp.serial_no = serialno;
+   fp.nr_header_packet = 2 + header->extra_headers;
+   fp.granule_rate_n = header->rate;
+   fp.granule_rate_d = 1;
+   fp.start_granule = 0;
+   fp.preroll = 3;
+   fp.granule_shift = 0;
+
+   add_message_header_field(&fp, "Content-Type", "audio/x-speex");
+
+   add_fisbone_to_stream(os, &fp);
+}
+
 void version()
 {
    printf ("speexenc (Speex encoder) version " SPEEX_VERSION " (compiled " __DATE__ ")\n");
@@ -186,6 +222,7 @@ void usage()
    printf (" --nframes n        Number of frames per Ogg packet (1-10), default 1\n"); 
    printf (" --denoise          Denoise the input before encoding\n"); 
    printf (" --agc              Apply adaptive gain control (AGC) before encoding\n"); 
+   printf (" --skeleton         Outputs ogg skeleton metadata (may cause incompatibilities)\n");
    printf (" --comment          Add the given string as an extra comment. This may be\n");
    printf ("                     used multiple times\n");
    printf (" --author           Author of this track\n");
@@ -229,6 +266,7 @@ int main(int argc, char **argv)
    void *st;
    SpeexBits bits;
    char cbits[MAX_FRAME_BYTES];
+   int with_skeleton = 0;
    struct option long_options[] =
    {
       {"wideband", no_argument, NULL, 0},
@@ -245,6 +283,7 @@ int main(int argc, char **argv)
       {"comp", required_argument, NULL, 0},
       {"denoise", no_argument, NULL, 0},
       {"agc", no_argument, NULL, 0},
+      {"skeleton",no_argument,NULL, 0},
       {"help", no_argument, NULL, 0},
       {"quiet", no_argument, NULL, 0},
       {"le", no_argument, NULL, 0},
@@ -268,6 +307,7 @@ int main(int argc, char **argv)
    float vbr_quality=-1;
    int lsb=1;
    ogg_stream_state os;
+   ogg_stream_state so; /* ogg stream for skeleton bitstream */
    ogg_page 		 og;
    ogg_packet 		 op;
    int bytes_written=0, ret, result;
@@ -359,6 +399,9 @@ int main(int argc, char **argv)
          } else if (strcmp(long_options[option_index].name,"agc")==0)
          {
             agc_enabled=1;
+         } else if (strcmp(long_options[option_index].name,"skeleton")==0)
+         {
+            with_skeleton=1;
          } else if (strcmp(long_options[option_index].name,"help")==0)
          {
             usage();
@@ -447,6 +490,11 @@ int main(int argc, char **argv)
    /*Initialize Ogg stream struct*/
    srand(time(NULL));
    if (ogg_stream_init(&os, rand())==-1)
+   {
+      fprintf(stderr,"Error: stream init failed\n");
+      exit(1);
+   }
+   if (with_skeleton && ogg_stream_init(&so, rand())==-1)
    {
       fprintf(stderr,"Error: stream init failed\n");
       exit(1);
@@ -627,6 +675,9 @@ int main(int argc, char **argv)
    {
       fprintf (stderr, "Warning: --vad is already implied by --vbr or --abr\n");
    }
+   if (with_skeleton) {
+      fprintf (stderr, "Warning: Enabling skeleton output may cause some decoders to fail.\n");
+   }
 
    if (abr_enabled)
    {
@@ -643,6 +694,17 @@ int main(int argc, char **argv)
       lookahead += frame_size;
    }
 
+   /* first packet should be the skeleton header. */
+
+   if (with_skeleton) {
+      add_fishead_packet(&so);
+      if ((ret = flush_ogg_stream_to_file(&so, fout))) {
+	 fprintf (stderr,"Error: failed skeleton (fishead) header to output stream\n");
+         exit(1);
+      } else
+	 bytes_written += ret;
+   }
+
    /*Write header*/
    {
       int packet_size;
@@ -655,14 +717,6 @@ int main(int argc, char **argv)
       ogg_stream_packetin(&os, &op);
       free(op.packet);
 
-      op.packet = (unsigned char *)comments;
-      op.bytes = comments_length;
-      op.b_o_s = 0;
-      op.e_o_s = 0;
-      op.granulepos = 0;
-      op.packetno = 1;
-      ogg_stream_packetin(&os, &op);
-      
       while((result = ogg_stream_flush(&os, &og)))
       {
          if(!result) break;
@@ -675,9 +729,52 @@ int main(int argc, char **argv)
          else
             bytes_written += ret;
       }
+
+      op.packet = (unsigned char *)comments;
+      op.bytes = comments_length;
+      op.b_o_s = 0;
+      op.e_o_s = 0;
+      op.granulepos = 0;
+      op.packetno = 1;
+      ogg_stream_packetin(&os, &op);
+   }
+
+   /* fisbone packet should be write after all bos pages */
+   if (with_skeleton) {
+      add_fisbone_packet(&so, os.serialno, &header);
+      if ((ret = flush_ogg_stream_to_file(&so, fout))) {
+	 fprintf (stderr,"Error: failed writing skeleton (fisbone )header to output stream\n");
+         exit(1);
+      } else
+	 bytes_written += ret;
+   }
+
+   /* writing the rest of the speex header packets */
+   while((result = ogg_stream_flush(&os, &og)))
+   {
+      if(!result) break;
+      ret = oe_write_page(&og, fout);
+      if(ret != og.header_len + og.body_len)
+      {
+         fprintf (stderr,"Error: failed writing header to output stream\n");
+         exit(1);
+      }
+      else
+         bytes_written += ret;
    }
 
    free(comments);
+
+   /* write the skeleton eos packet */
+   if (with_skeleton) {
+      add_eos_packet_to_stream(&so);
+      if ((ret = flush_ogg_stream_to_file(&so, fout))) {
+         fprintf (stderr,"Error: failed writing skeleton header to output stream\n");
+         exit(1);
+      } else
+	 bytes_written += ret;
+   }
+
 
    speex_bits_init(&bits);
 
