@@ -42,7 +42,7 @@ Jean-Marc Valin
 \begin_layout Standard
 
 \newpage
-Copyright (c) 2002-2005 Jean-Marc Valin/Xiph.org Foundation
+Copyright (c) 2002-2006 Jean-Marc Valin/Xiph.org Foundation
 \end_layout
 
 \begin_layout Standard
@@ -93,8 +93,7 @@ http://www.speex.org/
  There is already Vorbis that does general audio, but it is not really suitable
  for speech.
  Also, unlike many other speech codecs, Speex is not targeted at cell phones
- (not many open-source cell phones anyway :-) ) but rather at voice over
- IP (VoIP) and file-based compression.
+ but rather at voice over IP (VoIP) and file-based compression.
  
 \end_layout
 
@@ -307,7 +306,20 @@ Speex is mainly designed for 3 different sampling rates: 8 kHz, 16 kHz,
 \end_inset
 
 .
- 
+ For a sampling rate of 
+\begin_inset Formula $F_{s}$
+\end_inset
+
+ kHz, the highest frequency that can be represented is equal to 
+\begin_inset Formula $F_{s}/2$
+\end_inset
+
+ kHz.
+ This is a consequence of Nyquist's sampling theorem (and 
+\begin_inset Formula $F_{s}/2$
+\end_inset
+
+ is known as the Nyquist frequency).
 \end_layout
 
 \begin_layout Subsection*
@@ -2882,6 +2894,19 @@ sideways false
 status open
 
 \begin_layout Standard
+\begin_inset ERT
+status collapsed
+
+\begin_layout Standard
+
+
+\backslash
+begin{center}
+\end_layout
+
+\end_inset
+
+
 \begin_inset Tabular
 <lyxtabular version="3" rows="16" columns="3">
 <features>
@@ -3357,6 +3382,19 @@ int
 \end_inset
 
 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Standard
+
+
+\backslash
+end{center}
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Caption
@@ -3428,7 +3466,35 @@ perceptually weighted domain
 
 \begin_layout Standard
 This section describes the basic ideas behind CELP.
- Note that it's still incomplete.
+ This is still a work in progress.
+\end_layout
+
+\begin_layout Subsection
+Source-Filter Model of Speech Prediction
+\end_layout
+
+\begin_layout Standard
+The source-filter model of speech production assumes that the vocal cords
+ are the source of spectrally flat sound (the excitation signal), and that
+ the vocal tract acts as a filter to spectrally shape the various sounds
+ of speech.
+ While still an approximation, the model is widely used in speech coding
+ because of its simplicity.Its use is also the reason why most speech codecs
+ (Speex included) perform badly on music signals.
+ The different phonemes can be distinguished by their excitation (source)
+ and spectral shape (filter).
+ Voiced sounds (e.g.
+ vowels) have an excitation signal that is periodic and that can be approximated
+ by an impulse train in the time domain or by regularly-spaced harmonics
+ in the frequency domain.
+ On the other hand, fricatives (such as the "s", "sh" and "f" sounds) have
+ an excitation signal that is similar to white Gaussian noise.
+ So called voice fricatives (such as "z" and "v") have excitation signal
+ composed of an harmonic part and a noisy part.
+\end_layout
+
+\begin_layout Standard
+The source-filter model is usually tied with the use of Linear prediction.
 \end_layout
 
 \begin_layout Subsection
@@ -3500,46 +3566,23 @@ That can be done by making all derivatives
 \end_layout
 
 \begin_layout Standard
-The 
-\begin_inset Formula $a_{i}$
-\end_inset
-
- filter coefficients are computed using the Levinson-Durbin
-\begin_inset LatexCommand \index{Levinson-Durbin}
-
-\end_inset
-
- algorithm, which starts from the auto-correlation
-\begin_inset LatexCommand \index{auto-correlation}
-
-\end_inset
-
- 
-\begin_inset Formula $R(m)$
-\end_inset
-
- of the signal 
-\begin_inset Formula $x[n]$
-\end_inset
-
-.
-\end_layout
-
-\begin_layout Standard
-\begin_inset Formula \[
-R(m)=\sum_{i=0}^{N-1}x[i]x[i-m]\]
-
-\end_inset
-
-
-\end_layout
-
-\begin_layout Standard
 For an order 
 \begin_inset Formula $N$
 \end_inset
 
- filter, we have:
+ filter, the filter coefficients 
+\begin_inset Formula $a_{i}$
+\end_inset
+
+ are found by solving the system 
+\begin_inset Formula $N\times N$
+\end_inset
+
+ linear system 
+\begin_inset Formula $\mathbf{Ra}=\mathbf{r}$
+\end_inset
+
+, where
 \begin_inset Formula \[
 \mathbf{R}=\left[\begin{array}{cccc}
 R(0) & R(1) & \cdots & R(N-1)\\
@@ -3559,21 +3602,42 @@ R(N)\end{array}\right]\]
 
 \end_inset
 
+with 
+\begin_inset Formula $R(m)$
+\end_inset
+
+, the auto-correlation
+\begin_inset LatexCommand \index{auto-correlation}
+
+\end_inset
+
+ of the signal 
+\begin_inset Formula $x[n]$
+\end_inset
+
+, computed as:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula \[
+R(m)=\sum_{i=0}^{N-1}x[i]x[i-m]\]
+
+\end_inset
+
 
 \end_layout
 
 \begin_layout Standard
-The filter coefficients 
-\begin_inset Formula $a_{i}$
+Because 
+\begin_inset Formula $\mathbf{R}$
 \end_inset
 
- are found by solving the system 
-\begin_inset Formula $\mathbf{Ra}=\mathbf{r}$
+ is toeplitz hermitian, the Levinson-Durbin
+\begin_inset LatexCommand \index{Levinson-Durbin}
+
 \end_inset
 
-.
- What the Levinson-Durbin algorithm does here is making the solution to
- the problem 
+ algorithm can be used, making the solution to the problem 
 \begin_inset Formula $\mathcal{O}\left(N^{2}\right)$
 \end_inset
 
@@ -3581,11 +3645,7 @@ The filter coefficients
 \begin_inset Formula $\mathcal{O}\left(N^{3}\right)$
 \end_inset
 
- by exploiting the fact that matrix 
-\begin_inset Formula $\mathbf{R}$
-\end_inset
-
- is toeplitz hermitian.
+.
  Also, it can be proven that all the roots of 
 \begin_inset Formula $A(z)$
 \end_inset
@@ -3605,102 +3665,6 @@ The filter coefficients
  adding noise to the signal.
  Also, we can apply a window to the auto-correlation, which is equivalent
  to filtering in the frequency domain, reducing sharp resonances.
-\end_layout
-
-\begin_layout Standard
-The linear prediction model represents each speech sample as a linear combinatio
-n of past samples, plus an error signal called the excitation (or residual).
-\begin_inset Formula \[
-x[n]=\sum_{i=1}^{N}a_{i}x[n-i]+e[n]\]
-
-\end_inset
-
-
-\end_layout
-
-\begin_layout Standard
-In the 
-\emph on
-z
-\emph default
--domain, this can be expressed as
-\end_layout
-
-\begin_layout Standard
-\begin_inset Formula \[
-x(z)=\frac{1}{A(z)}\: e(z)\]
-
-\end_inset
-
-
-\end_layout
-
-\begin_layout Standard
-where 
-\begin_inset Formula $A(z)$
-\end_inset
-
- is defined as
-\end_layout
-
-\begin_layout Standard
-\begin_inset Formula \[
-A(z)=1-\sum_{i=1}^{N}a_{i}z^{-i}\]
-
-\end_inset
-
-
-\end_layout
-
-\begin_layout Standard
-We usually refer to 
-\begin_inset Formula $A(z)$
-\end_inset
-
- as the analysis filter and 
-\begin_inset Formula $1/A(z)$
-\end_inset
-
- as the synthesis filter.
- The whole process is called short-term prediction as it predicts the signal
- 
-\begin_inset Formula $x[n]$
-\end_inset
-
- using a prediction using only the 
-\begin_inset Formula $N$
-\end_inset
-
- past samples, where 
-\begin_inset Formula $N$
-\end_inset
-
- is usually around 10.
-\end_layout
-
-\begin_layout Standard
-Because LPC coefficients have very little robustness to quantization, they
- are converted to Line Spectral Pair
-\begin_inset LatexCommand \index{line spectral pair}
-
-\end_inset
-
- (LSP) coefficients which have a much better behaviour with quantization,
- one of them being that it's easy to keep the filter stable.
- 
-\end_layout
-
-\begin_layout Standard
-\begin_inset Note Comment
-status collapsed
-
-\begin_layout Standard
-Describe LSP's
-\end_layout
-
-\end_inset
-
-
 \end_layout
 
 \begin_layout Subsection
@@ -3809,7 +3773,7 @@ X(z)=\frac{C(z)}{A(z)\left(1-\beta z^{-T}\right)}\]
 \end_layout
 
 \begin_layout Subsection
-Analysis-by-Synthesis and Error Weighting
+Noise Weighting
 \begin_inset LatexCommand \index{error weighting}
 
 \end_inset
@@ -3839,57 +3803,39 @@ shape
 vice versa
 \emph default
 .
- That's why instead of minimizing the simple quadratic error
-\begin_inset Formula \[
-E=\sum_{n}\left(x[n]-\overline{x}[n]\right)^{2}\]
-
-\end_inset
-
-where 
-\begin_inset Formula $\overline{x}[n]$
-\end_inset
-
- is the encoder signal, we minimize the error for the perceptually weighted
- signal
-\begin_inset Formula \[
-X_{w}(z)=W(z)X(z)\]
-
-\end_inset
-
-where 
+ In order to maximize speech quality, CELP codecs minimize the mean square
+ of the error (noise) in the perceptually weighted domain.
+ This means that a perceptual noise weighting filter 
 \begin_inset Formula $W(z)$
 \end_inset
 
- is the weighting filter, usually of the form
-\end_layout
+ is applied to the error signal in the encoder.
+ In most CELP codecs, 
+\begin_inset Formula $W(z)$
+\end_inset
 
-\begin_layout Standard
+ is a pole-zero weighting filter derived from the linear prediction coefficients
+ (LPC), generally using bandwidth expansion.
+ Let the spectral envelope be represented by the synthesis filter 
+\begin_inset Formula $1/A(z)$
+\end_inset
+
+, CELP codecs typically derive the noise weighting filter as: 
 \begin_inset Formula \begin{equation}
-W(z)=\frac{A\left(\frac{z}{\gamma_{1}}\right)}{A\left(\frac{z}{\gamma_{2}}\right)}\label{eq:weighting_filter}\end{equation}
+W(z)=\frac{A(z/\gamma_{1})}{A(z/\gamma_{2})}\label{eq:gamma-weighting}\end{equation}
 
 \end_inset
 
-
-\end_layout
-
-\begin_layout Standard
-with control parameters 
-\begin_inset Formula $\gamma_{1}>\gamma_{2}$
+where 
+\begin_inset Formula $\gamma_{1}=0.9$
 \end_inset
 
-.
- If the noise is white in the perceptually weighted domain, then in the
- signal domain its spectral shape will be of the form
-\begin_inset Formula \[
-A_{noise}(z)=\frac{1}{W(z)}=\frac{A\left(\frac{z}{\gamma_{2}}\right)}{A\left(\frac{z}{\gamma_{1}}\right)}\]
-
+ and 
+\begin_inset Formula $\gamma_{2}=0.6$
 \end_inset
 
-
-\end_layout
-
-\begin_layout Standard
-If a filter 
+ in the Speex reference implementation.
+ If a filter 
 \begin_inset Formula $A(z)$
 \end_inset
 
@@ -3917,29 +3863,130 @@ If a filter
 \end_layout
 
 \begin_layout Standard
-Analysis-by-synthesis refers to the fact that when trying to find the best
- pitch parameters (
-\begin_inset Formula $T$
+The weighting filter is applied to the error signal used to optimize the
+ codebook search through analysis-by-synthesis (AbS).
+ This results in a spectral shape of the noise that tends towards 
+\begin_inset Formula $1/W(z)$
 \end_inset
 
-, 
-\begin_inset Formula $\beta$
+.
+ While the simplicity of the model has been an important reason for the
+ success of CELP, it remains that 
+\begin_inset Formula $W(z)$
 \end_inset
 
-) and innovation signal 
-\begin_inset Formula $c[n]$
+ is a very rough approximation for the perceptually optimal noise weighting
+ function.
+ Fig.
+ 
+\begin_inset LatexCommand \ref{cap:Standard-noise-shaping}
+
 \end_inset
 
-, we do not work by making the excitation 
-\begin_inset Formula $e[n]$
+ illustrates the noise shaping that results from Eq.
+ 
+\begin_inset LatexCommand \ref{eq:gamma-weighting}
+
 \end_inset
 
- as close as the original one (which would be simpler), but apply the synthesis
- (and weighting) filter and try making 
-\begin_inset Formula $X_{w}(z)$
+.
+ Throughout this paper, we refer to 
+\begin_inset Formula $W(z)$
 \end_inset
 
- as close to the original as possible.
+ as the noise weighting filter and to 
+\begin_inset Formula $1/W(z)$
+\end_inset
+
+ as the noise shaping filter (or curve).
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Standard
+\begin_inset ERT
+status collapsed
+
+\begin_layout Standard
+
+
+\backslash
+begin{center}
+\end_layout
+
+\end_inset
+
+
+\begin_inset Graphics
+	filename ref_shaping.eps
+	width 45page%
+	keepAspectRatio
+
+\end_inset
+
+
+\begin_inset ERT
+status collapsed
+
+\begin_layout Standard
+
+
+\backslash
+end{center}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Caption
+Standard noise shaping in CELP.
+ Arbitrary y-axis offset.
+\begin_inset LatexCommand \label{cap:Standard-noise-shaping}
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+Analysis-by-Synthesis
+\end_layout
+
+\begin_layout Standard
+One of the main principles behind CELP is called Analysis-by-Synthesis (AbS),
+ meaning that the encoding (analysis) is performed by perceptually optimising
+ the decoded (synthesis) signal in a closed loop.
+ In theory, the best CELP stream would be produced by trying all possible
+ bit combinations and selecting the one that produces the best-sounding
+ decoded signal.
+ This is obviously not possible in practice for two reasons: the required
+ complexity is beyond any currently available hardware and the 
+\begin_inset Quotes eld
+\end_inset
+
+best sounding
+\begin_inset Quotes erd
+\end_inset
+
+ selection criterion implies a human listener.
+ 
+\end_layout
+
+\begin_layout Standard
+In order to achieve real-time encoding using limited computing resources,
+ the CELP optimisation is broken down into smaller, more manageable, sequential
+ searches using the perceptual weighting function described earlier.
 \end_layout
 
 \begin_layout Standard
@@ -3994,7 +4041,7 @@ sub-vector fixed (innovation) codebooks
 \end_layout
 
 \begin_layout Subsection
-LPC Analysis
+Whole-Frame Analysis
 \begin_inset LatexCommand \index{linear prediction}
 
 \end_inset
@@ -4003,66 +4050,175 @@ LPC Analysis
 \end_layout
 
 \begin_layout Standard
-An LPC analysis is first performed on a (asymetric Hamming) window that
- spans all of the current frame and half a frame in advance.
- The LPC coefficients are then converted to Line Spectral Pair
+In narrowband, Speex frames are 20 ms long (160 samples) and are subdivided
+ in 4 sub-frames of 5 ms each (40 samples).
+ For most narrowband bit-rates (8 kbps and above), the only parameters encoded
+ at the frame level are the Line Spectral Pairs (LSP) and a global excitation
+ gain 
+\begin_inset Formula $g_{frame}$
+\end_inset
+
+, as shown in Fig.
+ 
+\begin_inset LatexCommand \ref{cap:Frame-open-loop-analysis}
+
+\end_inset
+
+.
+ All other parameters are encoded at the sub-frame level.
+\end_layout
+
+\begin_layout Standard
+Linear prediction analysis is performed once per frame using an asymmetric
+ Hamming window centered on the fourth sub-frame.
+ Because linear prediction coefficients (LPC) are not robust to quantization,
+ they are first are converted to line spectral pairs (LSP)
 \begin_inset LatexCommand \index{line spectral pair}
 
 \end_inset
 
- (LSP), a representation that is more robust to quantization.
+.
  The LSP's are considered to be associated to the 
 \begin_inset Formula $4^{th}$
 \end_inset
 
  sub-frames and the LSP's associated to the first 3 sub-frames are linearly
- interpolated using the current and previous LSP's.
-\end_layout
-
-\begin_layout Standard
-The LSP's are encoded using 30 bits for higher quality modes and 18 bits
- for lower quality, through the use of a multi-stage split-vector quantizer.
- For the lower quality modes, the 10 coefficients are first quantized with
- 6 bits and the error is then divided in two 5-coefficient sub-vectors.
- Each of them is quantized with 6 bits, for a total of 18 bits.
- For the higher quality modes, the remaining error on both sub-vectors is
- further quantized with 6 bits each, for a total of 30 bits.
-\end_layout
-
-\begin_layout Standard
-The perceptual weighting filter 
-\begin_inset Formula $W(z)$
-\end_inset
-
- used by Speex is derived from the LPC filter 
-\begin_inset Formula $A(z)$
-\end_inset
-
- and corresponds to the one described by eq.
- 
-\begin_inset LatexCommand \ref{eq:weighting_filter}
-
-\end_inset
-
- with 
-\begin_inset Formula $\gamma_{1}=0.9$
-\end_inset
-
- and 
-\begin_inset Formula $\gamma_{2}=0.6$
+ interpolated using the current and previous LSP coefficients.
+ The LSP coefficients and converted back to the LPC filter 
+\begin_inset Formula $\hat{A}(z)$
 \end_inset
 
 .
- We can use the unquantized 
+ The non-quantized interpolated filter is denoted 
 \begin_inset Formula $A(z)$
 \end_inset
 
- filter since the weighting filter is only used in the encoder.
+ and can be used for the weighting filter 
+\begin_inset Formula $W(z)$
+\end_inset
+
+ because it does not need to be available to the decoder.
+ 
+\end_layout
+
+\begin_layout Standard
+To make Speex more robust to packet loss, no prediction is applied on the
+ LSP coefficients prior to quantization.
+ The LSPs are encoded using vector quantizatin (VQ) with 30 bits for higher
+ quality modes and 18 bits for lower quality.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Standard
+\begin_inset ERT
+status collapsed
+
+\begin_layout Standard
+
+
+\backslash
+begin{center}
+\end_layout
+
+\end_inset
+
+
+\begin_inset Graphics
+	filename speex_analysis.eps
+	width 30page%
+
+\end_inset
+
+
+\begin_inset ERT
+status collapsed
+
+\begin_layout Standard
+
+
+\backslash
+end{center}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Caption
+Frame open-loop analysis
+\begin_inset LatexCommand \label{cap:Frame-open-loop-analysis}
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Subsection
-Pitch Prediction (adaptive codebook)
-\begin_inset LatexCommand \index{pitch}
+Sub-Frame Analysis-by-Synthesis
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Standard
+\begin_inset ERT
+status collapsed
+
+\begin_layout Standard
+
+
+\backslash
+begin{center}
+\end_layout
+
+\end_inset
+
+
+\begin_inset Graphics
+	filename speex_abs.eps
+	lyxscale 75
+	width 40page%
+
+\end_inset
+
+
+\begin_inset ERT
+status collapsed
+
+\begin_layout Standard
+
+
+\backslash
+end{center}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Caption
+Analysis-by-synthesis closed-loop optimization on a sub-frame.
+\begin_inset LatexCommand \label{cap:Sub-frame-AbS}
+
+\end_inset
+
+
+\end_layout
 
 \end_inset
 
@@ -4070,30 +4226,45 @@ Pitch Prediction (adaptive codebook)
 \end_layout
 
 \begin_layout Standard
-Speex uses a 3-tap prediction for pitch.
- That is, the pitch prediction signal 
-\begin_inset Formula $p[n]$
-\end_inset
-
- is obtained by the past of the excitation by:
-\begin_inset Formula \[
-p[n]=\beta_{0}e[n-T-1]+\beta_{1}e[n-T]+\beta_{2}e[n-T+1]\]
+The analysis-by-synthesis (AbS) encoder loop is described in Fig.
+ 
+\begin_inset LatexCommand \ref{cap:Sub-frame-AbS}
 
 \end_inset
 
+.
+ There are three main aspects where Speex significantly differs from most
+ other CELP codecs.
+ First, while most recent CELP codecs make use of fractional pitch estimation
+ with a single gain, Speex uses an integer to encode the pitch period, but
+ uses a 3-tap predictor (3 gains).
+ The adaptive codebook contribution 
+\begin_inset Formula $e_{a}[n]$
+\end_inset
 
-\end_layout
+ can thus be expressed as:
+\begin_inset Formula \begin{equation}
+e_{a}[n]=g_{0}e[n-T-1]+g_{1}e[n-T]+g_{2}e[n-T+1]\label{eq:adaptive-3tap}\end{equation}
 
-\begin_layout Standard
+\end_inset
+
 where 
-\begin_inset Formula $T$
+\begin_inset Formula $g_{0}$
 \end_inset
 
- is the pitch period and the 
-\begin_inset Formula $\beta_{i}$
+, 
+\begin_inset Formula $g_{1}$
 \end_inset
 
- are the prediction (filter) taps.
+ and 
+\begin_inset Formula $g_{2}$
+\end_inset
+
+ are the jointly quantized pitch gains and 
+\begin_inset Formula $e[n]$
+\end_inset
+
+ is the codec excitation memory.
  It is worth noting that when the pitch is smaller than the sub-frame size,
  we repeat the excitation at a period 
 \begin_inset Formula $T$
@@ -4101,7 +4272,7 @@ where
 
 .
  For example, when 
-\begin_inset Formula $n-T+1$
+\begin_inset Formula $n-T+1\geq0$
 \end_inset
 
 , we use 
@@ -4109,8 +4280,6 @@ where
 \end_inset
 
  instead.
- The period and quantized gains are determined in closed loop (analysis-by-synth
-esis).
  In most modes, the pitch period is encoded with 7 bits in the 
 \begin_inset Formula $\left[17,144\right]$
 \end_inset
@@ -4119,23 +4288,47 @@ esis).
 \begin_inset Formula $\beta_{i}$
 \end_inset
 
- coefficients are vector-quantized using 7 bits (15 kbps narrowband and
- above) at higher bit-rates and 5 bits at lower bit-rates (11 kbps narrowband
+ coefficients are vector-quantized using 7 bits at higher bit-rates (15
+ kbps narrowband and above) and 5 bits at lower bit-rates (11 kbps narrowband
  and below).
 \end_layout
 
-\begin_layout Subsection
-Innovation Codebook
+\begin_layout Standard
+Many current CELP codecs use moving average (MA) prediction to encode the
+ fixed codebook gain.
+ This provides slightly better coding at the expense of introducing a dependency
+ on previously encoded frames.
+ A second difference is that Speex encodes the fixed codebook gain as the
+ product of the global excitation gain 
+\begin_inset Formula $g_{frame}$
+\end_inset
+
+ with a sub-frame gain corrections 
+\begin_inset Formula $g_{subf}$
+\end_inset
+
+.
+ This increases robustness to packet loss by eliminating the inter-frame
+ dependency.
+ The sub-frame gain correction is encoded before the fixed codebook is searched
+ (not closed-loop optimized) and uses between 0 and 3 bits per sub-frame,
+ depending on the bit-rate.
 \end_layout
 
 \begin_layout Standard
-In Speex, the innovation signal is quantized using sub-vector shape-only
- vector quantization (VQ).
- That means that the innovation signal is divided in sub-vectors (of size
- 5 to 20) and quantized using a codebook that represents both the shape
- and the gain at the same time.
- This saves many bits that would otherwise be allocated for a separate gain
- at the price of a slight increase in complexity.
+The third difference is that Speex uses sub-vector quantization of the innovatio
+n (fixed codebook) signal instead of an algebraic codebook.
+ Each sub-frame is divided into sub-vectors of lengths ranging between 5
+ and 20 samples.
+ Each sub-vector is chosen from a bitrate-dependent codebook and all sub-vectors
+ are concatenated to form a sub-frame.
+ As an example, the 3.95 kbps mode uses a sub-vector size of 20 samples with
+ 32 entries in the codebook (5 bits).
+ This means that the innovation is encoded with 10 bits per sub-frame, or
+ 2000 bps.
+ On the other hand, the 18.2 kbps mode uses a sub-vector size of 5 samples
+ with 256 entries in the codebook (8 bits), so the innovation uses 64 bits
+ per sub-frame, or 12800 bps.
  
 \end_layout
 
@@ -6157,6 +6350,14 @@ Perceptual enhancement
 \end_layout
 
 \begin_layout Standard
+
+\series bold
+This section was only valid for version 1.1.12 and earlier.
+ It does not apply to version 1.2-beta1 (and later), for which the new perceptual
+ enhancement is not yet documented.
+\end_layout
+
+\begin_layout Standard
 This part of the codec only applies to the decoder and can even be changed
  without affecting inter-operability.
  For that reason, the implementation provided and described here should
@@ -6166,7 +6367,7 @@ This part of the codec only applies to the decoder and can even be changed
 \begin_inset Formula $S(z)=1/A(z)$
 \end_inset
 
- is replaced by an enhanced filter
+ is replaced by an enhanced filter:
 \begin_inset Formula \[
 S'(z)=\frac{A\left(z/a_{2}\right)A\left(z/a_{3}\right)}{A\left(z\right)A\left(z/a_{1}\right)}\]
 
@@ -6894,7 +7095,7 @@ As of version 1.0 beta 1, Speex is released under Xiph's version of the (revised
 \end_inset
 
 ).
- This license is the most permissive of the open-source licenses.
+ This license is one of the most permissive open-source licenses.
 \end_layout
 
 \begin_layout Subsection*
@@ -7098,7 +7299,7 @@ Can Speex pass DTMF
 \begin_layout Standard
 I guess it all depends on the bit-rate used.
  Though no formal testing has yet been performed, I'd say is correctly at
- 8 kbps and above (15 kbps for version < 1.1.1).
+ 8 kbps and above.
  Also, make sure you don't use the lowest complexity (see SPEEX_SET_COMPLEXITY
  or --comp option), as it causes significant noise.
 \end_layout
@@ -7118,14 +7319,15 @@ What is your (Jean-Marc) relationship with the University of Sherbrooke
 \end_layout
 
 \begin_layout Standard
-Currently (2005/05/11), I'm doing my 
+I have completed my 
 \emph on
 Ph.D.
 
 \emph default
- at the University of Sherbrooke in mobile robotics.
+ at the University of Sherbrooke in 2005 in mobile robotics.
  Although I did my master with the Sherbrooke speech coding group (in speech
- enhancement, not coding), I am not associated with them anymore.
+ enhancement, not coding), was no longer associated with them when developing
+ Speex.
  It should 
 \series bold
 not
