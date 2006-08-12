@@ -3412,8 +3412,18 @@ Ogg/Speex header packet
 \end_layout
 
 \begin_layout Standard
+\begin_inset ERT
+status collapsed
 
-\newpage
+\begin_layout Standard
+
+
+\backslash
+clearpage
+\end_layout
+
+\end_inset
+
 
 \end_layout
 
@@ -3495,6 +3505,71 @@ The source-filter model of speech production assumes that the vocal cords
 
 \begin_layout Standard
 The source-filter model is usually tied with the use of Linear prediction.
+ The CELP model is based on source-filter model, as can be seen from the
+ CELP decoder illustrated in Figure 
+\begin_inset LatexCommand \ref{fig:The-CELP-model}
+
+\end_inset
+
+.
+ 
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Standard
+\begin_inset ERT
+status collapsed
+
+\begin_layout Standard
+
+
+\backslash
+begin{center}
+\end_layout
+
+\end_inset
+
+
+\begin_inset Graphics
+	filename celp_decoder.eps
+	width 45page%
+	keepAspectRatio
+
+\end_inset
+
+
+\begin_inset ERT
+status collapsed
+
+\begin_layout Standard
+
+
+\backslash
+end{center}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Caption
+The CELP model of speech synthesis (decoder)
+\begin_inset LatexCommand \label{fig:The-CELP-model}
+
+\end_inset
+
+ 
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Subsection
@@ -4130,7 +4205,7 @@ begin{center}
 
 \begin_inset Graphics
 	filename speex_analysis.eps
-	width 30page%
+	width 35page%
 
 \end_inset
 
