@@ -559,7 +559,7 @@ void speex_echo_cancel(SpeexEchoState *st, const spx_int16_t *ref, const spx_int
          tmp_out = 0;
          saturated = 1;
       }
-      out[i] = tmp_out;
+      out[i] = (spx_int16_t)tmp_out;
       st->memE = tmp_out;
    }
 
@@ -803,7 +803,7 @@ void speex_echo_cancel(SpeexEchoState *st, const spx_int16_t *ref, const spx_int
 #endif
       /* Estimate residual echo */
       for (i=0;i<=st->frame_size;i++)
-         Yout[i] = MULT16_32_Q15(leak2,st->Yps[i]);
+         Yout[i] = (spx_int32_t)MULT16_32_Q15(leak2,st->Yps[i]);
    }
 }
 

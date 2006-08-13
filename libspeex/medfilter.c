@@ -37,10 +37,10 @@
 
 MedianFilter *median_filter_new(int N)
 {
-   MedianFilter *f = speex_alloc(sizeof(MedianFilter));
+   MedianFilter *f = (MedianFilter*)speex_alloc(sizeof(MedianFilter));
    f->N = N;
-   f->ids = speex_alloc(sizeof(int)*N);
-   f->val = speex_alloc(sizeof(float)*N);
+   f->ids = (int*)speex_alloc(sizeof(int)*N);
+   f->val = (float*)speex_alloc(sizeof(float)*N);
    f->filled = 0;
    return f;
 }
