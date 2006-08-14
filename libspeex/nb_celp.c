@@ -1151,6 +1151,7 @@ static void nb_decode_lost(DecState *st, spx_word16_t *out, char *stack)
    spx_word16_t fact;
    spx_word16_t gain_med;
    spx_word16_t innov_gain;
+   spx_word16_t noise_gain;
    
    if (st->count_lost<10)
       fact = attenuation[st->count_lost];
@@ -1201,11 +1202,13 @@ static void nb_decode_lost(DecState *st, spx_word16_t *out, char *stack)
          pitch_val = st->max_pitch;
       if (pitch_val < st->min_pitch)
          pitch_val = st->min_pitch;
+      
+      noise_gain = MULT16_16_Q15(innov_gain, MULT16_16_Q15(fact, SUB16(Q15ONE,MULT16_16_Q15(pitch_gain,pitch_gain))));
       for (i=0;i<st->subframeSize;i++)
       {
          /* FIXME: Second term need to be 16-bit */
          exc[i]= MULT16_16_Q15(pitch_gain, (exc[i-pitch_val]+VERY_SMALL)) + 
-               MULT16_16_Q15(fact, MULT16_16_Q15(SHL(Q15ONE,15)-SHL(MULT16_16(pitch_gain,pitch_gain),1),speex_rand(innov_gain, &st->seed)));
+               speex_rand(noise_gain, &st->seed);
       }
       for (i=0;i<st->subframeSize;i++)
          sp[i]=exc[i-st->subframeSize];
@@ -1687,8 +1690,8 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
       exc_ener = compute_rms16 (st->exc, st->frameSize);
       gain32 = PDIV32(ol_gain, ADD16(exc_ener,1));
 #ifdef FIXED_POINT
-      if (gain32 > 32768)
-         gain32 = 32768;
+      if (gain32 > 32767)
+         gain32 = 32767;
       gain = EXTRACT16(gain32);
 #else
       if (gain32 > 2)
