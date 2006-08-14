@@ -462,6 +462,7 @@ int main(int argc, char **argv)
    int extra_headers;
    int wav_format=0;
    int lookahead;
+   int skeleton_serialno = -1;
 
    enh_enabled = 1;
 
@@ -584,7 +585,7 @@ int main(int argc, char **argv)
    
    speex_bits_init(&bits);
    /*Main decoding loop*/
-   int skeleton_serialno = -1;
+   
    while (1)
    {
       char *data;

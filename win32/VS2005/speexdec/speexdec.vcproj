@@ -380,6 +380,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\skeleton.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\speexdec.c"
 				>
 			</File>
@@ -399,6 +403,10 @@
 			>
 			<File
 				RelativePath="..\..\..\src\getopt_win.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\skeleton.h"
 				>
 			</File>
 			<File

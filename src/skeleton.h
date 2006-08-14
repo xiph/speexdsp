@@ -10,6 +10,10 @@
 extern "C" {
 #endif
 
+#ifdef WIN32
+#define snprintf _snprintf
+#endif
+
 #include <ogg/ogg.h>
 
 #define SKELETON_VERSION_MAJOR 3

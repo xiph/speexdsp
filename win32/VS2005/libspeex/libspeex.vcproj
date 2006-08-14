@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="8.00"
 	Name="libspeex"
-	ProjectGUID="{6D653C6F-8722-4B10-9C3A-CB7094DD159F}"
+	ProjectGUID="{E972C52F-9E85-4D65-B19C-031E511E9DB4}"
 	RootNamespace="libspeex"
 	Keyword="Win32Proj"
 	>
