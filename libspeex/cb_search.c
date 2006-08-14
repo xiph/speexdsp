@@ -286,10 +286,10 @@ int   update_target
    N=complexity;
    if (N>10)
       N=10;
-   if (N<1)
-      N=1;
    /* Complexity isn't as important for the codebooks as it is for the pitch */
    N=(2*N)/3;
+   if (N<1)
+      N=1;
    if (N==1)
    {
       split_cb_search_shape_sign_N1(target,ak,awk1,awk2,par,p,nsf,exc,r,bits,stack,update_target);
