@@ -1172,51 +1172,30 @@ static void nb_decode_lost(DecState *st, spx_word16_t *out, char *stack)
    if (pitch_gain>.85)
       pitch_gain=.85;
 #endif
-
    pitch_gain = MULT16_16_Q15(fact,pitch_gain) + VERY_SMALL;
-
+   /* FIXME: This was rms of innovation (not exc) */
+   innov_gain = compute_rms16(st->exc, st->frameSize);
+   noise_gain = MULT16_16_Q15(innov_gain, MULT16_16_Q15(fact, SUB16(Q15ONE,MULT16_16_Q15(pitch_gain,pitch_gain))));
    /* Shift all buffers by one frame */
    speex_move(st->excBuf, st->excBuf+st->frameSize, (2*st->max_pitch + st->subframeSize + 12)*sizeof(spx_word16_t));
-   for (sub=0;sub<st->nbSubframes;sub++)
-   {
-      int offset;
-      spx_word16_t *sp;
-      spx_word16_t *exc;
-      /* Offset relative to start of frame */
-      offset = st->subframeSize*sub;
-      /* Original signal */
-      sp=out+offset;
-      /* Excitation */
-      exc=st->exc+offset;
-      /* Excitation after post-filter*/
-        
-      /* Make up a plausible excitation */
-      /* FIXME: THIS CAN BE IMPROVED */
-      /*if (pitch_gain>.95)
-        pitch_gain=.95;*/
-      
-      /* FIXME: This was rms of innovation (not exc) */
-      innov_gain = compute_rms16(st->exc, st->frameSize);
-      pitch_val = st->last_pitch + SHR32((spx_int32_t)speex_rand(1+st->count_lost, &st->seed),SIG_SHIFT);
-      if (pitch_val > st->max_pitch)
-         pitch_val = st->max_pitch;
-      if (pitch_val < st->min_pitch)
-         pitch_val = st->min_pitch;
-      
-      noise_gain = MULT16_16_Q15(innov_gain, MULT16_16_Q15(fact, SUB16(Q15ONE,MULT16_16_Q15(pitch_gain,pitch_gain))));
-      for (i=0;i<st->subframeSize;i++)
-      {
-         /* FIXME: Second term need to be 16-bit */
-         exc[i]= MULT16_16_Q15(pitch_gain, (exc[i-pitch_val]+VERY_SMALL)) + 
-               speex_rand(noise_gain, &st->seed);
-      }
-      for (i=0;i<st->subframeSize;i++)
-         sp[i]=exc[i-st->subframeSize];
-      iir_mem16(sp, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, 
-                st->mem_sp, stack);
+   
 
-      bw_lpc(QCONST16(.98,15), st->interp_qlpc, st->interp_qlpc, st->lpcSize);
+   pitch_val = st->last_pitch + SHR32((spx_int32_t)speex_rand(1+st->count_lost, &st->seed),SIG_SHIFT);
+   if (pitch_val > st->max_pitch)
+      pitch_val = st->max_pitch;
+   if (pitch_val < st->min_pitch)
+      pitch_val = st->min_pitch;
+   for (i=0;i<st->frameSize;i++)
+   {
+      st->exc[i]= MULT16_16_Q15(pitch_gain, (st->exc[i-pitch_val]+VERY_SMALL)) + 
+            speex_rand(noise_gain, &st->seed);
    }
+
+   for (i=0;i<st->frameSize;i++)
+      out[i]=st->exc[i-st->subframeSize];
+   bw_lpc(QCONST16(.98,15), st->interp_qlpc, st->interp_qlpc, st->lpcSize);
+   iir_mem16(out, st->interp_qlpc, out, st->frameSize, st->lpcSize, 
+             st->mem_sp, stack);
    highpass(out, out, st->frameSize, HIGHPASS_NARROWBAND|HIGHPASS_OUTPUT, st->mem_hp);
    
    st->first = 0;
