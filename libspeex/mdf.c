@@ -330,11 +330,11 @@ SpeexEchoState *speex_echo_state_init(int frame_size, int filter_length)
       spx_word32_t sum = 0;
       /* Ratio of ~10 between adaptation rate of first and last block */
       spx_word16_t decay = QCONST16(exp(-2.4/M),15);
-      st->prop[M-1] = QCONST16(.7, 15);
-      sum = EXTEND32(st->prop[M-1]);
-      for (i=M-2;i>=0;i--)
+      st->prop[0] = QCONST16(.7, 15);
+      sum = EXTEND32(st->prop[0]);
+      for (i=1;i<M;i++)
       {
-         st->prop[i] = MULT16_16_Q15(st->prop[i+1], decay);
+         st->prop[i] = MULT16_16_Q15(st->prop[i-1], decay);
          sum = ADD32(sum, EXTEND32(st->prop[i]));
       }
       for (i=M-1;i>=0;i--)
@@ -520,11 +520,14 @@ void speex_echo_cancel(SpeexEchoState *st, const spx_int16_t *ref, const spx_int
    }
 
    /* Shift memory: this could be optimized eventually*/
-   for (i=0;i<N*(M-1);i++)
-      st->X[i]=st->X[i+N];
+   for (j=M-2;j>=0;j--)
+   {
+      for (i=0;i<N;i++)
+         st->X[(j+1)*N+i] = st->X[j*N+i];
+   }
 
    /* Convert x (echo input) to frequency domain */
-   spx_fft(st->fft_table, st->x, &st->X[(M-1)*N]);
+   spx_fft(st->fft_table, st->x, &st->X[0]);
    
    /* Compute filter response Y */
    spectral_mul_accum(st->X, st->W, st->Y, N, M);
@@ -585,7 +588,7 @@ void speex_echo_cancel(SpeexEchoState *st, const spx_int16_t *ref, const spx_int
    /* Compute power spectrum of echo (X), error (E) and filter response (Y) */
    power_spectrum(st->E, st->Rf, N);
    power_spectrum(st->Y, st->Yf, N);
-   power_spectrum(&st->X[(M-1)*N], st->Xf, N);
+   power_spectrum(&st->X[0], st->Xf, N);
    
    /* Smooth echo energy estimate over time */
    for (j=0;j<=st->frame_size;j++)
@@ -736,7 +739,7 @@ void speex_echo_cancel(SpeexEchoState *st, const spx_int16_t *ref, const spx_int
    {
       /* This is a variant of the Alternatively Updated MDF (AUMDF) */
       /* Remove the "if" to make this an MDF filter */
-      if (j==M-1 || st->cancel_count%(M-1) == j)
+      if (j==0 || st->cancel_count%(M-1) == j-1)
       {
 #ifdef FIXED_POINT
          for (i=0;i<N;i++)
