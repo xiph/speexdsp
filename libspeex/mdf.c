@@ -475,7 +475,6 @@ void mc_echo_cancel(SpeexEchoState *st, const spx_int16_t *ref, const spx_int16_
 {
    int i,j, chan, speak;
    int N,M, C, K;
-   spx_word32_t Syy,See,Sxx;
    spx_word16_t leak_estimate;
    spx_word16_t ss, ss_1;
    spx_float_t Pey = FLOAT_ONE, Pyy=FLOAT_ONE;
@@ -487,6 +486,8 @@ void mc_echo_cancel(SpeexEchoState *st, const spx_int16_t *ref, const spx_int16_
    M = st->M;
    C = st->C;
    K = st->K;
+   spx_word32_t Syy[C],See[C],Sxx[K];
+
    st->cancel_count++;
 #ifdef FIXED_POINT
    ss=DIV32_16(11469,M);
@@ -628,48 +629,50 @@ void mc_echo_cancel(SpeexEchoState *st, const spx_int16_t *ref, const spx_int16_
       /* Compute filter response Y */
       spectral_mul_accum(st->X, st->W+chan*N*K*M, st->Y+chan*N, N, M*K);
       spx_ifft(st->fft_table, st->Y+chan*N, st->y+chan*N);
-   }
 
    
-   /* Compute error signal (for the output with de-emphasis) */ 
-   for (i=0;i<st->frame_size;i++)
-   {
-      spx_word32_t tmp_out;
+      /* Compute error signal (for the output with de-emphasis) */ 
+      for (i=0;i<st->frame_size;i++)
+      {
+         spx_word32_t tmp_out;
 #ifdef SMOOTH_BLOCKS
-      spx_word16_t y = MULT16_16_Q15(st->window[i+st->frame_size],st->e[i+st->frame_size]) + MULT16_16_Q15(st->window[i],st->y[i+st->frame_size]);
-      tmp_out = SUB32(EXTEND32(st->d[i+st->frame_size]), EXTEND32(y));
+         spx_word16_t y = MULT16_16_Q15(st->window[i+st->frame_size],st->e[chan*N+i+st->frame_size]) + MULT16_16_Q15(st->window[i],st->y[chan*N+i+st->frame_size]);
+         tmp_out = SUB32(EXTEND32(st->d[chan*N+i+st->frame_size]), EXTEND32(y));
 #else
-      tmp_out = SUB32(EXTEND32(st->d[i+st->frame_size]), EXTEND32(st->y[i+st->frame_size]));
+         tmp_out = SUB32(EXTEND32(st->d[chan*N+i+st->frame_size]), EXTEND32(st->y[chan*N+i+st->frame_size]));
 #endif
 
-      /* Saturation */
-      if (tmp_out>32767)
-         tmp_out = 32767;
-      else if (tmp_out<-32768)
-         tmp_out = -32768;
-      tmp_out = ADD32(tmp_out, EXTEND32(MULT16_16_P15(st->preemph, st->memE)));
-      /* This is an arbitrary test for saturation */
-      if (ref[i] <= -32000 || ref[i] >= 32000)
-      {
-         tmp_out = 0;
-         st->saturated = 1;
+         /* Saturation */
+         if (tmp_out>32767)
+            tmp_out = 32767;
+         else if (tmp_out<-32768)
+            tmp_out = -32768;
+         tmp_out = ADD32(tmp_out, EXTEND32(MULT16_16_P15(st->preemph, st->memE[chan])));
+         /* This is an arbitrary test for saturation */
+         if (ref[i*C+chan] <= -32000 || ref[i*C+chan] >= 32000)
+         {
+            tmp_out = 0;
+            st->saturated = 1;
+         }
+         out[i*C+chan] = (spx_int16_t)tmp_out;
+         st->memE[chan] = tmp_out;
       }
-      out[i] = (spx_int16_t)tmp_out;
-      st->memE = tmp_out;
+      
+      /* Compute error signal (filter update version) */ 
+      for (i=0;i<st->frame_size;i++)
+      {
+         st->e[chan*N+i] = 0;
+         st->e[chan*N+i+st->frame_size] = st->d[chan*N+i+st->frame_size] - st->y[chan*N+i+st->frame_size];
+      }
+      
+      /* Compute a bunch of correlations */
+      See[chan] = mdf_inner_prod(st->e+chan*N+st->frame_size, st->e+chan*N+st->frame_size, st->frame_size);
+      See[chan] = ADD32(See[chan], SHR32(EXTEND32(10000),6));
+      Syy[chan] = mdf_inner_prod(st->y+chan*N+st->frame_size, st->y+chan*N+st->frame_size, st->frame_size);
    }
-
-   /* Compute error signal (filter update version) */ 
-   for (i=0;i<st->frame_size;i++)
-   {
-      st->e[i] = 0;
-      st->e[i+st->frame_size] = st->d[i+st->frame_size] - st->y[i+st->frame_size];
-   }
-
-   /* Compute a bunch of correlations */
-   See = mdf_inner_prod(st->e+st->frame_size, st->e+st->frame_size, st->frame_size);
-   See = ADD32(See, SHR32(EXTEND32(10000),6));
-   Syy = mdf_inner_prod(st->y+st->frame_size, st->y+st->frame_size, st->frame_size);
-   Sxx = mdf_inner_prod(st->x+st->frame_size, st->x+st->frame_size, st->frame_size);
+   
+   for (speak = 0; speak < K; speak++)
+      Sxx[speak] = mdf_inner_prod(st->x+speak*N+st->frame_size, st->x+speak*N+st->frame_size, st->frame_size);
 
    /* Convert error to frequency domain */
    spx_fft(st->fft_table, st->e, st->E);
@@ -685,21 +688,6 @@ void mc_echo_cancel(SpeexEchoState *st, const spx_int16_t *ref, const spx_int16_
    /* Smooth echo energy estimate over time */
    for (j=0;j<=st->frame_size;j++)
       st->power[j] = MULT16_32_Q15(ss_1,st->power[j]) + 1 + MULT16_32_Q15(ss,st->Xf[j]);
-   
-   /* Enable this to compute the power based only on the tail (would need to compute more 
-      efficiently to make this really useful */
-   if (0)
-   {
-      float scale2 = .5f/M;
-      for (j=0;j<=st->frame_size;j++)
-         st->power[j] = 0;
-      for (i=0;i<M;i++)
-      {
-         power_spectrum(&st->X[i*N], st->Xf, N);
-         for (j=0;j<=st->frame_size;j++)
-            st->power[j] += scale2*st->Xf[j];
-      }
-   }
 
    /* Compute filtered spectra and (cross-)correlations */
    for (j=st->frame_size;j>=0;j--)
