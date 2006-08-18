@@ -486,7 +486,7 @@ void mc_echo_cancel(SpeexEchoState *st, const spx_int16_t *ref, const spx_int16_
    M = st->M;
    C = st->C;
    K = st->K;
-   spx_word32_t Syy,See,Sxx;
+   spx_word32_t Syy=0,See=0,Sxx=0;
 
    st->cancel_count++;
 #ifdef FIXED_POINT
@@ -531,7 +531,7 @@ void mc_echo_cancel(SpeexEchoState *st, const spx_int16_t *ref, const spx_int16_
       {
          spx_word16_t tmp;
          spx_word32_t tmp32;
-         st->x[speak+N+i] = st->x[speak+N+i+st->frame_size];
+         st->x[speak*N+i] = st->x[speak*N+i+st->frame_size];
          tmp32 = SUB32(EXTEND32(echo[i]), EXTEND32(MULT16_16_P15(st->preemph, st->memX[speak])));
 #ifdef FIXED_POINT
          /*FIXME: If saturation occurs here, we need to freeze adaptation for M frames (not just one) */
@@ -546,7 +546,7 @@ void mc_echo_cancel(SpeexEchoState *st, const spx_int16_t *ref, const spx_int16_
             st->saturated = 1;
          }      
 #endif
-         st->x[speak+N+i+st->frame_size] = EXTRACT16(tmp32);
+         st->x[speak*N+i+st->frame_size] = EXTRACT16(tmp32);
          st->memX[speak] = echo[i];
       }
    }   
