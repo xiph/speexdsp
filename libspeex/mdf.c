@@ -314,7 +314,7 @@ SpeexEchoState *mc_echo_state_init(int frame_size, int filter_length, int nb_mic
    
    st->e = (spx_word16_t*)speex_alloc(C*N*sizeof(spx_word16_t));
    st->x = (spx_word16_t*)speex_alloc(K*N*sizeof(spx_word16_t));
-   st->d = (spx_word16_t*)speex_alloc(N*sizeof(spx_word16_t));
+   st->d = (spx_word16_t*)speex_alloc(C*N*sizeof(spx_word16_t));
    st->y = (spx_word16_t*)speex_alloc(C*N*sizeof(spx_word16_t));
    st->Yps = (spx_word32_t*)speex_alloc(C*N*sizeof(spx_word32_t));
    st->last_y = (spx_word16_t*)speex_alloc(C*N*sizeof(spx_word16_t));
@@ -511,7 +511,7 @@ void mc_echo_cancel(SpeexEchoState *st, const spx_int16_t *ref, const spx_int16_
 
    for (chan = 0; chan < C; chan++)
    {
-      filter_dc_notch16(ref+chan, st->notch_radius, st->d, st->frame_size, st->notch_mem, C);
+      filter_dc_notch16(ref+chan, st->notch_radius, st->d+chan*N, st->frame_size, st->notch_mem, C);
       /* Copy input data to buffer */
       for (i=0;i<st->frame_size;i++)
       {
