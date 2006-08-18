@@ -206,6 +206,18 @@ static inline void power_spectrum(const spx_word16_t *X, spx_word32_t *ps, int N
    ps[j]=MULT16_16(X[i],X[i]);
 }
 
+/** Compute power spectrum of a half-complex (packed) vector and accumulate */
+static inline void power_spectrum_accum(const spx_word16_t *X, spx_word32_t *ps, int N)
+{
+   int i, j;
+   ps[0]+=MULT16_16(X[0],X[0]);
+   for (i=1,j=1;i<N-1;i+=2,j++)
+   {
+      ps[j] +=  MULT16_16(X[i],X[i]) + MULT16_16(X[i+1],X[i+1]);
+   }
+   ps[j]+=MULT16_16(X[i],X[i]);
+}
+
 /** Compute cross-power spectrum of a half-complex (packed) vectors and add to acc */
 #ifdef FIXED_POINT
 static inline void spectral_mul_accum(const spx_word16_t *X, const spx_word32_t *Y, spx_word16_t *acc, int N, int M)
@@ -532,7 +544,7 @@ void mc_echo_cancel(SpeexEchoState *st, const spx_int16_t *ref, const spx_int16_
          spx_word16_t tmp;
          spx_word32_t tmp32;
          st->x[speak*N+i] = st->x[speak*N+i+st->frame_size];
-         tmp32 = SUB32(EXTEND32(echo[i]), EXTEND32(MULT16_16_P15(st->preemph, st->memX[speak])));
+         tmp32 = SUB32(EXTEND32(echo[i*K+speak]), EXTEND32(MULT16_16_P15(st->preemph, st->memX[speak])));
 #ifdef FIXED_POINT
          /*FIXME: If saturation occurs here, we need to freeze adaptation for M frames (not just one) */
          if (tmp32 > 32767)
@@ -547,7 +559,7 @@ void mc_echo_cancel(SpeexEchoState *st, const spx_int16_t *ref, const spx_int16_
          }      
 #endif
          st->x[speak*N+i+st->frame_size] = EXTRACT16(tmp32);
-         st->memX[speak] = echo[i];
+         st->memX[speak] = echo[i*K+speak];
       }
    }   
    
@@ -625,10 +637,10 @@ void mc_echo_cancel(SpeexEchoState *st, const spx_int16_t *ref, const spx_int16_
       }
    }
 
-   for (speak = 0; speak < K; speak++)
-      Sxx += mdf_inner_prod(st->x+speak*N+st->frame_size, st->x+speak*N+st->frame_size, st->frame_size);
-
-
+   /* So we can use power_spectrum_accum */ 
+   for (i=0;i<=st->frame_size;i++)
+      st->Rf[i] = st->Yf[i] = st->Xf[i] = 0;
+   
    for (chan = 0; chan < C; chan++)
    {
       /* Compute filter response Y */
@@ -679,17 +691,19 @@ void mc_echo_cancel(SpeexEchoState *st, const spx_int16_t *ref, const spx_int16_
       for (i=0;i<st->frame_size;i++)
          st->y[i+chan*N] = 0;
       spx_fft(st->fft_table, st->y+chan*N, st->Y+chan*N);
+   
+      /* Compute power spectrum of echo (X), error (E) and filter response (Y) */
+      power_spectrum_accum(st->E+chan*N, st->Rf, N);
+      power_spectrum_accum(st->Y+chan*N, st->Yf, N);
    }
    See = ADD32(See, SHR32(EXTEND32(10000),6));
    
-
-   /* FIXME: MC conversion required */
-   /* Compute power spectrum of echo (X), error (E) and filter response (Y) */
-   power_spectrum(st->E, st->Rf, N);
-   power_spectrum(st->Y, st->Yf, N);
-   power_spectrum(st->X, st->Xf, N);
+   for (speak = 0; speak < K; speak++)
+   {
+      Sxx += mdf_inner_prod(st->x+speak*N+st->frame_size, st->x+speak*N+st->frame_size, st->frame_size);
+      power_spectrum_accum(st->X+speak*N, st->Xf, N);
+   }
    
-   /* FIXME: MC conversion required */
    /* Smooth echo energy estimate over time */
    for (j=0;j<=st->frame_size;j++)
       st->power[j] = MULT16_32_Q15(ss_1,st->power[j]) + 1 + MULT16_32_Q15(ss,st->Xf[j]);
