@@ -306,19 +306,19 @@ SpeexEchoState *mc_echo_state_init(int frame_size, int filter_length, int nb_mic
    st->y = (spx_word16_t*)speex_alloc(C*N*sizeof(spx_word16_t));
    st->Yps = (spx_word32_t*)speex_alloc(C*N*sizeof(spx_word32_t));
    st->last_y = (spx_word16_t*)speex_alloc(C*N*sizeof(spx_word16_t));
-   st->Yf = (spx_word32_t*)speex_alloc(C*(st->frame_size+1)*sizeof(spx_word32_t));
-   st->Rf = (spx_word32_t*)speex_alloc(C*(st->frame_size+1)*sizeof(spx_word32_t));
-   st->Xf = (spx_word32_t*)speex_alloc(K*(st->frame_size+1)*sizeof(spx_word32_t));
-   st->Yh = (spx_word32_t*)speex_alloc(C*(st->frame_size+1)*sizeof(spx_word32_t));
-   st->Eh = (spx_word32_t*)speex_alloc(C*(st->frame_size+1)*sizeof(spx_word32_t));
+   st->Yf = (spx_word32_t*)speex_alloc((st->frame_size+1)*sizeof(spx_word32_t));
+   st->Rf = (spx_word32_t*)speex_alloc((st->frame_size+1)*sizeof(spx_word32_t));
+   st->Xf = (spx_word32_t*)speex_alloc((st->frame_size+1)*sizeof(spx_word32_t));
+   st->Yh = (spx_word32_t*)speex_alloc((st->frame_size+1)*sizeof(spx_word32_t));
+   st->Eh = (spx_word32_t*)speex_alloc((st->frame_size+1)*sizeof(spx_word32_t));
 
    st->X = (spx_word16_t*)speex_alloc(K*(M+1)*N*sizeof(spx_word16_t));
    st->Y = (spx_word16_t*)speex_alloc(C*N*sizeof(spx_word16_t));
    st->E = (spx_word16_t*)speex_alloc(C*N*sizeof(spx_word16_t));
    st->W = (spx_word32_t*)speex_alloc(C*K*M*N*sizeof(spx_word32_t));
    st->PHI = (spx_word32_t*)speex_alloc(N*sizeof(spx_word32_t));
-   st->power = (spx_word32_t*)speex_alloc(K*(frame_size+1)*sizeof(spx_word32_t));
-   st->power_1 = (spx_float_t*)speex_alloc(K*(frame_size+1)*sizeof(spx_float_t));
+   st->power = (spx_word32_t*)speex_alloc((frame_size+1)*sizeof(spx_word32_t));
+   st->power_1 = (spx_float_t*)speex_alloc((frame_size+1)*sizeof(spx_float_t));
    st->window = (spx_word16_t*)speex_alloc(N*sizeof(spx_word16_t));
    st->prop = (spx_word16_t*)speex_alloc(M*sizeof(spx_word16_t));
    st->wtmp = (spx_word16_t*)speex_alloc(N*sizeof(spx_word16_t));
@@ -486,7 +486,7 @@ void mc_echo_cancel(SpeexEchoState *st, const spx_int16_t *ref, const spx_int16_
    M = st->M;
    C = st->C;
    K = st->K;
-   spx_word32_t Syy[C],See[C],Sxx[K];
+   spx_word32_t Syy,See,Sxx;
 
    st->cancel_count++;
 #ifdef FIXED_POINT
@@ -580,9 +580,9 @@ void mc_echo_cancel(SpeexEchoState *st, const spx_int16_t *ref, const spx_int16_
          {
             for (j=M-1;j>=0;j--)
             {
-               weighted_spectral_mul_conj(st->power_1+K*N, &st->X[(j+1)*N*K+speak*N], st->E+chan*N, st->PHI, N);
+               weighted_spectral_mul_conj(st->power_1, &st->X[(j+1)*N*K+speak*N], st->E+chan*N, st->PHI, N);
                for (i=0;i<N;i++)
-                  st->W[chan*N*K*M + j*N*K + speak*N +i] += MULT16_32_Q15(st->prop[j], st->PHI[i]);
+                  st->W[chan*N*K*M + j*N*K + speak*N + i] += MULT16_32_Q15(st->prop[j], st->PHI[i]);
             }
          }
       }   
@@ -590,6 +590,7 @@ void mc_echo_cancel(SpeexEchoState *st, const spx_int16_t *ref, const spx_int16_
    
    st->saturated = 0;
    
+   /* FIXME: MC conversion required */ 
    /* Update weight to prevent circular convolution (MDF / AUMDF) */
    for (j=0;j<M;j++)
    {
@@ -623,6 +624,10 @@ void mc_echo_cancel(SpeexEchoState *st, const spx_int16_t *ref, const spx_int16_
 #endif
       }
    }
+
+   for (speak = 0; speak < K; speak++)
+      Sxx += mdf_inner_prod(st->x+speak*N+st->frame_size, st->x+speak*N+st->frame_size, st->frame_size);
+
 
    for (chan = 0; chan < C; chan++)
    {
@@ -666,25 +671,25 @@ void mc_echo_cancel(SpeexEchoState *st, const spx_int16_t *ref, const spx_int16_
       }
       
       /* Compute a bunch of correlations */
-      See[chan] = mdf_inner_prod(st->e+chan*N+st->frame_size, st->e+chan*N+st->frame_size, st->frame_size);
-      See[chan] = ADD32(See[chan], SHR32(EXTEND32(10000),6));
-      Syy[chan] = mdf_inner_prod(st->y+chan*N+st->frame_size, st->y+chan*N+st->frame_size, st->frame_size);
-   }
+      See += mdf_inner_prod(st->e+chan*N+st->frame_size, st->e+chan*N+st->frame_size, st->frame_size);
+      Syy += mdf_inner_prod(st->y+chan*N+st->frame_size, st->y+chan*N+st->frame_size, st->frame_size);
    
-   for (speak = 0; speak < K; speak++)
-      Sxx[speak] = mdf_inner_prod(st->x+speak*N+st->frame_size, st->x+speak*N+st->frame_size, st->frame_size);
+      /* Convert error to frequency domain */
+      spx_fft(st->fft_table, st->e+chan*N, st->E+chan*N);
+      for (i=0;i<st->frame_size;i++)
+         st->y[i+chan*N] = 0;
+      spx_fft(st->fft_table, st->y+chan*N, st->Y+chan*N);
+   }
+   See = ADD32(See, SHR32(EXTEND32(10000),6));
+   
 
-   /* Convert error to frequency domain */
-   spx_fft(st->fft_table, st->e, st->E);
-   for (i=0;i<st->frame_size;i++)
-      st->y[i] = 0;
-   spx_fft(st->fft_table, st->y, st->Y);
-
+   /* FIXME: MC conversion required */
    /* Compute power spectrum of echo (X), error (E) and filter response (Y) */
    power_spectrum(st->E, st->Rf, N);
    power_spectrum(st->Y, st->Yf, N);
    power_spectrum(st->X, st->Xf, N);
    
+   /* FIXME: MC conversion required */
    /* Smooth echo energy estimate over time */
    for (j=0;j<=st->frame_size;j++)
       st->power[j] = MULT16_32_Q15(ss_1,st->power[j]) + 1 + MULT16_32_Q15(ss,st->Xf[j]);
@@ -794,6 +799,7 @@ void mc_echo_cancel(SpeexEchoState *st, const spx_int16_t *ref, const spx_int16_
       st->sum_adapt = ADD32(st->sum_adapt,adapt_rate);
    }
 
+   /* FIXME: MC conversion required */ 
    /* Compute spectrum of estimated echo for use in an echo post-filter (if necessary)*/
    if (Yout)
    {
