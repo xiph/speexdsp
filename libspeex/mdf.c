@@ -148,7 +148,7 @@ struct SpeexEchoState_ {
    spx_word16_t *memX, *memD, *memE;
    spx_word16_t preemph;
    spx_word16_t notch_radius;
-   spx_mem_t notch_mem[2];
+   spx_mem_t *notch_mem;
 
    /* NOTE: If you only use speex_echo_cancel() and want to save some memory, remove this */
    spx_int16_t *play_buf;
@@ -347,7 +347,7 @@ SpeexEchoState *mc_echo_state_init(int frame_size, int filter_length, int nb_mic
 #endif
    for (i=0;i<=st->frame_size;i++)
       st->power_1[i] = FLOAT_ONE;
-   for (i=0;i<N*M;i++)
+   for (i=0;i<N*M*K*C;i++)
       st->W[i] = 0;
    for (i=0;i<N;i++)
       st->PHI[i] = 0;
@@ -379,7 +379,7 @@ SpeexEchoState *mc_echo_state_init(int frame_size, int filter_length, int nb_mic
    else
       st->notch_radius = QCONST16(.992, 15);
 
-   st->notch_mem[0] = st->notch_mem[1] = 0;
+   st->notch_mem = (spx_mem_t*)speex_alloc(2*C*sizeof(spx_mem_t));
    st->adapted = 0;
    st->Pey = st->Pyy = FLOAT_ONE;
    
@@ -392,10 +392,12 @@ SpeexEchoState *mc_echo_state_init(int frame_size, int filter_length, int nb_mic
 /** Resets echo canceller state */
 void speex_echo_state_reset(SpeexEchoState *st)
 {
-   int i, M, N;
+   int i, M, N, C, K;
    st->cancel_count=0;
    N = st->window_size;
    M = st->M;
+   C=st->C;
+   K=st->K;
    for (i=0;i<N*M;i++)
       st->W[i] = 0;
    for (i=0;i<N*(M+1);i++)
@@ -404,7 +406,8 @@ void speex_echo_state_reset(SpeexEchoState *st)
       st->power[i] = 0;
    for (i=0;i<N;i++)
       st->E[i] = 0;
-   st->notch_mem[0] = st->notch_mem[1] = 0;
+   for (i=0;i<2*C;i++)
+      st->notch_mem[i] = 0;
   
    st->saturated = 0;
    st->adapted = 0;
@@ -511,7 +514,7 @@ void mc_echo_cancel(SpeexEchoState *st, const spx_int16_t *ref, const spx_int16_
 
    for (chan = 0; chan < C; chan++)
    {
-      filter_dc_notch16(ref+chan, st->notch_radius, st->d+chan*N, st->frame_size, st->notch_mem, C);
+      filter_dc_notch16(ref+chan, st->notch_radius, st->d+chan*N, st->frame_size, st->notch_mem+2*chan, C);
       /* Copy input data to buffer */
       for (i=0;i<st->frame_size;i++)
       {
@@ -604,39 +607,45 @@ void mc_echo_cancel(SpeexEchoState *st, const spx_int16_t *ref, const spx_int16_
    
    /* FIXME: MC conversion required */ 
    /* Update weight to prevent circular convolution (MDF / AUMDF) */
-   for (j=0;j<M;j++)
+   for (chan = 0; chan < C; chan++)
    {
-      /* This is a variant of the Alternatively Updated MDF (AUMDF) */
-      /* Remove the "if" to make this an MDF filter */
-      if (j==0 || st->cancel_count%(M-1) == j-1)
+      for (speak = 0; speak < K; speak++)
       {
+         for (j=0;j<M;j++)
+         {
+            /* This is a variant of the Alternatively Updated MDF (AUMDF) */
+            /* Remove the "if" to make this an MDF filter */
+            if (j==0 || st->cancel_count%(M-1) == j-1)
+            {
 #ifdef FIXED_POINT
-         for (i=0;i<N;i++)
-            st->wtmp2[i] = EXTRACT16(PSHR32(st->W[j*N+i],NORMALIZE_SCALEDOWN+16));
-         spx_ifft(st->fft_table, st->wtmp2, st->wtmp);
-         for (i=0;i<st->frame_size;i++)
-         {
-            st->wtmp[i]=0;
-         }
-         for (i=st->frame_size;i<N;i++)
-         {
-            st->wtmp[i]=SHL16(st->wtmp[i],NORMALIZE_SCALEUP);
-         }
-         spx_fft(st->fft_table, st->wtmp, st->wtmp2);
-         /* The "-1" in the shift is a sort of kludge that trades less efficient update speed for decrease noise */
-         for (i=0;i<N;i++)
-            st->W[j*N+i] -= SHL32(EXTEND32(st->wtmp2[i]),16+NORMALIZE_SCALEDOWN-NORMALIZE_SCALEUP-1);
+               for (i=0;i<N;i++)
+                  st->wtmp2[i] = EXTRACT16(PSHR32(st->W[chan*N*K*M + j*N*K + speak*N + i],NORMALIZE_SCALEDOWN+16));
+               spx_ifft(st->fft_table, st->wtmp2, st->wtmp);
+               for (i=0;i<st->frame_size;i++)
+               {
+                  st->wtmp[i]=0;
+               }
+               for (i=st->frame_size;i<N;i++)
+               {
+                  st->wtmp[i]=SHL16(st->wtmp[i],NORMALIZE_SCALEUP);
+               }
+               spx_fft(st->fft_table, st->wtmp, st->wtmp2);
+               /* The "-1" in the shift is a sort of kludge that trades less efficient update speed for decrease noise */
+               for (i=0;i<N;i++)
+                  st->W[chan*N*K*M + j*N*K + speak*N + i] -= SHL32(EXTEND32(st->wtmp2[i]),16+NORMALIZE_SCALEDOWN-NORMALIZE_SCALEUP-1);
 #else
-         spx_ifft(st->fft_table, &st->W[j*N], st->wtmp);
-         for (i=st->frame_size;i<N;i++)
-         {
-            st->wtmp[i]=0;
-         }
-         spx_fft(st->fft_table, st->wtmp, &st->W[j*N]);
+               spx_ifft(st->fft_table, &st->W[chan*N*K*M + j*N*K + speak*N], st->wtmp);
+               for (i=st->frame_size;i<N;i++)
+               {
+                  st->wtmp[i]=0;
+               }
+               spx_fft(st->fft_table, st->wtmp, &st->W[chan*N*K*M + j*N*K + speak*N]);
 #endif
+            }
+         }
       }
    }
-
+   
    /* So we can use power_spectrum_accum */ 
    for (i=0;i<=st->frame_size;i++)
       st->Rf[i] = st->Yf[i] = st->Xf[i] = 0;
