@@ -1145,7 +1145,7 @@ const spx_word16_t attenuation[10] = {1., 0.961, 0.852, 0.698, 0.527, 0.368, 0.2
 
 static void nb_decode_lost(DecState *st, spx_word16_t *out, char *stack)
 {
-   int i, sub;
+   int i;
    int pitch_val;
    spx_word16_t pitch_gain;
    spx_word16_t fact;
