@@ -1,13 +1,4 @@
-For 1.1.13:
-Input buffer in new enhancer
-(remove the if's in loops in interp_pitch())
-Fix --force-nb
-Fix wideband PLC
-change filter structure in vorbis-psy (use the numerator=LPC version)
-Fix overflow in mdf
-
-Later:
-use 16-bit version of the filters in ltp.c
+Better saturation handling in mdf?
 get rid of crap that shouldn't be exposed in speex.h
 
 Would be nice:

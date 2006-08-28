@@ -101,7 +101,7 @@ typedef struct EncState {
    VBRState *vbr;                /**< State of the VBR data */
    float  vbr_quality;           /**< Quality setting for VBR encoding */
    float  relative_quality;      /**< Relative quality that will be needed by VBR */
-   int    vbr_enabled;           /**< 1 for enabling VBR, 0 otherwise */
+   spx_int32_t vbr_enabled;      /**< 1 for enabling VBR, 0 otherwise */
    spx_int32_t vbr_max;          /**< Max bit-rate allowed in VBR mode */
    int    vad_enabled;           /**< 1 for enabling VAD, 0 otherwise */
    int    dtx_enabled;           /**< 1 for enabling DTX, 0 otherwise */

@@ -91,7 +91,7 @@ typedef struct SpeexJitter {
    int valid_bits;                                                        /**< True if Speex bits are valid        */
    JitterBuffer *packets;
    void *dec;                                                             /**< Pointer to Speex decoder            */
-   int frame_size;                                                        /**< Frame size of Speex decoder         */
+   spx_int32_t frame_size;                                                        /**< Frame size of Speex decoder         */
 } SpeexJitter;
 
 /** Initialise jitter buffer */

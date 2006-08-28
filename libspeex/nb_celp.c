@@ -490,7 +490,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
       /*  delta_qual*=.1*(3+st->vbr_quality);*/
       if (st->vbr_enabled) 
       {
-         int mode;
+         spx_int32_t mode;
          int choice=0;
          float min_diff=100;
          mode = 8;
@@ -540,7 +540,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
          
          if (st->abr_enabled)
          {
-            int bitrate;
+            spx_int32_t bitrate;
             speex_encoder_ctl(state, SPEEX_GET_BITRATE, &bitrate);
             st->abr_drift+=(bitrate-st->abr_enabled);
             st->abr_drift2 = .95*st->abr_drift2 + .05*(bitrate-st->abr_enabled);
@@ -1759,40 +1759,40 @@ int nb_encoder_ctl(void *state, int request, void *ptr)
    switch(request)
    {
    case SPEEX_GET_FRAME_SIZE:
-      (*(int*)ptr) = st->frameSize;
+      (*(spx_int32_t*)ptr) = st->frameSize;
       break;
    case SPEEX_SET_LOW_MODE:
    case SPEEX_SET_MODE:
-      st->submodeSelect = st->submodeID = (*(int*)ptr);
+      st->submodeSelect = st->submodeID = (*(spx_int32_t*)ptr);
       break;
    case SPEEX_GET_LOW_MODE:
    case SPEEX_GET_MODE:
-      (*(int*)ptr) = st->submodeID;
+      (*(spx_int32_t*)ptr) = st->submodeID;
       break;
    case SPEEX_SET_VBR:
-      st->vbr_enabled = (*(int*)ptr);
+      st->vbr_enabled = (*(spx_int32_t*)ptr);
       break;
    case SPEEX_GET_VBR:
-      (*(int*)ptr) = st->vbr_enabled;
+      (*(spx_int32_t*)ptr) = st->vbr_enabled;
       break;
    case SPEEX_SET_VAD:
-      st->vad_enabled = (*(int*)ptr);
+      st->vad_enabled = (*(spx_int32_t*)ptr);
       break;
    case SPEEX_GET_VAD:
-      (*(int*)ptr) = st->vad_enabled;
+      (*(spx_int32_t*)ptr) = st->vad_enabled;
       break;
    case SPEEX_SET_DTX:
-      st->dtx_enabled = (*(int*)ptr);
+      st->dtx_enabled = (*(spx_int32_t*)ptr);
       break;
    case SPEEX_GET_DTX:
-      (*(int*)ptr) = st->dtx_enabled;
+      (*(spx_int32_t*)ptr) = st->dtx_enabled;
       break;
    case SPEEX_SET_ABR:
       st->abr_enabled = (*(spx_int32_t*)ptr);
       st->vbr_enabled = st->abr_enabled!=0;
       if (st->vbr_enabled) 
       {
-         int i=10;
+         spx_int32_t i=10;
          spx_int32_t rate, target;
          float vbr_qual;
          target = (*(spx_int32_t*)ptr);
@@ -1834,7 +1834,7 @@ int nb_encoder_ctl(void *state, int request, void *ptr)
       }
       break;
    case SPEEX_SET_COMPLEXITY:
-      st->complexity = (*(int*)ptr);
+      st->complexity = (*(spx_int32_t*)ptr);
       if (st->complexity<0)
          st->complexity=0;
       break;
@@ -1843,7 +1843,7 @@ int nb_encoder_ctl(void *state, int request, void *ptr)
       break;
    case SPEEX_SET_BITRATE:
       {
-         int i=10;
+         spx_int32_t i=10;
          spx_int32_t rate, target;
          target = (*(spx_int32_t*)ptr);
          while (i>=0)
@@ -1884,21 +1884,21 @@ int nb_encoder_ctl(void *state, int request, void *ptr)
       }
       break;
    case SPEEX_SET_SUBMODE_ENCODING:
-      st->encode_submode = (*(int*)ptr);
+      st->encode_submode = (*(spx_int32_t*)ptr);
       break;
    case SPEEX_GET_SUBMODE_ENCODING:
-      (*(int*)ptr) = st->encode_submode;
+      (*(spx_int32_t*)ptr) = st->encode_submode;
       break;
    case SPEEX_GET_LOOKAHEAD:
-      (*(int*)ptr)=(st->windowSize-st->frameSize);
+      (*(spx_int32_t*)ptr)=(st->windowSize-st->frameSize);
       break;
    case SPEEX_SET_PLC_TUNING:
-      st->plc_tuning = (*(int*)ptr);
+      st->plc_tuning = (*(spx_int32_t*)ptr);
       if (st->plc_tuning>100)
          st->plc_tuning=100;
       break;
    case SPEEX_GET_PLC_TUNING:
-      (*(int*)ptr)=(st->plc_tuning);
+      (*(spx_int32_t*)ptr)=(st->plc_tuning);
       break;
    case SPEEX_SET_VBR_MAX_BITRATE:
       st->vbr_max = (*(spx_int32_t*)ptr);
@@ -1954,20 +1954,20 @@ int nb_decoder_ctl(void *state, int request, void *ptr)
    {
    case SPEEX_SET_LOW_MODE:
    case SPEEX_SET_MODE:
-      st->submodeID = (*(int*)ptr);
+      st->submodeID = (*(spx_int32_t*)ptr);
       break;
    case SPEEX_GET_LOW_MODE:
    case SPEEX_GET_MODE:
-      (*(int*)ptr) = st->submodeID;
+      (*(spx_int32_t*)ptr) = st->submodeID;
       break;
    case SPEEX_SET_ENH:
-      st->lpc_enh_enabled = *((int*)ptr);
+      st->lpc_enh_enabled = *((spx_int32_t*)ptr);
       break;
    case SPEEX_GET_ENH:
-      *((int*)ptr) = st->lpc_enh_enabled;
+      *((spx_int32_t*)ptr) = st->lpc_enh_enabled;
       break;
    case SPEEX_GET_FRAME_SIZE:
-      (*(int*)ptr) = st->frameSize;
+      (*(spx_int32_t*)ptr) = st->frameSize;
       break;
    case SPEEX_GET_BITRATE:
       if (st->submodes[st->submodeID])
@@ -2007,13 +2007,13 @@ int nb_decoder_ctl(void *state, int request, void *ptr)
       }
       break;
    case SPEEX_SET_SUBMODE_ENCODING:
-      st->encode_submode = (*(int*)ptr);
+      st->encode_submode = (*(spx_int32_t*)ptr);
       break;
    case SPEEX_GET_SUBMODE_ENCODING:
-      (*(int*)ptr) = st->encode_submode;
+      (*(spx_int32_t*)ptr) = st->encode_submode;
       break;
    case SPEEX_GET_LOOKAHEAD:
-      (*(int*)ptr)=st->subframeSize;
+      (*(spx_int32_t*)ptr)=st->subframeSize;
       break;
    case SPEEX_SET_HIGHPASS:
       st->highpass_enabled = (*(spx_int32_t*)ptr);
@@ -2039,7 +2039,7 @@ int nb_decoder_ctl(void *state, int request, void *ptr)
       }
       break;
    case SPEEX_GET_DTX_STATUS:
-      *((int*)ptr) = st->dtx_enabled;
+      *((spx_int32_t*)ptr) = st->dtx_enabled;
       break;
    case SPEEX_SET_INNOVATION_SAVE:
       st->innov_save = (spx_sig_t*)ptr;

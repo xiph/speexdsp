@@ -71,13 +71,13 @@ unsigned short le_short(unsigned short s)
 }
 
 
-int read_wav_header(FILE *file, int *rate, int *channels, int *format, int *size)
+int read_wav_header(FILE *file, int *rate, int *channels, int *format, spx_int32_t *size)
 {
    char ch[5];
-   int itmp;
-   short stmp;
-   int bpersec;
-   short balign;
+   spx_int32_t itmp;
+   spx_int16_t stmp;
+   spx_int32_t bpersec;
+   spx_int16_t balign;
    int skip_bytes;
    int i;
 
@@ -221,8 +221,8 @@ int read_wav_header(FILE *file, int *rate, int *channels, int *format, int *size
 void write_wav_header(FILE *file, int rate, int channels, int format, int size)
 {
    char ch[5];
-   int itmp;
-   short stmp;
+   spx_int32_t itmp;
+   spx_int16_t stmp;
 
    ch[4]=0;
 

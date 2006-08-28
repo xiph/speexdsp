@@ -299,7 +299,7 @@ void version_short()
    printf ("Copyright (C) 2002-2006 Jean-Marc Valin\n");
 }
 
-static void *process_header(ogg_packet *op, int enh_enabled, int *frame_size, int *granule_frame_size, int *rate, int *nframes, int forceMode, int *channels, SpeexStereoState *stereo, int *extra_headers, int quiet)
+static void *process_header(ogg_packet *op, spx_int32_t enh_enabled, spx_int32_t *frame_size, int *granule_frame_size, spx_int32_t *rate, int *nframes, int forceMode, int *channels, SpeexStereoState *stereo, int *extra_headers, int quiet)
 {
    void *st;
    const SpeexMode *mode;
@@ -459,7 +459,7 @@ int main(int argc, char **argv)
    SpeexStereoState stereo = SPEEX_STEREO_STATE_INIT;
    int channels=-1;
    int rate=0;
-   int extra_headers;
+   int extra_headers=0;
    int wav_format=0;
    int lookahead;
    int speex_serialno = -1;
@@ -693,7 +693,7 @@ int main(int argc, char **argv)
                      speex_decode_stereo_int(output, frame_size, &stereo);
 
                   if (print_bitrate) {
-                     int tmp;
+                     spx_int32_t tmp;
                      char ch=13;
                      speex_decoder_ctl(st, SPEEX_GET_BITRATE, &tmp);
                      fputc (ch, stderr);

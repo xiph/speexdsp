@@ -39,7 +39,7 @@ unsigned short be_short(unsigned short s);
 unsigned short le_short(unsigned short s);
 spx_uint32_t le_int(spx_uint32_t i);
 
-int read_wav_header(FILE *file, int *rate, int *channels, int *format, int *size);
+int read_wav_header(FILE *file, int *rate, int *channels, int *format, spx_int32_t *size);
 
 void write_wav_header(FILE *file, int rate, int channels, int format, int size);
 
