@@ -346,7 +346,7 @@ SpeexEchoState *speex_echo_state_init(int frame_size, int filter_length)
       }
       for (i=M-1;i>=0;i--)
       {
-         st->prop[i] = DIV32(SHL32(EXTEND32(st->prop[i]),15),sum);
+         st->prop[i] = DIV32(MULT16_16(QCONST16(.8,15), st->prop[i]),sum);
       }
    }
    
@@ -468,6 +468,7 @@ void speex_echo_cancel(SpeexEchoState *st, const spx_int16_t *ref, const spx_int
    int i,j;
    int N,M;
    spx_word32_t Syy,See,Sxx;
+   /*spx_word32_t Sey;*/
    spx_word16_t leak_estimate;
    spx_word16_t ss, ss_1;
    spx_float_t Pey = FLOAT_ONE, Pyy=FLOAT_ONE;
@@ -632,6 +633,7 @@ void speex_echo_cancel(SpeexEchoState *st, const spx_int16_t *ref, const spx_int
    }
 
    /* Compute a bunch of correlations */
+   /*Sey = mdf_inner_prod(st->e+st->frame_size, st->y+st->frame_size, st->frame_size);*/
    See = mdf_inner_prod(st->e+st->frame_size, st->e+st->frame_size, st->frame_size);
    See = ADD32(See, SHR32(EXTEND32(10000),6));
    Syy = mdf_inner_prod(st->y+st->frame_size, st->y+st->frame_size, st->frame_size);
@@ -658,7 +660,7 @@ void speex_echo_cancel(SpeexEchoState *st, const spx_int16_t *ref, const spx_int
    {
       float scale2 = .5f/M;
       for (j=0;j<=st->frame_size;j++)
-         st->power[j] = 0;
+         st->power[j] = 100;
       for (i=0;i<M;i++)
       {
          power_spectrum(&st->X[i*N], st->Xf, N);
@@ -719,8 +721,11 @@ void speex_echo_cancel(SpeexEchoState *st, const spx_int16_t *ref, const spx_int
    if (tmp32 > SHR32(See,1))
       tmp32 = SHR32(See,1);
    RER = FLOAT_EXTRACT16(FLOAT_SHL(FLOAT_DIV32(tmp32,See),15));
-#else   
+#else
    RER = (.0001*Sxx + 3.*MULT16_32_Q15(leak_estimate,Syy)) / See;
+   /*FIXME: Enable that when I'm a bit more confident */
+   /*if (RER < Sey*Sey/(1+See*Syy))
+      RER = Sey*Sey/(1+See*Syy);*/
    if (RER > .5)
       RER = .5;
 #endif
