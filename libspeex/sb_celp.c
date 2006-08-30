@@ -1418,7 +1418,7 @@ int sb_encoder_ctl(void *state, int request, void *ptr)
       break;
    case SPEEX_GET_LOOKAHEAD:
       speex_encoder_ctl(st->st_low, SPEEX_GET_LOOKAHEAD, ptr);
-      (*(spx_int32_t*)ptr) = 2*(*(int*)ptr) + QMF_ORDER - 1;
+      (*(spx_int32_t*)ptr) = 2*(*(spx_int32_t*)ptr) + QMF_ORDER - 1;
       break;
    case SPEEX_SET_PLC_TUNING:
       speex_encoder_ctl(st->st_low, SPEEX_SET_PLC_TUNING, ptr);

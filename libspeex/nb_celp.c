@@ -1825,7 +1825,7 @@ int nb_encoder_ctl(void *state, int request, void *ptr)
       break;
    case SPEEX_SET_QUALITY:
       {
-         int quality = (*(int*)ptr);
+         int quality = (*(spx_int32_t*)ptr);
          if (quality < 0)
             quality = 0;
          if (quality > 10)
@@ -1937,7 +1937,7 @@ int nb_encoder_ctl(void *state, int request, void *ptr)
       st->innov_save = (spx_sig_t*)ptr;
       break;
    case SPEEX_SET_WIDEBAND:
-      st->isWideband = *((int*)ptr);
+      st->isWideband = *((spx_int32_t*)ptr);
       break;
    default:
       speex_warning_int("Unknown nb_ctl request: ", request);
@@ -2045,7 +2045,7 @@ int nb_decoder_ctl(void *state, int request, void *ptr)
       st->innov_save = (spx_sig_t*)ptr;
       break;
    case SPEEX_SET_WIDEBAND:
-      st->isWideband = *((int*)ptr);
+      st->isWideband = *((spx_int32_t*)ptr);
       break;
    default:
       speex_warning_int("Unknown nb_ctl request: ", request);

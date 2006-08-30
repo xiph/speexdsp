@@ -135,9 +135,9 @@ void main()
    void *st;
    void *dec;
    SpeexBits bits;
-   int tmp;
+   spx_int32_t tmp;
    unsigned long bitCount=0;
-   int skip_group_delay;
+   spx_int32_t skip_group_delay;
    SpeexCallback callback;
 
    /* C54xx defaults to max wait states, even for parts like C5416 with 
