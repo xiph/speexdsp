@@ -717,7 +717,7 @@ void speex_echo_cancel(SpeexEchoState *st, const spx_int16_t *ref, const spx_int
    /* Compute Residual to Error Ratio */
 #ifdef FIXED_POINT
    tmp32 = MULT16_32_Q15(leak_estimate,Syy);
-   tmp32 = ADD32(tmp32, SHL32(tmp32,1));
+   tmp32 = ADD32(SHR32(Sxx,13), ADD32(tmp32, SHL32(tmp32,1)));
    if (tmp32 > SHR32(See,1))
       tmp32 = SHR32(See,1);
    RER = FLOAT_EXTRACT16(FLOAT_SHL(FLOAT_DIV32(tmp32,See),15));
@@ -759,15 +759,15 @@ void speex_echo_cancel(SpeexEchoState *st, const spx_int16_t *ref, const spx_int
       /* Temporary adaption rate if filter is not yet adapted enough */
       spx_word16_t adapt_rate=0;
 
-      tmp32 = MULT16_32_Q15(QCONST16(.15f, 15), Sxx);
+      tmp32 = MULT16_32_Q15(QCONST16(.25f, 15), Sxx);
 #ifdef FIXED_POINT
-      if (Sxx > SHR32(See,2))
-         Sxx = SHR32(See,2);
+      if (tmp32 > SHR32(See,2))
+         tmp32 = SHR32(See,2);
 #else
-      if (Sxx > .25*See)
-         Sxx = .25*See;
+      if (tmp32 > .25*See)
+         tmp32 = .25*See;
 #endif
-      adapt_rate = FLOAT_EXTRACT16(FLOAT_SHL(FLOAT_DIV32(Sxx, See),15));
+      adapt_rate = FLOAT_EXTRACT16(FLOAT_SHL(FLOAT_DIV32(tmp32, See),15));
       
       for (i=0;i<=st->frame_size;i++)
          st->power_1[i] = FLOAT_SHL(FLOAT_DIV32(EXTEND32(adapt_rate),ADD32(st->power[i],10)),WEIGHT_SHIFT+1);
