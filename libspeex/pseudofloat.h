@@ -167,9 +167,9 @@ static inline spx_float_t FLOAT_SUB(spx_float_t a, spx_float_t b)
 static inline int FLOAT_LT(spx_float_t a, spx_float_t b)
 {
    if (a.m==0)
-      return b.m<0;
+      return b.m>0;
    else if (b.m==0)
-      return a.m>0;   
+      return a.m<0;   
    if ((a).e > (b).e)
       return ((a).m>>1) < ((b).m>>MIN(15,(a).e-(b).e+1));
    else 
@@ -217,9 +217,17 @@ static inline spx_float_t FLOAT_SHL(spx_float_t a, int b)
 static inline spx_int16_t FLOAT_EXTRACT16(spx_float_t a)
 {
    if (a.e<0)
-      return EXTRACT16((EXTEND32(a.m)+(1<<(-a.e-1)))>>-a.e);
+      return EXTRACT16((EXTEND32(a.m)+(EXTEND32(1)<<(-a.e-1)))>>-a.e);
    else
       return a.m<<a.e;
+}
+
+static inline spx_int32_t FLOAT_EXTRACT32(spx_float_t a)
+{
+   if (a.e<0)
+      return (EXTEND32(a.m)+(EXTEND32(1)<<(-a.e-1)))>>-a.e;
+   else
+      return EXTEND32(a.m)<<a.e;
 }
 
 static inline spx_int32_t FLOAT_MUL32(spx_float_t a, spx_word32_t b)
@@ -362,6 +370,7 @@ static inline spx_float_t FLOAT_SQRT(spx_float_t a)
 #define FLOAT_MUL32(a,b) ((a)*(b))
 #define FLOAT_DIV32(a,b) ((a)/(b))
 #define FLOAT_EXTRACT16(a) (a)
+#define FLOAT_EXTRACT32(a) (a)
 #define FLOAT_ADD(a,b) ((a)+(b))
 #define FLOAT_SUB(a,b) ((a)-(b))
 #define REALFLOAT(x) (x)

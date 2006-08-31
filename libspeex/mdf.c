@@ -468,7 +468,7 @@ void speex_echo_cancel(SpeexEchoState *st, const spx_int16_t *ref, const spx_int
    int i,j;
    int N,M;
    spx_word32_t Syy,See,Sxx;
-   /*spx_word32_t Sey;*/
+   spx_word32_t Sey;
    spx_word16_t leak_estimate;
    spx_word16_t ss, ss_1;
    spx_float_t Pey = FLOAT_ONE, Pyy=FLOAT_ONE;
@@ -633,7 +633,7 @@ void speex_echo_cancel(SpeexEchoState *st, const spx_int16_t *ref, const spx_int
    }
 
    /* Compute a bunch of correlations */
-   /*Sey = mdf_inner_prod(st->e+st->frame_size, st->y+st->frame_size, st->frame_size);*/
+   Sey = mdf_inner_prod(st->e+st->frame_size, st->y+st->frame_size, st->frame_size);
    See = mdf_inner_prod(st->e+st->frame_size, st->e+st->frame_size, st->frame_size);
    See = ADD32(See, SHR32(EXTEND32(10000),6));
    Syy = mdf_inner_prod(st->y+st->frame_size, st->y+st->frame_size, st->frame_size);
@@ -718,14 +718,23 @@ void speex_echo_cancel(SpeexEchoState *st, const spx_int16_t *ref, const spx_int
 #ifdef FIXED_POINT
    tmp32 = MULT16_32_Q15(leak_estimate,Syy);
    tmp32 = ADD32(SHR32(Sxx,13), ADD32(tmp32, SHL32(tmp32,1)));
+   /* Check for y in e (lower bound on RER) */
+   {
+      spx_float_t bound = PSEUDOFLOAT(Sey);
+      bound = FLOAT_DIVU(FLOAT_MULT(bound, bound), PSEUDOFLOAT(ADD32(1,Syy)));
+      if (FLOAT_GT(bound, PSEUDOFLOAT(See)))
+         tmp32 = See;
+      else if (tmp32 < FLOAT_EXTRACT32(bound))
+         tmp32 = FLOAT_EXTRACT32(bound);
+   }
    if (tmp32 > SHR32(See,1))
       tmp32 = SHR32(See,1);
    RER = FLOAT_EXTRACT16(FLOAT_SHL(FLOAT_DIV32(tmp32,See),15));
 #else
    RER = (.0001*Sxx + 3.*MULT16_32_Q15(leak_estimate,Syy)) / See;
-   /*FIXME: Enable that when I'm a bit more confident */
-   /*if (RER < Sey*Sey/(1+See*Syy))
-      RER = Sey*Sey/(1+See*Syy);*/
+   /* Check for y in e (lower bound on RER) */
+   if (RER < Sey*Sey/(1+See*Syy))
+      RER = Sey*Sey/(1+See*Syy);
    if (RER > .5)
       RER = .5;
 #endif
