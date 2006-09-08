@@ -87,14 +87,14 @@ const spx_word16_t exc_gain_quant_scal1[2]={11546, 17224};
 
 #else
 
-const float exc_gain_quant_scal3_bound[7]={0.112338, 0.236980, 0.369316, 0.492054, 0.637471, 0.828874, 1.132784};
-const float exc_gain_quant_scal3[8]={0.061130, 0.163546, 0.310413, 0.428220, 0.555887, 0.719055, 0.938694, 1.326874};
-const float exc_gain_quant_scal1_bound[1]={0.87798};
-const float exc_gain_quant_scal1[2]={0.70469, 1.05127};
+const float exc_gain_quant_scal3_bound[7]={0.112338f, 0.236980f, 0.369316f, 0.492054f, 0.637471f, 0.828874f, 1.132784f};
+const float exc_gain_quant_scal3[8]={0.061130f, 0.163546f, 0.310413f, 0.428220f, 0.555887f, 0.719055f, 0.938694f, 1.326874f};
+const float exc_gain_quant_scal1_bound[1]={0.87798f};
+const float exc_gain_quant_scal1[2]={0.70469f, 1.05127f};
 
-#define LSP_MARGIN .002
-#define LSP_DELTA1 .2
-#define LSP_DELTA2 .05
+#define LSP_MARGIN .002f
+#define LSP_DELTA1 .2f
+#define LSP_DELTA2 .05f
 
 #endif
 
