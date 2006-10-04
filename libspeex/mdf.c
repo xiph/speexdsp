@@ -740,7 +740,7 @@ void speex_echo_cancel(SpeexEchoState *st, const spx_int16_t *ref, const spx_int
 #endif
 
    /* We consider that the filter has had minimal adaptation if the following is true*/
-   if (!st->adapted && st->sum_adapt > QCONST32(1,15))
+   if (!st->adapted && st->sum_adapt > QCONST32(M,15))
    {
       st->adapted = 1;
    }
@@ -764,20 +764,22 @@ void speex_echo_cancel(SpeexEchoState *st, const spx_int16_t *ref, const spx_int
          /*st->power_1[i] = adapt_rate*r/(e*(1+st->power[i]));*/
          st->power_1[i] = FLOAT_SHL(FLOAT_DIV32_FLOAT(r,FLOAT_MUL32U(e,st->power[i]+10)),WEIGHT_SHIFT+16);
       }
-   } else if (Sxx > SHR32(MULT16_16(N, 1000),6)) {
+   } else {
       /* Temporary adaption rate if filter is not yet adapted enough */
       spx_word16_t adapt_rate=0;
 
-      tmp32 = MULT16_32_Q15(QCONST16(.25f, 15), Sxx);
+      if (Sxx > SHR32(MULT16_16(N, 1000),6)) 
+      {
+         tmp32 = MULT16_32_Q15(QCONST16(.25f, 15), Sxx);
 #ifdef FIXED_POINT
-      if (tmp32 > SHR32(See,2))
-         tmp32 = SHR32(See,2);
+         if (tmp32 > SHR32(See,2))
+            tmp32 = SHR32(See,2);
 #else
-      if (tmp32 > .25*See)
-         tmp32 = .25*See;
+         if (tmp32 > .25*See)
+            tmp32 = .25*See;
 #endif
-      adapt_rate = FLOAT_EXTRACT16(FLOAT_SHL(FLOAT_DIV32(tmp32, See),15));
-      
+         adapt_rate = FLOAT_EXTRACT16(FLOAT_SHL(FLOAT_DIV32(tmp32, See),15));
+      }
       for (i=0;i<=st->frame_size;i++)
          st->power_1[i] = FLOAT_SHL(FLOAT_DIV32(EXTEND32(adapt_rate),ADD32(st->power[i],10)),WEIGHT_SHIFT+1);
 
