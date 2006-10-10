@@ -347,7 +347,7 @@ static inline spx_float_t FLOAT_SQRT(spx_float_t a)
 {
    spx_float_t r;
    spx_int32_t m;
-   m = a.m << 14;
+   m = SHL32(EXTEND32(a.m), 14);
    r.e = a.e - 14;
    if (r.e & 1)
    {
