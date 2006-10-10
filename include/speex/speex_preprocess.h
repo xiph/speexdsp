@@ -41,70 +41,10 @@
 extern "C" {
 #endif
 
-struct drft_lookup;
+struct SpeexPreprocessState_;
 
-/** Speex pre-processor state. */
-typedef struct SpeexPreprocessState {
-   int    frame_size;        /**< Number of samples processed each time */
-   int    ps_size;           /**< Number of points in the power spectrum */
-   int    sampling_rate;     /**< Sampling rate of the input/output */
-   
-   /* parameters */
-   int    denoise_enabled;
-   int    agc_enabled;
-   float  agc_level;
-   int    vad_enabled;
-   int    dereverb_enabled;
-   float  reverb_decay;
-   float  reverb_level;
-   float  speech_prob_start;
-   float  speech_prob_continue;
-   
-   float *frame;             /**< Processing frame (2*ps_size) */
-   float *ps;                /**< Current power spectrum */
-   float *gain2;             /**< Adjusted gains */
-   float *window;            /**< Analysis/Synthesis window */
-   float *noise;             /**< Noise estimate */
-   float *reverb_estimate;   /**< Estimate of reverb energy */
-   float *old_ps;            /**< Power spectrum for last frame */
-   float *gain;              /**< Ephraim Malah gain */
-   float *prior;             /**< A-priori SNR */
-   float *post;              /**< A-posteriori SNR */
+typedef struct SpeexPreprocessState_ SpeexPreprocessState;
 
-   float *S;                 /**< Smoothed power spectrum */
-   float *Smin;              /**< See Cohen paper */
-   float *Stmp;              /**< See Cohen paper */
-   float *update_prob;       /**< Propability of speech presence for noise update */
-
-   float *zeta;              /**< Smoothed a priori SNR */
-   float  Zpeak;
-   float  Zlast;
-
-   float *loudness_weight;   /**< Perceptual loudness curve */
-
-   float *echo_noise;
-
-   float *noise_bands;
-   float *noise_bands2;
-   int    noise_bandsN;
-   float *speech_bands;
-   float *speech_bands2;
-   int    speech_bandsN;
-
-   float *inbuf;             /**< Input buffer (overlapped analysis) */
-   float *outbuf;            /**< Output buffer (for overlap and add) */
-
-   float  speech_prob;
-   int    last_speech;
-   float  loudness;          /**< loudness estimate */
-   float  loudness2;         /**< loudness estimate */
-   int    nb_adapt;          /**< Number of frames used for adaptation so far */
-   int    nb_loudness_adapt; /**< Number of frames used for loudness adaptation so far */
-   int    consec_noise;      /**< Number of consecutive noise frames */
-   int    nb_preprocess;     /**< Number of frames processed so far */
-   struct drft_lookup *fft_lookup;   /**< Lookup table for the FFT */
-
-} SpeexPreprocessState;
 
 /** Creates a new preprocessing state */
 SpeexPreprocessState *speex_preprocess_state_init(int frame_size, int sampling_rate);

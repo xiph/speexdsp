@@ -36,8 +36,8 @@
 #include "config.h"
 #endif
 
-/*#define USE_SMALLFT*/
-#define USE_KISS_FFT
+#define USE_SMALLFT
+/*#define USE_KISS_FFT*/
 
 
 #include "misc.h"
@@ -120,7 +120,6 @@ void spx_ifft(void *table, float *in, float *out)
 {
    if (in==out)
    {
-      int i;
       speex_warning("FFT should not be done in-place");
    } else {
       int i;
