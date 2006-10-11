@@ -1,6 +1,6 @@
-/* Copyright (C) 2003 Epic Games 
-   Written by Jean-Marc Valin
-
+/* Copyright (C) 2003 Epic Games (written by Jean-Marc Valin)
+   Copyright (C) 2004-2006 Epic Games 
+   
    File: preprocess.c
    Preprocessor with denoising based on the algorithm by Ephraim and Malah
 
@@ -29,6 +29,30 @@
    STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
    ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
    POSSIBILITY OF SUCH DAMAGE.
+*/
+
+
+/*
+   Recommended papers:
+   
+   Y. Ephraim and D. Malah, "Speech enhancement using minimum mean-square error
+   short-time spectral amplitude estimator". IEEE Transactions on Acoustics, 
+   Speech and Signal Processing, vol. ASSP-32, no. 6, pp. 1109-1121, 1984.
+   
+   Y. Ephraim and D. Malah, "Speech enhancement using minimum mean-square error
+   log-spectral amplitude estimator". IEEE Transactions on Acoustics, Speech and 
+   Signal Processing, vol. ASSP-33, no. 2, pp. 443-445, 1985.
+   
+   I. Cohen and B. Berdugo, "Speech enhancement for non-stationary noise environments".
+   Signal Processing, vol. 81, no. 2, pp. 2403-2418, 2001.
+
+   Stefan Gustafsson, Rainer Martin, Peter Jax, and Peter Vary. "A psychoacoustic 
+   approach to combined acoustic echo cancellation and noise reduction". IEEE 
+   Transactions on Speech and Audio Processing, 2002.
+   
+   J.-M. Valin, J. Rouat, and F. Michaud, "Microphone array post-filter for separation
+   of simultaneous non-stationary sources". In Proceedings IEEE International 
+   Conference on Acoustics, Speech, and Signal Processing, 2004.
 */
 
 #ifdef HAVE_CONFIG_H
