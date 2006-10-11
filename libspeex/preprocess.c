@@ -48,19 +48,12 @@
 #define M_PI 3.14159263
 #endif
 
-#define SQRT_M_PI_2 0.88623
 #define LOUDNESS_EXP 2.5
 
-#define NB_BANDS 8
+#define NB_BANDS 24
 
 #define SPEEX_PROB_START_DEFAULT    0.35f
 #define SPEEX_PROB_CONTINUE_DEFAULT 0.20f
-
-#define ZMIN .1
-#define ZMAX .316
-#define ZMIN_1 10
-#define LOG_MIN_MAX_1 0.86859
-
 
 /** Speex pre-processor state. */
 struct SpeexPreprocessState_ {
@@ -112,7 +105,7 @@ struct SpeexPreprocessState_ {
    float  loudness2;         /**< loudness estimate */
    int    nb_adapt;          /**< Number of frames used for adaptation so far */
    int    nb_loudness_adapt; /**< Number of frames used for loudness adaptation so far */
-   int    nb_preprocess;     /**< Number of frames processed so far */
+   int    min_count;         /**< Number of frames processed so far */
    void *fft_lookup;   /**< Lookup table for the FFT */
 
 };
@@ -221,7 +214,7 @@ SpeexPreprocessState *speex_preprocess_state_init(int frame_size, int sampling_r
    st->speech_prob_start = SPEEX_PROB_START_DEFAULT;
    st->speech_prob_continue = SPEEX_PROB_CONTINUE_DEFAULT;
 
-   st->nbands = 24;
+   st->nbands = NB_BANDS;
    M = st->nbands;
    st->bank = filterbank_new(M, 4000, 8000, N, 1);
          
@@ -295,7 +288,7 @@ SpeexPreprocessState *speex_preprocess_state_init(int frame_size, int sampling_r
    st->fft_lookup = spx_fft_init(2*N);
 
    st->nb_adapt=0;
-   st->nb_preprocess=0;
+   st->min_count=0;
    return st;
 }
 
@@ -424,6 +417,7 @@ static void preprocess_analysis(SpeexPreprocessState *st, spx_int16_t *x)
 static void update_noise_prob(SpeexPreprocessState *st)
 {
    int i;
+   int min_range;
    int N = st->ps_size;
 
    for (i=1;i<N-1;i++)
@@ -431,14 +425,23 @@ static void update_noise_prob(SpeexPreprocessState *st)
    st->S[0] = 100.f+ .8f*st->S[0] + .2*st->ps[0];
    st->S[N-1] = 100.f+ .8f*st->S[N-1] + .2*st->ps[N-1];
    
-   if (st->nb_preprocess<1)
+   if (st->nb_adapt==1)
    {
       for (i=0;i<N;i++)
-         st->Smin[i] = st->Stmp[i] = st->S[i]+100.f;
+         st->Smin[i] = st->Stmp[i] = 0.f;
    }
 
-   if (st->nb_preprocess%200==0)
+   if (st->nb_adapt < 100)
+      min_range = 15;
+   else if (st->nb_adapt < 1000)
+      min_range = 50;
+   else if (st->nb_adapt < 10000)
+      min_range = 150;
+   else
+      min_range = 300;
+   if (st->min_count > min_range)
    {
+      st->min_count = 0;
       for (i=0;i<N;i++)
       {
          st->Smin[i] = min(st->Stmp[i], st->S[i]);
@@ -477,6 +480,8 @@ int speex_preprocess(SpeexPreprocessState *st, spx_int16_t *x, spx_int32_t *echo
    float beta, beta_1;
    
    st->nb_adapt++;
+   st->min_count++;
+   
    beta =1.0f/st->nb_adapt;
    if (beta < .05f)
       beta=.05f;
@@ -486,7 +491,7 @@ int speex_preprocess(SpeexPreprocessState *st, spx_int16_t *x, spx_int32_t *echo
    if (echo)
    {
       for (i=0;i<N;i++)
-         st->echo_noise[i] = MAX32(.9f*st->echo_noise[i], echo[i]);
+         st->echo_noise[i] = MAX32(.6f*st->echo_noise[i], echo[i]);
       filterbank_compute_bank(st->bank, st->echo_noise, st->echo_noise+N);
    } else {
       for (i=0;i<N+M;i++)
@@ -496,15 +501,13 @@ int speex_preprocess(SpeexPreprocessState *st, spx_int16_t *x, spx_int32_t *echo
 
    update_noise_prob(st);
 
-   st->nb_preprocess++;
-
    /* Noise estimation always updated for the 10 first frames */
-   if (st->nb_adapt<10)
+   /*if (st->nb_adapt<10)
    {
       for (i=1;i<N-1;i++)
          st->update_prob[i] = 0;
    }
-
+   */
    for (i=0;i<N;i++)
    {
       if (st->update_prob[i]<.5f || st->ps[i] < st->noise[i])
@@ -531,19 +534,11 @@ int speex_preprocess(SpeexPreprocessState *st, spx_int16_t *x, spx_int32_t *echo
             (1.f-gamma)* (.8*st->gain[i]*st->gain[i]*st->old_ps[i]/tot_noise + .2*st->prior[i]);
       if (st->prior[i]>100.f)
          st->prior[i]=100.f;
-      if (st->prior[i]<.01f)
-         st->prior[i]=.01f;
+      /*if (st->prior[i]<.01f)
+      st->prior[i]=.01f;*/
    }
 
    /*print_vec(st->prior, N+M, "prior");*/
-#if 0
-   for (i=0;i<N+M;i++)
-   {
-      fprintf (stderr, "%f ", st->prior[i]);
-   }
-   fprintf (stderr, "\n");
-#endif
-
 
    for (i=0;i<N+M;i++)
    {
@@ -558,7 +553,7 @@ int speex_preprocess(SpeexPreprocessState *st, spx_int16_t *x, spx_int32_t *echo
    if (Pframe < .2)
       Pframe = .2;
    /*print_vec(&Pframe, 1, "");*/
-   /*fprintf (stderr, "%f\n", Pframe);*/
+   
    /* Compute gain according to the Ephraim-Malah algorithm */
    for (i=0;i<N+M;i++)
    {
@@ -682,11 +677,11 @@ void speex_preprocess_estimate_update(SpeexPreprocessState *st, spx_int16_t *x, 
    float *ps=st->ps;
 
    M = st->nbands;
+   st->min_count++;
+   
    preprocess_analysis(st, x);
 
    update_noise_prob(st);
-
-   st->nb_preprocess++;
    
    for (i=1;i<N-1;i++)
    {
