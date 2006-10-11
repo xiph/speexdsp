@@ -531,6 +531,8 @@ int speex_preprocess(SpeexPreprocessState *st, spx_int16_t *x, spx_int32_t *echo
             (1.f-gamma)* (.8*st->gain[i]*st->gain[i]*st->old_ps[i]/tot_noise + .2*st->prior[i]);
       if (st->prior[i]>100.f)
          st->prior[i]=100.f;
+      if (st->prior[i]<.01f)
+         st->prior[i]=.01f;
    }
 
    /*print_vec(st->prior, N+M, "prior");*/
@@ -548,18 +550,14 @@ int speex_preprocess(SpeexPreprocessState *st, spx_int16_t *x, spx_int32_t *echo
       st->zeta[i] = .7f*st->zeta[i] + .3f*st->prior[i];
    }
 
-   {
-      int freq_start = (int)(300.0f*2.f*N/st->sampling_rate);
-      int freq_end   = (int)(2000.0f*2.f*N/st->sampling_rate);
-      for (i=freq_start;i<freq_end;i++)
-      {
-         Zframe += st->zeta[i];         
-      }
-      Zframe /= (freq_end-freq_start);
-   }
-
+   Zframe = 0;
+   for (i=N;i<N+M;i++)
+      Zframe += st->zeta[i];
+   Zframe /= st->nbands;
    Pframe = qcurve(Zframe);
-
+   if (Pframe < .2)
+      Pframe = .2;
+   /*print_vec(&Pframe, 1, "");*/
    /*fprintf (stderr, "%f\n", Pframe);*/
    /* Compute gain according to the Ephraim-Malah algorithm */
    for (i=0;i<N+M;i++)
@@ -579,10 +577,11 @@ int speex_preprocess(SpeexPreprocessState *st, spx_int16_t *x, spx_int32_t *echo
       else
          zeta1 = .25f*st->zeta[i-1] + .5f*st->zeta[i] + .25f*st->zeta[i+1];
       P1 = qcurve (zeta1);
-      
+      if (P1 < .2)
+         P1 = .2;
       /* FIXME: add global prob (P2) */
       q = 1-Pframe*P1;
-      q = 1-P1;
+      /*q = 1-P1;*/
       if (q>.95f)
          q=.95f;
       p=1.f/(1.f + (q/(1.f-q))*(1.f+st->prior[i])*exp(-theta));
