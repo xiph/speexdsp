@@ -474,7 +474,6 @@ int speex_preprocess(SpeexPreprocessState *st, spx_int16_t *x, spx_int32_t *echo
    int N = st->ps_size;
    int N3 = 2*N - st->frame_size;
    int N4 = st->frame_size - N3;
-   /*float scale=.5f/N;*/
    float *ps=st->ps;
    float Zframe=0, Pframe;
    float beta, beta_1;
@@ -508,6 +507,8 @@ int speex_preprocess(SpeexPreprocessState *st, spx_int16_t *x, spx_int32_t *echo
          st->update_prob[i] = 0;
    }
    */
+   
+   /* Update the noise estimate for the frequencies where it can be */
    for (i=0;i<N;i++)
    {
       if (st->update_prob[i]<.5f || st->ps[i] < st->noise[i])
@@ -540,11 +541,14 @@ int speex_preprocess(SpeexPreprocessState *st, spx_int16_t *x, spx_int32_t *echo
 
    /*print_vec(st->prior, N+M, "prior");*/
 
-   for (i=0;i<N+M;i++)
-   {
+   /* Recursive average of the a priori SNR. A bit smoothed for the psd components */
+   st->zeta[0] = .7f*st->zeta[0] + .3f*st->prior[0];
+   for (i=1;i<N-1;i++)
+      st->zeta[i] = .7f*st->zeta[i] + .3f*(.5f*st->prior[i]+.25f*st->prior[i+1]+.25f*st->prior[i-1]);
+   for (i=N-1;i<N+M;i++)
       st->zeta[i] = .7f*st->zeta[i] + .3f*st->prior[i];
-   }
 
+   /* Speech probability of presence for the entire frame is based on the average filterbank a priori SNR */
    Zframe = 0;
    for (i=N;i<N+M;i++)
       Zframe += st->zeta[i];
@@ -552,6 +556,7 @@ int speex_preprocess(SpeexPreprocessState *st, spx_int16_t *x, spx_int32_t *echo
    Pframe = qcurve(Zframe);
    if (Pframe < .2)
       Pframe = .2;
+   
    /*print_vec(&Pframe, 1, "");*/
    
    /* Compute gain according to the Ephraim-Malah algorithm */
@@ -561,17 +566,12 @@ int speex_preprocess(SpeexPreprocessState *st, spx_int16_t *x, spx_int32_t *echo
       float theta;
       float prior_ratio;
       float p, q;
-      float zeta1;
       float P1;
 
       prior_ratio = st->prior[i]/(1.0001f+st->prior[i]);
       theta = (1.f+st->post[i])*prior_ratio;
 
-      if (i==0 || i==N-1 || i==N || i==N+M-1)
-         zeta1 = st->zeta[i];
-      else
-         zeta1 = .25f*st->zeta[i-1] + .5f*st->zeta[i] + .25f*st->zeta[i+1];
-      P1 = qcurve (zeta1);
+      P1 = qcurve (st->zeta[i]);
       if (P1 < .2)
          P1 = .2;
       /* FIXME: add global prob (P2) */
@@ -595,8 +595,11 @@ int speex_preprocess(SpeexPreprocessState *st, spx_int16_t *x, spx_int32_t *echo
       st->reverb_estimate[i] = st->reverb_decay*st->reverb_estimate[i] + st->reverb_decay*st->reverb_level*st->gain[i]*st->gain[i]*st->ps[i];
       if (st->denoise_enabled)
       {
+         /* Compute the gain floor based on different floors for the background noise and residual echo */
          float gain_floor = (.03f*st->noise[i] + .003*st->echo_noise[i])/(1+st->noise[i] + st->echo_noise[i]);
          gain_floor = sqrt(gain_floor);
+         
+         /* Take into account speech probability of presence (what's the best rule to use?) */
          /*st->gain2[i] = p*p*st->gain[i];*/
          st->gain2[i]=(p*sqrt(st->gain[i])+gain_floor*(1-p)) * (p*sqrt(st->gain[i])+gain_floor*(1-p));
          /*st->gain2[i] = pow(st->gain[i], p) * pow(gain_floor,1.f-p);*/
@@ -605,15 +608,8 @@ int speex_preprocess(SpeexPreprocessState *st, spx_int16_t *x, spx_int32_t *echo
       }
    }
    
-   /*st->gain2[0]=st->gain[0]=0.f;
-   st->gain2[N-1]=st->gain[N-1]=0.f;*/
-   
+   /* Only use the filterbank gains. This should be improved. */
    filterbank_compute_psd(st->bank,st->gain2+N, st->gain2);
-   if (0) {
-      float m[24];
-      filterbank_compute_bank(st->bank, st->gain2, m);
-      filterbank_compute_psd(st->bank,m, st->gain2);
-   }
    
    if (st->agc_enabled)
       speex_compute_agc(st);
