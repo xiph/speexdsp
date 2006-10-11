@@ -39,13 +39,16 @@
 #include "misc.h"
 #include <math.h>
 
+#define toBARK(n)   (13.1f*atan(.00074f*(n))+2.24f*atan((n)*(n)*1.85e-8f)+1e-4f*(n))
+#define toMEL(n)    (2595.f*log10(1.f+(n)/700.f))
+
 FilterBank *filterbank_new(int banks, float max_freq, float sampling, int len, int type)
 {
    FilterBank *bank;
    float df, max_mel, mel_interval;
    int i;
    df = .5*sampling/len;
-   max_mel = 2595*log10(1+max_freq/700);
+   max_mel = toBARK(max_freq);
    mel_interval = max_mel/(banks-1);
    
    bank = speex_alloc(sizeof(FilterBank));
@@ -65,7 +68,7 @@ FilterBank *filterbank_new(int banks, float max_freq, float sampling, int len, i
       float mel;
       float val;
       curr_freq = i*df;
-      mel = 2595*log10(1+curr_freq/700);
+      mel = toBARK(curr_freq);
       if (mel > max_mel)
          break;
       id1 = (int)(floor(mel/mel_interval));
