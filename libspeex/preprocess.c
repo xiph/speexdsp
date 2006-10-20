@@ -189,7 +189,7 @@ static inline float hypergeom_gain(float x)
 
 static inline float qcurve(float x)
 {
-   return 1.f/(1.f+.1f/(x*x));
+   return 1.f/(1.f+.1f/(x));
 }
 
 SpeexPreprocessState *speex_preprocess_state_init(int frame_size, int sampling_rate)
@@ -536,7 +536,7 @@ int speex_preprocess(SpeexPreprocessState *st, spx_int16_t *x, spx_int32_t *echo
    for (i=0;i<N;i++)
    {
       if (st->update_prob[i]<.5f || st->ps[i] < st->noise[i])
-         st->noise[i] = beta_1*st->noise[i] + beta*st->ps[i];
+         st->noise[i] = beta_1*st->noise[i] + beta*NOISE_OVERCOMPENS*st->ps[i];
    }
    filterbank_compute_bank(st->bank, st->noise, st->noise+N);
 
@@ -549,18 +549,16 @@ int speex_preprocess(SpeexPreprocessState *st, spx_int16_t *x, spx_int32_t *echo
    for (i=0;i<N+M;i++)
    {
       float gamma = .1;
-      float tot_noise = 1.f+ NOISE_OVERCOMPENS*st->noise[i] + st->echo_noise[i] + st->reverb_estimate[i];
+      float tot_noise = 1.f+ st->noise[i] + st->echo_noise[i] + st->reverb_estimate[i];
       st->post[i] = ps[i]/tot_noise - 1.f;
       if (st->post[i]>100.f)
          st->post[i]=100.f;
-      gamma = .15+.85*st->prior[i]*st->prior[i]/((1+st->prior[i])*(1+st->prior[i]));
+      /*gamma = .15+.85*st->prior[i]*st->prior[i]/((1+st->prior[i])*(1+st->prior[i]));*/
+      gamma = .1+.9*(st->old_ps[i]/(1+st->old_ps[i]+tot_noise))*(st->old_ps[i]/(1+st->old_ps[i]+tot_noise));
       /* A priori SNR update */
-      st->prior[i] = gamma*max(0.0f,st->post[i]) +
-            (1.f-gamma)* (.8*st->gain[i]*st->gain[i]*st->old_ps[i]/tot_noise + .2*st->prior[i]);
+      st->prior[i] = gamma*max(0.0f,st->post[i]) + (1.f-gamma)*st->old_ps[i]/tot_noise;
       if (st->prior[i]>100.f)
          st->prior[i]=100.f;
-      /*if (st->prior[i]<.01f)
-      st->prior[i]=.01f;*/
    }
 
    /*print_vec(st->prior, N+M, "prior");*/
@@ -577,11 +575,32 @@ int speex_preprocess(SpeexPreprocessState *st, spx_int16_t *x, spx_int32_t *echo
    for (i=N;i<N+M;i++)
       Zframe += st->zeta[i];
    Zframe /= st->nbands;
-   Pframe = qcurve(Zframe);
-   if (Pframe < .2)
-      Pframe = .2;
+   Pframe = .1+.9*qcurve(Zframe);
    
    /*print_vec(&Pframe, 1, "");*/
+   /*for (i=N;i<N+M;i++)
+      st->gain2[i] = qcurve (st->zeta[i]);
+   filterbank_compute_psd(st->bank,st->gain2+N, st->gain2);*/
+   
+   for (i=N;i<N+M;i++)
+   {
+      float theta, MM;
+      float prior_ratio;
+      float q;
+      float P1;
+
+      prior_ratio = st->prior[i]/(1.0001f+st->prior[i]);
+      theta = (1.f+st->post[i])*prior_ratio;
+
+      MM = hypergeom_gain(theta);
+      st->gain[i] = prior_ratio * MM;
+
+      P1 = .2+.8*qcurve (st->zeta[i]);
+      q = 1-Pframe*P1;
+      st->gain2[i]=1.f/(1.f + (q/(1.f-q))*(1.f+st->prior[i])*exp(-theta));
+   }
+   filterbank_compute_psd(st->bank,st->gain2+N, st->gain2);
+   filterbank_compute_psd(st->bank,st->gain+N, st->gain);
    
    /* Compute gain according to the Ephraim-Malah algorithm */
    for (i=0;i<N+M;i++)
@@ -589,51 +608,60 @@ int speex_preprocess(SpeexPreprocessState *st, spx_int16_t *x, spx_int32_t *echo
       float MM;
       float theta;
       float prior_ratio;
-      float p, q;
-      float P1;
-
+      float p;
+      float g;
       prior_ratio = st->prior[i]/(1.0001f+st->prior[i]);
       theta = (1.f+st->post[i])*prior_ratio;
-
-      P1 = qcurve (st->zeta[i]);
-      if (P1 < .2)
-         P1 = .2;
-      /* FIXME: add global prob (P2) */
-      q = 1-Pframe*P1;
-      /*q = 1-P1;*/
-      if (q>.95f)
-         q=.95f;
-      p=1.f/(1.f + (q/(1.f-q))*(1.f+st->prior[i])*exp(-theta));
-      /*p=1;*/
+      p = st->gain2[i];
 
       /* Optimal estimator for loudness domain */
       MM = hypergeom_gain(theta);
 
-      st->gain[i] = prior_ratio * MM;
+      g = prior_ratio * MM;
+      if (g > 1.5*st->gain[i])
+         g = 1.5*st->gain[i];
+      if (g < .66*st->gain[i])
+         g = .66*st->gain[i];
+      st->gain[i] = g;
       /*Put some (very arbitraty) limit on the gain*/
-      if (st->gain[i]>2.f)
-      {
-         st->gain[i]=2.f;
-      }
+      if (st->gain[i]>1.f)
+         st->gain[i]=1.f;
       
       st->reverb_estimate[i] = st->reverb_decay*st->reverb_estimate[i] + st->reverb_decay*st->reverb_level*st->gain[i]*st->gain[i]*st->ps[i];
       if (st->denoise_enabled)
       {
          /* Compute the gain floor based on different floors for the background noise and residual echo */
-         float gain_floor = (.03f*st->noise[i] + .003*st->echo_noise[i])/(1+st->noise[i] + st->echo_noise[i]);
+         float gain_floor = (.003f*st->noise[i] + .0001*st->echo_noise[i])/(1+st->noise[i] + st->echo_noise[i]);
+         /*if (Pframe>.5)
+         gain_floor *= 20;
+         if (gain_floor > 1)
+         gain_floor = 1;*/
          gain_floor = sqrt(gain_floor);
          
          /* Take into account speech probability of presence (what's the best rule to use?) */
          /*st->gain2[i] = p*p*st->gain[i];*/
-         st->gain2[i]=(p*sqrt(st->gain[i])+gain_floor*(1-p)) * (p*sqrt(st->gain[i])+gain_floor*(1-p));
+#if 1
+         if (st->gain[i] < gain_floor)
+            st->gain[i] = gain_floor;
+         st->gain2[i]=(p*sqrt(st->gain[i])+sqrt(gain_floor)*(1-p)) * (p*sqrt(st->gain[i])+sqrt(gain_floor)*(1-p));
+#else
+         p *= sqrt(st->gain[i]);
+         st->gain2[i]=(p+sqrt(gain_floor)*(1-p)) * (p+sqrt(gain_floor)*(1-p));
+#endif    
          /*st->gain2[i] = pow(st->gain[i], p) * pow(gain_floor,1.f-p);*/
+         /*st->gain2[i] *= 1.4;
+         if (st->gain2[i]>1)
+         st->gain2[i] = 1;*/
+         /*st->gain2[i] = p*p*st->gain[i];
+         if (st->gain2[i] < gain_floor)
+         st->gain2[i] = gain_floor;*/
       } else {
          st->gain2[i]=1.f;
       }
    }
    
    /* Only use the filterbank gains. This should be improved. */
-   filterbank_compute_psd(st->bank,st->gain2+N, st->gain2);
+   /*filterbank_compute_psd(st->bank,st->gain2+N, st->gain2);*/
    
    if (st->agc_enabled)
       speex_compute_agc(st);
@@ -683,7 +711,7 @@ int speex_preprocess(SpeexPreprocessState *st, spx_int16_t *x, spx_int32_t *echo
 
    /* Save old power spectrum */
    for (i=0;i<N+M;i++)
-      st->old_ps[i] = ps[i];
+      st->old_ps[i] = .2*st->old_ps[i] + .8*st->gain[i]*st->gain[i]*ps[i];
 
    return 1;
 }
