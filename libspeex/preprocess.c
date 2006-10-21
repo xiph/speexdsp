@@ -489,7 +489,7 @@ static void update_noise_prob(SpeexPreprocessState *st)
 
 }
 
-#define NOISE_OVERCOMPENS 1.4
+#define NOISE_OVERCOMPENS 1.
 
 int speex_preprocess(SpeexPreprocessState *st, spx_int16_t *x, spx_int32_t *echo)
 {
@@ -506,8 +506,8 @@ int speex_preprocess(SpeexPreprocessState *st, spx_int16_t *x, spx_int32_t *echo
    st->min_count++;
    
    beta =1.0f/st->nb_adapt;
-   if (beta < .05f)
-      beta=.05f;
+   if (beta < .03f)
+      beta=.03f;
    beta_1 = 1.0f-beta;
    M = st->nbands;
    /* Deal with residual echo if provided */
@@ -561,7 +561,7 @@ int speex_preprocess(SpeexPreprocessState *st, spx_int16_t *x, spx_int32_t *echo
          st->prior[i]=100.f;
    }
 
-   /*print_vec(st->prior, N+M, "prior");*/
+   /*print_vec(st->post, N+M, "");*/
 
    /* Recursive average of the a priori SNR. A bit smoothed for the psd components */
    st->zeta[0] = .7f*st->zeta[0] + .3f*st->prior[0];
@@ -595,7 +595,7 @@ int speex_preprocess(SpeexPreprocessState *st, spx_int16_t *x, spx_int32_t *echo
       MM = hypergeom_gain(theta);
       st->gain[i] = prior_ratio * MM;
 
-      P1 = .2+.8*qcurve (st->zeta[i]);
+      P1 = .1+.9*qcurve (st->zeta[i]);
       q = 1-Pframe*P1;
       st->gain2[i]=1.f/(1.f + (q/(1.f-q))*(1.f+st->prior[i])*exp(-theta));
    }
@@ -623,7 +623,7 @@ int speex_preprocess(SpeexPreprocessState *st, spx_int16_t *x, spx_int32_t *echo
       if (g < .66*st->gain[i])
          g = .66*st->gain[i];
       st->gain[i] = g;
-      /*Put some (very arbitraty) limit on the gain*/
+      /* Limit on the gain */
       if (st->gain[i]>1.f)
          st->gain[i]=1.f;
       
@@ -631,38 +631,24 @@ int speex_preprocess(SpeexPreprocessState *st, spx_int16_t *x, spx_int32_t *echo
       if (st->denoise_enabled)
       {
          /* Compute the gain floor based on different floors for the background noise and residual echo */
-         float gain_floor = (.003f*st->noise[i] + .0001*st->echo_noise[i])/(1+st->noise[i] + st->echo_noise[i]);
-         /*if (Pframe>.5)
-         gain_floor *= 20;
-         if (gain_floor > 1)
-         gain_floor = 1;*/
+         float gain_floor = (.003f*st->noise[i] + .00003*st->echo_noise[i])/(1+st->noise[i] + st->echo_noise[i]);
          gain_floor = sqrt(gain_floor);
-         
+
          /* Take into account speech probability of presence (what's the best rule to use?) */
-         /*st->gain2[i] = p*p*st->gain[i];*/
-#if 1
          if (st->gain[i] < gain_floor)
             st->gain[i] = gain_floor;
          st->gain2[i]=(p*sqrt(st->gain[i])+sqrt(gain_floor)*(1-p)) * (p*sqrt(st->gain[i])+sqrt(gain_floor)*(1-p));
-#else
-         p *= sqrt(st->gain[i]);
-         st->gain2[i]=(p+sqrt(gain_floor)*(1-p)) * (p+sqrt(gain_floor)*(1-p));
-#endif    
          /*st->gain2[i] = pow(st->gain[i], p) * pow(gain_floor,1.f-p);*/
-         /*st->gain2[i] *= 1.4;
-         if (st->gain2[i]>1)
-         st->gain2[i] = 1;*/
-         /*st->gain2[i] = p*p*st->gain[i];
-         if (st->gain2[i] < gain_floor)
-         st->gain2[i] = gain_floor;*/
       } else {
          st->gain2[i]=1.f;
       }
    }
    
-   /* Only use the filterbank gains. This should be improved. */
-   /*filterbank_compute_psd(st->bank,st->gain2+N, st->gain2);*/
-   
+   /* Enable this to only use the filterbank gains */
+#if 0
+   filterbank_compute_psd(st->bank,st->gain2+N, st->gain2);
+#endif
+
    if (st->agc_enabled)
       speex_compute_agc(st);
 
@@ -672,13 +658,8 @@ int speex_preprocess(SpeexPreprocessState *st, spx_int16_t *x, spx_int32_t *echo
       st->ft[2*i-1] *= st->gain2[i];
       st->ft[2*i] *= st->gain2[i];
    }
-
-   /* Get rid of the DC and very low frequencies */
-   st->ft[0]=0;
-   st->ft[1]=0;
-   st->ft[2]=0;
-   /* Nyquist frequency is mostly useless too */
-   st->ft[2*N-1]=0;
+   st->ft[0] *= st->gain2[0];
+   st->ft[2*N-1] *= st->gain2[N-1];
 
    /* Inverse FFT with 1/N scaling */
    spx_ifft_float(st->fft_lookup, st->ft, st->frame);
