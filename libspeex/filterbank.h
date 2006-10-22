@@ -47,7 +47,7 @@ typedef struct {
 } FilterBank;
 
 
-FilterBank *filterbank_new(int banks, float max_freq, float sampling, int len, int type);
+FilterBank *filterbank_new(int banks, float sampling, int len, int type);
 
 void filterbank_destroy(FilterBank *bank);
 

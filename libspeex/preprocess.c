@@ -76,16 +76,22 @@
 
 #define NB_BANDS 24
 
-#define SPEEX_PROB_START_DEFAULT    0.35f
-#define SPEEX_PROB_CONTINUE_DEFAULT 0.20f
+#define SPEEX_PROB_START_DEFAULT       0.35f
+#define SPEEX_PROB_CONTINUE_DEFAULT    0.20f
+#define NOISE_SUPPRESS_DEFAULT       -25
+#define ECHO_SUPPRESS_DEFAULT        -45
+#define ECHO_SUPPRESS_ACTIVE_DEFAULT -15
 
 /** Speex pre-processor state. */
 struct SpeexPreprocessState_ {
+   /* Basic info */
    int    frame_size;        /**< Number of samples processed each time */
    int    ps_size;           /**< Number of points in the power spectrum */
    int    sampling_rate;     /**< Sampling rate of the input/output */
+   int    nbands;
+   FilterBank *bank;
    
-   /* parameters */
+   /* Parameters */
    int    denoise_enabled;
    int    agc_enabled;
    float  agc_level;
@@ -95,10 +101,11 @@ struct SpeexPreprocessState_ {
    float  reverb_level;
    float  speech_prob_start;
    float  speech_prob_continue;
+   int    noise_suppress;
+   int    echo_suppress;
+   int    echo_suppress_active;
    
-   int    nbands;
-   FilterBank *bank;
-   
+   /* DSP-related arrays */
    float *frame;             /**< Processing frame (2*ps_size) */
    float *ft;                /**< Processing frame in freq domain (2*ps_size) */
    float *ps;                /**< Current power spectrum */
@@ -122,6 +129,7 @@ struct SpeexPreprocessState_ {
 
    float *echo_noise;
 
+   /* Misc */
    float *inbuf;             /**< Input buffer (overlapped analysis) */
    float *outbuf;            /**< Output buffer (for overlap and add) */
 
@@ -130,7 +138,7 @@ struct SpeexPreprocessState_ {
    int    nb_adapt;          /**< Number of frames used for adaptation so far */
    int    nb_loudness_adapt; /**< Number of frames used for loudness adaptation so far */
    int    min_count;         /**< Number of frames processed so far */
-   void *fft_lookup;   /**< Lookup table for the FFT */
+   void  *fft_lookup;        /**< Lookup table for the FFT */
 
 };
 
@@ -234,14 +242,17 @@ SpeexPreprocessState *speex_preprocess_state_init(int frame_size, int sampling_r
    st->dereverb_enabled = 0;
    st->reverb_decay = .0;
    st->reverb_level = .0;
+   st->noise_suppress = NOISE_SUPPRESS_DEFAULT;
+   st->echo_suppress = ECHO_SUPPRESS_DEFAULT;
+   st->echo_suppress_active = ECHO_SUPPRESS_ACTIVE_DEFAULT;
 
    st->speech_prob_start = SPEEX_PROB_START_DEFAULT;
    st->speech_prob_continue = SPEEX_PROB_CONTINUE_DEFAULT;
 
    st->nbands = NB_BANDS;
    M = st->nbands;
-   st->bank = filterbank_new(M, 4000, 8000, N, 1);
-         
+   st->bank = filterbank_new(M, sampling_rate, N, 1);
+   
    st->frame = (float*)speex_alloc(2*N*sizeof(float));
    st->window = (float*)speex_alloc(2*N*sizeof(float));
    st->ft = (float*)speex_alloc(2*N*sizeof(float));
@@ -501,6 +512,8 @@ int speex_preprocess(SpeexPreprocessState *st, spx_int16_t *x, spx_int32_t *echo
    float *ps=st->ps;
    float Zframe=0, Pframe;
    float beta, beta_1;
+   float echo_floor;
+   float noise_floor;
    
    st->nb_adapt++;
    st->min_count++;
@@ -577,6 +590,8 @@ int speex_preprocess(SpeexPreprocessState *st, spx_int16_t *x, spx_int32_t *echo
    Zframe /= st->nbands;
    Pframe = .1+.9*qcurve(Zframe);
    
+   noise_floor = exp(.2302585f*st->noise_suppress);
+   echo_floor = exp(.2302585f* (st->echo_suppress*(1-Pframe) + st->echo_suppress_active*Pframe));
    /*print_vec(&Pframe, 1, "");*/
    /*for (i=N;i<N+M;i++)
       st->gain2[i] = qcurve (st->zeta[i]);
@@ -618,10 +633,10 @@ int speex_preprocess(SpeexPreprocessState *st, spx_int16_t *x, spx_int32_t *echo
       MM = hypergeom_gain(theta);
 
       g = prior_ratio * MM;
-      if (g > 1.5*st->gain[i])
-         g = 1.5*st->gain[i];
-      if (g < .66*st->gain[i])
-         g = .66*st->gain[i];
+      if (g > 2*st->gain[i])
+         g = 2*st->gain[i];
+      if (g < .5*st->gain[i])
+         g = .5*st->gain[i];
       st->gain[i] = g;
       /* Limit on the gain */
       if (st->gain[i]>1.f)
@@ -631,7 +646,7 @@ int speex_preprocess(SpeexPreprocessState *st, spx_int16_t *x, spx_int32_t *echo
       if (st->denoise_enabled)
       {
          /* Compute the gain floor based on different floors for the background noise and residual echo */
-         float gain_floor = (.003f*st->noise[i] + .00003*st->echo_noise[i])/(1+st->noise[i] + st->echo_noise[i]);
+         float gain_floor = (noise_floor*st->noise[i] + echo_floor*st->echo_noise[i])/(1+st->noise[i] + st->echo_noise[i]);
          gain_floor = sqrt(gain_floor);
 
          /* Take into account speech probability of presence (what's the best rule to use?) */
@@ -816,7 +831,26 @@ int speex_preprocess_ctl(SpeexPreprocessState *state, int request, void *ptr)
       (*(int*)ptr) = st->speech_prob_continue * 100;
       break;
 
-      default:
+   case SPEEX_PREPROCESS_SET_NOISE_SUPPRESS:
+      st->noise_suppress = -ABS(*(spx_int32_t*)ptr);
+      break;
+   case SPEEX_PREPROCESS_GET_NOISE_SUPPRESS:
+      (*(spx_int32_t*)ptr) = st->noise_suppress;
+      break;
+   case SPEEX_PREPROCESS_SET_ECHO_SUPPRESS:
+      st->echo_suppress = -ABS(*(spx_int32_t*)ptr);
+      break;
+   case SPEEX_PREPROCESS_GET_ECHO_SUPPRESS:
+      (*(spx_int32_t*)ptr) = st->echo_suppress;
+      break;
+   case SPEEX_PREPROCESS_SET_ECHO_SUPPRESS_ACTIVE:
+      st->echo_suppress_active = -ABS(*(spx_int32_t*)ptr);
+      break;
+   case SPEEX_PREPROCESS_GET_ECHO_SUPPRESS_ACTIVE:
+      (*(spx_int32_t*)ptr) = st->echo_suppress_active;
+      break;
+
+   default:
       speex_warning_int("Unknown speex_preprocess_ctl request: ", request);
       return -1;
    }
