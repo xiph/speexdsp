@@ -643,20 +643,21 @@ int speex_preprocess(SpeexPreprocessState *st, spx_int16_t *x, spx_int32_t *echo
          st->gain[i]=1.f;
       
       st->reverb_estimate[i] = st->reverb_decay*st->reverb_estimate[i] + st->reverb_decay*st->reverb_level*st->gain[i]*st->gain[i]*st->ps[i];
-      if (st->denoise_enabled)
-      {
-         /* Compute the gain floor based on different floors for the background noise and residual echo */
-         float gain_floor = (noise_floor*st->noise[i] + echo_floor*st->echo_noise[i])/(1+st->noise[i] + st->echo_noise[i]);
-         gain_floor = sqrt(gain_floor);
-
-         /* Take into account speech probability of presence (what's the best rule to use?) */
-         if (st->gain[i] < gain_floor)
-            st->gain[i] = gain_floor;
-         st->gain2[i]=(p*sqrt(st->gain[i])+sqrt(gain_floor)*(1-p)) * (p*sqrt(st->gain[i])+sqrt(gain_floor)*(1-p));
-         /*st->gain2[i] = pow(st->gain[i], p) * pow(gain_floor,1.f-p);*/
-      } else {
+      /* Compute the gain floor based on different floors for the background noise and residual echo */
+      float gain_floor = (noise_floor*st->noise[i] + echo_floor*st->echo_noise[i])/(1+st->noise[i] + st->echo_noise[i]);
+      gain_floor = sqrt(gain_floor);
+      
+      /* Take into account speech probability of presence (what's the best rule to use?) */
+      if (st->gain[i] < gain_floor)
+         st->gain[i] = gain_floor;
+      st->gain2[i]=(p*sqrt(st->gain[i])+sqrt(gain_floor)*(1-p)) * (p*sqrt(st->gain[i])+sqrt(gain_floor)*(1-p));
+      /*st->gain2[i] = pow(st->gain[i], p) * pow(gain_floor,1.f-p);*/
+   }
+   
+   if (!st->denoise_enabled)
+   {
+      for (i=0;i<N+M;i++)
          st->gain2[i]=1.f;
-      }
    }
    
    /* Enable this to only use the filterbank gains */
