@@ -641,15 +641,20 @@ int speex_preprocess(SpeexPreprocessState *st, spx_int16_t *x, spx_int32_t *echo
       g = prior_ratio * MM;
       
       /* Constrain the gain to be close to the Bark scale gain */
-      if (g > 2*st->gain[i])
-         g = 2*st->gain[i];
+      if (g > 3*st->gain[i])
+         g = 3*st->gain[i];
       if (g < .5*st->gain[i])
          g = .5*st->gain[i];
       st->gain[i] = g;
       
-      /* Sounds on the gain */
+      /* Bound on the gain */
       if (st->gain[i]>1.f)
          st->gain[i]=1.f;
+      
+      /* Save old power spectrum */
+      st->old_ps[i] = .2*st->old_ps[i] + .8*st->gain[i]*st->gain[i]*ps[i];
+      
+      /* Apply gain floor */
       if (st->gain[i] < gain_floor)
          st->gain[i] = gain_floor;
       
@@ -663,8 +668,6 @@ int speex_preprocess(SpeexPreprocessState *st, spx_int16_t *x, spx_int32_t *echo
       st->gain2[i] = pow(st->gain[i], p) * pow(gain_floor,1.f-p);
 #endif
       
-      /* Save old power spectrum */
-      st->old_ps[i] = .2*st->old_ps[i] + .8*st->gain[i]*st->gain[i]*ps[i];
 
    }
    
