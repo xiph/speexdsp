@@ -625,33 +625,47 @@ int speex_preprocess(SpeexPreprocessState *st, spx_int16_t *x, spx_int32_t *echo
       float prior_ratio;
       float p;
       float g;
+      float gain_floor;
+      
+      /* Compute the gain floor based on different floors for the background noise and residual echo */
+      gain_floor = (noise_floor*st->noise[i] + echo_floor*st->echo_noise[i])/(1+st->noise[i] + st->echo_noise[i]);
+      gain_floor = sqrt(gain_floor);
+      
+      /* Wiener filter gain */
       prior_ratio = st->prior[i]/(1.0001f+st->prior[i]);
       theta = (1.f+st->post[i])*prior_ratio;
       p = st->gain2[i];
 
       /* Optimal estimator for loudness domain */
       MM = hypergeom_gain(theta);
-
       g = prior_ratio * MM;
+      
+      /* Constrain the gain to be close to the Bark scale gain */
       if (g > 2*st->gain[i])
          g = 2*st->gain[i];
       if (g < .5*st->gain[i])
          g = .5*st->gain[i];
       st->gain[i] = g;
-      /* Limit on the gain */
+      
+      /* Sounds on the gain */
       if (st->gain[i]>1.f)
          st->gain[i]=1.f;
-      
-      st->reverb_estimate[i] = st->reverb_decay*st->reverb_estimate[i] + st->reverb_decay*st->reverb_level*st->gain[i]*st->gain[i]*st->ps[i];
-      /* Compute the gain floor based on different floors for the background noise and residual echo */
-      float gain_floor = (noise_floor*st->noise[i] + echo_floor*st->echo_noise[i])/(1+st->noise[i] + st->echo_noise[i]);
-      gain_floor = sqrt(gain_floor);
-      
-      /* Take into account speech probability of presence (what's the best rule to use?) */
       if (st->gain[i] < gain_floor)
          st->gain[i] = gain_floor;
+      
+      /* Exponential decay model for reverberation (unused) */
+      st->reverb_estimate[i] = st->reverb_decay*st->reverb_estimate[i] + st->reverb_decay*st->reverb_level*st->gain[i]*st->gain[i]*st->ps[i];
+      
+      /* Take into account speech probability of presence (what's the best rule to use?) */
+#if 1 /* Loudness domain MMSE estimator */
       st->gain2[i]=(p*sqrt(st->gain[i])+sqrt(gain_floor)*(1-p)) * (p*sqrt(st->gain[i])+sqrt(gain_floor)*(1-p));
-      /*st->gain2[i] = pow(st->gain[i], p) * pow(gain_floor,1.f-p);*/
+#else /* Log-domain MMSE estimator */
+      st->gain2[i] = pow(st->gain[i], p) * pow(gain_floor,1.f-p);
+#endif
+      
+      /* Save old power spectrum */
+      st->old_ps[i] = .2*st->old_ps[i] + .8*st->gain[i]*st->gain[i]*ps[i];
+
    }
    
    if (!st->denoise_enabled)
@@ -705,10 +719,6 @@ int speex_preprocess(SpeexPreprocessState *st, spx_int16_t *x, spx_int32_t *echo
    /* Update outbuf */
    for (i=0;i<N3;i++)
       st->outbuf[i] = st->frame[st->frame_size+i];
-
-   /* Save old power spectrum */
-   for (i=0;i<N+M;i++)
-      st->old_ps[i] = .2*st->old_ps[i] + .8*st->gain[i]*st->gain[i]*ps[i];
 
    return 1;
 }
