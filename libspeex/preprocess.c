@@ -110,6 +110,7 @@ struct SpeexPreprocessState_ {
    float *ft;                /**< Processing frame in freq domain (2*ps_size) */
    float *ps;                /**< Current power spectrum */
    float *gain2;             /**< Adjusted gains */
+   float *gain_floor;        /**< Minimum gain allowed */
    float *window;            /**< Analysis/Synthesis window */
    float *noise;             /**< Noise estimate */
    float *reverb_estimate;   /**< Estimate of reverb energy */
@@ -197,7 +198,7 @@ static inline float hypergeom_gain(float x)
 
 static inline float qcurve(float x)
 {
-   return 1.f/(1.f+.1f/(x));
+   return 1.f/(1.f+.15f/(x));
 }
 
 SpeexPreprocessState *speex_preprocess_state_init(int frame_size, int sampling_rate)
@@ -266,6 +267,7 @@ SpeexPreprocessState *speex_preprocess_state_init(int frame_size, int sampling_r
    st->post = (float*)speex_alloc((N+M)*sizeof(float));
    st->gain = (float*)speex_alloc((N+M)*sizeof(float));
    st->gain2 = (float*)speex_alloc((N+M)*sizeof(float));
+   st->gain_floor = (float*)speex_alloc((N+M)*sizeof(float));
    st->zeta = (float*)speex_alloc((N+M)*sizeof(float));
    
    st->S = (float*)speex_alloc(N*sizeof(float));
@@ -333,6 +335,7 @@ void speex_preprocess_state_destroy(SpeexPreprocessState *st)
    speex_free(st->ft);
    speex_free(st->ps);
    speex_free(st->gain2);
+   speex_free(st->gain_floor);
    speex_free(st->window);
    speex_free(st->noise);
    speex_free(st->reverb_estimate);
@@ -604,18 +607,21 @@ int speex_preprocess(SpeexPreprocessState *st, spx_int16_t *x, spx_int32_t *echo
       float q;
       float P1;
 
-      prior_ratio = st->prior[i]/(1.0001f+st->prior[i]);
+      /* Compute the gain floor based on different floors for the background noise and residual echo */
+      st->gain_floor[i] = sqrt((noise_floor*st->noise[i] + echo_floor*st->echo_noise[i])/(1+st->noise[i] + st->echo_noise[i]));
+      prior_ratio = st->prior[i]/(1.f+st->prior[i]);
       theta = (1.f+st->post[i])*prior_ratio;
 
       MM = hypergeom_gain(theta);
       st->gain[i] = prior_ratio * MM;
 
-      P1 = .1+.9*qcurve (st->zeta[i]);
+      P1 = .2+.8*qcurve (st->zeta[i]);
       q = 1-Pframe*P1;
       st->gain2[i]=1.f/(1.f + (q/(1.f-q))*(1.f+st->prior[i])*exp(-theta));
    }
    filterbank_compute_psd(st->bank,st->gain2+N, st->gain2);
    filterbank_compute_psd(st->bank,st->gain+N, st->gain);
+   filterbank_compute_psd(st->bank,st->gain_floor+N, st->gain_floor);
    
    /* Compute gain according to the Ephraim-Malah algorithm */
    for (i=0;i<N+M;i++)
@@ -625,14 +631,9 @@ int speex_preprocess(SpeexPreprocessState *st, spx_int16_t *x, spx_int32_t *echo
       float prior_ratio;
       float p;
       float g;
-      float gain_floor;
-      
-      /* Compute the gain floor based on different floors for the background noise and residual echo */
-      gain_floor = (noise_floor*st->noise[i] + echo_floor*st->echo_noise[i])/(1+st->noise[i] + st->echo_noise[i]);
-      gain_floor = sqrt(gain_floor);
       
       /* Wiener filter gain */
-      prior_ratio = st->prior[i]/(1.0001f+st->prior[i]);
+      prior_ratio = st->prior[i]/(1.f+st->prior[i]);
       theta = (1.f+st->post[i])*prior_ratio;
       p = st->gain2[i];
 
@@ -655,21 +656,26 @@ int speex_preprocess(SpeexPreprocessState *st, spx_int16_t *x, spx_int32_t *echo
       st->old_ps[i] = .2*st->old_ps[i] + .8*st->gain[i]*st->gain[i]*ps[i];
       
       /* Apply gain floor */
-      if (st->gain[i] < gain_floor)
-         st->gain[i] = gain_floor;
+      if (st->gain[i] < st->gain_floor[i])
+         st->gain[i] = st->gain_floor[i];
       
       /* Exponential decay model for reverberation (unused) */
-      st->reverb_estimate[i] = st->reverb_decay*st->reverb_estimate[i] + st->reverb_decay*st->reverb_level*st->gain[i]*st->gain[i]*st->ps[i];
+      /*st->reverb_estimate[i] = st->reverb_decay*st->reverb_estimate[i] + st->reverb_decay*st->reverb_level*st->gain[i]*st->gain[i]*st->ps[i];*/
       
       /* Take into account speech probability of presence (what's the best rule to use?) */
 #if 1 /* Loudness domain MMSE estimator */
-      st->gain2[i]=(p*sqrt(st->gain[i])+sqrt(gain_floor)*(1-p)) * (p*sqrt(st->gain[i])+sqrt(gain_floor)*(1-p));
+      st->gain2[i]=(p*sqrt(st->gain[i])+sqrt(st->gain_floor[i])*(1-p)) * (p*sqrt(st->gain[i])+sqrt(st->gain_floor[i])*(1-p));
 #else /* Log-domain MMSE estimator */
-      st->gain2[i] = pow(st->gain[i], p) * pow(gain_floor,1.f-p);
+      st->gain2[i] = pow(st->gain[i], p) * pow(st->gain_floor[i],1.f-p);
 #endif
       
 
    }
+   
+   /* Enable this to only use the filterbank gains */
+#if 0
+   filterbank_compute_psd(st->bank,st->gain2+N, st->gain2);
+#endif
    
    if (!st->denoise_enabled)
    {
@@ -677,11 +683,6 @@ int speex_preprocess(SpeexPreprocessState *st, spx_int16_t *x, spx_int32_t *echo
          st->gain2[i]=1.f;
    }
    
-   /* Enable this to only use the filterbank gains */
-#if 0
-   filterbank_compute_psd(st->bank,st->gain2+N, st->gain2);
-#endif
-
    if (st->agc_enabled)
       speex_compute_agc(st);
 
