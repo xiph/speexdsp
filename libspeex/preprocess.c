@@ -614,6 +614,12 @@ int speex_preprocess(SpeexPreprocessState *st, spx_int16_t *x, spx_int32_t *echo
 
       MM = hypergeom_gain(theta);
       st->gain[i] = prior_ratio * MM;
+      /* Bound on the gain */
+      if (st->gain[i]>1.f)
+         st->gain[i]=1.f;
+      
+      /* Save old Bark power spectrum */
+      st->old_ps[i] = .2*st->old_ps[i] + .8*st->gain[i]*st->gain[i]*ps[i];
 
       P1 = .2+.8*qcurve (st->zeta[i]);
       q = 1-Pframe*P1;
@@ -621,61 +627,67 @@ int speex_preprocess(SpeexPreprocessState *st, spx_int16_t *x, spx_int32_t *echo
    }
    filterbank_compute_psd(st->bank,st->gain2+N, st->gain2);
    filterbank_compute_psd(st->bank,st->gain+N, st->gain);
-   filterbank_compute_psd(st->bank,st->gain_floor+N, st->gain_floor);
    
-   /* Compute gain according to the Ephraim-Malah algorithm */
-   for (i=0;i<N+M;i++)
+   /* Use 1 for linear gain resolution (best) or 0 for Bark gain resolution (faster) */
+   if (1)
    {
-      float MM;
-      float theta;
-      float prior_ratio;
-      float p;
-      float g;
-      
-      /* Wiener filter gain */
-      prior_ratio = st->prior[i]/(1.f+st->prior[i]);
-      theta = (1.f+st->post[i])*prior_ratio;
-      p = st->gain2[i];
-
-      /* Optimal estimator for loudness domain */
-      MM = hypergeom_gain(theta);
-      g = prior_ratio * MM;
-      
-      /* Constrain the gain to be close to the Bark scale gain */
-      if (g > 3*st->gain[i])
-         g = 3*st->gain[i];
-      if (g < .5*st->gain[i])
-         g = .5*st->gain[i];
-      st->gain[i] = g;
-      
-      /* Bound on the gain */
-      if (st->gain[i]>1.f)
-         st->gain[i]=1.f;
-      
-      /* Save old power spectrum */
-      st->old_ps[i] = .2*st->old_ps[i] + .8*st->gain[i]*st->gain[i]*ps[i];
-      
-      /* Apply gain floor */
-      if (st->gain[i] < st->gain_floor[i])
-         st->gain[i] = st->gain_floor[i];
-      
-      /* Exponential decay model for reverberation (unused) */
-      /*st->reverb_estimate[i] = st->reverb_decay*st->reverb_estimate[i] + st->reverb_decay*st->reverb_level*st->gain[i]*st->gain[i]*st->ps[i];*/
-      
-      /* Take into account speech probability of presence (what's the best rule to use?) */
-#if 1 /* Loudness domain MMSE estimator */
-      st->gain2[i]=(p*sqrt(st->gain[i])+sqrt(st->gain_floor[i])*(1-p)) * (p*sqrt(st->gain[i])+sqrt(st->gain_floor[i])*(1-p));
-#else /* Log-domain MMSE estimator */
-      st->gain2[i] = pow(st->gain[i], p) * pow(st->gain_floor[i],1.f-p);
-#endif
-      
-
-   }
+      filterbank_compute_psd(st->bank,st->gain_floor+N, st->gain_floor);
    
-   /* Enable this to only use the filterbank gains */
-#if 0
-   filterbank_compute_psd(st->bank,st->gain2+N, st->gain2);
-#endif
+      /* Compute gain according to the Ephraim-Malah algorithm */
+      for (i=0;i<N;i++)
+      {
+         float MM;
+         float theta;
+         float prior_ratio;
+         float p;
+         float g;
+         
+         /* Wiener filter gain */
+         prior_ratio = st->prior[i]/(1.f+st->prior[i]);
+         theta = (1.f+st->post[i])*prior_ratio;
+         p = st->gain2[i];
+         
+         /* Optimal estimator for loudness domain */
+         MM = hypergeom_gain(theta);
+         g = prior_ratio * MM;
+         
+         /* Constrain the gain to be close to the Bark scale gain */
+         if (g > 3*st->gain[i])
+            g = 3*st->gain[i];
+         st->gain[i] = g;
+         
+         /* Bound on the gain */
+         if (st->gain[i]>1.f)
+            st->gain[i]=1.f;
+         
+         /* Save old power spectrum */
+         st->old_ps[i] = .2*st->old_ps[i] + .8*st->gain[i]*st->gain[i]*ps[i];
+         
+         /* Apply gain floor */
+         if (st->gain[i] < st->gain_floor[i])
+            st->gain[i] = st->gain_floor[i];
+         
+         /* Exponential decay model for reverberation (unused) */
+         /*st->reverb_estimate[i] = st->reverb_decay*st->reverb_estimate[i] + st->reverb_decay*st->reverb_level*st->gain[i]*st->gain[i]*st->ps[i];*/
+         
+         /* Take into account speech probability of presence (loudness domain MMSE estimator) */
+         st->gain2[i]=(p*sqrt(st->gain[i])+sqrt(st->gain_floor[i])*(1-p)) * (p*sqrt(st->gain[i])+sqrt(st->gain_floor[i])*(1-p));
+         
+         /* Use this if you want a log-domain MMSE estimator instead */
+         /*st->gain2[i] = pow(st->gain[i], p) * pow(st->gain_floor[i],1.f-p);*/
+         
+      }
+   } else {
+      for (i=N;i<N+M;i++)
+      {
+         float p = st->gain2[i];
+         if (st->gain[i] < st->gain_floor[i])
+            st->gain[i] = st->gain_floor[i];
+         st->gain2[i]=(p*sqrt(st->gain[i])+sqrt(st->gain_floor[i])*(1-p)) * (p*sqrt(st->gain[i])+sqrt(st->gain_floor[i])*(1-p));
+      }
+      filterbank_compute_psd(st->bank,st->gain2+N, st->gain2);
+      
+   }
    
    if (!st->denoise_enabled)
    {
