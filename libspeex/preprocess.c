@@ -134,6 +134,7 @@ struct SpeexPreprocessState_ {
    float *inbuf;             /**< Input buffer (overlapped analysis) */
    float *outbuf;            /**< Output buffer (for overlap and add) */
 
+   int    was_speech;
    float  loudness;          /**< loudness estimate */
    float  loudness2;         /**< loudness estimate */
    int    nb_adapt;          /**< Number of frames used for adaptation so far */
@@ -318,6 +319,7 @@ SpeexPreprocessState *speex_preprocess_state_init(int frame_size, int sampling_r
       st->loudness_weight[i] *= st->loudness_weight[i];
    }
 
+   st->was_speech = 0;
    st->loudness = pow(6000,LOUDNESS_EXP);
    st->loudness2 = 6000;
    st->nb_loudness_adapt = 0;
@@ -736,7 +738,20 @@ int speex_preprocess(SpeexPreprocessState *st, spx_int16_t *x, spx_int32_t *echo
    for (i=0;i<N3;i++)
       st->outbuf[i] = st->frame[st->frame_size+i];
 
-   return 1;
+   if (st->vad_enabled)
+   {
+      if (Pframe > st->speech_prob_start || (st->was_speech && Pframe > st->speech_prob_continue))
+      {
+         st->was_speech=1;
+         return 1;
+      } else
+      {
+         st->was_speech=0;
+         return 0;
+      }
+   } else {
+      return 1;
+   }
 }
 
 void speex_preprocess_estimate_update(SpeexPreprocessState *st, spx_int16_t *x, spx_int32_t *echo)
@@ -811,10 +826,10 @@ int speex_preprocess_ctl(SpeexPreprocessState *state, int request, void *ptr)
 
    case SPEEX_PREPROCESS_SET_VAD:
       speex_warning("The VAD has been removed pending a complete rewrite");
-      st->vad_enabled = (*(int*)ptr);
+      st->vad_enabled = (*(spx_int32_t*)ptr);
       break;
    case SPEEX_PREPROCESS_GET_VAD:
-      (*(int*)ptr) = st->vad_enabled;
+      (*(spx_int32_t*)ptr) = st->vad_enabled;
       break;
    
    case SPEEX_PREPROCESS_SET_DEREVERB:
