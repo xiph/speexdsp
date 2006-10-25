@@ -102,6 +102,8 @@ static const spx_float_t MIN_LEAK = .032f;
 #define TOP16(x) (x)
 #endif
 
+void speex_echo_get_residual(SpeexEchoState *st, spx_int32_t *Yout, int len);
+
 
 /** Speex echo cancellation state. */
 struct SpeexEchoState_ {
@@ -116,6 +118,8 @@ struct SpeexEchoState_ {
    spx_word16_t beta0;
    spx_word16_t beta_max;
    spx_word32_t sum_adapt;
+   spx_word16_t leak_estimate;
+   
    spx_word16_t *e;
    spx_word16_t *x;
    spx_word16_t *X;
@@ -291,6 +295,7 @@ SpeexEchoState *speex_echo_state_init(int frame_size, int filter_length)
    st->beta0 = (2.0f*st->frame_size)/st->sampling_rate;
    st->beta_max = (.5f*st->frame_size)/st->sampling_rate;
 #endif
+   st->leak_estimate = 0;
 
    st->fft_table = spx_fft_init(N);
    
@@ -463,13 +468,19 @@ void speex_echo_playback(SpeexEchoState *st, const spx_int16_t *play)
 }
 
 /** Performs echo cancellation on a frame */
-void speex_echo_cancel(SpeexEchoState *st, const spx_int16_t *ref, const spx_int16_t *echo, spx_int16_t *out, spx_int32_t *Yout)
+void speex_echo_cancel(SpeexEchoState *st, const spx_int16_t *in, const spx_int16_t *far_end, spx_int16_t *out, spx_int32_t *Yout)
+{
+   speex_echo_cancellation(st, in, far_end, out);
+   speex_echo_get_residual(st, Yout, 0);
+}
+
+/** Performs echo cancellation on a frame (deprecated, last arg now ignored) */
+void speex_echo_cancellation(SpeexEchoState *st, const spx_int16_t *in, const spx_int16_t *far_end, spx_int16_t *out)
 {
    int i,j;
    int N,M;
    spx_word32_t Syy,See,Sxx;
    spx_word32_t Sey;
-   spx_word16_t leak_estimate;
    spx_word16_t ss, ss_1;
    spx_float_t Pey = FLOAT_ONE, Pyy=FLOAT_ONE;
    spx_float_t alpha, alpha_1;
@@ -487,14 +498,14 @@ void speex_echo_cancel(SpeexEchoState *st, const spx_int16_t *ref, const spx_int
    ss_1 = 1-ss;
 #endif
 
-   filter_dc_notch16(ref, st->notch_radius, st->d, st->frame_size, st->notch_mem);
+   filter_dc_notch16(in, st->notch_radius, st->d, st->frame_size, st->notch_mem);
    /* Copy input data to buffer */
    for (i=0;i<st->frame_size;i++)
    {
       spx_word16_t tmp;
       spx_word32_t tmp32;
       st->x[i] = st->x[i+st->frame_size];
-      tmp32 = SUB32(EXTEND32(echo[i]), EXTEND32(MULT16_16_P15(st->preemph, st->memX)));
+      tmp32 = SUB32(EXTEND32(far_end[i]), EXTEND32(MULT16_16_P15(st->preemph, st->memX)));
 #ifdef FIXED_POINT
       /*FIXME: If saturation occurs here, we need to freeze adaptation for M frames (not just one) */
       if (tmp32 > 32767)
@@ -509,7 +520,7 @@ void speex_echo_cancel(SpeexEchoState *st, const spx_int16_t *ref, const spx_int
       }      
 #endif
       st->x[i+st->frame_size] = EXTRACT16(tmp32);
-      st->memX = echo[i];
+      st->memX = far_end[i];
       
       tmp = st->d[i];
       st->d[i] = st->d[i+st->frame_size];
@@ -537,7 +548,7 @@ void speex_echo_cancel(SpeexEchoState *st, const spx_int16_t *ref, const spx_int
          st->X[(j+1)*N+i] = st->X[j*N+i];
    }
 
-   /* Convert x (echo input) to frequency domain */
+   /* Convert x (far end) to frequency domain */
    spx_fft(st->fft_table, st->x, &st->X[0]);
    
 #ifdef SMOOTH_BLOCKS
@@ -616,7 +627,7 @@ void speex_echo_cancel(SpeexEchoState *st, const spx_int16_t *ref, const spx_int
          tmp_out = -32768;
       tmp_out = ADD32(tmp_out, EXTEND32(MULT16_16_P15(st->preemph, st->memE)));
       /* This is an arbitrary test for saturation */
-      if (ref[i] <= -32000 || ref[i] >= 32000)
+      if (in[i] <= -32000 || in[i] >= 32000)
       {
          tmp_out = 0;
          st->saturated = 1;
@@ -645,12 +656,12 @@ void speex_echo_cancel(SpeexEchoState *st, const spx_int16_t *ref, const spx_int
       st->y[i] = 0;
    spx_fft(st->fft_table, st->y, st->Y);
 
-   /* Compute power spectrum of echo (X), error (E) and filter response (Y) */
+   /* Compute power spectrum of far end (X), error (E) and filter response (Y) */
    power_spectrum(st->E, st->Rf, N);
    power_spectrum(st->Y, st->Yf, N);
    power_spectrum(st->X, st->Xf, N);
    
-   /* Smooth echo energy estimate over time */
+   /* Smooth far end energy estimate over time */
    for (j=0;j<=st->frame_size;j++)
       st->power[j] = MULT16_32_Q15(ss_1,st->power[j]) + 1 + MULT16_32_Q15(ss,st->Xf[j]);
    
@@ -706,17 +717,17 @@ void speex_echo_cancel(SpeexEchoState *st, const spx_int16_t *ref, const spx_int
    if (FLOAT_GT(st->Pey, st->Pyy))
       st->Pey = st->Pyy;
    /* leak_estimate is the linear regression result */
-   leak_estimate = FLOAT_EXTRACT16(FLOAT_SHL(FLOAT_DIVU(st->Pey, st->Pyy),14));
+   st->leak_estimate = FLOAT_EXTRACT16(FLOAT_SHL(FLOAT_DIVU(st->Pey, st->Pyy),14));
    /* This looks like a stupid bug, but it's right (because we convert from Q14 to Q15) */
-   if (leak_estimate > 16383)
-      leak_estimate = 32767;
+   if (st->leak_estimate > 16383)
+      st->leak_estimate = 32767;
    else
-      leak_estimate = SHL16(leak_estimate,1);
-   /*printf ("%f\n", leak_estimate);*/
+      st->leak_estimate = SHL16(st->leak_estimate,1);
+   /*printf ("%f\n", st->leak_estimate);*/
    
    /* Compute Residual to Error Ratio */
 #ifdef FIXED_POINT
-   tmp32 = MULT16_32_Q15(leak_estimate,Syy);
+   tmp32 = MULT16_32_Q15(st->leak_estimate,Syy);
    tmp32 = ADD32(SHR32(Sxx,13), ADD32(tmp32, SHL32(tmp32,1)));
    /* Check for y in e (lower bound on RER) */
    {
@@ -731,7 +742,7 @@ void speex_echo_cancel(SpeexEchoState *st, const spx_int16_t *ref, const spx_int
       tmp32 = SHR32(See,1);
    RER = FLOAT_EXTRACT16(FLOAT_SHL(FLOAT_DIV32(tmp32,See),15));
 #else
-   RER = (.0001*Sxx + 3.*MULT16_32_Q15(leak_estimate,Syy)) / See;
+   RER = (.0001*Sxx + 3.*MULT16_32_Q15(st->leak_estimate,Syy)) / See;
    /* Check for y in e (lower bound on RER) */
    if (RER < Sey*Sey/(1+See*Syy))
       RER = Sey*Sey/(1+See*Syy);
@@ -751,7 +762,7 @@ void speex_echo_cancel(SpeexEchoState *st, const spx_int16_t *ref, const spx_int
       {
          spx_word32_t r, e;
          /* Compute frequency-domain adaptation mask */
-         r = MULT16_32_Q15(leak_estimate,SHL32(st->Yf[i],3));
+         r = MULT16_32_Q15(st->leak_estimate,SHL32(st->Yf[i],3));
          e = SHL32(st->Rf[i],3)+1;
 #ifdef FIXED_POINT
          if (r>SHR32(e,1))
@@ -788,48 +799,54 @@ void speex_echo_cancel(SpeexEchoState *st, const spx_int16_t *ref, const spx_int
       st->sum_adapt = ADD32(st->sum_adapt,adapt_rate);
    }
 
-   /* Compute spectrum of estimated echo for use in an echo post-filter (if necessary)*/
-   if (Yout)
+   if (st->adapted)
    {
-      spx_word16_t leak2;
-      if (st->adapted)
-      {
-         /* If the filter is adapted, take the filtered echo */
-         for (i=0;i<st->frame_size;i++)
-            st->last_y[i] = st->last_y[st->frame_size+i];
-         for (i=0;i<st->frame_size;i++)
-            st->last_y[st->frame_size+i] = ref[i]-out[i];
-      } else {
-         /* If filter isn't adapted yet, all we can do is take the echo signal directly */
-         for (i=0;i<N;i++)
-            st->last_y[i] = st->x[i];
-      }
-      
-      /* Apply hanning window (should pre-compute it)*/
+      /* If the filter is adapted, take the filtered echo */
+      for (i=0;i<st->frame_size;i++)
+         st->last_y[i] = st->last_y[st->frame_size+i];
+      for (i=0;i<st->frame_size;i++)
+         st->last_y[st->frame_size+i] = in[i]-out[i];
+   } else {
+      /* If filter isn't adapted yet, all we can do is take the far end signal directly */
       for (i=0;i<N;i++)
-         st->y[i] = MULT16_16_Q15(st->window[i],st->last_y[i]);
-      
-      /* Compute power spectrum of the echo */
-      spx_fft(st->fft_table, st->y, st->Y);
-      power_spectrum(st->Y, st->Yps, N);
-      
-#ifdef FIXED_POINT
-      if (leak_estimate > 16383)
-         leak2 = 32767;
-      else
-         leak2 = SHL16(leak_estimate, 1);
-#else
-      if (leak_estimate>.5)
-         leak2 = 1;
-      else
-         leak2 = 2*leak_estimate;
-#endif
-      /* Estimate residual echo */
-      for (i=0;i<=st->frame_size;i++)
-         Yout[i] = (spx_int32_t)MULT16_32_Q15(leak2,st->Yps[i]);
+         st->last_y[i] = st->x[i];
    }
+
 }
 
+/* Compute spectrum of estimated echo for use in an echo post-filter */
+void speex_echo_get_residual(SpeexEchoState *st, spx_int32_t *Yout, int len)
+{
+   int i;
+   spx_word16_t leak2;
+   int N;
+   
+   N = st->window_size;
+
+   /* Apply hanning window (should pre-compute it)*/
+   for (i=0;i<N;i++)
+      st->y[i] = MULT16_16_Q15(st->window[i],st->last_y[i]);
+      
+   /* Compute power spectrum of the echo */
+   spx_fft(st->fft_table, st->y, st->Y);
+   power_spectrum(st->Y, st->Yps, N);
+      
+#ifdef FIXED_POINT
+   if (st->leak_estimate > 16383)
+      leak2 = 32767;
+   else
+      leak2 = SHL16(st->leak_estimate, 1);
+#else
+   if (st->leak_estimate>.5)
+      leak2 = 1;
+   else
+      leak2 = 2*st->leak_estimate;
+#endif
+   /* Estimate residual echo */
+   for (i=0;i<=st->frame_size;i++)
+      Yout[i] = (spx_int32_t)MULT16_32_Q15(leak2,st->Yps[i]);
+   
+}
 
 int speex_echo_ctl(SpeexEchoState *st, int request, void *ptr)
 {
