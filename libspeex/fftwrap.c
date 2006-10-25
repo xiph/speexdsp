@@ -36,8 +36,8 @@
 #include "config.h"
 #endif
 
-#define USE_SMALLFT
-/*#define USE_KISS_FFT*/
+/*#define USE_SMALLFT*/
+#define USE_KISS_FFT
 
 
 #include "misc.h"
