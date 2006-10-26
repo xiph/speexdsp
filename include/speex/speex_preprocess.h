@@ -53,6 +53,9 @@ SpeexPreprocessState *speex_preprocess_state_init(int frame_size, int sampling_r
 void speex_preprocess_state_destroy(SpeexPreprocessState *st);
 
 /** Preprocess a frame */
+int speex_preprocess_run(SpeexPreprocessState *st, spx_int16_t *x);
+
+/** Preprocess a frame (deprecated) */
 int speex_preprocess(SpeexPreprocessState *st, spx_int16_t *x, spx_int32_t *echo);
 
 /** Preprocess a frame */
@@ -112,6 +115,9 @@ int speex_preprocess_ctl(SpeexPreprocessState *st, int request, void *ptr);
 
 #define SPEEX_PREPROCESS_SET_ECHO_SUPPRESS_ACTIVE 22
 #define SPEEX_PREPROCESS_GET_ECHO_SUPPRESS_ACTIVE 23
+
+#define SPEEX_PREPROCESS_SET_ECHO_STATE 24
+#define SPEEX_PREPROCESS_GET_ECHO_STATE 25
 
 #ifdef __cplusplus
 }

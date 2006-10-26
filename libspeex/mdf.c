@@ -102,7 +102,7 @@ static const spx_float_t MIN_LEAK = .032f;
 #define TOP16(x) (x)
 #endif
 
-void speex_echo_get_residual(SpeexEchoState *st, spx_int32_t *Yout, int len);
+void speex_echo_get_residual(SpeexEchoState *st, spx_word32_t *Yout, int len);
 
 
 /** Speex echo cancellation state. */
@@ -126,7 +126,6 @@ struct SpeexEchoState_ {
    spx_word16_t *d;
    spx_word16_t *y;
    spx_word16_t *last_y;
-   spx_word32_t *Yps;
    spx_word16_t *Y;
    spx_word16_t *E;
    spx_word32_t *PHI;
@@ -303,7 +302,6 @@ SpeexEchoState *speex_echo_state_init(int frame_size, int filter_length)
    st->x = (spx_word16_t*)speex_alloc(N*sizeof(spx_word16_t));
    st->d = (spx_word16_t*)speex_alloc(N*sizeof(spx_word16_t));
    st->y = (spx_word16_t*)speex_alloc(N*sizeof(spx_word16_t));
-   st->Yps = (spx_word32_t*)speex_alloc(N*sizeof(spx_word32_t));
    st->last_y = (spx_word16_t*)speex_alloc(N*sizeof(spx_word16_t));
    st->Yf = (spx_word32_t*)speex_alloc((st->frame_size+1)*sizeof(spx_word32_t));
    st->Rf = (spx_word32_t*)speex_alloc((st->frame_size+1)*sizeof(spx_word32_t));
@@ -409,7 +407,6 @@ void speex_echo_state_destroy(SpeexEchoState *st)
    speex_free(st->d);
    speex_free(st->y);
    speex_free(st->last_y);
-   speex_free(st->Yps);
    speex_free(st->Yf);
    speex_free(st->Rf);
    speex_free(st->Xf);
@@ -471,7 +468,6 @@ void speex_echo_playback(SpeexEchoState *st, const spx_int16_t *play)
 void speex_echo_cancel(SpeexEchoState *st, const spx_int16_t *in, const spx_int16_t *far_end, spx_int16_t *out, spx_int32_t *Yout)
 {
    speex_echo_cancellation(st, in, far_end, out);
-   speex_echo_get_residual(st, Yout, 0);
 }
 
 /** Performs echo cancellation on a frame (deprecated, last arg now ignored) */
@@ -815,7 +811,7 @@ void speex_echo_cancellation(SpeexEchoState *st, const spx_int16_t *in, const sp
 }
 
 /* Compute spectrum of estimated echo for use in an echo post-filter */
-void speex_echo_get_residual(SpeexEchoState *st, spx_int32_t *Yout, int len)
+void speex_echo_get_residual(SpeexEchoState *st, spx_word32_t *residual_echo, int len)
 {
    int i;
    spx_word16_t leak2;
@@ -829,7 +825,7 @@ void speex_echo_get_residual(SpeexEchoState *st, spx_int32_t *Yout, int len)
       
    /* Compute power spectrum of the echo */
    spx_fft(st->fft_table, st->y, st->Y);
-   power_spectrum(st->Y, st->Yps, N);
+   power_spectrum(st->Y, residual_echo, N);
       
 #ifdef FIXED_POINT
    if (st->leak_estimate > 16383)
@@ -844,7 +840,7 @@ void speex_echo_get_residual(SpeexEchoState *st, spx_int32_t *Yout, int len)
 #endif
    /* Estimate residual echo */
    for (i=0;i<=st->frame_size;i++)
-      Yout[i] = (spx_int32_t)MULT16_32_Q15(leak2,st->Yps[i]);
+      residual_echo[i] = (spx_int32_t)MULT16_32_Q15(leak2,residual_echo[i]);
    
 }
 

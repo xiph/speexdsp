@@ -18,7 +18,6 @@
 int main(int argc, char **argv)
 {
    int echo_fd, ref_fd, e_fd;
-   spx_int32_t noise[NN+1];
    short echo_buf[NN], ref_buf[NN], e_buf[NN];
    SpeexEchoState *st;
    SpeexPreprocessState *den;
@@ -36,12 +35,13 @@ int main(int argc, char **argv)
    den = speex_preprocess_state_init(NN, 8000);
    int tmp = 8000;
    speex_echo_ctl(st, SPEEX_ECHO_SET_SAMPLING_RATE, &tmp);
+   speex_preprocess_ctl(den, SPEEX_PREPROCESS_SET_ECHO_STATE, st);
 
    while (read(ref_fd, ref_buf, NN*2))
    {
       read(echo_fd, echo_buf, NN*2);
-      speex_echo_cancel(st, ref_buf, echo_buf, e_buf, noise);
-      /*speex_preprocess(den, e_buf, noise);*/
+      speex_echo_cancellation(st, ref_buf, echo_buf, e_buf);
+      speex_preprocess_run(den, e_buf);
       write(e_fd, e_buf, NN*2);
    }
    speex_echo_state_destroy(st);

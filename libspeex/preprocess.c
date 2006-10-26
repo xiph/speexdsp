@@ -61,6 +61,7 @@
 
 #include <math.h>
 #include "speex/speex_preprocess.h"
+#include "speex/speex_echo.h"
 #include "misc.h"
 #include "fftwrap.h"
 #include "filterbank.h"
@@ -81,6 +82,10 @@
 #define NOISE_SUPPRESS_DEFAULT       -25
 #define ECHO_SUPPRESS_DEFAULT        -45
 #define ECHO_SUPPRESS_ACTIVE_DEFAULT -15
+
+#ifndef NULL
+#define NULL 0
+#endif
 
 /** Speex pre-processor state. */
 struct SpeexPreprocessState_ {
@@ -104,6 +109,7 @@ struct SpeexPreprocessState_ {
    int    noise_suppress;
    int    echo_suppress;
    int    echo_suppress_active;
+   SpeexEchoState *echo_state;
    
    /* DSP-related arrays */
    float *frame;             /**< Processing frame (2*ps_size) */
@@ -129,6 +135,7 @@ struct SpeexPreprocessState_ {
    float *loudness_weight;   /**< Perceptual loudness curve */
 
    float *echo_noise;
+   spx_word32_t *residual_echo;
 
    /* Misc */
    float *inbuf;             /**< Input buffer (overlapped analysis) */
@@ -251,6 +258,8 @@ SpeexPreprocessState *speex_preprocess_state_init(int frame_size, int sampling_r
    st->speech_prob_start = SPEEX_PROB_START_DEFAULT;
    st->speech_prob_continue = SPEEX_PROB_CONTINUE_DEFAULT;
 
+   st->echo_state = NULL;
+   
    st->nbands = NB_BANDS;
    M = st->nbands;
    st->bank = filterbank_new(M, sampling_rate, N, 1);
@@ -262,6 +271,7 @@ SpeexPreprocessState *speex_preprocess_state_init(int frame_size, int sampling_r
    st->ps = (float*)speex_alloc((N+M)*sizeof(float));
    st->noise = (float*)speex_alloc((N+M)*sizeof(float));
    st->echo_noise = (float*)speex_alloc((N+M)*sizeof(float));
+   st->residual_echo = (spx_word32_t*)speex_alloc((N+M)*sizeof(float));
    st->reverb_estimate = (float*)speex_alloc((N+M)*sizeof(float));
    st->old_ps = (float*)speex_alloc((N+M)*sizeof(float));
    st->prior = (float*)speex_alloc((N+M)*sizeof(float));
@@ -347,6 +357,7 @@ void speex_preprocess_state_destroy(SpeexPreprocessState *st)
    speex_free(st->post);
    speex_free(st->loudness_weight);
    speex_free(st->echo_noise);
+   speex_free(st->residual_echo);
 
    speex_free(st->S);
    speex_free(st->Smin);
@@ -507,7 +518,14 @@ static void update_noise_prob(SpeexPreprocessState *st)
 
 #define NOISE_OVERCOMPENS 1.
 
+void speex_echo_get_residual(SpeexEchoState *st, spx_word32_t *Yout, int len);
+
 int speex_preprocess(SpeexPreprocessState *st, spx_int16_t *x, spx_int32_t *echo)
+{
+   return speex_preprocess_run(st, x);
+}
+
+int speex_preprocess_run(SpeexPreprocessState *st, spx_int16_t *x)
 {
    int i;
    int M;
@@ -529,10 +547,11 @@ int speex_preprocess(SpeexPreprocessState *st, spx_int16_t *x, spx_int32_t *echo
    beta_1 = 1.0f-beta;
    M = st->nbands;
    /* Deal with residual echo if provided */
-   if (echo)
+   if (st->echo_state)
    {
+      speex_echo_get_residual(st->echo_state, st->residual_echo, N);
       for (i=0;i<N;i++)
-         st->echo_noise[i] = MAX32(.6f*st->echo_noise[i], echo[i]);
+         st->echo_noise[i] = MAX32(.6f*st->echo_noise[i], st->residual_echo[i]);
       filterbank_compute_bank(st->bank, st->echo_noise, st->echo_noise+N);
    } else {
       for (i=0;i<N+M;i++)
@@ -890,6 +909,12 @@ int speex_preprocess_ctl(SpeexPreprocessState *state, int request, void *ptr)
       break;
    case SPEEX_PREPROCESS_GET_ECHO_SUPPRESS_ACTIVE:
       (*(spx_int32_t*)ptr) = st->echo_suppress_active;
+      break;
+   case SPEEX_PREPROCESS_SET_ECHO_STATE:
+      st->echo_state = (SpeexEchoState*)ptr;
+      break;
+   case SPEEX_PREPROCESS_GET_ECHO_STATE:
+      ptr = (void*)st->echo_state;
       break;
 
    default:
