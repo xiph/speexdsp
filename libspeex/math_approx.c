@@ -37,6 +37,36 @@
 #include "math_approx.h"
 #include "misc.h"
 
+spx_int16_t spx_ilog2(spx_uint32_t x)
+{
+   int r=0;
+   if (x>=(spx_int32_t)32768)
+   {
+      x >>= 16;
+      r += 16;
+   }
+   if (x>=256)
+   {
+      x >>= 8;
+      r += 8;
+   }
+   if (x>=16)
+   {
+      x >>= 4;
+      r += 4;
+   }
+   if (x>=4)
+   {
+      x >>= 2;
+      r += 2;
+   }
+   if (x>=1)
+   {
+      r += 1;
+   }
+   return r;
+}
+
 #ifdef FIXED_POINT
 
 /* sqrt(x) ~= 0.22178 + 1.29227*x - 0.77070*x^2 + 0.25723*x^3 (for .25 < x < 1) */
@@ -151,6 +181,46 @@ spx_word16_t spx_cos(spx_word16_t x)
    }
 }
 
+#include <stdio.h>
+/*
+ K0 = 1
+ K1 = log(2)
+ K2 = 3-4*log(2)
+ K3 = 3*log(2) - 2
+*/
+#define D0 16384
+#define D1 11356
+#define D2 3726
+#define D3 1301
+/* Input in Q11 format, output in Q16 */
+static spx_word32_t spx_exp2(spx_word16_t x)
+{
+   int integer;
+   spx_word16_t frac;
+   integer = SHR16(x,11);
+   if (integer>14)
+      return 0x7fffffff;
+   else if (integer < -15)
+      return 0;
+   frac = SHL16(x-SHL16(integer,11),3);
+   frac = ADD16(D0, MULT16_16_Q14(frac, ADD16(D1, MULT16_16_Q14(frac, ADD16(D2 , MULT16_16_Q14(D3,frac))))));
+   if (integer+2>0)
+      return SHL32(EXTEND32(frac), integer+2);
+   else
+      return SHR32(EXTEND32(frac), -integer-2);
+}
+
+spx_word32_t spx_exp(spx_word16_t x)
+{
+   if (x>21290)
+      return 0x7fffffff;
+   else if (x<-21290)
+      return 0;
+   else
+      return spx_exp2(1+MULT16_16_P14(23637,x));
+}
+
+
 #else
 
 #ifndef M_PI
@@ -176,6 +246,5 @@ spx_word16_t spx_cos(spx_word16_t x)
       return NEG16(C1 + x*(C2+x*(C3+C4*x)));
    }
 }
-
 
 #endif
