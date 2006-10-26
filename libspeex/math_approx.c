@@ -40,7 +40,7 @@
 spx_int16_t spx_ilog2(spx_uint32_t x)
 {
    int r=0;
-   if (x>=(spx_int32_t)32768)
+   if (x>=(spx_int32_t)65536)
    {
       x >>= 16;
       r += 16;
@@ -60,7 +60,32 @@ spx_int16_t spx_ilog2(spx_uint32_t x)
       x >>= 2;
       r += 2;
    }
-   if (x>=1)
+   if (x>=2)
+   {
+      r += 1;
+   }
+   return r;
+}
+
+spx_int16_t spx_ilog4(spx_uint32_t x)
+{
+   int r=0;
+   if (x>=(spx_int32_t)65536)
+   {
+      x >>= 16;
+      r += 8;
+   }
+   if (x>=256)
+   {
+      x >>= 8;
+      r += 4;
+   }
+   if (x>=16)
+   {
+      x >>= 4;
+      r += 2;
+   }
+   if (x>=4)
    {
       r += 1;
    }
