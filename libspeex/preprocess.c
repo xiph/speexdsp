@@ -119,8 +119,8 @@ struct SpeexPreprocessState_ {
    float *gain_floor;        /**< Minimum gain allowed */
    float *window;            /**< Analysis/Synthesis window */
    spx_word32_t *noise;      /**< Noise estimate */
-   float *reverb_estimate;   /**< Estimate of reverb energy */
-   float *old_ps;            /**< Power spectrum for last frame */
+   spx_word32_t *reverb_estimate; /**< Estimate of reverb energy */
+   spx_word32_t *old_ps;     /**< Power spectrum for last frame */
    float *gain;              /**< Ephraim Malah gain */
    float *prior;             /**< A-priori SNR */
    float *post;              /**< A-posteriori SNR */
@@ -272,8 +272,8 @@ SpeexPreprocessState *speex_preprocess_state_init(int frame_size, int sampling_r
    st->noise = (spx_word32_t*)speex_alloc((N+M)*sizeof(float));
    st->echo_noise = (spx_word32_t*)speex_alloc((N+M)*sizeof(float));
    st->residual_echo = (spx_word32_t*)speex_alloc((N+M)*sizeof(float));
-   st->reverb_estimate = (float*)speex_alloc((N+M)*sizeof(float));
-   st->old_ps = (float*)speex_alloc((N+M)*sizeof(float));
+   st->reverb_estimate = (spx_word32_t*)speex_alloc((N+M)*sizeof(float));
+   st->old_ps = (spx_word32_t*)speex_alloc((N+M)*sizeof(float));
    st->prior = (float*)speex_alloc((N+M)*sizeof(float));
    st->post = (float*)speex_alloc((N+M)*sizeof(float));
    st->gain = (float*)speex_alloc((N+M)*sizeof(float));
@@ -586,12 +586,12 @@ int speex_preprocess_run(SpeexPreprocessState *st, spx_int16_t *x)
    for (i=0;i<N+M;i++)
    {
       float gamma = .1;
-      float tot_noise = 1.f+ st->noise[i] + st->echo_noise[i] + st->reverb_estimate[i];
-      st->post[i] = ps[i]/tot_noise - 1.f;
+      spx_word32_t tot_noise = 1+st->noise[i] + st->echo_noise[i] + st->reverb_estimate[i];
+      st->post[i] = 1.f*ps[i]/tot_noise - 1.f;
       if (st->post[i]>100.f)
          st->post[i]=100.f;
       /*gamma = .15+.85*st->prior[i]*st->prior[i]/((1+st->prior[i])*(1+st->prior[i]));*/
-      gamma = .1+.9*(st->old_ps[i]/(1+st->old_ps[i]+tot_noise))*(st->old_ps[i]/(1+st->old_ps[i]+tot_noise));
+      gamma = .1+.9*(st->old_ps[i]/(1.f+st->old_ps[i]+tot_noise))*(st->old_ps[i]/(1.f+st->old_ps[i]+tot_noise));
       /* A priori SNR update */
       st->prior[i] = gamma*max(0.0f,st->post[i]) + (1.f-gamma)*st->old_ps[i]/tot_noise;
       if (st->prior[i]>100.f)
