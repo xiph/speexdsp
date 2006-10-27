@@ -47,6 +47,8 @@ FilterBank *filterbank_new(int banks, float sampling, int len, int type)
    FilterBank *bank;
    float df, max_mel, mel_interval;
    int i;
+   int id1;
+   int id2;
    df = .5*sampling/len;
    max_mel = toBARK(.5*sampling);
    mel_interval = max_mel/(banks-1);
@@ -59,8 +61,6 @@ FilterBank *filterbank_new(int banks, float sampling, int len, int type)
    bank->filter_left = speex_alloc(len*sizeof(float));
    bank->filter_right = speex_alloc(len*sizeof(float));
    bank->scaling = speex_alloc(banks*sizeof(float));
-   int id1;
-   int id2;
 
    for (i=0;i<len;i++)
    {
