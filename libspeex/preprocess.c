@@ -114,20 +114,20 @@ struct SpeexPreprocessState_ {
    /* DSP-related arrays */
    spx_word16_t *frame;      /**< Processing frame (2*ps_size) */
    spx_word16_t *ft;         /**< Processing frame in freq domain (2*ps_size) */
-   spx_word32_t *ps;                /**< Current power spectrum */
+   spx_word32_t *ps;         /**< Current power spectrum */
    float *gain2;             /**< Adjusted gains */
    float *gain_floor;        /**< Minimum gain allowed */
    float *window;            /**< Analysis/Synthesis window */
-   float *noise;             /**< Noise estimate */
+   spx_word32_t *noise;      /**< Noise estimate */
    float *reverb_estimate;   /**< Estimate of reverb energy */
    float *old_ps;            /**< Power spectrum for last frame */
    float *gain;              /**< Ephraim Malah gain */
    float *prior;             /**< A-priori SNR */
    float *post;              /**< A-posteriori SNR */
 
-   float *S;                 /**< Smoothed power spectrum */
-   float *Smin;              /**< See Cohen paper */
-   float *Stmp;              /**< See Cohen paper */
+   spx_word32_t *S;          /**< Smoothed power spectrum */
+   spx_word32_t *Smin;       /**< See Cohen paper */
+   spx_word32_t *Stmp;       /**< See Cohen paper */
    float *update_prob;       /**< Propability of speech presence for noise update */
 
    float *zeta;              /**< Smoothed a priori SNR */
@@ -138,8 +138,8 @@ struct SpeexPreprocessState_ {
    spx_word32_t *residual_echo;
 
    /* Misc */
-   float *inbuf;             /**< Input buffer (overlapped analysis) */
-   float *outbuf;            /**< Output buffer (for overlap and add) */
+   spx_word16_t *inbuf;      /**< Input buffer (overlapped analysis) */
+   spx_word16_t *outbuf;     /**< Output buffer (for overlap and add) */
 
    int    was_speech;
    float  loudness;          /**< loudness estimate */
@@ -269,7 +269,7 @@ SpeexPreprocessState *speex_preprocess_state_init(int frame_size, int sampling_r
    st->ft = (spx_word16_t*)speex_alloc(2*N*sizeof(float));
    
    st->ps = (spx_word32_t*)speex_alloc((N+M)*sizeof(float));
-   st->noise = (float*)speex_alloc((N+M)*sizeof(float));
+   st->noise = (spx_word32_t*)speex_alloc((N+M)*sizeof(float));
    st->echo_noise = (spx_word32_t*)speex_alloc((N+M)*sizeof(float));
    st->residual_echo = (spx_word32_t*)speex_alloc((N+M)*sizeof(float));
    st->reverb_estimate = (float*)speex_alloc((N+M)*sizeof(float));
@@ -281,14 +281,14 @@ SpeexPreprocessState *speex_preprocess_state_init(int frame_size, int sampling_r
    st->gain_floor = (float*)speex_alloc((N+M)*sizeof(float));
    st->zeta = (float*)speex_alloc((N+M)*sizeof(float));
    
-   st->S = (float*)speex_alloc(N*sizeof(float));
-   st->Smin = (float*)speex_alloc(N*sizeof(float));
-   st->Stmp = (float*)speex_alloc(N*sizeof(float));
+   st->S = (spx_word32_t*)speex_alloc(N*sizeof(float));
+   st->Smin = (spx_word32_t*)speex_alloc(N*sizeof(float));
+   st->Stmp = (spx_word32_t*)speex_alloc(N*sizeof(float));
    st->update_prob = (float*)speex_alloc(N*sizeof(float));
    
    st->loudness_weight = (float*)speex_alloc(N*sizeof(float));
-   st->inbuf = (float*)speex_alloc(N3*sizeof(float));
-   st->outbuf = (float*)speex_alloc(N3*sizeof(float));
+   st->inbuf = (spx_word16_t*)speex_alloc(N3*sizeof(float));
+   st->outbuf = (spx_word16_t*)speex_alloc(N3*sizeof(float));
 
    conj_window(st->window, 2*N3);
    for (i=2*N3;i<2*st->ps_size;i++)
@@ -575,7 +575,7 @@ int speex_preprocess_run(SpeexPreprocessState *st, spx_int16_t *x)
       if (st->update_prob[i]<.5f || st->ps[i] < st->noise[i])
          st->noise[i] = beta_1*st->noise[i] + beta*NOISE_OVERCOMPENS*st->ps[i];
    }
-   filterbank_compute_bank(st->bank, st->noise, st->noise+N);
+   filterbank_compute_bank32(st->bank, st->noise, st->noise+N);
 
    /* Special case for first frame */
    if (st->nb_adapt==1)
