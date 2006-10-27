@@ -111,6 +111,24 @@ void filterbank_destroy(FilterBank *bank)
    speex_free(bank);
 }
 
+void filterbank_compute_bank32(FilterBank *bank, spx_word32_t *ps, spx_word32_t *mel)
+{
+   int i;
+   for (i=0;i<bank->nb_banks;i++)
+      mel[i] = 0;
+
+   for (i=0;i<bank->len;i++)
+   {
+      int id = bank->bank_left[i];
+      mel[id] += bank->filter_left[i]*ps[i];
+      id = bank->bank_right[i];
+      mel[id] += bank->filter_right[i]*ps[i];
+   }
+   for (i=0;i<bank->nb_banks;i++)
+      mel[i] *= bank->scaling[i];
+
+}
+
 void filterbank_compute_bank(FilterBank *bank, float *ps, float *mel)
 {
    int i;

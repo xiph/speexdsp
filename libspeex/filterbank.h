@@ -53,6 +53,8 @@ void filterbank_destroy(FilterBank *bank);
 
 void filterbank_compute_bank(FilterBank *bank, float *psd, float *mel);
 
+void filterbank_compute_bank32(FilterBank *bank, spx_word32_t *ps, spx_word32_t *mel);
+
 void filterbank_compute_psd(FilterBank *bank, float *mel, float *psd);
 
 
