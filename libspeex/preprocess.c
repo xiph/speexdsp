@@ -112,8 +112,8 @@ struct SpeexPreprocessState_ {
    SpeexEchoState *echo_state;
    
    /* DSP-related arrays */
-   float *frame;             /**< Processing frame (2*ps_size) */
-   float *ft;                /**< Processing frame in freq domain (2*ps_size) */
+   spx_word16_t *frame;      /**< Processing frame (2*ps_size) */
+   spx_word16_t *ft;         /**< Processing frame in freq domain (2*ps_size) */
    float *ps;                /**< Current power spectrum */
    float *gain2;             /**< Adjusted gains */
    float *gain_floor;        /**< Minimum gain allowed */
@@ -264,9 +264,9 @@ SpeexPreprocessState *speex_preprocess_state_init(int frame_size, int sampling_r
    M = st->nbands;
    st->bank = filterbank_new(M, sampling_rate, N, 1);
    
-   st->frame = (float*)speex_alloc(2*N*sizeof(float));
+   st->frame = (spx_word16_t*)speex_alloc(2*N*sizeof(float));
    st->window = (float*)speex_alloc(2*N*sizeof(float));
-   st->ft = (float*)speex_alloc(2*N*sizeof(float));
+   st->ft = (spx_word16_t*)speex_alloc(2*N*sizeof(float));
    
    st->ps = (float*)speex_alloc((N+M)*sizeof(float));
    st->noise = (float*)speex_alloc((N+M)*sizeof(float));
@@ -455,12 +455,12 @@ static void preprocess_analysis(SpeexPreprocessState *st, spx_int16_t *x)
       st->frame[i] *= st->window[i];
 
    /* Perform FFT */
-   spx_fft_float(st->fft_lookup, st->frame, st->ft);
+   spx_fft(st->fft_lookup, st->frame, st->ft);
          
    /* Power spectrum */
    ps[0]=1;
    for (i=1;i<N;i++)
-      ps[i]=1+st->ft[2*i-1]*st->ft[2*i-1] + st->ft[2*i]*st->ft[2*i];
+      ps[i]=1+MULT16_16(st->ft[2*i-1],st->ft[2*i-1]) + MULT16_16(st->ft[2*i],st->ft[2*i]);
 
    filterbank_compute_bank(st->bank, ps, ps+N);
 }
@@ -729,7 +729,7 @@ int speex_preprocess_run(SpeexPreprocessState *st, spx_int16_t *x)
    st->ft[2*N-1] *= st->gain2[N-1];
 
    /* Inverse FFT with 1/N scaling */
-   spx_ifft_float(st->fft_lookup, st->ft, st->frame);
+   spx_ifft(st->fft_lookup, st->ft, st->frame);
 
    {
       float max_sample=0;
