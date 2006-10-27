@@ -117,7 +117,7 @@ struct SpeexPreprocessState_ {
    spx_word32_t *ps;         /**< Current power spectrum */
    float *gain2;             /**< Adjusted gains */
    float *gain_floor;        /**< Minimum gain allowed */
-   float *window;            /**< Analysis/Synthesis window */
+   spx_word16_t *window;     /**< Analysis/Synthesis window */
    spx_word32_t *noise;      /**< Noise estimate */
    spx_word32_t *reverb_estimate; /**< Estimate of reverb energy */
    spx_word32_t *old_ps;     /**< Power spectrum for last frame */
@@ -152,11 +152,12 @@ struct SpeexPreprocessState_ {
 };
 
 
-static void conj_window(float *w, int len)
+static void conj_window(spx_word16_t *w, int len)
 {
    int i;
    for (i=0;i<len;i++)
    {
+      float tmp;
       float x=4*((float)i)/len;
       int inv=0;
       if (x<1)
@@ -173,10 +174,10 @@ static void conj_window(float *w, int len)
          x=4-x;
       }
       x*=1.9979;
-      w[i]=(.5-.5*cos(x))*(.5-.5*cos(x));
+      tmp=(.5-.5*cos(x))*(.5-.5*cos(x));
       if (inv)
-         w[i]=1-w[i];
-      w[i]=sqrt(w[i]);
+         tmp=1-tmp;
+      w[i]=QCONST16(.999,15)*sqrt(tmp);
    }
 }
 
@@ -265,7 +266,7 @@ SpeexPreprocessState *speex_preprocess_state_init(int frame_size, int sampling_r
    st->bank = filterbank_new(M, sampling_rate, N, 1);
    
    st->frame = (spx_word16_t*)speex_alloc(2*N*sizeof(float));
-   st->window = (float*)speex_alloc(2*N*sizeof(float));
+   st->window = (spx_word16_t*)speex_alloc(2*N*sizeof(float));
    st->ft = (spx_word16_t*)speex_alloc(2*N*sizeof(float));
    
    st->ps = (spx_word32_t*)speex_alloc((N+M)*sizeof(float));
@@ -292,7 +293,7 @@ SpeexPreprocessState *speex_preprocess_state_init(int frame_size, int sampling_r
 
    conj_window(st->window, 2*N3);
    for (i=2*N3;i<2*st->ps_size;i++)
-      st->window[i]=1;
+      st->window[i]=QCONST16(.999,15);
    
    if (N4>0)
    {
@@ -452,7 +453,7 @@ static void preprocess_analysis(SpeexPreprocessState *st, spx_int16_t *x)
 
    /* Windowing */
    for (i=0;i<2*N;i++)
-      st->frame[i] *= st->window[i];
+      st->frame[i] = MULT16_16_Q15(st->window[i], st->frame[i]);
 
    /* Perform FFT */
    spx_fft(st->fft_lookup, st->frame, st->ft);
@@ -745,7 +746,7 @@ int speex_preprocess_run(SpeexPreprocessState *st, spx_int16_t *x)
    }
 
    for (i=0;i<2*N;i++)
-      st->frame[i] *= st->window[i];
+      st->frame[i] = MULT16_16_Q15(st->window[i], st->frame[i]);
 
    /* Perform overlap and add */
    for (i=0;i<N3;i++)
@@ -800,7 +801,7 @@ void speex_preprocess_estimate_update(SpeexPreprocessState *st, spx_int16_t *x, 
    }
 
    for (i=0;i<N3;i++)
-      st->outbuf[i] = x[st->frame_size-N3+i]*st->window[st->frame_size+i];
+      st->outbuf[i] = MULT16_16_Q15(x[st->frame_size-N3+i],st->window[st->frame_size+i]);
 
    /* Save old power spectrum */
    for (i=0;i<N+M;i++)
