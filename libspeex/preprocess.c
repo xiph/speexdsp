@@ -87,6 +87,84 @@
 #define NULL 0
 #endif
 
+#define SQR(x) ((x)*(x))
+#define SQR16(x) (MULT16_16((x),(x)))
+#define SQR16_Q15(x) (MULT16_16_Q15((x),(x)))
+
+#ifdef FIXED_POINT
+static inline spx_word16_t DIV32_16_Q8(spx_word32_t a, spx_word32_t b)
+{
+   if (SHR32(a,8) >= b)
+   {
+      return 32767;
+   } else {
+      if (b>=QCONST32(1,23))
+      {
+         a = SHR32(a,8);
+         b = SHR32(b,8);
+      }
+      if (b>=QCONST32(1,19))
+      {
+         a = SHR32(a,4);
+         b = SHR32(b,4);
+      }
+      if (b>=QCONST32(1,15))
+      {
+         a = SHR32(a,4);
+         b = SHR32(b,4);
+      }
+      a = SHL32(a,8);
+      return DIV32_16(a,b);
+   }
+   
+}
+static inline spx_word16_t DIV32_16_Q15(spx_word32_t a, spx_word32_t b)
+{
+   if (SHR32(a,15) >= b)
+   {
+      return 32767;
+   } else {
+      if (b>=QCONST32(1,23))
+      {
+         a = SHR32(a,8);
+         b = SHR32(b,8);
+      }
+      if (b>=QCONST32(1,19))
+      {
+         a = SHR32(a,4);
+         b = SHR32(b,4);
+      }
+      if (b>=QCONST32(1,15))
+      {
+         a = SHR32(a,4);
+         b = SHR32(b,4);
+      }
+      a = SHL32(a,15);      
+      return DIV32_16(a,b);
+   }
+}
+#define SNR_SCALING 256.f
+#define SNR_SCALING_1 0.0039062f
+#define SNR_SHIFT 8
+
+#define GAIN_SCALING 32768.f
+#define GAIN_SCALING_1 3.0518e-05
+#define GAIN_SHIFT 1
+
+#else
+
+#define DIV32_16_Q8(a,b) ((a)/(b))
+#define DIV32_16_Q15(a,b) ((a)/(b))
+#define SNR_SCALING 1.f
+#define SNR_SCALING_1 1.f
+#define SNR_SHIFT 0
+#define GAIN_SCALING 1.f
+#define GAIN_SCALING_1 1.f
+#define GAIN_SHIFT 0
+
+#endif
+
+
 /** Speex pre-processor state. */
 struct SpeexPreprocessState_ {
    /* Basic info */
@@ -588,13 +666,13 @@ int speex_preprocess_run(SpeexPreprocessState *st, spx_int16_t *x)
    {
       float gamma = .1;
       spx_word32_t tot_noise = 1+st->noise[i] + st->echo_noise[i] + st->reverb_estimate[i];
-      st->post[i] = 1.f*ps[i]/tot_noise - 1.f;
+      st->post[i] = SNR_SCALING_1*SUB16(DIV32_16_Q8(ps[i],tot_noise), QCONST16(1.f,8));
       if (st->post[i]>100.f)
          st->post[i]=100.f;
       /*gamma = .15+.85*st->prior[i]*st->prior[i]/((1+st->prior[i])*(1+st->prior[i]));*/
-      gamma = .1+.9*(st->old_ps[i]/(1.f+st->old_ps[i]+tot_noise))*(st->old_ps[i]/(1.f+st->old_ps[i]+tot_noise));
+      gamma = .1+.9*GAIN_SCALING_1*SQR16_Q15(DIV32_16_Q15(st->old_ps[i],(st->old_ps[i]+tot_noise)));
       /* A priori SNR update */
-      st->prior[i] = gamma*max(0.0f,st->post[i]) + (1.f-gamma)*st->old_ps[i]/tot_noise;
+      st->prior[i] = gamma*max(0.0f,st->post[i]) + (1.f-gamma)*SNR_SCALING_1*DIV32_16_Q8(st->old_ps[i],tot_noise);
       if (st->prior[i]>100.f)
          st->prior[i]=100.f;
    }
@@ -693,7 +771,7 @@ int speex_preprocess_run(SpeexPreprocessState *st, spx_int16_t *x)
          /*st->reverb_estimate[i] = st->reverb_decay*st->reverb_estimate[i] + st->reverb_decay*st->reverb_level*st->gain[i]*st->gain[i]*st->ps[i];*/
          
          /* Take into account speech probability of presence (loudness domain MMSE estimator) */
-         st->gain2[i]=(p*sqrt(st->gain[i])+sqrt(st->gain_floor[i])*(1-p)) * (p*sqrt(st->gain[i])+sqrt(st->gain_floor[i])*(1-p));
+         st->gain2[i]=SQR(p*sqrt(st->gain[i])+sqrt(st->gain_floor[i])*(1-p));
          
          /* Use this if you want a log-domain MMSE estimator instead */
          /*st->gain2[i] = pow(st->gain[i], p) * pow(st->gain_floor[i],1.f-p);*/
