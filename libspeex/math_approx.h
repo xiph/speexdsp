@@ -38,6 +38,8 @@
 #include "misc.h"
 
 spx_word16_t spx_cos(spx_word16_t x);
+spx_int16_t spx_ilog2(spx_uint32_t x);
+spx_int16_t spx_ilog4(spx_uint32_t x);
 
 #ifdef FIXED_POINT
 spx_word16_t spx_sqrt(spx_word32_t x);
