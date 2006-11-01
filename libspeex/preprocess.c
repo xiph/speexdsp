@@ -67,9 +67,6 @@
 #include "filterbank.h"
 #include "math_approx.c"
 
-#define max(a,b) ((a) > (b) ? (a) : (b))
-#define min(a,b) ((a) < (b) ? (a) : (b))
-
 #ifndef M_PI
 #define M_PI 3.14159263
 #endif
@@ -203,7 +200,7 @@ struct SpeexPreprocessState_ {
    spx_word32_t *reverb_estimate; /**< Estimate of reverb energy */
    spx_word32_t *old_ps;     /**< Power spectrum for last frame */
    float *gain;              /**< Ephraim Malah gain */
-   float *prior;             /**< A-priori SNR */
+   spx_word16_t *prior;      /**< A-priori SNR */
    spx_word16_t *post;       /**< A-posteriori SNR */
 
    spx_word32_t *S;          /**< Smoothed power spectrum */
@@ -211,7 +208,7 @@ struct SpeexPreprocessState_ {
    spx_word32_t *Stmp;       /**< See Cohen paper */
    float *update_prob;       /**< Propability of speech presence for noise update */
 
-   float *zeta;              /**< Smoothed a priori SNR */
+   spx_word16_t *zeta;              /**< Smoothed a priori SNR */
 
    float *loudness_weight;   /**< Perceptual loudness curve */
 
@@ -290,7 +287,7 @@ static inline float hypergeom_gain(float x)
 
 static inline float qcurve(float x)
 {
-   return 1.f/(1.f+.15f/(x));
+   return 1.f/(1.f+.15f/(SNR_SCALING_1*x));
 }
 
 SpeexPreprocessState *speex_preprocess_state_init(int frame_size, int sampling_rate)
@@ -358,7 +355,7 @@ SpeexPreprocessState *speex_preprocess_state_init(int frame_size, int sampling_r
    st->residual_echo = (spx_word32_t*)speex_alloc((N+M)*sizeof(float));
    st->reverb_estimate = (spx_word32_t*)speex_alloc((N+M)*sizeof(float));
    st->old_ps = (spx_word32_t*)speex_alloc((N+M)*sizeof(float));
-   st->prior = (float*)speex_alloc((N+M)*sizeof(float));
+   st->prior = (spx_word16_t*)speex_alloc((N+M)*sizeof(float));
    st->post = (spx_word16_t*)speex_alloc((N+M)*sizeof(float));
    st->gain = (float*)speex_alloc((N+M)*sizeof(float));
    st->gain2 = (float*)speex_alloc((N+M)*sizeof(float));
@@ -393,7 +390,7 @@ SpeexPreprocessState *speex_preprocess_state_init(int frame_size, int sampling_r
       st->old_ps[i]=1.;
       st->gain[i]=1;
       st->post[i]=Q15_ONE;
-      st->prior[i]=1;
+      st->prior[i]=Q15_ONE;
    }
 
    for (i=0;i<N;i++)
@@ -592,14 +589,14 @@ static void update_noise_prob(SpeexPreprocessState *st)
       st->min_count = 0;
       for (i=0;i<N;i++)
       {
-         st->Smin[i] = min(st->Stmp[i], st->S[i]);
+         st->Smin[i] = MIN32(st->Stmp[i], st->S[i]);
          st->Stmp[i] = st->S[i];
       }
    } else {
       for (i=0;i<N;i++)
       {
-         st->Smin[i] = min(st->Smin[i], st->S[i]);
-         st->Stmp[i] = min(st->Stmp[i], st->S[i]);      
+         st->Smin[i] = MIN32(st->Smin[i], st->S[i]);
+         st->Stmp[i] = MIN32(st->Stmp[i], st->S[i]);      
       }
    }
    for (i=0;i<N;i++)
@@ -684,15 +681,13 @@ int speex_preprocess_run(SpeexPreprocessState *st, spx_int16_t *x)
    {
       float gamma = .1;
       spx_word32_t tot_noise = 1.f+ PSHR32(st->noise[i],NOISE_SHIFT) + st->echo_noise[i] + st->reverb_estimate[i];
-      st->post[i] = SUB16(DIV32_16_Q8(ps[i],tot_noise), QCONST16(1.f,8));
-      st->post[i]=MIN16(st->post[i], QCONST16(100.f,8));
+      st->post[i] = SUB16(DIV32_16_Q8(ps[i],tot_noise), QCONST16(1.f,SNR_SHIFT));
+      st->post[i]=MIN16(st->post[i], QCONST16(100.f,SNR_SHIFT));
       
       gamma = .1+.9*FRAC_SCALING_1*SQR16_Q15(DIV32_16_Q15(st->old_ps[i],ADD32(st->old_ps[i],tot_noise)));
       /* A priori SNR update */
-      st->prior[i] = gamma*max(0.0f,SNR_SCALING_1*st->post[i]) + (1.f-gamma)*SNR_SCALING_1*DIV32_16_Q8(st->old_ps[i],tot_noise);
-
-      if (st->prior[i]>100.f)
-         st->prior[i]=100.f;
+      st->prior[i] = gamma*MAX16(0,st->post[i]) + (1.f-gamma)*DIV32_16_Q8(st->old_ps[i],tot_noise);
+      st->prior[i]=MIN16(st->prior[i], QCONST16(100.f,SNR_SHIFT));
    }
 
    /*print_vec(st->post, N+M, "");*/
@@ -727,7 +722,7 @@ int speex_preprocess_run(SpeexPreprocessState *st, spx_int16_t *x)
 
       /* Compute the gain floor based on different floors for the background noise and residual echo */
       st->gain_floor[i] = sqrt((noise_floor*PSHR32(st->noise[i],NOISE_SHIFT) + echo_floor*st->echo_noise[i])/(1+PSHR32(st->noise[i],NOISE_SHIFT) + st->echo_noise[i]));
-      prior_ratio = st->prior[i]/(1.f+st->prior[i]);
+      prior_ratio = st->prior[i]/(SNR_SCALING+st->prior[i]);
       theta = (1.f+SNR_SCALING_1*st->post[i])*prior_ratio;
 
       MM = hypergeom_gain(theta);
@@ -741,7 +736,7 @@ int speex_preprocess_run(SpeexPreprocessState *st, spx_int16_t *x)
 
       P1 = .2+.8*qcurve (st->zeta[i]);
       q = 1-Pframe*P1;
-      st->gain2[i]=1.f/(1.f + (q/(1.f-q))*(1.f+st->prior[i])*exp(-theta));
+      st->gain2[i]=1.f/(1.f + (q/(1.f-q))*(1.f+SNR_SCALING_1*st->prior[i])*exp(-theta));
    }
    filterbank_compute_psd(st->bank,st->gain2+N, st->gain2);
    filterbank_compute_psd(st->bank,st->gain+N, st->gain);
@@ -761,7 +756,7 @@ int speex_preprocess_run(SpeexPreprocessState *st, spx_int16_t *x)
          float g;
          
          /* Wiener filter gain */
-         prior_ratio = st->prior[i]/(1.f+st->prior[i]);
+         prior_ratio = st->prior[i]/(SNR_SCALING+st->prior[i]);
          theta = (1.f+SNR_SCALING_1*st->post[i])*prior_ratio;
          p = st->gain2[i];
          
@@ -891,10 +886,7 @@ void speex_preprocess_estimate_update(SpeexPreprocessState *st, spx_int16_t *x, 
    {
       if (st->update_prob[i]<.5f || st->ps[i] < PSHR32(st->noise[i],NOISE_SHIFT))
       {
-         if (echo)
-            st->noise[i] = .95f*st->noise[i] + .1f*max(1.0f,st->ps[i]-1.0*echo[i]);
-         else
-            st->noise[i] = .95f*st->noise[i] + .1f*st->ps[i];
+         st->noise[i] = .95f*st->noise[i] + .1f*st->ps[i];
       }
    }
 
