@@ -740,7 +740,7 @@ int speex_preprocess_run(SpeexPreprocessState *st, spx_int16_t *x)
 
       /* Compute the gain floor based on different floors for the background noise and residual echo */
       st->gain_floor[i] = FRAC_SCALING*sqrt((noise_floor*PSHR32(st->noise[i],NOISE_SHIFT) + echo_floor*st->echo_noise[i])/(1+PSHR32(st->noise[i],NOISE_SHIFT) + st->echo_noise[i]));
-      prior_ratio = FRAC_SCALING*st->prior[i]/(SNR_SCALING+st->prior[i]);
+      prior_ratio = PDIV32_16(SHL32(EXTEND32(st->prior[i]), 15), ADD16(st->prior[i], SHL32(1,SNR_SHIFT)));
       theta = MULT16_32_P15(prior_ratio, QCONST32(1.f,EXPIN_SHIFT)+SHL32(EXTEND32(st->post[i]),EXPIN_SHIFT-SNR_SHIFT));
 
       MM = hypergeom_gain(EXPIN_SCALING_1*theta);
@@ -748,7 +748,7 @@ int speex_preprocess_run(SpeexPreprocessState *st, spx_int16_t *x)
       st->gain[i] = MIN16(FRAC_SCALING, prior_ratio * MM);
       
       /* Save old Bark power spectrum */
-      st->old_ps[i] = .2*st->old_ps[i] + .8*FRAC_SCALING_1*FRAC_SCALING_1*st->gain[i]*st->gain[i]*ps[i];
+      st->old_ps[i] = MULT16_16_P15(QCONST16(.2f,15),st->old_ps[i]) + MULT16_32_P15(MULT16_16_P15(QCONST16(.8f,15),SQR16_Q15(st->gain[i])),ps[i]);
 
       P1 = .2+.8*qcurve (st->zeta[i]);
       q = 1-Pframe*P1;
@@ -757,6 +757,7 @@ int speex_preprocess_run(SpeexPreprocessState *st, spx_int16_t *x)
 #endif
       st->gain2[i]=FRAC_SCALING/(1.f + (q/(1.f-q))*(1.f+SNR_SCALING_1*st->prior[i])*EXPOUT_SCALING_1*spx_exp(-EXTRACT16(theta)));
    }
+   /* Convert the EM gains and speech prob to linear frequency */
    filterbank_compute_psd16(st->bank,st->gain2+N, st->gain2);
    filterbank_compute_psd16(st->bank,st->gain+N, st->gain);
    
@@ -765,7 +766,7 @@ int speex_preprocess_run(SpeexPreprocessState *st, spx_int16_t *x)
    {
       filterbank_compute_psd16(st->bank,st->gain_floor+N, st->gain_floor);
    
-      /* Compute gain according to the Ephraim-Malah algorithm */
+      /* Compute gain according to the Ephraim-Malah algorithm -- linear frequency */
       for (i=0;i<N;i++)
       {
          float MM;
