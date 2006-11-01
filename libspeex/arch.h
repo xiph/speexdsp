@@ -151,6 +151,7 @@ typedef float spx_word32_t;
 #define MULT16_32_Q13(a,b)     ((a)*(b))
 #define MULT16_32_Q14(a,b)     ((a)*(b))
 #define MULT16_32_Q15(a,b)     ((a)*(b))
+#define MULT16_32_P15(a,b)     ((a)*(b))
 
 #define MAC16_32_Q11(c,a,b)     ((c)+(a)*(b))
 #define MAC16_32_Q15(c,a,b)     ((c)+(a)*(b))

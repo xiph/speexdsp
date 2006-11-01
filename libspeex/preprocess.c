@@ -151,6 +151,11 @@ static inline spx_word16_t DIV32_16_Q15(spx_word32_t a, spx_word32_t b)
 #define FRAC_SCALING_1 3.0518e-05
 #define FRAC_SHIFT 1
 
+#define EXPIN_SCALING 2048.f
+#define EXPIN_SCALING_1 0.00048828f
+#define EXPIN_SHIFT 11
+#define EXPOUT_SCALING_1 1.5259e-05
+
 #define NOISE_SHIFT 7
 
 #else
@@ -164,6 +169,10 @@ static inline spx_word16_t DIV32_16_Q15(spx_word32_t a, spx_word32_t b)
 #define FRAC_SCALING_1 1.f
 #define FRAC_SHIFT 0
 #define NOISE_SHIFT 0
+
+#define EXPIN_SCALING 1.f
+#define EXPIN_SCALING_1 1.f
+#define EXPOUT_SCALING_1 1.f
 
 #endif
 
@@ -717,33 +726,36 @@ int speex_preprocess_run(SpeexPreprocessState *st, spx_int16_t *x)
    
    noise_floor = exp(.2302585f*st->noise_suppress);
    echo_floor = exp(.2302585f* (st->echo_suppress*(1-Pframe) + st->echo_suppress_active*Pframe));
-   /*print_vec(&Pframe, 1, "");*/
-   /*for (i=N;i<N+M;i++)
-      st->gain2[i] = qcurve (st->zeta[i]);
-   filterbank_compute_psd(st->bank,st->gain2+N, st->gain2);*/
    
+   /* Compute Ephraim & Malah gain speech probability of presence for each critical band (Bark scale) 
+      Technically this is actually wrong because the EM gaim assumes a slightly different probability 
+      distribution */
    for (i=N;i<N+M;i++)
    {
-      float theta, MM;
-      float prior_ratio;
+      spx_word32_t theta;
+      float MM;
+      spx_word16_t prior_ratio;
       float q;
       float P1;
 
       /* Compute the gain floor based on different floors for the background noise and residual echo */
       st->gain_floor[i] = FRAC_SCALING*sqrt((noise_floor*PSHR32(st->noise[i],NOISE_SHIFT) + echo_floor*st->echo_noise[i])/(1+PSHR32(st->noise[i],NOISE_SHIFT) + st->echo_noise[i]));
-      prior_ratio = st->prior[i]/(SNR_SCALING+st->prior[i]);
-      theta = (1.f+SNR_SCALING_1*st->post[i])*prior_ratio;
+      prior_ratio = FRAC_SCALING*st->prior[i]/(SNR_SCALING+st->prior[i]);
+      theta = MULT16_32_P15(prior_ratio, QCONST32(1.f,EXPIN_SHIFT)+SHL32(EXTEND32(st->post[i]),EXPIN_SHIFT-SNR_SHIFT));
 
-      MM = hypergeom_gain(theta);
+      MM = hypergeom_gain(EXPIN_SCALING_1*theta);
       /* Gain with bound */
-      st->gain[i] = MIN16(FRAC_SCALING, FRAC_SCALING*prior_ratio * MM);
+      st->gain[i] = MIN16(FRAC_SCALING, prior_ratio * MM);
       
       /* Save old Bark power spectrum */
       st->old_ps[i] = .2*st->old_ps[i] + .8*FRAC_SCALING_1*FRAC_SCALING_1*st->gain[i]*st->gain[i]*ps[i];
 
       P1 = .2+.8*qcurve (st->zeta[i]);
       q = 1-Pframe*P1;
-      st->gain2[i]=FRAC_SCALING/(1.f + (q/(1.f-q))*(1.f+SNR_SCALING_1*st->prior[i])*exp(-theta));
+#ifdef FIXED_POINT
+      theta = MIN32(theta, 32767);
+#endif
+      st->gain2[i]=FRAC_SCALING/(1.f + (q/(1.f-q))*(1.f+SNR_SCALING_1*st->prior[i])*EXPOUT_SCALING_1*spx_exp(-EXTRACT16(theta)));
    }
    filterbank_compute_psd16(st->bank,st->gain2+N, st->gain2);
    filterbank_compute_psd16(st->bank,st->gain+N, st->gain);

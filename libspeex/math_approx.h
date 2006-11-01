@@ -44,9 +44,11 @@ spx_int16_t spx_ilog4(spx_uint32_t x);
 #ifdef FIXED_POINT
 spx_word16_t spx_sqrt(spx_word32_t x);
 spx_word16_t spx_acos(spx_word16_t x);
+spx_word32_t spx_exp(spx_word16_t x);
 #else
 #define spx_sqrt sqrt
 #define spx_acos acos
+#define spx_exp exp
 #endif
 
 #endif

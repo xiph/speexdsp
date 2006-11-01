@@ -235,6 +235,7 @@ static spx_word32_t spx_exp2(spx_word16_t x)
       return SHR32(EXTEND32(frac), -integer-2);
 }
 
+/* Input in Q11 format, output in Q16 */
 spx_word32_t spx_exp(spx_word16_t x)
 {
    if (x>21290)
