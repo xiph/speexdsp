@@ -159,3 +159,16 @@ void filterbank_compute_psd(FilterBank *bank, float *mel, float *ps)
    }
 }
 
+void filterbank_compute_psd16(FilterBank *bank, spx_word16_t *mel, spx_word16_t *ps)
+{
+   int i;
+   for (i=0;i<bank->len;i++)
+   {
+      int id = bank->bank_left[i];
+      ps[i] = mel[id]*bank->filter_left[i];
+      id = bank->bank_right[i];
+      ps[i] += mel[id]*bank->filter_right[i];
+   }
+}
+
+

@@ -89,6 +89,8 @@
 #define SQR16(x) (MULT16_16((x),(x)))
 #define SQR16_Q15(x) (MULT16_16_Q15((x),(x)))
 
+#define FLOOR(x) x = floor(x);
+
 #ifdef FIXED_POINT
 static inline spx_word16_t DIV32_16_Q8(spx_word32_t a, spx_word32_t b)
 {
@@ -145,7 +147,7 @@ static inline spx_word16_t DIV32_16_Q15(spx_word32_t a, spx_word32_t b)
 #define SNR_SCALING_1 0.0039062f
 #define SNR_SHIFT 8
 
-#define FRAC_SCALING 32768.f
+#define FRAC_SCALING 32767.f
 #define FRAC_SCALING_1 3.0518e-05
 #define FRAC_SHIFT 1
 
@@ -193,13 +195,13 @@ struct SpeexPreprocessState_ {
    spx_word16_t *frame;      /**< Processing frame (2*ps_size) */
    spx_word16_t *ft;         /**< Processing frame in freq domain (2*ps_size) */
    spx_word32_t *ps;         /**< Current power spectrum */
-   float *gain2;             /**< Adjusted gains */
+   spx_word16_t *gain2;      /**< Adjusted gains */
    float *gain_floor;        /**< Minimum gain allowed */
    spx_word16_t *window;     /**< Analysis/Synthesis window */
    spx_word32_t *noise;      /**< Noise estimate */
    spx_word32_t *reverb_estimate; /**< Estimate of reverb energy */
    spx_word32_t *old_ps;     /**< Power spectrum for last frame */
-   float *gain;              /**< Ephraim Malah gain */
+   spx_word16_t *gain;       /**< Ephraim Malah gain */
    spx_word16_t *prior;      /**< A-priori SNR */
    spx_word16_t *post;       /**< A-posteriori SNR */
 
@@ -257,7 +259,7 @@ static void conj_window(spx_word16_t *w, int len)
       tmp=(.5-.5*cos(x))*(.5-.5*cos(x));
       if (inv)
          tmp=1-tmp;
-      w[i]=QCONST16(.9999f,15)*sqrt(tmp);
+      w[i]=Q15_ONE*sqrt(tmp);
    }
 }
 
@@ -357,7 +359,7 @@ SpeexPreprocessState *speex_preprocess_state_init(int frame_size, int sampling_r
    st->old_ps = (spx_word32_t*)speex_alloc((N+M)*sizeof(float));
    st->prior = (spx_word16_t*)speex_alloc((N+M)*sizeof(float));
    st->post = (spx_word16_t*)speex_alloc((N+M)*sizeof(float));
-   st->gain = (float*)speex_alloc((N+M)*sizeof(float));
+   st->gain = (spx_word16_t*)speex_alloc((N+M)*sizeof(float));
    st->gain2 = (float*)speex_alloc((N+M)*sizeof(float));
    st->gain_floor = (float*)speex_alloc((N+M)*sizeof(float));
    st->zeta = (spx_word16_t*)speex_alloc((N+M)*sizeof(float));
@@ -373,7 +375,7 @@ SpeexPreprocessState *speex_preprocess_state_init(int frame_size, int sampling_r
 
    conj_window(st->window, 2*N3);
    for (i=2*N3;i<2*st->ps_size;i++)
-      st->window[i]=QCONST16(.9999f,15);
+      st->window[i]=Q15_ONE;
    
    if (N4>0)
    {
@@ -388,7 +390,7 @@ SpeexPreprocessState *speex_preprocess_state_init(int frame_size, int sampling_r
       st->noise[i]=QCONST32(1.f,NOISE_SHIFT);
       st->reverb_estimate[i]=0.;
       st->old_ps[i]=1.;
-      st->gain[i]=1;
+      st->gain[i]=Q15_ONE;
       st->post[i]=Q15_ONE;
       st->prior[i]=Q15_ONE;
    }
@@ -489,7 +491,7 @@ static void speex_compute_agc(SpeexPreprocessState *st)
 
       for (i=2;i<N;i++)
       {
-         loudness += scale*st->ps[i] * st->gain2[i] * st->gain2[i] * st->loudness_weight[i];
+         loudness += scale*st->ps[i] * FRAC_SCALING_1*FRAC_SCALING_1*st->gain2[i] * st->gain2[i] * st->loudness_weight[i];
       }
       loudness=sqrt(loudness);
       /*if (loudness < 2*pow(st->loudness, 1.0/LOUDNESS_EXP) &&
@@ -732,20 +734,18 @@ int speex_preprocess_run(SpeexPreprocessState *st, spx_int16_t *x)
       theta = (1.f+SNR_SCALING_1*st->post[i])*prior_ratio;
 
       MM = hypergeom_gain(theta);
-      st->gain[i] = prior_ratio * MM;
-      /* Bound on the gain */
-      if (st->gain[i]>1.f)
-         st->gain[i]=1.f;
+      /* Gain with bound */
+      st->gain[i] = MIN16(FRAC_SCALING, FRAC_SCALING*prior_ratio * MM);
       
       /* Save old Bark power spectrum */
-      st->old_ps[i] = .2*st->old_ps[i] + .8*st->gain[i]*st->gain[i]*ps[i];
+      st->old_ps[i] = .2*st->old_ps[i] + .8*FRAC_SCALING_1*FRAC_SCALING_1*st->gain[i]*st->gain[i]*ps[i];
 
       P1 = .2+.8*qcurve (st->zeta[i]);
       q = 1-Pframe*P1;
-      st->gain2[i]=1.f/(1.f + (q/(1.f-q))*(1.f+SNR_SCALING_1*st->prior[i])*exp(-theta));
+      st->gain2[i]=FRAC_SCALING/(1.f + (q/(1.f-q))*(1.f+SNR_SCALING_1*st->prior[i])*exp(-theta));
    }
-   filterbank_compute_psd(st->bank,st->gain2+N, st->gain2);
-   filterbank_compute_psd(st->bank,st->gain+N, st->gain);
+   filterbank_compute_psd16(st->bank,st->gain2+N, st->gain2);
+   filterbank_compute_psd16(st->bank,st->gain+N, st->gain);
    
    /* Use 1 for linear gain resolution (best) or 0 for Bark gain resolution (faster) */
    if (1)
@@ -764,34 +764,30 @@ int speex_preprocess_run(SpeexPreprocessState *st, spx_int16_t *x)
          /* Wiener filter gain */
          prior_ratio = st->prior[i]/(SNR_SCALING+st->prior[i]);
          theta = (1.f+SNR_SCALING_1*st->post[i])*prior_ratio;
-         p = st->gain2[i];
+         p = FRAC_SCALING_1*st->gain2[i];
          
          /* Optimal estimator for loudness domain */
          MM = hypergeom_gain(theta);
          g = prior_ratio * MM;
          
          /* Constrain the gain to be close to the Bark scale gain */
-         if (g > 3*st->gain[i])
-            g = 3*st->gain[i];
-         st->gain[i] = g;
-         
-         /* Bound on the gain */
-         if (st->gain[i]>1.f)
-            st->gain[i]=1.f;
+         if (g > 3.f*FRAC_SCALING_1*st->gain[i])
+            g = 3.f*FRAC_SCALING_1*st->gain[i];
+         st->gain[i] = MIN16(Q15_ONE, FRAC_SCALING*g);
          
          /* Save old power spectrum */
-         st->old_ps[i] = .2*st->old_ps[i] + .8*st->gain[i]*st->gain[i]*ps[i];
+         st->old_ps[i] = .2*st->old_ps[i] + .8*FRAC_SCALING_1*FRAC_SCALING_1*st->gain[i]*st->gain[i]*ps[i];
          
          /* Apply gain floor */
-         if (st->gain[i] < st->gain_floor[i])
-            st->gain[i] = st->gain_floor[i];
-         
+         if (st->gain[i] < FRAC_SCALING*st->gain_floor[i])
+            st->gain[i] = FRAC_SCALING*st->gain_floor[i];
+
          /* Exponential decay model for reverberation (unused) */
          /*st->reverb_estimate[i] = st->reverb_decay*st->reverb_estimate[i] + st->reverb_decay*st->reverb_level*st->gain[i]*st->gain[i]*st->ps[i];*/
          
          /* Take into account speech probability of presence (loudness domain MMSE estimator) */
-         st->gain2[i]=(p*sqrt(st->gain[i])+sqrt(st->gain_floor[i])*(1-p)) * (p*sqrt(st->gain[i])+sqrt(st->gain_floor[i])*(1-p));
-         
+         st->gain2[i]=FRAC_SCALING*SQR(p*sqrt(FRAC_SCALING_1*st->gain[i])+sqrt(st->gain_floor[i])*(1-p));
+
          /* Use this if you want a log-domain MMSE estimator instead */
          /*st->gain2[i] = pow(st->gain[i], p) * pow(st->gain_floor[i],1.f-p);*/
          
@@ -799,19 +795,19 @@ int speex_preprocess_run(SpeexPreprocessState *st, spx_int16_t *x)
    } else {
       for (i=N;i<N+M;i++)
       {
-         float p = st->gain2[i];
-         if (st->gain[i] < st->gain_floor[i])
-            st->gain[i] = st->gain_floor[i];
-         st->gain2[i]=(p*sqrt(st->gain[i])+sqrt(st->gain_floor[i])*(1-p)) * (p*sqrt(st->gain[i])+sqrt(st->gain_floor[i])*(1-p));
+         float p = FRAC_SCALING_1*st->gain2[i];
+         if (st->gain[i] < FRAC_SCALING*st->gain_floor[i])
+            st->gain[i] = FRAC_SCALING*st->gain_floor[i];
+         st->gain2[i]=FRAC_SCALING*(p*sqrt(FRAC_SCALING_1*st->gain[i])+sqrt(st->gain_floor[i])*(1-p)) * (p*sqrt(FRAC_SCALING_1*st->gain[i])+sqrt(st->gain_floor[i])*(1-p));
       }
-      filterbank_compute_psd(st->bank,st->gain2+N, st->gain2);
+      filterbank_compute_psd16(st->bank,st->gain2+N, st->gain2);
       
    }
    
    if (!st->denoise_enabled)
    {
       for (i=0;i<N+M;i++)
-         st->gain2[i]=1.f;
+         st->gain2[i]=FRAC_SCALING;
    }
    
    if (st->agc_enabled)
@@ -820,11 +816,11 @@ int speex_preprocess_run(SpeexPreprocessState *st, spx_int16_t *x)
    /* Apply computed gain */
    for (i=1;i<N;i++)
    {
-      st->ft[2*i-1] *= st->gain2[i];
-      st->ft[2*i] *= st->gain2[i];
+      st->ft[2*i-1] *= FRAC_SCALING_1*st->gain2[i];
+      st->ft[2*i] *= FRAC_SCALING_1*st->gain2[i];
    }
-   st->ft[0] *= st->gain2[0];
-   st->ft[2*N-1] *= st->gain2[N-1];
+   st->ft[0] *= FRAC_SCALING_1*st->gain2[0];
+   st->ft[2*N-1] *= FRAC_SCALING_1*st->gain2[N-1];
 
    /* Inverse FFT with 1/N scaling */
    spx_ifft(st->fft_lookup, st->ft, st->frame);
