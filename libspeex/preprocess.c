@@ -208,7 +208,7 @@ struct SpeexPreprocessState_ {
    spx_word32_t *Stmp;       /**< See Cohen paper */
    float *update_prob;       /**< Propability of speech presence for noise update */
 
-   spx_word16_t *zeta;              /**< Smoothed a priori SNR */
+   spx_word16_t *zeta;       /**< Smoothed a priori SNR */
 
    float *loudness_weight;   /**< Perceptual loudness curve */
 
@@ -285,7 +285,7 @@ static inline float hypergeom_gain(float x)
    return ((1-frac)*table[ind] + frac*table[ind+1])/sqrt(x+.0001f);
 }
 
-static inline float qcurve(float x)
+static inline float qcurve(spx_word16_t x)
 {
    return 1.f/(1.f+.15f/(SNR_SCALING_1*x));
 }
@@ -360,7 +360,7 @@ SpeexPreprocessState *speex_preprocess_state_init(int frame_size, int sampling_r
    st->gain = (float*)speex_alloc((N+M)*sizeof(float));
    st->gain2 = (float*)speex_alloc((N+M)*sizeof(float));
    st->gain_floor = (float*)speex_alloc((N+M)*sizeof(float));
-   st->zeta = (float*)speex_alloc((N+M)*sizeof(float));
+   st->zeta = (spx_word16_t*)speex_alloc((N+M)*sizeof(float));
    
    st->S = (spx_word32_t*)speex_alloc(N*sizeof(float));
    st->Smin = (spx_word32_t*)speex_alloc(N*sizeof(float));
@@ -679,14 +679,20 @@ int speex_preprocess_run(SpeexPreprocessState *st, spx_int16_t *x)
    /* Compute a posteriori SNR */
    for (i=0;i<N+M;i++)
    {
-      float gamma = .1;
+      spx_word16_t gamma;
+      
+      /* Total noise estimate including residual echo and reverberation */
       spx_word32_t tot_noise = 1.f+ PSHR32(st->noise[i],NOISE_SHIFT) + st->echo_noise[i] + st->reverb_estimate[i];
+      
+      /* A posteriori SNR = ps/noise - 1*/
       st->post[i] = SUB16(DIV32_16_Q8(ps[i],tot_noise), QCONST16(1.f,SNR_SHIFT));
       st->post[i]=MIN16(st->post[i], QCONST16(100.f,SNR_SHIFT));
       
-      gamma = .1+.9*FRAC_SCALING_1*SQR16_Q15(DIV32_16_Q15(st->old_ps[i],ADD32(st->old_ps[i],tot_noise)));
-      /* A priori SNR update */
-      st->prior[i] = gamma*MAX16(0,st->post[i]) + (1.f-gamma)*DIV32_16_Q8(st->old_ps[i],tot_noise);
+      /* Computing update gamma = .1 + .9*(old/(old+noise))^2 */
+      gamma = QCONST16(.1f,15)+MULT16_16_Q15(QCONST16(.89f,15),SQR16_Q15(DIV32_16_Q15(st->old_ps[i],ADD32(st->old_ps[i],tot_noise))));
+      
+      /* A priori SNR update = gamma*max(0,post) + (1-gamma)*old/noise */
+      st->prior[i] = PSHR16(ADD32(MULT16_16(gamma,MAX16(0,st->post[i])), MULT16_16(Q15_ONE-gamma,DIV32_16_Q8(st->old_ps[i],tot_noise))), 15);
       st->prior[i]=MIN16(st->prior[i], QCONST16(100.f,SNR_SHIFT));
    }
 
