@@ -688,8 +688,7 @@ int speex_preprocess_run(SpeexPreprocessState *st, spx_int16_t *x)
 
       if (st->post[i]>100.f)
          st->post[i]=100.f;
-      /*gamma = .15+.85*st->prior[i]*st->prior[i]/((1+st->prior[i])*(1+st->prior[i]));*/
-      gamma = .1+.9*(st->old_ps[i]/(1.f+st->old_ps[i]+tot_noise))*(st->old_ps[i]/(1.f+st->old_ps[i]+tot_noise));
+      gamma = .1+.9*FRAC_SCALING_1*SQR16_Q15(DIV32_16_Q15(st->old_ps[i],ADD32(st->old_ps[i],tot_noise)));
       /* A priori SNR update */
       st->prior[i] = gamma*max(0.0f,st->post[i]) + (1.f-gamma)*SNR_SCALING_1*DIV32_16_Q8(st->old_ps[i],tot_noise);
 
