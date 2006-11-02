@@ -770,27 +770,30 @@ int speex_preprocess_run(SpeexPreprocessState *st, spx_int16_t *x)
       for (i=0;i<N;i++)
       {
          float MM;
-         float theta;
-         float prior_ratio;
+         spx_word32_t theta;
+         spx_word16_t prior_ratio;
          float p;
          float g;
          
          /* Wiener filter gain */
-         prior_ratio = st->prior[i]/(SNR_SCALING+st->prior[i]);
-         theta = (1.f+SNR_SCALING_1*st->post[i])*prior_ratio;
-         p = FRAC_SCALING_1*st->gain2[i];
-         
+         prior_ratio = PDIV32_16(SHL32(EXTEND32(st->prior[i]), 15), ADD16(st->prior[i], SHL32(1,SNR_SHIFT)));
+         theta = MULT16_32_P15(prior_ratio, QCONST32(1.f,EXPIN_SHIFT)+SHL32(EXTEND32(st->post[i]),EXPIN_SHIFT-SNR_SHIFT));
+
          /* Optimal estimator for loudness domain */
-         MM = hypergeom_gain(theta);
-         g = prior_ratio * MM;
-         
+         MM = hypergeom_gain(EXPIN_SCALING_1*theta);
+         /* EM gain with bound */
+         g = MIN16(FRAC_SCALING, prior_ratio * MM);
+
+         /* Interpolated speech probability of presence */
+         p = FRAC_SCALING_1*st->gain2[i];
+                  
          /* Constrain the gain to be close to the Bark scale gain */
-         if (g > 3.f*FRAC_SCALING_1*st->gain[i])
-            g = 3.f*FRAC_SCALING_1*st->gain[i];
-         st->gain[i] = MIN16(Q15_ONE, FRAC_SCALING*g);
+         if (g > 3.f*st->gain[i])
+            g = 3.f*st->gain[i];
+         st->gain[i] = MIN16(Q15_ONE, g);
          
          /* Save old power spectrum */
-         st->old_ps[i] = .2*st->old_ps[i] + .8*FRAC_SCALING_1*FRAC_SCALING_1*st->gain[i]*st->gain[i]*ps[i];
+         st->old_ps[i] = MULT16_32_P15(QCONST16(.2f,15),st->old_ps[i]) + MULT16_32_P15(MULT16_16_P15(QCONST16(.8f,15),SQR16_Q15(st->gain[i])),ps[i]);
          
          /* Apply gain floor */
          if (st->gain[i] < st->gain_floor[i])
