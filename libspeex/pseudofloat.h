@@ -331,7 +331,8 @@ static inline spx_float_t FLOAT_DIVU(spx_float_t a, spx_float_t b)
    int e=0;
    spx_int32_t num;
    spx_float_t r;
-   num = ABS16(a.m);
+   num = a.m;
+   a.m = ABS16(a.m);
    while (a.m >= b.m)
    {
       e++;
