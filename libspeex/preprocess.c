@@ -704,7 +704,7 @@ int speex_preprocess_run(SpeexPreprocessState *st, spx_int16_t *x)
       gamma = QCONST16(.1f,15)+MULT16_16_Q15(QCONST16(.89f,15),SQR16_Q15(DIV32_16_Q15(st->old_ps[i],ADD32(st->old_ps[i],tot_noise))));
       
       /* A priori SNR update = gamma*max(0,post) + (1-gamma)*old/noise */
-      st->prior[i] = PSHR16(ADD32(MULT16_16(gamma,MAX16(0,st->post[i])), MULT16_16(Q15_ONE-gamma,DIV32_16_Q8(st->old_ps[i],tot_noise))), 15);
+      st->prior[i] = PSHR32(ADD32(MULT16_16(gamma,MAX16(0,st->post[i])), MULT16_16(Q15_ONE-gamma,DIV32_16_Q8(st->old_ps[i],tot_noise))), 15);
       st->prior[i]=MIN16(st->prior[i], QCONST16(100.f,SNR_SHIFT));
    }
 
@@ -748,7 +748,7 @@ int speex_preprocess_run(SpeexPreprocessState *st, spx_int16_t *x)
       st->gain[i] = MIN16(FRAC_SCALING, prior_ratio * MM);
       
       /* Save old Bark power spectrum */
-      st->old_ps[i] = MULT16_16_P15(QCONST16(.2f,15),st->old_ps[i]) + MULT16_32_P15(MULT16_16_P15(QCONST16(.8f,15),SQR16_Q15(st->gain[i])),ps[i]);
+      st->old_ps[i] = MULT16_32_P15(QCONST16(.2f,15),st->old_ps[i]) + MULT16_32_P15(MULT16_16_P15(QCONST16(.8f,15),SQR16_Q15(st->gain[i])),ps[i]);
 
       P1 = .2+.8*qcurve (st->zeta[i]);
       q = 1-Pframe*P1;
