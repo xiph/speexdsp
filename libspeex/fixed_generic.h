@@ -46,14 +46,14 @@
 #define SHL16(a,shift) ((a) << (shift))
 #define SHR32(a,shift) ((a) >> (shift))
 #define SHL32(a,shift) ((a) << (shift))
-#define PSHR16(a,shift) (SHR16((a)+(1<<((shift)-1)),shift))
-#define PSHR32(a,shift) (SHR32((a)+(1<<((shift)-1)),shift))
+#define PSHR16(a,shift) (SHR16((a)+((1<<((shift))>>1)),shift))
+#define PSHR32(a,shift) (SHR32((a)+((1<<((shift))>>1)),shift))
 #define SATURATE16(x,a) (((x)>(a) ? (a) : (x)<-(a) ? -(a) : (x)))
 #define SATURATE32(x,a) (((x)>(a) ? (a) : (x)<-(a) ? -(a) : (x)))
 
 #define SHR(a,shift) ((a) >> (shift))
 #define SHL(a,shift) ((spx_word32_t)(a) << (shift))
-#define PSHR(a,shift) (SHR((a)+(1<<((shift)-1)),shift))
+#define PSHR(a,shift) (SHR((a)+((1<<((shift))>>1)),shift))
 #define SATURATE(x,a) (((x)>(a) ? (a) : (x)<-(a) ? -(a) : (x)))
 
 
