@@ -277,23 +277,24 @@ static void conj_window(spx_word16_t *w, int len)
    which multiplied by xi/(1+xi) is the optimal gain
    in the loudness domain ( sqrt[amplitude] )
 */
-static inline float hypergeom_gain(float x)
+static inline spx_word32_t hypergeom_gain(spx_word32_t xx)
 {
    int ind;
    float integer, frac;
+   float x;
    static const float table[21] = {
       0.82157f, 1.02017f, 1.20461f, 1.37534f, 1.53363f, 1.68092f, 1.81865f,
       1.94811f, 2.07038f, 2.18638f, 2.29688f, 2.40255f, 2.50391f, 2.60144f,
       2.69551f, 2.78647f, 2.87458f, 2.96015f, 3.04333f, 3.12431f, 3.20326f};
-      
+   x = EXPIN_SCALING_1*xx;
    integer = floor(2*x);
    ind = (int)integer;
    if (ind<0)
-      return 1;
+      return FRAC_SCALING;
    if (ind>19)
-      return 1+.1296/x;
+      return FRAC_SCALING*(1+.1296/x);
    frac = 2*x-integer;
-   return ((1-frac)*table[ind] + frac*table[ind+1])/sqrt(x+.0001f);
+   return FRAC_SCALING*((1-frac)*table[ind] + frac*table[ind+1])/sqrt(x+.0001f);
 }
 
 static inline float qcurve(spx_word16_t x)
@@ -733,7 +734,7 @@ int speex_preprocess_run(SpeexPreprocessState *st, spx_int16_t *x)
    for (i=N;i<N+M;i++)
    {
       spx_word32_t theta;
-      float MM;
+      spx_word32_t MM;
       spx_word16_t prior_ratio;
       float q;
       float P1;
@@ -743,10 +744,9 @@ int speex_preprocess_run(SpeexPreprocessState *st, spx_int16_t *x)
       prior_ratio = PDIV32_16(SHL32(EXTEND32(st->prior[i]), 15), ADD16(st->prior[i], SHL32(1,SNR_SHIFT)));
       theta = MULT16_32_P15(prior_ratio, QCONST32(1.f,EXPIN_SHIFT)+SHL32(EXTEND32(st->post[i]),EXPIN_SHIFT-SNR_SHIFT));
 
-      MM = hypergeom_gain(EXPIN_SCALING_1*theta);
+      MM = hypergeom_gain(theta);
       /* Gain with bound */
-      st->gain[i] = MIN16(FRAC_SCALING, prior_ratio * MM);
-      
+      st->gain[i] = EXTRACT16(MIN32(Q15_ONE, MULT16_32_Q15(prior_ratio, MM)));
       /* Save old Bark power spectrum */
       st->old_ps[i] = MULT16_32_P15(QCONST16(.2f,15),st->old_ps[i]) + MULT16_32_P15(MULT16_16_P15(QCONST16(.8f,15),SQR16_Q15(st->gain[i])),ps[i]);
 
@@ -769,28 +769,28 @@ int speex_preprocess_run(SpeexPreprocessState *st, spx_int16_t *x)
       /* Compute gain according to the Ephraim-Malah algorithm -- linear frequency */
       for (i=0;i<N;i++)
       {
-         float MM;
+         spx_word32_t MM;
          spx_word32_t theta;
          spx_word16_t prior_ratio;
-         float p;
-         float g;
+         spx_word16_t tmp;
+         spx_word16_t p;
+         spx_word16_t g;
          
          /* Wiener filter gain */
          prior_ratio = PDIV32_16(SHL32(EXTEND32(st->prior[i]), 15), ADD16(st->prior[i], SHL32(1,SNR_SHIFT)));
          theta = MULT16_32_P15(prior_ratio, QCONST32(1.f,EXPIN_SHIFT)+SHL32(EXTEND32(st->post[i]),EXPIN_SHIFT-SNR_SHIFT));
 
          /* Optimal estimator for loudness domain */
-         MM = hypergeom_gain(EXPIN_SCALING_1*theta);
+         MM = hypergeom_gain(theta);
          /* EM gain with bound */
-         g = MIN16(FRAC_SCALING, prior_ratio * MM);
-
+         g = EXTRACT16(MIN32(Q15_ONE, MULT16_32_Q15(prior_ratio, MM)));
          /* Interpolated speech probability of presence */
-         p = FRAC_SCALING_1*st->gain2[i];
+         p = st->gain2[i];
                   
          /* Constrain the gain to be close to the Bark scale gain */
-         if (g > 3.f*st->gain[i])
-            g = 3.f*st->gain[i];
-         st->gain[i] = MIN16(Q15_ONE, g);
+         if (MULT16_16_Q15(QCONST16(.333f,15),g) > st->gain[i])
+            g = MULT16_16(3,st->gain[i]);
+         st->gain[i] = g;
          
          /* Save old power spectrum */
          st->old_ps[i] = MULT16_32_P15(QCONST16(.2f,15),st->old_ps[i]) + MULT16_32_P15(MULT16_16_P15(QCONST16(.8f,15),SQR16_Q15(st->gain[i])),ps[i]);
@@ -803,7 +803,9 @@ int speex_preprocess_run(SpeexPreprocessState *st, spx_int16_t *x)
          /*st->reverb_estimate[i] = st->reverb_decay*st->reverb_estimate[i] + st->reverb_decay*st->reverb_level*st->gain[i]*st->gain[i]*st->ps[i];*/
          
          /* Take into account speech probability of presence (loudness domain MMSE estimator) */
-         st->gain2[i]=FRAC_SCALING*SQR(p*sqrt(FRAC_SCALING_1*st->gain[i])+sqrt(FRAC_SCALING_1*st->gain_floor[i])*(1-p));
+         /* gain2 = [p*sqrt(gain)+(1-p)*sqrt(gain _floor) ]^2 */
+         tmp = MULT16_16_P15(p,spx_sqrt(SHL32(EXTEND32(st->gain[i]),15))) + MULT16_16_P15(SUB16(Q15_ONE,p),spx_sqrt(SHL32(EXTEND32(st->gain_floor[i]),15)));
+         st->gain2[i]=SQR16_Q15(tmp);
 
          /* Use this if you want a log-domain MMSE estimator instead */
          /*st->gain2[i] = pow(st->gain[i], p) * pow(st->gain_floor[i],1.f-p);*/
