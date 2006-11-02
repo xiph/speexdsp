@@ -704,7 +704,7 @@ int speex_preprocess_run(SpeexPreprocessState *st, spx_int16_t *x)
       gamma = QCONST16(.1f,15)+MULT16_16_Q15(QCONST16(.89f,15),SQR16_Q15(DIV32_16_Q15(st->old_ps[i],ADD32(st->old_ps[i],tot_noise))));
       
       /* A priori SNR update = gamma*max(0,post) + (1-gamma)*old/noise */
-      st->prior[i] = PSHR32(ADD32(MULT16_16(gamma,MAX16(0,st->post[i])), MULT16_16(Q15_ONE-gamma,DIV32_16_Q8(st->old_ps[i],tot_noise))), 15);
+      st->prior[i] = EXTRACT16(PSHR32(ADD32(MULT16_16(gamma,MAX16(0,st->post[i])), MULT16_16(Q15_ONE-gamma,DIV32_16_Q8(st->old_ps[i],tot_noise))), 15));
       st->prior[i]=MIN16(st->prior[i], QCONST16(100.f,SNR_SHIFT));
    }
 
