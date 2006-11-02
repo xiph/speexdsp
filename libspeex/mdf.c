@@ -102,6 +102,9 @@ static const spx_float_t MIN_LEAK = .032f;
 #define TOP16(x) (x)
 #endif
 
+
+#define PLAYBACK_DELAY 2
+
 void speex_echo_get_residual(SpeexEchoState *st, spx_word32_t *Yout, int len);
 
 
@@ -154,6 +157,7 @@ struct SpeexEchoState_ {
    /* NOTE: If you only use speex_echo_cancel() and want to save some memory, remove this */
    spx_int16_t *play_buf;
    int play_buf_pos;
+   int play_buf_started;
 };
 
 static inline void filter_dc_notch16(const spx_int16_t *in, spx_word16_t radius, spx_word16_t *out, int len, spx_mem_t *mem)
@@ -366,9 +370,10 @@ SpeexEchoState *speex_echo_state_init(int frame_size, int filter_length)
    st->adapted = 0;
    st->Pey = st->Pyy = FLOAT_ONE;
    
-   st->play_buf = (spx_int16_t*)speex_alloc(2*st->frame_size*sizeof(spx_int16_t));
-   st->play_buf_pos = 0;
-
+   st->play_buf = (spx_int16_t*)speex_alloc((PLAYBACK_DELAY+1)*st->frame_size*sizeof(spx_int16_t));
+   st->play_buf_pos = PLAYBACK_DELAY*st->frame_size;
+   st->play_buf_started = 0;
+   
    return st;
 }
 
@@ -393,7 +398,10 @@ void speex_echo_state_reset(SpeexEchoState *st)
    st->adapted = 0;
    st->sum_adapt = 0;
    st->Pey = st->Pyy = FLOAT_ONE;
-   st->play_buf_pos = 0;
+   for (i=0;i<3*st->frame_size;i++)
+      st->play_buf[i] = 0;
+   st->play_buf_pos = PLAYBACK_DELAY*st->frame_size;
+   st->play_buf_started = 0;
 
 }
 
@@ -433,14 +441,16 @@ void speex_echo_state_destroy(SpeexEchoState *st)
 void speex_echo_capture(SpeexEchoState *st, const spx_int16_t *rec, spx_int16_t *out, spx_int32_t *Yout)
 {
    int i;
+   /*speex_warning_int("capture with fill level ", st->play_buf_pos/st->frame_size);*/
+   st->play_buf_started = 1;
    if (st->play_buf_pos>=st->frame_size)
    {
-      speex_echo_cancel(st, rec, st->play_buf, out, Yout);
+      speex_echo_cancellation(st, rec, st->play_buf, out);
       st->play_buf_pos -= st->frame_size;
-      for (i=0;i<st->frame_size;i++)
+      for (i=0;i<st->play_buf_pos;i++)
          st->play_buf[i] = st->play_buf[i+st->frame_size];
    } else {
-      speex_warning("no playback frame available");
+      speex_warning("No playback frame available (your application is buggy and/or got xruns)");
       if (st->play_buf_pos!=0)
       {
          speex_warning("internal playback buffer corruption?");
@@ -453,14 +463,27 @@ void speex_echo_capture(SpeexEchoState *st, const spx_int16_t *rec, spx_int16_t 
 
 void speex_echo_playback(SpeexEchoState *st, const spx_int16_t *play)
 {
-   if (st->play_buf_pos<=st->frame_size)
+   /*speex_warning_int("playback with fill level ", st->play_buf_pos/st->frame_size);*/
+   if (!st->play_buf_started)
+   {
+      speex_warning("discarded first playback frame");
+      return;
+   }
+   if (st->play_buf_pos<=PLAYBACK_DELAY*st->frame_size)
    {
       int i;
       for (i=0;i<st->frame_size;i++)
          st->play_buf[st->play_buf_pos+i] = play[i];
       st->play_buf_pos += st->frame_size;
+      if (st->play_buf_pos <= (PLAYBACK_DELAY-1)*st->frame_size)
+      {
+         speex_warning("Auto-filling the buffer (your application is buggy and/or got xruns)");
+         for (i=0;i<st->frame_size;i++)
+            st->play_buf[st->play_buf_pos+i] = play[i];
+         st->play_buf_pos += st->frame_size;
+      }
    } else {
-      speex_warning("had to discard a playback frame");
+      speex_warning("Had to discard a playback frame (your application is buggy and/or got xruns)");
    }
 }
 
