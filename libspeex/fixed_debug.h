@@ -271,6 +271,20 @@ static inline int MULT16_32_QX(int a, long long b, int Q)
    return res;
 }
 
+static inline int MULT16_32_PX(int a, long long b, int Q)
+{
+   long long res;
+   if (!VERIFY_SHORT(a) || !VERIFY_INT(b))
+   {
+      fprintf (stderr, "MULT16_32_Q%d: inputs are not short+int: %d %d\n", Q, (int)a, (int)b);
+   }
+   res = ((((long long)a)*(long long)b) + ((1<<Q)>>1))>> Q;
+   if (!VERIFY_INT(res))
+      fprintf (stderr, "MULT16_32_Q%d: output is not int: %d*%d=%d\n", Q, (int)a, (int)b,(int)res);
+   spx_mips+=5;
+   return res;
+}
+
 
 #define MULT16_32_Q11(a,b) MULT16_32_QX(a,b,11)
 #define MAC16_32_Q11(c,a,b) ADD32((c),MULT16_32_Q11((a),(b)))
@@ -278,6 +292,7 @@ static inline int MULT16_32_QX(int a, long long b, int Q)
 #define MULT16_32_Q13(a,b) MULT16_32_QX(a,b,13)
 #define MULT16_32_Q14(a,b) MULT16_32_QX(a,b,14)
 #define MULT16_32_Q15(a,b) MULT16_32_QX(a,b,15)
+#define MULT16_32_P15(a,b) MULT16_32_PX(a,b,15)
 #define MAC16_32_Q15(c,a,b) ADD32((c),MULT16_32_Q15((a),(b)))
 
 static inline int SATURATE(int a, int b)

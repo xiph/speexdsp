@@ -39,8 +39,8 @@
 typedef struct {
    int *bank_left;
    int *bank_right;
-   float *filter_left;
-   float *filter_right;
+   spx_word16_t *filter_left;
+   spx_word16_t *filter_right;
    float *scaling;
    int nb_banks;
    int len;

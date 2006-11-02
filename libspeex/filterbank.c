@@ -41,7 +41,13 @@
 
 #define toBARK(n)   (13.1f*atan(.00074f*(n))+2.24f*atan((n)*(n)*1.85e-8f)+1e-4f*(n))
 #define toMEL(n)    (2595.f*log10(1.f+(n)/700.f))
-
+      
+#ifdef FIXED_POINT
+#define Q15(x) (floor(.5+32767.*(x)))
+#else
+#define Q15(x) (x)
+#endif
+      
 FilterBank *filterbank_new(int banks, float sampling, int len, int type)
 {
    FilterBank *bank;
@@ -58,8 +64,8 @@ FilterBank *filterbank_new(int banks, float sampling, int len, int type)
    bank->len = len;
    bank->bank_left = speex_alloc(len*sizeof(int));
    bank->bank_right = speex_alloc(len*sizeof(int));
-   bank->filter_left = speex_alloc(len*sizeof(float));
-   bank->filter_right = speex_alloc(len*sizeof(float));
+   bank->filter_left = speex_alloc(len*sizeof(spx_word16_t));
+   bank->filter_right = speex_alloc(len*sizeof(spx_word16_t));
    bank->scaling = speex_alloc(banks*sizeof(float));
 
    for (i=0;i<len;i++)
@@ -81,9 +87,9 @@ FilterBank *filterbank_new(int banks, float sampling, int len, int type)
       }
       id2 = id1+1;
       bank->bank_left[i] = id1;
-      bank->filter_left[i] = 1-val;
+      bank->filter_left[i] = Q15(1-val);
       bank->bank_right[i] = id2;
-      bank->filter_right[i] = val;
+      bank->filter_right[i] = Q15(val);
    }
    
    for (i=0;i<bank->nb_banks;i++)
@@ -96,7 +102,7 @@ FilterBank *filterbank_new(int banks, float sampling, int len, int type)
       bank->scaling[id] += bank->filter_right[i];
    }
    for (i=0;i<bank->nb_banks;i++)
-      bank->scaling[i] = 1./(bank->scaling[i]);
+      bank->scaling[i] = Q15_ONE/(bank->scaling[i]);
 
    return bank;
 }
@@ -119,13 +125,14 @@ void filterbank_compute_bank32(FilterBank *bank, spx_word32_t *ps, spx_word32_t 
 
    for (i=0;i<bank->len;i++)
    {
-      int id = bank->bank_left[i];
-      mel[id] += bank->filter_left[i]*ps[i];
+      int id;
+      id = bank->bank_left[i];
+      mel[id] += MULT16_32_P15(bank->filter_left[i],ps[i]);
       id = bank->bank_right[i];
-      mel[id] += bank->filter_right[i]*ps[i];
+      mel[id] += MULT16_32_P15(bank->filter_right[i],ps[i]);
    }
    for (i=0;i<bank->nb_banks;i++)
-      mel[i] *= bank->scaling[i];
+      mel[i] = MULT16_32_P15(Q15(bank->scaling[i]),mel[i]);
 
 }
 
@@ -164,10 +171,13 @@ void filterbank_compute_psd16(FilterBank *bank, spx_word16_t *mel, spx_word16_t 
    int i;
    for (i=0;i<bank->len;i++)
    {
-      int id = bank->bank_left[i];
-      ps[i] = mel[id]*bank->filter_left[i];
-      id = bank->bank_right[i];
-      ps[i] += mel[id]*bank->filter_right[i];
+      spx_word32_t tmp;
+      int id1, id2;
+      id1 = bank->bank_left[i];
+      id2 = bank->bank_right[i];
+      tmp = MULT16_16(mel[id1],bank->filter_left[i]);
+      tmp += MULT16_16(mel[id2],bank->filter_right[i]);
+      ps[i] = EXTRACT16(PSHR32(tmp,15));
    }
 }
 
