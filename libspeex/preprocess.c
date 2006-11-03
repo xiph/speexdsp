@@ -284,6 +284,7 @@ static inline spx_word32_t hypergeom_gain(spx_word32_t xx)
    int ind;
    spx_word16_t frac;
    float x;
+   /* Q13 table */
    static const spx_word16_t table[21] = {
        6730,  8357,  9868, 11267, 12563, 13770, 14898,
       15959, 16961, 17911, 18816, 19682, 20512, 21311,
@@ -295,7 +296,7 @@ static inline spx_word32_t hypergeom_gain(spx_word32_t xx)
       if (ind>19)
          return FRAC_SCALING*(1+.1296/x);
       frac = SHL32(xx-SHL32(ind,10),5);
-      return (MULT16_16(Q15_ONE-frac,table[ind]) + MULT16_16(frac,table[ind+1]))/(8192.*sqrt(x+.0001f));
+      return SHL32(DIV32_16(PSHR32(MULT16_16(Q15_ONE-frac,table[ind]) + MULT16_16(frac,table[ind+1]),7),(spx_sqrt(SHL32(xx,15)+6711))),7);
 }
 
 static inline spx_word16_t qcurve(spx_word16_t x)
