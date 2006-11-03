@@ -297,11 +297,18 @@ static inline spx_word32_t hypergeom_gain(spx_word32_t xx)
    return FRAC_SCALING*((1-frac)*table[ind] + frac*table[ind+1])/sqrt(x+.0001f);
 }
 
-static inline float qcurve(spx_word16_t x)
+#ifdef FIXED_POINT
+static inline spx_word16_t qcurve(spx_word16_t x)
+{
+   x = MAX16(x, 1);
+   return DIV32_16(SHL32(EXTEND32(32767),9),ADD16(512,MULT16_16_Q15(QCONST16(.60f,15),DIV32_16(32767,x))));
+}
+#else
+static inline spx_word16_t qcurve(spx_word16_t x)
 {
    return 1.f/(1.f+.15f/(SNR_SCALING_1*x));
 }
-
+#endif
 SpeexPreprocessState *speex_preprocess_state_init(int frame_size, int sampling_rate)
 {
    int i;
@@ -562,6 +569,7 @@ static void preprocess_analysis(SpeexPreprocessState *st, spx_int16_t *x)
    spx_fft(st->fft_lookup, st->frame, st->ft);
          
    /* Power spectrum */
+   /*FIXME: Set ps[0] properly */
    ps[0]=1;
    for (i=1;i<N;i++)
       ps[i]=1+MULT16_16(st->ft[2*i-1],st->ft[2*i-1]) + MULT16_16(st->ft[2*i],st->ft[2*i]);
@@ -723,7 +731,7 @@ int speex_preprocess_run(SpeexPreprocessState *st, spx_int16_t *x)
    for (i=N;i<N+M;i++)
       Zframe += st->zeta[i];
    Zframe /= st->nbands;
-   Pframe = .1+.9*qcurve(Zframe);
+   Pframe = .1+.9*FRAC_SCALING_1*qcurve(Zframe);
    
    noise_floor = exp(.2302585f*st->noise_suppress);
    echo_floor = exp(.2302585f* (st->echo_suppress*(1-Pframe) + st->echo_suppress_active*Pframe));
@@ -750,12 +758,14 @@ int speex_preprocess_run(SpeexPreprocessState *st, spx_int16_t *x)
       /* Save old Bark power spectrum */
       st->old_ps[i] = MULT16_32_P15(QCONST16(.2f,15),st->old_ps[i]) + MULT16_32_P15(MULT16_16_P15(QCONST16(.8f,15),SQR16_Q15(st->gain[i])),ps[i]);
 
-      P1 = .2+.8*qcurve (st->zeta[i]);
+      P1 = .2+.8*FRAC_SCALING_1*qcurve (st->zeta[i]);
       q = 1-Pframe*P1;
 #ifdef FIXED_POINT
       theta = MIN32(theta, 32767);
+      st->gain2[i]=FRAC_SCALING/(1.f + (q/(1.f-q))*SNR_SCALING_1*MULT16_16_Q15((SHL32(1,SNR_SHIFT)+st->prior[i]),EXTRACT16(MIN32(Q15ONE,SHR32(spx_exp(-EXTRACT16(theta)),1)))));
+#else
+      st->gain2[i]=1/(1.f + (q/(1.f-q))*(1+st->prior[i]),exp(-theta));
 #endif
-      st->gain2[i]=FRAC_SCALING/(1.f + (q/(1.f-q))*(1.f+SNR_SCALING_1*st->prior[i])*EXPOUT_SCALING_1*spx_exp(-EXTRACT16(theta)));
    }
    /* Convert the EM gains and speech prob to linear frequency */
    filterbank_compute_psd16(st->bank,st->gain2+N, st->gain2);

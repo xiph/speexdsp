@@ -243,7 +243,7 @@ spx_word32_t spx_exp(spx_word16_t x)
    else if (x<-21290)
       return 0;
    else
-      return spx_exp2(1+MULT16_16_P14(23637,x));
+      return spx_exp2(MULT16_16_P14(23637,x));
 }
 
 
