@@ -272,6 +272,38 @@ static void conj_window(spx_word16_t *w, int len)
    }
 }
 
+#ifdef FIXED_POINT
+/* This function approximates the gain function 
+   y = gamma(1.25)^2 * M(-.25;1;-x) / sqrt(x)  
+   which multiplied by xi/(1+xi) is the optimal gain
+   in the loudness domain ( sqrt[amplitude] )
+   Input in Q11 format, output in Q15
+*/
+static inline spx_word32_t hypergeom_gain(spx_word32_t xx)
+{
+   int ind;
+   spx_word16_t frac;
+   float x;
+   static const spx_word16_t table[21] = {
+       6730,  8357,  9868, 11267, 12563, 13770, 14898,
+      15959, 16961, 17911, 18816, 19682, 20512, 21311,
+      22082, 22827, 23549, 24250, 24931, 25594, 26241};
+      x = EXPIN_SCALING_1*xx;
+      ind = SHR32(xx,10);
+      if (ind<0)
+         return FRAC_SCALING;
+      if (ind>19)
+         return FRAC_SCALING*(1+.1296/x);
+      frac = SHL32(xx-SHL32(ind,10),5);
+      return (MULT16_16(Q15_ONE-frac,table[ind]) + MULT16_16(frac,table[ind+1]))/(8192.*sqrt(x+.0001f));
+}
+
+static inline spx_word16_t qcurve(spx_word16_t x)
+{
+   x = MAX16(x, 1);
+   return DIV32_16(SHL32(EXTEND32(32767),9),ADD16(512,MULT16_16_Q15(QCONST16(.60f,15),DIV32_16(32767,x))));
+}
+#else
 /* This function approximates the gain function 
    y = gamma(1.25)^2 * M(-.25;1;-x) / sqrt(x)  
    which multiplied by xi/(1+xi) is the optimal gain
@@ -286,24 +318,17 @@ static inline spx_word32_t hypergeom_gain(spx_word32_t xx)
       0.82157f, 1.02017f, 1.20461f, 1.37534f, 1.53363f, 1.68092f, 1.81865f,
       1.94811f, 2.07038f, 2.18638f, 2.29688f, 2.40255f, 2.50391f, 2.60144f,
       2.69551f, 2.78647f, 2.87458f, 2.96015f, 3.04333f, 3.12431f, 3.20326f};
-   x = EXPIN_SCALING_1*xx;
-   integer = floor(2*x);
-   ind = (int)integer;
-   if (ind<0)
-      return FRAC_SCALING;
-   if (ind>19)
-      return FRAC_SCALING*(1+.1296/x);
-   frac = 2*x-integer;
-   return FRAC_SCALING*((1-frac)*table[ind] + frac*table[ind+1])/sqrt(x+.0001f);
+      x = EXPIN_SCALING_1*xx;
+      integer = floor(2*x);
+      ind = (int)integer;
+      if (ind<0)
+         return FRAC_SCALING;
+      if (ind>19)
+         return FRAC_SCALING*(1+.1296/x);
+      frac = 2*x-integer;
+      return FRAC_SCALING*((1-frac)*table[ind] + frac*table[ind+1])/sqrt(x+.0001f);
 }
 
-#ifdef FIXED_POINT
-static inline spx_word16_t qcurve(spx_word16_t x)
-{
-   x = MAX16(x, 1);
-   return DIV32_16(SHL32(EXTEND32(32767),9),ADD16(512,MULT16_16_Q15(QCONST16(.60f,15),DIV32_16(32767,x))));
-}
-#else
 static inline spx_word16_t qcurve(spx_word16_t x)
 {
    return 1.f/(1.f+.15f/(SNR_SCALING_1*x));
@@ -764,7 +789,7 @@ int speex_preprocess_run(SpeexPreprocessState *st, spx_int16_t *x)
       theta = MIN32(theta, 32767);
       st->gain2[i]=FRAC_SCALING/(1.f + (q/(1.f-q))*SNR_SCALING_1*MULT16_16_Q15((SHL32(1,SNR_SHIFT)+st->prior[i]),EXTRACT16(MIN32(Q15ONE,SHR32(spx_exp(-EXTRACT16(theta)),1)))));
 #else
-      st->gain2[i]=1/(1.f + (q/(1.f-q))*(1+st->prior[i]),exp(-theta));
+      st->gain2[i]=1/(1.f + (q/(1.f-q))*(1+st->prior[i])*exp(-theta));
 #endif
    }
    /* Convert the EM gains and speech prob to linear frequency */
