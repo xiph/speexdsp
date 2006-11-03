@@ -65,7 +65,7 @@
 #include "misc.h"
 #include "fftwrap.h"
 #include "filterbank.h"
-#include "math_approx.c"
+#include "math_approx.h"
 
 #ifndef M_PI
 #define M_PI 3.14159263
