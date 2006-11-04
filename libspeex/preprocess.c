@@ -674,7 +674,8 @@ int speex_preprocess_run(SpeexPreprocessState *st, spx_int16_t *x)
    int N3 = 2*N - st->frame_size;
    int N4 = st->frame_size - N3;
    spx_word32_t *ps=st->ps;
-   float Zframe=0, Pframe;
+   float Zframe=0;
+   spx_word16_t Pframe;
    float beta, beta_1;
    float echo_floor;
    float noise_floor;
@@ -692,7 +693,7 @@ int speex_preprocess_run(SpeexPreprocessState *st, spx_int16_t *x)
    {
       speex_echo_get_residual(st->echo_state, st->residual_echo, N);
       for (i=0;i<N;i++)
-         st->echo_noise[i] = MAX32(.6f*st->echo_noise[i], st->residual_echo[i]);
+         st->echo_noise[i] = MAX32(MULT16_32_Q15(QCONST16(.6f,15),st->echo_noise[i]), st->residual_echo[i]);
       filterbank_compute_bank32(st->bank, st->echo_noise, st->echo_noise+N);
    } else {
       for (i=0;i<N+M;i++)
@@ -757,10 +758,10 @@ int speex_preprocess_run(SpeexPreprocessState *st, spx_int16_t *x)
    for (i=N;i<N+M;i++)
       Zframe += st->zeta[i];
    Zframe /= st->nbands;
-   Pframe = .1+.9*FRAC_SCALING_1*qcurve(Zframe);
+   Pframe = QCONST16(.1f,15)+MULT16_16_Q15(QCONST16(.899f,15),qcurve (Zframe));
    
    noise_floor = exp(.2302585f*st->noise_suppress);
-   echo_floor = exp(.2302585f* (st->echo_suppress*(1-Pframe) + st->echo_suppress_active*Pframe));
+   echo_floor = exp(.2302585f* (st->echo_suppress*(1-FRAC_SCALING_1*Pframe) + st->echo_suppress_active*FRAC_SCALING_1*Pframe));
    
    /* Compute Ephraim & Malah gain speech probability of presence for each critical band (Bark scale) 
       Technically this is actually wrong because the EM gaim assumes a slightly different probability 
@@ -770,11 +771,11 @@ int speex_preprocess_run(SpeexPreprocessState *st, spx_int16_t *x)
       spx_word32_t theta;
       spx_word32_t MM;
       spx_word16_t prior_ratio;
-      float q;
-      float P1;
+      spx_word16_t q;
+      spx_word16_t P1;
 
       /* Compute the gain floor based on different floors for the background noise and residual echo */
-      st->gain_floor[i] = FRAC_SCALING*sqrt((noise_floor*PSHR32(st->noise[i],NOISE_SHIFT) + echo_floor*st->echo_noise[i])/(1+PSHR32(st->noise[i],NOISE_SHIFT) + st->echo_noise[i]));
+      st->gain_floor[i] = FRAC_SCALING*sqrt(noise_floor*PSHR32(st->noise[i],NOISE_SHIFT) + echo_floor*st->echo_noise[i])/sqrt(1+PSHR32(st->noise[i],NOISE_SHIFT) + st->echo_noise[i]);
       prior_ratio = PDIV32_16(SHL32(EXTEND32(st->prior[i]), 15), ADD16(st->prior[i], SHL32(1,SNR_SHIFT)));
       theta = MULT16_32_P15(prior_ratio, QCONST32(1.f,EXPIN_SHIFT)+SHL32(EXTEND32(st->post[i]),EXPIN_SHIFT-SNR_SHIFT));
 
@@ -784,11 +785,11 @@ int speex_preprocess_run(SpeexPreprocessState *st, spx_int16_t *x)
       /* Save old Bark power spectrum */
       st->old_ps[i] = MULT16_32_P15(QCONST16(.2f,15),st->old_ps[i]) + MULT16_32_P15(MULT16_16_P15(QCONST16(.8f,15),SQR16_Q15(st->gain[i])),ps[i]);
 
-      P1 = .2+.8*FRAC_SCALING_1*qcurve (st->zeta[i]);
-      q = 1-Pframe*P1;
+      P1 = QCONST16(.199f,15)+MULT16_16_Q15(QCONST16(.8f,15),qcurve (st->zeta[i]));
+      q = Q15_ONE-MULT16_16_Q15(Pframe,P1);
 #ifdef FIXED_POINT
       theta = MIN32(theta, 32767);
-      st->gain2[i]=FRAC_SCALING/(1.f + (q/(1.f-q))*SNR_SCALING_1*MULT16_16_Q15((SHL32(1,SNR_SHIFT)+st->prior[i]),EXTRACT16(MIN32(Q15ONE,SHR32(spx_exp(-EXTRACT16(theta)),1)))));
+      st->gain2[i]=FRAC_SCALING/(1.f + (q/(1.f*Q15_ONE-q))*SNR_SCALING_1*MULT16_16_Q15((SHL32(1,SNR_SHIFT)+st->prior[i]),EXTRACT16(MIN32(Q15ONE,SHR32(spx_exp(-EXTRACT16(theta)),1)))));
 #else
       st->gain2[i]=1/(1.f + (q/(1.f-q))*(1+st->prior[i])*exp(-theta));
 #endif
@@ -910,7 +911,7 @@ int speex_preprocess_run(SpeexPreprocessState *st, spx_int16_t *x)
 
    if (st->vad_enabled)
    {
-      if (Pframe > st->speech_prob_start || (st->was_speech && Pframe > st->speech_prob_continue))
+      if (FRAC_SCALING_1*Pframe > st->speech_prob_start || (st->was_speech && FRAC_SCALING_1*Pframe > st->speech_prob_continue))
       {
          st->was_speech=1;
          return 1;
@@ -992,7 +993,7 @@ int speex_preprocess_ctl(SpeexPreprocessState *state, int request, void *ptr)
       break;
 
    case SPEEX_PREPROCESS_SET_VAD:
-      speex_warning("The VAD has been removed pending a complete rewrite");
+      speex_warning("The VAD has been replaced by a hack pending a complete rewrite");
       st->vad_enabled = (*(spx_int32_t*)ptr);
       break;
    case SPEEX_PREPROCESS_GET_VAD:
