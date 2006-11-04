@@ -499,6 +499,8 @@ void speex_preprocess_state_destroy(SpeexPreprocessState *st)
    speex_free(st);
 }
 
+/* FIXME: The AGC doesn't work yet with fixed-point*/
+#ifndef FIXED_POINT
 static void speex_compute_agc(SpeexPreprocessState *st)
 {
    int i;
@@ -557,6 +559,7 @@ static void speex_compute_agc(SpeexPreprocessState *st)
       st->gain2[i] *= agc_gain;
    
 }
+#endif
 
 static void preprocess_analysis(SpeexPreprocessState *st, spx_int16_t *x)
 {
@@ -674,7 +677,7 @@ int speex_preprocess_run(SpeexPreprocessState *st, spx_int16_t *x)
    int N3 = 2*N - st->frame_size;
    int N4 = st->frame_size - N3;
    spx_word32_t *ps=st->ps;
-   float Zframe=0;
+   spx_word32_t Zframe;
    spx_word16_t Pframe;
    float beta, beta_1;
    float echo_floor;
@@ -756,9 +759,8 @@ int speex_preprocess_run(SpeexPreprocessState *st, spx_int16_t *x)
    /* Speech probability of presence for the entire frame is based on the average filterbank a priori SNR */
    Zframe = 0;
    for (i=N;i<N+M;i++)
-      Zframe += st->zeta[i];
-   Zframe /= st->nbands;
-   Pframe = QCONST16(.1f,15)+MULT16_16_Q15(QCONST16(.899f,15),qcurve (Zframe));
+      Zframe = ADD32(Zframe, EXTEND32(st->zeta[i]));
+   Pframe = QCONST16(.1f,15)+MULT16_16_Q15(QCONST16(.899f,15),qcurve(DIV32_16(Zframe,st->nbands)));
    
    noise_floor = exp(.2302585f*st->noise_suppress);
    echo_floor = exp(.2302585f* (st->echo_suppress*(1-FRAC_SCALING_1*Pframe) + st->echo_suppress_active*FRAC_SCALING_1*Pframe));
@@ -875,23 +877,29 @@ int speex_preprocess_run(SpeexPreprocessState *st, spx_int16_t *x)
          st->gain2[i]=FRAC_SCALING;
    }
    
+   /*FIXME: This *will* not work for fixed-point */
+#ifndef FIXED_POINT
    if (st->agc_enabled)
       speex_compute_agc(st);
-
+#endif
+   
    /* Apply computed gain */
    for (i=1;i<N;i++)
    {
-      st->ft[2*i-1] *= FRAC_SCALING_1*st->gain2[i];
-      st->ft[2*i] *= FRAC_SCALING_1*st->gain2[i];
+      st->ft[2*i-1] = MULT16_16_P15(st->gain2[i],st->ft[2*i-1]);
+      st->ft[2*i] = MULT16_16_P15(st->gain2[i],st->ft[2*i]);
    }
-   st->ft[0] *= FRAC_SCALING_1*st->gain2[0];
-   st->ft[2*N-1] *= FRAC_SCALING_1*st->gain2[N-1];
+   st->ft[0] = MULT16_16_P15(st->gain2[0],st->ft[0]);
+   st->ft[2*N-1] = MULT16_16_P15(st->gain2[N-1],st->ft[2*N-1]);
 
    /* Inverse FFT with 1/N scaling */
    spx_ifft(st->fft_lookup, st->ft, st->frame);
    for (i=0;i<2*N;i++)
       st->frame[i] = PSHR16(st->frame[i], st->frame_shift);
 
+   /*FIXME: This *will* not work for fixed-point */
+#ifndef FIXED_POINT
+   if (st->agc_enabled)
    {
       float max_sample=0;
       for (i=0;i<2*N;i++)
@@ -904,7 +912,8 @@ int speex_preprocess_run(SpeexPreprocessState *st, spx_int16_t *x)
             st->frame[i] *= damp;
       }
    }
-
+#endif
+   
    for (i=0;i<2*N;i++)
       st->frame[i] = MULT16_16_Q15(st->frame[i], st->window[i]);
 
