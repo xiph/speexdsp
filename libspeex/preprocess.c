@@ -768,12 +768,19 @@ int speex_preprocess_run(SpeexPreprocessState *st, spx_int16_t *x)
       distribution */
    for (i=N;i<N+M;i++)
    {
+      /* See EM and Cohen papers*/
       spx_word32_t theta;
+      /* Gain from hypergeometric function */
       spx_word32_t MM;
+      /* Weiner filter gain */
       spx_word16_t prior_ratio;
-      spx_word16_t q;
+      /* a priority probability of speech presence based on Bark sub-band alone */
       spx_word16_t P1;
-
+      /* Speech absence a priori probability (considering sub-band and frame) */
+      spx_word16_t q;
+#ifdef FIXED_POINT
+      spx_word16_t tmp;
+#endif
       /* Compute the gain floor based on different floors for the background noise and residual echo */
       st->gain_floor[i] = FRAC_SCALING*sqrt(noise_floor*PSHR32(st->noise[i],NOISE_SHIFT) + echo_floor*st->echo_noise[i])/sqrt(1+PSHR32(st->noise[i],NOISE_SHIFT) + st->echo_noise[i]);
       prior_ratio = PDIV32_16(SHL32(EXTEND32(st->prior[i]), 15), ADD16(st->prior[i], SHL32(1,SNR_SHIFT)));
@@ -788,8 +795,11 @@ int speex_preprocess_run(SpeexPreprocessState *st, spx_int16_t *x)
       P1 = QCONST16(.199f,15)+MULT16_16_Q15(QCONST16(.8f,15),qcurve (st->zeta[i]));
       q = Q15_ONE-MULT16_16_Q15(Pframe,P1);
 #ifdef FIXED_POINT
-      theta = MIN32(theta, 32767);
-      st->gain2[i]=FRAC_SCALING/(1.f + (q/(1.f*Q15_ONE-q))*SNR_SCALING_1*MULT16_16_Q15((SHL32(1,SNR_SHIFT)+st->prior[i]),EXTRACT16(MIN32(Q15ONE,SHR32(spx_exp(-EXTRACT16(theta)),1)))));
+      theta = MIN32(theta, EXTEND32(32767));
+/*Q8*/tmp = MULT16_16_Q15((SHL32(1,SNR_SHIFT)+st->prior[i]),EXTRACT16(MIN32(Q15ONE,SHR32(spx_exp(-EXTRACT16(theta)),1))));
+      tmp = MIN16(QCONST16(3.,SNR_SHIFT), tmp); /* Prevent overflows in the next line*/
+/*Q8*/tmp = PSHR(MULT16_16(PDIV32_16(SHL32(EXTEND32(q),8),(Q15_ONE-q)),tmp),8);
+      st->gain2[i]=DIV32_16(SHL(EXTEND32(32767),SNR_SHIFT), ADD16(256,tmp));
 #else
       st->gain2[i]=1/(1.f + (q/(1.f-q))*(1+st->prior[i])*exp(-theta));
 #endif
@@ -846,7 +856,6 @@ int speex_preprocess_run(SpeexPreprocessState *st, spx_int16_t *x)
 
          /* Use this if you want a log-domain MMSE estimator instead */
          /*st->gain2[i] = pow(st->gain[i], p) * pow(st->gain_floor[i],1.f-p);*/
-         
       }
    } else {
       for (i=N;i<N+M;i++)
