@@ -615,14 +615,15 @@ static void update_noise_prob(SpeexPreprocessState *st)
    int N = st->ps_size;
 
    for (i=1;i<N-1;i++)
-      st->S[i] = 100.f+ .8f*st->S[i] + .05f*st->ps[i-1]+.1f*st->ps[i]+.05f*st->ps[i+1];
-   st->S[0] = 100.f+ .8f*st->S[0] + .2*st->ps[0];
-   st->S[N-1] = 100.f+ .8f*st->S[N-1] + .2*st->ps[N-1];
+      st->S[i] = 100 + MULT16_32_Q15(QCONST16(.8f,15),st->S[i]) + MULT16_32_Q15(QCONST16(.05f,15),st->ps[i-1]) 
+                      + MULT16_32_Q15(QCONST16(.1f,15),st->ps[i]) + MULT16_32_Q15(QCONST16(.05f,15),st->ps[i+1]);
+   st->S[0] = 100 + MULT16_32_Q15(QCONST16(.8f,15),st->S[0]) + MULT16_32_Q15(QCONST16(.2f,15),st->ps[0]);
+   st->S[N-1] = 100 + MULT16_32_Q15(QCONST16(.8f,15),st->S[N-1]) + MULT16_32_Q15(QCONST16(.2f,15),st->ps[N-1]);
    
    if (st->nb_adapt==1)
    {
       for (i=0;i<N;i++)
-         st->Smin[i] = st->Stmp[i] = 0.f;
+         st->Smin[i] = st->Stmp[i] = 0;
    }
 
    if (st->nb_adapt < 100)
@@ -650,7 +651,7 @@ static void update_noise_prob(SpeexPreprocessState *st)
    }
    for (i=0;i<N;i++)
    {
-      if (st->S[i] > 2.5*st->Smin[i])
+      if (MULT16_32_Q15(QCONST16(.4f,15),st->S[i]) >= st->Smin[i])
          st->update_prob[i] = 1;
       else
          st->update_prob[i] = 0;
@@ -733,7 +734,7 @@ int speex_preprocess_run(SpeexPreprocessState *st, spx_int16_t *x)
       spx_word16_t gamma;
       
       /* Total noise estimate including residual echo and reverberation */
-      spx_word32_t tot_noise = 1.f+ PSHR32(st->noise[i],NOISE_SHIFT) + st->echo_noise[i] + st->reverb_estimate[i];
+      spx_word32_t tot_noise = ADD32(ADD32(ADD32(EXTEND32(1), PSHR32(st->noise[i],NOISE_SHIFT)) , st->echo_noise[i]) , st->reverb_estimate[i]);
       
       /* A posteriori SNR = ps/noise - 1*/
       st->post[i] = SUB16(DIV32_16_Q8(ps[i],tot_noise), QCONST16(1.f,SNR_SHIFT));
@@ -750,11 +751,12 @@ int speex_preprocess_run(SpeexPreprocessState *st, spx_int16_t *x)
    /*print_vec(st->post, N+M, "");*/
 
    /* Recursive average of the a priori SNR. A bit smoothed for the psd components */
-   st->zeta[0] = .7f*st->zeta[0] + .3f*st->prior[0];
+   st->zeta[0] = PSHR32(ADD32(MULT16_16(QCONST16(.7f,15),st->zeta[0]), MULT16_16(QCONST16(.3f,15),st->prior[0])),15);
    for (i=1;i<N-1;i++)
-      st->zeta[i] = .7f*st->zeta[i] + .3f*(.5f*st->prior[i]+.25f*st->prior[i+1]+.25f*st->prior[i-1]);
+      st->zeta[i] = PSHR32(ADD32(ADD32(ADD32(MULT16_16(QCONST16(.7f,15),st->zeta[i]), MULT16_16(QCONST16(.15f,15),st->prior[i])),
+                           MULT16_16(QCONST16(.075f,15),st->prior[i-1])), MULT16_16(QCONST16(.075f,15),st->prior[i+1])),15);
    for (i=N-1;i<N+M;i++)
-      st->zeta[i] = .7f*st->zeta[i] + .3f*st->prior[i];
+      st->zeta[i] = PSHR32(ADD32(MULT16_16(QCONST16(.7f,15),st->zeta[i]), MULT16_16(QCONST16(.3f,15),st->prior[i])),15);
 
    /* Speech probability of presence for the entire frame is based on the average filterbank a priori SNR */
    Zframe = 0;
@@ -871,10 +873,11 @@ int speex_preprocess_run(SpeexPreprocessState *st, spx_int16_t *x)
       
    }
    
+   /* If noise suppression is off, don't apply the gain (but then why call this in the first place!) */
    if (!st->denoise_enabled)
    {
       for (i=0;i<N+M;i++)
-         st->gain2[i]=FRAC_SCALING;
+         st->gain2[i]=Q15_ONE;
    }
    
    /*FIXME: This *will* not work for fixed-point */
@@ -894,6 +897,7 @@ int speex_preprocess_run(SpeexPreprocessState *st, spx_int16_t *x)
 
    /* Inverse FFT with 1/N scaling */
    spx_ifft(st->fft_lookup, st->ft, st->frame);
+   /* Scale back to original (lower) amplitude */
    for (i=0;i<2*N;i++)
       st->frame[i] = PSHR16(st->frame[i], st->frame_shift);
 
@@ -914,6 +918,7 @@ int speex_preprocess_run(SpeexPreprocessState *st, spx_int16_t *x)
    }
 #endif
    
+   /* Synthesis window (for WOLA) */
    for (i=0;i<2*N;i++)
       st->frame[i] = MULT16_16_Q15(st->frame[i], st->window[i]);
 
@@ -927,6 +932,7 @@ int speex_preprocess_run(SpeexPreprocessState *st, spx_int16_t *x)
    for (i=0;i<N3;i++)
       st->outbuf[i] = st->frame[st->frame_size+i];
 
+   /* FIXME: This VAD is a kludge */
    if (st->vad_enabled)
    {
       if (FRAC_SCALING_1*Pframe > st->speech_prob_start || (st->was_speech && FRAC_SCALING_1*Pframe > st->speech_prob_continue))
