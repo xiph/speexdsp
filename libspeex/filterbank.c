@@ -59,16 +59,16 @@ FilterBank *filterbank_new(int banks, float sampling, int len, int type)
    max_mel = toBARK(.5*sampling);
    mel_interval = max_mel/(banks-1);
    
-   bank = speex_alloc(sizeof(FilterBank));
+   bank = (FilterBank*)speex_alloc(sizeof(FilterBank));
    bank->nb_banks = banks;
    bank->len = len;
-   bank->bank_left = speex_alloc(len*sizeof(int));
-   bank->bank_right = speex_alloc(len*sizeof(int));
-   bank->filter_left = speex_alloc(len*sizeof(spx_word16_t));
-   bank->filter_right = speex_alloc(len*sizeof(spx_word16_t));
+   bank->bank_left = (int*)speex_alloc(len*sizeof(int));
+   bank->bank_right = (int*)speex_alloc(len*sizeof(int));
+   bank->filter_left = (spx_word16_t*)speex_alloc(len*sizeof(spx_word16_t));
+   bank->filter_right = (spx_word16_t*)speex_alloc(len*sizeof(spx_word16_t));
    /* Think I can safely disable normalisation that for fixed-point (and probably float as well) */
 #ifndef FIXED_POINT
-   bank->scaling = speex_alloc(banks*sizeof(float));
+   bank->scaling = (float*)speex_alloc(banks*sizeof(float));
 #endif
    for (i=0;i<len;i++)
    {
