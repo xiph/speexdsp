@@ -858,13 +858,13 @@ int speex_preprocess_run(SpeexPreprocessState *st, spx_int16_t *x)
    } else {
       for (i=N;i<N+M;i++)
       {
-         float p = FRAC_SCALING_1*st->gain2[i];
-         if (st->gain[i] < st->gain_floor[i])
-            st->gain[i] = st->gain_floor[i];
-         st->gain2[i]=FRAC_SCALING*(p*sqrt(FRAC_SCALING_1*st->gain[i])+sqrt(FRAC_SCALING_1*st->gain_floor[i])*(1-p)) * (p*sqrt(FRAC_SCALING_1*st->gain[i])+sqrt(FRAC_SCALING_1*st->gain_floor[i])*(1-p));
+         spx_word16_t tmp;
+         spx_word16_t p = st->gain2[i];
+         st->gain[i] = MAX16(st->gain[i], st->gain_floor[i]);         
+         tmp = MULT16_16_P15(p,spx_sqrt(SHL32(EXTEND32(st->gain[i]),15))) + MULT16_16_P15(SUB16(Q15_ONE,p),spx_sqrt(SHL32(EXTEND32(st->gain_floor[i]),15)));
+         st->gain2[i]=SQR16_Q15(tmp);
       }
       filterbank_compute_psd16(st->bank,st->gain2+N, st->gain2);
-      
    }
    
    /* If noise suppression is off, don't apply the gain (but then why call this in the first place!) */
