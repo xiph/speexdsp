@@ -89,8 +89,6 @@
 #define SQR16(x) (MULT16_16((x),(x)))
 #define SQR16_Q15(x) (MULT16_16_Q15((x),(x)))
 
-#define FLOOR(x) x = floor(x);
-
 #ifdef FIXED_POINT
 static inline spx_word16_t DIV32_16_Q8(spx_word32_t a, spx_word32_t b)
 {
@@ -139,7 +137,7 @@ static inline spx_word16_t DIV32_16_Q15(spx_word32_t a, spx_word32_t b)
          a = SHR32(a,4);
          b = SHR32(b,4);
       }
-      a = SHL32(a,15);      
+      a = SHL32(a,15)-a;
       return DIV32_16(a,b);
    }
 }
@@ -599,9 +597,9 @@ static void preprocess_analysis(SpeexPreprocessState *st, spx_int16_t *x)
          
    /* Power spectrum */
    /*FIXME: Set ps[0] properly */
-   ps[0]=1;
+   ps[0]=MULT16_16(st->ft[0],st->ft[0]);
    for (i=1;i<N;i++)
-      ps[i]=1+MULT16_16(st->ft[2*i-1],st->ft[2*i-1]) + MULT16_16(st->ft[2*i],st->ft[2*i]);
+      ps[i]=MULT16_16(st->ft[2*i-1],st->ft[2*i-1]) + MULT16_16(st->ft[2*i],st->ft[2*i]);
    for (i=0;i<N;i++)
       st->ps[i] = PSHR32(st->ps[i], 2*st->frame_shift);
 
@@ -615,10 +613,10 @@ static void update_noise_prob(SpeexPreprocessState *st)
    int N = st->ps_size;
 
    for (i=1;i<N-1;i++)
-      st->S[i] = 100 + MULT16_32_Q15(QCONST16(.8f,15),st->S[i]) + MULT16_32_Q15(QCONST16(.05f,15),st->ps[i-1]) 
+      st->S[i] =  MULT16_32_Q15(QCONST16(.8f,15),st->S[i]) + MULT16_32_Q15(QCONST16(.05f,15),st->ps[i-1]) 
                       + MULT16_32_Q15(QCONST16(.1f,15),st->ps[i]) + MULT16_32_Q15(QCONST16(.05f,15),st->ps[i+1]);
-   st->S[0] = 100 + MULT16_32_Q15(QCONST16(.8f,15),st->S[0]) + MULT16_32_Q15(QCONST16(.2f,15),st->ps[0]);
-   st->S[N-1] = 100 + MULT16_32_Q15(QCONST16(.8f,15),st->S[N-1]) + MULT16_32_Q15(QCONST16(.2f,15),st->ps[N-1]);
+   st->S[0] =  MULT16_32_Q15(QCONST16(.8f,15),st->S[0]) + MULT16_32_Q15(QCONST16(.2f,15),st->ps[0]);
+   st->S[N-1] =  MULT16_32_Q15(QCONST16(.8f,15),st->S[N-1]) + MULT16_32_Q15(QCONST16(.2f,15),st->ps[N-1]);
    
    if (st->nb_adapt==1)
    {
@@ -651,7 +649,7 @@ static void update_noise_prob(SpeexPreprocessState *st)
    }
    for (i=0;i<N;i++)
    {
-      if (MULT16_32_Q15(QCONST16(.4f,15),st->S[i]) >= st->Smin[i])
+      if (MULT16_32_Q15(QCONST16(.4f,15),st->S[i]) > st->Smin[i]+20)
          st->update_prob[i] = 1;
       else
          st->update_prob[i] = 0;
@@ -894,7 +892,7 @@ int speex_preprocess_run(SpeexPreprocessState *st, spx_int16_t *x)
    }
    st->ft[0] = MULT16_16_P15(st->gain2[0],st->ft[0]);
    st->ft[2*N-1] = MULT16_16_P15(st->gain2[N-1],st->ft[2*N-1]);
-
+   
    /* Inverse FFT with 1/N scaling */
    spx_ifft(st->fft_lookup, st->ft, st->frame);
    /* Scale back to original (lower) amplitude */
