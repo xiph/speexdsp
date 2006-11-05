@@ -75,8 +75,8 @@
 
 #define NB_BANDS 24
 
-#define SPEEX_PROB_START_DEFAULT       0.35f
-#define SPEEX_PROB_CONTINUE_DEFAULT    0.20f
+#define SPEECH_PROB_START_DEFAULT       QCONST16(0.35f,15)
+#define SPEECH_PROB_CONTINUE_DEFAULT    QCONST16(0.20f,15)
 #define NOISE_SUPPRESS_DEFAULT       -25
 #define ECHO_SUPPRESS_DEFAULT        -45
 #define ECHO_SUPPRESS_ACTIVE_DEFAULT -15
@@ -191,8 +191,8 @@ struct SpeexPreprocessState_ {
    int    dereverb_enabled;
    float  reverb_decay;
    float  reverb_level;
-   float  speech_prob_start;
-   float  speech_prob_continue;
+   spx_word16_t speech_prob_start;
+   spx_word16_t speech_prob_continue;
    int    noise_suppress;
    int    echo_suppress;
    int    echo_suppress_active;
@@ -377,8 +377,8 @@ SpeexPreprocessState *speex_preprocess_state_init(int frame_size, int sampling_r
    st->echo_suppress = ECHO_SUPPRESS_DEFAULT;
    st->echo_suppress_active = ECHO_SUPPRESS_ACTIVE_DEFAULT;
 
-   st->speech_prob_start = SPEEX_PROB_START_DEFAULT;
-   st->speech_prob_continue = SPEEX_PROB_CONTINUE_DEFAULT;
+   st->speech_prob_start = SPEECH_PROB_START_DEFAULT;
+   st->speech_prob_continue = SPEECH_PROB_CONTINUE_DEFAULT;
 
    st->echo_state = NULL;
    
@@ -647,7 +647,7 @@ static void update_noise_prob(SpeexPreprocessState *st)
    }
    for (i=0;i<N;i++)
    {
-      if (MULT16_32_Q15(QCONST16(.4f,15),st->S[i]) > st->Smin[i]+20)
+      if (MULT16_32_Q15(QCONST16(.4f,15),st->S[i]) > ADD32(st->Smin[i],EXTEND32(20)))
          st->update_prob[i] = 1;
       else
          st->update_prob[i] = 0;
@@ -929,7 +929,7 @@ int speex_preprocess_run(SpeexPreprocessState *st, spx_int16_t *x)
    /* FIXME: This VAD is a kludge */
    if (st->vad_enabled)
    {
-      if (FRAC_SCALING_1*Pframe > st->speech_prob_start || (st->was_speech && FRAC_SCALING_1*Pframe > st->speech_prob_continue))
+      if (Pframe > st->speech_prob_start || (st->was_speech && Pframe > st->speech_prob_continue))
       {
          st->was_speech=1;
          return 1;
@@ -986,17 +986,17 @@ int speex_preprocess_ctl(SpeexPreprocessState *state, int request, void *ptr)
    switch(request)
    {
    case SPEEX_PREPROCESS_SET_DENOISE:
-      st->denoise_enabled = (*(int*)ptr);
+      st->denoise_enabled = (*(spx_int32_t*)ptr);
       break;
    case SPEEX_PREPROCESS_GET_DENOISE:
-      (*(int*)ptr) = st->denoise_enabled;
+      (*(spx_int32_t*)ptr) = st->denoise_enabled;
       break;
 
    case SPEEX_PREPROCESS_SET_AGC:
-      st->agc_enabled = (*(int*)ptr);
+      st->agc_enabled = (*(spx_int32_t*)ptr);
       break;
    case SPEEX_PREPROCESS_GET_AGC:
-      (*(int*)ptr) = st->agc_enabled;
+      (*(spx_int32_t*)ptr) = st->agc_enabled;
       break;
 
    case SPEEX_PREPROCESS_SET_AGC_LEVEL:
@@ -1019,12 +1019,12 @@ int speex_preprocess_ctl(SpeexPreprocessState *state, int request, void *ptr)
       break;
    
    case SPEEX_PREPROCESS_SET_DEREVERB:
-      st->dereverb_enabled = (*(int*)ptr);
+      st->dereverb_enabled = (*(spx_int32_t*)ptr);
       for (i=0;i<st->ps_size;i++)
          st->reverb_estimate[i]=0;
       break;
    case SPEEX_PREPROCESS_GET_DEREVERB:
-      (*(int*)ptr) = st->dereverb_enabled;
+      (*(spx_int32_t*)ptr) = st->dereverb_enabled;
       break;
 
    case SPEEX_PREPROCESS_SET_DEREVERB_LEVEL:
@@ -1042,21 +1042,19 @@ int speex_preprocess_ctl(SpeexPreprocessState *state, int request, void *ptr)
       break;
 
    case SPEEX_PREPROCESS_SET_PROB_START:
-      st->speech_prob_start = (*(int*)ptr) / 100.0;
-      if ( st->speech_prob_start > 1 || st->speech_prob_start < 0 )
-         st->speech_prob_start = SPEEX_PROB_START_DEFAULT;
+      *(spx_int32_t*)ptr = MIN32(Q15_ONE,MAX32(0, *(spx_int32_t*)ptr));
+      st->speech_prob_start = DIV32_16(MULT16_16(32767,*(spx_int32_t*)ptr), 100);
       break;
    case SPEEX_PREPROCESS_GET_PROB_START:
-      (*(int*)ptr) = st->speech_prob_start * 100;
+      (*(spx_int32_t*)ptr) = MULT16_16_Q15(st->speech_prob_start, 100);
       break;
 
    case SPEEX_PREPROCESS_SET_PROB_CONTINUE:
-      st->speech_prob_continue = (*(int*)ptr) / 100.0;
-      if ( st->speech_prob_continue > 1 || st->speech_prob_continue < 0 )
-         st->speech_prob_continue = SPEEX_PROB_CONTINUE_DEFAULT;
+      *(spx_int32_t*)ptr = MIN32(Q15_ONE,MAX32(0, *(spx_int32_t*)ptr));
+      st->speech_prob_continue = DIV32_16(MULT16_16(32767,*(spx_int32_t*)ptr), 100);
       break;
    case SPEEX_PREPROCESS_GET_PROB_CONTINUE:
-      (*(int*)ptr) = st->speech_prob_continue * 100;
+      (*(spx_int32_t*)ptr) = MULT16_16_Q15(st->speech_prob_continue, 100);
       break;
 
    case SPEEX_PREPROCESS_SET_NOISE_SUPPRESS:
