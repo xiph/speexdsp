@@ -270,6 +270,7 @@ static void conj_window(spx_word16_t *w, int len)
    }
 }
 
+      
 #ifdef FIXED_POINT
 /* This function approximates the gain function 
    y = gamma(1.25)^2 * M(-.25;1;-x) / sqrt(x)  
@@ -300,6 +301,36 @@ static inline spx_word16_t qcurve(spx_word16_t x)
    x = MAX16(x, 1);
    return DIV32_16(SHL32(EXTEND32(32767),9),ADD16(512,MULT16_16_Q15(QCONST16(.60f,15),DIV32_16(32767,x))));
 }
+
+/* Compute the gain floor based on different floors for the background noise and residual echo */
+static void compute_gain_floor(int noise_suppress, int effective_echo_suppress, spx_word32_t *noise, spx_word32_t *echo, spx_word16_t *gain_floor, int len)
+{
+   int i;
+   
+   if (noise_suppress > effective_echo_suppress)
+   {
+      spx_word16_t noise_gain, gain_ratio;
+      noise_gain = EXTRACT16(MIN32(Q15_ONE,SHR32(spx_exp(MULT16_16(QCONST16(0.11513,11),noise_suppress)),1)));
+      gain_ratio = EXTRACT16(MIN32(Q15_ONE,SHR32(spx_exp(MULT16_16(QCONST16(.2302585f,11),effective_echo_suppress-noise_suppress)),1)));
+
+      /* gain_floor = sqrt [ (noise*noise_floor + echo*echo_floor) / (noise+echo) ] */
+      for (i=0;i<len;i++)
+         gain_floor[i] = MULT16_16_Q15(noise_gain,
+                                       spx_sqrt(SHL32(EXTEND32(DIV32_16_Q15(PSHR32(noise[i],NOISE_SHIFT) + MULT16_32_Q15(gain_ratio,echo[i]),
+                                             (1+PSHR32(noise[i],NOISE_SHIFT) + echo[i]) )),15)));
+   } else {
+      spx_word16_t echo_gain, gain_ratio;
+      echo_gain = EXTRACT16(MIN32(Q15_ONE,SHR32(spx_exp(MULT16_16(QCONST16(0.11513,11),effective_echo_suppress)),1)));
+      gain_ratio = EXTRACT16(MIN32(Q15_ONE,SHR32(spx_exp(MULT16_16(QCONST16(.2302585f,11),noise_suppress-effective_echo_suppress)),1)));
+
+      /* gain_floor = sqrt [ (noise*noise_floor + echo*echo_floor) / (noise+echo) ] */
+      for (i=0;i<len;i++)
+         gain_floor[i] = MULT16_16_Q15(echo_gain,
+                                       spx_sqrt(SHL32(EXTEND32(DIV32_16_Q15(MULT16_32_Q15(gain_ratio,PSHR32(noise[i],NOISE_SHIFT)) + echo[i],
+                                             (1+PSHR32(noise[i],NOISE_SHIFT) + echo[i]) )),15)));
+   }
+}
+
 #else
 /* This function approximates the gain function 
    y = gamma(1.25)^2 * M(-.25;1;-x) / sqrt(x)  
@@ -330,6 +361,21 @@ static inline spx_word16_t qcurve(spx_word16_t x)
 {
    return 1.f/(1.f+.15f/(SNR_SCALING_1*x));
 }
+
+static void compute_gain_floor(int noise_suppress, int effective_echo_suppress, spx_word32_t *noise, spx_word32_t *echo, spx_word16_t *gain_floor, int len)
+{
+   int i;
+   float echo_floor;
+   float noise_floor;
+
+   noise_floor = exp(.2302585f*noise_suppress);
+   echo_floor = exp(.2302585f*effective_echo_suppress);
+
+   /* Compute the gain floor based on different floors for the background noise and residual echo */
+   for (i=0;i<len;i++)
+      gain_floor[i] = FRAC_SCALING*sqrt(noise_floor*PSHR32(noise[i],NOISE_SHIFT) + echo_floor*echo[i])/sqrt(1+PSHR32(noise[i],NOISE_SHIFT) + echo[i]);
+}
+
 #endif
 SpeexPreprocessState *speex_preprocess_state_init(int frame_size, int sampling_rate)
 {
@@ -677,8 +723,7 @@ int speex_preprocess_run(SpeexPreprocessState *st, spx_int16_t *x)
    spx_word32_t Zframe;
    spx_word16_t Pframe;
    spx_word16_t beta, beta_1;
-   float echo_floor;
-   float noise_floor;
+   spx_word16_t effective_echo_suppress;
    
    st->nb_adapt++;
    st->min_count++;
@@ -758,9 +803,10 @@ int speex_preprocess_run(SpeexPreprocessState *st, spx_int16_t *x)
       Zframe = ADD32(Zframe, EXTEND32(st->zeta[i]));
    Pframe = QCONST16(.1f,15)+MULT16_16_Q15(QCONST16(.899f,15),qcurve(DIV32_16(Zframe,st->nbands)));
    
-   noise_floor = exp(.2302585f*st->noise_suppress);
-   echo_floor = exp(.2302585f* (st->echo_suppress*(1-FRAC_SCALING_1*Pframe) + st->echo_suppress_active*FRAC_SCALING_1*Pframe));
+   effective_echo_suppress = EXTRACT16(PSHR32(ADD32(MULT16_16(SUB16(Q15_ONE,Pframe), st->echo_suppress), MULT16_16(Pframe, st->echo_suppress_active)),15));
    
+   compute_gain_floor(st->noise_suppress, effective_echo_suppress, st->noise+N, st->echo_noise+N, st->gain_floor+N, M);
+         
    /* Compute Ephraim & Malah gain speech probability of presence for each critical band (Bark scale) 
       Technically this is actually wrong because the EM gaim assumes a slightly different probability 
       distribution */
@@ -779,8 +825,7 @@ int speex_preprocess_run(SpeexPreprocessState *st, spx_int16_t *x)
 #ifdef FIXED_POINT
       spx_word16_t tmp;
 #endif
-      /* Compute the gain floor based on different floors for the background noise and residual echo */
-      st->gain_floor[i] = FRAC_SCALING*sqrt(noise_floor*PSHR32(st->noise[i],NOISE_SHIFT) + echo_floor*st->echo_noise[i])/sqrt(1+PSHR32(st->noise[i],NOISE_SHIFT) + st->echo_noise[i]);
+      
       prior_ratio = PDIV32_16(SHL32(EXTEND32(st->prior[i]), 15), ADD16(st->prior[i], SHL32(1,SNR_SHIFT)));
       theta = MULT16_32_P15(prior_ratio, QCONST32(1.f,EXPIN_SHIFT)+SHL32(EXTEND32(st->post[i]),EXPIN_SHIFT-SNR_SHIFT));
 
