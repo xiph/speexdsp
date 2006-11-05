@@ -66,8 +66,10 @@ FilterBank *filterbank_new(int banks, float sampling, int len, int type)
    bank->bank_right = speex_alloc(len*sizeof(int));
    bank->filter_left = speex_alloc(len*sizeof(spx_word16_t));
    bank->filter_right = speex_alloc(len*sizeof(spx_word16_t));
+   /* Think I can safely disable normalisation that for fixed-point (and probably float as well) */
+#ifndef FIXED_POINT
    bank->scaling = speex_alloc(banks*sizeof(float));
-
+#endif
    for (i=0;i<len;i++)
    {
       float curr_freq;
@@ -92,6 +94,8 @@ FilterBank *filterbank_new(int banks, float sampling, int len, int type)
       bank->filter_right[i] = Q15(val);
    }
    
+   /* Think I can safely disable normalisation that for fixed-point (and probably float as well) */
+#ifndef FIXED_POINT
    for (i=0;i<bank->nb_banks;i++)
       bank->scaling[i] = 0;
    for (i=0;i<bank->len;i++)
@@ -103,7 +107,7 @@ FilterBank *filterbank_new(int banks, float sampling, int len, int type)
    }
    for (i=0;i<bank->nb_banks;i++)
       bank->scaling[i] = Q15_ONE/(bank->scaling[i]);
-
+#endif
    return bank;
 }
 
@@ -113,7 +117,9 @@ void filterbank_destroy(FilterBank *bank)
    speex_free(bank->bank_right);
    speex_free(bank->filter_left);
    speex_free(bank->filter_right);
+#ifndef FIXED_POINT
    speex_free(bank->scaling);
+#endif
    speex_free(bank);
 }
 
@@ -131,9 +137,12 @@ void filterbank_compute_bank32(FilterBank *bank, spx_word32_t *ps, spx_word32_t 
       id = bank->bank_right[i];
       mel[id] += MULT16_32_P15(bank->filter_right[i],ps[i]);
    }
-   for (i=0;i<bank->nb_banks;i++)
+   /* Think I can safely disable normalisation that for fixed-point (and probably float as well) */
+#ifndef FIXED_POINT
+   /*for (i=0;i<bank->nb_banks;i++)
       mel[i] = MULT16_32_P15(Q15(bank->scaling[i]),mel[i]);
-
+   */
+#endif
 }
 
 void filterbank_compute_bank(FilterBank *bank, float *ps, float *mel)
@@ -149,9 +158,10 @@ void filterbank_compute_bank(FilterBank *bank, float *ps, float *mel)
       id = bank->bank_right[i];
       mel[id] += bank->filter_right[i]*ps[i];
    }
+#ifndef FIXED_POINT
    for (i=0;i<bank->nb_banks;i++)
       mel[i] *= bank->scaling[i];
-
+#endif
 }
 
 void filterbank_compute_psd(FilterBank *bank, float *mel, float *ps)

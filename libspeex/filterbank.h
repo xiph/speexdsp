@@ -41,7 +41,9 @@ typedef struct {
    int *bank_right;
    spx_word16_t *filter_left;
    spx_word16_t *filter_right;
+#ifndef FIXED_POINT
    float *scaling;
+#endif
    int nb_banks;
    int len;
 } FilterBank;

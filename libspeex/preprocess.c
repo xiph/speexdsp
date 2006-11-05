@@ -281,18 +281,16 @@ static inline spx_word32_t hypergeom_gain(spx_word32_t xx)
 {
    int ind;
    spx_word16_t frac;
-   float x;
    /* Q13 table */
    static const spx_word16_t table[21] = {
        6730,  8357,  9868, 11267, 12563, 13770, 14898,
       15959, 16961, 17911, 18816, 19682, 20512, 21311,
       22082, 22827, 23549, 24250, 24931, 25594, 26241};
-      x = EXPIN_SCALING_1*xx;
       ind = SHR32(xx,10);
       if (ind<0)
-         return FRAC_SCALING;
+         return Q15_ONE;
       if (ind>19)
-         return FRAC_SCALING*(1+.1296/x);
+         return ADD32(EXTEND32(Q15_ONE),EXTEND32(DIV32_16(QCONST32(.1296,23), SHR32(xx,EXPIN_SHIFT-SNR_SHIFT))));
       frac = SHL32(xx-SHL32(ind,10),5);
       return SHL32(DIV32_16(PSHR32(MULT16_16(Q15_ONE-frac,table[ind]) + MULT16_16(frac,table[ind+1]),7),(spx_sqrt(SHL32(xx,15)+6711))),7);
 }
@@ -678,17 +676,15 @@ int speex_preprocess_run(SpeexPreprocessState *st, spx_int16_t *x)
    spx_word32_t *ps=st->ps;
    spx_word32_t Zframe;
    spx_word16_t Pframe;
-   float beta, beta_1;
+   spx_word16_t beta, beta_1;
    float echo_floor;
    float noise_floor;
    
    st->nb_adapt++;
    st->min_count++;
    
-   beta =1.0f/st->nb_adapt;
-   if (beta < .03f)
-      beta=.03f;
-   beta_1 = 1.0f-beta;
+   beta = MAX16(QCONST16(.03,15),DIV32_16(Q15_ONE,st->nb_adapt));
+   beta_1 = Q15_ONE-beta;
    M = st->nbands;
    /* Deal with residual echo if provided */
    if (st->echo_state)
@@ -717,7 +713,7 @@ int speex_preprocess_run(SpeexPreprocessState *st, spx_int16_t *x)
    for (i=0;i<N;i++)
    {
       if (!st->update_prob[i] || st->ps[i] < PSHR32(st->noise[i], NOISE_SHIFT))
-         st->noise[i] = beta_1*st->noise[i] + beta*NOISE_OVERCOMPENS*SHL32(st->ps[i],NOISE_SHIFT);
+         st->noise[i] = MULT16_32_Q15(beta_1,st->noise[i]) + MULT16_32_Q15(beta,SHL32(st->ps[i],NOISE_SHIFT));
    }
    filterbank_compute_bank32(st->bank, st->noise, st->noise+N);
 
