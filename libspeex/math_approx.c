@@ -173,7 +173,42 @@ spx_word16_t spx_cos(spx_word16_t x)
    }
 }
 
-#include <stdio.h>
+#define L1 32767
+#define L2 -7651
+#define L3 8277
+#define L4 -626
+
+static inline spx_word16_t _spx_cos_pi_2(spx_word16_t x)
+{
+   spx_word16_t x2;
+   
+   x2 = MULT16_16_P15(x,x);
+   return ADD16(1,MIN16(32766,ADD32(SUB16(L1,x2), MULT16_16_P15(x2, ADD32(L2, MULT16_16_P15(x2, ADD32(L3, MULT16_16_P15(L4, x2))))))));
+}
+
+spx_word16_t spx_cos_norm(spx_word32_t x)
+{
+   x = x&0x0001ffff;
+   if (x>SHL32(EXTEND32(1), 16))
+      x = SUB32(SHL32(EXTEND32(1), 17),x);
+   if (x&0x00007fff)
+   {
+      if (x<SHL32(EXTEND32(1), 15))
+      {
+         return _spx_cos_pi_2(EXTRACT16(x));
+      } else {
+         return NEG32(_spx_cos_pi_2(EXTRACT16(65536-x)));
+      }
+   } else {
+      if (x&0x0000ffff)
+         return 0;
+      else if (x&0x0001ffff)
+         return -32767;
+      else
+         return 32767;
+   }
+}
+
 /*
  K0 = 1
  K1 = log(2)

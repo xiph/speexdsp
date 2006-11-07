@@ -246,27 +246,27 @@ static void conj_window(spx_word16_t *w, int len)
    int i;
    for (i=0;i<len;i++)
    {
-      float tmp;
-      float x=4*((float)i)/len;
+      spx_word16_t tmp;
+      spx_word16_t x = DIV32_16(MULT16_16(QCONST16(4.f,13),i),len);
       int inv=0;
-      if (x<1)
+      if (x<QCONST16(1.f,13))
       {
-      } else if (x<2)
+      } else if (x<QCONST16(2.f,13))
       {
-         x=2-x;
+         x=QCONST16(2.f,13)-x;
          inv=1;
-      } else if (x<3)
+      } else if (x<QCONST16(3.f,13))
       {
-         x=x-2;
+         x=x-QCONST16(2.f,13);
          inv=1;
       } else {
-         x=4-x;
+         x=QCONST16(2.f,13)-x+QCONST16(2.f,13); /* 4 - x */
       }
-      x*=1.9979;
-      tmp=(.5-.5*cos(x))*(.5-.5*cos(x));
+      x = MULT16_16_Q14(QCONST16(1.271903f,14), x);
+      tmp = SQR16_Q15(QCONST16(.5f,15)-MULT16_16_P15(QCONST16(.5f,15),spx_cos_norm(QCONST32(x,2))));
       if (inv)
-         tmp=1-tmp;
-      w[i]=Q15_ONE*sqrt(tmp);
+         tmp=SUB16(Q15_ONE,tmp);
+      w[i]=spx_sqrt(SHL32(EXTEND32(tmp),15));
    }
 }
 
