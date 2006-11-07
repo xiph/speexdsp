@@ -189,8 +189,8 @@ struct SpeexPreprocessState_ {
    float  agc_level;
    int    vad_enabled;
    int    dereverb_enabled;
-   float  reverb_decay;
-   float  reverb_level;
+   spx_word16_t  reverb_decay;
+   spx_word16_t  reverb_level;
    spx_word16_t speech_prob_start;
    spx_word16_t speech_prob_continue;
    int    noise_suppress;
@@ -218,9 +218,6 @@ struct SpeexPreprocessState_ {
    int *update_prob;       /**< Propability of speech presence for noise update */
 
    spx_word16_t *zeta;       /**< Smoothed a priori SNR */
-
-   float *loudness_weight;   /**< Perceptual loudness curve */
-
    spx_word32_t *echo_noise;
    spx_word32_t *residual_echo;
 
@@ -228,11 +225,14 @@ struct SpeexPreprocessState_ {
    spx_word16_t *inbuf;      /**< Input buffer (overlapped analysis) */
    spx_word16_t *outbuf;     /**< Output buffer (for overlap and add) */
 
-   int    was_speech;
+#ifndef FIXED_POINT
+   float *loudness_weight;   /**< Perceptual loudness curve */
    float  loudness;          /**< loudness estimate */
    float  loudness2;         /**< loudness estimate */
-   int    nb_adapt;          /**< Number of frames used for adaptation so far */
    int    nb_loudness_adapt; /**< Number of frames used for loudness adaptation so far */
+#endif
+   int    nb_adapt;          /**< Number of frames used for adaptation so far */
+   int    was_speech;
    int    min_count;         /**< Number of frames processed so far */
    void  *fft_lookup;        /**< Lookup table for the FFT */
 #ifdef FIXED_POINT
@@ -417,8 +417,8 @@ SpeexPreprocessState *speex_preprocess_state_init(int frame_size, int sampling_r
    st->agc_level = 8000;
    st->vad_enabled = 0;
    st->dereverb_enabled = 0;
-   st->reverb_decay = .0;
-   st->reverb_level = .0;
+   st->reverb_decay = 0;
+   st->reverb_level = 0;
    st->noise_suppress = NOISE_SUPPRESS_DEFAULT;
    st->echo_suppress = ECHO_SUPPRESS_DEFAULT;
    st->echo_suppress_active = ECHO_SUPPRESS_ACTIVE_DEFAULT;
@@ -454,7 +454,6 @@ SpeexPreprocessState *speex_preprocess_state_init(int frame_size, int sampling_r
    st->Stmp = (spx_word32_t*)speex_alloc(N*sizeof(spx_word32_t));
    st->update_prob = (int*)speex_alloc(N*sizeof(int));
    
-   st->loudness_weight = (float*)speex_alloc(N*sizeof(float));
    st->inbuf = (spx_word16_t*)speex_alloc(N3*sizeof(spx_word16_t));
    st->outbuf = (spx_word16_t*)speex_alloc(N3*sizeof(spx_word16_t));
 
@@ -473,11 +472,11 @@ SpeexPreprocessState *speex_preprocess_state_init(int frame_size, int sampling_r
    for (i=0;i<N+M;i++)
    {
       st->noise[i]=QCONST32(1.f,NOISE_SHIFT);
-      st->reverb_estimate[i]=0.;
-      st->old_ps[i]=1.;
+      st->reverb_estimate[i]=0;
+      st->old_ps[i]=1;
       st->gain[i]=Q15_ONE;
-      st->post[i]=Q15_ONE;
-      st->prior[i]=Q15_ONE;
+      st->post[i]=SHL16(1, SNR_SHIFT);
+      st->prior[i]=SHL16(1, SNR_SHIFT);
    }
 
    for (i=0;i<N;i++)
@@ -487,7 +486,8 @@ SpeexPreprocessState *speex_preprocess_state_init(int frame_size, int sampling_r
       st->inbuf[i]=0;
       st->outbuf[i]=0;
    }
-
+#ifndef FIXED_POINT
+   st->loudness_weight = (float*)speex_alloc(N*sizeof(float));
    for (i=0;i<N;i++)
    {
       float ff=((float)i)*.5*sampling_rate/((float)N);
@@ -496,11 +496,11 @@ SpeexPreprocessState *speex_preprocess_state_init(int frame_size, int sampling_r
          st->loudness_weight[i]=.01f;
       st->loudness_weight[i] *= st->loudness_weight[i];
    }
-
-   st->was_speech = 0;
    st->loudness = pow(6000,LOUDNESS_EXP);
    st->loudness2 = 6000;
    st->nb_loudness_adapt = 0;
+#endif
+   st->was_speech = 0;
 
    st->fft_lookup = spx_fft_init(2*N);
 
@@ -523,7 +523,9 @@ void speex_preprocess_state_destroy(SpeexPreprocessState *st)
    speex_free(st->gain);
    speex_free(st->prior);
    speex_free(st->post);
+#ifndef FIXED_POINT
    speex_free(st->loudness_weight);
+#endif
    speex_free(st->echo_noise);
    speex_free(st->residual_echo);
 
@@ -1007,7 +1009,7 @@ void speex_preprocess_estimate_update(SpeexPreprocessState *st, spx_int16_t *x, 
    {
       if (!st->update_prob[i] || st->ps[i] < PSHR32(st->noise[i],NOISE_SHIFT))
       {
-         st->noise[i] = .95f*st->noise[i] + .1f*st->ps[i];
+         st->noise[i] = MULT16_32_Q15(QCONST16(.95f,15),st->noise[i]) + MULT16_32_Q15(QCONST16(.05f,15),SHL32(st->ps[i],NOISE_SHIFT));
       }
    }
 
@@ -1018,8 +1020,8 @@ void speex_preprocess_estimate_update(SpeexPreprocessState *st, spx_int16_t *x, 
    for (i=0;i<N+M;i++)
       st->old_ps[i] = ps[i];
 
-   for (i=1;i<N;i++)
-      st->reverb_estimate[i] *= st->reverb_decay;
+   for (i=0;i<N;i++)
+      st->reverb_estimate[i] = MULT16_32_Q15(st->reverb_decay, st->reverb_estimate[i]);
 }
 
 
@@ -1036,7 +1038,7 @@ int speex_preprocess_ctl(SpeexPreprocessState *state, int request, void *ptr)
    case SPEEX_PREPROCESS_GET_DENOISE:
       (*(spx_int32_t*)ptr) = st->denoise_enabled;
       break;
-
+#ifndef FIXED_POINT
    case SPEEX_PREPROCESS_SET_AGC:
       st->agc_enabled = (*(spx_int32_t*)ptr);
       break;
@@ -1054,7 +1056,7 @@ int speex_preprocess_ctl(SpeexPreprocessState *state, int request, void *ptr)
    case SPEEX_PREPROCESS_GET_AGC_LEVEL:
       (*(float*)ptr) = st->agc_level;
       break;
-
+#endif
    case SPEEX_PREPROCESS_SET_VAD:
       speex_warning("The VAD has been replaced by a hack pending a complete rewrite");
       st->vad_enabled = (*(spx_int32_t*)ptr);
