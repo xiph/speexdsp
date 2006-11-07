@@ -343,7 +343,7 @@ SpeexEchoState *speex_echo_state_init(int frame_size, int filter_length)
    {
       spx_word32_t sum = 0;
       /* Ratio of ~10 between adaptation rate of first and last block */
-      spx_word16_t decay = QCONST16(exp(-2.4/M),15);
+      spx_word16_t decay = SHR32(spx_exp(NEG16(DIV32_16(QCONST16(2.4,11),M))),1);
       st->prop[0] = QCONST16(.7, 15);
       sum = EXTEND32(st->prop[0]);
       for (i=1;i<M;i++)
