@@ -116,11 +116,11 @@ static inline short SHL16(int a, int shift)
    int res;
    if (!VERIFY_SHORT(a) || !VERIFY_SHORT(shift))
    {
-      fprintf (stderr, "SHR16: inputs are not short: %d %d\n", a, shift);
+      fprintf (stderr, "SHL16: inputs are not short: %d %d\n", a, shift);
    }
    res = a<<shift;
    if (!VERIFY_SHORT(res))
-      fprintf (stderr, "SHR16: output is not short: %d\n", res);
+      fprintf (stderr, "SHL16: output is not short: %d\n", res);
    spx_mips++;
    return res;
 }
@@ -268,6 +268,8 @@ static inline int MULT16_32_QX(int a, long long b, int Q)
    {
       fprintf (stderr, "MULT16_32_Q%d: inputs are not short+int: %d %d\n", Q, (int)a, (int)b);
    }
+   if (ABS32(b)>=(1<<(15+Q)))
+      fprintf (stderr, "MULT16_32_Q%d: second operand too large: %d %d\n", Q, (int)a, (int)b);      
    res = (((long long)a)*(long long)b) >> Q;
    if (!VERIFY_INT(res))
       fprintf (stderr, "MULT16_32_Q%d: output is not int: %d*%d=%d\n", Q, (int)a, (int)b,(int)res);
@@ -280,11 +282,13 @@ static inline int MULT16_32_PX(int a, long long b, int Q)
    long long res;
    if (!VERIFY_SHORT(a) || !VERIFY_INT(b))
    {
-      fprintf (stderr, "MULT16_32_Q%d: inputs are not short+int: %d %d\n", Q, (int)a, (int)b);
+      fprintf (stderr, "MULT16_32_P%d: inputs are not short+int: %d %d\n", Q, (int)a, (int)b);
    }
+   if (ABS32(b)>=(1<<(15+Q)))
+      fprintf (stderr, "MULT16_32_Q%d: second operand too large: %d %d\n", Q, (int)a, (int)b);      
    res = ((((long long)a)*(long long)b) + ((1<<Q)>>1))>> Q;
    if (!VERIFY_INT(res))
-      fprintf (stderr, "MULT16_32_Q%d: output is not int: %d*%d=%d\n", Q, (int)a, (int)b,(int)res);
+      fprintf (stderr, "MULT16_32_P%d: output is not int: %d*%d=%d\n", Q, (int)a, (int)b,(int)res);
    spx_mips+=5;
    return res;
 }
