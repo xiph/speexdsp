@@ -262,16 +262,20 @@ static inline void spectral_mul_accum(const spx_word16_t *X, const spx_word32_t 
 #endif
 
 /** Compute weighted cross-power spectrum of a half-complex (packed) vector with conjugate */
-static inline void weighted_spectral_mul_conj(const spx_float_t *w, const spx_word16_t *X, const spx_word16_t *Y, spx_word32_t *prod, int N)
+static inline void weighted_spectral_mul_conj(const spx_float_t *w, const spx_float_t p, const spx_word16_t *X, const spx_word16_t *Y, spx_word32_t *prod, int N)
 {
    int i, j;
-   prod[0] = FLOAT_MUL32(w[0],MULT16_16(X[0],Y[0]));
+   spx_float_t W;
+   W = FLOAT_AMULT(p, w[0]);
+   prod[0] = FLOAT_MUL32(W,MULT16_16(X[0],Y[0]));
    for (i=1,j=1;i<N-1;i+=2,j++)
    {
-      prod[i] = FLOAT_MUL32(w[j],MAC16_16(MULT16_16(X[i],Y[i]), X[i+1],Y[i+1]));
-      prod[i+1] = FLOAT_MUL32(w[j],MAC16_16(MULT16_16(-X[i+1],Y[i]), X[i],Y[i+1]));
+      W = FLOAT_AMULT(p, w[j]);
+      prod[i] = FLOAT_MUL32(W,MAC16_16(MULT16_16(X[i],Y[i]), X[i+1],Y[i+1]));
+      prod[i+1] = FLOAT_MUL32(W,MAC16_16(MULT16_16(-X[i+1],Y[i]), X[i],Y[i+1]));
    }
-   prod[i] = FLOAT_MUL32(w[j],MULT16_16(X[i],Y[i]));
+   W = FLOAT_AMULT(p, w[j]);
+   prod[i] = FLOAT_MUL32(W,MULT16_16(X[i],Y[i]));
 }
 
 
@@ -580,11 +584,11 @@ void speex_echo_cancellation(SpeexEchoState *st, const spx_int16_t *in, const sp
    {
       for (j=M-1;j>=0;j--)
       {
-         weighted_spectral_mul_conj(st->power_1, &st->X[(j+1)*N], st->E, st->PHI, N);
+         weighted_spectral_mul_conj(st->power_1, FLOAT_SHL(PSEUDOFLOAT(st->prop[j]),-15), &st->X[(j+1)*N], st->E, st->PHI, N);
          for (i=0;i<N;i++)
-            st->W[j*N+i] += MULT16_32_Q15(st->prop[j], st->PHI[i]);
+            st->W[j*N+i] = ADD32(st->W[j*N+i], st->PHI[i]);
          
-      }   
+      }
    }
    
    st->saturated = 0;

@@ -205,6 +205,14 @@ static inline spx_float_t FLOAT_MULT(spx_float_t a, spx_float_t b)
    return r;   
 }
 
+static inline spx_float_t FLOAT_AMULT(spx_float_t a, spx_float_t b)
+{
+   spx_float_t r;
+   r.m = (spx_int16_t)((spx_int32_t)(a).m*(b).m>>15);
+   r.e = (a).e+(b).e+15;
+   return r;   
+}
+
 
 static inline spx_float_t FLOAT_SHL(spx_float_t a, int b)
 {
@@ -368,6 +376,7 @@ static inline spx_float_t FLOAT_SQRT(spx_float_t a)
 #define FLOAT_HALF 0.5f
 #define PSEUDOFLOAT(x) (x)
 #define FLOAT_MULT(a,b) ((a)*(b))
+#define FLOAT_AMULT(a,b) ((a)*(b))
 #define FLOAT_MUL32(a,b) ((a)*(b))
 #define FLOAT_DIV32(a,b) ((a)/(b))
 #define FLOAT_EXTRACT16(a) (a)
