@@ -126,7 +126,7 @@ struct SpeexEchoState_ {
    spx_word16_t *e;
    spx_word16_t *x;
    spx_word16_t *X;
-   spx_word16_t *d;
+   spx_word16_t *input;
    spx_word16_t *y;
    spx_word16_t *last_y;
    spx_word16_t *Y;
@@ -308,7 +308,7 @@ SpeexEchoState *speex_echo_state_init(int frame_size, int filter_length)
    
    st->e = (spx_word16_t*)speex_alloc(N*sizeof(spx_word16_t));
    st->x = (spx_word16_t*)speex_alloc(N*sizeof(spx_word16_t));
-   st->d = (spx_word16_t*)speex_alloc(N*sizeof(spx_word16_t));
+   st->input = (spx_word16_t*)speex_alloc(st->frame_size*sizeof(spx_word16_t));
    st->y = (spx_word16_t*)speex_alloc(N*sizeof(spx_word16_t));
    st->last_y = (spx_word16_t*)speex_alloc(N*sizeof(spx_word16_t));
    st->Yf = (spx_word32_t*)speex_alloc((st->frame_size+1)*sizeof(spx_word32_t));
@@ -416,7 +416,7 @@ void speex_echo_state_destroy(SpeexEchoState *st)
 
    speex_free(st->e);
    speex_free(st->x);
-   speex_free(st->d);
+   speex_free(st->input);
    speex_free(st->y);
    speex_free(st->last_y);
    speex_free(st->Yf);
@@ -521,11 +521,10 @@ void speex_echo_cancellation(SpeexEchoState *st, const spx_int16_t *in, const sp
    ss_1 = 1-ss;
 #endif
 
-   filter_dc_notch16(in, st->notch_radius, st->d+st->frame_size, st->frame_size, st->notch_mem);
+   filter_dc_notch16(in, st->notch_radius, st->input, st->frame_size, st->notch_mem);
    /* Copy input data to buffer and apply pre-emphasis */
    for (i=0;i<st->frame_size;i++)
    {
-      spx_word16_t tmp;
       spx_word32_t tmp32;
       st->x[i] = st->x[i+st->frame_size];
       tmp32 = SUB32(EXTEND32(far_end[i]), EXTEND32(MULT16_16_P15(st->preemph, st->memX)));
@@ -535,7 +534,7 @@ void speex_echo_cancellation(SpeexEchoState *st, const spx_int16_t *in, const sp
       {
          tmp32 = 32767;
          st->saturated = 1;
-      }      
+      }
       if (tmp32 < -32767)
       {
          tmp32 = -32767;
@@ -545,7 +544,7 @@ void speex_echo_cancellation(SpeexEchoState *st, const spx_int16_t *in, const sp
       st->x[i+st->frame_size] = EXTRACT16(tmp32);
       st->memX = far_end[i];
       
-      tmp32 = SUB32(EXTEND32(st->d[i+st->frame_size]), EXTEND32(MULT16_16_P15(st->preemph, st->memD)));
+      tmp32 = SUB32(EXTEND32(st->input[i]), EXTEND32(MULT16_16_P15(st->preemph, st->memD)));
 #ifdef FIXED_POINT
       if (tmp32 > 32767)
       {
@@ -558,8 +557,8 @@ void speex_echo_cancellation(SpeexEchoState *st, const spx_int16_t *in, const sp
          st->saturated = 1;
       }
 #endif
-      st->memD = st->d[i+st->frame_size];
-      st->d[i+st->frame_size] = tmp32;
+      st->memD = st->input[i];
+      st->input[i] = tmp32;
    }
 
    /* Shift memory: this could be optimized eventually*/
@@ -636,9 +635,9 @@ void speex_echo_cancellation(SpeexEchoState *st, const spx_int16_t *in, const sp
       spx_word32_t tmp_out;
 #ifdef SMOOTH_BLOCKS
       spx_word16_t y = MULT16_16_Q15(st->window[i+st->frame_size],st->e[i+st->frame_size]) + MULT16_16_Q15(st->window[i],st->y[i+st->frame_size]);
-      tmp_out = SUB32(EXTEND32(st->d[i+st->frame_size]), EXTEND32(y));
+      tmp_out = SUB32(EXTEND32(st->input[i]), EXTEND32(y));
 #else
-      tmp_out = SUB32(EXTEND32(st->d[i+st->frame_size]), EXTEND32(st->y[i+st->frame_size]));
+      tmp_out = SUB32(EXTEND32(st->input[i]), EXTEND32(st->y[i+st->frame_size]));
 #endif
 
       /* Saturation */
@@ -661,7 +660,7 @@ void speex_echo_cancellation(SpeexEchoState *st, const spx_int16_t *in, const sp
    for (i=0;i<st->frame_size;i++)
    {
       st->e[i] = 0;
-      st->e[i+st->frame_size] = st->d[i+st->frame_size] - st->y[i+st->frame_size];
+      st->e[i+st->frame_size] = st->input[i] - st->y[i+st->frame_size];
    }
 
    /* Compute a bunch of correlations */
