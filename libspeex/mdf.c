@@ -521,8 +521,8 @@ void speex_echo_cancellation(SpeexEchoState *st, const spx_int16_t *in, const sp
    ss_1 = 1-ss;
 #endif
 
-   filter_dc_notch16(in, st->notch_radius, st->d, st->frame_size, st->notch_mem);
-   /* Copy input data to buffer */
+   filter_dc_notch16(in, st->notch_radius, st->d+st->frame_size, st->frame_size, st->notch_mem);
+   /* Copy input data to buffer and apply pre-emphasis */
    for (i=0;i<st->frame_size;i++)
    {
       spx_word16_t tmp;
@@ -545,9 +545,7 @@ void speex_echo_cancellation(SpeexEchoState *st, const spx_int16_t *in, const sp
       st->x[i+st->frame_size] = EXTRACT16(tmp32);
       st->memX = far_end[i];
       
-      tmp = st->d[i];
-      st->d[i] = st->d[i+st->frame_size];
-      tmp32 = SUB32(EXTEND32(tmp), EXTEND32(MULT16_16_P15(st->preemph, st->memD)));
+      tmp32 = SUB32(EXTEND32(st->d[i+st->frame_size]), EXTEND32(MULT16_16_P15(st->preemph, st->memD)));
 #ifdef FIXED_POINT
       if (tmp32 > 32767)
       {
@@ -560,8 +558,8 @@ void speex_echo_cancellation(SpeexEchoState *st, const spx_int16_t *in, const sp
          st->saturated = 1;
       }
 #endif
+      st->memD = st->d[i+st->frame_size];
       st->d[i+st->frame_size] = tmp32;
-      st->memD = tmp;
    }
 
    /* Shift memory: this could be optimized eventually*/
@@ -822,6 +820,7 @@ void speex_echo_cancellation(SpeexEchoState *st, const spx_int16_t *in, const sp
       st->sum_adapt = ADD32(st->sum_adapt,adapt_rate);
    }
 
+   /* Save residual echo so it can be used by the nonlinear processor */
    if (st->adapted)
    {
       /* If the filter is adapted, take the filtered echo */
