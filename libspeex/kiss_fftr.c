@@ -138,8 +138,7 @@ void kiss_fftri(kiss_fftr_cfg st,const kiss_fft_cpx *freqdata,kiss_fft_scalar *t
     int k, ncfft;
 
     if (st->substate->inverse == 0) {
-        speex_warning ("kiss fft usage error: improper alloc\n");
-        exit (1);
+        speex_error ("kiss fft usage error: improper alloc\n");
     }
 
     ncfft = st->substate->nfft;
