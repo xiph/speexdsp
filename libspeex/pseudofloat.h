@@ -250,21 +250,18 @@ static inline spx_float_t FLOAT_MUL32U(spx_word32_t a, spx_word32_t b)
    return r;
 }
 
+/* Do NOT attempt to divide by a negative number */
 static inline spx_float_t FLOAT_DIV32_FLOAT(spx_word32_t a, spx_float_t b)
 {
    int e=0;
    spx_float_t r;
-   /* FIXME: Handle the sign */
    if (a==0)
    {
       return FLOAT_ZERO;
    }
-   while (a<SHL32(EXTEND32(b.m),14))
-   {
-      a <<= 1;
-      e--;
-   }
-   while (a>=SHL32(EXTEND32(b.m-1),15))
+   e = spx_ilog2(ABS32(a))-spx_ilog2(b.m-1)-15;
+   a = VSHR32(a, e);
+   if (ABS32(a)>=SHL32(EXTEND32(b.m-1),15))
    {
       a >>= 1;
       e++;
@@ -275,40 +272,45 @@ static inline spx_float_t FLOAT_DIV32_FLOAT(spx_word32_t a, spx_float_t b)
 }
 
 
+/* Do NOT attempt to divide by a negative number */
 static inline spx_float_t FLOAT_DIV32(spx_word32_t a, spx_word32_t b)
 {
-   int e=0;
+   int e0=0,e=0;
    spx_float_t r;
-   /* FIXME: Handle the sign */
    if (a==0)
    {
       return FLOAT_ZERO;
    }
-   while (b>32767)
+   if (b>32767)
    {
-      b >>= 1;
-      e--;
+      e0 = spx_ilog2(b)-14;
+      b = VSHR32(b, e0);
+      e0 = -e0;
    }
-   while (a<SHL32(b,14))
-   {
-      a <<= 1;
-      e--;
-   }
-   while (a>=SHL32(b-1,15))
+   e = spx_ilog2(ABS32(a))-spx_ilog2(b-1)-15;
+   a = VSHR32(a, e);
+   if (ABS32(a)>=SHL32(EXTEND32(b-1),15))
    {
       a >>= 1;
       e++;
    }
+   e += e0;
    r.m = DIV32_16(a,b);
    r.e = e;
    return r;
 }
 
+/* Do NOT attempt to divide by a negative number */
 static inline spx_float_t FLOAT_DIVU(spx_float_t a, spx_float_t b)
 {
    int e=0;
    spx_int32_t num;
    spx_float_t r;
+   if (b.m<=0)
+   {
+      speex_warning_int("Attempted to divide by", b.m);
+      return FLOAT_ONE;
+   }
    num = a.m;
    a.m = ABS16(a.m);
    while (a.m >= b.m)
