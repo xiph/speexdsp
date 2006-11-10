@@ -48,6 +48,7 @@
 #define SHL32(a,shift) ((a) << (shift))
 #define PSHR16(a,shift) (SHR16((a)+((1<<((shift))>>1)),shift))
 #define PSHR32(a,shift) (SHR32((a)+((1<<((shift))>>1)),shift))
+#define VSHR32(a, shift) (((shift)>0) ? SHR32(a, shift) : SHL32(a, -(shift)))
 #define SATURATE16(x,a) (((x)>(a) ? (a) : (x)<-(a) ? -(a) : (x)))
 #define SATURATE32(x,a) (((x)>(a) ? (a) : (x)<-(a) ? -(a) : (x)))
 

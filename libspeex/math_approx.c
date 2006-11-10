@@ -111,15 +111,9 @@ spx_word16_t spx_sqrt(spx_word32_t x)
    int k;
    spx_word32_t rt;
    k = spx_ilog4(x)-6;
-   if (k>0)
-      x = SHR32(x, (k<<1));
-   else
-      x = SHL32(x, (-k<<1));
+   x = VSHR32(x, (k<<1));
    rt = ADD16(C0, MULT16_16_Q14(x, ADD16(C1, MULT16_16_Q14(x, ADD16(C2, MULT16_16_Q14(x, (C3)))))));
-   if (k>7)
-      rt <<= k-7;
-   else
-      rt >>= 7-k;
+   rt = VSHR32(rt,7-k);
    return rt;
 }
 
@@ -231,10 +225,7 @@ static spx_word32_t spx_exp2(spx_word16_t x)
       return 0;
    frac = SHL16(x-SHL16(integer,11),3);
    frac = ADD16(D0, MULT16_16_Q14(frac, ADD16(D1, MULT16_16_Q14(frac, ADD16(D2 , MULT16_16_Q14(D3,frac))))));
-   if (integer+2>0)
-      return SHL32(EXTEND32(frac), integer+2);
-   else
-      return SHR32(EXTEND32(frac), -integer-2);
+   return VSHR32(EXTEND32(frac), -integer-2);
 }
 
 /* Input in Q11 format, output in Q16 */
