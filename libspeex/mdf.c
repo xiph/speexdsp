@@ -666,10 +666,23 @@ void speex_echo_cancellation(SpeexEchoState *st, const spx_int16_t *in, const sp
    /* Compute a bunch of correlations */
    Sey = mdf_inner_prod(st->e+st->frame_size, st->y+st->frame_size, st->frame_size);
    See = mdf_inner_prod(st->e+st->frame_size, st->e+st->frame_size, st->frame_size);
-   See = ADD32(See, SHR32(MULT16_16(N, 100),6));
+   See = MAX32(See, SHR32(MULT16_16(N, 100),6));
    Syy = mdf_inner_prod(st->y+st->frame_size, st->y+st->frame_size, st->frame_size);
    Sxx = mdf_inner_prod(st->x+st->frame_size, st->x+st->frame_size, st->frame_size);
 
+   /* Just in case something went really wrong */
+#ifdef FIXED_POINT
+   if (Syy<0)
+   {
+      speex_warning_int ("Syy is negative: ", Syy);
+      Syy = 0;
+   }
+   if (Sxx<0)
+   {
+      speex_warning_int ("Sxx is negative: ", Sxx);
+      Sxx = 0;
+   }
+#endif
    /* Convert error to frequency domain */
    spx_fft(st->fft_table, st->e, st->E);
    for (i=0;i<st->frame_size;i++)

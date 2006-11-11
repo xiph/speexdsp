@@ -760,7 +760,7 @@ int speex_preprocess_run(SpeexPreprocessState *st, spx_int16_t *x)
    for (i=0;i<N;i++)
    {
       if (!st->update_prob[i] || st->ps[i] < PSHR32(st->noise[i], NOISE_SHIFT))
-         st->noise[i] = MULT16_32_Q15(beta_1,st->noise[i]) + MULT16_32_Q15(beta,SHL32(st->ps[i],NOISE_SHIFT));
+         st->noise[i] = MAX32(EXTEND32(0),MULT16_32_Q15(beta_1,st->noise[i]) + MULT16_32_Q15(beta,SHL32(st->ps[i],NOISE_SHIFT)));
    }
    filterbank_compute_bank32(st->bank, st->noise, st->noise+N);
 
