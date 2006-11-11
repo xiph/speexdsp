@@ -38,26 +38,21 @@
 #include "filterbank.h"
 #include "misc.h"
 #include <math.h>
-
-#define toBARK(n)   (13.1f*atan(.00074f*(n))+2.24f*atan((n)*(n)*1.85e-8f)+1e-4f*(n))
+      
+#define toBARK(n)   (1000.f*32768.f*(13.1f*atan(.00074f*(n))+2.24f*atan((n)*(n)*1.85e-8f)+1e-4f*(n)))
 #define toMEL(n)    (2595.f*log10(1.f+(n)/700.f))
       
-#ifdef FIXED_POINT
-#define Q15(x) (floor(.5+32767.*(x)))
-#else
-#define Q15(x) (x)
-#endif
-      
-FilterBank *filterbank_new(int banks, float sampling, int len, int type)
+FilterBank *filterbank_new(int banks, spx_word32_t sampling, int len, int type)
 {
    FilterBank *bank;
-   float df, max_mel, mel_interval;
+   spx_word32_t df;
+   spx_word32_t max_mel, mel_interval;
    int i;
    int id1;
    int id2;
-   df = .5*sampling/len;
+   df = DIV32(SHL32(sampling,15),MULT16_16(2,len));
    max_mel = toBARK(.5*sampling);
-   mel_interval = max_mel/(banks-1);
+   mel_interval = PDIV32(max_mel,banks-1);
    
    bank = (FilterBank*)speex_alloc(sizeof(FilterBank));
    bank->nb_banks = banks;
@@ -72,29 +67,33 @@ FilterBank *filterbank_new(int banks, float sampling, int len, int type)
 #endif
    for (i=0;i<len;i++)
    {
-      float curr_freq;
-      float mel;
-      float val;
-      curr_freq = i*df;
+      spx_word32_t curr_freq;
+      spx_word32_t mel;
+      spx_word16_t val;
+      curr_freq = MULT16_32_P15(i,df);
       mel = toBARK(curr_freq);
       if (mel > max_mel)
          break;
+#ifdef FIXED_POINT
+      id1 = DIV32(mel,mel_interval);
+#else      
       id1 = (int)(floor(mel/mel_interval));
+#endif
       if (id1>banks-2)
       {
          id1 = banks-2;
-         val = 1;
+         val = Q15_ONE;
       } else {
-         val = (mel - id1*mel_interval)/mel_interval;
+         val = DIV32_16(mel - id1*mel_interval,EXTRACT16(PSHR32((int)(.5+mel_interval),15)));
       }
       id2 = id1+1;
       bank->bank_left[i] = id1;
-      bank->filter_left[i] = Q15(1-val);
+      bank->filter_left[i] = SUB16(Q15_ONE,val);
       bank->bank_right[i] = id2;
-      bank->filter_right[i] = Q15(val);
+      bank->filter_right[i] = val;
    }
    
-   /* Think I can safely disable normalisation that for fixed-point (and probably float as well) */
+   /* Think I can safely disable normalisation for fixed-point (and probably float as well) */
 #ifndef FIXED_POINT
    for (i=0;i<bank->nb_banks;i++)
       bank->scaling[i] = 0;
@@ -145,37 +144,6 @@ void filterbank_compute_bank32(FilterBank *bank, spx_word32_t *ps, spx_word32_t 
 #endif
 }
 
-void filterbank_compute_bank(FilterBank *bank, float *ps, float *mel)
-{
-   int i;
-   for (i=0;i<bank->nb_banks;i++)
-      mel[i] = 0;
-
-   for (i=0;i<bank->len;i++)
-   {
-      int id = bank->bank_left[i];
-      mel[id] += bank->filter_left[i]*ps[i];
-      id = bank->bank_right[i];
-      mel[id] += bank->filter_right[i]*ps[i];
-   }
-#ifndef FIXED_POINT
-   for (i=0;i<bank->nb_banks;i++)
-      mel[i] *= bank->scaling[i];
-#endif
-}
-
-void filterbank_compute_psd(FilterBank *bank, float *mel, float *ps)
-{
-   int i;
-   for (i=0;i<bank->len;i++)
-   {
-      int id = bank->bank_left[i];
-      ps[i] = mel[id]*bank->filter_left[i];
-      id = bank->bank_right[i];
-      ps[i] += mel[id]*bank->filter_right[i];
-   }
-}
-
 void filterbank_compute_psd16(FilterBank *bank, spx_word16_t *mel, spx_word16_t *ps)
 {
    int i;
@@ -192,3 +160,33 @@ void filterbank_compute_psd16(FilterBank *bank, spx_word16_t *mel, spx_word16_t 
 }
 
 
+#ifndef FIXED_POINT
+void filterbank_compute_bank(FilterBank *bank, float *ps, float *mel)
+{
+   int i;
+   for (i=0;i<bank->nb_banks;i++)
+      mel[i] = 0;
+
+   for (i=0;i<bank->len;i++)
+   {
+      int id = bank->bank_left[i];
+      mel[id] += bank->filter_left[i]*ps[i];
+      id = bank->bank_right[i];
+      mel[id] += bank->filter_right[i]*ps[i];
+   }
+   for (i=0;i<bank->nb_banks;i++)
+      mel[i] *= bank->scaling[i];
+}
+
+void filterbank_compute_psd(FilterBank *bank, float *mel, float *ps)
+{
+   int i;
+   for (i=0;i<bank->len;i++)
+   {
+      int id = bank->bank_left[i];
+      ps[i] = mel[id]*bank->filter_left[i];
+      id = bank->bank_right[i];
+      ps[i] += mel[id]*bank->filter_right[i];
+   }
+}
+#endif

@@ -49,17 +49,18 @@ typedef struct {
 } FilterBank;
 
 
-FilterBank *filterbank_new(int banks, float sampling, int len, int type);
+FilterBank *filterbank_new(int banks, spx_word32_t sampling, int len, int type);
 
 void filterbank_destroy(FilterBank *bank);
 
-void filterbank_compute_bank(FilterBank *bank, float *psd, float *mel);
-
 void filterbank_compute_bank32(FilterBank *bank, spx_word32_t *ps, spx_word32_t *mel);
 
-void filterbank_compute_psd(FilterBank *bank, float *mel, float *psd);
-
 void filterbank_compute_psd16(FilterBank *bank, spx_word16_t *mel, spx_word16_t *psd);
+
+#ifndef FIXED_POINT
+void filterbank_compute_bank(FilterBank *bank, float *psd, float *mel);
+void filterbank_compute_psd(FilterBank *bank, float *mel, float *psd);
+#endif
 
 
 #endif
