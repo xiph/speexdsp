@@ -79,9 +79,6 @@
 #define M_PI 3.14159265358979323846
 #endif
 
-#define min(a,b) ((a)<(b) ? (a) : (b))
-#define max(a,b) ((a)>(b) ? (a) : (b))
-
 #ifdef FIXED_POINT
 #define WEIGHT_SHIFT 11
 #define NORMALIZE_SCALEDOWN 5
@@ -123,25 +120,25 @@ struct SpeexEchoState_ {
    spx_word32_t sum_adapt;
    spx_word16_t leak_estimate;
    
-   spx_word16_t *e;
+   spx_word16_t *e;      /* scratch */
    spx_word16_t *x;
    spx_word16_t *X;
-   spx_word16_t *input;
-   spx_word16_t *y;
+   spx_word16_t *input;  /* scratch */
+   spx_word16_t *y;      /* scratch */
    spx_word16_t *last_y;
-   spx_word16_t *Y;
+   spx_word16_t *Y;      /* scratch */
    spx_word16_t *E;
-   spx_word32_t *PHI;
+   spx_word32_t *PHI;    /* scratch */
    spx_word32_t *W;
    spx_word32_t *power;
    spx_float_t *power_1;
-   spx_word16_t *wtmp;
+   spx_word16_t *wtmp;   /* scratch */
 #ifdef FIXED_POINT
-   spx_word16_t *wtmp2;
+   spx_word16_t *wtmp2;  /* scratch */
 #endif
-   spx_word32_t *Rf;
-   spx_word32_t *Yf;
-   spx_word32_t *Xf;
+   spx_word32_t *Rf;     /* scratch */
+   spx_word32_t *Yf;     /* scratch */
+   spx_word32_t *Xf;     /* scratch */
    spx_word32_t *Eh;
    spx_word32_t *Yh;
    spx_float_t Pey;
@@ -292,7 +289,7 @@ SpeexEchoState *speex_echo_state_init(int frame_size, int filter_length)
    st->cancel_count=0;
    st->sum_adapt = 0;
    st->saturated = 0;
-   /* FIXME: Make that an init option (new API call?) */
+   /* This is the default sampling rate */
    st->sampling_rate = 8000;
    st->spec_average = DIV32_16(SHL32(EXTEND32(st->frame_size), 15), st->sampling_rate);
 #ifdef FIXED_POINT
@@ -342,8 +339,6 @@ SpeexEchoState *speex_echo_state_init(int frame_size, int filter_length)
       st->power_1[i] = FLOAT_ONE;
    for (i=0;i<N*M;i++)
       st->W[i] = 0;
-   for (i=0;i<N;i++)
-      st->PHI[i] = 0;
    {
       spx_word32_t sum = 0;
       /* Ratio of ~10 between adaptation rate of first and last block */
@@ -393,9 +388,21 @@ void speex_echo_state_reset(SpeexEchoState *st)
    for (i=0;i<N*(M+1);i++)
       st->X[i] = 0;
    for (i=0;i<=st->frame_size;i++)
+   {
       st->power[i] = 0;
+      st->power_1[i] = FLOAT_ONE;
+      st->Eh[i] = 0;
+      st->Yh[i] = 0;
+   }
+   for (i=0;i<st->frame_size;i++)
+   {
+      st->last_y[i] = 0;
+   }
    for (i=0;i<N;i++)
+   {
       st->E[i] = 0;
+      st->x[i] = 0;
+   }
    st->notch_mem[0] = st->notch_mem[1] = 0;
   
    st->saturated = 0;
@@ -529,16 +536,16 @@ void speex_echo_cancellation(SpeexEchoState *st, const spx_int16_t *in, const sp
       st->x[i] = st->x[i+st->frame_size];
       tmp32 = SUB32(EXTEND32(far_end[i]), EXTEND32(MULT16_16_P15(st->preemph, st->memX)));
 #ifdef FIXED_POINT
-      /*FIXME: If saturation occurs here, we need to freeze adaptation for M frames (not just one) */
+      /* If saturation occurs here, we need to freeze adaptation for M+1 frames (not just one) */
       if (tmp32 > 32767)
       {
          tmp32 = 32767;
-         st->saturated = 1;
+         st->saturated = M+1;
       }
       if (tmp32 < -32767)
       {
          tmp32 = -32767;
-         st->saturated = 1;
+         st->saturated = M+1;
       }      
 #endif
       st->x[i+st->frame_size] = EXTRACT16(tmp32);
@@ -549,12 +556,14 @@ void speex_echo_cancellation(SpeexEchoState *st, const spx_int16_t *in, const sp
       if (tmp32 > 32767)
       {
          tmp32 = 32767;
-         st->saturated = 1;
+         if (st->saturated == 0)
+            st->saturated = 1;
       }      
       if (tmp32 < -32767)
       {
          tmp32 = -32767;
-         st->saturated = 1;
+         if (st->saturated == 0)
+            st->saturated = 1;
       }
 #endif
       st->memD = st->input[i];
@@ -577,7 +586,7 @@ void speex_echo_cancellation(SpeexEchoState *st, const spx_int16_t *in, const sp
 #endif
 
    /* Compute weight gradient */
-   if (!st->saturated)
+   if (st->saturated == 0)
    {
       for (j=M-1;j>=0;j--)
       {
@@ -586,9 +595,9 @@ void speex_echo_cancellation(SpeexEchoState *st, const spx_int16_t *in, const sp
             st->W[j*N+i] = ADD32(st->W[j*N+i], st->PHI[i]);
          
       }
+   } else {
+      st->saturated--;
    }
-   
-   st->saturated = 0;
    
    /* Update weight to prevent circular convolution (MDF / AUMDF) */
    for (j=0;j<M;j++)
@@ -646,11 +655,12 @@ void speex_echo_cancellation(SpeexEchoState *st, const spx_int16_t *in, const sp
       else if (tmp_out<-32768)
          tmp_out = -32768;
       tmp_out = ADD32(tmp_out, EXTEND32(MULT16_16_P15(st->preemph, st->memE)));
-      /* This is an arbitrary test for saturation */
+      /* This is an arbitrary test for saturation in the microphone signal */
       if (in[i] <= -32000 || in[i] >= 32000)
       {
          tmp_out = 0;
-         st->saturated = 1;
+         if (st->saturated == 0)
+            st->saturated = 1;
       }
       out[i] = (spx_int16_t)tmp_out;
       st->memE = tmp_out;

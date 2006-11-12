@@ -642,7 +642,6 @@ static void preprocess_analysis(SpeexPreprocessState *st, spx_int16_t *x)
    spx_fft(st->fft_lookup, st->frame, st->ft);
          
    /* Power spectrum */
-   /*FIXME: Set ps[0] properly */
    ps[0]=MULT16_16(st->ft[0],st->ft[0]);
    for (i=1;i<N;i++)
       ps[i]=MULT16_16(st->ft[2*i-1],st->ft[2*i-1]) + MULT16_16(st->ft[2*i],st->ft[2*i]);
