@@ -38,10 +38,18 @@
 #include "filterbank.h"
 #include "misc.h"
 #include <math.h>
+#include "math_approx.h"
       
-#define toBARK(n)   (1000.f*32768.f*(13.1f*atan(.00074f*(n))+2.24f*atan((n)*(n)*1.85e-8f)+1e-4f*(n)))
+#ifdef FIXED_POINT
+
+#define toBARK(n)   (MULT16_16(26829,spx_atan(SHR32(MULT16_16(97,n),2))) + MULT16_16(4588,spx_atan(MULT16_32_Q15(20,MULT16_16(n,n)))) + MULT16_16(3355,n))
+      
+#else
+#define toBARK(n)   (13.1f*atan(.00074f*(n))+2.24f*atan((n)*(n)*1.85e-8f)+1e-4f*(n))
+#endif
+       
 #define toMEL(n)    (2595.f*log10(1.f+(n)/700.f))
-      
+
 FilterBank *filterbank_new(int banks, spx_word32_t sampling, int len, int type)
 {
    FilterBank *bank;
@@ -51,7 +59,7 @@ FilterBank *filterbank_new(int banks, spx_word32_t sampling, int len, int type)
    int id1;
    int id2;
    df = DIV32(SHL32(sampling,15),MULT16_16(2,len));
-   max_mel = toBARK(.5*sampling);
+   max_mel = toBARK(EXTRACT16(MULT16_16_Q15(QCONST16(.5f,15),sampling)));
    mel_interval = PDIV32(max_mel,banks-1);
    
    bank = (FilterBank*)speex_alloc(sizeof(FilterBank));
@@ -67,10 +75,10 @@ FilterBank *filterbank_new(int banks, spx_word32_t sampling, int len, int type)
 #endif
    for (i=0;i<len;i++)
    {
-      spx_word32_t curr_freq;
+      spx_word16_t curr_freq;
       spx_word32_t mel;
       spx_word16_t val;
-      curr_freq = MULT16_32_P15(i,df);
+      curr_freq = EXTRACT16(MULT16_32_P15(i,df));
       mel = toBARK(curr_freq);
       if (mel > max_mel)
          break;
@@ -84,7 +92,7 @@ FilterBank *filterbank_new(int banks, spx_word32_t sampling, int len, int type)
          id1 = banks-2;
          val = Q15_ONE;
       } else {
-         val = DIV32_16(mel - id1*mel_interval,EXTRACT16(PSHR32((int)(.5+mel_interval),15)));
+         val = DIV32_16(mel - id1*mel_interval,EXTRACT16(PSHR32(mel_interval,15)));
       }
       id2 = id1+1;
       bank->bank_left[i] = id1;

@@ -46,12 +46,16 @@ spx_word16_t spx_acos(spx_word16_t x);
 spx_word32_t spx_exp(spx_word16_t x);
 spx_word16_t spx_cos_norm(spx_word32_t x);
 
+/* Input in Q15, output in Q14 */
+spx_word16_t spx_atan(spx_word32_t x);
+
 #else
 
 #define spx_sqrt sqrt
 #define spx_acos acos
 #define spx_exp exp
 #define spx_cos_norm(x) (cos((.5f*M_PI)*(x)))
+#define spx_atan atan
 
 #endif
 

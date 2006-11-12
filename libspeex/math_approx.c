@@ -238,8 +238,30 @@ spx_word32_t spx_exp(spx_word16_t x)
    else
       return spx_exp2(MULT16_16_P14(23637,x));
 }
+#define M1 32767
+#define M2 -21
+#define M3 -11943
+#define M4 4936
 
+static inline spx_word16_t spx_atan01(spx_word16_t x)
+{
+   return MULT16_16_P15(x, ADD32(M1, MULT16_16_P15(x, ADD32(M2, MULT16_16_P15(x, ADD32(M3, MULT16_16_P15(M4, x)))))));
+}
 
+/* Input in Q15, output in Q14 */
+spx_word16_t spx_atan(spx_word32_t x)
+{
+   if (x <= 32767)
+   {
+      return SHR16(spx_atan01(x),1);
+   } else {
+      int e = spx_ilog2(x);
+      if (e>=29)
+         return 25736;
+      x = DIV32_16(SHL32(EXTEND32(32767),29-e), EXTRACT16(SHR32(x, e-14)));
+      return SUB16(25736, SHR16(spx_atan01(x),1));
+   }
+}
 #else
 
 #ifndef M_PI
