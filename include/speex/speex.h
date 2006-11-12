@@ -35,6 +35,10 @@
 
 #ifndef SPEEX_H
 #define SPEEX_H
+/** @defgroup Codec Speex encoder and decoder
+ *  This is the Speex codec itself.
+ *  @{
+ */
 
 #include "speex/speex_bits.h"
 #include "speex/speex_types.h"
@@ -427,5 +431,5 @@ const SpeexMode * speex_lib_get_mode (int mode);
 }
 #endif
 
-
+/** @}*/
 #endif

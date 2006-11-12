@@ -1,8 +1,10 @@
 /* Copyright (C) 2003 Epic Games
    Written by Jean-Marc Valin */
 /**
-   @file speex_preprocess.h
-   @brief Speex preprocessor
+ *  @file speex_preprocess.h
+ *  @brief Speex preprocessor. The preprocess can do noise suppression, 
+ * residual echo suppression (after using the echo canceller), automatic
+ * gain control (AGC) and voice activity detection (VAD).
 */
 /*
    Redistribution and use in source and binary forms, with or without
@@ -34,6 +36,12 @@
 
 #ifndef SPEEX_PREPROCESS_H
 #define SPEEX_PREPROCESS_H
+/** @defgroup SpeexPreprocessState Preprocessor
+ *  This is the Speex preprocessor. The preprocess can do noise suppression, 
+ * residual echo suppression (after using the echo canceller), automatic
+ * gain control (AGC) and voice activity detection (VAD).
+ *  @{
+ */
 
 #include "speex/speex_types.h"
 
@@ -46,22 +54,41 @@ struct SpeexPreprocessState_;
 typedef struct SpeexPreprocessState_ SpeexPreprocessState;
 
 
-/** Creates a new preprocessing state */
+/** Creates a new preprocessing state. You MUST create one state per channel processed.
+ * @param frame_size Number of samples to process at one time (should correspond to 10-20 ms). Must be
+ * the same value as that used for the echo canceller for residual echo cancellation to work.
+ * @param sampling_rate Sampling rate used for the input.
+ * @return Newly created preprocessor state
+*/
 SpeexPreprocessState *speex_preprocess_state_init(int frame_size, int sampling_rate);
 
-/** Destroys a denoising state */
+/** Destroys a preprocessor state 
+ * @param st Preprocessor state to destroy
+*/
 void speex_preprocess_state_destroy(SpeexPreprocessState *st);
 
-/** Preprocess a frame */
+/** Preprocess a frame 
+ * @param st Preprocessor state
+ * @param x Audio sample vector (in and out). Must be same size as specified in speex_preprocess_state_init().
+ * @return Bool value for voice activity (1 for speech, 0 for noise/silence), ONLY if VAD turned on.
+*/
 int speex_preprocess_run(SpeexPreprocessState *st, spx_int16_t *x);
 
-/** Preprocess a frame (deprecated) */
+/** Preprocess a frame (deprecated, use speex_preprocess_run() instead)*/
 int speex_preprocess(SpeexPreprocessState *st, spx_int16_t *x, spx_int32_t *echo);
 
-/** Preprocess a frame */
-void speex_preprocess_estimate_update(SpeexPreprocessState *st, spx_int16_t *x, spx_int32_t *echo);
+/** Update preprocessor state, but do not compute the output
+ * @param st Preprocessor state
+ * @param x Audio sample vector (in only). Must be same size as specified in speex_preprocess_state_init().
+*/
+void speex_preprocess_estimate_update(SpeexPreprocessState *st, spx_int16_t *x);
 
-/** Used like the ioctl function to control the preprocessor parameters */
+/** Used like the ioctl function to control the preprocessor parameters 
+ * @param st Preprocessor state
+ * @param request ioctl-type request (one of the SPEEX_PREPROCESS_* macros)
+ * @param ptr Data exchanged to-from function
+ * @return 0 if no error, -1 if request in unknown
+*/
 int speex_preprocess_ctl(SpeexPreprocessState *st, int request, void *ptr);
 
 
@@ -107,20 +134,29 @@ int speex_preprocess_ctl(SpeexPreprocessState *st, int request, void *ptr);
 #define SPEEX_PREPROCESS_SET_PROB_CONTINUE 16
 #define SPEEX_PREPROCESS_GET_PROB_CONTINUE 17
 
+/** Set maximum attenuation of the noise in dB (negative number) */
 #define SPEEX_PREPROCESS_SET_NOISE_SUPPRESS 18
+/** Get maximum attenuation of the noise in dB (negative number) */
 #define SPEEX_PREPROCESS_GET_NOISE_SUPPRESS 19
 
+/** Set maximum attenuation of the residual echo in dB (negative number) */
 #define SPEEX_PREPROCESS_SET_ECHO_SUPPRESS 20
+/** Get maximum attenuation of the residual echo in dB (negative number) */
 #define SPEEX_PREPROCESS_GET_ECHO_SUPPRESS 21
 
+/** Set maximum attenuation of the residual echo in dB when near end is active (negative number) */
 #define SPEEX_PREPROCESS_SET_ECHO_SUPPRESS_ACTIVE 22
+/** Get maximum attenuation of the residual echo in dB when near end is active (negative number) */
 #define SPEEX_PREPROCESS_GET_ECHO_SUPPRESS_ACTIVE 23
 
+/** Set the corresponding echo canceller state so that residual echo suppression can be performed (NULL for no residual echo suppression) */
 #define SPEEX_PREPROCESS_SET_ECHO_STATE 24
+/** Get the corresponding echo canceller state */
 #define SPEEX_PREPROCESS_GET_ECHO_STATE 25
 
 #ifdef __cplusplus
 }
 #endif
 
+/** @}*/
 #endif
