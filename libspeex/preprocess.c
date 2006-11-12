@@ -736,6 +736,14 @@ int speex_preprocess_run(SpeexPreprocessState *st, spx_int16_t *x)
    if (st->echo_state)
    {
       speex_echo_get_residual(st->echo_state, st->residual_echo, N);
+#ifndef FIXED_POINT
+      /* If there are NaNs or ridiculous values, it'll show up in the DC and we just reset everything to zero */
+      if (!(st->residual_echo[0] >=0 && st->residual_echo[0]<N*1e9f))
+      {
+         for (i=0;i<N;i++)
+            st->residual_echo[i] = 0;
+      }
+#endif
       for (i=0;i<N;i++)
          st->echo_noise[i] = MAX32(MULT16_32_Q15(QCONST16(.6f,15),st->echo_noise[i]), st->residual_echo[i]);
       filterbank_compute_bank32(st->bank, st->echo_noise, st->echo_noise+N);

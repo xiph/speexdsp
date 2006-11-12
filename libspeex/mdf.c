@@ -113,6 +113,7 @@ struct SpeexEchoState_ {
    int cancel_count;
    int adapted;
    int saturated;
+   int screwed_up;
    spx_int32_t sampling_rate;
    spx_word16_t spec_average;
    spx_word16_t beta0;
@@ -289,6 +290,7 @@ SpeexEchoState *speex_echo_state_init(int frame_size, int filter_length)
    st->cancel_count=0;
    st->sum_adapt = 0;
    st->saturated = 0;
+   st->screwed_up = 0;
    /* This is the default sampling rate */
    st->sampling_rate = 8000;
    st->spec_average = DIV32_16(SHL32(EXTEND32(st->frame_size), 15), st->sampling_rate);
@@ -381,6 +383,7 @@ void speex_echo_state_reset(SpeexEchoState *st)
 {
    int i, M, N;
    st->cancel_count=0;
+   st->screwed_up = 0;
    N = st->window_size;
    M = st->M;
    for (i=0;i<N*M;i++)
@@ -404,7 +407,8 @@ void speex_echo_state_reset(SpeexEchoState *st)
       st->x[i] = 0;
    }
    st->notch_mem[0] = st->notch_mem[1] = 0;
-  
+   st->memX=st->memD=st->memE=0;
+
    st->saturated = 0;
    st->adapted = 0;
    st->sum_adapt = 0;
@@ -509,7 +513,7 @@ void speex_echo_cancellation(SpeexEchoState *st, const spx_int16_t *in, const sp
 {
    int i,j;
    int N,M;
-   spx_word32_t Syy,See,Sxx;
+   spx_word32_t Syy,See,Sxx,Sdd;
    spx_word32_t Sey;
    spx_word16_t ss, ss_1;
    spx_float_t Pey = FLOAT_ONE, Pyy=FLOAT_ONE;
@@ -676,23 +680,39 @@ void speex_echo_cancellation(SpeexEchoState *st, const spx_int16_t *in, const sp
    /* Compute a bunch of correlations */
    Sey = mdf_inner_prod(st->e+st->frame_size, st->y+st->frame_size, st->frame_size);
    See = mdf_inner_prod(st->e+st->frame_size, st->e+st->frame_size, st->frame_size);
-   See = MAX32(See, SHR32(MULT16_16(N, 100),6));
    Syy = mdf_inner_prod(st->y+st->frame_size, st->y+st->frame_size, st->frame_size);
    Sxx = mdf_inner_prod(st->x+st->frame_size, st->x+st->frame_size, st->frame_size);
-
-   /* Just in case something went really wrong */
-#ifdef FIXED_POINT
-   if (Syy<0)
-   {
-      speex_warning_int ("Syy is negative: ", Syy);
-      Syy = 0;
-   }
-   if (Sxx<0)
-   {
-      speex_warning_int ("Sxx is negative: ", Sxx);
-      Sxx = 0;
-   }
+   Sdd = mdf_inner_prod(st->input, st->input, st->frame_size);
+   
+   /* Do some sanity check */
+   if (!(Syy>=0 && Sxx>=0 && See >= 0)
+#ifndef FIXED_POINT
+       || !(See < N*1e9 && Syy < N*1e9 && Sxx < N*1e9)
 #endif
+      )
+   {
+      /* Things have gone really bad */
+      st->screwed_up += 50;
+      for (i=0;i<st->frame_size;i++)
+         out[i] = 0;
+   } else if (SHR32(See, 2) > ADD32(Sdd, SHR32(MULT16_16(N, 100),6)))
+   {
+      /* AEC seems to add lots of echo instead of removing it, let's see if it will improve */
+      st->screwed_up++;
+   } else {
+      /* Everything's fine */
+      st->screwed_up=0;
+   }
+   if (st->screwed_up>=50)
+   {
+      speex_warning("The echo canceller started acting funny and got slapped (reset). It swears it will behave now.");
+      speex_echo_state_reset(st);
+      return;
+   }
+
+   /* Add a small noise floor to make sure not to have problems when dividing */
+   See = MAX32(See, SHR32(MULT16_16(N, 100),6));
+
    /* Convert error to frequency domain */
    spx_fft(st->fft_table, st->e, st->E);
    for (i=0;i<st->frame_size;i++)
