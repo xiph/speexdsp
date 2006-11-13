@@ -1,20 +1,24 @@
-#LyX 1.4.2 created this file. For more info see http://www.lyx.org/
+#LyX 1.4.3 created this file. For more info see http://www.lyx.org/
 \lyxformat 245
 \begin_document
 \begin_header
-\textclass article
+\textclass scrbook
 \language english
 \inputencoding auto
 \fontscheme pslatex
 \graphics default
-\paperfontsize default
+\paperfontsize 10
 \spacing onehalf
 \papersize letterpaper
-\use_geometry false
-\use_amsmath 1
+\use_geometry true
+\use_amsmath 2
 \cite_engine basic
 \use_bibtopic false
 \paperorientation portrait
+\leftmargin 2cm
+\topmargin 2cm
+\rightmargin 2cm
+\bottommargin 2cm
 \secnumdepth 3
 \tocdepth 3
 \paragraph_separation indent
@@ -32,7 +36,7 @@
 \begin_layout Title
 The Speex Codec Manual
 \newline
-(version 1.2-beta1)
+(version 1.2-beta2)
 \end_layout
 
 \begin_layout Author
@@ -78,7 +82,7 @@ on License".
 
 \end_layout
 
-\begin_layout Section
+\begin_layout Chapter
 Introduction to Speex
 \end_layout
 
@@ -255,7 +259,7 @@ This document is divided in the following way.
 
 \end_layout
 
-\begin_layout Section
+\begin_layout Chapter
 Codec description
 \begin_inset LatexCommand \label{sec:Feature-description}
 
@@ -268,7 +272,7 @@ Codec description
 This section describes the main features provided by Speex.
 \end_layout
 
-\begin_layout Subsection
+\begin_layout Section
 Concepts
 \end_layout
 
@@ -521,11 +525,11 @@ look-ahead
  the frames.
 \end_layout
 
-\begin_layout Subsection
+\begin_layout Section
 Codec
 \end_layout
 
-\begin_layout Subsection
+\begin_layout Section
 Preprocessor
 \end_layout
 
@@ -540,7 +544,7 @@ before
 \end_layout
 
 \begin_layout Itemize
-denoising
+noise suppression
 \end_layout
 
 \begin_layout Itemize
@@ -579,11 +583,11 @@ The voice activity detector (VAD) provided by the preprocessor is more advanced
  
 \end_layout
 
-\begin_layout Subsection
+\begin_layout Section
 Adaptive Jitter Buffer
 \end_layout
 
-\begin_layout Subsection
+\begin_layout Section
 Acoustic Echo Canceller
 \end_layout
 
@@ -593,7 +597,7 @@ Acoustic Echo Canceller
 
 \end_layout
 
-\begin_layout Section
+\begin_layout Chapter
 Compiling
 \end_layout
 
@@ -698,7 +702,7 @@ The options supported by the Speex configure script are:
 
 \end_layout
 
-\begin_layout Section
+\begin_layout Chapter
 Command-line encoder/decoder
 \begin_inset LatexCommand \label{sec:Command-line-encoder/decoder}
 
@@ -720,7 +724,7 @@ speexdec
  This section describes how to use these tools.
 \end_layout
 
-\begin_layout Subsection
+\begin_layout Section
 
 \emph on
 speexenc
@@ -826,7 +830,7 @@ n Set encoding speed/quality tradeoff.
 (-v) Print version information
 \end_layout
 
-\begin_layout Subsubsection*
+\begin_layout Subsection*
 Speex comments
 \end_layout
 
@@ -846,7 +850,7 @@ Speex comments
  
 \end_layout
 
-\begin_layout Subsubsection*
+\begin_layout Subsection*
 Raw input options
 \end_layout
 
@@ -875,7 +879,7 @@ n Sampling rate for raw input
 --16bit Raw input is 16-bit signed 
 \end_layout
 
-\begin_layout Subsection
+\begin_layout Section
 
 \emph on
 speexdec
@@ -963,7 +967,7 @@ n Simulate n % random packet loss
 
 \end_layout
 
-\begin_layout Section
+\begin_layout Chapter
 Programming with Speex (the libspeex
 \begin_inset LatexCommand \index{libspeex}
 
@@ -992,7 +996,7 @@ This section explains how to use the Speex API.
 .
 \end_layout
 
-\begin_layout Subsection
+\begin_layout Section
 Encoding
 \begin_inset LatexCommand \label{sub:Encoding}
 
@@ -1172,7 +1176,7 @@ That's about it for the encoder.
  
 \end_layout
 
-\begin_layout Subsection
+\begin_layout Section
 Decoding
 \begin_inset LatexCommand \label{sub:Decoding}
 
@@ -1318,7 +1322,7 @@ speex_bits_destroy(&bits);
 speex_decoder_destroy(dec_state);
 \end_layout
 
-\begin_layout Subsection
+\begin_layout Section
 Preprocessor
 \begin_inset LatexCommand \label{sub:Preprocessor}
 
@@ -1366,7 +1370,7 @@ For each input frame, you need to call:
 \end_layout
 
 \begin_layout LyX-Code
-speex_preprocess(preprocess_state, audio_frame, echo_residue);
+speex_preprocess_run(preprocess_state, audio_frame);
 \end_layout
 
 \begin_layout Standard
@@ -1374,12 +1378,7 @@ where
 \family typewriter
 audio_frame
 \family default
- is used both as input and output and 
-\family typewriter
-echo_residue
-\family default
- is either an array filled by the echo canceller, or NULL if the preprocessor
- is used without the echo canceller.
+ is used both as input and output.
 \end_layout
 
 \begin_layout Standard
@@ -1388,7 +1387,7 @@ In cases where the output audio is not useful for a certain frame, it is
 \end_layout
 
 \begin_layout LyX-Code
-speex_preprocess_estimate_update(preprocess_state, audio_frame, echo_residue);
+speex_preprocess_estimate_update(preprocess_state, audio_frame);
 \end_layout
 
 \begin_layout Standard
@@ -1417,7 +1416,7 @@ The preprocessor state can be destroyed using:
 speex_preprocess_state_destroy(preprocess_state);
 \end_layout
 
-\begin_layout Subsection
+\begin_layout Section
 Echo Cancellation
 \begin_inset LatexCommand \label{sub:Echo-Cancellation}
 
@@ -1488,7 +1487,7 @@ Once the echo canceller state is created, audio can be processed by:
 \end_layout
 
 \begin_layout LyX-Code
-speex_echo_cancel(echo_state, input_frame, echo_frame, output_frame, residue);
+speex_echo_cancellation(echo_state, input_frame, echo_frame, output_frame);
 \end_layout
 
 \begin_layout Standard
@@ -1506,13 +1505,6 @@ echo_frame
 output_frame
 \family default
  is the signal with echo removed.
- The 
-\family typewriter
-residue
-\family default
- parameter is optional (you can set it to NULL) and is used to return the
- estimated power spectrum of the echo residue so it can be removed by the
- preprocessor (if you with to use it).
  
 \end_layout
 
@@ -1549,32 +1541,38 @@ read_from_soundcard(input_frame, frame_size);
 \end_layout
 
 \begin_layout LyX-Code
-speex_echo_cancel(echo_state, input_frame, echo_frame, output_frame, residue);
+speex_echo_cancellation(echo_state, input_frame, echo_frame, output_frame);
 \end_layout
 
 \begin_layout Standard
-As stated above, if you wish to further reduce the echo present in the signal,
- you can do so by passing 
+If you wish to further reduce the echo present in the signal, you can do
+ so by 
 \family typewriter
-residue
+associating the echo canceller to the preprocessor
 \family default
- as the last parameter of 
-\family typewriter
-speex_preprocess()
-\family default
- function (see Section 
+ (see Section 
 \begin_inset LatexCommand \ref{sub:Preprocessor}
 
 \end_inset
 
 ).
+ This is done by calling:
+\end_layout
+
+\begin_layout LyX-Code
+speex_preprocess_ctl(preprocess_state, SPEEX_PREPROCESS_SET_ECHO_STATE,
+ echo_state);
 \end_layout
 
 \begin_layout Standard
-As of version 1.2-beta1, there is an alternative, simpler API that can be
+in the initialisation.
+\end_layout
+
+\begin_layout Standard
+As of version 1.2-beta2, there is an alternative, simpler API that can be
  used instead of 
 \emph on
-speex_echo_cancel()
+speex_echo_cancellation()
 \emph default
 .
  When audio capture and playback are handled asynchronously (e.g.
@@ -1601,7 +1599,7 @@ every time an audio frame is played.
 \end_layout
 
 \begin_layout LyX-Code
-speex_echo_capture(echo_state, input_frame, output_frame, residue);
+speex_echo_capture(echo_state, input_frame, output_frame);
 \end_layout
 
 \begin_layout Standard
@@ -1619,12 +1617,13 @@ speex_echo_capture()
 speex_echo_cancel()
 \emph default
 .
- When capture and playback are done synchronously, 
+ A side effect of using this alternate API is that the playback audio is
+ delayed by two frames, which is the normal delay caused by the soundcard.
+ When capture and playback are already synchronised, 
 \emph on
-speex_echo_cancel()
+speex_echo_cancellation()
 \emph default
- is still prefered since it gives better control on the exact input/echo
- timing.
+ is preferable since it gives better control on the exact input/echo timing.
 \end_layout
 
 \begin_layout Standard
@@ -1644,7 +1643,7 @@ It is also possible to reset the state of the echo canceller so it can be
 speex_echo_state_reset(echo_state);
 \end_layout
 
-\begin_layout Subsubsection
+\begin_layout Subsection
 Troubleshooting
 \end_layout
 
@@ -1730,7 +1729,7 @@ http://www.embeddedstar.com/articles/2003/7/article20030720-1.html
  same.
 \end_layout
 
-\begin_layout Subsection
+\begin_layout Section
 Codec Options (speex_*_ctl)
 \begin_inset LatexCommand \label{sub:Codec-Options}
 
@@ -1962,7 +1961,7 @@ SPEEX_GET_PLC_TUNING* Get the current tuning of the encoder for PLC (integer
  normally only used internally
 \end_layout
 
-\begin_layout Subsection
+\begin_layout Section
 Mode queries
 \begin_inset LatexCommand \label{sub:Mode-queries}
 
@@ -2006,7 +2005,7 @@ ptr
  
 \end_layout
 
-\begin_layout Subsection
+\begin_layout Section
 Preprocessor options
 \begin_inset LatexCommand \label{sub:Preprocessor-options}
 
@@ -2074,7 +2073,62 @@ SPEEX_PREPROCESS_SET_DEREVERB_DECAY
 SPEEX_PREPROCESS_GET_DEREVERB_DECAY
 \end_layout
 
-\begin_layout Subsection
+\begin_layout Description
+SPEEX_PREPROCESS_SET_PROB_START
+\end_layout
+
+\begin_layout Description
+SPEEX_PREPROCESS_GET_PROB_START
+\end_layout
+
+\begin_layout Description
+SPEEX_PREPROCESS_SET_PROB_CONTINUE
+\end_layout
+
+\begin_layout Description
+SPEEX_PREPROCESS_GET_PROB_CONTINUE
+\end_layout
+
+\begin_layout Description
+SPEEX_PREPROCESS_SET_NOISE_SUPPRESS Set maximum attenuation of the noise
+ in dB (negative number)
+\end_layout
+
+\begin_layout Description
+SPEEX_PREPROCESS_GET_NOISE_SUPPRESS Get maximum attenuation of the noise
+ in dB (negative number)
+\end_layout
+
+\begin_layout Description
+SPEEX_PREPROCESS_SET_ECHO_SUPPRESS Set maximum attenuation of the residual
+ echo in dB (negative number)
+\end_layout
+
+\begin_layout Description
+SPEEX_PREPROCESS_GET_ECHO_SUPPRESS Set maximum attenuation of the residual
+ echo in dB (negative number)
+\end_layout
+
+\begin_layout Description
+SPEEX_PREPROCESS_SET_ECHO_SUPPRESS_ACTIVE Set maximum attenuation of the
+ echo in dB when near end is active (negative number)
+\end_layout
+
+\begin_layout Description
+SPEEX_PREPROCESS_GET_ECHO_SUPPRESS_ACTIVE Set maximum attenuation of the
+ echo in dB when near end is active (negative number)
+\end_layout
+
+\begin_layout Description
+SPEEX_PREPROCESS_SET_ECHO_STATE Set the associated echo canceller for residual
+ echo suppression (NULL for no residual echo suppression)
+\end_layout
+
+\begin_layout Description
+SPEEX_PREPROCESS_GET_ECHO_STATE Get the associated echo canceller
+\end_layout
+
+\begin_layout Section
 Packing and in-band signalling
 \begin_inset LatexCommand \index{in-band signalling}
 
@@ -2685,7 +2739,7 @@ Finally, applications may define custom in-band messages using mode 13.
 
 \end_layout
 
-\begin_layout Section
+\begin_layout Chapter
 Formats and standards
 \begin_inset LatexCommand \index{standards}
 
@@ -2744,7 +2798,7 @@ For encoders, at least one narrowband or wideband mode MUST be supported.
  some modes.
 \end_layout
 
-\begin_layout Subsection
+\begin_layout Section
 RTP
 \begin_inset LatexCommand \index{RTP}
 
@@ -2770,7 +2824,7 @@ The RTP payload draft is included in appendix
  
 \end_layout
 
-\begin_layout Subsection
+\begin_layout Section
 MIME Type
 \end_layout
 
@@ -2783,7 +2837,7 @@ audio/speex
  in the near future.
 \end_layout
 
-\begin_layout Subsection
+\begin_layout Section
 Ogg
 \begin_inset LatexCommand \index{Ogg}
 
@@ -3427,7 +3481,7 @@ clearpage
 
 \end_layout
 
-\begin_layout Section
+\begin_layout Chapter
 Introduction to CELP Coding
 \begin_inset LatexCommand \index{CELP}
 
@@ -3479,7 +3533,7 @@ This section describes the basic ideas behind CELP.
  This is still a work in progress.
 \end_layout
 
-\begin_layout Subsection
+\begin_layout Section
 Source-Filter Model of Speech Prediction
 \end_layout
 
@@ -3572,7 +3626,7 @@ The CELP model of speech synthesis (decoder)
 
 \end_layout
 
-\begin_layout Subsection
+\begin_layout Section
 Linear Prediction (LPC)
 \begin_inset LatexCommand \index{linear prediction}
 
@@ -3742,7 +3796,7 @@ Because
  to filtering in the frequency domain, reducing sharp resonances.
 \end_layout
 
-\begin_layout Subsection
+\begin_layout Section
 Pitch Prediction
 \begin_inset LatexCommand \index{pitch}
 
@@ -3792,7 +3846,7 @@ where
 .
 \end_layout
 
-\begin_layout Subsection
+\begin_layout Section
 Innovation Codebook
 \end_layout
 
@@ -3847,7 +3901,7 @@ X(z)=\frac{C(z)}{A(z)\left(1-\beta z^{-T}\right)}\]
 
 \end_layout
 
-\begin_layout Subsection
+\begin_layout Section
 Noise Weighting
 \begin_inset LatexCommand \index{error weighting}
 
@@ -4034,7 +4088,7 @@ Standard noise shaping in CELP.
 
 \end_layout
 
-\begin_layout Subsection
+\begin_layout Section
 Analysis-by-Synthesis
 \end_layout
 
@@ -4070,7 +4124,7 @@ In order to achieve real-time encoding using limited computing resources,
 
 \end_layout
 
-\begin_layout Section
+\begin_layout Chapter
 Speex narrowband mode
 \begin_inset LatexCommand \label{sec:Speex-narrowband-mode}
 
@@ -4115,7 +4169,7 @@ Dynamically-selectable codebooks (LSP, pitch and innovation)
 sub-vector fixed (innovation) codebooks
 \end_layout
 
-\begin_layout Subsection
+\begin_layout Section
 Whole-Frame Analysis
 \begin_inset LatexCommand \index{linear prediction}
 
@@ -4239,7 +4293,7 @@ Frame open-loop analysis
 
 \end_layout
 
-\begin_layout Subsection
+\begin_layout Section
 Sub-Frame Analysis-by-Synthesis
 \end_layout
 
@@ -4407,7 +4461,7 @@ n (fixed codebook) signal instead of an algebraic codebook.
  
 \end_layout
 
-\begin_layout Subsection
+\begin_layout Section
 Bit allocation
 \end_layout
 
@@ -6415,7 +6469,7 @@ Quality versus bit-rate
 
 \end_layout
 
-\begin_layout Subsection
+\begin_layout Section
 Perceptual enhancement
 \begin_inset LatexCommand \index{perceptual enhancement}
 
@@ -6476,7 +6530,7 @@ where
 
 \end_layout
 
-\begin_layout Section
+\begin_layout Chapter
 Speex wideband mode (sub-band CELP)
 \begin_inset LatexCommand \index{wideband}
 
@@ -6529,7 +6583,7 @@ embedded narrowband bit-stream
  encoding is described in this section.
 \end_layout
 
-\begin_layout Subsection
+\begin_layout Section
 Linear Prediction
 \end_layout
 
@@ -6542,7 +6596,7 @@ The linear prediction part used for the high-band is very similar to what
  is then quantized using 6 bits, too.
 \end_layout
 
-\begin_layout Subsection
+\begin_layout Section
 Pitch Prediction
 \end_layout
 
@@ -6557,7 +6611,7 @@ That part is easy: there's no pitch prediction for the high-band.
  (pitch).
 \end_layout
 
-\begin_layout Subsection
+\begin_layout Section
 Excitation Quantization
 \end_layout
 
@@ -6566,7 +6620,7 @@ The high-band excitation is coded in the same way as for narrowband.
  
 \end_layout
 
-\begin_layout Subsection
+\begin_layout Section
 Bit allocation
 \end_layout
 
@@ -7117,7 +7171,7 @@ clearpage
 
 \end_layout
 
-\begin_layout Section
+\begin_layout Chapter
 \start_of_appendix
 FAQ
 \end_layout
@@ -7458,7 +7512,7 @@ d as a sum of unit pulses, thus making the codebook search much more efficient.
 
 \end_layout
 
-\begin_layout Section
+\begin_layout Chapter
 Sample code
 \begin_inset LatexCommand \label{sec:Sample-code}
 
@@ -7482,7 +7536,7 @@ where both files are raw (no header) files encoded at 16 bits per sample
  (in the machine natural endianness).
 \end_layout
 
-\begin_layout Subsection
+\begin_layout Section
 sampleenc.c
 \end_layout
 
@@ -7501,7 +7555,7 @@ preview false
 
 \end_layout
 
-\begin_layout Subsection
+\begin_layout Section
 sampledec.c
 \end_layout
 
@@ -7526,7 +7580,7 @@ preview false
 
 \end_layout
 
-\begin_layout Section
+\begin_layout Chapter
 IETF RTP Profile
 \begin_inset LatexCommand \label{sec:IETF-draft}
 
@@ -7550,7 +7604,7 @@ preview false
 
 \end_layout
 
-\begin_layout Section
+\begin_layout Chapter
 Speex License
 \begin_inset LatexCommand \label{sec:Speex-License}
 
@@ -7602,7 +7656,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS ``AS
 
 \end_layout
 
-\begin_layout Section
+\begin_layout Chapter
 GNU Free Documentation License
 \end_layout
 
@@ -7618,7 +7672,7 @@ Copyright (C) 2000 Free Software Foundation, Inc.
  
 \end_layout
 
-\begin_layout Subsection*
+\begin_layout Section*
 0.
  PREAMBLE
 \end_layout
@@ -7652,7 +7706,7 @@ We have designed this License in order to use it for manuals for free software,
  
 \end_layout
 
-\begin_layout Subsection*
+\begin_layout Section*
 1.
  APPLICABILITY AND DEFINITIONS
 \end_layout
@@ -7730,7 +7784,7 @@ The "Title Page" means, for a printed book, the title page itself, plus
  preceding the beginning of the body of the text.
 \end_layout
 
-\begin_layout Subsection*
+\begin_layout Section*
 2.
  VERBATIM COPYING
 \end_layout
@@ -7753,7 +7807,7 @@ You may also lend copies, under the same conditions stated above, and you
  may publicly display copies.
 \end_layout
 
-\begin_layout Subsection*
+\begin_layout Section*
 3.
  COPYING IN QUANTITY
 \end_layout
@@ -7802,7 +7856,7 @@ It is requested, but not required, that you contact the authors of the Document
  
 \end_layout
 
-\begin_layout Subsection*
+\begin_layout Section*
 4.
  MODIFICATIONS
 \end_layout
@@ -7954,7 +8008,7 @@ nt of any Modified Version.
  
 \end_layout
 
-\begin_layout Subsection*
+\begin_layout Section*
 5.
  COMBINING DOCUMENTS
 \end_layout
@@ -7986,7 +8040,7 @@ In the combination, you must combine any sections entitled "History" in
  You must delete all sections entitled "Endorsements."
 \end_layout
 
-\begin_layout Subsection*
+\begin_layout Section*
 6.
  COLLECTIONS OF DOCUMENTS
 \end_layout
@@ -8007,7 +8061,7 @@ You may extract a single document from such a collection, and distribute
  
 \end_layout
 
-\begin_layout Subsection*
+\begin_layout Section*
 7.
  AGGREGATION WITH INDEPENDENT WORKS
 \end_layout
@@ -8031,7 +8085,7 @@ If the Cover Text requirement of section 3 is applicable to these copies
  Otherwise they must appear on covers around the whole aggregate.
 \end_layout
 
-\begin_layout Subsection*
+\begin_layout Section*
 8.
  TRANSLATION
 \end_layout
@@ -8049,7 +8103,7 @@ Translation is considered a kind of modification, so you may distribute
  version of this License, the original English version will prevail.
 \end_layout
 
-\begin_layout Subsection*
+\begin_layout Section*
 9.
  TERMINATION
 \end_layout
@@ -8065,7 +8119,7 @@ You may not copy, modify, sublicense, or distribute the Document except
  
 \end_layout
 
-\begin_layout Subsection*
+\begin_layout Section*
 10.
  FUTURE REVISIONS OF THIS LICENSE
 \end_layout
