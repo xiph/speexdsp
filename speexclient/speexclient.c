@@ -70,6 +70,9 @@ int main(int argc, char *argv[])
    int local_port, remote_port;
    int nfds;
    struct pollfd *pfds;
+   SpeexPreprocessState *preprocess;
+   AlsaDevice *audio_dev;
+   int tmp;
 
    if (argc != 5)
    {
@@ -113,11 +116,11 @@ int main(int argc, char *argv[])
       exit(1);
    }
 
-   AlsaDevice *audio_dev = alsa_device_open(argv[1], SAMPLING_RATE, 1, FRAME_SIZE);
-   int tmp;
+   /* Setup audio device */
+   audio_dev = alsa_device_open(argv[1], SAMPLING_RATE, 1, FRAME_SIZE);
    
+   /* Setup the encoder and decoder in wideband */
    void *enc_state, *dec_state;
-   SpeexPreprocessState *preprocess;
    enc_state = speex_encoder_init(&speex_wb_mode);
    tmp = 8;
    speex_encoder_ctl(enc_state, SPEEX_SET_QUALITY, &tmp);
@@ -129,10 +132,10 @@ int main(int argc, char *argv[])
    SpeexBits enc_bits, dec_bits;
    speex_bits_init(&enc_bits);
    speex_bits_init(&dec_bits);
-   preprocess = speex_preprocess_state_init(FRAME_SIZE, SAMPLING_RATE);
+   
    
    struct sched_param param;
-   //param.sched_priority = 40;
+   /*param.sched_priority = 40; */
    param.sched_priority = sched_get_priority_min(SCHED_FIFO);
    if (sched_setscheduler(0,SCHED_FIFO,&param))
       perror("sched_setscheduler");
@@ -140,25 +143,32 @@ int main(int argc, char *argv[])
    int send_timestamp = 0;
    int recv_started=0;
    
+   /* Setup all file descriptors for poll()ing */
    nfds = alsa_device_nfds(audio_dev);
    pfds = malloc(sizeof(*pfds)*(nfds+1));
    alsa_device_getfds(audio_dev, pfds, nfds);
-
    pfds[nfds].fd = sd;
    pfds[nfds].events = POLLIN;
 
-   alsa_device_start(audio_dev);
-
+   /* Setup jitter buffer using decoder */
    SpeexJitter jitter;
    speex_jitter_init(&jitter, dec_state, SAMPLING_RATE);
+   
+   /* Echo canceller with 200 ms tail length */
    SpeexEchoState *echo_state = speex_echo_state_init(FRAME_SIZE, 10*FRAME_SIZE);
    tmp = SAMPLING_RATE;
    speex_echo_ctl(echo_state, SPEEX_ECHO_SET_SAMPLING_RATE, &tmp);
 
+   /* Setup preprocessor and associate with echo canceller for residual echo suppression */
+   preprocess = speex_preprocess_state_init(FRAME_SIZE, SAMPLING_RATE);
    speex_preprocess_ctl(preprocess, SPEEX_PREPROCESS_SET_ECHO_STATE, echo_state);
    
+   alsa_device_start(audio_dev);
+   
+   /* Infinite loop on capture, playback and receiving packets */
    while (1)
    {
+      /* Wait for either 1) capture 2) playback 3) socket data */
       poll(pfds, nfds+1, -1);
       /* Received packets */
       if (pfds[nfds].revents & POLLIN)
@@ -170,38 +180,53 @@ int main(int argc, char *argv[])
    
          if ((payload & 0x80000000) == 0) 
          {
+            /* Put content of the packet into the jitter buffer, except for the pseudo-header */
             speex_jitter_put(&jitter, msg+8, n-8, recv_timestamp);
             recv_started = 1;
          }
 
       }
+      /* Ready to play a frame (playback) */
       if (alsa_device_playback_ready(audio_dev, pfds, nfds))
       {
          short pcm[FRAME_SIZE];
          if (recv_started)
          {
+            /* Get audio from the jitter buffer */
             speex_jitter_get(&jitter, pcm, NULL);
          } else {
             for (i=0;i<FRAME_SIZE;i++)
                pcm[i] = 0;
          }
+         /* Playback the audio and reset the echo canceller if we got an underrun */
          if (alsa_device_write(audio_dev, pcm, FRAME_SIZE))
             speex_echo_state_reset(echo_state);
+         /* Put frame into playback buffer */
          speex_echo_playback(echo_state, pcm);
       }
+      /* Audio available from the soundcard (capture) */
       if (alsa_device_capture_ready(audio_dev, pfds, nfds))
       {
          short pcm[FRAME_SIZE], pcm2[FRAME_SIZE];
          char outpacket[MAX_MSG];
+         /* Get audio from the soundcard */
          alsa_device_read(audio_dev, pcm, FRAME_SIZE);
+         
+         /* Perform echo cancellation */
          speex_echo_capture(echo_state, pcm, pcm2);
          for (i=0;i<FRAME_SIZE;i++)
             pcm[i] = pcm2[i];
          
          speex_bits_reset(&enc_bits);
+         
+         /* Apply noise/echo suppression */
          speex_preprocess_run(preprocess, pcm);
+         
+         /* Encode */
          speex_encode_int(enc_state, pcm, &enc_bits);
          int packetSize = speex_bits_write(&enc_bits, outpacket+8, MAX_MSG);
+         
+         /* Pseudo header: four null bytes and a 32-bit timestamp */
          ((int*)outpacket)[0] = htonl(0);
          ((int*)outpacket)[1] = send_timestamp;
          send_timestamp += FRAME_SIZE;
