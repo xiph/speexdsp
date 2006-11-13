@@ -33,7 +33,7 @@
 
 #ifndef SPEEX_ECHO_H
 #define SPEEX_ECHO_H
-/** @defgroup SpeexEchoState Acoustic echo canceller
+/** @defgroup SpeexEchoState SpeexEchoState: Acoustic echo canceller
  *  This is the acoustic echo canceller module.
  *  @{
  */
@@ -58,6 +58,7 @@ struct SpeexEchoState_;
  * This holds the state of the echo canceller. You need one per channel. 
 */
 
+/** Internal echo canceller state. Should never be accessed directly. */
 typedef struct SpeexEchoState_ SpeexEchoState;
 
 /** Creates a new echo canceller state

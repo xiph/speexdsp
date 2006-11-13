@@ -35,7 +35,7 @@
 
 #ifndef BITS_H
 #define BITS_H
-/** @defgroup SpeexBits Bit-stream manipulations
+/** @defgroup SpeexBits SpeexBits: Bit-stream manipulations
  *  This is the structure that holds the bit-stream when encoding or decoding
  * with Speex. It allows some manipulations as well.
  *  @{
@@ -86,8 +86,9 @@ void speex_bits_read_whole_bytes(SpeexBits *bits, char *bytes, int len);
 
 /** Write the content of a bit-stream to an area of memory
  * 
+ * @param bits Bit-stream to operate on
  * @param bytes Memory location where to write the bits
- * @param len Maximum number of bytes to write (i.e. size of the "bytes" buffer)
+ * @param max_len Maximum number of bytes to write (i.e. size of the "bytes" buffer)
  * @return Number of bytes written to the "bytes" buffer
 */
 int speex_bits_write(SpeexBits *bits, char *bytes, int max_len);

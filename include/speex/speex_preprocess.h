@@ -36,7 +36,7 @@
 
 #ifndef SPEEX_PREPROCESS_H
 #define SPEEX_PREPROCESS_H
-/** @defgroup SpeexPreprocessState Preprocessor
+/** @defgroup SpeexPreprocessState SpeexPreprocessState: The Speex preprocessor
  *  This is the Speex preprocessor. The preprocess can do noise suppression, 
  * residual echo suppression (after using the echo canceller), automatic
  * gain control (AGC) and voice activity detection (VAD).
@@ -48,9 +48,11 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
+   
+/** State of the preprocessor (one per channel). Should never be accessed directly. */
 struct SpeexPreprocessState_;
 
+/** State of the preprocessor (one per channel). Should never be accessed directly. */
 typedef struct SpeexPreprocessState_ SpeexPreprocessState;
 
 
@@ -128,10 +130,14 @@ int speex_preprocess_ctl(SpeexPreprocessState *st, int request, void *ptr);
 /** Get preprocessor dereverb decay */
 #define SPEEX_PREPROCESS_GET_DEREVERB_DECAY 13
 
+/** Set probability required for the VAD to go from silence to voice */
 #define SPEEX_PREPROCESS_SET_PROB_START 14
+/** Get probability required for the VAD to go from silence to voice */
 #define SPEEX_PREPROCESS_GET_PROB_START 15
 
+/** Set probability required for the VAD to stay in the voice state (integer percent) */
 #define SPEEX_PREPROCESS_SET_PROB_CONTINUE 16
+/** Get probability required for the VAD to stay in the voice state (integer percent) */
 #define SPEEX_PREPROCESS_GET_PROB_CONTINUE 17
 
 /** Set maximum attenuation of the noise in dB (negative number) */

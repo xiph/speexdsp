@@ -35,7 +35,7 @@
 
 #ifndef SPEEX_JITTER_H
 #define SPEEX_JITTER_H
-/** @defgroup JitterBuffer Adaptive jitter buffer
+/** @defgroup JitterBuffer JitterBuffer: Adaptive jitter buffer
  *  This is the jitter buffer that reorders UDP/RTP packets and adjusts the buffer size
  * to maintain good quality and low latency.
  *  @{
@@ -48,24 +48,32 @@
 extern "C" {
 #endif
 
+/** Generic adaptive jitter buffer state */
 struct JitterBuffer_;
 
+/** Generic adaptive jitter buffer state */
 typedef struct JitterBuffer_ JitterBuffer;
 
+/** Definition of an incoming packet */
 typedef struct _JitterBufferPacket JitterBufferPacket;
 
+/** Definition of an incoming packet */
 struct _JitterBufferPacket {
-   char        *data;
-   spx_uint32_t len;
-   spx_uint32_t timestamp;
-   spx_uint32_t span;
+   char        *data;       /**< Data bytes contained in the packet */
+   spx_uint32_t len;        /**< Length of the packet in bytes */
+   spx_uint32_t timestamp;  /**< Timestamp for the packet */
+   spx_uint32_t span;       /**< Time covered by the packet (same units as timestamp) */
 };
 
-
+/** Packet has been retrieved */
 #define JITTER_BUFFER_OK 0
+/** Packet is missing */
 #define JITTER_BUFFER_MISSING 1
+/** Packet is incomplete (does not cover the entive tick */
 #define JITTER_BUFFER_INCOMPLETE 2
+/** There was an error in the jitter buffer */
 #define JITTER_BUFFER_INTERNAL_ERROR -1
+/** Invalid argument */
 #define JITTER_BUFFER_BAD_ARGUMENT -2
 
 /** Initialises jitter buffer 
@@ -101,7 +109,7 @@ void jitter_buffer_tick(JitterBuffer *jitter);
 
 /* @} */
 
-/** @defgroup SpeexJitter Adaptive jitter buffer specifically for Speex
+/** @defgroup SpeexJitter SpeexJitter: Adaptive jitter buffer specifically for Speex
  *  This is the jitter buffer that reorders UDP/RTP packets and adjusts the buffer size
  * to maintain good quality and low latency. This is a simplified version that works only
  * with Speex, but is much easier to use.
@@ -110,16 +118,18 @@ void jitter_buffer_tick(JitterBuffer *jitter);
 
 /** Speex jitter-buffer state. Never use it directly! */
 typedef struct SpeexJitter {
-   SpeexBits current_packet;                                              /**< Current Speex packet                */
-   int valid_bits;                                                        /**< True if Speex bits are valid        */
-   JitterBuffer *packets;
-   void *dec;                                                             /**< Pointer to Speex decoder            */
-   spx_int32_t frame_size;                                                        /**< Frame size of Speex decoder         */
+   SpeexBits current_packet;         /**< Current Speex packet */
+   int valid_bits;                   /**< True if Speex bits are valid */
+   JitterBuffer *packets;            /**< Generic jitter buffer state */
+   void *dec;                        /**< Pointer to Speex decoder */
+   spx_int32_t frame_size;           /**< Frame size of Speex decoder */
 } SpeexJitter;
 
 /** Initialise jitter buffer 
  * 
  * @param jitter State of the Speex jitter buffer
+ * @param decoder Speex decoder to call
+ * @param sampling_rate Sampling rate used by the decoder
 */
 void speex_jitter_init(SpeexJitter *jitter, void *decoder, int sampling_rate);
 
