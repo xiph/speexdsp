@@ -1418,6 +1418,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\libspeex\filterbank.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\libspeex\filters.c"
 				>
 			</File>
