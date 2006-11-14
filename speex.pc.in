@@ -10,5 +10,5 @@ Description: Speex is an audio codec tuned for speech
 Version: @SPEEX_VERSION@
 Requires:
 Conflicts:
-Libs: -L${libdir} -lspeex
+Libs: -L${libdir} -lspeex -lm
 Cflags: -I${includedir}
