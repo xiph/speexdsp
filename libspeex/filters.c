@@ -83,8 +83,8 @@ void highpass(const spx_word16_t *x, spx_word16_t *y, int len, int filtID, spx_m
       spx_word16_t yi;
       spx_word32_t vout = ADD32(MULT16_16(num[0], x[i]),mem[0]);
       yi = EXTRACT16(SATURATE(PSHR32(vout,14),32767));
-      mem[0] = ADD32(MAC16_16(mem[1], num[1],x[i]), MULT16_32_Q14(-den[1],vout));
-      mem[1] = ADD32(MULT16_16(num[2],x[i]), MULT16_32_Q14(-den[2],vout));
+      mem[0] = ADD32(MAC16_16(mem[1], num[1],x[i]), SHL32(MULT16_32_Q15(-den[1],vout),1));
+      mem[1] = ADD32(MULT16_16(num[2],x[i]), SHL32(MULT16_32_Q15(-den[2],vout),1));
       y[i] = yi;
    }
 }
@@ -218,10 +218,10 @@ spx_word16_t compute_rms16(const spx_word16_t *x, int len)
       for (i=0;i<len;i+=4)
       {
          spx_word32_t sum2=0;
-         sum2 = MAC16_16(sum2,PSHR16(x[i],1),PSHR16(x[i],1));
-         sum2 = MAC16_16(sum2,PSHR16(x[i+1],1),PSHR16(x[i+1],1));
-         sum2 = MAC16_16(sum2,PSHR16(x[i+2],1),PSHR16(x[i+2],1));
-         sum2 = MAC16_16(sum2,PSHR16(x[i+3],1),PSHR16(x[i+3],1));
+         sum2 = MAC16_16(sum2,SHR16(x[i],1),SHR16(x[i],1));
+         sum2 = MAC16_16(sum2,SHR16(x[i+1],1),SHR16(x[i+1],1));
+         sum2 = MAC16_16(sum2,SHR16(x[i+2],1),SHR16(x[i+2],1));
+         sum2 = MAC16_16(sum2,SHR16(x[i+3],1),SHR16(x[i+3],1));
          sum = ADD32(sum,SHR32(sum2,6));
       }
       return SHL16(spx_sqrt(DIV32(sum,len)),4);
