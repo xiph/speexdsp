@@ -838,9 +838,9 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
          for (i=0;i<st->lpcSize;i++)
             st->mem_sw[i]=mem[i];
       
-      /* Compute target signal */
+      /* Compute target signal (saturation prevents overflows on clipped input speech) */
       for (i=0;i<st->subframeSize;i++)
-         target[i]=SUB16(sw[i],PSHR32(ringing[i],1));
+         target[i]=EXTRACT16(SATURATE(SUB32(sw[i],PSHR32(ringing[i],1)),32767));
 
       /* Reset excitation */
       for (i=0;i<st->subframeSize;i++)
@@ -908,8 +908,9 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
          for (i=0;i<st->subframeSize;i++)
             innov[i]=0;
          
+         /* FIXME: Make sure this is save from overflows (so far so good) */
          for (i=0;i<st->subframeSize;i++)
-            real_exc[i] = SUB16(real_exc[i], PSHR32(exc32[i],SIG_SHIFT-1));
+            real_exc[i] = SUB16(real_exc[i], EXTRACT16(PSHR32(exc32[i],SIG_SHIFT-1)));
 
          ener = SHL32(EXTEND32(compute_rms16(real_exc, st->subframeSize)),SIG_SHIFT);
          
@@ -960,7 +961,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
             signal_mul(innov, innov, ener, st->subframeSize);
 
             for (i=0;i<st->subframeSize;i++)
-               exc[i] = EXTRACT16(PSHR32(ADD32(SHL32(exc32[i],1),innov[i]),SIG_SHIFT));
+               exc[i] = EXTRACT16(SATURATE32(PSHR32(ADD32(SHL32(exc32[i],1),innov[i]),SIG_SHIFT),32767));
          } else {
             speex_error("No fixed codebook");
          }
@@ -1426,6 +1427,7 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
       int qe;
       qe = speex_bits_unpack_unsigned(bits, 5);
 #ifdef FIXED_POINT
+      /* FIXME: Perhaps we could slightly lower the gain here when the output is going to saturate? */
       ol_gain = MULT16_32_Q15(28406,ol_gain_table[qe]);
 #else
       ol_gain = SIG_SCALING*exp(qe/3.5);
@@ -1638,7 +1640,7 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
             SUBMODE(innovation_unquant)(innov2, SUBMODE(innovation_params), st->subframeSize, bits, stack, &st->seed);
             signal_mul(innov2, innov2, MULT16_32_Q15(QCONST16(0.454545,15),ener), st->subframeSize);
             for (i=0;i<st->subframeSize;i++)
-               exc[i] = ADD16(exc[i],PSHR32(innov2[i],SIG_SHIFT));
+               exc[i] = EXTRACT16(SATURATE32(ADD32(EXTEND32(exc[i]),PSHR32(innov2[i],SIG_SHIFT)),32767));
             if (innov_save)
             {
                for (i=0;i<st->subframeSize;i++)
