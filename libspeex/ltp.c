@@ -603,6 +603,14 @@ spx_word32_t *cumul_gain
          break;
       }
    }
+   for (i=-end;i<nsf;i++)
+   {
+      if (ABS16(exc2[i])>16383)
+      {
+         scaledown=1;
+         break;
+      }
+   }
 #endif
    if (N>end-start+1)
       N=end-start+1;

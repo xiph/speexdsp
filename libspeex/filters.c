@@ -784,7 +784,7 @@ char *stack
    spx_word16_t g1, g2;
    spx_word16_t ngain;
    spx_word16_t gg1, gg2;
-
+   int scaledown=0;
 #if 0 /* Set to 1 to enable full pitch search */
    int nol_pitch[6];
    spx_word16_t nol_pitch_coef[6];
@@ -819,6 +819,23 @@ char *stack
    else
       interp_pitch(exc, iexc+nsf, -corr_pitch, 80);
 
+#ifdef FIXED_POINT
+   for (i=0;i<nsf;i++)
+   {
+      if (ABS16(exc[i])>16383)
+      {
+         scaledown = 1;
+         break;
+      }
+   }
+   if (scaledown)
+   {
+      for (i=0;i<nsf;i++)
+         exc[i] = SHR16(exc[i],1);
+      for (i=0;i<2*nsf;i++)
+         iexc[i] = SHR16(iexc[i],1);
+   }
+#endif
    /*interp_pitch(exc, iexc+2*nsf, 2*corr_pitch, 80);*/
    
    /*printf ("%d %d %f\n", pitch, corr_pitch, max_corr*ener_1);*/
@@ -898,5 +915,14 @@ char *stack
    
    for (i=0;i<nsf;i++)
       new_exc[i] = MULT16_16_Q14(ngain, new_exc[i]);
+#ifdef FIXED_POINT
+   if (scaledown)
+   {
+      for (i=0;i<nsf;i++)
+         exc[i] = SHL16(exc[i],1);
+      for (i=0;i<nsf;i++)
+         new_exc[i] = SHL16(SATURATE16(new_exc[i],16383),1);
+   }
+#endif
 }
 
