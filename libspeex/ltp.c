@@ -177,7 +177,9 @@ void open_loop_nbest_pitch(spx_word16_t *sw, int start, int end, int len, int *p
    spx_word32_t e0;
    VARDECL(spx_word32_t *corr);
    VARDECL(spx_word32_t *energy);
+#ifdef FIXED_POINT
    int scaledown = 0;
+#endif
    
    ALLOC(best_score, N, spx_word32_t);
    ALLOC(best_ener, N, spx_word32_t);

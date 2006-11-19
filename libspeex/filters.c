@@ -784,7 +784,9 @@ char *stack
    spx_word16_t g1, g2;
    spx_word16_t ngain;
    spx_word16_t gg1, gg2;
+#ifdef FIXED_POINT
    int scaledown=0;
+#endif
 #if 0 /* Set to 1 to enable full pitch search */
    int nol_pitch[6];
    spx_word16_t nol_pitch_coef[6];
