@@ -1621,7 +1621,7 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
             }
          } else {
             for (i=0;i<st->subframeSize;i++)
-               exc[i]=PSHR32(ADD32(SHL32(exc32[i],1),innov[i]),SIG_SHIFT);
+               exc[i]=EXTRACT16(SATURATE32(PSHR32(ADD32(SHL32(exc32[i],1),innov[i]),SIG_SHIFT),32767));
             /*print_vec(exc, 40, "innov");*/
          }
          if (innov_save)

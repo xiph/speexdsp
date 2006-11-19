@@ -210,7 +210,7 @@ static void mix_and_saturate(spx_word32_t *x0, spx_word32_t *x1, spx_word16_t *o
    {
       spx_word32_t tmp;
 #ifdef FIXED_POINT
-      tmp=PSHR(x0[i]-x1[i],SIG_SHIFT-1);
+      tmp=PSHR32(SUB32(x0[i],x1[i]),SIG_SHIFT-1);
 #else
       tmp=2*(x0[i]-x1[i]);
 #endif
@@ -219,7 +219,7 @@ static void mix_and_saturate(spx_word32_t *x0, spx_word32_t *x1, spx_word16_t *o
       else if (tmp<-32767)
          out[i] = -32767;
       else
-         out[i] = tmp;
+         out[i] = EXTRACT16(tmp);
    }
 }
 

@@ -650,19 +650,19 @@ void fir_mem_up(const spx_sig_t *x, const spx_word16_t *a, spx_sig_t *y, int N, 
          a1 = a[j+1];
          x1 = xx[N-2+j-i];
 
-         y0 = ADD32(y0,SHR(MULT16_16(a0, x1),2));
-         y1 = ADD32(y1,SHR(MULT16_16(a1, x1),2));
-         y2 = ADD32(y2,SHR(MULT16_16(a0, x0),2));
-         y3 = ADD32(y3,SHR(MULT16_16(a1, x0),2));
+         y0 = ADD32(y0,SHR32(MULT16_16(a0, x1),2));
+         y1 = ADD32(y1,SHR32(MULT16_16(a1, x1),2));
+         y2 = ADD32(y2,SHR32(MULT16_16(a0, x0),2));
+         y3 = ADD32(y3,SHR32(MULT16_16(a1, x0),2));
 
          a0 = a[j+2];
          a1 = a[j+3];
          x0 = xx[N+j-i];
 
-         y0 = ADD32(y0,SHR(MULT16_16(a0, x0),2));
-         y1 = ADD32(y1,SHR(MULT16_16(a1, x0),2));
-         y2 = ADD32(y2,SHR(MULT16_16(a0, x1),2));
-         y3 = ADD32(y3,SHR(MULT16_16(a1, x1),2));
+         y0 = ADD32(y0,SHR32(MULT16_16(a0, x0),2));
+         y1 = ADD32(y1,SHR32(MULT16_16(a1, x0),2));
+         y2 = ADD32(y2,SHR32(MULT16_16(a0, x1),2));
+         y3 = ADD32(y3,SHR32(MULT16_16(a1, x1),2));
       }
       y[i] = y0;
       y[i+1] = y1;
