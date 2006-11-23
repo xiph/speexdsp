@@ -76,6 +76,7 @@ void speex_bits_destroy(SpeexBits *bits)
 
 void speex_bits_reset(SpeexBits *bits)
 {
+   /* We only need to clear the first byte now */
    bits->chars[0]=0;
    bits->nbBits=0;
    bits->charPtr=0;
@@ -225,11 +226,10 @@ void speex_bits_pack(SpeexBits *bits, int data, int nbBits)
       speex_warning("Buffer too small to pack bits");
       if (bits->owner)
       {
-	int new_nchars = ((bits->buf_size+5)*3)>>1;
+         int new_nchars = ((bits->buf_size+5)*3)>>1;
          char *tmp = (char*)speex_realloc(bits->chars, new_nchars);
          if (tmp)
          {
-	    speex_memset_bytes(tmp, 0, new_nchars);
             bits->buf_size=new_nchars;
             bits->chars=tmp;
          } else {
