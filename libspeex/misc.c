@@ -157,7 +157,7 @@ spx_word16_t speex_rand(spx_word16_t std, spx_int32_t *seed)
    spx_word32_t res;
    *seed = 1664525 * *seed + 1013904223;
    res = MULT16_16(EXTRACT16(SHR32(*seed,16)),std);
-   return PSHR32(SUB32(res, SHR(res, 3)),14);
+   return EXTRACT16(PSHR32(SUB32(res, SHR32(res, 3)),14));
 }
 #else
 spx_word16_t speex_rand(spx_word16_t std, spx_int32_t *seed)

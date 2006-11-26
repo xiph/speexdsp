@@ -402,13 +402,13 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
       qmf_decomp(in, h0, st->x0d, st->x1d, st->full_frame_size, QMF_ORDER, st->h0_mem, stack);
       
       for (i=0;i<st->frame_size;i++)
-         low[i] = SATURATE(PSHR(st->x0d[i],SIG_SHIFT),32767);
+         low[i] = EXTRACT16(SATURATE(PSHR32(st->x0d[i],SIG_SHIFT),32767));
       
       /* Encode the narrowband part*/
       speex_encode_native(st->st_low, low, bits);
 
       for (i=0;i<st->frame_size;i++)
-         st->x0d[i] = SHL(low[i],SIG_SHIFT);
+         st->x0d[i] = SHL32(EXTEND32(low[i]),SIG_SHIFT);
    }
    /* High-band buffering / sync with low band */
    for (i=0;i<st->windowSize-st->frame_size;i++)
@@ -436,7 +436,7 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
       ALLOC(w_sig, st->windowSize, spx_word16_t);
       /* Window for analysis */
       for (i=0;i<st->windowSize;i++)
-         w_sig[i] = SHR(MULT16_16(SHR((spx_word32_t)(st->high[i]),SIG_SHIFT),st->window[i]),SIG_SHIFT);
+         w_sig[i] = EXTRACT16(SHR32(MULT16_16(EXTRACT16(SHR32(EXTEND32(st->high[i]),SIG_SHIFT)),st->window[i]),SIG_SHIFT));
 
       /* Compute auto-correlation */
       _spx_autocorr(w_sig, st->autocorr, st->lpcSize+1, st->windowSize);
@@ -645,7 +645,7 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
       
       rl = low_pi_gain[sub];
 #ifdef FIXED_POINT
-      filter_ratio=PDIV32_16(SHL(rl+82,2),SHR(82+rh,5));
+      filter_ratio=PDIV32_16(SHL32(rl+82,2),EXTRACT16(SHR32(82+rh,5)));
 #else
       filter_ratio=(rl+.01)/(rh+.01);
 #endif
@@ -1008,7 +1008,7 @@ int sb_decode(void *state, SpeexBits *bits, void *vout)
       ret = speex_decode_native(st->st_low, bits, low);
       
       for (i=0;i<st->frame_size;i++)
-         st->x0d[i] = SHL((spx_sig_t)low[i], SIG_SHIFT);
+         st->x0d[i] = SHL32(EXTEND32(low[i]), SIG_SHIFT);
    }
 
    speex_decoder_ctl(st->st_low, SPEEX_GET_DTX_STATUS, &dtx);
@@ -1134,7 +1134,7 @@ int sb_decode(void *state, SpeexBits *bits, void *vout)
 
          rl = low_pi_gain[sub];
 #ifdef FIXED_POINT
-         filter_ratio=PDIV32_16(SHL(rl+82,2),SHR(82+rh,5));
+         filter_ratio=PDIV32_16(SHL32(rl+82,2),EXTRACT16(SHR32(82+rh,5)));
 #else
          filter_ratio=(rl+.01)/(rh+.01);
 #endif
@@ -1195,7 +1195,7 @@ int sb_decode(void *state, SpeexBits *bits, void *vout)
          if (st->subframeSize==80)
             gc *= 1.4142;
 
-         scale = SHL(MULT16_16(PDIV32_16(SHL(gc,SIG_SHIFT-6),filter_ratio),(1+el)),6);
+         scale = SHL32(MULT16_16(PDIV32_16(SHL32(EXTEND32(gc),SIG_SHIFT-6),filter_ratio),(1+el)),6);
 
          SUBMODE(innovation_unquant)(exc, SUBMODE(innovation_params), st->subframeSize, 
                                      bits, stack, &st->seed);

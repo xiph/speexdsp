@@ -86,12 +86,13 @@ static inline short EXTRACT16(int x)
    return res;
 }
 
-static inline int EXTEND32(int x)
+#define EXTEND32(x) _EXTEND32(x, __FILE__, __LINE__)
+static inline int _EXTEND32(int x, char *file, int line)
 {
    int res;
    if (!VERIFY_SHORT(x))
    {
-      fprintf (stderr, "EXTEND32: input is not short: %d\n", x);
+      fprintf (stderr, "EXTEND32: input is not short: %d in %s: line %d\n", x, file, line);
    }
    res = x;
    spx_mips++;
@@ -163,8 +164,8 @@ static inline int SHL32(long long a, int shift)
 #define SATURATE16(x,a) (((x)>(a) ? (a) : (x)<-(a) ? -(a) : (x)))
 #define SATURATE32(x,a) (((x)>(a) ? (a) : (x)<-(a) ? -(a) : (x)))
 
-#define SHR(a,shift) ((a) >> (shift))
-#define SHL(a,shift) ((a) << (shift))
+//#define SHR(a,shift) ((a) >> (shift))
+//#define SHL(a,shift) ((a) << (shift))
 
 static inline short ADD16(int a, int b) 
 {
@@ -227,7 +228,6 @@ static inline int SUB32(long long a, long long b)
 
 #define ADD64(a,b) (MIPS_INC(a)+(b))
 
-#define PSHR(a,shift) (SHR((a)+((1<<((shift))>>1)),shift))
 /* result fits in 16 bits */
 static inline short MULT16_16_16(int a, int b) 
 {
@@ -258,9 +258,9 @@ static inline int MULT16_16(int a, int b)
 }
 
 #define MAC16_16(c,a,b)     (spx_mips--,ADD32((c),MULT16_16((a),(b))))
-#define MAC16_16_Q11(c,a,b)     (ADD16((c),EXTRACT16(SHR32(MULT16_16((a),(b)),11))))
-#define MAC16_16_Q13(c,a,b)     (ADD16((c),EXTRACT16(SHR32(MULT16_16((a),(b)),13))))
-#define MAC16_16_P13(c,a,b)     (ADD32((c),SHR(ADD32(4096,MULT16_16((a),(b))),13)))
+#define MAC16_16_Q11(c,a,b)     (EXTRACT16(ADD16((c),EXTRACT16(SHR32(MULT16_16((a),(b)),11)))))
+#define MAC16_16_Q13(c,a,b)     (EXTRACT16(ADD16((c),EXTRACT16(SHR32(MULT16_16((a),(b)),13)))))
+#define MAC16_16_P13(c,a,b)     (EXTRACT16(ADD32((c),SHR32(ADD32(4096,MULT16_16((a),(b))),13))))
 
 
 static inline int MULT16_32_QX(int a, long long b, int Q)

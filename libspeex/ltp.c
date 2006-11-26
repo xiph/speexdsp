@@ -846,7 +846,7 @@ int cdbk_offset
    for (i=0;i<nsf;i++)
    {
       exc_out[i]=MULT16_16(exc[i-start],SHL16(pitch_coef,7));
-      exc[i] = PSHR(exc_out[i],13);
+      exc[i] = EXTRACT16(PSHR32(exc_out[i],13));
    }
    *pitch_val = start;
    gain_val[0]=gain_val[2]=0;

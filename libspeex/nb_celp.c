@@ -1167,7 +1167,7 @@ static void nb_decode_lost(DecState *st, spx_word16_t *out, char *stack)
    pitch_gain = st->last_pitch_gain;
    if (pitch_gain>54)
       pitch_gain = 54;
-   pitch_gain = SHL(pitch_gain, 9);
+   pitch_gain = SHL16(pitch_gain, 9);
 #else   
    pitch_gain = GAIN_SCALING_1*st->last_pitch_gain;
    if (pitch_gain>.85)
@@ -1201,7 +1201,7 @@ static void nb_decode_lost(DecState *st, spx_word16_t *out, char *stack)
    
    st->first = 0;
    st->count_lost++;
-   st->pitch_gain_buf[st->pitch_gain_buf_idx++] = PSHR(pitch_gain,9);
+   st->pitch_gain_buf[st->pitch_gain_buf_idx++] = PSHR16(pitch_gain,9);
    if (st->pitch_gain_buf_idx > 2) /* rollover */
       st->pitch_gain_buf_idx = 0;
 }

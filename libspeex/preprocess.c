@@ -491,6 +491,7 @@ SpeexPreprocessState *speex_preprocess_state_init(int frame_size, int sampling_r
    for (i=0;i<N;i++)
    {
       float ff=((float)i)*.5*sampling_rate/((float)N);
+      /*st->loudness_weight[i] = .5f*(1.f/(1.f+ff/8000.f))+1.f*exp(-.5f*(ff-3800.f)*(ff-3800.f)/9e5f);*/
       st->loudness_weight[i] = .35f-.35f*ff/16000.f+.73f*exp(-.5f*(ff-3800)*(ff-3800)/9e5f);
       if (st->loudness_weight[i]<.01f)
          st->loudness_weight[i]=.01f;
@@ -545,62 +546,43 @@ void speex_preprocess_state_destroy(SpeexPreprocessState *st)
 
 /* FIXME: The AGC doesn't work yet with fixed-point*/
 #ifndef FIXED_POINT
-static void speex_compute_agc(SpeexPreprocessState *st)
+static void speex_compute_agc(SpeexPreprocessState *st, spx_word16_t Pframe, spx_word16_t *ft)
 {
    int i;
    int N = st->ps_size;
-   float scale=.5f/N;
    float agc_gain;
-   int freq_start, freq_end;
-   float active_bands = 0;
 
-   freq_start = (int)(300.0f*2*N/st->sampling_rate);
-   freq_end   = (int)(2000.0f*2*N/st->sampling_rate);
-   for (i=freq_start;i<freq_end;i++)
+   float loudness=0.f;
+   float rate, rate2=.05f;
+   
+   for (i=2;i<N;i++)
    {
-      if (st->S[i] > 20.f*st->Smin[i]+1000.f)
-         active_bands+=1;
+      loudness += 2.f*N*SQR16(st->ft[i])* st->loudness_weight[i];
    }
-   active_bands /= (freq_end-freq_start+1);
-
-   if (active_bands > .2f)
+   loudness=sqrt(loudness);
+      /*if (loudness < 2*pow(st->loudness, 1.0/LOUDNESS_EXP) &&
+   loudness*2 > pow(st->loudness, 1.0/LOUDNESS_EXP))*/
+   if (Pframe>.5 && st->nb_adapt>50)
    {
-      float loudness=0.f;
-      float rate, rate2=.2f;
       st->nb_loudness_adapt++;
       rate=2.0f/(1+st->nb_loudness_adapt);
-      if (rate < .05f)
-         rate = .05f;
-      if (rate < .1f && pow(loudness, LOUDNESS_EXP) > st->loudness)
-         rate = .1f;
-      if (rate < .2f && pow(loudness, LOUDNESS_EXP) > 3.f*st->loudness)
-         rate = .2f;
-      if (rate < .4f && pow(loudness, LOUDNESS_EXP) > 10.f*st->loudness)
-         rate = .4f;
-
-      for (i=2;i<N;i++)
-      {
-         loudness += scale*st->ps[i] * FRAC_SCALING_1*FRAC_SCALING_1*st->gain2[i] * st->gain2[i] * st->loudness_weight[i];
-      }
-      loudness=sqrt(loudness);
-      /*if (loudness < 2*pow(st->loudness, 1.0/LOUDNESS_EXP) &&
-        loudness*2 > pow(st->loudness, 1.0/LOUDNESS_EXP))*/
       st->loudness = (1-rate)*st->loudness + (rate)*pow(loudness, LOUDNESS_EXP);
       
       st->loudness2 = (1-rate2)*st->loudness2 + rate2*pow(st->loudness, 1.0f/LOUDNESS_EXP);
-
-      loudness = pow(st->loudness, 1.0f/LOUDNESS_EXP);
-
-      /*fprintf (stderr, "%f %f %f\n", loudness, st->loudness2, rate);*/
    }
+   printf ("%f %f %f %f\n", Pframe, loudness, pow(st->loudness, 1.0f/LOUDNESS_EXP), st->loudness2);
+   
+   loudness = pow(st->loudness, 1.0f/LOUDNESS_EXP);
+   
+   /*fprintf (stderr, "%f %f %f\n", loudness, st->loudness2, rate);*/
    
    agc_gain = st->agc_level/st->loudness2;
    /*fprintf (stderr, "%f %f %f %f\n", active_bands, st->loudness, st->loudness2, agc_gain);*/
-   if (agc_gain>200)
-      agc_gain = 200;
-
-   for (i=0;i<N;i++)
-      st->gain2[i] *= agc_gain;
+   if (agc_gain>30)
+      agc_gain = 30;
+   
+   for (i=0;i<2*N;i++)
+      ft[i] *= agc_gain;
    
 }
 #endif
@@ -850,8 +832,8 @@ int speex_preprocess_run(SpeexPreprocessState *st, spx_int16_t *x)
       theta = MIN32(theta, EXTEND32(32767));
 /*Q8*/tmp = MULT16_16_Q15((SHL32(1,SNR_SHIFT)+st->prior[i]),EXTRACT16(MIN32(Q15ONE,SHR32(spx_exp(-EXTRACT16(theta)),1))));
       tmp = MIN16(QCONST16(3.,SNR_SHIFT), tmp); /* Prevent overflows in the next line*/
-/*Q8*/tmp = PSHR(MULT16_16(PDIV32_16(SHL32(EXTEND32(q),8),(Q15_ONE-q)),tmp),8);
-      st->gain2[i]=DIV32_16(SHL(EXTEND32(32767),SNR_SHIFT), ADD16(256,tmp));
+/*Q8*/tmp = EXTRACT16(PSHR32(MULT16_16(PDIV32_16(SHL32(EXTEND32(q),8),(Q15_ONE-q)),tmp),8));
+      st->gain2[i]=DIV32_16(SHL32(EXTEND32(32767),SNR_SHIFT), ADD16(256,tmp));
 #else
       st->gain2[i]=1/(1.f + (q/(1.f-q))*(1+st->prior[i])*exp(-theta));
 #endif
@@ -927,13 +909,7 @@ int speex_preprocess_run(SpeexPreprocessState *st, spx_int16_t *x)
       for (i=0;i<N+M;i++)
          st->gain2[i]=Q15_ONE;
    }
-   
-   /*FIXME: This *will* not work for fixed-point */
-#ifndef FIXED_POINT
-   if (st->agc_enabled)
-      speex_compute_agc(st);
-#endif
-   
+      
    /* Apply computed gain */
    for (i=1;i<N;i++)
    {
@@ -943,6 +919,12 @@ int speex_preprocess_run(SpeexPreprocessState *st, spx_int16_t *x)
    st->ft[0] = MULT16_16_P15(st->gain2[0],st->ft[0]);
    st->ft[2*N-1] = MULT16_16_P15(st->gain2[N-1],st->ft[2*N-1]);
    
+   /*FIXME: This *will* not work for fixed-point */
+#ifndef FIXED_POINT
+   if (st->agc_enabled)
+      speex_compute_agc(st, Pframe, st->ft);
+#endif
+
    /* Inverse FFT with 1/N scaling */
    spx_ifft(st->fft_lookup, st->ft, st->frame);
    /* Scale back to original (lower) amplitude */

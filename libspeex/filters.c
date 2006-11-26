@@ -598,7 +598,7 @@ void qmf_decomp(const spx_word16_t *xx, const spx_word16_t *aa, spx_sig_t *y1, s
    for (i=0;i<M-1;i++)
       x[i]=mem[M-i-2];
    for (i=0;i<N;i++)
-      x[i+M-1]=SATURATE(PSHR(xx[i],1),16383);
+      x[i+M-1]=SATURATE(PSHR16(xx[i],1),16383);
    for (i=0,k=0;i<N;i+=2,k++)
    {
       y1[k]=0;
@@ -615,7 +615,7 @@ void qmf_decomp(const spx_word16_t *xx, const spx_word16_t *aa, spx_sig_t *y1, s
       y2[k] = SHR32(y2[k],1);
    }
    for (i=0;i<M-1;i++)
-     mem[i]=SATURATE(PSHR(xx[N-i-1],1),16383);
+     mem[i]=SATURATE(PSHR16(xx[N-i-1],1),16383);
 }
 
 

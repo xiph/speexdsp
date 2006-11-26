@@ -54,8 +54,8 @@ static void kf_bfly2(
        kiss_fft_cpx *x=Fout;
        for (i=0;i<2*m;i++)
        {
-          x[i].r = SHR(x[i].r,1);
-          x[i].i = SHR(x[i].i,1);
+          x[i].r = SHR16(x[i].r,1);
+          x[i].i = SHR16(x[i].i,1);
        }
     }
 

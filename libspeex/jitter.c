@@ -41,7 +41,10 @@
 #include <speex/speex.h>
 #include <speex/speex_bits.h>
 #include <speex/speex_jitter.h>
-#include <stdio.h>
+
+#ifndef NULL
+#define NULL 0
+#endif
 
 #define LATE_BINS 10
 #define MAX_MARGIN 30                     /**< Number of bins in margin histogram */
