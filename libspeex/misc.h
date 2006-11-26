@@ -98,12 +98,6 @@ void speex_free_scratch (void *ptr);
 /** Speex wrapper for mem_move */
 void *speex_move (void *dest, void *src, int n);
 
-/** Speex wrapper for memcpy */
-void speex_memcpy_bytes(char *dst, char *src, int nbytes);
-
-/** Speex wrapper for memset */
-void speex_memset_bytes(char *dst, char src, int nbytes);
-
 /** Print error message to stderr */
 void speex_error(const char *str);
 

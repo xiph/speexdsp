@@ -87,50 +87,6 @@ spx_uint32_t le_int(spx_uint32_t i)
    return ret;
 }
 
-#if BYTES_PER_CHAR == 2
-void speex_memcpy_bytes(char *dst, char *src, int nbytes)
-{
-  int i;
-  int nchars = nbytes/BYTES_PER_CHAR;
-  for (i=0;i<nchars;i++)
-    dst[i]=src[i];
-  if (nbytes & 1) {
-    /* copy in the last byte */
-    int last_i = nchars;
-    char last_dst_char = dst[last_i];
-    char last_src_char = src[last_i];
-    last_dst_char &= 0xff00;
-    last_dst_char |= (last_src_char & 0x00ff);
-    dst[last_i] = last_dst_char;
-  }
-}
-void speex_memset_bytes(char *dst, char c, int nbytes)
-{
-  int i;
-  spx_int16_t cc = ((c << 8) | c);
-  int nchars = nbytes/BYTES_PER_CHAR;
-  for (i=0;i<nchars;i++)
-    dst[i]=cc;
-  if (nbytes & 1) {
-    /* copy in the last byte */
-    int last_i = nchars;
-    char last_dst_char = dst[last_i];
-    last_dst_char &= 0xff00;
-    last_dst_char |= (c & 0x00ff);
-    dst[last_i] = last_dst_char;
-  }
-}
-#else
-void speex_memcpy_bytes(char *dst, char *src, int nbytes)
-{
-  memcpy(dst, src, nbytes);
-}
-void speex_memset_bytes(char *dst, char src, int nbytes)
-{
-  memset(dst, src, nbytes);
-}
-#endif
-
 #ifndef OVERRIDE_SPEEX_ALLOC
 void *speex_alloc (int size)
 {
