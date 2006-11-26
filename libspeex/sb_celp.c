@@ -436,7 +436,7 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
       ALLOC(w_sig, st->windowSize, spx_word16_t);
       /* Window for analysis */
       for (i=0;i<st->windowSize;i++)
-         w_sig[i] = EXTRACT16(SHR32(MULT16_16(EXTRACT16(SHR32(EXTEND32(st->high[i]),SIG_SHIFT)),st->window[i]),SIG_SHIFT));
+         w_sig[i] = EXTRACT16(SHR32(MULT16_16(EXTRACT16(SHR32(st->high[i],SIG_SHIFT)),st->window[i]),SIG_SHIFT));
 
       /* Compute auto-correlation */
       _spx_autocorr(w_sig, st->autocorr, st->lpcSize+1, st->windowSize);
