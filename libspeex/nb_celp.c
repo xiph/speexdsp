@@ -910,7 +910,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
          
          /* FIXME: Make sure this is save from overflows (so far so good) */
          for (i=0;i<st->subframeSize;i++)
-            real_exc[i] = SUB16(real_exc[i], EXTRACT16(PSHR32(exc32[i],SIG_SHIFT-1)));
+            real_exc[i] = EXTRACT16(SUB32(EXTEND32(real_exc[i]), PSHR32(exc32[i],SIG_SHIFT-1)));
 
          ener = SHL32(EXTEND32(compute_rms16(real_exc, st->subframeSize)),SIG_SHIFT);
          

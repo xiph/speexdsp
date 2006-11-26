@@ -74,12 +74,13 @@ static inline int NEG32(long long x)
    return res;
 }
 
-static inline short EXTRACT16(int x)
+#define EXTRACT16(x) _EXTRACT16(x, __FILE__, __LINE__)
+static inline short _EXTRACT16(int x, char *file, int line)
 {
    int res;
    if (!VERIFY_SHORT(x))
    {
-      fprintf (stderr, "EXTRACT16: input is not short: %d\n", x);
+      fprintf (stderr, "EXTRACT16: input is not short: %d in %s: line %d\n", x, file, line);
    }
    res = x;
    spx_mips++;
@@ -99,16 +100,17 @@ static inline int _EXTEND32(int x, char *file, int line)
    return res;
 }
 
-static inline short SHR16(int a, int shift) 
+#define SHR16(a, shift) _SHR16(a, shift, __FILE__, __LINE__)
+static inline short _SHR16(int a, int shift, char *file, int line) 
 {
    int res;
    if (!VERIFY_SHORT(a) || !VERIFY_SHORT(shift))
    {
-      fprintf (stderr, "SHR16: inputs are not short: %d %d\n", a, shift);
+      fprintf (stderr, "SHR16: inputs are not short: %d >> %d in %s: line %d\n", a, shift, file, line);
    }
    res = a>>shift;
    if (!VERIFY_SHORT(res))
-      fprintf (stderr, "SHR16: output is not short: %d\n", res);
+      fprintf (stderr, "SHR16: output is not short: %d in %s: line %d\n", res, file, line);
    spx_mips++;
    return res;
 }
@@ -182,16 +184,18 @@ static inline short ADD16(int a, int b)
    spx_mips++;
    return res;
 }
-static inline short SUB16(int a, int b) 
+
+#define SUB16(a, b) _SUB16(a, b, __FILE__, __LINE__)
+static inline short _SUB16(int a, int b, char *file, int line) 
 {
    int res;
    if (!VERIFY_SHORT(a) || !VERIFY_SHORT(b))
    {
-      fprintf (stderr, "SUB16: inputs are not short: %d %d\n", a, b);
+      fprintf (stderr, "SUB16: inputs are not short: %d %d in %s: line %d\n", a, b, file, line);
    }
    res = a-b;
    if (!VERIFY_SHORT(res))
-      fprintf (stderr, "SUB16: output is not short: %d\n", res);
+      fprintf (stderr, "SUB16: output is not short: %d in %s: line %d\n", res, file, line);
    spx_mips++;
    return res;
 }
