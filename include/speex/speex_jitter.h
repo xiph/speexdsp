@@ -76,6 +76,13 @@ struct _JitterBufferPacket {
 /** Invalid argument */
 #define JITTER_BUFFER_BAD_ARGUMENT -2
 
+
+/** Set minimum amount of extra buffering required (margin) */
+#define JITTER_BUFFER_SET_MARGIN 0
+/** Get minimum amount of extra buffering required (margin) */
+#define JITTER_BUFFER_GET_MARGIN 1
+
+
 /** Initialises jitter buffer 
  * 
  * @param tick Number of samples per "tick", i.e. the time period of the elements that will be retrieved
@@ -95,17 +102,41 @@ void jitter_buffer_reset(JitterBuffer *jitter);
  */
 void jitter_buffer_destroy(JitterBuffer *jitter);
 
-/** Put one packet into the jitter buffer */
+/** Put one packet into the jitter buffer
+ * 
+ * @param jitter Jitter buffer state
+ * @param packet Incoming packet
+*/
 void jitter_buffer_put(JitterBuffer *jitter, const JitterBufferPacket *packet);
 
-/** Get one packet from the jitter buffer */
+/** Get one packet from the jitter buffer
+ * 
+ * @param jitter Jitter buffer state
+ * @param packet Returned packet
+ * @param current_timestamp Timestamp for the returned packet 
+*/
 int jitter_buffer_get(JitterBuffer *jitter, JitterBufferPacket *packet, spx_uint32_t *current_timestamp);
 
-/** Get pointer timestamp of jitter buffer */
+/** Get pointer timestamp of jitter buffer
+ * 
+ * @param jitter Jitter buffer state
+*/
 int jitter_buffer_get_pointer_timestamp(JitterBuffer *jitter);
 
-/** Advance by one tick */
+/** Advance by one tick
+ * 
+ * @param jitter Jitter buffer state
+*/
 void jitter_buffer_tick(JitterBuffer *jitter);
+
+/** Used like the ioctl function to control the jitter buffer parameters
+ * 
+ * @param jitter Jitter buffer state
+ * @param request ioctl-type request (one of the JITTER_BUFFER_* macros)
+ * @param ptr Data exchanged to-from function
+ * @return 0 if no error, -1 if request in unknown
+*/
+int jitter_buffer_ctl(JitterBuffer *jitter, int request, void *ptr);
 
 /* @} */
 
@@ -114,7 +145,7 @@ void jitter_buffer_tick(JitterBuffer *jitter);
  * to maintain good quality and low latency. This is a simplified version that works only
  * with Speex, but is much easier to use.
  *  @{
- */
+*/
 
 /** Speex jitter-buffer state. Never use it directly! */
 typedef struct SpeexJitter {

@@ -427,7 +427,22 @@ void jitter_buffer_tick(JitterBuffer *jitter)
    jitter->current_timestamp += jitter->tick_size;
 }
 
-
+/* Used like the ioctl function to control the jitter buffer parameters */
+int jitter_buffer_ctl(JitterBuffer *jitter, int request, void *ptr)
+{
+   switch(request)
+   {
+      case JITTER_BUFFER_SET_MARGIN:
+         jitter->buffer_margin = *(spx_int32_t*)ptr;
+         break;
+      case JITTER_BUFFER_GET_MARGIN:
+         *(spx_int32_t*)ptr = jitter->buffer_margin;
+         break;
+      default:
+         speex_warning_int("Unknown jitter_buffer_ctl request: ", request);
+         return -1;
+   }
+}
 
 
 
