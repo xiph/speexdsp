@@ -126,9 +126,6 @@ static const spx_word16_t gc_quant_bound[16] = {125, 164, 215, 282, 370, 484, 63
 #ifdef FIXED_POINT
 static const spx_word16_t h0[64] = {2, -7, -7, 18, 15, -39, -25, 75, 35, -130, -41, 212, 38, -327, -17, 483, -32, -689, 124, 956, -283, -1307, 543, 1780, -973, -2467, 1733, 3633, -3339, -6409, 9059, 30153, 30153, 9059, -6409, -3339, 3633, 1733, -2467, -973, 1780, 543, -1307, -283, 956, 124, -689, -32, 483, -17, -327, 38, 212, -41, -130, 35, 75, -25, -39, 15, 18, -7, -7, 2};
 
-static const spx_word16_t h1[64] = {2, 7, -7, -18, 15, 39, -25, -75, 35, 130, -41, -212, 38, 327, -17, -483, -32, 689, 124, -956, -283, 1307, 543, -1780, -973, 2467, 1733, -3633, -3339, 6409, 9059, -30153, 30153, -9059, -6409, 3339, 3633, -1733, -2467, 973, 1780, -543, -1307, 283, 956, -124, -689, 32, 483, 17, -327, -38, 212, 41, -130, -35, 75, 25, -39, -15, 18, 7, -7, -2};
-
-
 #else
 static const float h0[64] = {
    3.596189e-05f, -0.0001123515f,
@@ -165,40 +162,6 @@ static const float h0[64] = {
    -0.0001123515f, 3.596189e-05f
 };
 
-static const float h1[64] = {
-   3.596189e-05f, 0.0001123515f,
-   -0.0001104587f, -0.0002790277f,
-   0.0002298438f, 0.0005953563f,
-   -0.0003823631f, -0.00113826f,
-   0.0005308539f, 0.001986177f,
-   -0.0006243724f, -0.003235877f,
-   0.0005743159f, 0.004989147f,
-   -0.0002584767f, -0.007367171f,
-   -0.0004857935f, 0.01050689f,
-   0.001894714f, -0.01459396f,
-   -0.004313674f, 0.01994365f,
-   0.00828756f, -0.02716055f,
-   -0.01485397f, 0.03764973f,
-   0.026447f, -0.05543245f,
-   -0.05095487f, 0.09779096f,
-   0.1382363f, -0.4600981f,
-   0.4600981f, -0.1382363f,
-   -0.09779096f, 0.05095487f,
-   0.05543245f, -0.026447f,
-   -0.03764973f, 0.01485397f,
-   0.02716055f, -0.00828756f,
-   -0.01994365f, 0.004313674f,
-   0.01459396f, -0.001894714f,
-   -0.01050689f, 0.0004857935f,
-   0.007367171f, 0.0002584767f,
-   -0.004989147f, -0.0005743159f,
-   0.003235877f, 0.0006243724f,
-   -0.001986177f, -0.0005308539f,
-   0.00113826f, 0.0003823631f,
-   -0.0005953563f, -0.0002298438f,
-   0.0002790277f, 0.0001104587f,
-   -0.0001123515f, -3.596189e-05f
-};
 #endif
 
 extern const spx_word16_t lpc_window[];
@@ -842,9 +805,8 @@ void *sb_decoder_init(const SpeexMode *m)
    st->first=1;
 
 
-   st->x0d = (spx_sig_t*)speex_alloc((st->frame_size)*sizeof(spx_sig_t));
-   st->x1d = (spx_sig_t*)speex_alloc((st->frame_size)*sizeof(spx_sig_t));
-   st->high = (spx_sig_t*)speex_alloc((st->full_frame_size)*sizeof(spx_sig_t));
+   st->x0d = (spx_word16_t*)speex_alloc((st->frame_size)*sizeof(spx_word16_t));
+   st->high = (spx_word16_t*)speex_alloc((st->frame_size)*sizeof(spx_word16_t));
 
    st->g0_mem = (spx_word32_t*)speex_alloc((QMF_ORDER)*sizeof(spx_word32_t));
    st->g1_mem = (spx_word32_t*)speex_alloc((QMF_ORDER)*sizeof(spx_word32_t));
@@ -884,7 +846,6 @@ void sb_decoder_destroy(void *state)
 #endif
 
    speex_free(st->x0d);
-   speex_free(st->x1d);
    speex_free(st->high);
    speex_free(st->g0_mem);
    speex_free(st->g1_mem);
@@ -927,10 +888,10 @@ static void sb_decode_lost(SBDecState *st, spx_word16_t *out, int dtx, char *sta
    }
 
    for (i=0;i<st->frame_size;i++)
-      st->high[i]=st->exc[i];
+      st->high[i]=EXTRACT16(PSHR32(st->exc[i],SIG_SHIFT));
 
-   iir_mem2(st->high, st->interp_qlpc, st->high, st->frame_size, st->lpcSize, 
-            st->mem_sp);
+   iir_mem16(st->high, st->interp_qlpc, st->high, st->frame_size, st->lpcSize, 
+            st->mem_sp, stack);
    
    
    /* Reconstruct the original */
@@ -969,7 +930,7 @@ int sb_decode(void *state, SpeexBits *bits, void *vout)
       ret = speex_decode_native(st->st_low, bits, low);
       
       for (i=0;i<st->frame_size;i++)
-         st->x0d[i] = SHL32(EXTEND32(low[i]), SIG_SHIFT);
+         st->x0d[i] = low[i];
    }
 
    speex_decoder_ctl(st->st_low, SPEEX_GET_DTX_STATUS, &dtx);
@@ -1022,11 +983,13 @@ int sb_decode(void *state, SpeexBits *bits, void *vout)
 
       for (i=0;i<st->frame_size;i++)
          st->exc[i]=VERY_SMALL;
+      for (i=0;i<st->frame_size;i++)
+         st->high[i]=VERY_SMALL;
 
       st->first=1;
 
       /* Final signal synthesis from excitation */
-      iir_mem2(st->exc, st->interp_qlpc, st->high, st->frame_size, st->lpcSize, st->mem_sp);
+      iir_mem16(st->high, st->interp_qlpc, st->high, st->frame_size, st->lpcSize, st->mem_sp, stack);
 
       qmf_synth(st->x0d, st->high, h0, out, st->full_frame_size, QMF_ORDER, st->g0_mem, st->g1_mem, stack);
 
@@ -1054,7 +1017,8 @@ int sb_decode(void *state, SpeexBits *bits, void *vout)
 
    for (sub=0;sub<st->nbSubframes;sub++)
    {
-      spx_sig_t *exc, *sp, *innov_save=NULL;
+      spx_sig_t *exc, *innov_save=NULL;
+      spx_word16_t *sp;
       spx_word16_t filter_ratio;
       spx_word16_t el=0;
       int offset;
@@ -1184,9 +1148,9 @@ int sb_decode(void *state, SpeexBits *bits, void *vout)
       }
       
       for (i=0;i<st->subframeSize;i++)
-         sp[i]=st->excBuf[i];
-      iir_mem2(sp, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, 
-               st->mem_sp);
+         sp[i]=EXTRACT16(PSHR32(st->excBuf[i],SIG_SHIFT));
+      iir_mem16(sp, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, 
+               st->mem_sp, stack);
       for (i=0;i<st->subframeSize;i++)
          st->excBuf[i]=exc[i];
       for (i=0;i<st->lpcSize;i++)

@@ -618,63 +618,7 @@ void qmf_decomp(const spx_word16_t *xx, const spx_word16_t *aa, spx_sig_t *y1, s
      mem[i]=SHR16(xx[N-i-1],1);
 }
 
-
-/* By segher */
-void fir_mem_up(const spx_sig_t *x, const spx_word16_t *a, spx_sig_t *y, int N, int M, spx_word32_t *mem, char *stack)
-   /* assumptions:
-      all odd x[i] are zero -- well, actually they are left out of the array now
-      N and M are multiples of 4 */
-{
-   int i, j;
-   VARDECL(spx_word16_t *xx);
-   
-   ALLOC(xx, M+N-1, spx_word16_t);
-
-   for (i = 0; i < N/2; i++)
-      xx[2*i] = PSHR32(x[N/2-1-i],SIG_SHIFT);
-   for (i = 0; i < M - 1; i += 2)
-      xx[N+i] = mem[i+1];
-
-   for (i = 0; i < N; i += 4) {
-      spx_sig_t y0, y1, y2, y3;
-      spx_word16_t x0;
-
-      y0 = y1 = y2 = y3 = 0;
-      x0 = xx[N-4-i];
-
-      for (j = 0; j < M; j += 4) {
-         spx_word16_t x1;
-         spx_word16_t a0, a1;
-
-         a0 = a[j];
-         a1 = a[j+1];
-         x1 = xx[N-2+j-i];
-
-         y0 = ADD32(y0,MULT16_16(a0, x1));
-         y1 = ADD32(y1,MULT16_16(a1, x1));
-         y2 = ADD32(y2,MULT16_16(a0, x0));
-         y3 = ADD32(y3,MULT16_16(a1, x0));
-
-         a0 = a[j+2];
-         a1 = a[j+3];
-         x0 = xx[N+j-i];
-
-         y0 = ADD32(y0,MULT16_16(a0, x0));
-         y1 = ADD32(y1,MULT16_16(a1, x0));
-         y2 = ADD32(y2,MULT16_16(a0, x1));
-         y3 = ADD32(y3,MULT16_16(a1, x1));
-      }
-      y[i] = SHR32(y0,1);
-      y[i+1] = SHR32(y1,1);
-      y[i+2] = SHR32(y2,1);
-      y[i+3] = SHR32(y3,1);
-   }
-
-   for (i = 0; i < M - 1; i += 2)
-      mem[i+1] = xx[i];
-}
-
-void qmf_synth(const spx_sig_t *x1, const spx_sig_t *x2, const spx_word16_t *a, spx_word16_t *y, int N, int M, spx_word32_t *mem1, spx_word32_t *mem2, char *stack)
+void qmf_synth(const spx_word16_t *x1, const spx_word16_t *x2, const spx_word16_t *a, spx_word16_t *y, int N, int M, spx_word32_t *mem1, spx_word32_t *mem2, char *stack)
    /* assumptions:
       all odd x[i] are zero -- well, actually they are left out of the array now
       N and M are multiples of 4 */
@@ -687,11 +631,11 @@ void qmf_synth(const spx_sig_t *x1, const spx_sig_t *x2, const spx_word16_t *a, 
    ALLOC(xx2, M+N-1, spx_word16_t);
 
    for (i = 0; i < N/2; i++)
-      xx1[2*i] = PSHR32(x1[N/2-1-i],SIG_SHIFT);
+      xx1[2*i] = x1[N/2-1-i];
    for (i = 0; i < M - 1; i += 2)
       xx1[N+i] = mem1[i+1];
    for (i = 0; i < N/2; i++)
-      xx2[2*i] = PSHR32(x2[N/2-1-i],SIG_SHIFT);
+      xx2[2*i] = x2[N/2-1-i];
    for (i = 0; i < M - 1; i += 2)
       xx2[N+i] = mem2[i+1];
 
