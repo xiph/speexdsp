@@ -650,28 +650,116 @@ void fir_mem_up(const spx_sig_t *x, const spx_word16_t *a, spx_sig_t *y, int N, 
          a1 = a[j+1];
          x1 = xx[N-2+j-i];
 
-         y0 = ADD32(y0,SHR32(MULT16_16(a0, x1),2));
-         y1 = ADD32(y1,SHR32(MULT16_16(a1, x1),2));
-         y2 = ADD32(y2,SHR32(MULT16_16(a0, x0),2));
-         y3 = ADD32(y3,SHR32(MULT16_16(a1, x0),2));
+         y0 = ADD32(y0,MULT16_16(a0, x1));
+         y1 = ADD32(y1,MULT16_16(a1, x1));
+         y2 = ADD32(y2,MULT16_16(a0, x0));
+         y3 = ADD32(y3,MULT16_16(a1, x0));
 
          a0 = a[j+2];
          a1 = a[j+3];
          x0 = xx[N+j-i];
 
-         y0 = ADD32(y0,SHR32(MULT16_16(a0, x0),2));
-         y1 = ADD32(y1,SHR32(MULT16_16(a1, x0),2));
-         y2 = ADD32(y2,SHR32(MULT16_16(a0, x1),2));
-         y3 = ADD32(y3,SHR32(MULT16_16(a1, x1),2));
+         y0 = ADD32(y0,MULT16_16(a0, x0));
+         y1 = ADD32(y1,MULT16_16(a1, x0));
+         y2 = ADD32(y2,MULT16_16(a0, x1));
+         y3 = ADD32(y3,MULT16_16(a1, x1));
       }
-      y[i] = y0;
-      y[i+1] = y1;
-      y[i+2] = y2;
-      y[i+3] = y3;
+      y[i] = SHR32(y0,1);
+      y[i+1] = SHR32(y1,1);
+      y[i+2] = SHR32(y2,1);
+      y[i+3] = SHR32(y3,1);
    }
 
    for (i = 0; i < M - 1; i += 2)
       mem[i+1] = xx[i];
+}
+
+void qmf_synth(const spx_sig_t *x1, const spx_sig_t *x2, const spx_word16_t *a, spx_word16_t *y, int N, int M, spx_word32_t *mem1, spx_word32_t *mem2, char *stack)
+   /* assumptions:
+      all odd x[i] are zero -- well, actually they are left out of the array now
+      N and M are multiples of 4 */
+{
+   int i, j;
+   VARDECL(spx_word16_t *xx1);
+   VARDECL(spx_word16_t *xx2);
+   
+   ALLOC(xx1, M+N-1, spx_word16_t);
+   ALLOC(xx2, M+N-1, spx_word16_t);
+
+   for (i = 0; i < N/2; i++)
+      xx1[2*i] = PSHR32(x1[N/2-1-i],SIG_SHIFT);
+   for (i = 0; i < M - 1; i += 2)
+      xx1[N+i] = mem1[i+1];
+   for (i = 0; i < N/2; i++)
+      xx2[2*i] = PSHR32(x2[N/2-1-i],SIG_SHIFT);
+   for (i = 0; i < M - 1; i += 2)
+      xx2[N+i] = mem2[i+1];
+
+   for (i = 0; i < N; i += 4) {
+      spx_sig_t y0, y1, y2, y3;
+      spx_word16_t x10, x20;
+
+      y0 = y1 = y2 = y3 = 0;
+      x10 = xx1[N-4-i];
+      x20 = xx2[N-4-i];
+
+      for (j = 0; j < M; j += 4) {
+         spx_word16_t x11, x21;
+         spx_word16_t a0, a1;
+
+         a0 = a[j];
+         a1 = a[j+1];
+         x11 = xx1[N-2+j-i];
+         x21 = xx2[N-2+j-i];
+
+#ifdef FIXED_POINT
+         /* We multiply twice by the same coef to avoid overflows */
+         y0 = MAC16_16(MAC16_16(y0, a0, x11), NEG16(a0), x21);
+         y1 = MAC16_16(MAC16_16(y1, a1, x11), a1, x21);
+         y2 = MAC16_16(MAC16_16(y2, a0, x10), NEG16(a0), x20);
+         y3 = MAC16_16(MAC16_16(y3, a1, x10), a1, x20);
+#else
+         y0 = ADD32(y0,MULT16_16(a0, x11-x21));
+         y1 = ADD32(y1,MULT16_16(a1, x11+x21));
+         y2 = ADD32(y2,MULT16_16(a0, x10-x20));
+         y3 = ADD32(y3,MULT16_16(a1, x10+x20));
+#endif
+         a0 = a[j+2];
+         a1 = a[j+3];
+         x10 = xx1[N+j-i];
+         x20 = xx2[N+j-i];
+
+#ifdef FIXED_POINT
+         /* We multiply twice by the same coef to avoid overflows */
+         y0 = MAC16_16(MAC16_16(y0, a0, x10), NEG16(a0), x20);
+         y1 = MAC16_16(MAC16_16(y1, a1, x10), a1, x20);
+         y2 = MAC16_16(MAC16_16(y2, a0, x11), NEG16(a0), x21);
+         y3 = MAC16_16(MAC16_16(y3, a1, x11), a1, x21);
+#else
+         y0 = ADD32(y0,MULT16_16(a0, x10-x20));
+         y1 = ADD32(y1,MULT16_16(a1, x10+x20));
+         y2 = ADD32(y2,MULT16_16(a0, x11-x21));
+         y3 = ADD32(y3,MULT16_16(a1, x11+x21));
+#endif
+      }
+#ifdef FIXED_POINT
+      y[i] = EXTRACT16(SATURATE32(PSHR32(y0,15),32767));
+      y[i+1] = EXTRACT16(SATURATE32(PSHR32(y1,15),32767));
+      y[i+2] = EXTRACT16(SATURATE32(PSHR32(y2,15),32767));
+      y[i+3] = EXTRACT16(SATURATE32(PSHR32(y3,15),32767));
+#else
+      /* Normalize up explicitly if we're in float */
+      y[i] = 2.*y0;
+      y[i+1] = 2.*y1;
+      y[i+2] = 2.*y2;
+      y[i+3] = 2.*y3;
+#endif
+   }
+
+   for (i = 0; i < M - 1; i += 2)
+      mem1[i+1] = xx1[i];
+   for (i = 0; i < M - 1; i += 2)
+      mem2[i+1] = xx2[i];
 }
 
 #ifdef FIXED_POINT

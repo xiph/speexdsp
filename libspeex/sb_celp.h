@@ -60,7 +60,6 @@ typedef struct SBEncState {
    char  *stack;                  /**< Temporary allocation stack */
    spx_sig_t *x0d, *x1d;          /**< QMF filter signals*/
    spx_sig_t *high;               /**< High-band signal (buffer) */
-   spx_sig_t *y0, *y1;            /**< QMF synthesis signals */
    spx_word16_t *h0_mem, *h1_mem;
    spx_word32_t *g0_mem, *g1_mem; /**< QMF memories */
 
@@ -127,7 +126,6 @@ typedef struct SBDecState {
    char  *stack;
    spx_sig_t *x0d, *x1d;
    spx_sig_t *high;
-   spx_sig_t *y0, *y1;
    spx_word32_t *g0_mem, *g1_mem;
 
    spx_sig_t *exc;

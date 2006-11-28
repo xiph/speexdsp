@@ -203,25 +203,6 @@ static const float h1[64] = {
 
 extern const spx_word16_t lpc_window[];
 
-static void mix_and_saturate(spx_word32_t *x0, spx_word32_t *x1, spx_word16_t *out, int len)
-{
-   int i;
-   for (i=0;i<len;i++)
-   {
-      spx_word32_t tmp;
-#ifdef FIXED_POINT
-      tmp=PSHR32(SUB32(x0[i],x1[i]),SIG_SHIFT-1);
-#else
-      tmp=2*(x0[i]-x1[i]);
-#endif
-      if (tmp>32767)
-         out[i] = 32767;
-      else if (tmp<-32767)
-         out[i] = -32767;
-      else
-         out[i] = EXTRACT16(tmp);
-   }
-}
 
 void *sb_encoder_init(const SpeexMode *m)
 {
@@ -269,8 +250,6 @@ void *sb_encoder_init(const SpeexMode *m)
    st->x0d=(spx_sig_t*)speex_alloc((st->frame_size)*sizeof(spx_sig_t));
    st->x1d=(spx_sig_t*)speex_alloc((st->frame_size)*sizeof(spx_sig_t));
    st->high=(spx_sig_t*)speex_alloc((st->full_frame_size)*sizeof(spx_sig_t));
-   st->y0=(spx_sig_t*)speex_alloc((st->full_frame_size)*sizeof(spx_sig_t));
-   st->y1=(spx_sig_t*)speex_alloc((st->full_frame_size)*sizeof(spx_sig_t));
 
    st->h0_mem=(spx_word16_t*)speex_alloc((QMF_ORDER)*sizeof(spx_word16_t));
    st->h1_mem=(spx_word16_t*)speex_alloc((QMF_ORDER)*sizeof(spx_word16_t));
@@ -338,8 +317,6 @@ void sb_encoder_destroy(void *state)
    speex_free(st->x0d);
    speex_free(st->x1d);
    speex_free(st->high);
-   speex_free(st->y0);
-   speex_free(st->y1);
 
    speex_free(st->h0_mem);
    speex_free(st->h1_mem);
@@ -569,11 +546,7 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
 
 #ifdef RESYNTH
       /* Reconstruct the original */
-      fir_mem_up(st->x0d, h0, st->y0, st->full_frame_size, QMF_ORDER, st->g0_mem, stack);
-      fir_mem_up(st->high, h1, st->y1, st->full_frame_size, QMF_ORDER, st->g1_mem, stack);
-
-      for (i=0;i<st->full_frame_size;i++)
-         in[i]=SHR(st->y0[i]-st->y1[i], SIG_SHIFT-1);
+      qmf_synth(st->x0d, st->high, h0, in, st->full_frame_size, QMF_ORDER, st->g0_mem, st->g1_mem, stack);
 #endif
 
       if (dtx)
@@ -815,11 +788,7 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
 
 #ifdef RESYNTH
    /* Reconstruct the original */
-   fir_mem_up(st->x0d, h0, st->y0, st->full_frame_size, QMF_ORDER, st->g0_mem, stack);
-   fir_mem_up(st->high, h1, st->y1, st->full_frame_size, QMF_ORDER, st->g1_mem, stack);
-
-   for (i=0;i<st->full_frame_size;i++)
-      in[i]=SHR(st->y0[i]-st->y1[i], SIG_SHIFT-1);
+   qmf_synth(st->x0d, st->high, h0, in, st->full_frame_size, QMF_ORDER, st->g0_mem, st->g1_mem, stack);
 #endif
    for (i=0;i<st->lpcSize;i++)
       st->old_lsp[i] = st->lsp[i];
@@ -876,8 +845,6 @@ void *sb_decoder_init(const SpeexMode *m)
    st->x0d = (spx_sig_t*)speex_alloc((st->frame_size)*sizeof(spx_sig_t));
    st->x1d = (spx_sig_t*)speex_alloc((st->frame_size)*sizeof(spx_sig_t));
    st->high = (spx_sig_t*)speex_alloc((st->full_frame_size)*sizeof(spx_sig_t));
-   st->y0 = (spx_sig_t*)speex_alloc((st->full_frame_size)*sizeof(spx_sig_t));
-   st->y1 = (spx_sig_t*)speex_alloc((st->full_frame_size)*sizeof(spx_sig_t));
 
    st->g0_mem = (spx_word32_t*)speex_alloc((QMF_ORDER)*sizeof(spx_word32_t));
    st->g1_mem = (spx_word32_t*)speex_alloc((QMF_ORDER)*sizeof(spx_word32_t));
@@ -919,8 +886,6 @@ void sb_decoder_destroy(void *state)
    speex_free(st->x0d);
    speex_free(st->x1d);
    speex_free(st->high);
-   speex_free(st->y0);
-   speex_free(st->y1);
    speex_free(st->g0_mem);
    speex_free(st->g1_mem);
    speex_free(st->exc);
@@ -969,11 +934,7 @@ static void sb_decode_lost(SBDecState *st, spx_word16_t *out, int dtx, char *sta
    
    
    /* Reconstruct the original */
-   fir_mem_up(st->x0d, h0, st->y0, st->full_frame_size, QMF_ORDER, st->g0_mem, stack);
-   fir_mem_up(st->high, h1, st->y1, st->full_frame_size, QMF_ORDER, st->g1_mem, stack);
-
-   mix_and_saturate(st->y0, st->y1, out, st->full_frame_size);
-
+   qmf_synth(st->x0d, st->high, h0, out, st->full_frame_size, QMF_ORDER, st->g0_mem, st->g1_mem, stack);
    if (dtx)
    {
       st->submodeID=saved_modeid;
@@ -1067,10 +1028,7 @@ int sb_decode(void *state, SpeexBits *bits, void *vout)
       /* Final signal synthesis from excitation */
       iir_mem2(st->exc, st->interp_qlpc, st->high, st->frame_size, st->lpcSize, st->mem_sp);
 
-      fir_mem_up(st->x0d, h0, st->y0, st->full_frame_size, QMF_ORDER, st->g0_mem, stack);
-      fir_mem_up(st->high, h1, st->y1, st->full_frame_size, QMF_ORDER, st->g1_mem, stack);
-
-      mix_and_saturate(st->y0, st->y1, out, st->full_frame_size);
+      qmf_synth(st->x0d, st->high, h0, out, st->full_frame_size, QMF_ORDER, st->g0_mem, st->g1_mem, stack);
 
       return 0;
 
@@ -1236,11 +1194,7 @@ int sb_decode(void *state, SpeexBits *bits, void *vout)
 
    }
 
-   fir_mem_up(st->x0d, h0, st->y0, st->full_frame_size, QMF_ORDER, st->g0_mem, stack);
-   fir_mem_up(st->high, h1, st->y1, st->full_frame_size, QMF_ORDER, st->g1_mem, stack);
-
-   mix_and_saturate(st->y0, st->y1, out, st->full_frame_size);
-
+   qmf_synth(st->x0d, st->high, h0, out, st->full_frame_size, QMF_ORDER, st->g0_mem, st->g1_mem, stack);
    for (i=0;i<st->lpcSize;i++)
       st->old_qlsp[i] = st->qlsp[i];
 
