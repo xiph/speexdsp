@@ -159,8 +159,8 @@ static inline int SHL32(long long a, int shift)
    return res;
 }
 
-#define PSHR16(a,shift) (SHR16((a)+((1<<((shift))>>1)),shift))
-#define PSHR32(a,shift) (SHR32((a)+((1<<((shift))>>1)),shift))
+#define PSHR16(a,shift) (SHR16(ADD16((a),((1<<((shift))>>1))),shift))
+#define PSHR32(a,shift) (SHR32(ADD32((a),((1<<((shift))>>1))),shift))
 #define VSHR32(a, shift) (((shift)>0) ? SHR32(a, shift) : SHL32(a, -(shift)))
 
 #define SATURATE16(x,a) (((x)>(a) ? (a) : (x)<-(a) ? -(a) : (x)))
@@ -247,16 +247,17 @@ static inline short MULT16_16_16(int a, int b)
    return res;
 }
 
-static inline int MULT16_16(int a, int b) 
+#define MULT16_16(a, b) _MULT16_16(a, b, __FILE__, __LINE__)
+static inline int _MULT16_16(int a, int b, char *file, int line) 
 {
    long long res;
    if (!VERIFY_SHORT(a) || !VERIFY_SHORT(b))
    {
-      fprintf (stderr, "MULT16_16: inputs are not short: %d %d\n", a, b);
+      fprintf (stderr, "MULT16_16: inputs are not short: %d %d in %s: line %d\n", a, b, file, line);
    }
    res = ((long long)a)*b;
    if (!VERIFY_INT(res))
-      fprintf (stderr, "MULT16_16: output is not int: %d\n", (int)res);
+      fprintf (stderr, "MULT16_16: output is not int: %d in %s: line %d\n", (int)res, file, line);
    spx_mips++;
    return res;
 }
@@ -429,23 +430,24 @@ static inline short MULT16_16_P15(int a, int b)
    return res;
 }
 
+#define DIV32_16(a, b) _DIV32_16(a, b, __FILE__, __LINE__)
 
-static inline int DIV32_16(long long a, long long b) 
+static inline int _DIV32_16(long long a, long long b, char *file, int line) 
 {
    long long res;
    if (b==0)
    {
-      fprintf(stderr, "DIV32_16: divide by zero: %d/%d\n", (int)a, (int)b);
+      fprintf(stderr, "DIV32_16: divide by zero: %d/%d in %s: line %d\n", (int)a, (int)b, file, line);
       return 0;
    }
    if (!VERIFY_INT(a) || !VERIFY_SHORT(b))
    {
-      fprintf (stderr, "DIV32_16: inputs are not int/short: %d %d\n", (int)a, (int)b);
+      fprintf (stderr, "DIV32_16: inputs are not int/short: %d %d in %s: line %d\n", (int)a, (int)b, file, line);
    }
    res = a/b;
    if (!VERIFY_SHORT(res))
    {
-      fprintf (stderr, "DIV32_16: output is not short: %d / %d = %d\n", (int)a,(int)b,(int)res);
+      fprintf (stderr, "DIV32_16: output is not short: %d / %d = %d in %s: line %d\n", (int)a,(int)b,(int)res, file, line);
       if (res>32767)
          res = 32767;
       if (res<-32768)
