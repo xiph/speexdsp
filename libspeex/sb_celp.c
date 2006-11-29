@@ -804,10 +804,6 @@ void *sb_decoder_init(const SpeexMode *m)
 
    st->first=1;
 
-
-   st->x0d = (spx_word16_t*)speex_alloc((st->frame_size)*sizeof(spx_word16_t));
-   st->high = (spx_word16_t*)speex_alloc((st->frame_size)*sizeof(spx_word16_t));
-
    st->g0_mem = (spx_word32_t*)speex_alloc((QMF_ORDER)*sizeof(spx_word32_t));
    st->g1_mem = (spx_word32_t*)speex_alloc((QMF_ORDER)*sizeof(spx_word32_t));
 
@@ -845,8 +841,6 @@ void sb_decoder_destroy(void *state)
    speex_free_scratch(st->stack);
 #endif
 
-   speex_free(st->x0d);
-   speex_free(st->high);
    speex_free(st->g0_mem);
    speex_free(st->g1_mem);
    speex_free(st->exc);
@@ -888,14 +882,14 @@ static void sb_decode_lost(SBDecState *st, spx_word16_t *out, int dtx, char *sta
    }
 
    for (i=0;i<st->frame_size;i++)
-      st->high[i]=EXTRACT16(PSHR32(st->exc[i],SIG_SHIFT));
+      out[i+st->frame_size]=EXTRACT16(PSHR32(st->exc[i],SIG_SHIFT));
 
-   iir_mem16(st->high, st->interp_qlpc, st->high, st->frame_size, st->lpcSize, 
+   iir_mem16(out+st->frame_size, st->interp_qlpc, out+st->frame_size, st->frame_size, st->lpcSize, 
             st->mem_sp, stack);
    
    
    /* Reconstruct the original */
-   qmf_synth(st->x0d, st->high, h0, out, st->full_frame_size, QMF_ORDER, st->g0_mem, st->g1_mem, stack);
+   qmf_synth(out, out+st->frame_size, h0, out, st->full_frame_size, QMF_ORDER, st->g0_mem, st->g1_mem, stack);
    if (dtx)
    {
       st->submodeID=saved_modeid;
@@ -922,16 +916,8 @@ int sb_decode(void *state, SpeexBits *bits, void *vout)
    stack=st->stack;
    mode = (const SpeexSBMode*)(st->mode->mode);
 
-   {
-      VARDECL(spx_word16_t *low);
-      ALLOC(low, st->frame_size, spx_word16_t);
-      
-      /* Decode the low-band */
-      ret = speex_decode_native(st->st_low, bits, low);
-      
-      for (i=0;i<st->frame_size;i++)
-         st->x0d[i] = low[i];
-   }
+   /* Decode the low-band */
+   ret = speex_decode_native(st->st_low, bits, out);
 
    speex_decoder_ctl(st->st_low, SPEEX_GET_DTX_STATUS, &dtx);
 
@@ -984,14 +970,14 @@ int sb_decode(void *state, SpeexBits *bits, void *vout)
       for (i=0;i<st->frame_size;i++)
          st->exc[i]=VERY_SMALL;
       for (i=0;i<st->frame_size;i++)
-         st->high[i]=VERY_SMALL;
+         out[st->frame_size+i]=VERY_SMALL;
 
       st->first=1;
 
       /* Final signal synthesis from excitation */
-      iir_mem16(st->high, st->interp_qlpc, st->high, st->frame_size, st->lpcSize, st->mem_sp, stack);
+      iir_mem16(out+st->frame_size, st->interp_qlpc, out+st->frame_size, st->frame_size, st->lpcSize, st->mem_sp, stack);
 
-      qmf_synth(st->x0d, st->high, h0, out, st->full_frame_size, QMF_ORDER, st->g0_mem, st->g1_mem, stack);
+      qmf_synth(out, out+st->frame_size, h0, out, st->full_frame_size, QMF_ORDER, st->g0_mem, st->g1_mem, stack);
 
       return 0;
 
@@ -1025,7 +1011,7 @@ int sb_decode(void *state, SpeexBits *bits, void *vout)
       spx_word32_t rl=0,rh=0;
       
       offset = st->subframeSize*sub;
-      sp=st->high+offset;
+      sp=out+st->frame_size+offset;
       exc=st->exc+offset;
       /* Pointer for saving innovation */
       if (st->innov_save)
@@ -1158,7 +1144,7 @@ int sb_decode(void *state, SpeexBits *bits, void *vout)
 
    }
 
-   qmf_synth(st->x0d, st->high, h0, out, st->full_frame_size, QMF_ORDER, st->g0_mem, st->g1_mem, stack);
+   qmf_synth(out, out+st->frame_size, h0, out, st->full_frame_size, QMF_ORDER, st->g0_mem, st->g1_mem, stack);
    for (i=0;i<st->lpcSize;i++)
       st->old_qlsp[i] = st->qlsp[i];
 
