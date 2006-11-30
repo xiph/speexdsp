@@ -169,17 +169,18 @@ static inline int SHL32(long long a, int shift)
 //#define SHR(a,shift) ((a) >> (shift))
 //#define SHL(a,shift) ((a) << (shift))
 
-static inline short ADD16(int a, int b) 
+#define ADD16(a, b) _ADD16(a, b, __FILE__, __LINE__)
+static inline short _ADD16(int a, int b, char *file, int line) 
 {
    int res;
    if (!VERIFY_SHORT(a) || !VERIFY_SHORT(b))
    {
-      fprintf (stderr, "ADD16: inputs are not short: %d %d\n", a, b);
+      fprintf (stderr, "ADD16: inputs are not short: %d %d in %s: line %d\n", a, b, file, line);
    }
    res = a+b;
    if (!VERIFY_SHORT(res))
    {
-     fprintf (stderr, "ADD16: output is not short: %d+%d=%d\n", a,b,res);
+      fprintf (stderr, "ADD16: output is not short: %d+%d=%d in %s: line %d\n", a,b,res, file, line);
    }
    spx_mips++;
    return res;

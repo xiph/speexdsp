@@ -720,7 +720,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
       int   offset;
       spx_word16_t *sw;
       spx_word16_t *exc;
-      spx_sig_t *innov_save = NULL;
+      spx_word16_t *innov_save = NULL;
       int pitch;
       int response_bound = st->subframeSize;
 #ifdef EPIC_48K
@@ -969,7 +969,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
          if (innov_save)
          {
             for (i=0;i<st->subframeSize;i++)
-               innov_save[i] = innov[i];
+               innov_save[i] = EXTRACT16(PSHR32(innov[i],SIG_SHIFT));
          }
          /* In some (rare) modes, we do a second search (more bits) to reduce noise even more */
          if (SUBMODE(double_codebook)) {
@@ -989,7 +989,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
             if (innov_save)
             {
                for (i=0;i<st->subframeSize;i++)
-                  innov_save[i] = ADD32(innov_save[i],innov2[i]);
+                  innov_save[i] = ADD16(innov_save[i],EXTRACT16(PSHR32(innov2[i],SIG_SHIFT)));
             }
             stack = tmp_stack;
          }
@@ -1460,7 +1460,7 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
       int offset;
       spx_word16_t *exc;
       spx_word16_t *sp;
-      spx_sig_t *innov_save = NULL;
+      spx_word16_t *innov_save = NULL;
       spx_word16_t tmp;
 
 #ifdef EPIC_48K
@@ -1627,7 +1627,7 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
          if (innov_save)
          {
             for (i=0;i<st->subframeSize;i++)
-               innov_save[i] = innov[i];
+               innov_save[i] = EXTRACT16(PSHR32(innov[i], SIG_SHIFT));
          }
          /* Decode second codebook (only for some modes) */
          if (SUBMODE(double_codebook))
@@ -1644,7 +1644,7 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
             if (innov_save)
             {
                for (i=0;i<st->subframeSize;i++)
-                  innov_save[i] = ADD32(innov_save[i],innov2[i]);
+                  innov_save[i] = ADD16(innov_save[i],EXTRACT16(PSHR32(innov2[i], SIG_SHIFT)));
             }
             stack = tmp_stack;
          }
@@ -1936,7 +1936,7 @@ int nb_encoder_ctl(void *state, int request, void *ptr)
       (*(float*)ptr)=st->relative_quality;
       break;
    case SPEEX_SET_INNOVATION_SAVE:
-      st->innov_save = (spx_sig_t*)ptr;
+      st->innov_save = (spx_word16_t*)ptr;
       break;
    case SPEEX_SET_WIDEBAND:
       st->isWideband = *((spx_int32_t*)ptr);
@@ -2044,7 +2044,7 @@ int nb_decoder_ctl(void *state, int request, void *ptr)
       *((spx_int32_t*)ptr) = st->dtx_enabled;
       break;
    case SPEEX_SET_INNOVATION_SAVE:
-      st->innov_save = (spx_sig_t*)ptr;
+      st->innov_save = (spx_word16_t*)ptr;
       break;
    case SPEEX_SET_WIDEBAND:
       st->isWideband = *((spx_int32_t*)ptr);
