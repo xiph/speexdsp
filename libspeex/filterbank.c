@@ -197,4 +197,29 @@ void filterbank_compute_psd(FilterBank *bank, float *mel, float *ps)
       ps[i] += mel[id]*bank->filter_right[i];
    }
 }
+
+void filterbank_psy_smooth(FilterBank *bank, float *ps, float *mask)
+{
+   /* Low freq slope: 14 dB/Bark*/
+   /* High freq slope: 9 dB/Bark*/
+   /* Noise vs tone: 5 dB difference */
+   float bark[bank->nb_banks];
+   int i;
+   /* Assumes 1/3 Bark resolution */
+   float decay_low = 0.34145f;
+   float decay_high = 0.50119f;
+   filterbank_compute_bank(bank, ps, bark);
+   for (i=1;i<bank->nb_banks;i++)
+   {
+      /*float decay_high = 13-1.6*log10(bark[i-1]);
+      decay_high = pow(10,(-decay_high/30.f));*/
+      bark[i] = bark[i] + decay_high*bark[i-1];
+   }
+   for (i=bank->nb_banks-2;i>=0;i--)
+   {
+      bark[i] = bark[i] + decay_low*bark[i+1];
+   }
+   filterbank_compute_psd(bank, bark, mask);
+}
+
 #endif
