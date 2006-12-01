@@ -442,6 +442,7 @@ int jitter_buffer_ctl(JitterBuffer *jitter, int request, void *ptr)
          speex_warning_int("Unknown jitter_buffer_ctl request: ", request);
          return -1;
    }
+   return 0;
 }
 
 

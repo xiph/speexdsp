@@ -608,11 +608,7 @@ static const SpeexSubmode nb_48k_submode = {
    split_cb_search_shape_sign,
    split_cb_shape_sign_unquant,
    &split_cb_nb_48k,
-#ifdef FIXED_POINT
-   22938, 16384, 11796, 18022,
-#else
-   0.7, 0.5, .36, .55,
-#endif
+   QCONST16(.45,15),
    144
 };
 
@@ -622,7 +618,6 @@ static const SpeexNBMode nb_48k_mode = {
    240,    /*frameSize*/
    48,     /*subframeSize*/
    10,     /*lpcSize*/
-   640,    /*bufSize*/
    17,     /*pitchStart*/
    144,    /*pitchEnd*/
    0.9,    /*gamma1*/

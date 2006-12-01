@@ -432,7 +432,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
             ol_gain2=ol2;
          ol_gain2 = sqrt(2*ol_gain2*(ol1+ol2))*1.3*(1-.5*GAIN_SCALING_1*GAIN_SCALING_1*ol_pitch_coef*ol_pitch_coef);
       
-         ol_gain=SHR(sqrt(1+ol_gain2/st->frameSize),SIG_SHIFT);
+         ol_gain=SHR32(sqrt(1+ol_gain2/st->frameSize),SIG_SHIFT);
 
       } else
 #endif
@@ -1227,7 +1227,7 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
    VARDECL(spx_lsp_t *qlsp);
    spx_word16_t pitch_average=0;
 #ifdef EPIC_48K
-   int pitch_half[2];
+   int pitch_half[2] = {0, 0};
    int ol_pitch_id=0;
 #endif
    spx_word16_t *out = (spx_word16_t*)vout;
