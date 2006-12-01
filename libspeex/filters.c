@@ -624,37 +624,40 @@ void qmf_synth(const spx_word16_t *x1, const spx_word16_t *x2, const spx_word16_
       N and M are multiples of 4 */
 {
    int i, j;
+   int M2, N2;
    VARDECL(spx_word16_t *xx1);
    VARDECL(spx_word16_t *xx2);
    
-   ALLOC(xx1, M+N-1, spx_word16_t);
-   ALLOC(xx2, M+N-1, spx_word16_t);
+   M2 = M>>1;
+   N2 = N>>1;
+   ALLOC(xx1, M2+N2, spx_word16_t);
+   ALLOC(xx2, M2+N2, spx_word16_t);
 
-   for (i = 0; i < N/2; i++)
-      xx1[2*i] = x1[N/2-1-i];
-   for (i = 0; i < M - 1; i += 2)
-      xx1[N+i] = mem1[i+1];
-   for (i = 0; i < N/2; i++)
-      xx2[2*i] = x2[N/2-1-i];
-   for (i = 0; i < M - 1; i += 2)
-      xx2[N+i] = mem2[i+1];
+   for (i = 0; i < N2; i++)
+      xx1[i] = x1[N2-1-i];
+   for (i = 0; i < M2; i++)
+      xx1[N2+i] = mem1[2*i+1];
+   for (i = 0; i < N2; i++)
+      xx2[i] = x2[N2-1-i];
+   for (i = 0; i < M2; i++)
+      xx2[N2+i] = mem2[2*i+1];
 
-   for (i = 0; i < N; i += 4) {
+   for (i = 0; i < N2; i += 2) {
       spx_sig_t y0, y1, y2, y3;
       spx_word16_t x10, x20;
 
       y0 = y1 = y2 = y3 = 0;
-      x10 = xx1[N-4-i];
-      x20 = xx2[N-4-i];
+      x10 = xx1[N2-2-i];
+      x20 = xx2[N2-2-i];
 
-      for (j = 0; j < M; j += 4) {
+      for (j = 0; j < M2; j += 2) {
          spx_word16_t x11, x21;
          spx_word16_t a0, a1;
 
-         a0 = a[j];
-         a1 = a[j+1];
-         x11 = xx1[N-2+j-i];
-         x21 = xx2[N-2+j-i];
+         a0 = a[2*j];
+         a1 = a[2*j+1];
+         x11 = xx1[N2-1+j-i];
+         x21 = xx2[N2-1+j-i];
 
 #ifdef FIXED_POINT
          /* We multiply twice by the same coef to avoid overflows */
@@ -668,10 +671,10 @@ void qmf_synth(const spx_word16_t *x1, const spx_word16_t *x2, const spx_word16_
          y2 = ADD32(y2,MULT16_16(a0, x10-x20));
          y3 = ADD32(y3,MULT16_16(a1, x10+x20));
 #endif
-         a0 = a[j+2];
-         a1 = a[j+3];
-         x10 = xx1[N+j-i];
-         x20 = xx2[N+j-i];
+         a0 = a[2*j+2];
+         a1 = a[2*j+3];
+         x10 = xx1[N2+j-i];
+         x20 = xx2[N2+j-i];
 
 #ifdef FIXED_POINT
          /* We multiply twice by the same coef to avoid overflows */
@@ -687,23 +690,23 @@ void qmf_synth(const spx_word16_t *x1, const spx_word16_t *x2, const spx_word16_
 #endif
       }
 #ifdef FIXED_POINT
-      y[i] = EXTRACT16(SATURATE32(PSHR32(y0,15),32767));
-      y[i+1] = EXTRACT16(SATURATE32(PSHR32(y1,15),32767));
-      y[i+2] = EXTRACT16(SATURATE32(PSHR32(y2,15),32767));
-      y[i+3] = EXTRACT16(SATURATE32(PSHR32(y3,15),32767));
+      y[2*i] = EXTRACT16(SATURATE32(PSHR32(y0,15),32767));
+      y[2*i+1] = EXTRACT16(SATURATE32(PSHR32(y1,15),32767));
+      y[2*i+2] = EXTRACT16(SATURATE32(PSHR32(y2,15),32767));
+      y[2*i+3] = EXTRACT16(SATURATE32(PSHR32(y3,15),32767));
 #else
       /* Normalize up explicitly if we're in float */
-      y[i] = 2.*y0;
-      y[i+1] = 2.*y1;
-      y[i+2] = 2.*y2;
-      y[i+3] = 2.*y3;
+      y[2*i] = 2.f*y0;
+      y[2*i+1] = 2.f*y1;
+      y[2*i+2] = 2.f*y2;
+      y[2*i+3] = 2.f*y3;
 #endif
    }
 
-   for (i = 0; i < M - 1; i += 2)
-      mem1[i+1] = xx1[i];
-   for (i = 0; i < M - 1; i += 2)
-      mem2[i+1] = xx2[i];
+   for (i = 0; i < M2; i++)
+      mem1[2*i+1] = xx1[i];
+   for (i = 0; i < M2; i++)
+      mem2[2*i+1] = xx2[i];
 }
 
 #ifdef FIXED_POINT
