@@ -608,7 +608,7 @@ static const SpeexSubmode nb_48k_submode = {
    split_cb_search_shape_sign,
    split_cb_shape_sign_unquant,
    &split_cb_nb_48k,
-   QCONST16(.45,15),
+   QCONST16(.7,15),
    144
 };
 
