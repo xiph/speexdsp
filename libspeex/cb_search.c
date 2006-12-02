@@ -580,7 +580,7 @@ int   update_target
    VARDECL(spx_sig_t *tmp);
    ALLOC(tmp, nsf, spx_sig_t);
    for (i=0;i<nsf;i++)
-      tmp[i]=PSHR32(EXTEND32(target[i]),SIG_SHIFT);
+      tmp[i]=SHL32(EXTEND32(target[i]),8);
    residue_percep_zero(tmp, ak, awk1, awk2, tmp, nsf, p, stack);
 
    for (i=0;i<nsf;i++)
