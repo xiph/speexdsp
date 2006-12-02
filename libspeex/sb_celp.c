@@ -716,7 +716,7 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
          if (st->innov_save)
          {
             for (i=0;i<st->subframeSize;i++)
-               innov_save[2*i]=innov[i];
+               innov_save[2*i]=EXTRACT16(SHR32(innov[i],SIG_SHIFT));
          }
          
          if (SUBMODE(double_codebook)) {
@@ -808,8 +808,7 @@ void *sb_decoder_init(const SpeexMode *m)
    st->g0_mem = (spx_word32_t*)speex_alloc((QMF_ORDER)*sizeof(spx_word32_t));
    st->g1_mem = (spx_word32_t*)speex_alloc((QMF_ORDER)*sizeof(spx_word32_t));
 
-   st->exc = (spx_sig_t*)speex_alloc((st->frame_size)*sizeof(spx_sig_t));
-   st->excBuf = (spx_sig_t*)speex_alloc((st->subframeSize)*sizeof(spx_sig_t));
+   st->excBuf = (spx_word16_t*)speex_alloc((st->subframeSize)*sizeof(spx_word16_t));
 
    st->qlsp = (spx_lsp_t*)speex_alloc((st->lpcSize)*sizeof(spx_lsp_t));
    st->old_qlsp = (spx_lsp_t*)speex_alloc((st->lpcSize)*sizeof(spx_lsp_t));
@@ -817,6 +816,7 @@ void *sb_decoder_init(const SpeexMode *m)
    st->interp_qlpc = (spx_coef_t*)speex_alloc(st->lpcSize*sizeof(spx_coef_t));
 
    st->pi_gain = (spx_word32_t*)speex_alloc((st->nbSubframes)*sizeof(spx_word32_t));
+   st->exc_rms = (spx_word16_t*)speex_alloc((st->nbSubframes)*sizeof(spx_word16_t));
    st->mem_sp = (spx_mem_t*)speex_alloc((2*st->lpcSize)*sizeof(spx_mem_t));
    
    st->low_innov = (spx_word16_t*)speex_alloc((st->frame_size)*sizeof(spx_word16_t));
@@ -844,13 +844,13 @@ void sb_decoder_destroy(void *state)
 
    speex_free(st->g0_mem);
    speex_free(st->g1_mem);
-   speex_free(st->exc);
    speex_free(st->excBuf);
    speex_free(st->qlsp);
    speex_free(st->old_qlsp);
    speex_free(st->interp_qlsp);
    speex_free(st->interp_qlpc);
    speex_free(st->pi_gain);
+   speex_free(st->exc_rms);
    speex_free(st->low_innov);
    speex_free(st->mem_sp);
 
@@ -876,14 +876,10 @@ static void sb_decode_lost(SBDecState *st, spx_word16_t *out, int dtx, char *sta
    /* Final signal synthesis from excitation */
    if (!dtx)
    {
-      spx_word16_t low_ener;
-      low_ener = .9*compute_rms(st->exc, st->frame_size);
-      for (i=0;i<st->frame_size;i++)
-         st->exc[i] = speex_rand(low_ener, &st->seed);
+      st->last_ener =  MULT16_16_Q15(QCONST16(.9f,15),st->last_ener);
    }
-
    for (i=0;i<st->frame_size;i++)
-      out[i+st->frame_size]=EXTRACT16(PSHR32(st->exc[i],SIG_SHIFT));
+      out[i+st->frame_size] = speex_rand(st->last_ener, &st->seed);
 
    iir_mem16(out+st->frame_size, st->interp_qlpc, out+st->frame_size, st->frame_size, st->lpcSize, 
             st->mem_sp, stack);
@@ -907,7 +903,7 @@ int sb_decode(void *state, SpeexBits *bits, void *vout)
    int ret;
    char *stack;
    VARDECL(spx_word32_t *low_pi_gain);
-   VARDECL(spx_word16_t *low_exc);
+   VARDECL(spx_word16_t *low_exc_rms);
    VARDECL(spx_coef_t *ak);
    spx_int32_t dtx;
    const SpeexSBMode *mode;
@@ -969,8 +965,6 @@ int sb_decode(void *state, SpeexBits *bits, void *vout)
       }
 
       for (i=0;i<st->frame_size;i++)
-         st->exc[i]=VERY_SMALL;
-      for (i=0;i<st->frame_size;i++)
          out[st->frame_size+i]=VERY_SMALL;
 
       st->first=1;
@@ -984,13 +978,10 @@ int sb_decode(void *state, SpeexBits *bits, void *vout)
 
    }
 
-   for (i=0;i<st->frame_size;i++)
-      st->exc[i]=0;
-
    ALLOC(low_pi_gain, st->nbSubframes, spx_word32_t);
-   ALLOC(low_exc, st->frame_size, spx_word16_t);
+   ALLOC(low_exc_rms, st->nbSubframes, spx_word16_t);
    speex_decoder_ctl(st->st_low, SPEEX_GET_PI_GAIN, low_pi_gain);
-   speex_decoder_ctl(st->st_low, SPEEX_GET_EXC, low_exc);
+   speex_decoder_ctl(st->st_low, SPEEX_GET_EXC, low_exc_rms);
 
    SUBMODE(lsp_unquant)(st->qlsp, st->lpcSize, bits);
    
@@ -1004,7 +995,7 @@ int sb_decode(void *state, SpeexBits *bits, void *vout)
 
    for (sub=0;sub<st->nbSubframes;sub++)
    {
-      spx_sig_t *exc;
+      VARDECL(spx_word32_t *exc);
       spx_word16_t *innov_save=NULL;
       spx_word16_t *sp;
       spx_word16_t filter_ratio;
@@ -1014,7 +1005,7 @@ int sb_decode(void *state, SpeexBits *bits, void *vout)
       
       offset = st->subframeSize*sub;
       sp=out+st->frame_size+offset;
-      exc=st->exc+offset;
+      ALLOC(exc, st->subframeSize, spx_word32_t);
       /* Pointer for saving innovation */
       if (st->innov_save)
       {
@@ -1093,9 +1084,8 @@ int sb_decode(void *state, SpeexBits *bits, void *vout)
          spx_word16_t gc;
          spx_word32_t scale;
          int qgc = speex_bits_unpack_unsigned(bits, 4);
-
-         el = compute_rms16(low_exc+offset, st->subframeSize);
-
+         
+         el = low_exc_rms[sub];
 #ifdef FIXED_POINT
          gc = MULT16_32_Q15(28626,gc_quant_bound[qgc]);
 #else
@@ -1132,20 +1122,22 @@ int sb_decode(void *state, SpeexBits *bits, void *vout)
       if (st->innov_save)
       {
          for (i=0;i<st->subframeSize;i++)
-            innov_save[2*i]=exc[i];
+            innov_save[2*i]=EXTRACT16(PSHR32(exc[i],SIG_SHIFT));
       }
       
       for (i=0;i<st->subframeSize;i++)
-         sp[i]=EXTRACT16(PSHR32(st->excBuf[i],SIG_SHIFT));
+         sp[i]=st->excBuf[i];
       iir_mem16(sp, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, 
                st->mem_sp, stack);
       for (i=0;i<st->subframeSize;i++)
-         st->excBuf[i]=exc[i];
+         st->excBuf[i]=EXTRACT16(PSHR32(exc[i],SIG_SHIFT));
       for (i=0;i<st->lpcSize;i++)
          st->interp_qlpc[i] = ak[i];
+      st->exc_rms[sub] = compute_rms16(st->excBuf, st->subframeSize);
 
    }
-
+   st->last_ener = compute_rms16(out+st->frame_size, st->frame_size);
+   
    qmf_synth(out, out+st->frame_size, h0, out, st->full_frame_size, QMF_ORDER, st->g0_mem, st->g1_mem, stack);
    for (i=0;i<st->lpcSize;i++)
       st->old_qlsp[i] = st->qlsp[i];
@@ -1383,17 +1375,7 @@ int sb_encoder_ctl(void *state, int request, void *ptr)
    case SPEEX_GET_EXC:
       {
          int i;
-         spx_sig_t *e = (spx_sig_t*)ptr;
-         for (i=0;i<st->full_frame_size;i++)
-            e[i]=0;
-         for (i=0;i<st->frame_size;i++)
-            e[2*i]=2*st->exc[i];
-      }
-      break;
-   case SPEEX_GET_INNOV:
-      {
-         int i;
-         spx_sig_t *e = (spx_sig_t*)ptr;
+         spx_word16_t *e = (spx_word16_t*)ptr;
          for (i=0;i<st->full_frame_size;i++)
             e[i]=0;
          for (i=0;i<st->frame_size;i++)
@@ -1487,6 +1469,7 @@ int sb_decoder_ctl(void *state, int request, void *ptr)
             st->mem_sp[i]=0;
          for (i=0;i<QMF_ORDER;i++)
             st->g0_mem[i]=st->g1_mem[i]=0;
+         st->last_ener=0;
       }
       break;
    case SPEEX_SET_SUBMODE_ENCODING:
@@ -1518,21 +1501,8 @@ int sb_decoder_ctl(void *state, int request, void *ptr)
    case SPEEX_GET_EXC:
       {
          int i;
-         spx_sig_t *e = (spx_sig_t*)ptr;
-         for (i=0;i<st->full_frame_size;i++)
-            e[i]=0;
-         for (i=0;i<st->frame_size;i++)
-            e[2*i]=2*st->exc[i];
-      }
-      break;
-   case SPEEX_GET_INNOV:
-      {
-         int i;
-         spx_sig_t *e = (spx_sig_t*)ptr;
-         for (i=0;i<st->full_frame_size;i++)
-            e[i]=0;
-         for (i=0;i<st->frame_size;i++)
-            e[2*i]=2*st->exc[i];
+         for (i=0;i<st->nbSubframes;i++)
+            ((spx_word16_t*)ptr)[i] = st->exc_rms[i];
       }
       break;
    case SPEEX_GET_DTX_STATUS:

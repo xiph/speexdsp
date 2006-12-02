@@ -126,8 +126,7 @@ typedef struct SBDecState {
    char  *stack;
    spx_word32_t *g0_mem, *g1_mem;
 
-   spx_sig_t *exc;
-   spx_sig_t *excBuf;
+   spx_word16_t *excBuf;
    spx_lsp_t *qlsp;
    spx_lsp_t *old_qlsp;
    spx_lsp_t *interp_qlsp;
@@ -135,9 +134,11 @@ typedef struct SBDecState {
 
    spx_mem_t *mem_sp;
    spx_word32_t *pi_gain;
+   spx_word16_t *exc_rms;
    spx_word16_t *innov_save;      /** If non-NULL, innovation is copied here */
    spx_word16_t *low_innov;       /** Lower-band innovation is copied here magically */
    
+   spx_word16_t last_ener;
    spx_int32_t seed;
 
    int    encode_submode;

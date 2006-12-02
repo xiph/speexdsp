@@ -114,16 +114,17 @@ static inline short _SHR16(int a, int shift, char *file, int line)
    spx_mips++;
    return res;
 }
-static inline short SHL16(int a, int shift) 
+#define SHL16(a, shift) _SHL16(a, shift, __FILE__, __LINE__)
+static inline short _SHL16(int a, int shift, char *file, int line) 
 {
    int res;
    if (!VERIFY_SHORT(a) || !VERIFY_SHORT(shift))
    {
-      fprintf (stderr, "SHL16: inputs are not short: %d %d\n", a, shift);
+      fprintf (stderr, "SHL16: inputs are not short: %d %d in %s: line %d\n", a, shift, file, line);
    }
    res = a<<shift;
    if (!VERIFY_SHORT(res))
-      fprintf (stderr, "SHL16: output is not short: %d\n", res);
+      fprintf (stderr, "SHL16: output is not short: %d in %s: line %d\n", res, file, line);
    spx_mips++;
    return res;
 }
@@ -201,17 +202,18 @@ static inline short _SUB16(int a, int b, char *file, int line)
    return res;
 }
 
-static inline int ADD32(long long a, long long b) 
+#define ADD32(a, b) _ADD32(a, b, __FILE__, __LINE__)
+static inline int _ADD32(long long a, long long b, char *file, int line) 
 {
    long long res;
    if (!VERIFY_INT(a) || !VERIFY_INT(b))
    {
-      fprintf (stderr, "ADD32: inputs are not int: %d %d\n", (int)a, (int)b);
+      fprintf (stderr, "ADD32: inputs are not int: %d %d in %s: line %d\n", (int)a, (int)b, file, line);
    }
    res = a+b;
    if (!VERIFY_INT(res))
    {
-      fprintf (stderr, "ADD32: output is not int: %d\n", (int)res);
+      fprintf (stderr, "ADD32: output is not int: %d in %s: line %d\n", (int)res, file, line);
    }
    spx_mips++;
    return res;
