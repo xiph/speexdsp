@@ -581,7 +581,7 @@ void compute_impulse_response(const spx_coef_t *ak, const spx_coef_t *awk1, cons
 }
 #endif
 
-void qmf_decomp(const spx_word16_t *xx, const spx_word16_t *aa, spx_sig_t *y1, spx_sig_t *y2, int N, int M, spx_word16_t *mem, char *stack)
+void qmf_decomp(const spx_word16_t *xx, const spx_word16_t *aa, spx_word16_t *y1, spx_word16_t *y2, int N, int M, spx_word16_t *mem, char *stack)
 {
    int i,j,k,M2;
    VARDECL(spx_word16_t *a);
@@ -601,18 +601,17 @@ void qmf_decomp(const spx_word16_t *xx, const spx_word16_t *aa, spx_sig_t *y1, s
       x[i+M-1]=SHR16(xx[i],1);
    for (i=0,k=0;i<N;i+=2,k++)
    {
-      y1[k]=0;
-      y2[k]=0;
+      spx_word32_t y1k=0, y2k=0;
       for (j=0;j<M2;j++)
       {
-         y1[k]=ADD32(y1[k],MULT16_16(a[j],ADD16(x[i+j],x2[i-j])));
-         y2[k]=SUB32(y2[k],MULT16_16(a[j],SUB16(x[i+j],x2[i-j])));
+         y1k=ADD32(y1k,MULT16_16(a[j],ADD16(x[i+j],x2[i-j])));
+         y2k=SUB32(y2k,MULT16_16(a[j],SUB16(x[i+j],x2[i-j])));
          j++;
-         y1[k]=ADD32(y1[k],MULT16_16(a[j],ADD16(x[i+j],x2[i-j])));
-         y2[k]=ADD32(y2[k],MULT16_16(a[j],SUB16(x[i+j],x2[i-j])));
+         y1k=ADD32(y1k,MULT16_16(a[j],ADD16(x[i+j],x2[i-j])));
+         y2k=ADD32(y2k,MULT16_16(a[j],SUB16(x[i+j],x2[i-j])));
       }
-      y1[k] = SHR32(y1[k],1);
-      y2[k] = SHR32(y2[k],1);
+      y1[k] = EXTRACT16(SATURATE(PSHR32(y1k,15),32767));
+      y2[k] = EXTRACT16(SATURATE(PSHR32(y2k,15),32767));
    }
    for (i=0;i<M-1;i++)
      mem[i]=SHR16(xx[N-i-1],1);

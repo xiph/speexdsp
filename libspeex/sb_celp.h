@@ -58,7 +58,7 @@ typedef struct SBEncState {
    spx_word16_t  gamma2;          /**< Perceptual weighting coef 2 */
 
    char  *stack;                  /**< Temporary allocation stack */
-   spx_sig_t *x0d, *x1d;          /**< QMF filter signals*/
+   spx_word16_t *x0d, *x1d;          /**< QMF filter signals*/
    spx_sig_t *high;               /**< High-band signal (buffer) */
    spx_word16_t *h0_mem, *h1_mem;
    spx_word32_t *g0_mem, *g1_mem; /**< QMF memories */
