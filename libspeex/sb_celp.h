@@ -135,7 +135,6 @@ typedef struct SBDecState {
    spx_word32_t *pi_gain;
    spx_word16_t *exc_rms;
    spx_word16_t *innov_save;      /** If non-NULL, innovation is copied here */
-   spx_word16_t *low_innov;       /** Lower-band innovation is copied here magically */
    
    spx_word16_t last_ener;
    spx_int32_t seed;

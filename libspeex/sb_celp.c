@@ -812,8 +812,6 @@ void *sb_decoder_init(const SpeexMode *m)
    st->exc_rms = (spx_word16_t*)speex_alloc((st->nbSubframes)*sizeof(spx_word16_t));
    st->mem_sp = (spx_mem_t*)speex_alloc((2*st->lpcSize)*sizeof(spx_mem_t));
    
-   st->low_innov = (spx_word16_t*)speex_alloc((st->frame_size)*sizeof(spx_word16_t));
-   speex_decoder_ctl(st->st_low, SPEEX_SET_INNOVATION_SAVE, st->low_innov);
    st->innov_save = NULL;
 
 
@@ -844,7 +842,6 @@ void sb_decoder_destroy(void *state)
    speex_free(st->interp_qlpc);
    speex_free(st->pi_gain);
    speex_free(st->exc_rms);
-   speex_free(st->low_innov);
    speex_free(st->mem_sp);
 
    speex_free(state);
@@ -901,11 +898,13 @@ int sb_decode(void *state, SpeexBits *bits, void *vout)
    spx_int32_t dtx;
    const SpeexSBMode *mode;
    spx_word16_t *out = (spx_word16_t*)vout;
-   
+   spx_word16_t *low_innov_alias;
    st = (SBDecState*)state;
    stack=st->stack;
    mode = (const SpeexSBMode*)(st->mode->mode);
 
+   low_innov_alias = out+st->frame_size;
+   speex_decoder_ctl(st->st_low, SPEEX_SET_INNOVATION_SAVE, low_innov_alias);
    /* Decode the low-band */
    ret = speex_decode_native(st->st_low, bits, out);
 
@@ -1061,7 +1060,7 @@ int sb_decode(void *state, SpeexBits *bits, void *vout)
             el = compute_rms(low_innov+offset, st->subframeSize);*/
             for (i=0;i<st->subframeSize;i++)
             {
-               float e=tmp*g*mode->folding_gain*st->low_innov[offset+i];
+               float e=tmp*g*mode->folding_gain*low_innov_alias[offset+i];
                tmp *= -1;
                exc[i] = SIG_SCALING*e;
                /*float r = speex_rand(g*el,&seed);
