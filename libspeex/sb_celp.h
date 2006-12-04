@@ -63,8 +63,6 @@ typedef struct SBEncState {
    spx_word16_t *h0_mem, *h1_mem;
    spx_word32_t *g0_mem, *g1_mem; /**< QMF memories */
 
-   spx_sig_t *excBuf;             /**< High-band excitation */
-   spx_sig_t *exc;                /**< High-band excitation (for QMF only)*/
    spx_sig_t *res;                /**< Zero-input response (ringing) */
    spx_sig_t *sw;                 /**< Perceptually weighted signal */
    const spx_word16_t *window;    /**< LPC analysis window */
@@ -86,6 +84,7 @@ typedef struct SBEncState {
    spx_mem_t *mem_sp2;
    spx_mem_t *mem_sw;             /**< Perceptual signal memory */
    spx_word32_t *pi_gain;
+   spx_word16_t *exc_rms;
    spx_word16_t *innov_save;         /**< If non-NULL, innovation is copied here */
    spx_word16_t *low_innov;          /**< Lower-band innovation is copied here magically */
 

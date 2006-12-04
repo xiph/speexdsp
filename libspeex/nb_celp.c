@@ -1927,9 +1927,8 @@ int nb_encoder_ctl(void *state, int request, void *ptr)
    case SPEEX_GET_EXC:
       {
          int i;
-         spx_word16_t *e = (spx_word16_t*)ptr;
-         for (i=0;i<st->frameSize;i++)
-            e[i]=st->exc[i];
+         for (i=0;i<st->nbSubframes;i++)
+            ((spx_word16_t*)ptr)[i] = compute_rms16(st->exc+i*st->subframeSize, st->subframeSize);
       }
       break;
    case SPEEX_GET_RELATIVE_QUALITY:
