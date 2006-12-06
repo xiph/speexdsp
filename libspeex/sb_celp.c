@@ -215,10 +215,7 @@ void *sb_encoder_init(const SpeexMode *m)
 
    st->h0_mem=(spx_word16_t*)speex_alloc((QMF_ORDER)*sizeof(spx_word16_t));
    st->h1_mem=(spx_word16_t*)speex_alloc((QMF_ORDER)*sizeof(spx_word16_t));
-   st->g0_mem=(spx_word32_t*)speex_alloc((QMF_ORDER)*sizeof(spx_word32_t));
-   st->g1_mem=(spx_word32_t*)speex_alloc((QMF_ORDER)*sizeof(spx_word32_t));
 
-   st->res=(spx_sig_t*)speex_alloc((st->frame_size)*sizeof(spx_sig_t));
    st->sw=(spx_sig_t*)speex_alloc((st->frame_size)*sizeof(spx_sig_t));
    st->window= lpc_window;
 
@@ -279,10 +276,7 @@ void sb_encoder_destroy(void *state)
 
    speex_free(st->h0_mem);
    speex_free(st->h1_mem);
-   speex_free(st->g0_mem);
-   speex_free(st->g1_mem);
 
-   speex_free(st->res);
    speex_free(st->sw);
    speex_free(st->lagWindow);
 
@@ -498,11 +492,6 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
       /* Final signal synthesis from excitation */
       iir_mem2(st->high, st->interp_qlpc, st->high, st->frame_size, st->lpcSize, st->mem_sp);
 
-#ifdef RESYNTH
-      /* Reconstruct the original */
-      qmf_synth(low, st->high, h0, in, st->full_frame_size, QMF_ORDER, st->g0_mem, st->g1_mem, stack);
-#endif
-
       if (dtx)
          return 0;
       else
@@ -529,7 +518,8 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
    for (sub=0;sub<st->nbSubframes;sub++)
    {
       VARDECL(spx_word32_t *exc);
-      spx_sig_t *sp, *res, *sw;
+      VARDECL(spx_word16_t *res);
+      spx_sig_t *sp, *sw;
       spx_word16_t *innov_save=NULL;
       spx_word16_t filter_ratio;
       int offset;
@@ -538,9 +528,9 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
 
       offset = st->subframeSize*sub;
       sp=st->high+offset;
-      res=st->res+offset;
       sw=st->sw+offset;
       ALLOC(exc, st->subframeSize, spx_word32_t);
+      ALLOC(res, st->subframeSize, spx_word16_t);
       /* Pointer for saving innovation */
       if (st->innov_save)
       {
@@ -665,16 +655,16 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
          
          /* Reset excitation */
          for (i=0;i<st->subframeSize;i++)
-            exc[i]=VERY_SMALL;
+            res[i]=VERY_SMALL;
          
          /* Compute zero response (ringing) of A(z/g1) / ( A(z/g2) * Aq(z) ) */
          for (i=0;i<st->lpcSize;i++)
             mem[i]=st->mem_sp[i];
-         iir_mem2(exc, st->interp_qlpc, exc, st->subframeSize, st->lpcSize, mem);
+         iir_mem16(res, st->interp_qlpc, res, st->subframeSize, st->lpcSize, mem, stack);
 
          for (i=0;i<st->lpcSize;i++)
             mem[i]=st->mem_sw[i];
-         filter_mem2(exc, st->bw_lpc1, st->bw_lpc2, res, st->subframeSize, st->lpcSize, mem);
+         filter_mem16(res, st->bw_lpc1, st->bw_lpc2, res, st->subframeSize, st->lpcSize, mem, stack);
 
          /* Compute weighted signal */
          for (i=0;i<st->lpcSize;i++)
@@ -683,7 +673,7 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
 
          /* Compute target signal */
          for (i=0;i<st->subframeSize;i++)
-            target[i]=PSHR32(sw[i]-res[i],SIG_SHIFT);
+            target[i]=SUB16(PSHR32(sw[i],SIG_SHIFT),res[i]);
 
          for (i=0;i<st->subframeSize;i++)
            exc[i]=0;
@@ -742,11 +732,6 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
       filter_mem2(sp, st->bw_lpc1, st->bw_lpc2, sw, st->subframeSize, st->lpcSize, st->mem_sw);
    }
 
-
-#ifdef RESYNTH
-   /* Reconstruct the original */
-   qmf_synth(low, st->high, h0, in, st->full_frame_size, QMF_ORDER, st->g0_mem, st->g1_mem, stack);
-#endif
    for (i=0;i<st->lpcSize;i++)
       st->old_lsp[i] = st->lsp[i];
    for (i=0;i<st->lpcSize;i++)
@@ -1294,7 +1279,7 @@ int sb_encoder_ctl(void *state, int request, void *ptr)
          for (i=0;i<st->lpcSize;i++)
             st->mem_sw[i]=st->mem_sp[i]=st->mem_sp2[i]=0;
          for (i=0;i<QMF_ORDER;i++)
-            st->h0_mem[i]=st->h1_mem[i]=st->g0_mem[i]=st->g1_mem[i]=0;
+            st->h0_mem[i]=st->h1_mem[i]=0;
       }
       break;
    case SPEEX_SET_SUBMODE_ENCODING:

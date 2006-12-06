@@ -61,9 +61,7 @@ typedef struct SBEncState {
    spx_word16_t *x0d, *x1d;          /**< QMF filter signals*/
    spx_sig_t *high;               /**< High-band signal (buffer) */
    spx_word16_t *h0_mem, *h1_mem;
-   spx_word32_t *g0_mem, *g1_mem; /**< QMF memories */
 
-   spx_sig_t *res;                /**< Zero-input response (ringing) */
    spx_sig_t *sw;                 /**< Perceptually weighted signal */
    const spx_word16_t *window;    /**< LPC analysis window */
    spx_word16_t *lagWindow;       /**< Auto-correlation window */
