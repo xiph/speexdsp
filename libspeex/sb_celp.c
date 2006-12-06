@@ -210,13 +210,11 @@ void *sb_encoder_init(const SpeexMode *m)
    st->gamma2=mode->gamma2;
    st->first=1;
 
-   st->x1d=(spx_word16_t*)speex_alloc((st->frame_size)*sizeof(spx_word16_t));
-   st->high=(spx_sig_t*)speex_alloc((st->full_frame_size)*sizeof(spx_sig_t));
+   st->high=(spx_word16_t*)speex_alloc((st->windowSize)*sizeof(spx_word16_t));
 
    st->h0_mem=(spx_word16_t*)speex_alloc((QMF_ORDER)*sizeof(spx_word16_t));
    st->h1_mem=(spx_word16_t*)speex_alloc((QMF_ORDER)*sizeof(spx_word16_t));
 
-   st->sw=(spx_sig_t*)speex_alloc((st->frame_size)*sizeof(spx_sig_t));
    st->window= lpc_window;
 
    st->lagWindow = (spx_word16_t*)speex_alloc((st->lpcSize+1)*sizeof(spx_word16_t));
@@ -271,13 +269,11 @@ void sb_encoder_destroy(void *state)
    speex_free_scratch(st->stack);
 #endif
 
-   speex_free(st->x1d);
    speex_free(st->high);
 
    speex_free(st->h0_mem);
    speex_free(st->h1_mem);
 
-   speex_free(st->sw);
    speex_free(st->lagWindow);
 
    speex_free(st->autocorr);
@@ -326,17 +322,14 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
    mode = (const SpeexSBMode*)(st->mode->mode);
    ALLOC(low, st->frame_size, spx_word16_t);
 
-   /* Compute the two sub-bands by filtering with QMF h0*/
-   qmf_decomp(in, h0, low, st->x1d, st->full_frame_size, QMF_ORDER, st->h0_mem, stack);
-   
-   /* Encode the narrowband part*/
-   speex_encode_native(st->st_low, low, bits);
-
    /* High-band buffering / sync with low band */
    for (i=0;i<st->windowSize-st->frame_size;i++)
       st->high[i] = st->high[st->frame_size+i];
-   for (i=0;i<st->frame_size;i++)
-      st->high[st->windowSize-st->frame_size+i]=SHL32(st->x1d[i],SIG_SHIFT);
+   /* Compute the two sub-bands by filtering with QMF h0*/
+   qmf_decomp(in, h0, low, st->high+st->windowSize-st->frame_size, st->full_frame_size, QMF_ORDER, st->h0_mem, stack);
+   
+   /* Encode the narrowband part*/
+   speex_encode_native(st->st_low, low, bits);
 
    ALLOC(low_pi_gain, st->nbSubframes, spx_word32_t);
    ALLOC(low_exc_rms, st->nbSubframes, spx_word16_t);
@@ -358,10 +351,10 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
       if (st->subframeSize==80)
       {
          for (i=0;i<st->windowSize;i++)
-            w_sig[i] = EXTRACT16(SHR32(MULT16_16(EXTRACT16(SHR32(st->high[i],SIG_SHIFT)),st->window[i>>1]),SIG_SHIFT));
+            w_sig[i] = EXTRACT16(SHR32(MULT16_16(st->high[i],st->window[i>>1]),SIG_SHIFT));
       } else {
          for (i=0;i<st->windowSize;i++)
-            w_sig[i] = EXTRACT16(SHR32(MULT16_16(EXTRACT16(SHR32(st->high[i],SIG_SHIFT)),st->window[i]),SIG_SHIFT));
+            w_sig[i] = EXTRACT16(SHR32(MULT16_16(st->high[i],st->window[i]),SIG_SHIFT));
       }
       /* Compute auto-correlation */
       _spx_autocorr(w_sig, st->autocorr, st->lpcSize+1, st->windowSize);
@@ -416,7 +409,7 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
 
       /*FIXME: Are the two signals (low, high) in sync? */
       e_low = compute_rms16(low, st->frame_size);
-      e_high = compute_rms(st->high, st->frame_size);
+      e_high = compute_rms16(st->high, st->frame_size);
       ratio = 2*log((1+e_high)/(1+e_low));
       
       speex_encoder_ctl(st->st_low, SPEEX_GET_RELATIVE_QUALITY, &st->relative_quality);
@@ -483,14 +476,14 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
    if (dtx || st->submodes[st->submodeID] == NULL)
    {
       for (i=0;i<st->frame_size;i++)
-         st->high[i]=st->sw[i]=VERY_SMALL;
+         st->high[i]=VERY_SMALL;
 
       for (i=0;i<st->lpcSize;i++)
          st->mem_sw[i]=0;
       st->first=1;
 
       /* Final signal synthesis from excitation */
-      iir_mem2(st->high, st->interp_qlpc, st->high, st->frame_size, st->lpcSize, st->mem_sp);
+      iir_mem16(st->high, st->interp_qlpc, st->high, st->frame_size, st->lpcSize, st->mem_sp, stack);
 
       if (dtx)
          return 0;
@@ -517,9 +510,10 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
 
    for (sub=0;sub<st->nbSubframes;sub++)
    {
-      VARDECL(spx_word32_t *exc);
+      VARDECL(spx_word16_t *exc);
       VARDECL(spx_word16_t *res);
-      spx_sig_t *sp, *sw;
+      VARDECL(spx_word16_t *sw);
+      spx_word16_t *sp;
       spx_word16_t *innov_save=NULL;
       spx_word16_t filter_ratio;
       int offset;
@@ -528,9 +522,9 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
 
       offset = st->subframeSize*sub;
       sp=st->high+offset;
-      sw=st->sw+offset;
-      ALLOC(exc, st->subframeSize, spx_word32_t);
+      ALLOC(exc, st->subframeSize, spx_word16_t);
       ALLOC(res, st->subframeSize, spx_word16_t);
+      ALLOC(sw, st->subframeSize, spx_word16_t);
       /* Pointer for saving innovation */
       if (st->innov_save)
       {
@@ -570,10 +564,10 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
 #endif
       
       /* Compute "real excitation" */
-      fir_mem2(sp, st->interp_qlpc, exc, st->subframeSize, st->lpcSize, st->mem_sp2);
+      fir_mem16(sp, st->interp_qlpc, exc, st->subframeSize, st->lpcSize, st->mem_sp2, stack);
       /* Compute energy of low-band and high-band excitation */
 
-      eh = compute_rms(exc, st->subframeSize);
+      eh = compute_rms16(exc, st->subframeSize);
 
       if (!SUBMODE(innovation_quant)) {/* 1 for spectral folding excitation, 0 for stochastic */
          float g;
@@ -669,11 +663,11 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
          /* Compute weighted signal */
          for (i=0;i<st->lpcSize;i++)
             mem[i]=st->mem_sw[i];
-         filter_mem2(sp, st->bw_lpc1, st->bw_lpc2, sw, st->subframeSize, st->lpcSize, mem);
+         filter_mem16(sp, st->bw_lpc1, st->bw_lpc2, sw, st->subframeSize, st->lpcSize, mem, stack);
 
          /* Compute target signal */
          for (i=0;i<st->subframeSize;i++)
-            target[i]=SUB16(PSHR32(sw[i],SIG_SHIFT),res[i]);
+            target[i]=SUB16(sw[i],res[i]);
 
          for (i=0;i<st->subframeSize;i++)
            exc[i]=0;
@@ -693,7 +687,7 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
          signal_mul(innov, innov, scale, st->subframeSize);
 
          for (i=0;i<st->subframeSize;i++)
-            exc[i] = ADD32(exc[i], innov[i]);
+            exc[i] = ADD32(exc[i], PSHR32(innov[i],SIG_SHIFT));
 
          if (st->innov_save)
          {
@@ -715,21 +709,21 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
             for (i=0;i<st->subframeSize;i++)
                innov2[i]*=scale*(1/2.5)/SIG_SCALING;
             for (i=0;i<st->subframeSize;i++)
-               exc[i] = ADD32(exc[i],innov2[i]);
+               exc[i] = ADD32(exc[i],PSHR32(innov2[i], SIG_SHIFT));
             stack = tmp_stack;
          }
       }
 
-      st->exc_rms[sub] = compute_rms(exc, st->subframeSize);
+      st->exc_rms[sub] = compute_rms16(exc, st->subframeSize);
       
       /*Keep the previous memory*/
       for (i=0;i<st->lpcSize;i++)
          mem[i]=st->mem_sp[i];
       /* Final signal synthesis from excitation */
-      iir_mem2(exc, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, st->mem_sp);
+      iir_mem16(exc, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, st->mem_sp, stack);
       
       /* Compute weighted signal again, from synthesized speech (not sure it's the right thing) */
-      filter_mem2(sp, st->bw_lpc1, st->bw_lpc2, sw, st->subframeSize, st->lpcSize, st->mem_sw);
+      filter_mem16(sp, st->bw_lpc1, st->bw_lpc2, sw, st->subframeSize, st->lpcSize, st->mem_sw, stack);
    }
 
    for (i=0;i<st->lpcSize;i++)

@@ -58,11 +58,9 @@ typedef struct SBEncState {
    spx_word16_t  gamma2;          /**< Perceptual weighting coef 2 */
 
    char  *stack;                  /**< Temporary allocation stack */
-   spx_word16_t *x0d, *x1d;          /**< QMF filter signals*/
-   spx_sig_t *high;               /**< High-band signal (buffer) */
+   spx_word16_t *high;               /**< High-band signal (buffer) */
    spx_word16_t *h0_mem, *h1_mem;
 
-   spx_sig_t *sw;                 /**< Perceptually weighted signal */
    const spx_word16_t *window;    /**< LPC analysis window */
    spx_word16_t *lagWindow;       /**< Auto-correlation window */
    spx_word16_t *autocorr;        /**< Auto-correlation (for LPC analysis) */
