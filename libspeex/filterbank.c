@@ -203,7 +203,7 @@ void filterbank_psy_smooth(FilterBank *bank, float *ps, float *mask)
    /* Low freq slope: 14 dB/Bark*/
    /* High freq slope: 9 dB/Bark*/
    /* Noise vs tone: 5 dB difference */
-   float bark[bank->nb_banks];
+   float bark[NB_BANDS];
    int i;
    /* Assumes 1/3 Bark resolution */
    float decay_low = 0.34145f;
