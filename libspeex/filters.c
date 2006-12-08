@@ -297,53 +297,6 @@ spx_word16_t compute_rms16(const spx_word16_t *x, int len)
 
 
 
-#ifndef OVERRIDE_FILTER_MEM2
-#ifdef PRECISION16
-void filter_mem2(const spx_sig_t *x, const spx_coef_t *num, const spx_coef_t *den, spx_sig_t *y, int N, int ord, spx_mem_t *mem)
-{
-   int i,j;
-   spx_word16_t xi,yi,nyi;
-
-   for (i=0;i<N;i++)
-   {
-      xi= EXTRACT16(PSHR32(SATURATE(x[i],536870911),SIG_SHIFT));
-      yi = EXTRACT16(PSHR32(SATURATE(ADD32(x[i], SHL32(mem[0],1)),536870911),SIG_SHIFT));
-      nyi = NEG16(yi);
-      for (j=0;j<ord-1;j++)
-      {
-         mem[j] = MAC16_16(MAC16_16(mem[j+1], num[j],xi), den[j],nyi);
-      }
-      mem[ord-1] = ADD32(MULT16_16(num[ord-1],xi), MULT16_16(den[ord-1],nyi));
-      y[i] = SHL32(EXTEND32(yi),SIG_SHIFT);
-   }
-}
-#else
-void filter_mem2(const spx_sig_t *x, const spx_coef_t *num, const spx_coef_t *den, spx_sig_t *y, int N, int ord, spx_mem_t *mem)
-{
-   int i,j;
-   spx_sig_t xi,yi,nyi;
-
-   for (i=0;i<ord;i++)
-      mem[i] = SHR32(mem[i],1);   
-   for (i=0;i<N;i++)
-   {
-      xi=SATURATE(x[i],805306368);
-      yi = SATURATE(ADD32(xi, SHL32(mem[0],2)),805306368);
-      nyi = NEG32(yi);
-      for (j=0;j<ord-1;j++)
-      {
-         mem[j] = MAC16_32_Q15(MAC16_32_Q15(mem[j+1], num[j],xi), den[j],nyi);
-      }
-      mem[ord-1] = SUB32(MULT16_32_Q15(num[ord-1],xi), MULT16_32_Q15(den[ord-1],yi));
-      y[i] = yi;
-   }
-   for (i=0;i<ord;i++)
-      mem[i] = SHL32(mem[i],1);   
-}
-#endif
-#endif
-
-#ifdef FIXED_POINT
 #ifndef OVERRIDE_FILTER_MEM16
 void filter_mem16(const spx_word16_t *x, const spx_coef_t *num, const spx_coef_t *den, spx_word16_t *y, int N, int ord, spx_mem_t *mem, char *stack)
 {
@@ -363,60 +316,7 @@ void filter_mem16(const spx_word16_t *x, const spx_coef_t *num, const spx_coef_t
    }
 }
 #endif
-#else
-void filter_mem16(const spx_word16_t *x, const spx_coef_t *num, const spx_coef_t *den, spx_word16_t *y, int N, int ord, spx_mem_t *mem, char *stack)
-{
-   filter_mem2(x, num, den, y, N, ord, mem);
-}
-#endif
 
-
-#ifndef OVERRIDE_IIR_MEM2
-#ifdef PRECISION16
-void iir_mem2(const spx_sig_t *x, const spx_coef_t *den, spx_sig_t *y, int N, int ord, spx_mem_t *mem)
-{
-   int i,j;
-   spx_word16_t yi,nyi;
-
-   for (i=0;i<N;i++)
-   {
-      yi = EXTRACT16(PSHR32(SATURATE(x[i] + SHL32(mem[0],1),536870911),SIG_SHIFT));
-      nyi = NEG16(yi);
-      for (j=0;j<ord-1;j++)
-      {
-         mem[j] = MAC16_16(mem[j+1],den[j],nyi);
-      }
-      mem[ord-1] = MULT16_16(den[ord-1],nyi);
-      y[i] = SHL32(EXTEND32(yi),SIG_SHIFT);
-   }
-}
-#else
-void iir_mem2(const spx_sig_t *x, const spx_coef_t *den, spx_sig_t *y, int N, int ord, spx_mem_t *mem)
-{
-   int i,j;
-   spx_word32_t xi,yi,nyi;
-
-   for (i=0;i<ord;i++)
-      mem[i] = SHR32(mem[i],1);   
-   for (i=0;i<N;i++)
-   {
-      xi=SATURATE(x[i],805306368);
-      yi = SATURATE(xi + SHL32(mem[0],2),805306368);
-      nyi = NEG32(yi);
-      for (j=0;j<ord-1;j++)
-      {
-         mem[j] = MAC16_32_Q15(mem[j+1],den[j],nyi);
-      }
-      mem[ord-1] = MULT16_32_Q15(den[ord-1],nyi);
-      y[i] = yi;
-   }
-   for (i=0;i<ord;i++)
-      mem[i] = SHL32(mem[i],1);   
-}
-#endif
-#endif
-
-#ifdef FIXED_POINT
 #ifndef OVERRIDE_IIR_MEM16
 void iir_mem16(const spx_word16_t *x, const spx_coef_t *den, spx_word16_t *y, int N, int ord, spx_mem_t *mem, char *stack)
 {
@@ -436,59 +336,7 @@ void iir_mem16(const spx_word16_t *x, const spx_coef_t *den, spx_word16_t *y, in
    }
 }
 #endif
-#else
-void iir_mem16(const spx_word16_t *x, const spx_coef_t *den, spx_word16_t *y, int N, int ord, spx_mem_t *mem, char *stack)
-{
-   iir_mem2(x, den, y, N, ord, mem);
-}
-#endif
 
-
-#ifndef OVERRIDE_FIR_MEM2
-#ifdef PRECISION16
-void fir_mem2(const spx_sig_t *x, const spx_coef_t *num, spx_sig_t *y, int N, int ord, spx_mem_t *mem)
-{
-   int i,j;
-   spx_word16_t xi,yi;
-
-   for (i=0;i<N;i++)
-   {
-      xi= EXTRACT16(PSHR32(SATURATE(x[i],536870911),SIG_SHIFT));
-      yi = EXTRACT16(PSHR32(SATURATE(x[i] + SHL32(mem[0],1),536870911),SIG_SHIFT));
-      for (j=0;j<ord-1;j++)
-      {
-         mem[j] = MAC16_16(mem[j+1], num[j],xi);
-      }
-      mem[ord-1] = MULT16_16(num[ord-1],xi);
-      y[i] = SHL32(EXTEND32(yi),SIG_SHIFT);
-   }
-}
-#else
-void fir_mem2(const spx_sig_t *x, const spx_coef_t *num, spx_sig_t *y, int N, int ord, spx_mem_t *mem)
-{
-   int i,j;
-   spx_word32_t xi,yi;
-
-   for (i=0;i<ord;i++)
-      mem[i] = SHR32(mem[i],1);   
-   for (i=0;i<N;i++)
-   {
-      xi=SATURATE(x[i],805306368);
-      yi = xi + SHL32(mem[0],2);
-      for (j=0;j<ord-1;j++)
-      {
-         mem[j] = MAC16_32_Q15(mem[j+1], num[j],xi);
-      }
-      mem[ord-1] = MULT16_32_Q15(num[ord-1],xi);
-      y[i] = SATURATE(yi,805306368);
-   }
-   for (i=0;i<ord;i++)
-      mem[i] = SHL32(mem[i],1);   
-}
-#endif
-#endif
-
-#ifdef FIXED_POINT
 #ifndef OVERRIDE_FIR_MEM16
 void fir_mem16(const spx_word16_t *x, const spx_coef_t *num, spx_word16_t *y, int N, int ord, spx_mem_t *mem, char *stack)
 {
@@ -508,14 +356,6 @@ void fir_mem16(const spx_word16_t *x, const spx_coef_t *num, spx_word16_t *y, in
    }
 }
 #endif
-#else
-void fir_mem16(const spx_word16_t *x, const spx_coef_t *num, spx_word16_t *y, int N, int ord, spx_mem_t *mem, char *stack)
-{
-   fir_mem2(x, num, y, N, ord, mem);
-}
-#endif
-
-
 
 
 void syn_percep_zero16(const spx_word16_t *xx, const spx_coef_t *ak, const spx_coef_t *awk1, const spx_coef_t *awk2, spx_word16_t *y, int N, int ord, char *stack)
@@ -543,32 +383,6 @@ void residue_percep_zero16(const spx_word16_t *xx, const spx_coef_t *ak, const s
    fir_mem16(y, awk2, y, N, ord, mem, stack);
 }
 
-
-void syn_percep_zero(const spx_sig_t *xx, const spx_coef_t *ak, const spx_coef_t *awk1, const spx_coef_t *awk2, spx_sig_t *y, int N, int ord, char *stack)
-{
-   int i;
-   VARDECL(spx_mem_t *mem);
-   ALLOC(mem, ord, spx_mem_t);
-   for (i=0;i<ord;i++)
-     mem[i]=0;
-   iir_mem2(xx, ak, y, N, ord, mem);
-   for (i=0;i<ord;i++)
-      mem[i]=0;
-   filter_mem2(y, awk1, awk2, y, N, ord, mem);
-}
-
-void residue_percep_zero(const spx_sig_t *xx, const spx_coef_t *ak, const spx_coef_t *awk1, const spx_coef_t *awk2, spx_sig_t *y, int N, int ord, char *stack)
-{
-   int i;
-   VARDECL(spx_mem_t *mem);
-   ALLOC(mem, ord, spx_mem_t);
-   for (i=0;i<ord;i++)
-      mem[i]=0;
-   filter_mem2(xx, ak, awk1, y, N, ord, mem);
-   for (i=0;i<ord;i++)
-     mem[i]=0;
-   fir_mem2(y, awk2, y, N, ord, mem);
-}
 
 #ifndef OVERRIDE_COMPUTE_IMPULSE_RESPONSE
 void compute_impulse_response(const spx_coef_t *ak, const spx_coef_t *awk1, const spx_coef_t *awk2, spx_word16_t *y, int N, int ord, char *stack)
