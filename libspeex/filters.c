@@ -595,11 +595,12 @@ void qmf_decomp(const spx_word16_t *xx, const spx_word16_t *aa, spx_word16_t *y1
    M2=M>>1;
    for (i=0;i<M;i++)
       a[M-i-1]= aa[i];
-
    for (i=0;i<M-1;i++)
       x[i]=mem[M-i-2];
    for (i=0;i<N;i++)
       x[i+M-1]=SHR16(xx[i],1);
+   for (i=0;i<M-1;i++)
+      mem[i]=SHR16(xx[N-i-1],1);
    for (i=0,k=0;i<N;i+=2,k++)
    {
       spx_word32_t y1k=0, y2k=0;
@@ -614,8 +615,6 @@ void qmf_decomp(const spx_word16_t *xx, const spx_word16_t *aa, spx_word16_t *y1
       y1[k] = EXTRACT16(SATURATE(PSHR32(y1k,15),32767));
       y2[k] = EXTRACT16(SATURATE(PSHR32(y2k,15),32767));
    }
-   for (i=0;i<M-1;i++)
-     mem[i]=SHR16(xx[N-i-1],1);
 }
 
 /* Re-synthesised a signal from the QMF low-band and high-band signals */

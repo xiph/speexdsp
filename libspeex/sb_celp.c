@@ -210,7 +210,7 @@ void *sb_encoder_init(const SpeexMode *m)
    st->gamma2=mode->gamma2;
    st->first=1;
 
-   st->high=(spx_word16_t*)speex_alloc((st->windowSize)*sizeof(spx_word16_t));
+   st->high=(spx_word16_t*)speex_alloc((st->windowSize-st->frame_size)*sizeof(spx_word16_t));
 
    st->h0_mem=(spx_word16_t*)speex_alloc((QMF_ORDER)*sizeof(spx_word16_t));
    st->h1_mem=(spx_word16_t*)speex_alloc((QMF_ORDER)*sizeof(spx_word16_t));
@@ -311,25 +311,40 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
    VARDECL(spx_word16_t *target);
    VARDECL(spx_word16_t *syn_resp);
    VARDECL(spx_word32_t *low_pi_gain);
-   VARDECL(spx_word16_t *low);
+   spx_word16_t *low;
+   spx_word16_t *high;
    VARDECL(spx_word16_t *low_exc_rms);
    const SpeexSBMode *mode;
    spx_int32_t dtx;
    spx_word16_t *in = (spx_word16_t*)vin;
+   float e_low=0, e_high=0;
 
    st = (SBEncState*)state;
    stack=st->stack;
    mode = (const SpeexSBMode*)(st->mode->mode);
-   ALLOC(low, st->frame_size, spx_word16_t);
-
-   /* High-band buffering / sync with low band */
-   for (i=0;i<st->windowSize-st->frame_size;i++)
-      st->high[i] = st->high[st->frame_size+i];
-   /* Compute the two sub-bands by filtering with QMF h0*/
-   qmf_decomp(in, h0, low, st->high+st->windowSize-st->frame_size, st->full_frame_size, QMF_ORDER, st->h0_mem, stack);
+   low = in;
+   high = in+st->frame_size;
    
+   /* High-band buffering / sync with low band */
+   /* Compute the two sub-bands by filtering with QMF h0*/
+   qmf_decomp(in, h0, low, high, st->full_frame_size, QMF_ORDER, st->h0_mem, stack);
+   
+   if (st->vbr_enabled || st->vad_enabled)
+   {
+      /* Need to compute things here before the signal is trashed by the encoder */
+      /*FIXME: Are the two signals (low, high) in sync? */
+      e_low = compute_rms16(low, st->frame_size);
+      e_high = compute_rms16(high, st->frame_size);
+   }
    /* Encode the narrowband part*/
    speex_encode_native(st->st_low, low, bits);
+
+   high = high - (st->windowSize-st->frame_size);
+   for (i=0;i<st->windowSize-st->frame_size;i++)
+      high[i] = st->high[i];
+   for (i=0;i<st->windowSize-st->frame_size;i++)
+      st->high[i] = high[i+st->frame_size];
+   
 
    ALLOC(low_pi_gain, st->nbSubframes, spx_word32_t);
    ALLOC(low_exc_rms, st->nbSubframes, spx_word16_t);
@@ -351,10 +366,10 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
       if (st->subframeSize==80)
       {
          for (i=0;i<st->windowSize;i++)
-            w_sig[i] = EXTRACT16(SHR32(MULT16_16(st->high[i],st->window[i>>1]),SIG_SHIFT));
+            w_sig[i] = EXTRACT16(SHR32(MULT16_16(high[i],st->window[i>>1]),SIG_SHIFT));
       } else {
          for (i=0;i<st->windowSize;i++)
-            w_sig[i] = EXTRACT16(SHR32(MULT16_16(st->high[i],st->window[i]),SIG_SHIFT));
+            w_sig[i] = EXTRACT16(SHR32(MULT16_16(high[i],st->window[i]),SIG_SHIFT));
       }
       /* Compute auto-correlation */
       _spx_autocorr(w_sig, st->autocorr, st->lpcSize+1, st->windowSize);
@@ -385,7 +400,6 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
    /* VBR code */
    if ((st->vbr_enabled || st->vad_enabled) && !dtx)
    {
-      float e_low=0, e_high=0;
       float ratio;
       if (st->abr_enabled)
       {
@@ -407,9 +421,6 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
       }
 
 
-      /*FIXME: Are the two signals (low, high) in sync? */
-      e_low = compute_rms16(low, st->frame_size);
-      e_high = compute_rms16(st->high, st->frame_size);
       ratio = 2*log((1+e_high)/(1+e_low));
       
       speex_encoder_ctl(st->st_low, SPEEX_GET_RELATIVE_QUALITY, &st->relative_quality);
@@ -476,14 +487,14 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
    if (dtx || st->submodes[st->submodeID] == NULL)
    {
       for (i=0;i<st->frame_size;i++)
-         st->high[i]=VERY_SMALL;
+         high[i]=VERY_SMALL;
 
       for (i=0;i<st->lpcSize;i++)
          st->mem_sw[i]=0;
       st->first=1;
 
       /* Final signal synthesis from excitation */
-      iir_mem16(st->high, st->interp_qlpc, st->high, st->frame_size, st->lpcSize, st->mem_sp, stack);
+      iir_mem16(high, st->interp_qlpc, high, st->frame_size, st->lpcSize, st->mem_sp, stack);
 
       if (dtx)
          return 0;
@@ -521,7 +532,7 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
       spx_word16_t eh=0;
 
       offset = st->subframeSize*sub;
-      sp=st->high+offset;
+      sp=high+offset;
       ALLOC(exc, st->subframeSize, spx_word16_t);
       ALLOC(res, st->subframeSize, spx_word16_t);
       ALLOC(sw, st->subframeSize, spx_word16_t);
