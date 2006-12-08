@@ -793,8 +793,8 @@ spx_word32_t *cumul_gain
 )
 {
    int i;
-   VARDECL(spx_sig_t *res);
-   ALLOC(res, nsf, spx_sig_t);
+   VARDECL(spx_word16_t *res);
+   ALLOC(res, nsf, spx_word16_t);
 #ifdef FIXED_POINT
    if (pitch_coef>63)
       pitch_coef=63;
@@ -810,9 +810,11 @@ spx_word32_t *cumul_gain
    {
       exc[i]=MULT16_32_Q15(SHL16(pitch_coef, 9),exc[i-start]);
    }
-   syn_percep_zero(exc, ak, awk1, awk2, res, nsf, p, stack);
    for (i=0;i<nsf;i++)
-      target[i]=EXTRACT16(SATURATE(SUB32(EXTEND32(target[i]),PSHR32(res[i],SIG_SHIFT-1)),32700));
+      res[i] = EXTRACT16(PSHR32(exc[i], SIG_SHIFT-1));
+   syn_percep_zero16(res, ak, awk1, awk2, res, nsf, p, stack);
+   for (i=0;i<nsf;i++)
+      target[i]=EXTRACT16(SATURATE(SUB32(EXTEND32(target[i]),EXTEND32(res[i])),32700));
    return start;
 }
 

@@ -73,6 +73,8 @@ void fir_mem16(const spx_word16_t *x, const spx_coef_t *num, spx_word16_t *y, in
 void bw_lpc(spx_word16_t , const spx_coef_t *lpc_in, spx_coef_t *lpc_out, int order);
 
 
+void syn_percep_zero16(const spx_word16_t *xx, const spx_coef_t *ak, const spx_coef_t *awk1, const spx_coef_t *awk2, spx_word16_t *y, int N, int ord, char *stack);
+void residue_percep_zero16(const spx_word16_t *xx, const spx_coef_t *ak, const spx_coef_t *awk1, const spx_coef_t *awk2, spx_word16_t *y, int N, int ord, char *stack);
 
 void syn_percep_zero(const spx_sig_t *x, const spx_coef_t *ak, const spx_coef_t *awk1, const spx_coef_t *awk2, spx_sig_t *y, int N, int ord, char *stack);
 

@@ -518,6 +518,30 @@ void fir_mem16(const spx_word16_t *x, const spx_coef_t *num, spx_word16_t *y, in
 
 
 
+void syn_percep_zero16(const spx_word16_t *xx, const spx_coef_t *ak, const spx_coef_t *awk1, const spx_coef_t *awk2, spx_word16_t *y, int N, int ord, char *stack)
+{
+   int i;
+   VARDECL(spx_mem_t *mem);
+   ALLOC(mem, ord, spx_mem_t);
+   for (i=0;i<ord;i++)
+      mem[i]=0;
+   iir_mem16(xx, ak, y, N, ord, mem, stack);
+   for (i=0;i<ord;i++)
+      mem[i]=0;
+   filter_mem16(y, awk1, awk2, y, N, ord, mem, stack);
+}
+void residue_percep_zero16(const spx_word16_t *xx, const spx_coef_t *ak, const spx_coef_t *awk1, const spx_coef_t *awk2, spx_word16_t *y, int N, int ord, char *stack)
+{
+   int i;
+   VARDECL(spx_mem_t *mem);
+   ALLOC(mem, ord, spx_mem_t);
+   for (i=0;i<ord;i++)
+      mem[i]=0;
+   filter_mem16(xx, ak, awk1, y, N, ord, mem, stack);
+   for (i=0;i<ord;i++)
+      mem[i]=0;
+   fir_mem16(y, awk2, y, N, ord, mem, stack);
+}
 
 
 void syn_percep_zero(const spx_sig_t *xx, const spx_coef_t *ak, const spx_coef_t *awk1, const spx_coef_t *awk2, spx_sig_t *y, int N, int ord, char *stack)
