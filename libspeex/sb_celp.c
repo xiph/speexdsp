@@ -569,7 +569,7 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
       
       rl = low_pi_gain[sub];
 #ifdef FIXED_POINT
-      filter_ratio=PDIV32_16(SHL32(rl+82,2),EXTRACT16(SHR32(82+rh,5)));
+      filter_ratio=EXTRACT16(SATURATE(PDIV32(SHL32(rl+82,2),EXTRACT16(SHR32(82+rh,5))),32767));
 #else
       filter_ratio=(rl+.01)/(rh+.01);
 #endif
@@ -637,7 +637,7 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
          {
             int qgc = scal_quant(gc, gc_quant_bound, 16);
             speex_bits_pack(bits, qgc, 4);
-            gc = MULT16_32_Q15(28626,gc_quant_bound[qgc]);
+            gc = MULT16_16_Q15(28626,gc_quant_bound[qgc]);
          }
 #else
          {
@@ -1017,7 +1017,7 @@ int sb_decode(void *state, SpeexBits *bits, void *vout)
 
          rl = low_pi_gain[sub];
 #ifdef FIXED_POINT
-         filter_ratio=PDIV32_16(SHL32(rl+82,2),EXTRACT16(SHR32(82+rh,5)));
+         filter_ratio=EXTRACT16(SATURATE(PDIV32(SHL32(rl+82,2),EXTRACT16(SHR32(82+rh,5))),32767));
 #else
          filter_ratio=(rl+.01)/(rh+.01);
 #endif
@@ -1069,7 +1069,7 @@ int sb_decode(void *state, SpeexBits *bits, void *vout)
          
          el = low_exc_rms[sub];
 #ifdef FIXED_POINT
-         gc = MULT16_32_Q15(28626,gc_quant_bound[qgc]);
+         gc = MULT16_16_Q15(28626,gc_quant_bound[qgc]);
 #else
          gc = exp((1/3.7)*qgc-0.15556);
 #endif
@@ -1077,8 +1077,7 @@ int sb_decode(void *state, SpeexBits *bits, void *vout)
          if (st->subframeSize==80)
             gc *= 1.4142;
 
-         scale = SHL32(MULT16_16(PDIV32_16(SHL32(EXTEND32(gc),SIG_SHIFT-6),filter_ratio),(1+el)),6);
-
+         scale = SHL32(PDIV32(SHL32(MULT16_16(gc, el),3), filter_ratio),SIG_SHIFT-3);
          SUBMODE(innovation_unquant)(exc, SUBMODE(innovation_params), st->subframeSize, 
                                      bits, stack, &st->seed);
 
@@ -1289,7 +1288,7 @@ int sb_encoder_ctl(void *state, int request, void *ptr)
       break;
    case SPEEX_SET_SUBMODE_ENCODING:
       st->encode_submode = (*(spx_int32_t*)ptr);
-      speex_encoder_ctl(st->st_low, SPEEX_SET_SUBMODE_ENCODING, &ptr);
+      speex_encoder_ctl(st->st_low, SPEEX_SET_SUBMODE_ENCODING, ptr);
       break;
    case SPEEX_GET_SUBMODE_ENCODING:
       (*(spx_int32_t*)ptr) = st->encode_submode;
@@ -1451,7 +1450,7 @@ int sb_decoder_ctl(void *state, int request, void *ptr)
       break;
    case SPEEX_SET_SUBMODE_ENCODING:
       st->encode_submode = (*(spx_int32_t*)ptr);
-      speex_decoder_ctl(st->st_low, SPEEX_SET_SUBMODE_ENCODING, &ptr);
+      speex_decoder_ctl(st->st_low, SPEEX_SET_SUBMODE_ENCODING, ptr);
       break;
    case SPEEX_GET_SUBMODE_ENCODING:
       (*(spx_int32_t*)ptr) = st->encode_submode;
