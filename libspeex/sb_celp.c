@@ -569,7 +569,7 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
       
       rl = low_pi_gain[sub];
 #ifdef FIXED_POINT
-      filter_ratio=EXTRACT16(SATURATE(PDIV32(SHL32(rl+82,2),EXTRACT16(SHR32(82+rh,5))),32767));
+      filter_ratio=EXTRACT16(SATURATE(PDIV32(SHL32(ADD32(rl,82),7),ADD32(82,rh)),32767));
 #else
       filter_ratio=(rl+.01)/(rh+.01);
 #endif
@@ -1017,7 +1017,7 @@ int sb_decode(void *state, SpeexBits *bits, void *vout)
 
          rl = low_pi_gain[sub];
 #ifdef FIXED_POINT
-         filter_ratio=EXTRACT16(SATURATE(PDIV32(SHL32(rl+82,2),EXTRACT16(SHR32(82+rh,5))),32767));
+         filter_ratio=EXTRACT16(SATURATE(PDIV32(SHL32(ADD32(rl,82),7),ADD32(82,rh)),32767));
 #else
          filter_ratio=(rl+.01)/(rh+.01);
 #endif
