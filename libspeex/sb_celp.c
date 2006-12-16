@@ -581,12 +581,12 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
       eh = compute_rms16(exc, st->subframeSize);
 
       if (!SUBMODE(innovation_quant)) {/* 1 for spectral folding excitation, 0 for stochastic */
-         float g;
+         spx_word32_t g;
          spx_word16_t el;
          el = compute_rms16(st->low_innov+offset, st->subframeSize);
 
          /* Gain to use if we want to use the low-band excitation for high-band */
-         g=eh/(1.+el);
+         g=PDIV32(MULT16_16(filter_ratio,eh),EXTEND32(ADD16(1,el)));
          
 #if 0
          {
@@ -604,15 +604,14 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
          }
 #endif
 
-#ifdef FIXED_POINT
-         g *= filter_ratio/128.;
-#else
-         g *= filter_ratio;
-#endif
          /*print_vec(&g, 1, "gain factor");*/
          /* Gain quantization */
          {
+#ifdef FIXED_POINT
+            int quant = (int) floor(.5 + 10 + 8.0 * log((g/127.+.0001)));
+#else
             int quant = (int) floor(.5 + 10 + 8.0 * log((g+.0001)));
+#endif
             /*speex_warning_int("tata", quant);*/
             if (quant<0)
                quant=0;
