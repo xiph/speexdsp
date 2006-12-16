@@ -979,11 +979,11 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
             for (i=0;i<st->subframeSize;i++)
                innov2[i]=0;
             for (i=0;i<st->subframeSize;i++)
-               target[i]=MULT16_16_P13(QCONST16(2.2,13), target[i]);
+               target[i]=MULT16_16_P13(QCONST16(2.2f,13), target[i]);
             SUBMODE(innovation_quant)(target, interp_qlpc, bw_lpc1, bw_lpc2, 
                                       SUBMODE(innovation_params), st->lpcSize, st->subframeSize, 
                                       innov2, syn_resp, bits, stack, st->complexity, 0);
-            signal_mul(innov2, innov2, MULT16_32_Q15(QCONST16(0.454545,15),ener), st->subframeSize);
+            signal_mul(innov2, innov2, MULT16_32_Q15(QCONST16(0.454545f,15),ener), st->subframeSize);
             for (i=0;i<st->subframeSize;i++)
                exc[i] = ADD32(exc[i],PSHR32(innov2[i],SIG_SHIFT));
             if (innov_save)
@@ -1638,7 +1638,7 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
             for (i=0;i<st->subframeSize;i++)
                innov2[i]=0;
             SUBMODE(innovation_unquant)(innov2, SUBMODE(innovation_params), st->subframeSize, bits, stack, &st->seed);
-            signal_mul(innov2, innov2, MULT16_32_Q15(QCONST16(0.454545,15),ener), st->subframeSize);
+            signal_mul(innov2, innov2, MULT16_32_Q15(QCONST16(0.454545f,15),ener), st->subframeSize);
             for (i=0;i<st->subframeSize;i++)
                exc[i] = EXTRACT16(SATURATE32(ADD32(EXTEND32(exc[i]),PSHR32(innov2[i],SIG_SHIFT)),32767));
             if (innov_save)
