@@ -495,7 +495,7 @@ static const SpeexSBMode sb_wb_mode = {
 #endif
    .012,   /*lag_factor*/
    QCONST16(.0002,15), /*lpc_floor*/
-   0.9,
+   QCONST16(0.9f,15),
    {NULL, &wb_submode1, &wb_submode2, &wb_submode3, &wb_submode4, NULL, NULL, NULL},
    3,
    {1, 8, 2, 3, 4, 5, 5, 6, 6, 7, 7},
@@ -541,7 +541,7 @@ static const SpeexSBMode sb_uwb_mode = {
 #endif
    .012,   /*lag_factor*/
    QCONST16(.0002,15), /*lpc_floor*/
-   0.7,
+   QCONST16(0.7f,15),
    {NULL, &wb_submode1, NULL, NULL, NULL, NULL, NULL, NULL},
    1,
    {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10},

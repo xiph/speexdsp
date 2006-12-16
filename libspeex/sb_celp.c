@@ -317,7 +317,7 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
    const SpeexSBMode *mode;
    spx_int32_t dtx;
    spx_word16_t *in = (spx_word16_t*)vin;
-   float e_low=0, e_high=0;
+   spx_word16_t e_low=0, e_high=0;
 
    st = (SBEncState*)state;
    stack=st->stack;
@@ -421,7 +421,7 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
       }
 
 
-      ratio = 2*log((1+e_high)/(1+e_low));
+      ratio = 2*log((1.f+e_high)/(1.f+e_low));
       
       speex_encoder_ctl(st->st_low, SPEEX_GET_RELATIVE_QUALITY, &st->relative_quality);
       if (ratio<-4)
@@ -630,7 +630,7 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
 
          /* This is a kludge that cleans up a historical bug */
          if (st->subframeSize==80)
-            gc *= 0.70711;
+            gc = MULT16_16_P15(QCONST16(0.70711f,15),gc);
          /*printf ("%f %f %f %f\n", el, eh, filter_ratio, gc);*/
 #ifdef FIXED_POINT
          {
@@ -650,7 +650,7 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
          }         
 #endif
          if (st->subframeSize==80)
-            gc *= 1.4142;
+            gc = MULT16_16_P14(QCONST16(1.4142f,14), gc);
 
          scale = SHL32(MULT16_16(PDIV32_16(SHL32(EXTEND32(gc),SIG_SHIFT-6),filter_ratio),(1+el)),6);
 
@@ -1043,13 +1043,13 @@ int sb_decode(void *state, SpeexBits *bits, void *vout)
             exc[i]=mode->folding_gain*g*st->low_innov[offset+i];
 #else
          {
-            float tmp=1;
+            spx_word16_t tmp=1;
             /*static tmp1=0,tmp2=0;
             static int seed=1;
             el = compute_rms(low_innov+offset, st->subframeSize);*/
             for (i=0;i<st->subframeSize;i++)
             {
-               float e=tmp*g*mode->folding_gain*low_innov_alias[offset+i];
+               float e=tmp*g*MULT16_16_Q15(mode->folding_gain,low_innov_alias[offset+i]);
                tmp *= -1;
                exc[i] = SIG_SCALING*e;
                /*float r = speex_rand(g*el,&seed);
@@ -1074,7 +1074,7 @@ int sb_decode(void *state, SpeexBits *bits, void *vout)
 #endif
 
          if (st->subframeSize==80)
-            gc *= 1.4142;
+            gc = MULT16_16_P14(QCONST16(1.4142f,14),gc);
 
          scale = SHL32(PDIV32(SHL32(MULT16_16(gc, el),3), filter_ratio),SIG_SHIFT-3);
          SUBMODE(innovation_unquant)(exc, SUBMODE(innovation_params), st->subframeSize, 

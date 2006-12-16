@@ -130,7 +130,7 @@ typedef struct SpeexSBMode {
    spx_word16_t gamma2;   /**< Perceptual filter parameter #1 */
    float   lag_factor;    /**< Lag-windowing parameter */
    spx_word16_t   lpc_floor;     /**< Noise floor for LPC analysis */
-   float   folding_gain;
+   spx_word16_t   folding_gain;
 
    const SpeexSubmode *submodes[SB_SUBMODES]; /**< Sub-mode data for the mode */
    int     defaultSubmode; /**< Default sub-mode to use when encoding */
