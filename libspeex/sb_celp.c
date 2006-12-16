@@ -45,6 +45,7 @@
 #include "vq.h"
 #include "ltp.h"
 #include "misc.h"
+#include "math_approx.h"
 
 /* Default size for the encoder and decoder stack (can be changed at compile time).
    This does not apply when using variable-size arrays or alloca. */
@@ -1025,42 +1026,20 @@ int sb_decode(void *state, SpeexBits *bits, void *vout)
          exc[i]=0;
       if (!SUBMODE(innovation_unquant))
       {
-         float g;
+         spx_word32_t g;
          int quant;
 
          quant = speex_bits_unpack_unsigned(bits, 5);
-         g= exp(((float)quant-10)/8.0);
+         g= spx_exp(MULT16_16(QCONST16(.125f,11),(quant-10)));
          
-#ifdef FIXED_POINT
-         g /= filter_ratio/128.;
-#else
-         g /= filter_ratio;
-#endif
-         /* High-band excitation using the low-band excitation and a gain */
+         g = PDIV32(g, filter_ratio);
          
-#if 0
-         for (i=0;i<st->subframeSize;i++)
-            exc[i]=mode->folding_gain*g*st->low_innov[offset+i];
-#else
+         for (i=0;i<st->subframeSize;i+=2)
          {
-            spx_word16_t tmp=1;
-            /*static tmp1=0,tmp2=0;
-            static int seed=1;
-            el = compute_rms(low_innov+offset, st->subframeSize);*/
-            for (i=0;i<st->subframeSize;i++)
-            {
-               float e=tmp*g*MULT16_16_Q15(mode->folding_gain,low_innov_alias[offset+i]);
-               tmp *= -1;
-               exc[i] = SIG_SCALING*e;
-               /*float r = speex_rand(g*el,&seed);
-               exc[i] = .5*(r+tmp2 + e-tmp1);
-               tmp1 = e;
-               tmp2 = r;*/               
-            }
-            
+            exc[i]=SHL32(MULT16_32_P15(MULT16_16_Q15(mode->folding_gain,low_innov_alias[offset+i]),SHL32(g,6)),SIG_SHIFT);
+            exc[i+1]=NEG32(SHL32(MULT16_32_P15(MULT16_16_Q15(mode->folding_gain,low_innov_alias[offset+i+1]),SHL32(g,6)),SIG_SHIFT));
          }
          
-#endif    
       } else {
          spx_word16_t gc;
          spx_word32_t scale;
