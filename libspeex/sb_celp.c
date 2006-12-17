@@ -110,12 +110,26 @@ int sb_decoder_ctl(void *state, int request, void *ptr)
 
 #ifdef FIXED_POINT
 static const spx_word16_t gc_quant_bound[16] = {125, 164, 215, 282, 370, 484, 635, 832, 1090, 1428, 1871, 2452, 3213, 4210, 5516, 7228};
+static const spx_word16_t fold_quant_bound[32] = {
+   39, 44, 50, 57, 64, 73, 83, 94,
+   106, 120, 136, 154, 175, 198, 225, 255,
+   288, 327, 370, 420, 476, 539, 611, 692,
+   784, 889, 1007, 1141, 1293, 1465, 1660, 1881};
 #define LSP_MARGIN 410
 #define LSP_DELTA1 6553
 #define LSP_DELTA2 1638
 
 #else
-
+/*
+static const spx_word16_t gc_quant_bound[16] = {
+      0.97979, 1.28384, 1.68223, 2.20426, 2.88829, 3.78458, 4.95900, 6.49787, 
+      8.51428, 11.15642, 14.61846, 19.15484, 25.09895, 32.88761, 43.09325, 56.46588};
+static const spx_word16_t fold_quant_bound[32] = {
+   0.30498, 0.34559, 0.39161, 0.44375, 0.50283, 0.56979, 0.64565, 0.73162,
+   0.82903, 0.93942, 1.06450, 1.20624, 1.36685, 1.54884, 1.75506, 1.98875,
+   2.25355, 2.55360, 2.89361, 3.27889, 3.71547, 4.21018, 4.77076, 5.40598,
+   6.12577, 6.94141, 7.86565, 8.91295, 10.09969, 11.44445, 12.96826, 14.69497};
+  */ 
 #define LSP_MARGIN .05
 #define LSP_DELTA1 .2
 #define LSP_DELTA2 .05
@@ -609,7 +623,7 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
          /* Gain quantization */
          {
 #ifdef FIXED_POINT
-            int quant = (int) floor(.5 + 10 + 8.0 * log((g/127.+.0001)));
+            int quant = scal_quant(g, fold_quant_bound, 32);
 #else
             int quant = (int) floor(.5 + 10 + 8.0 * log((g+.0001)));
 #endif
