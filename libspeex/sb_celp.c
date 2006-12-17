@@ -527,9 +527,9 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
       VARDECL(spx_word16_t *sw);
       spx_word16_t *sp;
       spx_word16_t *innov_save=NULL;
-      spx_word16_t filter_ratio;
+      spx_word16_t filter_ratio;     /*Q7*/
       int offset;
-      spx_word32_t rl, rh;
+      spx_word32_t rl, rh;           /*Q13*/
       spx_word16_t eh=0;
 
       offset = st->subframeSize*sub;
@@ -582,8 +582,8 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
       eh = compute_rms16(exc, st->subframeSize);
 
       if (!SUBMODE(innovation_quant)) {/* 1 for spectral folding excitation, 0 for stochastic */
-         spx_word32_t g;
-         spx_word16_t el;
+         spx_word32_t g;   /*Q7*/
+         spx_word16_t el;  /*Q0*/
          el = compute_rms16(st->low_innov+offset, st->subframeSize);
 
          /* Gain to use if we want to use the low-band excitation for high-band */
@@ -622,10 +622,10 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
          }
 
       } else {
-         spx_word16_t gc;
-         spx_word32_t scale;
-         spx_word16_t el;
-         el = low_exc_rms[sub];
+         spx_word16_t gc;       /*Q7*/
+         spx_word32_t scale;    /*Q14*/
+         spx_word16_t el;       /*Q0*/
+         el = low_exc_rms[sub]; /*Q0*/
 
          gc = PDIV32_16(MULT16_16(filter_ratio,1+eh),1+el);
 
@@ -718,7 +718,7 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
             SUBMODE(innovation_quant)(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2, 
                                       SUBMODE(innovation_params), st->lpcSize, st->subframeSize, 
                                       innov2, syn_resp, bits, stack, st->complexity, 0);
-            signal_mul(innov2, innov2, MULT16_32_Q15(QCONST16(0.4f,15),scale), st->subframeSize);
+            signal_mul(innov2, innov2, MULT16_32_P15(QCONST16(0.4f,15),scale), st->subframeSize);
 
             for (i=0;i<st->subframeSize;i++)
                exc[i] = ADD32(exc[i],PSHR32(innov2[i], SIG_SHIFT));
@@ -1070,7 +1070,7 @@ int sb_decode(void *state, SpeexBits *bits, void *vout)
                innov2[i]=0;
             SUBMODE(innovation_unquant)(innov2, SUBMODE(innovation_params), st->subframeSize, 
                                         bits, stack, &st->seed);
-            signal_mul(innov2, innov2, MULT16_32_Q15(QCONST16(0.4f,15),scale), st->subframeSize);
+            signal_mul(innov2, innov2, MULT16_32_P15(QCONST16(0.4f,15),scale), st->subframeSize);
             for (i=0;i<st->subframeSize;i++)
                exc[i] = ADD32(exc[i],innov2[i]);
             stack = tmp_stack;
