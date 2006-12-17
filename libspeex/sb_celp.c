@@ -120,7 +120,7 @@ static const spx_word16_t fold_quant_bound[32] = {
 #define LSP_DELTA2 1638
 
 #else
-/*
+
 static const spx_word16_t gc_quant_bound[16] = {
       0.97979, 1.28384, 1.68223, 2.20426, 2.88829, 3.78458, 4.95900, 6.49787, 
       8.51428, 11.15642, 14.61846, 19.15484, 25.09895, 32.88761, 43.09325, 56.46588};
@@ -129,7 +129,7 @@ static const spx_word16_t fold_quant_bound[32] = {
    0.82903, 0.93942, 1.06450, 1.20624, 1.36685, 1.54884, 1.75506, 1.98875,
    2.25355, 2.55360, 2.89361, 3.27889, 3.71547, 4.21018, 4.77076, 5.40598,
    6.12577, 6.94141, 7.86565, 8.91295, 10.09969, 11.44445, 12.96826, 14.69497};
-  */ 
+
 #define LSP_MARGIN .05
 #define LSP_DELTA1 .2
 #define LSP_DELTA2 .05
@@ -622,11 +622,7 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
          /*print_vec(&g, 1, "gain factor");*/
          /* Gain quantization */
          {
-#ifdef FIXED_POINT
             int quant = scal_quant(g, fold_quant_bound, 32);
-#else
-            int quant = (int) floor(.5 + 10 + 8.0 * log((g+.0001)));
-#endif
             /*speex_warning_int("tata", quant);*/
             if (quant<0)
                quant=0;
@@ -647,23 +643,11 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
          if (st->subframeSize==80)
             gc = MULT16_16_P15(QCONST16(0.70711f,15),gc);
          /*printf ("%f %f %f %f\n", el, eh, filter_ratio, gc);*/
-#ifdef FIXED_POINT
          {
             int qgc = scal_quant(gc, gc_quant_bound, 16);
             speex_bits_pack(bits, qgc, 4);
-            gc = MULT16_16_Q15(28626,gc_quant_bound[qgc]);
+            gc = MULT16_16_Q15(QCONST16(0.87360,15),gc_quant_bound[qgc]);
          }
-#else
-         {
-            int qgc = (int)floor(.5+3.7*(log(gc)+0.15556));
-            if (qgc<0)
-               qgc=0;
-            if (qgc>15)
-               qgc=15;
-            speex_bits_pack(bits, qgc, 4);
-            gc = exp((1/3.7)*qgc-0.15556);
-         }         
-#endif
          if (st->subframeSize==80)
             gc = MULT16_16_P14(QCONST16(1.4142f,14), gc);
 
@@ -1061,11 +1045,7 @@ int sb_decode(void *state, SpeexBits *bits, void *vout)
          int qgc = speex_bits_unpack_unsigned(bits, 4);
          
          el = low_exc_rms[sub];
-#ifdef FIXED_POINT
-         gc = MULT16_16_Q15(28626,gc_quant_bound[qgc]);
-#else
-         gc = exp((1/3.7)*qgc-0.15556);
-#endif
+         gc = MULT16_16_Q15(QCONST16(0.87360,15),gc_quant_bound[qgc]);
 
          if (st->subframeSize==80)
             gc = MULT16_16_P14(QCONST16(1.4142f,14),gc);
