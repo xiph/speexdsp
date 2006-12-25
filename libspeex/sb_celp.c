@@ -258,6 +258,11 @@ void *sb_encoder_init(const SpeexMode *m)
    st->mem_sp2 = (spx_mem_t*)speex_alloc((st->lpcSize)*sizeof(spx_mem_t));
    st->mem_sw = (spx_mem_t*)speex_alloc((st->lpcSize)*sizeof(spx_mem_t));
 
+   for (i=0;i<st->lpcSize;i++)
+   {
+      st->old_lsp[i]=LSP_SCALING*(M_PI*((float)(i+1)))/(st->lpcSize+1);
+   }
+
    st->vbr_quality = 8;
    st->vbr_enabled = 0;
    st->vbr_max = 0;
@@ -407,7 +412,7 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
          /*If we can't find all LSP's, do some damage control and use a flat filter*/
          for (i=0;i<st->lpcSize;i++)
          {
-            st->lsp[i]=LSP_SCALING*M_PI*((float)(i+1))/(st->lpcSize+1);
+            st->lsp[i]=st->old_lsp[i];
          }
       }
    }
@@ -846,7 +851,7 @@ static void sb_decode_lost(SBDecState *st, spx_word16_t *out, int dtx, char *sta
       saved_modeid=st->submodeID;
       st->submodeID=1;
    } else {
-      bw_lpc(GAMMA_SCALING*0.99, st->interp_qlpc, st->interp_qlpc, st->lpcSize);
+      bw_lpc(QCONST16(0.99f,15), st->interp_qlpc, st->interp_qlpc, st->lpcSize);
    }
 
    st->first=1;

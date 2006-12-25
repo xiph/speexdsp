@@ -1339,7 +1339,7 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
    {
       VARDECL(spx_coef_t *lpc);
       ALLOC(lpc, st->lpcSize, spx_coef_t);
-      bw_lpc(GAMMA_SCALING*.93, st->interp_qlpc, lpc, st->lpcSize);
+      bw_lpc(QCONST16(0.93f,15), st->interp_qlpc, lpc, st->lpcSize);
       {
          float innov_gain=0;
          float pgain=GAIN_SCALING_1*st->last_pitch_gain;
