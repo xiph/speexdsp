@@ -185,7 +185,6 @@ void open_loop_nbest_pitch(spx_word16_t *sw, int start, int end, int len, int *p
    ALLOC(best_ener, N, spx_word32_t);
    ALLOC(corr, end-start+1, spx_word32_t);
    ALLOC(energy, end-start+2, spx_word32_t);
-
    for (i=0;i<N;i++)
    {
         best_score[i]=-1;
@@ -233,8 +232,8 @@ void open_loop_nbest_pitch(spx_word16_t *sw, int start, int end, int len, int *p
 #endif
 
    /* FIXME: Fixed-point and floating-point code should be merged */
-#ifdef FIXED_POINT
    {
+#ifdef FIXED_POINT
       VARDECL(spx_word16_t *corr16);
       VARDECL(spx_word16_t *ener16);
       ALLOC(corr16, end-start+1, spx_word16_t);
@@ -242,7 +241,10 @@ void open_loop_nbest_pitch(spx_word16_t *sw, int start, int end, int len, int *p
       /* Normalize to 180 so we can square it and it still fits in 16 bits */
       normalize16(corr, corr16, 180, end-start+1);
       normalize16(energy, ener16, 180, end-start+1);
-
+#else
+      spx_word16_t *corr16 = corr;
+      spx_word16_t *ener16 = energy;
+#endif
       for (i=start;i<=end;i++)
       {
          spx_word16_t tmp = MULT16_16_16(corr16[i-start],corr16[i-start]);
@@ -273,31 +275,6 @@ void open_loop_nbest_pitch(spx_word16_t *sw, int start, int end, int len, int *p
          }
       }
    }
-#else
-   for (i=start;i<=end;i++)
-   {
-      float tmp = corr[i-start]*corr[i-start];
-      if (tmp*best_ener[N-1]>best_score[N-1]*(1+energy[i-start]))
-      {
-         for (j=0;j<N;j++)
-         {
-            if (tmp*best_ener[j]>best_score[j]*(1+energy[i-start]))
-            {
-               for (k=N-1;k>j;k--)
-               {
-                  best_score[k]=best_score[k-1];
-                  best_ener[k]=best_ener[k-1];
-                  pitch[k]=pitch[k-1];
-               }
-               best_score[j]=tmp;
-               best_ener[j]=energy[i-start]+1;
-               pitch[j]=i;
-               break;
-            }
-         }
-      }
-   }
-#endif
 
    /* Compute open-loop gain */
    if (gain)

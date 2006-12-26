@@ -459,22 +459,24 @@ static inline int _DIV32_16(long long a, long long b, char *file, int line)
    spx_mips+=20;
    return res;
 }
-static inline int DIV32(long long a, long long b) 
+
+#define DIV32(a, b) _DIV32(a, b, __FILE__, __LINE__)
+static inline int _DIV32(long long a, long long b, char *file, int line) 
 {
    long long res;
    if (b==0)
    {
-      fprintf(stderr, "DIV32: divide by zero: %d/%d\n", (int)a, (int)b);
+      fprintf(stderr, "DIV32: divide by zero: %d/%d in %s: line %d\n", (int)a, (int)b, file, line);
       return 0;
    }
 
    if (!VERIFY_INT(a) || !VERIFY_INT(b))
    {
-      fprintf (stderr, "DIV32: inputs are not int/short: %d %d\n", (int)a, (int)b);
+      fprintf (stderr, "DIV32: inputs are not int/short: %d %d in %s: line %d\n", (int)a, (int)b, file, line);
    }
    res = a/b;
    if (!VERIFY_INT(res))
-      fprintf (stderr, "DIV32: output is not int: %d\n", (int)res);
+      fprintf (stderr, "DIV32: output is not int: %d in %s: line %d\n", (int)res, file, line);
    spx_mips+=36;
    return res;
 }
