@@ -280,6 +280,8 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
    int pitch_half[2];
    int ol_pitch_id=0;
 #endif
+   spx_word32_t ener=0;
+   spx_word16_t fine_gain;
    spx_word16_t *in = (spx_word16_t*)vin;
 
    st=(EncState *)state;
@@ -901,70 +903,63 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
       }
 
       /* Quantization of innovation */
-      {
-         spx_word32_t ener=0;
-         spx_word16_t fine_gain;
-
-         for (i=0;i<st->subframeSize;i++)
-            innov[i]=0;
-         
-         /* FIXME: Make sure this is save from overflows (so far so good) */
-         for (i=0;i<st->subframeSize;i++)
-            real_exc[i] = EXTRACT16(SUB32(EXTEND32(real_exc[i]), PSHR32(exc32[i],SIG_SHIFT-1)));
-
-         ener = SHL32(EXTEND32(compute_rms16(real_exc, st->subframeSize)),SIG_SHIFT);
-         
-         /*FIXME: Should use DIV32_16 and make sure result fits in 16 bits */
+      for (i=0;i<st->subframeSize;i++)
+         innov[i]=0;
+      
+      /* FIXME: Make sure this is save from overflows (so far so good) */
+      for (i=0;i<st->subframeSize;i++)
+         real_exc[i] = EXTRACT16(SUB32(EXTEND32(real_exc[i]), PSHR32(exc32[i],SIG_SHIFT-1)));
+      
+      ener = SHL32(EXTEND32(compute_rms16(real_exc, st->subframeSize)),SIG_SHIFT);
+      
+      /*FIXME: Should use DIV32_16 and make sure result fits in 16 bits */
 #ifdef FIXED_POINT
-         {
-            spx_word32_t f = PDIV32(ener,PSHR32(ol_gain,SIG_SHIFT));
-            if (f<=32767)
-               fine_gain = f;
-            else
-               fine_gain = 32767;
-         }
+      {
+         spx_word32_t f = PDIV32(ener,PSHR32(ol_gain,SIG_SHIFT));
+         if (f<=32767)
+            fine_gain = f;
+         else
+            fine_gain = 32767;
+      }
 #else
-         fine_gain = PDIV32_16(ener,PSHR32(ol_gain,SIG_SHIFT));
+      fine_gain = PDIV32_16(ener,PSHR32(ol_gain,SIG_SHIFT));
 #endif
-         /* Calculate gain correction for the sub-frame (if any) */
-         if (SUBMODE(have_subframe_gain)) 
+      /* Calculate gain correction for the sub-frame (if any) */
+      if (SUBMODE(have_subframe_gain)) 
+      {
+         int qe;
+         if (SUBMODE(have_subframe_gain)==3)
          {
-            int qe;
-            if (SUBMODE(have_subframe_gain)==3)
-            {
-               qe = scal_quant(fine_gain, exc_gain_quant_scal3_bound, 8);
-               speex_bits_pack(bits, qe, 3);
-               ener=MULT16_32_Q14(exc_gain_quant_scal3[qe],ol_gain);
-            } else {
-               qe = scal_quant(fine_gain, exc_gain_quant_scal1_bound, 2);
-               speex_bits_pack(bits, qe, 1);
-               ener=MULT16_32_Q14(exc_gain_quant_scal1[qe],ol_gain);               
-            }
+            qe = scal_quant(fine_gain, exc_gain_quant_scal3_bound, 8);
+            speex_bits_pack(bits, qe, 3);
+            ener=MULT16_32_Q14(exc_gain_quant_scal3[qe],ol_gain);
          } else {
-            ener=ol_gain;
+            qe = scal_quant(fine_gain, exc_gain_quant_scal1_bound, 2);
+            speex_bits_pack(bits, qe, 1);
+            ener=MULT16_32_Q14(exc_gain_quant_scal1[qe],ol_gain);               
          }
-
-         /*printf ("%f %f\n", ener, ol_gain);*/
-
-         /* Normalize innovation */
-         signal_div(target, target, ener, st->subframeSize);
-
-         /* Quantize innovation */
-         if (SUBMODE(innovation_quant))
-         {
-            /* Codebook search */
-            SUBMODE(innovation_quant)(target, interp_qlpc, bw_lpc1, bw_lpc2, 
-                                      SUBMODE(innovation_params), st->lpcSize, st->subframeSize, 
-                                      innov, syn_resp, bits, stack, st->complexity, SUBMODE(double_codebook));
-            
-            /* De-normalize innovation and update excitation */
-            signal_mul(innov, innov, ener, st->subframeSize);
-
-            for (i=0;i<st->subframeSize;i++)
-               exc[i] = EXTRACT16(SATURATE32(PSHR32(ADD32(SHL32(exc32[i],1),innov[i]),SIG_SHIFT),32767));
-         } else {
-            speex_error("No fixed codebook");
-         }
+      } else {
+         ener=ol_gain;
+      }
+      
+      /*printf ("%f %f\n", ener, ol_gain);*/
+      
+      /* Normalize innovation */
+      signal_div(target, target, ener, st->subframeSize);
+      
+      /* Quantize innovation */
+      if (SUBMODE(innovation_quant))
+      {
+         /* Codebook search */
+         SUBMODE(innovation_quant)(target, interp_qlpc, bw_lpc1, bw_lpc2, 
+                  SUBMODE(innovation_params), st->lpcSize, st->subframeSize, 
+                  innov, syn_resp, bits, stack, st->complexity, SUBMODE(double_codebook));
+         
+         /* De-normalize innovation and update excitation */
+         signal_mul(innov, innov, ener, st->subframeSize);
+         
+         for (i=0;i<st->subframeSize;i++)
+            exc[i] = EXTRACT16(SATURATE32(PSHR32(ADD32(SHL32(exc32[i],1),innov[i]),SIG_SHIFT),32767));
 
          if (innov_save)
          {
@@ -993,8 +988,10 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
             }
             stack = tmp_stack;
          }
-
+      } else {
+         speex_error("No fixed codebook");
       }
+
 
       for (i=0;i<st->subframeSize;i++)
          sw[i] = exc[i];
