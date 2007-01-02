@@ -961,11 +961,6 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
          for (i=0;i<st->subframeSize;i++)
             exc[i] = EXTRACT16(SATURATE32(PSHR32(ADD32(SHL32(exc32[i],1),innov[i]),SIG_SHIFT),32767));
 
-         if (innov_save)
-         {
-            for (i=0;i<st->subframeSize;i++)
-               innov_save[i] = EXTRACT16(PSHR32(innov[i],SIG_SHIFT));
-         }
          /* In some (rare) modes, we do a second search (more bits) to reduce noise even more */
          if (SUBMODE(double_codebook)) {
             char *tmp_stack=stack;
@@ -980,13 +975,15 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
                                       innov2, syn_resp, bits, stack, st->complexity, 0);
             signal_mul(innov2, innov2, MULT16_32_Q15(QCONST16(0.454545f,15),ener), st->subframeSize);
             for (i=0;i<st->subframeSize;i++)
-               exc[i] = ADD32(exc[i],PSHR32(innov2[i],SIG_SHIFT));
-            if (innov_save)
-            {
-               for (i=0;i<st->subframeSize;i++)
-                  innov_save[i] = ADD16(innov_save[i],EXTRACT16(PSHR32(innov2[i],SIG_SHIFT)));
-            }
+               innov[i] = ADD32(innov[i],innov2[i]);
             stack = tmp_stack;
+         }
+         for (i=0;i<st->subframeSize;i++)
+            exc[i] = EXTRACT16(SATURATE32(PSHR32(ADD32(SHL32(exc32[i],1),innov[i]),SIG_SHIFT),32767));
+         if (innov_save)
+         {
+            for (i=0;i<st->subframeSize;i++)
+               innov_save[i] = EXTRACT16(PSHR32(innov[i],SIG_SHIFT));
          }
       } else {
          speex_error("No fixed codebook");
@@ -1575,16 +1572,38 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
          {
             /*Fixed codebook contribution*/
             SUBMODE(innovation_unquant)(innov, SUBMODE(innovation_params), st->subframeSize, bits, stack, &st->seed);
+            /* De-normalize innovation and update excitation */
+#ifdef FIXED_POINT
+            signal_mul(innov, innov, ener, st->subframeSize);
+#else
+            signal_mul(innov, innov, ener, st->subframeSize);
+#endif
+            /* Decode second codebook (only for some modes) */
+            if (SUBMODE(double_codebook))
+            {
+               char *tmp_stack=stack;
+               VARDECL(spx_sig_t *innov2);
+               ALLOC(innov2, st->subframeSize, spx_sig_t);
+               for (i=0;i<st->subframeSize;i++)
+                  innov2[i]=0;
+               SUBMODE(innovation_unquant)(innov2, SUBMODE(innovation_params), st->subframeSize, bits, stack, &st->seed);
+               signal_mul(innov2, innov2, MULT16_32_Q15(QCONST16(0.454545f,15),ener), st->subframeSize);
+               for (i=0;i<st->subframeSize;i++)
+                  innov[i] = ADD32(innov[i], innov2[i]);
+               stack = tmp_stack;
+            }
+            for (i=0;i<st->subframeSize;i++)
+               exc[i]=EXTRACT16(SATURATE32(PSHR32(ADD32(SHL32(exc32[i],1),innov[i]),SIG_SHIFT),32767));
+            /*print_vec(exc, 40, "innov");*/
+            if (innov_save)
+            {
+               for (i=0;i<st->subframeSize;i++)
+                  innov_save[i] = EXTRACT16(PSHR32(innov[i], SIG_SHIFT));
+            }
          } else {
             speex_error("No fixed codebook");
          }
 
-         /* De-normalize innovation and update excitation */
-#ifdef FIXED_POINT
-         signal_mul(innov, innov, ener, st->subframeSize);
-#else
-         signal_mul(innov, innov, ener, st->subframeSize);
-#endif
          /*Vocoder mode*/
          if (st->submodeID==1) 
          {
@@ -1616,35 +1635,8 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
                st->voc_mean = .95*st->voc_mean + .05*exc[i];
                exc[i]-=st->voc_mean;
             }
-         } else {
-            for (i=0;i<st->subframeSize;i++)
-               exc[i]=EXTRACT16(SATURATE32(PSHR32(ADD32(SHL32(exc32[i],1),innov[i]),SIG_SHIFT),32767));
-            /*print_vec(exc, 40, "innov");*/
          }
-         if (innov_save)
-         {
-            for (i=0;i<st->subframeSize;i++)
-               innov_save[i] = EXTRACT16(PSHR32(innov[i], SIG_SHIFT));
-         }
-         /* Decode second codebook (only for some modes) */
-         if (SUBMODE(double_codebook))
-         {
-            char *tmp_stack=stack;
-            VARDECL(spx_sig_t *innov2);
-            ALLOC(innov2, st->subframeSize, spx_sig_t);
-            for (i=0;i<st->subframeSize;i++)
-               innov2[i]=0;
-            SUBMODE(innovation_unquant)(innov2, SUBMODE(innovation_params), st->subframeSize, bits, stack, &st->seed);
-            signal_mul(innov2, innov2, MULT16_32_Q15(QCONST16(0.454545f,15),ener), st->subframeSize);
-            for (i=0;i<st->subframeSize;i++)
-               exc[i] = EXTRACT16(SATURATE32(ADD32(EXTEND32(exc[i]),PSHR32(innov2[i],SIG_SHIFT)),32767));
-            if (innov_save)
-            {
-               for (i=0;i<st->subframeSize;i++)
-                  innov_save[i] = ADD16(innov_save[i],EXTRACT16(PSHR32(innov2[i], SIG_SHIFT)));
-            }
-            stack = tmp_stack;
-         }
+
       }
    }
    
