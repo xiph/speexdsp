@@ -683,9 +683,6 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
          for (i=0;i<st->subframeSize;i++)
             target[i]=SUB16(sw[i],res[i]);
 
-         for (i=0;i<st->subframeSize;i++)
-           exc[i]=0;
-
          signal_div(target, target, scale, st->subframeSize);
 
          /* Reset excitation */
@@ -700,15 +697,6 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
 
          signal_mul(innov, innov, scale, st->subframeSize);
 
-         for (i=0;i<st->subframeSize;i++)
-            exc[i] = ADD32(exc[i], PSHR32(innov[i],SIG_SHIFT));
-
-         if (st->innov_save)
-         {
-            for (i=0;i<st->subframeSize;i++)
-               innov_save[2*i]=EXTRACT16(SHR32(innov[i],SIG_SHIFT));
-         }
-         
          if (SUBMODE(double_codebook)) {
             char *tmp_stack=stack;
             VARDECL(spx_sig_t *innov2);
@@ -724,9 +712,19 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
             signal_mul(innov2, innov2, MULT16_32_P15(QCONST16(0.4f,15),scale), st->subframeSize);
 
             for (i=0;i<st->subframeSize;i++)
-               exc[i] = ADD32(exc[i],PSHR32(innov2[i], SIG_SHIFT));
+               innov[i] = ADD32(innov[i],innov2[i]);
             stack = tmp_stack;
          }
+         for (i=0;i<st->subframeSize;i++)
+            exc[i] = PSHR32(innov[i],SIG_SHIFT);
+
+         if (st->innov_save)
+         {
+            for (i=0;i<st->subframeSize;i++)
+               innov_save[2*i]=EXTRACT16(SHR32(innov[i],SIG_SHIFT));
+         }
+         
+
       }
 
       st->exc_rms[sub] = compute_rms16(exc, st->subframeSize);
