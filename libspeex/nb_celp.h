@@ -96,7 +96,7 @@ typedef struct EncState {
    spx_mem_t *mem_exc2;          /**< Filter memory for excitation (whole frame) */
    spx_mem_t mem_hp[2];          /**< High-pass filter memory */
    spx_word32_t *pi_gain;        /**< Gain of LPC filter at theta=pi (fe/2) */
-   spx_word16_t *innov_save;        /**< If non-NULL, innovation is copied here */
+   spx_word16_t *innov_rms_save; /**< If non-NULL, innovation RMS is copied here */
          
    VBRState *vbr;                /**< State of the VBR data */
    float  vbr_quality;           /**< Quality setting for VBR encoding */

@@ -187,7 +187,7 @@ void *nb_encoder_init(const SpeexMode *m)
    st->mem_exc2 = (spx_mem_t*)speex_alloc((st->lpcSize)*sizeof(spx_mem_t));
 
    st->pi_gain = (spx_word32_t*)speex_alloc((st->nbSubframes)*sizeof(spx_word32_t));
-   st->innov_save = NULL;
+   st->innov_rms_save = NULL;
    
    st->pitch = (int*)speex_alloc((st->nbSubframes)*sizeof(int));
 
@@ -722,7 +722,6 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
       int   offset;
       spx_word16_t *sw;
       spx_word16_t *exc;
-      spx_word16_t *innov_save = NULL;
       int pitch;
       int response_bound = st->subframeSize;
 #ifdef EPIC_48K
@@ -741,9 +740,6 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
       exc=st->exc+offset;
       /* Weighted signal */
       sw=st->sw+offset;
-      /* Pointer for saving innovation */
-      if (st->innov_save)
-         innov_save = st->innov_save+offset;
       
       /* LSP interpolation (quantized and unquantized) */
       lsp_interpolate(st->old_lsp, lsp, interp_lsp, st->lpcSize, sub, st->nbSubframes);
@@ -980,10 +976,9 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
          }
          for (i=0;i<st->subframeSize;i++)
             exc[i] = EXTRACT16(SATURATE32(PSHR32(ADD32(SHL32(exc32[i],1),innov[i]),SIG_SHIFT),32767));
-         if (innov_save)
+         if (st->innov_rms_save)
          {
-            for (i=0;i<st->subframeSize;i++)
-               innov_save[i] = EXTRACT16(PSHR32(innov[i],SIG_SHIFT));
+            st->innov_rms_save[sub] = compute_rms(innov, st->subframeSize);
          }
       } else {
          speex_error("No fixed codebook");
@@ -1924,7 +1919,7 @@ int nb_encoder_ctl(void *state, int request, void *ptr)
       (*(float*)ptr)=st->relative_quality;
       break;
    case SPEEX_SET_INNOVATION_SAVE:
-      st->innov_save = (spx_word16_t*)ptr;
+      st->innov_rms_save = (spx_word16_t*)ptr;
       break;
    case SPEEX_SET_WIDEBAND:
       st->isWideband = *((spx_int32_t*)ptr);
