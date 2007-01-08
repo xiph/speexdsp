@@ -93,9 +93,25 @@
 
 #ifdef FIXED_POINT
 static const spx_float_t MIN_LEAK = {20972, -22};
+
+/* Constants for the two-path filter */
+static const spx_float_t VAR1_SMOOTH = {23593, -16};
+static const spx_float_t VAR2_SMOOTH = {23675, -15};
+static const spx_float_t VAR1_UPDATE = {16384, -15};
+static const spx_float_t VAR2_UPDATE = {16384, -16};
+static const spx_float_t VAR_BACKTRACK = {16384, -12};
 #define TOP16(x) ((x)>>16)
+
 #else
+
 static const spx_float_t MIN_LEAK = .005f;
+
+/* Constants for the two-path filter */
+static const spx_float_t VAR1_SMOOTH = .36f;
+static const spx_float_t VAR2_SMOOTH = .7225f;
+static const spx_float_t VAR1_UPDATE = .5f;
+static const spx_float_t VAR2_UPDATE = .25f;
+static const spx_float_t VAR_BACKTRACK = 4.f;
 #define TOP16(x) (x)
 #endif
 
@@ -114,9 +130,6 @@ struct SpeexEchoState_ {
    int adapted;
    int saturated;
    int screwed_up;
-#ifdef TWO_PATH
-   int update_cond;
-#endif
    spx_int32_t sampling_rate;
    spx_word16_t spec_average;
    spx_word16_t beta0;
@@ -136,9 +149,13 @@ struct SpeexEchoState_ {
    spx_word32_t *W;
 #ifdef TWO_PATH
    spx_word32_t *foreground;
+   spx_word32_t  Davg1;
+   spx_word32_t  Davg2;
+   spx_float_t   Dvar1;
+   spx_float_t   Dvar2;
 #endif
    spx_word32_t *power;
-   spx_float_t *power_1;
+   spx_float_t  *power_1;
    spx_word16_t *wtmp;   /* scratch */
 #ifdef FIXED_POINT
    spx_word16_t *wtmp2;  /* scratch */
@@ -148,8 +165,8 @@ struct SpeexEchoState_ {
    spx_word32_t *Xf;     /* scratch */
    spx_word32_t *Eh;
    spx_word32_t *Yh;
-   spx_float_t Pey;
-   spx_float_t Pyy;
+   spx_float_t   Pey;
+   spx_float_t   Pyy;
    spx_word16_t *window;
    spx_word16_t *prop;
    void *fft_table;
@@ -297,9 +314,6 @@ SpeexEchoState *speex_echo_state_init(int frame_size, int filter_length)
    st->sum_adapt = 0;
    st->saturated = 0;
    st->screwed_up = 0;
-#ifdef TWO_PATH
-   st->update_cond = 0;
-#endif
    /* This is the default sampling rate */
    st->sampling_rate = 8000;
    st->spec_average = DIV32_16(SHL32(EXTEND32(st->frame_size), 15), st->sampling_rate);
@@ -383,6 +397,11 @@ SpeexEchoState *speex_echo_state_init(int frame_size, int filter_length)
    st->adapted = 0;
    st->Pey = st->Pyy = FLOAT_ONE;
    
+#ifdef TWO_PATH
+   st->Davg1 = st->Davg2 = 0;
+   st->Dvar1 = st->Dvar2 = FLOAT_ZERO;
+#endif
+   
    st->play_buf = (spx_int16_t*)speex_alloc((PLAYBACK_DELAY+1)*st->frame_size*sizeof(spx_int16_t));
    st->play_buf_pos = PLAYBACK_DELAY*st->frame_size;
    st->play_buf_started = 0;
@@ -400,6 +419,10 @@ void speex_echo_state_reset(SpeexEchoState *st)
    M = st->M;
    for (i=0;i<N*M;i++)
       st->W[i] = 0;
+#ifdef TWO_PATH
+   for (i=0;i<N*M;i++)
+      st->foreground[i] = 0;
+#endif
    for (i=0;i<N*(M+1);i++)
       st->X[i] = 0;
    for (i=0;i<=st->frame_size;i++)
@@ -425,6 +448,10 @@ void speex_echo_state_reset(SpeexEchoState *st)
    st->adapted = 0;
    st->sum_adapt = 0;
    st->Pey = st->Pyy = FLOAT_ONE;
+#ifdef TWO_PATH
+   st->Davg1 = st->Davg2 = 0;
+   st->Dvar1 = st->Dvar2 = FLOAT_ZERO;
+#endif
    for (i=0;i<3*st->frame_size;i++)
       st->play_buf[i] = 0;
    st->play_buf_pos = PLAYBACK_DELAY*st->frame_size;
@@ -528,9 +555,10 @@ void speex_echo_cancellation(SpeexEchoState *st, const spx_int16_t *in, const sp
 {
    int i,j;
    int N,M;
-   spx_word32_t Syy,See,Sxx,Sdd;
+   spx_word32_t Syy,See,Sxx,Sdd, Sff;
 #ifdef TWO_PATH
-   spx_word32_t Sff;
+   spx_word32_t Dbf;
+   int update_foreground;
 #endif
    spx_word32_t Sey;
    spx_word16_t ss, ss_1;
@@ -666,45 +694,81 @@ void speex_echo_cancellation(SpeexEchoState *st, const spx_int16_t *in, const sp
    /* Compute filter response Y */
    spectral_mul_accum(st->X, st->W, st->Y, N, M);
    spx_ifft(st->fft_table, st->Y, st->y);
+
+#ifdef TWO_PATH
+   /* Difference in response */
+   for (i=0;i<st->frame_size;i++)
+      st->x[i+st->frame_size] = SUB16(st->e[i+st->frame_size], st->y[i+st->frame_size]);
+   Dbf = 10+mdf_inner_prod(st->x+st->frame_size, st->x+st->frame_size, st->frame_size);
+#endif
+
    for (i=0;i<st->frame_size;i++)
       st->x[i+st->frame_size] = SUB16(st->input[i], st->y[i+st->frame_size]);
    See = mdf_inner_prod(st->x+st->frame_size, st->x+st->frame_size, st->frame_size);
+#ifndef TWO_PATH
+   Sff = See;
+#endif
 
 #ifdef TWO_PATH
    /* Logic for updating the foreground filter */
    
-   /* If the background filter is better than the foreground, we might want to update the latter */
-   if (ADD32(See,SHR32(MULT16_16(N, 100),6)) < MULT16_32_Q15(QCONST16(.9f,15),ADD32(Sff,SHR32(MULT16_16(N, 100),6))))
-   {
-      st->update_cond++;
-      if (ADD32(See,SHR32(MULT16_16(N, 100),6)) < MULT16_32_Q15(QCONST16(.8f,15),ADD32(Sff,SHR32(MULT16_16(N, 100),6))))
-         st->update_cond++;
-   } else {
-      /* If the background filter is worse than the foreground filter by more than 6 dB, do a "backward update" */
-      if (ADD32(Sff,SHR32(MULT16_16(N, 100),6)) < MULT16_32_Q15(QCONST16(.5f,15),ADD32(See,SHR32(MULT16_16(N, 100),6))))
-      {
-         for (i=0;i<N*M;i++)
-            st->W[i] = st->foreground[i];
-         /* We also need to copy the output so as to get correct adaptation */
-         for (i=0;i<st->frame_size;i++)
-            st->y[i+st->frame_size] = SUB16(st->input[i], st->e[i+st->frame_size]);
-         for (i=0;i<st->frame_size;i++)
-            st->x[i+st->frame_size] = SUB16(st->input[i], st->y[i+st->frame_size]);
-         See = mdf_inner_prod(st->x+st->frame_size, st->x+st->frame_size, st->frame_size);
-      }
-      st->update_cond = 0;
-   }
+   /* For three time windows, compute the mean of the energy difference, as well as the variance */
+   st->Davg1 = ADD32(MULT16_32_Q15(QCONST16(.6f,15),st->Davg1), MULT16_32_Q15(QCONST16(.4f,15),SUB32(Sff,See)));
+   st->Davg2 = ADD32(MULT16_32_Q15(QCONST16(.85f,15),st->Davg2), MULT16_32_Q15(QCONST16(.15f,15),SUB32(Sff,See)));
+   st->Dvar1 = FLOAT_ADD(FLOAT_MULT(VAR1_SMOOTH, st->Dvar1), FLOAT_MUL32U(MULT16_32_Q15(QCONST16(.4f,15),Sff), MULT16_32_Q15(QCONST16(.4f,15),Dbf)));
+   st->Dvar2 = FLOAT_ADD(FLOAT_MULT(VAR2_SMOOTH, st->Dvar2), FLOAT_MUL32U(MULT16_32_Q15(QCONST16(.15f,15),Sff), MULT16_32_Q15(QCONST16(.15f,15),Dbf)));
+   
+   /* Equivalent float code:
+   st->Davg1 = .6*st->Davg1 + .4*(Sff-See);
+   st->Davg2 = .85*st->Davg2 + .15*(Sff-See);
+   st->Dvar1 = .36*st->Dvar1 + .16*Sff*Dbf;
+   st->Dvar2 = .7225*st->Dvar2 + .0225*Sff*Dbf;
+   */
+   
+   update_foreground = 0;
+   /* Check if we have a statistically significant reduction in the residual echo */
+   /* Note that this is *not* Gaussian, so we need to be careful about the longer tail */
+   if (FLOAT_GT(FLOAT_MUL32U(SUB32(Sff,See),ABS32(SUB32(Sff,See))), FLOAT_MUL32U(Sff,Dbf)))
+      update_foreground = 1;
+   else if (FLOAT_GT(FLOAT_MUL32U(st->Davg1, ABS32(st->Davg1)), FLOAT_MULT(VAR1_UPDATE,(st->Dvar1))))
+      update_foreground = 1;
+   else if (FLOAT_GT(FLOAT_MUL32U(st->Davg2, ABS32(st->Davg2)), FLOAT_MULT(VAR2_UPDATE,(st->Dvar2))))
+      update_foreground = 1;
    
    /* Do we update? */
-   if (st->update_cond >= 2)
+   if (update_foreground)
    {
-      st->update_cond = 0;
+      st->Davg1 = st->Davg2 = 0;
+      st->Dvar1 = st->Dvar2 = FLOAT_ZERO;
       /* Copy background filter to foreground filter */
       for (i=0;i<N*M;i++)
          st->foreground[i] = st->W[i];
       /* Apply a smooth transition so as to not introduce blocking artifacts */
       for (i=0;i<st->frame_size;i++)
          st->e[i+st->frame_size] = MULT16_16_Q15(st->window[i+st->frame_size],st->e[i+st->frame_size]) + MULT16_16_Q15(st->window[i],st->y[i+st->frame_size]);
+   } else {
+      int reset_background=0;
+      /* Otherwise, check if the background filter is significantly worse */
+      if (FLOAT_GT(FLOAT_MUL32U(NEG32(SUB32(Sff,See)),ABS32(SUB32(Sff,See))), FLOAT_MULT(VAR_BACKTRACK,FLOAT_MUL32U(Sff,Dbf))))
+         reset_background = 1;
+      if (FLOAT_GT(FLOAT_MUL32U(NEG32(st->Davg1), ABS32(st->Davg1)), FLOAT_MULT(VAR_BACKTRACK,st->Dvar1)))
+         reset_background = 1;
+      if (FLOAT_GT(FLOAT_MUL32U(NEG32(st->Davg2), ABS32(st->Davg2)), FLOAT_MULT(VAR_BACKTRACK,st->Dvar2)))
+         reset_background = 1;
+      if (reset_background)
+      {
+         /* Copy foreground filter to background filter */
+         for (i=0;i<N*M;i++)
+            st->W[i] = st->foreground[i];
+         /* We also need to copy the output so as to get correct adaptation */
+         for (i=0;i<st->frame_size;i++)
+            st->y[i+st->frame_size] = st->e[i+st->frame_size];
+         for (i=0;i<st->frame_size;i++)
+            st->x[i+st->frame_size] = SUB16(st->input[i], st->y[i+st->frame_size]);
+         See = Sff;
+         st->Davg1 = st->Davg2 = 0;
+         st->Dvar1 = st->Dvar2 = FLOAT_ZERO;
+      }
    }
 #endif
 
@@ -746,12 +810,12 @@ void speex_echo_cancellation(SpeexEchoState *st, const spx_int16_t *in, const sp
    Syy = mdf_inner_prod(st->y+st->frame_size, st->y+st->frame_size, st->frame_size);
    Sdd = mdf_inner_prod(st->input, st->input, st->frame_size);
    
-   /*printf ("%d %d %d %d\n", Sff, See, Syy, st->update_cond);*/
+   /*printf ("%f %f %f %f\n", Sff, See, Syy, Sdd, st->update_cond);*/
    
    /* Do some sanity check */
    if (!(Syy>=0 && Sxx>=0 && See >= 0)
 #ifndef FIXED_POINT
-       || !(See < N*1e9 && Syy < N*1e9 && Sxx < N*1e9)
+       || !(Sff < N*1e9 && Syy < N*1e9 && Sxx < N*1e9)
 #endif
       )
    {
@@ -759,7 +823,7 @@ void speex_echo_cancellation(SpeexEchoState *st, const spx_int16_t *in, const sp
       st->screwed_up += 50;
       for (i=0;i<st->frame_size;i++)
          out[i] = 0;
-   } else if (SHR32(See, 2) > ADD32(Sdd, SHR32(MULT16_16(N, 100),6)))
+   } else if (SHR32(Sff, 2) > ADD32(Sdd, SHR32(MULT16_16(N, 10000),6)))
    {
       /* AEC seems to add lots of echo instead of removing it, let's see if it will improve */
       st->screwed_up++;
@@ -878,7 +942,7 @@ void speex_echo_cancellation(SpeexEchoState *st, const spx_int16_t *in, const sp
 #endif
 
    /* We consider that the filter has had minimal adaptation if the following is true*/
-   if (!st->adapted && st->sum_adapt > QCONST32(M,15))
+   if (!st->adapted && st->sum_adapt > QCONST32(M,15) && MULT16_32_Q15(st->leak_estimate,Syy) > MULT16_32_Q15(QCONST16(.03f,15),Syy))
    {
       st->adapted = 1;
    }
