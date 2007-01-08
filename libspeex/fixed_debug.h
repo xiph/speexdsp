@@ -271,18 +271,19 @@ static inline int _MULT16_16(int a, int b, char *file, int line)
 #define MAC16_16_P13(c,a,b)     (EXTRACT16(ADD32((c),SHR32(ADD32(4096,MULT16_16((a),(b))),13))))
 
 
-static inline int MULT16_32_QX(int a, long long b, int Q)
+#define MULT16_32_QX(a, b, Q) _MULT16_32_QX(a, b, Q, __FILE__, __LINE__)
+static inline int _MULT16_32_QX(int a, long long b, int Q, char *file, int line)
 {
    long long res;
    if (!VERIFY_SHORT(a) || !VERIFY_INT(b))
    {
-      fprintf (stderr, "MULT16_32_Q%d: inputs are not short+int: %d %d\n", Q, (int)a, (int)b);
+      fprintf (stderr, "MULT16_32_Q%d: inputs are not short+int: %d %d in %s: line %d\n", Q, (int)a, (int)b, file, line);
    }
    if (ABS32(b)>=(1<<(15+Q)))
-      fprintf (stderr, "MULT16_32_Q%d: second operand too large: %d %d\n", Q, (int)a, (int)b);      
+      fprintf (stderr, "MULT16_32_Q%d: second operand too large: %d %d in %s: line %d\n", Q, (int)a, (int)b, file, line);      
    res = (((long long)a)*(long long)b) >> Q;
    if (!VERIFY_INT(res))
-      fprintf (stderr, "MULT16_32_Q%d: output is not int: %d*%d=%d\n", Q, (int)a, (int)b,(int)res);
+      fprintf (stderr, "MULT16_32_Q%d: output is not int: %d*%d=%d in %s: line %d\n", Q, (int)a, (int)b,(int)res, file, line);
    spx_mips+=5;
    return res;
 }
