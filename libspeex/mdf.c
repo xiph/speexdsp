@@ -138,24 +138,24 @@ struct SpeexEchoState_ {
    spx_word16_t leak_estimate;
    
    spx_word16_t *e;      /* scratch */
-   spx_word16_t *x;
-   spx_word16_t *X;
+   spx_word16_t *x;      /* Far-end input buffer (2N) */
+   spx_word16_t *X;      /* Far-end buffer (M+1 frames) in frequency domain */
    spx_word16_t *input;  /* scratch */
    spx_word16_t *y;      /* scratch */
    spx_word16_t *last_y;
    spx_word16_t *Y;      /* scratch */
    spx_word16_t *E;
    spx_word32_t *PHI;    /* scratch */
-   spx_word32_t *W;
+   spx_word32_t *W;      /* (Background) filter weights */
 #ifdef TWO_PATH
-   spx_word32_t *foreground;
-   spx_word32_t  Davg1;
-   spx_word32_t  Davg2;
-   spx_float_t   Dvar1;
-   spx_float_t   Dvar2;
+   spx_word32_t *foreground; /* Foreground filter weights */
+   spx_word32_t  Davg1;  /* 1st recursive average of the residual power difference */
+   spx_word32_t  Davg2;  /* 2nd recursive average of the residual power difference */
+   spx_float_t   Dvar1;  /* Estimated variance of 1st estimator */
+   spx_float_t   Dvar2;  /* Estimated variance of 2nd estimator */
 #endif
-   spx_word32_t *power;
-   spx_float_t  *power_1;
+   spx_word32_t *power;  /* Power of the far-end signal */
+   spx_float_t  *power_1;/* Inverse power of far-end */
    spx_word16_t *wtmp;   /* scratch */
 #ifdef FIXED_POINT
    spx_word16_t *wtmp2;  /* scratch */
@@ -205,6 +205,7 @@ static inline void filter_dc_notch16(const spx_int16_t *in, spx_word16_t radius,
    }
 }
 
+/* This inner product is slightly different from the codec version because of fixed-point */
 static inline spx_word32_t mdf_inner_prod(const spx_word16_t *x, const spx_word16_t *y, int len)
 {
    spx_word32_t sum=0;
@@ -578,6 +579,7 @@ void speex_echo_cancellation(SpeexEchoState *st, const spx_int16_t *in, const sp
    ss_1 = 1-ss;
 #endif
 
+   /* Apply a notch filter to make sure DC doesn't end up causing problems */
    filter_dc_notch16(in, st->notch_radius, st->input, st->frame_size, st->notch_mem);
    /* Copy input data to buffer and apply pre-emphasis */
    for (i=0;i<st->frame_size;i++)
@@ -636,6 +638,7 @@ void speex_echo_cancellation(SpeexEchoState *st, const spx_int16_t *in, const sp
    /* From here on, the top part of x is used as scratch space */
    
 #ifdef TWO_PATH
+   /* Compute foreground filter */
    spectral_mul_accum(st->X, st->foreground, st->Y, N, M);   
    spx_ifft(st->fft_table, st->Y, st->e);
    for (i=0;i<st->frame_size;i++)
@@ -696,7 +699,7 @@ void speex_echo_cancellation(SpeexEchoState *st, const spx_int16_t *in, const sp
    spx_ifft(st->fft_table, st->Y, st->y);
 
 #ifdef TWO_PATH
-   /* Difference in response */
+   /* Difference in response, this is used to estimate the variance of our residual power estimate */
    for (i=0;i<st->frame_size;i++)
       st->x[i+st->frame_size] = SUB16(st->e[i+st->frame_size], st->y[i+st->frame_size]);
    Dbf = 10+mdf_inner_prod(st->x+st->frame_size, st->x+st->frame_size, st->frame_size);
@@ -712,7 +715,7 @@ void speex_echo_cancellation(SpeexEchoState *st, const spx_int16_t *in, const sp
 #ifdef TWO_PATH
    /* Logic for updating the foreground filter */
    
-   /* For three time windows, compute the mean of the energy difference, as well as the variance */
+   /* For two time windows, compute the mean of the energy difference, as well as the variance */
    st->Davg1 = ADD32(MULT16_32_Q15(QCONST16(.6f,15),st->Davg1), MULT16_32_Q15(QCONST16(.4f,15),SUB32(Sff,See)));
    st->Davg2 = ADD32(MULT16_32_Q15(QCONST16(.85f,15),st->Davg2), MULT16_32_Q15(QCONST16(.15f,15),SUB32(Sff,See)));
    st->Dvar1 = FLOAT_ADD(FLOAT_MULT(VAR1_SMOOTH, st->Dvar1), FLOAT_MUL32U(MULT16_32_Q15(QCONST16(.4f,15),Sff), MULT16_32_Q15(QCONST16(.4f,15),Dbf)));
@@ -949,6 +952,7 @@ void speex_echo_cancellation(SpeexEchoState *st, const spx_int16_t *in, const sp
 
    if (st->adapted)
    {
+      /* Normal learning rate calculation once we're past the minimal adaptation phase */
       for (i=0;i<=st->frame_size;i++)
       {
          spx_word32_t r, e;
