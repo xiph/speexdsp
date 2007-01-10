@@ -300,6 +300,36 @@ static inline void weighted_spectral_mul_conj(const spx_float_t *w, const spx_fl
    prod[i] = FLOAT_MUL32(W,MULT16_16(X[i],Y[i]));
 }
 
+static inline void mdf_adjust_prop(const spx_word32_t *W, int N, int M, spx_word16_t *prop)
+{
+   int i, j;
+   spx_word16_t max_sum = 1;
+   spx_word32_t prop_sum = 1;
+   for (i=0;i<M;i++)
+   {
+      spx_word32_t tmp = 1;
+      for (j=0;j<N;j++)
+         tmp += MULT16_16(EXTRACT16(SHR32(W[i*N+j],18)), EXTRACT16(SHR32(W[i*N+j],18)));
+#ifdef FIXED_POINT
+      /* Just a security in case an overflow were to occur */
+      tmp = MIN32(ABS32(tmp), 536870912);
+#endif
+      prop[i] = spx_sqrt(tmp);
+      if (prop[i] > max_sum)
+         max_sum = prop[i];
+   }
+   for (i=0;i<M;i++)
+   {
+      prop[i] += MULT16_16_Q15(QCONST16(.1f,15),max_sum);
+      prop_sum += EXTEND32(prop[i]);
+   }
+   for (i=0;i<M;i++)
+   {
+      prop[i] = DIV32(MULT16_16(QCONST16(.99f,15), prop[i]),prop_sum);
+      /*printf ("%f ", prop[i]);*/
+   }
+   /*printf ("\n");*/
+}
 
 /** Creates a new echo canceller state */
 SpeexEchoState *speex_echo_state_init(int frame_size, int filter_length)
@@ -645,7 +675,9 @@ void speex_echo_cancellation(SpeexEchoState *st, const spx_int16_t *in, const sp
       st->x[i+st->frame_size] = SUB16(st->input[i], st->e[i+st->frame_size]);
    Sff = mdf_inner_prod(st->x+st->frame_size, st->x+st->frame_size, st->frame_size);
 #endif
-
+   
+   /* Adjust proportional adaption rate */
+   mdf_adjust_prop (st->W, N, M, st->prop);
    /* Compute weight gradient */
    if (st->saturated == 0)
    {
