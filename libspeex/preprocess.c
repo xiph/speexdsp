@@ -71,8 +71,10 @@
 #define M_PI 3.14159263
 #endif
 
-#define LOUDNESS_EXP 2.5
-
+#define LOUDNESS_EXP 5.f
+#define AMP_SCALE .001f
+#define AMP_SCALE_1 1000.f
+      
 #define NB_BANDS 24
 
 #define SPEECH_PROB_START_DEFAULT       QCONST16(0.35f,15)
@@ -503,7 +505,7 @@ SpeexPreprocessState *speex_preprocess_state_init(int frame_size, int sampling_r
          st->loudness_weight[i]=.01f;
       st->loudness_weight[i] *= st->loudness_weight[i];
    }
-   st->loudness = pow(st->agc_level,LOUDNESS_EXP);
+   st->loudness = pow(AMP_SCALE*st->agc_level,LOUDNESS_EXP);
    st->agc_gain = 1;
    st->nb_loudness_adapt = 0;
    st->max_gain = 10;
@@ -575,16 +577,16 @@ static void speex_compute_agc(SpeexPreprocessState *st, spx_word16_t Pframe, spx
    if (Pframe>.5)
    {
       st->nb_loudness_adapt++;
-      rate=2.0f/(1+st->nb_loudness_adapt);
-      st->loudness = (1-rate)*st->loudness + (rate)*pow(loudness, LOUDNESS_EXP);
-      if (st->init_max < st->max_gain)
-         st->init_max *= 1.1;
+      rate=2.0f*Pframe*Pframe/(1+st->nb_loudness_adapt);
+      st->loudness = (1-rate)*st->loudness + (rate)*pow(AMP_SCALE*loudness, LOUDNESS_EXP);
+      if (st->init_max < st->max_gain && st->nb_adapt > 20)
+         st->init_max *= 1.f + .05f*Pframe*Pframe;
    }
    /*printf ("%f %f %f %f\n", Pframe, loudness, pow(st->loudness, 1.0f/LOUDNESS_EXP), st->loudness2);*/
    
-   target_gain = st->agc_level*pow(st->loudness, -1.0f/LOUDNESS_EXP);
+   target_gain = AMP_SCALE*st->agc_level*pow(st->loudness, -1.0f/LOUDNESS_EXP);
 
-   if (Pframe>.5 || target_gain < st->agc_gain)
+   if ((Pframe>.5  && st->nb_adapt > 20) || target_gain < st->agc_gain)
    {
       if (target_gain > st->max_increase_step*st->agc_gain)
          target_gain = st->max_increase_step*st->agc_gain;
@@ -597,7 +599,7 @@ static void speex_compute_agc(SpeexPreprocessState *st, spx_word16_t Pframe, spx
    
       st->agc_gain = target_gain;
    }
-   /*fprintf (stderr, "%f %f %f\n", loudness, st->loudness2, rate);*/
+   printf ("%f %f %f\n", loudness, (float)AMP_SCALE_1*pow(st->loudness, 1.0f/LOUDNESS_EXP), st->agc_gain);
       
    for (i=0;i<2*N;i++)
       ft[i] *= st->agc_gain;
