@@ -599,7 +599,7 @@ static void speex_compute_agc(SpeexPreprocessState *st, spx_word16_t Pframe, spx
    
       st->agc_gain = target_gain;
    }
-   printf ("%f %f %f\n", loudness, (float)AMP_SCALE_1*pow(st->loudness, 1.0f/LOUDNESS_EXP), st->agc_gain);
+   /*printf ("%f %f %f\n", loudness, (float)AMP_SCALE_1*pow(st->loudness, 1.0f/LOUDNESS_EXP), st->agc_gain);*/
       
    for (i=0;i<2*N;i++)
       ft[i] *= st->agc_gain;
