@@ -77,8 +77,8 @@
 
 #define SPEECH_PROB_START_DEFAULT       QCONST16(0.35f,15)
 #define SPEECH_PROB_CONTINUE_DEFAULT    QCONST16(0.20f,15)
-#define NOISE_SUPPRESS_DEFAULT       -25
-#define ECHO_SUPPRESS_DEFAULT        -45
+#define NOISE_SUPPRESS_DEFAULT       -15
+#define ECHO_SUPPRESS_DEFAULT        -40
 #define ECHO_SUPPRESS_ACTIVE_DEFAULT -15
 
 #ifndef NULL
@@ -185,8 +185,6 @@ struct SpeexPreprocessState_ {
    
    /* Parameters */
    int    denoise_enabled;
-   int    agc_enabled;
-   float  agc_level;
    int    vad_enabled;
    int    dereverb_enabled;
    spx_word16_t  reverb_decay;
@@ -225,11 +223,19 @@ struct SpeexPreprocessState_ {
    spx_word16_t *inbuf;      /**< Input buffer (overlapped analysis) */
    spx_word16_t *outbuf;     /**< Output buffer (for overlap and add) */
 
+   /* AGC stuff, only for floating point for now */
 #ifndef FIXED_POINT
+   int    agc_enabled;
+   float  agc_level;
    float *loudness_weight;   /**< Perceptual loudness curve */
-   float  loudness;          /**< loudness estimate */
-   float  loudness2;         /**< loudness estimate */
+   float  loudness;          /**< Loudness estimate */
+   float  agc_gain;          /**< Current AGC gain */
    int    nb_loudness_adapt; /**< Number of frames used for loudness adaptation so far */
+   float  max_gain;          /**< Maximum gain allowed */
+   float  max_increase_step; /**< Maximum increase in gain from one frame to another */
+   float  max_decrease_step; /**< Maximum decrease in gain from one frame to another */
+   float  prev_loudness;     /**< Loudness of previous frame */
+   float  init_max;          /**< Current gain limit during initialisation */
 #endif
    int    nb_adapt;          /**< Number of frames used for adaptation so far */
    int    was_speech;
@@ -413,8 +419,6 @@ SpeexPreprocessState *speex_preprocess_state_init(int frame_size, int sampling_r
    
    st->sampling_rate = sampling_rate;
    st->denoise_enabled = 1;
-   st->agc_enabled = 0;
-   st->agc_level = 8000;
    st->vad_enabled = 0;
    st->dereverb_enabled = 0;
    st->reverb_decay = 0;
@@ -487,6 +491,8 @@ SpeexPreprocessState *speex_preprocess_state_init(int frame_size, int sampling_r
       st->outbuf[i]=0;
    }
 #ifndef FIXED_POINT
+   st->agc_enabled = 0;
+   st->agc_level = 8000;
    st->loudness_weight = (float*)speex_alloc(N*sizeof(float));
    for (i=0;i<N;i++)
    {
@@ -497,9 +503,14 @@ SpeexPreprocessState *speex_preprocess_state_init(int frame_size, int sampling_r
          st->loudness_weight[i]=.01f;
       st->loudness_weight[i] *= st->loudness_weight[i];
    }
-   st->loudness = pow(6000,LOUDNESS_EXP);
-   st->loudness2 = 6000;
+   st->loudness = pow(st->agc_level,LOUDNESS_EXP);
+   st->agc_gain = 1;
    st->nb_loudness_adapt = 0;
+   st->max_gain = 10;
+   st->max_increase_step = exp(0.11513f * 6.*st->frame_size / st->sampling_rate);
+   st->max_decrease_step = exp(-0.11513f * 30.*st->frame_size / st->sampling_rate);
+   st->prev_loudness = 1;
+   st->init_max = 1;
 #endif
    st->was_speech = 0;
 
@@ -550,40 +561,47 @@ static void speex_compute_agc(SpeexPreprocessState *st, spx_word16_t Pframe, spx
 {
    int i;
    int N = st->ps_size;
-   float agc_gain;
-
-   float loudness=0.f;
-   float rate, rate2=.05f;
+   float target_gain;
+   float loudness=1.f;
+   float rate;
    
    for (i=2;i<N;i++)
    {
-      loudness += 2.f*N*SQR16(st->ft[i])* st->loudness_weight[i];
+      loudness += 2.f*N*st->ps[i]* st->loudness_weight[i];
    }
    loudness=sqrt(loudness);
       /*if (loudness < 2*pow(st->loudness, 1.0/LOUDNESS_EXP) &&
    loudness*2 > pow(st->loudness, 1.0/LOUDNESS_EXP))*/
-   if (Pframe>.5 && st->nb_adapt>50)
+   if (Pframe>.5)
    {
       st->nb_loudness_adapt++;
       rate=2.0f/(1+st->nb_loudness_adapt);
       st->loudness = (1-rate)*st->loudness + (rate)*pow(loudness, LOUDNESS_EXP);
-      
-      st->loudness2 = (1-rate2)*st->loudness2 + rate2*pow(st->loudness, 1.0f/LOUDNESS_EXP);
+      if (st->init_max < st->max_gain)
+         st->init_max *= 1.1;
    }
    /*printf ("%f %f %f %f\n", Pframe, loudness, pow(st->loudness, 1.0f/LOUDNESS_EXP), st->loudness2);*/
    
-   loudness = pow(st->loudness, 1.0f/LOUDNESS_EXP);
+   target_gain = st->agc_level*pow(st->loudness, -1.0f/LOUDNESS_EXP);
+
+   if (Pframe>.5 || target_gain < st->agc_gain)
+   {
+      if (target_gain > st->max_increase_step*st->agc_gain)
+         target_gain = st->max_increase_step*st->agc_gain;
+      if (target_gain < st->max_decrease_step*st->agc_gain && loudness < 10*st->prev_loudness)
+         target_gain = st->max_decrease_step*st->agc_gain;
+      if (target_gain > st->max_gain)
+         target_gain = st->max_gain;
+      if (target_gain > st->init_max)
+         target_gain = st->init_max;
    
+      st->agc_gain = target_gain;
+   }
    /*fprintf (stderr, "%f %f %f\n", loudness, st->loudness2, rate);*/
-   
-   agc_gain = st->agc_level/st->loudness2;
-   /*fprintf (stderr, "%f %f %f %f\n", active_bands, st->loudness, st->loudness2, agc_gain);*/
-   if (agc_gain>30)
-      agc_gain = 30;
-   
+      
    for (i=0;i<2*N;i++)
-      ft[i] *= agc_gain;
-   
+      ft[i] *= st->agc_gain;
+   st->prev_loudness = loudness;
 }
 #endif
 
