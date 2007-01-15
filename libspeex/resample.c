@@ -66,8 +66,14 @@ SpeexResamplerState *speex_resampler_init(int in_rate, int out_rate)
    st->mem = speex_alloc((st->filt_len-1) * sizeof(float));
    for (i=0;i<st->filt_len-1;i++)
       st->mem[i] = 0;
+   return st;
 }
 
+void speex_resampler_init(SpeexResamplerState *st)
+{
+   speex_free(st->mem);
+   speex_free(st);
+}
 
 int speex_resample_float(SpeexResamplerState *st, const float *in, int len, float *out)
 {
