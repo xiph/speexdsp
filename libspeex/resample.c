@@ -32,6 +32,7 @@
 
 #include "misc.h"
 #include <math.h>
+#include <stdio.h>
             
 typedef struct {
    int in_rate;
@@ -87,8 +88,9 @@ static float sinc(float x, int N)
 
 int speex_resample_float(SpeexResamplerState *st, const float *in, int len, float *out)
 {
-   int i=0;
+   int j=0;
    int N = st->filt_len;
+   int out_sample = 0;
    while (1)
    {
       int j;
@@ -100,49 +102,58 @@ int speex_resample_float(SpeexResamplerState *st, const float *in, int len, floa
          else
             sum += in[st->last_sample-N+1+j]*sinc((j-N/2)-((float)st->samp_frac_num)/st->den_rate, N);
       }
-      out[i++] = sum;
+      out[out_sample++] = sum;
       
       st->last_sample += st->num_rate/st->den_rate;
       st->samp_frac_num += st->num_rate%st->den_rate;
       if (st->samp_frac_num >= st->den_rate)
       {
-         st->samp_frac_num >= st->den_rate;
+         st->samp_frac_num -= st->den_rate;
          st->last_sample++;
       }
+      //fprintf (stderr, "%d %d %d %d\n", st->last_sample, st->samp_frac_num, st->num_rate, st->den_rate);
       if (st->last_sample >= len)
       {
+         st->last_sample -= len;
          break;
       }      
    }
-   for (i=0;i<st->filt_len-1;i++)
-      st->mem[i] = in[i+len-N+1];
-   return i;
+   for (j=0;j<st->filt_len-1;j++)
+      st->mem[j] = in[j+len-N+1];
+   return out_sample;
 }
 
-#include <stdio.h>
 #define NN 256
 
 int main(int argc, char **argv)
 {
    int i;
    SpeexResamplerState *st = speex_resampler_init(8000, 16000, 1, 1);
+   short *in;
+   short *out;
+   float *fin, *fout;
+   in = speex_alloc(NN*sizeof(short));
+   out = speex_alloc(2*NN*sizeof(short));
+   fin = speex_alloc(NN*sizeof(float));
+   fout = speex_alloc(2*NN*sizeof(float));
    while (1)
    {
       int out_num;
-      short in[NN];
-      short out[2*NN];
-      float fin[NN], fout[2*NN];
       fread(in, sizeof(short), NN, stdin);
       if (feof(stdin))
          break;
       for (i=0;i<NN;i++)
          fin[i]=in[i];
       out_num = speex_resample_float(st, fin, NN, fout);
-      fprintf (stderr, "%d\n", out_num);
+      //fprintf (stderr, "%d\n", out_num);
       for (i=0;i<2*NN;i++)
          out[i]=fout[i];
-      fwrite(in, sizeof(short), 2*NN, stdout);
+      fwrite(out, sizeof(short), 2*NN, stdout);
    }
+   free(in);
+   free(out);
+   free(fin);
+   free(fout);
    return 0;
 }
 
