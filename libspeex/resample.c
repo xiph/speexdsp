@@ -34,6 +34,9 @@
 #include <math.h>
 #include <stdio.h>
             
+//#define float double
+#define FILTER_SIZE 64
+      
 typedef struct {
    int in_rate;
    int out_rate;
@@ -64,7 +67,7 @@ SpeexResamplerState *speex_resampler_init(int in_rate, int out_rate, int in_rate
       }
    }
    st->last_sample = 0;
-   st->filt_len = 64;
+   st->filt_len = FILTER_SIZE;
    st->mem = speex_alloc((st->filt_len-1) * sizeof(float));
    for (i=0;i<st->filt_len-1;i++)
       st->mem[i] = 0;
@@ -83,7 +86,7 @@ static float sinc(float x, int N)
       return 1;
    else if (fabs(x) > .5f*N)
       return 0;
-   return sin(M_PI*x)/(M_PI*x) * (.5-.5*cos(2*x*M_PI/N));
+   return sin(M_PI*x)/(M_PI*x) * (.5+.5*cos(2*x*M_PI/N));
 }
 
 int speex_resample_float(SpeexResamplerState *st, const float *in, int len, float *out)
