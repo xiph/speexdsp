@@ -46,8 +46,19 @@ typedef struct {
    int samp_frac_num;
    int filt_len;
    float *mem;
+   float *sinc_table;
 } SpeexResamplerState;
 
+static float sinc(float x, int N)
+{
+   //fprintf (stderr, "%f ", x);
+   if (fabs(x)<1e-6)
+      return 1;
+   else if (fabs(x) > .5f*N)
+      return 0;
+   /*FIXME: Can it really be any slower than this? */
+   return sin(M_PI*x)/(M_PI*x) * (.5+.5*cos(2*x*M_PI/N));
+}
 
 SpeexResamplerState *speex_resampler_init(int in_rate, int out_rate, int in_rate_den, int out_rate_den)
 {
@@ -68,9 +79,23 @@ SpeexResamplerState *speex_resampler_init(int in_rate, int out_rate, int in_rate
    }
    st->last_sample = 0;
    st->filt_len = FILTER_SIZE;
-   st->mem = speex_alloc((st->filt_len-1) * sizeof(float));
+   st->mem = (float*)speex_alloc((st->filt_len-1) * sizeof(float));
    for (i=0;i<st->filt_len-1;i++)
       st->mem[i] = 0;
+   if (1)
+   {
+      st->sinc_table = (float *)speex_alloc(st->filt_len*st->den_rate*sizeof(float));
+      for (i=0;i<st->den_rate;i++)
+      {
+         int j;
+         for (j=0;j<st->filt_len;j++)
+         {
+            st->sinc_table[i*st->filt_len+j] = sinc((j-st->filt_len/2+1)-((float)i)/st->den_rate, st->filt_len);
+         }
+      }
+   } else {
+      st->sinc_table = NULL;
+   }
    return st;
 }
 
@@ -80,16 +105,6 @@ void speex_resampler_destroy(SpeexResamplerState *st)
    speex_free(st);
 }
 
-static float sinc(float x, int N)
-{
-   //fprintf (stderr, "%f ", x);
-   if (fabs(x)<1e-6)
-      return 1;
-   else if (fabs(x) > .5f*N)
-      return 0;
-   /*FIXME: Can it really be any slower than this? */
-   return sin(M_PI*x)/(M_PI*x) * (.5+.5*cos(2*x*M_PI/N));
-}
 
 int speex_resample_float(SpeexResamplerState *st, const float *in, int len, float *out)
 {
@@ -101,14 +116,27 @@ int speex_resample_float(SpeexResamplerState *st, const float *in, int len, floa
       int j;
       float sum=0;
       /* Do the memory part */
-      for (j=0;st->last_sample-N+1+j < 0;j++)
+      if (st->sinc_table)
       {
-         sum += st->mem[st->last_sample+j]*sinc((j-N/2+1)-((float)st->samp_frac_num)/st->den_rate, N);
-      }
-      /* Do the new part */
-      for (;j<N;j++)
-      {
-         sum += in[st->last_sample-N+1+j]*sinc((j-N/2+1)-((float)st->samp_frac_num)/st->den_rate, N);
+         for (j=0;st->last_sample-N+1+j < 0;j++)
+         {
+            sum += st->mem[st->last_sample+j]*st->sinc_table[st->samp_frac_num*st->filt_len+j];
+         }
+         /* Do the new part */
+         for (;j<N;j++)
+         {
+            sum += in[st->last_sample-N+1+j]*st->sinc_table[st->samp_frac_num*st->filt_len+j];
+         }
+      } else {
+         for (j=0;st->last_sample-N+1+j < 0;j++)
+         {
+            sum += st->mem[st->last_sample+j]*sinc((j-N/2+1)-((float)st->samp_frac_num)/st->den_rate, N);
+         }
+         /* Do the new part */
+         for (;j<N;j++)
+         {
+            sum += in[st->last_sample-N+1+j]*sinc((j-N/2+1)-((float)st->samp_frac_num)/st->den_rate, N);
+         }
       }
       out[out_sample++] = sum;
       
@@ -155,7 +183,7 @@ int main(int argc, char **argv)
       out_num = speex_resample_float(st, fin, NN, fout);
       //fprintf (stderr, "%d\n", out_num);
       for (i=0;i<2*NN;i++)
-         out[i]=fout[i];
+         out[i]=floor(.5+fout[i]);
       fwrite(out, sizeof(short), out_num, stdout);
    }
    speex_resampler_destroy(st);
