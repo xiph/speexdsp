@@ -131,7 +131,7 @@ int speex_resample_float(SpeexResamplerState *st, const float *in, int len, floa
 int main(int argc, char **argv)
 {
    int i;
-   SpeexResamplerState *st = speex_resampler_init(8000, 16000, 1, 1);
+   SpeexResamplerState *st = speex_resampler_init(8000, 12000, 1, 1);
    short *in;
    short *out;
    float *fin, *fout;
@@ -151,12 +151,12 @@ int main(int argc, char **argv)
       //fprintf (stderr, "%d\n", out_num);
       for (i=0;i<2*NN;i++)
          out[i]=fout[i];
-      fwrite(out, sizeof(short), 2*NN, stdout);
+      fwrite(out, sizeof(short), out_num, stdout);
    }
-   free(in);
-   free(out);
-   free(fin);
-   free(fout);
+   speex_free(in);
+   speex_free(out);
+   speex_free(fin);
+   speex_free(fout);
    return 0;
 }
 
