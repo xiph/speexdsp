@@ -60,7 +60,7 @@ static float sinc(float x, int N)
    return sin(M_PI*x)/(M_PI*x) * (.5+.5*cos(2*x*M_PI/N));
 }
 
-SpeexResamplerState *speex_resampler_init(int in_rate, int out_rate, int in_rate_den, int out_rate_den)
+SpeexResamplerState *speex_resampler_init(int nb_channels, int in_rate, int out_rate, int in_rate_den, int out_rate_den)
 {
    SpeexResamplerState *st = (SpeexResamplerState *)speex_alloc(sizeof(SpeexResamplerState));
    int fact, i;
@@ -102,9 +102,20 @@ SpeexResamplerState *speex_resampler_init(int in_rate, int out_rate, int in_rate
 void speex_resampler_destroy(SpeexResamplerState *st)
 {
    speex_free(st->mem);
+   if (st->sinc_table)
+      speex_free(st->sinc_table);
    speex_free(st);
 }
 
+void speex_resample_set_rate(SpeexResamplerState *st, int in_rate, int out_rate, int in_rate_den, int out_rate_den);
+
+void speex_resample_set_input_stride(SpeexResamplerState *st, int stride);
+
+void speex_resample_set_output_stride(SpeexResamplerState *st, int stride);
+
+void speex_resample_skip_zeros(SpeexResamplerState *st);
+
+//int speex_resample_float(SpeexResamplerState *st, int index, const float *in, int *in_len, float *out, int *out_len)
 
 int speex_resample_float(SpeexResamplerState *st, const float *in, int len, float *out)
 {
@@ -164,10 +175,10 @@ int speex_resample_float(SpeexResamplerState *st, const float *in, int len, floa
 int main(int argc, char **argv)
 {
    int i;
-   SpeexResamplerState *st = speex_resampler_init(8000, 12000, 1, 1);
    short *in;
    short *out;
    float *fin, *fout;
+   SpeexResamplerState *st = speex_resampler_init(1, 8000, 12000, 1, 1);
    in = speex_alloc(NN*sizeof(short));
    out = speex_alloc(2*NN*sizeof(short));
    fin = speex_alloc(NN*sizeof(float));
