@@ -36,7 +36,10 @@
             
 //#define float double
 #define FILTER_SIZE 64
-      
+#define OVERSAMPLE 128
+
+typedef enum {SPEEX_RESAMPLER_DIRECT=0, SPEEX_RESAMPLER_INTERPOLATE=1} SpeexSincType;
+
 typedef struct {
    int in_rate;
    int out_rate;
@@ -47,6 +50,7 @@ typedef struct {
    int filt_len;
    float *mem;
    float *sinc_table;
+   SpeexSincType type;
 } SpeexResamplerState;
 
 static float sinc(float x, int N)
@@ -82,7 +86,7 @@ SpeexResamplerState *speex_resampler_init(int nb_channels, int in_rate, int out_
    st->mem = (float*)speex_alloc((st->filt_len-1) * sizeof(float));
    for (i=0;i<st->filt_len-1;i++)
       st->mem[i] = 0;
-   if (1)
+   if (st->den_rate <= OVERSAMPLE)
    {
       st->sinc_table = (float *)speex_alloc(st->filt_len*st->den_rate*sizeof(float));
       for (i=0;i<st->den_rate;i++)
@@ -93,8 +97,14 @@ SpeexResamplerState *speex_resampler_init(int nb_channels, int in_rate, int out_
             st->sinc_table[i*st->filt_len+j] = sinc((j-st->filt_len/2+1)-((float)i)/st->den_rate, st->filt_len);
          }
       }
+      st->type = SPEEX_RESAMPLER_DIRECT;
+      fprintf (stderr, "resampler uses direct sinc table\n");
    } else {
-      st->sinc_table = NULL;
+      st->sinc_table = (float *)speex_alloc(st->filt_len*st->den_rate*sizeof(float));
+      for (i=-4;i<OVERSAMPLE*st->filt_len+4;i++)
+         st->sinc_table[i+4] = sinc(i/(float)OVERSAMPLE - st->filt_len/2, st->filt_len);
+      st->type = SPEEX_RESAMPLER_INTERPOLATE;
+      fprintf (stderr, "resampler uses interpolated sinc table\n");
    }
    return st;
 }
@@ -107,16 +117,7 @@ void speex_resampler_destroy(SpeexResamplerState *st)
    speex_free(st);
 }
 
-void speex_resample_set_rate(SpeexResamplerState *st, int in_rate, int out_rate, int in_rate_den, int out_rate_den);
-
-void speex_resample_set_input_stride(SpeexResamplerState *st, int stride);
-
-void speex_resample_set_output_stride(SpeexResamplerState *st, int stride);
-
-void speex_resample_skip_zeros(SpeexResamplerState *st);
-
 //int speex_resample_float(SpeexResamplerState *st, int index, const float *in, int *in_len, float *out, int *out_len)
-
 int speex_resample_float(SpeexResamplerState *st, const float *in, int len, float *out)
 {
    int j=0;
@@ -127,7 +128,7 @@ int speex_resample_float(SpeexResamplerState *st, const float *in, int len, floa
       int j;
       float sum=0;
       /* Do the memory part */
-      if (st->sinc_table)
+      if (st->type == SPEEX_RESAMPLER_DIRECT)
       {
          for (j=0;st->last_sample-N+1+j < 0;j++)
          {
@@ -139,16 +140,28 @@ int speex_resample_float(SpeexResamplerState *st, const float *in, int len, floa
             sum += in[st->last_sample-N+1+j]*st->sinc_table[st->samp_frac_num*st->filt_len+j];
          }
       } else {
+         float alpha = ((float)st->samp_frac_num)/st->den_rate;
+         int offset = st->samp_frac_num*OVERSAMPLE/st->den_rate;
+         float frac = alpha*OVERSAMPLE - offset;
          for (j=0;st->last_sample-N+1+j < 0;j++)
          {
-            sum += st->mem[st->last_sample+j]*sinc((j-N/2+1)-((float)st->samp_frac_num)/st->den_rate, N);
+            float interp = frac*st->sinc_table[4+(j+1)*OVERSAMPLE-offset-1] + (1-frac)*st->sinc_table[4+(j+1)*OVERSAMPLE-offset];
+            //sum += st->mem[st->last_sample+j]*sinc((j-N/2+1)-((float)st->samp_frac_num)/st->den_rate, N);
+            sum += st->mem[st->last_sample+j]*interp;
          }
          /* Do the new part */
          for (;j<N;j++)
          {
-            sum += in[st->last_sample-N+1+j]*sinc((j-N/2+1)-((float)st->samp_frac_num)/st->den_rate, N);
+            float interp = frac*st->sinc_table[4+(j+1)*OVERSAMPLE-offset-1] + (1-frac)*st->sinc_table[4+(j+1)*OVERSAMPLE-offset];
+            //if (st->last_sample > N+2)
+            //   fprintf (stderr, "%f %f %f %f\n", sinc((j-N/2+1)-alpha, N), st->sinc_table[4+(j+1)*OVERSAMPLE-offset], st->sinc_table[4+(j+1)*OVERSAMPLE-offset-1], interp);
+            //sum += in[st->last_sample-N+1+j]*sinc((j-N/2+1)-alpha, N);
+            sum += in[st->last_sample-N+1+j]*interp;
+            
          }
       }
+      //if (st->last_sample > N+2)
+      //   exit(0);
       out[out_sample++] = sum;
       
       st->last_sample += st->num_rate/st->den_rate;
@@ -170,6 +183,15 @@ int speex_resample_float(SpeexResamplerState *st, const float *in, int len, floa
    return out_sample;
 }
 
+void speex_resample_set_rate(SpeexResamplerState *st, int in_rate, int out_rate, int in_rate_den, int out_rate_den);
+
+void speex_resample_set_input_stride(SpeexResamplerState *st, int stride);
+
+void speex_resample_set_output_stride(SpeexResamplerState *st, int stride);
+
+void speex_resample_skip_zeros(SpeexResamplerState *st);
+
+
 #define NN 256
 
 int main(int argc, char **argv)
@@ -178,7 +200,7 @@ int main(int argc, char **argv)
    short *in;
    short *out;
    float *fin, *fout;
-   SpeexResamplerState *st = speex_resampler_init(1, 8000, 12000, 1, 1);
+   SpeexResamplerState *st = speex_resampler_init(1, 8000, 13501, 1, 1);
    in = speex_alloc(NN*sizeof(short));
    out = speex_alloc(2*NN*sizeof(short));
    fin = speex_alloc(NN*sizeof(float));
