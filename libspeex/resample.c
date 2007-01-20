@@ -34,7 +34,7 @@
 #include <math.h>
 #include <stdio.h>
             
-//#define float double
+/*#define float double*/
 #define FILTER_SIZE 64
 #define OVERSAMPLE 64
 
@@ -55,7 +55,7 @@ typedef struct {
 
 static float sinc(float x, int N)
 {
-   //fprintf (stderr, "%f ", x);
+   /*fprintf (stderr, "%f ", x);*/
    if (fabs(x)<1e-6)
       return 1;
    else if (fabs(x) > .5f*N)
@@ -66,8 +66,9 @@ static float sinc(float x, int N)
 
 SpeexResamplerState *speex_resampler_init(int nb_channels, int in_rate, int out_rate, int in_rate_den, int out_rate_den)
 {
-   SpeexResamplerState *st = (SpeexResamplerState *)speex_alloc(sizeof(SpeexResamplerState));
    int fact, i;
+   float cutoff;
+   SpeexResamplerState *st = (SpeexResamplerState *)speex_alloc(sizeof(SpeexResamplerState));
    st->in_rate = in_rate;
    st->out_rate = out_rate;
    st->num_rate = in_rate;
@@ -86,6 +87,15 @@ SpeexResamplerState *speex_resampler_init(int nb_channels, int in_rate, int out_
    st->mem = (float*)speex_alloc((st->filt_len-1) * sizeof(float));
    for (i=0;i<st->filt_len-1;i++)
       st->mem[i] = 0;
+   /* FIXME: Is there a danger of overflow? */
+   if (in_rate*out_rate_den > out_rate*in_rate_den)
+   {
+      /* down-sampling */
+      cutoff = .92f * out_rate*in_rate_den / (in_rate*out_rate_den);
+   } else {
+      /* up-sampling */
+      cutoff = .97;
+   }
    if (st->den_rate <= OVERSAMPLE)
    {
       st->sinc_table = (float *)speex_alloc(st->filt_len*st->den_rate*sizeof(float));
@@ -94,17 +104,17 @@ SpeexResamplerState *speex_resampler_init(int nb_channels, int in_rate, int out_
          int j;
          for (j=0;j<st->filt_len;j++)
          {
-            st->sinc_table[i*st->filt_len+j] = sinc((j-st->filt_len/2+1)-((float)i)/st->den_rate, st->filt_len);
+            st->sinc_table[i*st->filt_len+j] = sinc(cutoff*((j-st->filt_len/2+1)-((float)i)/st->den_rate), st->filt_len);
          }
       }
       st->type = SPEEX_RESAMPLER_DIRECT;
-      fprintf (stderr, "resampler uses direct sinc table\n");
+      fprintf (stderr, "resampler uses direct sinc table and normalised cutoff %f\n", cutoff);
    } else {
       st->sinc_table = (float *)speex_alloc(st->filt_len*st->den_rate*sizeof(float));
       for (i=-4;i<OVERSAMPLE*st->filt_len+4;i++)
-         st->sinc_table[i+4] = sinc(i/(float)OVERSAMPLE - st->filt_len/2, st->filt_len);
+         st->sinc_table[i+4] = sinc(cutoff*(i/(float)OVERSAMPLE - st->filt_len/2), st->filt_len);
       st->type = SPEEX_RESAMPLER_INTERPOLATE;
-      fprintf (stderr, "resampler uses interpolated sinc table\n");
+      fprintf (stderr, "resampler uses interpolated sinc table and normalised cutoff %f\n", cutoff);
    }
    return st;
 }
@@ -117,7 +127,7 @@ void speex_resampler_destroy(SpeexResamplerState *st)
    speex_free(st);
 }
 
-//int speex_resample_float(SpeexResamplerState *st, int index, const float *in, int *in_len, float *out, int *out_len)
+/*int speex_resample_float(SpeexResamplerState *st, int index, const float *in, int *in_len, float *out, int *out_len)*/
 int speex_resample_float(SpeexResamplerState *st, const float *in, int len, float *out)
 {
    int j=0;
@@ -157,8 +167,6 @@ int speex_resample_float(SpeexResamplerState *st, const float *in, int len, floa
          }
          sum = frac*accum[0] + (1-frac)*accum[1];
       }
-      //if (st->last_sample > N+2)
-      //   exit(0);
       out[out_sample++] = sum;
       
       st->last_sample += st->num_rate/st->den_rate;
@@ -168,7 +176,6 @@ int speex_resample_float(SpeexResamplerState *st, const float *in, int len, floa
          st->samp_frac_num -= st->den_rate;
          st->last_sample++;
       }
-      //fprintf (stderr, "%d %d %d %d\n", st->last_sample, st->samp_frac_num, st->num_rate, st->den_rate);
       if (st->last_sample >= len)
       {
          st->last_sample -= len;
@@ -197,7 +204,7 @@ int main(int argc, char **argv)
    short *in;
    short *out;
    float *fin, *fout;
-   SpeexResamplerState *st = speex_resampler_init(1, 8000, 13501, 1, 1);
+   SpeexResamplerState *st = speex_resampler_init(1, 8000, 6501, 1, 1);
    in = speex_alloc(NN*sizeof(short));
    out = speex_alloc(2*NN*sizeof(short));
    fin = speex_alloc(NN*sizeof(float));
@@ -211,7 +218,6 @@ int main(int argc, char **argv)
       for (i=0;i<NN;i++)
          fin[i]=in[i];
       out_num = speex_resample_float(st, fin, NN, fout);
-      //fprintf (stderr, "%d\n", out_num);
       for (i=0;i<2*NN;i++)
          out[i]=floor(.5+fout[i]);
       fwrite(out, sizeof(short), out_num, stdout);
