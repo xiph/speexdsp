@@ -36,7 +36,7 @@
             
 //#define float double
 #define FILTER_SIZE 64
-#define OVERSAMPLE 128
+#define OVERSAMPLE 64
 
 typedef enum {SPEEX_RESAMPLER_DIRECT=0, SPEEX_RESAMPLER_INTERPOLATE=1} SpeexSincType;
 
@@ -140,25 +140,22 @@ int speex_resample_float(SpeexResamplerState *st, const float *in, int len, floa
             sum += in[st->last_sample-N+1+j]*st->sinc_table[st->samp_frac_num*st->filt_len+j];
          }
       } else {
+         float accum[2] = {0.f,0.f};
          float alpha = ((float)st->samp_frac_num)/st->den_rate;
          int offset = st->samp_frac_num*OVERSAMPLE/st->den_rate;
          float frac = alpha*OVERSAMPLE - offset;
          for (j=0;st->last_sample-N+1+j < 0;j++)
          {
-            float interp = frac*st->sinc_table[4+(j+1)*OVERSAMPLE-offset-1] + (1-frac)*st->sinc_table[4+(j+1)*OVERSAMPLE-offset];
-            //sum += st->mem[st->last_sample+j]*sinc((j-N/2+1)-((float)st->samp_frac_num)/st->den_rate, N);
-            sum += st->mem[st->last_sample+j]*interp;
+            accum[0] += st->mem[st->last_sample+j]*st->sinc_table[4+(j+1)*OVERSAMPLE-offset-1];
+            accum[1] += st->mem[st->last_sample+j]*st->sinc_table[4+(j+1)*OVERSAMPLE-offset];
          }
          /* Do the new part */
          for (;j<N;j++)
          {
-            float interp = frac*st->sinc_table[4+(j+1)*OVERSAMPLE-offset-1] + (1-frac)*st->sinc_table[4+(j+1)*OVERSAMPLE-offset];
-            //if (st->last_sample > N+2)
-            //   fprintf (stderr, "%f %f %f %f\n", sinc((j-N/2+1)-alpha, N), st->sinc_table[4+(j+1)*OVERSAMPLE-offset], st->sinc_table[4+(j+1)*OVERSAMPLE-offset-1], interp);
-            //sum += in[st->last_sample-N+1+j]*sinc((j-N/2+1)-alpha, N);
-            sum += in[st->last_sample-N+1+j]*interp;
-            
+            accum[0] += in[st->last_sample-N+1+j]*st->sinc_table[4+(j+1)*OVERSAMPLE-offset-1];
+            accum[1] += in[st->last_sample-N+1+j]*st->sinc_table[4+(j+1)*OVERSAMPLE-offset];
          }
+         sum = frac*accum[0] + (1-frac)*accum[1];
       }
       //if (st->last_sample > N+2)
       //   exit(0);
