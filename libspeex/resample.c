@@ -55,6 +55,8 @@ typedef struct {
    int filt_len;
    float *mem;
    float *sinc_table;
+   int in_stride;
+   int out_stride;
    SpeexSincType type;
 } SpeexResamplerState;
 
@@ -89,8 +91,8 @@ SpeexResamplerState *speex_resampler_init(int nb_channels, int in_rate, int out_
    }
    st->last_sample = 0;
    st->filt_len = FILTER_SIZE;
-   st->mem = (float*)speex_alloc((st->filt_len-1) * sizeof(float));
-   for (i=0;i<st->filt_len-1;i++)
+   st->mem = (float*)speex_alloc(nb_channels*(st->filt_len-1) * sizeof(float));
+   for (i=0;i<nb_channels*(st->filt_len-1);i++)
       st->mem[i] = 0;
    /* FIXME: Is there a danger of overflow? */
    if (in_rate*out_rate_den > out_rate*in_rate_den)
@@ -121,6 +123,8 @@ SpeexResamplerState *speex_resampler_init(int nb_channels, int in_rate, int out_
       st->type = SPEEX_RESAMPLER_INTERPOLATE;
       fprintf (stderr, "resampler uses interpolated sinc table and normalised cutoff %f\n", cutoff);
    }
+   st->in_stride = 1;
+   st->out_stride = 1;
    return st;
 }
 
@@ -132,11 +136,13 @@ void speex_resampler_destroy(SpeexResamplerState *st)
    speex_free(st);
 }
 
-void speex_resample_float(SpeexResamplerState *st, int index, const float *in, int *in_len, float *out, int *out_len)
+void speex_resample_float(SpeexResamplerState *st, int channel_index, const float *in, int *in_len, float *out, int *out_len)
 {
    int j=0;
    int N = st->filt_len;
    int out_sample = 0;
+   float *mem;
+   mem = st->mem + channel_index * (N-1);
    while (1)
    {
       int j;
@@ -145,20 +151,25 @@ void speex_resample_float(SpeexResamplerState *st, int index, const float *in, i
       if (st->type == SPEEX_RESAMPLER_DIRECT)
       {
          /* We already have all the filter coefficients pre-computed in the table */
+         const float *ptr;
          /* Do the memory part */
          for (j=0;st->last_sample-N+1+j < 0;j++)
          {
-            sum += st->mem[st->last_sample+j]*st->sinc_table[st->samp_frac_num*st->filt_len+j];
+            sum += mem[st->last_sample+j]*st->sinc_table[st->samp_frac_num*st->filt_len+j];
          }
+         
          /* Do the new part */
+         ptr = in+st->last_sample-N+1+j;
          for (;j<N;j++)
          {
-            sum += in[st->last_sample-N+1+j]*st->sinc_table[st->samp_frac_num*st->filt_len+j];
+            sum += *ptr*st->sinc_table[st->samp_frac_num*st->filt_len+j];
+            ptr += st->in_stride;
          }
       } else {
          /* We need to interpolate the sinc filter */
          float accum[4] = {0.f,0.f, 0.f, 0.f};
          float interp[4];
+         const float *ptr;
          float alpha = ((float)st->samp_frac_num)/st->den_rate;
          int offset = st->samp_frac_num*OVERSAMPLE/st->den_rate;
          float frac = alpha*OVERSAMPLE - offset;
@@ -167,18 +178,22 @@ void speex_resample_float(SpeexResamplerState *st, int index, const float *in, i
             have only two accumulators */
          for (j=0;st->last_sample-N+1+j < 0;j++)
          {
-            accum[0] += st->mem[st->last_sample+j]*st->sinc_table[4+(j+1)*OVERSAMPLE-offset-2];
-            accum[1] += st->mem[st->last_sample+j]*st->sinc_table[4+(j+1)*OVERSAMPLE-offset-1];
-            accum[2] += st->mem[st->last_sample+j]*st->sinc_table[4+(j+1)*OVERSAMPLE-offset];
-            accum[3] += st->mem[st->last_sample+j]*st->sinc_table[4+(j+1)*OVERSAMPLE-offset+1];
+            float curr_mem = mem[st->last_sample+j];
+            accum[0] += curr_mem*st->sinc_table[4+(j+1)*OVERSAMPLE-offset-2];
+            accum[1] += curr_mem*st->sinc_table[4+(j+1)*OVERSAMPLE-offset-1];
+            accum[2] += curr_mem*st->sinc_table[4+(j+1)*OVERSAMPLE-offset];
+            accum[3] += curr_mem*st->sinc_table[4+(j+1)*OVERSAMPLE-offset+1];
          }
+         ptr = in+st->last_sample-N+1+j;
          /* Do the new part */
          for (;j<N;j++)
          {
-            accum[0] += in[st->last_sample-N+1+j]*st->sinc_table[4+(j+1)*OVERSAMPLE-offset-2];
-            accum[1] += in[st->last_sample-N+1+j]*st->sinc_table[4+(j+1)*OVERSAMPLE-offset-1];
-            accum[2] += in[st->last_sample-N+1+j]*st->sinc_table[4+(j+1)*OVERSAMPLE-offset];
-            accum[3] += in[st->last_sample-N+1+j]*st->sinc_table[4+(j+1)*OVERSAMPLE-offset+1];
+            float curr_in = *ptr;
+            ptr += st->in_stride;
+            accum[0] += curr_in*st->sinc_table[4+(j+1)*OVERSAMPLE-offset-2];
+            accum[1] += curr_in*st->sinc_table[4+(j+1)*OVERSAMPLE-offset-1];
+            accum[2] += curr_in*st->sinc_table[4+(j+1)*OVERSAMPLE-offset];
+            accum[3] += curr_in*st->sinc_table[4+(j+1)*OVERSAMPLE-offset+1];
          }
          /* Compute interpolation coefficients. I'm not sure whether this corresponds to cubic interpolation
             but I know it's MMSE-optimal on a sinc */
@@ -189,8 +204,9 @@ void speex_resample_float(SpeexResamplerState *st, int index, const float *in, i
          /*sum = frac*accum[1] + (1-frac)*accum[2];*/
          sum = interp[0]*accum[0] + interp[1]*accum[1] + interp[2]*accum[2] + interp[3]*accum[3];
       }
-      out[out_sample++] = sum;
-      
+      *out = sum;
+      out += st->out_stride;
+      out_sample++;
       st->last_sample += st->num_rate/st->den_rate;
       st->samp_frac_num += st->num_rate%st->den_rate;
       if (st->samp_frac_num >= st->den_rate)
@@ -208,19 +224,29 @@ void speex_resample_float(SpeexResamplerState *st, int index, const float *in, i
    
    /* FIXME: The details of this are untested */
    for (j=0;j<N-1-*in_len;j++)
-      st->mem[j] = st->mem[j-*in_len];
+      mem[j] = mem[j-*in_len];
    for (;j<N-1;j++)
-      st->mem[j] = in[j+*in_len-N+1];
+      mem[j] = in[st->in_stride*(j+*in_len-N+1)];
    
 }
 
-void speex_resample_set_rate(SpeexResamplerState *st, int in_rate, int out_rate, int in_rate_den, int out_rate_den);
+void speex_resample_set_rate(SpeexResamplerState *st, int in_rate, int out_rate, int in_rate_den, int out_rate_den)
+{
+}
 
-void speex_resample_set_input_stride(SpeexResamplerState *st, int stride);
+void speex_resample_set_input_stride(SpeexResamplerState *st, int stride)
+{
+   st->in_stride = stride;
+}
 
-void speex_resample_set_output_stride(SpeexResamplerState *st, int stride);
+void speex_resample_set_output_stride(SpeexResamplerState *st, int stride)
+{
+   st->out_stride = stride;
+}
 
-void speex_resample_skip_zeros(SpeexResamplerState *st);
+void speex_resample_skip_zeros(SpeexResamplerState *st)
+{
+}
 
 
 #define NN 256
