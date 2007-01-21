@@ -131,12 +131,11 @@ SpeexResamplerState *speex_resampler_init(int nb_channels, int in_rate, int out_
 void speex_resampler_destroy(SpeexResamplerState *st)
 {
    speex_free(st->mem);
-   if (st->sinc_table)
-      speex_free(st->sinc_table);
+   speex_free(st->sinc_table);
    speex_free(st);
 }
 
-void speex_resample_float(SpeexResamplerState *st, int channel_index, const float *in, int *in_len, float *out, int *out_len)
+void speex_resampler_process_float(SpeexResamplerState *st, int channel_index, const float *in, int *in_len, float *out, int *out_len)
 {
    int j=0;
    int N = st->filt_len;
@@ -248,6 +247,9 @@ void speex_resample_skip_zeros(SpeexResamplerState *st)
 {
 }
 
+void speex_resample_reset_mem(SpeexResamplerState *st)
+{
+}
 
 #define NN 256
 
@@ -273,7 +275,7 @@ int main(int argc, char **argv)
          fin[i]=in[i];
       in_len = NN;
       out_len = 2*NN;
-      speex_resample_float(st, 0, fin, &in_len, fout, &out_len);
+      speex_resampler_process_float(st, 0, fin, &in_len, fout, &out_len);
       for (i=0;i<out_len;i++)
          out[i]=floor(.5+fout[i]);
       fwrite(out, sizeof(short), out_len, stdout);
