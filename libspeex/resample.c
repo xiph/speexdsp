@@ -132,8 +132,7 @@ void speex_resampler_destroy(SpeexResamplerState *st)
    speex_free(st);
 }
 
-/*int speex_resample_float(SpeexResamplerState *st, int index, const float *in, int *in_len, float *out, int *out_len)*/
-int speex_resample_float(SpeexResamplerState *st, const float *in, int len, float *out)
+void speex_resample_float(SpeexResamplerState *st, int index, const float *in, int *in_len, float *out, int *out_len)
 {
    int j=0;
    int N = st->filt_len;
@@ -142,9 +141,11 @@ int speex_resample_float(SpeexResamplerState *st, const float *in, int len, floa
    {
       int j;
       float sum=0;
-      /* Do the memory part */
+      
       if (st->type == SPEEX_RESAMPLER_DIRECT)
       {
+         /* We already have all the filter coefficients pre-computed in the table */
+         /* Do the memory part */
          for (j=0;st->last_sample-N+1+j < 0;j++)
          {
             sum += st->mem[st->last_sample+j]*st->sinc_table[st->samp_frac_num*st->filt_len+j];
@@ -155,11 +156,15 @@ int speex_resample_float(SpeexResamplerState *st, const float *in, int len, floa
             sum += in[st->last_sample-N+1+j]*st->sinc_table[st->samp_frac_num*st->filt_len+j];
          }
       } else {
+         /* We need to interpolate the sinc filter */
          float accum[4] = {0.f,0.f, 0.f, 0.f};
          float interp[4];
          float alpha = ((float)st->samp_frac_num)/st->den_rate;
          int offset = st->samp_frac_num*OVERSAMPLE/st->den_rate;
          float frac = alpha*OVERSAMPLE - offset;
+         /* This code is written like this to make it easy to optimise with SIMD.
+            For most DSPs, it would be best to split the loops in two because most DSPs 
+            have only two accumulators */
          for (j=0;st->last_sample-N+1+j < 0;j++)
          {
             accum[0] += st->mem[st->last_sample+j]*st->sinc_table[4+(j+1)*OVERSAMPLE-offset-2];
@@ -175,7 +180,8 @@ int speex_resample_float(SpeexResamplerState *st, const float *in, int len, floa
             accum[2] += in[st->last_sample-N+1+j]*st->sinc_table[4+(j+1)*OVERSAMPLE-offset];
             accum[3] += in[st->last_sample-N+1+j]*st->sinc_table[4+(j+1)*OVERSAMPLE-offset+1];
          }
-         /* Compute cubic interpolation coefficients */
+         /* Compute interpolation coefficients. I'm not sure whether this corresponds to cubic interpolation
+            but I know it's MMSE-optimal on a sinc */
          interp[0] =  -0.16667f*frac + 0.16667f*frac*frac*frac;
          interp[1] = frac + 0.5f*frac*frac - 0.5f*frac*frac*frac;
          interp[2] = 1.f - 0.5f*frac - frac*frac + 0.5f*frac*frac*frac;
@@ -192,16 +198,20 @@ int speex_resample_float(SpeexResamplerState *st, const float *in, int len, floa
          st->samp_frac_num -= st->den_rate;
          st->last_sample++;
       }
-      if (st->last_sample >= len)
-      {
-         st->last_sample -= len;
+      if (st->last_sample >= *in_len || out_sample >= *out_len)
          break;
-      }      
    }
-   /* FIXME: Handle the case where the input signal has less samples than the memory */
-   for (j=0;j<st->filt_len-1;j++)
-      st->mem[j] = in[j+len-N+1];
-   return out_sample;
+   if (st->last_sample < *in_len)
+      *in_len = st->last_sample;
+   *out_len = out_sample;
+   st->last_sample -= *in_len;
+   
+   /* FIXME: The details of this are untested */
+   for (j=0;j<N-1-*in_len;j++)
+      st->mem[j] = st->mem[j-*in_len];
+   for (;j<N-1;j++)
+      st->mem[j] = in[j+*in_len-N+1];
+   
 }
 
 void speex_resample_set_rate(SpeexResamplerState *st, int in_rate, int out_rate, int in_rate_den, int out_rate_den);
@@ -228,16 +238,19 @@ int main(int argc, char **argv)
    fout = speex_alloc(2*NN*sizeof(float));
    while (1)
    {
-      int out_num;
+      int in_len;
+      int out_len;
       fread(in, sizeof(short), NN, stdin);
       if (feof(stdin))
          break;
       for (i=0;i<NN;i++)
          fin[i]=in[i];
-      out_num = speex_resample_float(st, fin, NN, fout);
-      for (i=0;i<2*NN;i++)
+      in_len = NN;
+      out_len = 2*NN;
+      speex_resample_float(st, 0, fin, &in_len, fout, &out_len);
+      for (i=0;i<out_len;i++)
          out[i]=floor(.5+fout[i]);
-      fwrite(out, sizeof(short), out_num, stdout);
+      fwrite(out, sizeof(short), out_len, stdout);
    }
    speex_resampler_destroy(st);
    speex_free(in);
