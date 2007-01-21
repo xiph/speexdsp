@@ -2,6 +2,11 @@
       
    File: resample.c
    Resampling code
+      
+   The design goals of this code are:
+      - Very fast algorithm
+      - Low memory requirement
+      - Good *perceptual* quality (and not best SNR)
 
    Redistribution and use in source and binary forms, with or without
    modification, are permitted provided that the following conditions are
@@ -36,7 +41,7 @@
             
 /*#define float double*/
 #define FILTER_SIZE 64
-#define OVERSAMPLE 64
+#define OVERSAMPLE 8
 
 typedef enum {SPEEX_RESAMPLER_DIRECT=0, SPEEX_RESAMPLER_INTERPOLATE=1} SpeexSincType;
 
@@ -150,22 +155,33 @@ int speex_resample_float(SpeexResamplerState *st, const float *in, int len, floa
             sum += in[st->last_sample-N+1+j]*st->sinc_table[st->samp_frac_num*st->filt_len+j];
          }
       } else {
-         float accum[2] = {0.f,0.f};
+         float accum[4] = {0.f,0.f, 0.f, 0.f};
+         float interp[4];
          float alpha = ((float)st->samp_frac_num)/st->den_rate;
          int offset = st->samp_frac_num*OVERSAMPLE/st->den_rate;
          float frac = alpha*OVERSAMPLE - offset;
          for (j=0;st->last_sample-N+1+j < 0;j++)
          {
-            accum[0] += st->mem[st->last_sample+j]*st->sinc_table[4+(j+1)*OVERSAMPLE-offset-1];
-            accum[1] += st->mem[st->last_sample+j]*st->sinc_table[4+(j+1)*OVERSAMPLE-offset];
+            accum[0] += st->mem[st->last_sample+j]*st->sinc_table[4+(j+1)*OVERSAMPLE-offset-2];
+            accum[1] += st->mem[st->last_sample+j]*st->sinc_table[4+(j+1)*OVERSAMPLE-offset-1];
+            accum[2] += st->mem[st->last_sample+j]*st->sinc_table[4+(j+1)*OVERSAMPLE-offset];
+            accum[3] += st->mem[st->last_sample+j]*st->sinc_table[4+(j+1)*OVERSAMPLE-offset+1];
          }
          /* Do the new part */
          for (;j<N;j++)
          {
-            accum[0] += in[st->last_sample-N+1+j]*st->sinc_table[4+(j+1)*OVERSAMPLE-offset-1];
-            accum[1] += in[st->last_sample-N+1+j]*st->sinc_table[4+(j+1)*OVERSAMPLE-offset];
+            accum[0] += in[st->last_sample-N+1+j]*st->sinc_table[4+(j+1)*OVERSAMPLE-offset-2];
+            accum[1] += in[st->last_sample-N+1+j]*st->sinc_table[4+(j+1)*OVERSAMPLE-offset-1];
+            accum[2] += in[st->last_sample-N+1+j]*st->sinc_table[4+(j+1)*OVERSAMPLE-offset];
+            accum[3] += in[st->last_sample-N+1+j]*st->sinc_table[4+(j+1)*OVERSAMPLE-offset+1];
          }
-         sum = frac*accum[0] + (1-frac)*accum[1];
+         /* Compute cubic interpolation coefficients */
+         interp[0] =  -0.16667f*frac + 0.16667f*frac*frac*frac;
+         interp[1] = frac + 0.5f*frac*frac - 0.5f*frac*frac*frac;
+         interp[2] = 1.f - 0.5f*frac - frac*frac + 0.5f*frac*frac*frac;
+         interp[3] = -0.33333f*frac + 0.5f*frac*frac - 0.16667f*frac*frac*frac;
+         /*sum = frac*accum[1] + (1-frac)*accum[2];*/
+         sum = interp[0]*accum[0] + interp[1]*accum[1] + interp[2]*accum[2] + interp[3]*accum[3];
       }
       out[out_sample++] = sum;
       
@@ -182,6 +198,7 @@ int speex_resample_float(SpeexResamplerState *st, const float *in, int len, floa
          break;
       }      
    }
+   /* FIXME: Handle the case where the input signal has less samples than the memory */
    for (j=0;j<st->filt_len-1;j++)
       st->mem[j] = in[j+len-N+1];
    return out_sample;
@@ -204,7 +221,7 @@ int main(int argc, char **argv)
    short *in;
    short *out;
    float *fin, *fout;
-   SpeexResamplerState *st = speex_resampler_init(1, 8000, 6501, 1, 1);
+   SpeexResamplerState *st = speex_resampler_init(1, 8000, 13501, 1, 1);
    in = speex_alloc(NN*sizeof(short));
    out = speex_alloc(2*NN*sizeof(short));
    fin = speex_alloc(NN*sizeof(float));
