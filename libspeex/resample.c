@@ -46,17 +46,18 @@
 typedef enum {SPEEX_RESAMPLER_DIRECT=0, SPEEX_RESAMPLER_INTERPOLATE=1} SpeexSincType;
 
 typedef struct {
-   int in_rate;
-   int out_rate;
-   int num_rate;
-   int den_rate;
-   int last_sample;
-   int samp_frac_num;
-   int filt_len;
+   int    in_rate;
+   int    out_rate;
+   int    num_rate;
+   int    den_rate;
+   int    last_sample;
+   int    samp_frac_num;
+   int    filt_len;
    float *mem;
    float *sinc_table;
-   int in_stride;
-   int out_stride;
+   int    sinc_table_length;
+   int    in_stride;
+   int    out_stride;
    SpeexSincType type;
 } SpeexResamplerState;
 
@@ -71,58 +72,26 @@ static float sinc(float x, int N)
    return sin(M_PI*x)/(M_PI*x) * (.5+.5*cos(2*x*M_PI/N));
 }
 
+void speex_resample_set_rate(SpeexResamplerState *st, int in_rate, int out_rate, int in_rate_den, int out_rate_den);
+
 SpeexResamplerState *speex_resampler_init(int nb_channels, int in_rate, int out_rate, int in_rate_den, int out_rate_den)
 {
-   int fact, i;
-   float cutoff;
+   int i;
    SpeexResamplerState *st = (SpeexResamplerState *)speex_alloc(sizeof(SpeexResamplerState));
-   st->in_rate = in_rate;
-   st->out_rate = out_rate;
-   st->num_rate = in_rate;
-   st->den_rate = out_rate;
-   /* FIXME: This is terribly inefficient, but who cares (at least for now)? */
-   for (fact=2;fact<=sqrt(MAX32(in_rate, out_rate));fact++)
-   {
-      while ((st->num_rate % fact == 0) && (st->den_rate % fact == 0))
-      {
-         st->num_rate /= fact;
-         st->den_rate /= fact;
-      }
-   }
+   st->in_rate = 0;
+   st->out_rate = 0;
+   st->num_rate = 0;
+   st->den_rate = 0;
+
    st->last_sample = 0;
    st->filt_len = FILTER_SIZE;
    st->mem = (float*)speex_alloc(nb_channels*(st->filt_len-1) * sizeof(float));
    for (i=0;i<nb_channels*(st->filt_len-1);i++)
       st->mem[i] = 0;
-   /* FIXME: Is there a danger of overflow? */
-   if (in_rate*out_rate_den > out_rate*in_rate_den)
-   {
-      /* down-sampling */
-      cutoff = .92f * out_rate*in_rate_den / (in_rate*out_rate_den);
-   } else {
-      /* up-sampling */
-      cutoff = .97;
-   }
-   if (st->den_rate <= OVERSAMPLE)
-   {
-      st->sinc_table = (float *)speex_alloc(st->filt_len*st->den_rate*sizeof(float));
-      for (i=0;i<st->den_rate;i++)
-      {
-         int j;
-         for (j=0;j<st->filt_len;j++)
-         {
-            st->sinc_table[i*st->filt_len+j] = sinc(cutoff*((j-st->filt_len/2+1)-((float)i)/st->den_rate), st->filt_len);
-         }
-      }
-      st->type = SPEEX_RESAMPLER_DIRECT;
-      fprintf (stderr, "resampler uses direct sinc table and normalised cutoff %f\n", cutoff);
-   } else {
-      st->sinc_table = (float *)speex_alloc(st->filt_len*st->den_rate*sizeof(float));
-      for (i=-4;i<OVERSAMPLE*st->filt_len+4;i++)
-         st->sinc_table[i+4] = sinc(cutoff*(i/(float)OVERSAMPLE - st->filt_len/2), st->filt_len);
-      st->type = SPEEX_RESAMPLER_INTERPOLATE;
-      fprintf (stderr, "resampler uses interpolated sinc table and normalised cutoff %f\n", cutoff);
-   }
+   st->sinc_table_length = 0;
+   
+   speex_resample_set_rate(st, in_rate, out_rate, in_rate_den, out_rate_den);
+
    st->in_stride = 1;
    st->out_stride = 1;
    return st;
@@ -231,6 +200,69 @@ void speex_resampler_process_float(SpeexResamplerState *st, int channel_index, c
 
 void speex_resample_set_rate(SpeexResamplerState *st, int in_rate, int out_rate, int in_rate_den, int out_rate_den)
 {
+   float cutoff;
+   int i, fact;
+   if (st->in_rate == in_rate && st->out_rate == out_rate && st->num_rate == in_rate && st->den_rate == out_rate)
+      return;
+   
+   st->in_rate = in_rate;
+   st->out_rate = out_rate;
+   st->num_rate = in_rate;
+   st->den_rate = out_rate;
+   /* FIXME: This is terribly inefficient, but who cares (at least for now)? */
+   for (fact=2;fact<=sqrt(MAX32(in_rate, out_rate));fact++)
+   {
+      while ((st->num_rate % fact == 0) && (st->den_rate % fact == 0))
+      {
+         st->num_rate /= fact;
+         st->den_rate /= fact;
+      }
+   }
+   
+   /* FIXME: Is there a danger of overflow? */
+   if (in_rate*out_rate_den > out_rate*in_rate_den)
+   {
+      /* down-sampling */
+      cutoff = .92f * out_rate*in_rate_den / (in_rate*out_rate_den);
+   } else {
+      /* up-sampling */
+      cutoff = .97;
+   }
+   
+   /* Choose the resampling type that requires the least amount of memory */
+   if (st->den_rate <= OVERSAMPLE)
+   {
+      if (!st->sinc_table)
+         st->sinc_table = (float *)speex_alloc(st->filt_len*st->den_rate*sizeof(float));
+      else if (st->sinc_table_length < st->filt_len*st->den_rate)
+      {
+         st->sinc_table = (float *)speex_realloc(st->sinc_table,st->filt_len*st->den_rate*sizeof(float));
+         st->sinc_table_length = st->filt_len*st->den_rate;
+      }
+      for (i=0;i<st->den_rate;i++)
+      {
+         int j;
+         for (j=0;j<st->filt_len;j++)
+         {
+            st->sinc_table[i*st->filt_len+j] = sinc(cutoff*((j-st->filt_len/2+1)-((float)i)/st->den_rate), st->filt_len);
+         }
+      }
+      st->type = SPEEX_RESAMPLER_DIRECT;
+      fprintf (stderr, "resampler uses direct sinc table and normalised cutoff %f\n", cutoff);
+   } else {
+      if (!st->sinc_table)
+         st->sinc_table = (float *)speex_alloc((st->filt_len*OVERSAMPLE+8)*sizeof(float));
+      else if (st->sinc_table_length < st->filt_len*OVERSAMPLE+8)
+      {
+         st->sinc_table = (float *)speex_realloc(st->sinc_table,(st->filt_len*OVERSAMPLE+8)*sizeof(float));
+         st->sinc_table_length = st->filt_len*OVERSAMPLE+8;
+      }
+      for (i=-4;i<OVERSAMPLE*st->filt_len+4;i++)
+         st->sinc_table[i+4] = sinc(cutoff*(i/(float)OVERSAMPLE - st->filt_len/2), st->filt_len);
+      st->type = SPEEX_RESAMPLER_INTERPOLATE;
+      fprintf (stderr, "resampler uses interpolated sinc table and normalised cutoff %f\n", cutoff);
+   }
+
 }
 
 void speex_resample_set_input_stride(SpeexResamplerState *st, int stride)
@@ -259,7 +291,9 @@ int main(int argc, char **argv)
    short *in;
    short *out;
    float *fin, *fout;
-   SpeexResamplerState *st = speex_resampler_init(1, 8000, 13501, 1, 1);
+   SpeexResamplerState *st = speex_resampler_init(1, 8000, 12000, 1, 1);
+   speex_resample_set_rate(st, 8000, 13501, 1, 1);
+   
    in = speex_alloc(NN*sizeof(short));
    out = speex_alloc(2*NN*sizeof(short));
    fin = speex_alloc(NN*sizeof(float));
