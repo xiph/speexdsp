@@ -40,8 +40,20 @@
 #define SPEEX_RESAMPLER_H
 
 #ifdef OUTSIDE_SPEEX
+
+#define spx_int16_t short
+#ifdef FIXED_POINT
+#define spx_word16_t short
+#define spx_word32_t int
 #else
+#define spx_word16_t float
+#define spx_word32_t float
+#endif
+
+#else
+
 #include "speex/speex_types.h"
+
 #endif
 
 #ifdef __cplusplus

@@ -125,7 +125,7 @@ void speex_resampler_destroy(SpeexResamplerState *st)
    speex_free(st);
 }
 
-void speex_resampler_process_float(SpeexResamplerState *st, int channel_index, const float *in, int *in_len, float *out, int *out_len)
+static void speex_resampler_process_native(SpeexResamplerState *st, int channel_index, const float *in, int *in_len, float *out, int *out_len)
 {
    int j=0;
    int N = st->filt_len;
@@ -217,6 +217,41 @@ void speex_resampler_process_float(SpeexResamplerState *st, int channel_index, c
       mem[j] = in[st->in_stride*(j+*in_len-N+1)];
    
 }
+
+#ifdef FIXED_POINT
+void speex_resampler_process_float(SpeexResamplerState *st, int channel_index, const float *in, int *in_len, float *out, int *out_len)
+{
+   int i;
+   spx_word16_t x[*in_len];
+   spx_word16_t y[*out_len];
+   for (i=0;i<*in_len;i++)
+      x[i] = floor(.5+in[i]);
+   speex_resampler_process_native(st, channel_index, x, in_len, y, out_len);
+   for (i=0;i<*out_len;i++)
+      out[i] = y[i];
+
+}
+void speex_resampler_process_int(SpeexResamplerState *st, int channel_index, const spx_int16_t *in, int *in_len, spx_int16_t *out, int *out_len)
+{
+   speex_resampler_process_native(st, channel_index, in, in_len, out, out_len);
+}
+#else
+void speex_resampler_process_float(SpeexResamplerState *st, int channel_index, const float *in, int *in_len, float *out, int *out_len)
+{
+   speex_resampler_process_native(st, channel_index, in, in_len, out, out_len);
+}
+void speex_resampler_process_int(SpeexResamplerState *st, int channel_index, const spx_int16_t *in, int *in_len, spx_int16_t *out, int *out_len)
+{
+   int i;
+   spx_word16_t x[*in_len];
+   spx_word16_t y[*out_len];
+   for (i=0;i<*out_len;i++)
+      x[i] = in[i];
+   speex_resampler_process_native(st, channel_index, x, in_len, y, out_len);
+   for (i=0;i<*in_len;i++)
+      out[i] = floor(.5+y[i]);
+}
+#endif
 
 void speex_resampler_process_interleaved_float(SpeexResamplerState *st, const float *in, int *in_len, float *out, int *out_len)
 {
