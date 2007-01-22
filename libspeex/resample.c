@@ -64,6 +64,8 @@ typedef struct {
    SpeexSincType type;
 } SpeexResamplerState;
 
+
+/* The slow way of computing a sinc for the table. Should improve that some day */
 static float sinc(float x, int N)
 {
    /*fprintf (stderr, "%f ", x);*/
@@ -115,7 +117,7 @@ void speex_resampler_process_float(SpeexResamplerState *st, int channel_index, c
    int out_sample = 0;
    float *mem;
    mem = st->mem + channel_index * (N-1);
-   while (1)
+   while (!(st->last_sample >= *in_len || out_sample >= *out_len))
    {
       int j;
       float sum=0;
@@ -186,20 +188,32 @@ void speex_resampler_process_float(SpeexResamplerState *st, int channel_index, c
          st->samp_frac_num -= st->den_rate;
          st->last_sample++;
       }
-      if (st->last_sample >= *in_len || out_sample >= *out_len)
-         break;
    }
    if (st->last_sample < *in_len)
       *in_len = st->last_sample;
    *out_len = out_sample;
    st->last_sample -= *in_len;
    
-   /* FIXME: The details of this are untested */
    for (j=0;j<N-1-*in_len;j++)
-      mem[j] = mem[j-*in_len];
+      mem[j] = mem[j+*in_len];
    for (;j<N-1;j++)
       mem[j] = in[st->in_stride*(j+*in_len-N+1)];
    
+}
+
+void speex_resampler_process_interleaved_float(SpeexResamplerState *st, const float *in, int *in_len, float *out, int *out_len)
+{
+   int i;
+   int istride_save, ostride_save;
+   istride_save = st->in_stride;
+   ostride_save = st->out_stride;
+   st->in_stride = st->out_stride = st->nb_channels;
+   for (i=0;i<st->nb_channels;i++)
+   {
+      speex_resampler_process_float(st, i, in+i, in_len, out+i, out_len);
+   }
+   st->in_stride = istride_save;
+   st->out_stride = ostride_save;
 }
 
 void speex_resample_set_rate(SpeexResamplerState *st, int in_rate, int out_rate, int in_rate_den, int out_rate_den)
@@ -281,6 +295,7 @@ void speex_resample_set_output_stride(SpeexResamplerState *st, int stride)
 
 void speex_resample_skip_zeros(SpeexResamplerState *st)
 {
+   st->last_sample = st->filt_len/2;
 }
 
 void speex_resample_reset_mem(SpeexResamplerState *st)
@@ -299,7 +314,8 @@ int main(int argc, char **argv)
    short *out;
    float *fin, *fout;
    SpeexResamplerState *st = speex_resampler_init(1, 8000, 12000, 1, 1);
-   speex_resample_set_rate(st, 8000, 13501, 1, 1);
+   speex_resample_set_rate(st, 8000, 16000, 1, 1);
+   speex_resample_skip_zeros(st);
    
    in = speex_alloc(NN*sizeof(short));
    out = speex_alloc(2*NN*sizeof(short));
