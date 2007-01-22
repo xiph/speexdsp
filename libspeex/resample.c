@@ -74,16 +74,28 @@ struct SpeexResamplerState_ {
    int    frac_advance;
    
    spx_word16_t *mem;
-   float *sinc_table;
+   spx_word16_t *sinc_table;
    int    sinc_table_length;
    int    in_stride;
    int    out_stride;
    SpeexSincType type;
 } ;
 
-
+#ifdef FIXED_POINT
 /* The slow way of computing a sinc for the table. Should improve that some day */
-static float sinc(float x, int N)
+static spx_word16_t sinc(float x, int N)
+{
+   /*fprintf (stderr, "%f ", x);*/
+   if (fabs(x)<1e-6f)
+      return 32767.f;
+   else if (fabs(x) > .5f*N)
+      return 0;
+   /*FIXME: Can it really be any slower than this? */
+   return floor(.5f+32767.f*sin(M_PI*x)/(M_PI*x) * (.5f+.5f*cos(2*x*M_PI/N)));
+}
+#else
+/* The slow way of computing a sinc for the table. Should improve that some day */
+static spx_word16_t sinc(float x, int N)
 {
    /*fprintf (stderr, "%f ", x);*/
    if (fabs(x)<1e-6)
@@ -93,6 +105,7 @@ static float sinc(float x, int N)
    /*FIXME: Can it really be any slower than this? */
    return sin(M_PI*x)/(M_PI*x) * (.5+.5*cos(2*x*M_PI/N));
 }
+#endif
 
 SpeexResamplerState *speex_resampler_init(int nb_channels, int in_rate, int out_rate, int in_rate_den, int out_rate_den)
 {
@@ -135,7 +148,7 @@ static void speex_resampler_process_native(SpeexResamplerState *st, int channel_
    while (!(st->last_sample >= *in_len || out_sample >= *out_len))
    {
       int j;
-      float sum=0;
+      spx_word32_t sum=0;
       
       if (st->type == SPEEX_RESAMPLER_DIRECT)
       {
@@ -144,19 +157,19 @@ static void speex_resampler_process_native(SpeexResamplerState *st, int channel_
          /* Do the memory part */
          for (j=0;st->last_sample-N+1+j < 0;j++)
          {
-            sum += mem[st->last_sample+j]*st->sinc_table[st->samp_frac_num*st->filt_len+j];
+            sum += MULT16_16(mem[st->last_sample+j],st->sinc_table[st->samp_frac_num*st->filt_len+j]);
          }
          
          /* Do the new part */
          ptr = in+st->last_sample-N+1+j;
          for (;j<N;j++)
          {
-            sum += *ptr*st->sinc_table[st->samp_frac_num*st->filt_len+j];
+            sum += MULT16_16(*ptr,st->sinc_table[st->samp_frac_num*st->filt_len+j]);
             ptr += st->in_stride;
          }
       } else {
          /* We need to interpolate the sinc filter */
-         float accum[4] = {0.f,0.f, 0.f, 0.f};
+         spx_word32_t accum[4] = {0.f,0.f, 0.f, 0.f};
          float interp[4];
          const spx_word16_t *ptr;
          float alpha = ((float)st->samp_frac_num)/st->den_rate;
@@ -168,10 +181,10 @@ static void speex_resampler_process_native(SpeexResamplerState *st, int channel_
          for (j=0;st->last_sample-N+1+j < 0;j++)
          {
             spx_word16_t curr_mem = mem[st->last_sample+j];
-            accum[0] += curr_mem*st->sinc_table[4+(j+1)*OVERSAMPLE-offset-2];
-            accum[1] += curr_mem*st->sinc_table[4+(j+1)*OVERSAMPLE-offset-1];
-            accum[2] += curr_mem*st->sinc_table[4+(j+1)*OVERSAMPLE-offset];
-            accum[3] += curr_mem*st->sinc_table[4+(j+1)*OVERSAMPLE-offset+1];
+            accum[0] += MULT16_16(curr_mem,st->sinc_table[4+(j+1)*OVERSAMPLE-offset-2]);
+            accum[1] += MULT16_16(curr_mem,st->sinc_table[4+(j+1)*OVERSAMPLE-offset-1]);
+            accum[2] += MULT16_16(curr_mem,st->sinc_table[4+(j+1)*OVERSAMPLE-offset]);
+            accum[3] += MULT16_16(curr_mem,st->sinc_table[4+(j+1)*OVERSAMPLE-offset+1]);
          }
          ptr = in+st->last_sample-N+1+j;
          /* Do the new part */
@@ -179,10 +192,10 @@ static void speex_resampler_process_native(SpeexResamplerState *st, int channel_
          {
             spx_word16_t curr_in = *ptr;
             ptr += st->in_stride;
-            accum[0] += curr_in*st->sinc_table[4+(j+1)*OVERSAMPLE-offset-2];
-            accum[1] += curr_in*st->sinc_table[4+(j+1)*OVERSAMPLE-offset-1];
-            accum[2] += curr_in*st->sinc_table[4+(j+1)*OVERSAMPLE-offset];
-            accum[3] += curr_in*st->sinc_table[4+(j+1)*OVERSAMPLE-offset+1];
+            accum[0] += MULT16_16(curr_in,st->sinc_table[4+(j+1)*OVERSAMPLE-offset-2]);
+            accum[1] += MULT16_16(curr_in,st->sinc_table[4+(j+1)*OVERSAMPLE-offset-1]);
+            accum[2] += MULT16_16(curr_in,st->sinc_table[4+(j+1)*OVERSAMPLE-offset]);
+            accum[3] += MULT16_16(curr_in,st->sinc_table[4+(j+1)*OVERSAMPLE-offset+1]);
          }
          /* Compute interpolation coefficients. I'm not sure whether this corresponds to cubic interpolation
             but I know it's MMSE-optimal on a sinc */
@@ -195,7 +208,7 @@ static void speex_resampler_process_native(SpeexResamplerState *st, int channel_
          /*sum = frac*accum[1] + (1-frac)*accum[2];*/
          sum = interp[0]*accum[0] + interp[1]*accum[1] + interp[2]*accum[2] + interp[3]*accum[3];
       }
-      *out = sum;
+      *out = PSHR32(sum,15);
       out += st->out_stride;
       out_sample++;
       st->last_sample += st->int_advance;
@@ -296,17 +309,17 @@ void speex_resample_set_rate(SpeexResamplerState *st, int in_rate, int out_rate,
       cutoff = .92f * out_rate*in_rate_den / (in_rate*out_rate_den);
    } else {
       /* up-sampling */
-      cutoff = .97;
+      cutoff = .97f;
    }
    
    /* Choose the resampling type that requires the least amount of memory */
    if (st->den_rate <= OVERSAMPLE)
    {
       if (!st->sinc_table)
-         st->sinc_table = (float *)speex_alloc(st->filt_len*st->den_rate*sizeof(float));
+         st->sinc_table = (spx_word16_t *)speex_alloc(st->filt_len*st->den_rate*sizeof(spx_word16_t));
       else if (st->sinc_table_length < st->filt_len*st->den_rate)
       {
-         st->sinc_table = (float *)speex_realloc(st->sinc_table,st->filt_len*st->den_rate*sizeof(float));
+         st->sinc_table = (spx_word16_t *)speex_realloc(st->sinc_table,st->filt_len*st->den_rate*sizeof(spx_word16_t));
          st->sinc_table_length = st->filt_len*st->den_rate;
       }
       for (i=0;i<st->den_rate;i++)
@@ -321,10 +334,10 @@ void speex_resample_set_rate(SpeexResamplerState *st, int in_rate, int out_rate,
       /*fprintf (stderr, "resampler uses direct sinc table and normalised cutoff %f\n", cutoff);*/
    } else {
       if (!st->sinc_table)
-         st->sinc_table = (float *)speex_alloc((st->filt_len*OVERSAMPLE+8)*sizeof(float));
+         st->sinc_table = (spx_word16_t *)speex_alloc((st->filt_len*OVERSAMPLE+8)*sizeof(spx_word16_t));
       else if (st->sinc_table_length < st->filt_len*OVERSAMPLE+8)
       {
-         st->sinc_table = (float *)speex_realloc(st->sinc_table,(st->filt_len*OVERSAMPLE+8)*sizeof(float));
+         st->sinc_table = (spx_word16_t *)speex_realloc(st->sinc_table,(st->filt_len*OVERSAMPLE+8)*sizeof(spx_word16_t));
          st->sinc_table_length = st->filt_len*OVERSAMPLE+8;
       }
       for (i=-4;i<OVERSAMPLE*st->filt_len+4;i++)

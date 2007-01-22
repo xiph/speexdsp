@@ -48,6 +48,8 @@
 #else
 #define spx_word16_t float
 #define spx_word32_t float
+#define MULT16_16(a,b) ((a)*(b))
+#define PSHR32(a,b) (a)
 #endif
 
 #else
@@ -69,7 +71,9 @@ SpeexResamplerState *speex_resampler_init(int nb_channels, int in_rate, int out_
 void speex_resampler_destroy(SpeexResamplerState *st);
 
 void speex_resampler_process_float(SpeexResamplerState *st, int channel_index, const float *in, int *in_len, float *out, int *out_len);
-      
+
+void speex_resampler_process_int(SpeexResamplerState *st, int channel_index, const spx_int16_t *in, int *in_len, spx_int16_t *out, int *out_len);
+
 void speex_resampler_process_interleaved_float(SpeexResamplerState *st, const float *in, int *in_len, float *out, int *out_len);
 
 void speex_resample_set_rate(SpeexResamplerState *st, int in_rate, int out_rate, int in_rate_den, int out_rate_den);
