@@ -73,7 +73,7 @@ struct SpeexResamplerState_ {
    int    int_advance;
    int    frac_advance;
    
-   float *mem;
+   spx_word16_t *mem;
    float *sinc_table;
    int    sinc_table_length;
    int    in_stride;
@@ -106,7 +106,7 @@ SpeexResamplerState *speex_resampler_init(int nb_channels, int in_rate, int out_
    st->nb_channels = nb_channels;
    st->last_sample = 0;
    st->filt_len = FILTER_SIZE;
-   st->mem = (float*)speex_alloc(nb_channels*(st->filt_len-1) * sizeof(float));
+   st->mem = (spx_word16_t*)speex_alloc(nb_channels*(st->filt_len-1) * sizeof(spx_word16_t));
    for (i=0;i<nb_channels*(st->filt_len-1);i++)
       st->mem[i] = 0;
    st->sinc_table_length = 0;
@@ -125,12 +125,12 @@ void speex_resampler_destroy(SpeexResamplerState *st)
    speex_free(st);
 }
 
-static void speex_resampler_process_native(SpeexResamplerState *st, int channel_index, const float *in, int *in_len, float *out, int *out_len)
+static void speex_resampler_process_native(SpeexResamplerState *st, int channel_index, const spx_word16_t *in, int *in_len, spx_word16_t *out, int *out_len)
 {
    int j=0;
    int N = st->filt_len;
    int out_sample = 0;
-   float *mem;
+   spx_word16_t *mem;
    mem = st->mem + channel_index * (N-1);
    while (!(st->last_sample >= *in_len || out_sample >= *out_len))
    {
@@ -140,7 +140,7 @@ static void speex_resampler_process_native(SpeexResamplerState *st, int channel_
       if (st->type == SPEEX_RESAMPLER_DIRECT)
       {
          /* We already have all the filter coefficients pre-computed in the table */
-         const float *ptr;
+         const spx_word16_t *ptr;
          /* Do the memory part */
          for (j=0;st->last_sample-N+1+j < 0;j++)
          {
@@ -158,7 +158,7 @@ static void speex_resampler_process_native(SpeexResamplerState *st, int channel_
          /* We need to interpolate the sinc filter */
          float accum[4] = {0.f,0.f, 0.f, 0.f};
          float interp[4];
-         const float *ptr;
+         const spx_word16_t *ptr;
          float alpha = ((float)st->samp_frac_num)/st->den_rate;
          int offset = st->samp_frac_num*OVERSAMPLE/st->den_rate;
          float frac = alpha*OVERSAMPLE - offset;
@@ -167,7 +167,7 @@ static void speex_resampler_process_native(SpeexResamplerState *st, int channel_
             have only two accumulators */
          for (j=0;st->last_sample-N+1+j < 0;j++)
          {
-            float curr_mem = mem[st->last_sample+j];
+            spx_word16_t curr_mem = mem[st->last_sample+j];
             accum[0] += curr_mem*st->sinc_table[4+(j+1)*OVERSAMPLE-offset-2];
             accum[1] += curr_mem*st->sinc_table[4+(j+1)*OVERSAMPLE-offset-1];
             accum[2] += curr_mem*st->sinc_table[4+(j+1)*OVERSAMPLE-offset];
@@ -177,7 +177,7 @@ static void speex_resampler_process_native(SpeexResamplerState *st, int channel_
          /* Do the new part */
          for (;j<N;j++)
          {
-            float curr_in = *ptr;
+            spx_word16_t curr_in = *ptr;
             ptr += st->in_stride;
             accum[0] += curr_in*st->sinc_table[4+(j+1)*OVERSAMPLE-offset-2];
             accum[1] += curr_in*st->sinc_table[4+(j+1)*OVERSAMPLE-offset-1];
