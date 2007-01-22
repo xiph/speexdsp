@@ -70,6 +70,8 @@ struct SpeexResamplerState_ {
    int    last_sample;
    int    samp_frac_num;
    int    filt_len;
+   int    int_advance;
+   int    frac_advance;
    
    float *mem;
    float *sinc_table;
@@ -186,16 +188,18 @@ void speex_resampler_process_float(SpeexResamplerState *st, int channel_index, c
             but I know it's MMSE-optimal on a sinc */
          interp[0] =  -0.16667f*frac + 0.16667f*frac*frac*frac;
          interp[1] = frac + 0.5f*frac*frac - 0.5f*frac*frac*frac;
-         interp[2] = 1.f - 0.5f*frac - frac*frac + 0.5f*frac*frac*frac;
+         /*interp[2] = 1.f - 0.5f*frac - frac*frac + 0.5f*frac*frac*frac;*/
          interp[3] = -0.33333f*frac + 0.5f*frac*frac - 0.16667f*frac*frac*frac;
+         /* Just to make sure we don't have rounding problems */
+         interp[2] = 1.f-interp[0]-interp[1]-interp[3];
          /*sum = frac*accum[1] + (1-frac)*accum[2];*/
          sum = interp[0]*accum[0] + interp[1]*accum[1] + interp[2]*accum[2] + interp[3]*accum[3];
       }
       *out = sum;
       out += st->out_stride;
       out_sample++;
-      st->last_sample += st->num_rate/st->den_rate;
-      st->samp_frac_num += st->num_rate%st->den_rate;
+      st->last_sample += st->int_advance;
+      st->samp_frac_num += st->frac_advance;
       if (st->samp_frac_num >= st->den_rate)
       {
          st->samp_frac_num -= st->den_rate;
@@ -293,6 +297,8 @@ void speex_resample_set_rate(SpeexResamplerState *st, int in_rate, int out_rate,
       st->type = SPEEX_RESAMPLER_INTERPOLATE;
       /*fprintf (stderr, "resampler uses interpolated sinc table and normalised cutoff %f\n", cutoff);*/
    }
+   st->int_advance = st->num_rate/st->den_rate;
+   st->frac_advance = st->num_rate%st->den_rate;
 
 }
 
