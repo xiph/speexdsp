@@ -50,9 +50,12 @@ typedef struct {
    int    out_rate;
    int    num_rate;
    int    den_rate;
+   
+   int    nb_channels;
    int    last_sample;
    int    samp_frac_num;
    int    filt_len;
+   
    float *mem;
    float *sinc_table;
    int    sinc_table_length;
@@ -82,7 +85,8 @@ SpeexResamplerState *speex_resampler_init(int nb_channels, int in_rate, int out_
    st->out_rate = 0;
    st->num_rate = 0;
    st->den_rate = 0;
-
+   
+   st->nb_channels = nb_channels;
    st->last_sample = 0;
    st->filt_len = FILTER_SIZE;
    st->mem = (float*)speex_alloc(nb_channels*(st->filt_len-1) * sizeof(float));
@@ -281,6 +285,9 @@ void speex_resample_skip_zeros(SpeexResamplerState *st)
 
 void speex_resample_reset_mem(SpeexResamplerState *st)
 {
+   int i;
+   for (i=0;i<st->nb_channels*(st->filt_len-1);i++)
+      st->mem[i] = 0;
 }
 
 #define NN 256
