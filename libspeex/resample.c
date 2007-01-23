@@ -83,27 +83,29 @@ struct SpeexResamplerState_ {
 
 #ifdef FIXED_POINT
 /* The slow way of computing a sinc for the table. Should improve that some day */
-static spx_word16_t sinc(float x, int N)
+static spx_word16_t sinc(float cutoff, float x, int N)
 {
    /*fprintf (stderr, "%f ", x);*/
+   x *= cutoff;
    if (fabs(x)<1e-6f)
-      return 32767.f;
+      return cutoff;
    else if (fabs(x) > .5f*N)
       return 0;
    /*FIXME: Can it really be any slower than this? */
-   return floor(.5f+32767.f*sin(M_PI*x)/(M_PI*x) * (.5f+.5f*cos(2*x*M_PI/N)));
+   return floor(.5f+32768.f*cutoff*sin(M_PI*x)/(M_PI*x) * (.5f+.5f*cos(2*x*M_PI/N)));
 }
 #else
 /* The slow way of computing a sinc for the table. Should improve that some day */
-static spx_word16_t sinc(float x, int N)
+static spx_word16_t sinc(float cutoff, float x, int N)
 {
    /*fprintf (stderr, "%f ", x);*/
+   x *= cutoff;
    if (fabs(x)<1e-6)
-      return 1;
+      return cutoff;
    else if (fabs(x) > .5f*N)
       return 0;
    /*FIXME: Can it really be any slower than this? */
-   return sin(M_PI*x)/(M_PI*x) * (.5+.5*cos(2*x*M_PI/N));
+   return cutoff*sin(M_PI*x)/(M_PI*x) * (.5+.5*cos(2*x*M_PI/N));
 }
 #endif
 
@@ -327,7 +329,7 @@ void speex_resample_set_rate(SpeexResamplerState *st, int in_rate, int out_rate,
          int j;
          for (j=0;j<st->filt_len;j++)
          {
-            st->sinc_table[i*st->filt_len+j] = sinc(cutoff*((j-st->filt_len/2+1)-((float)i)/st->den_rate), st->filt_len);
+            st->sinc_table[i*st->filt_len+j] = sinc(cutoff,((j-st->filt_len/2+1)-((float)i)/st->den_rate), st->filt_len);
          }
       }
       st->type = SPEEX_RESAMPLER_DIRECT;
@@ -341,7 +343,7 @@ void speex_resample_set_rate(SpeexResamplerState *st, int in_rate, int out_rate,
          st->sinc_table_length = st->filt_len*OVERSAMPLE+8;
       }
       for (i=-4;i<OVERSAMPLE*st->filt_len+4;i++)
-         st->sinc_table[i+4] = sinc(cutoff*(i/(float)OVERSAMPLE - st->filt_len/2), st->filt_len);
+         st->sinc_table[i+4] = sinc(cutoff,(i/(float)OVERSAMPLE - st->filt_len/2), st->filt_len);
       st->type = SPEEX_RESAMPLER_INTERPOLATE;
       /*fprintf (stderr, "resampler uses interpolated sinc table and normalised cutoff %f\n", cutoff);*/
    }
