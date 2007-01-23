@@ -160,6 +160,24 @@ int speex_preprocess_ctl(SpeexPreprocessState *st, int request, void *ptr);
 /** Get the corresponding echo canceller state */
 #define SPEEX_PREPROCESS_GET_ECHO_STATE 25
 
+/** Set maximal gain increase in dB/second (int32) */
+#define SPEEX_PREPROCESS_SET_AGC_INCREMENT 26
+
+/** Get maximal gain increase in dB/second (int32) */
+#define SPEEX_PREPROCESS_GET_AGC_INCREMENT 27
+
+/** Set maximal gain decrease in dB/second (int32) */
+#define SPEEX_PREPROCESS_SET_AGC_DECREMENT 28
+
+/** Get maximal gain decrease in dB/second (int32) */
+#define SPEEX_PREPROCESS_GET_AGC_DECREMENT 29
+
+/** Set maximal gain in dB (int32) */
+#define SPEEX_PREPROCESS_SET_AGC_MAX_GAIN 30
+
+/** Get maximal gain in dB (int32) */
+#define SPEEX_PREPROCESS_GET_AGC_MAX_GAIN 31
+
 #ifdef __cplusplus
 }
 #endif

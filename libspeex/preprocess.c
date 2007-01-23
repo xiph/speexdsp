@@ -574,7 +574,7 @@ static void speex_compute_agc(SpeexPreprocessState *st, spx_word16_t Pframe, spx
    loudness=sqrt(loudness);
       /*if (loudness < 2*pow(st->loudness, 1.0/LOUDNESS_EXP) &&
    loudness*2 > pow(st->loudness, 1.0/LOUDNESS_EXP))*/
-   if (Pframe>.5)
+   if (Pframe>.5f)
    {
       st->nb_loudness_adapt++;
       rate=2.0f*Pframe*Pframe/(1+st->nb_loudness_adapt);
@@ -1064,6 +1064,24 @@ int speex_preprocess_ctl(SpeexPreprocessState *state, int request, void *ptr)
       break;
    case SPEEX_PREPROCESS_GET_AGC_LEVEL:
       (*(float*)ptr) = st->agc_level;
+      break;
+   case SPEEX_PREPROCESS_SET_AGC_INCREMENT:
+      st->max_increase_step = exp(0.11513f * (*(spx_int32_t*)ptr)*st->frame_size / st->sampling_rate);
+      break;
+   case SPEEX_PREPROCESS_GET_AGC_INCREMENT:
+      (*(spx_int32_t*)ptr) = floor(.5+8.6858*log(st->max_increase_step)*st->sampling_rate/st->frame_size);
+      break;
+   case SPEEX_PREPROCESS_SET_AGC_DECREMENT:
+      st->max_decrease_step = exp(0.11513f * (*(spx_int32_t*)ptr)*st->frame_size / st->sampling_rate);
+      break;
+   case SPEEX_PREPROCESS_GET_AGC_DECREMENT:
+      (*(spx_int32_t*)ptr) = floor(.5+8.6858*log(st->max_decrease_step)*st->sampling_rate/st->frame_size);
+      break;
+   case SPEEX_PREPROCESS_SET_AGC_MAX_GAIN:
+      st->max_gain = exp(0.11513f * (*(spx_int32_t*)ptr));
+      break;
+   case SPEEX_PREPROCESS_GET_AGC_MAX_GAIN:
+      (*(spx_int32_t*)ptr) = floor(.5+8.6858*log(st->max_gain));
       break;
 #endif
    case SPEEX_PREPROCESS_SET_VAD:
