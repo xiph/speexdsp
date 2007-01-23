@@ -52,6 +52,12 @@ void speex_free (void *ptr) {free(ptr);}
 #include <math.h>
 #include "speex/speex_resampler.h"
 
+#ifdef FIXED_POINT
+#define WORD2INT(x) ((x) < -32767 ? -32768 : ((x) > 32766 ? 32767 : (x)))  
+#else
+#define WORD2INT(x) ((x) < -32767.5f ? -32768 : ((x) > 32766.5f ? 32767 : floor(.5+(x))))  
+#endif
+               
 /*#define float double*/
 #define FILTER_SIZE 64
 #define OVERSAMPLE 8
@@ -88,11 +94,11 @@ static spx_word16_t sinc(float cutoff, float x, int N)
    /*fprintf (stderr, "%f ", x);*/
    x *= cutoff;
    if (fabs(x)<1e-6f)
-      return cutoff;
+      return WORD2INT(32768.f*cutoff);
    else if (fabs(x) > .5f*N)
       return 0;
    /*FIXME: Can it really be any slower than this? */
-   return floor(.5f+32768.f*cutoff*sin(M_PI*x)/(M_PI*x) * (.5f+.5f*cos(2*x*M_PI/N)));
+   return WORD2INT(32768.f*cutoff*sin(M_PI*x)/(M_PI*x) * (.5f+.5f*cos(2*x*M_PI/N)));
 }
 #else
 /* The slow way of computing a sinc for the table. Should improve that some day */
@@ -240,7 +246,7 @@ void speex_resampler_process_float(SpeexResamplerState *st, int channel_index, c
    spx_word16_t x[*in_len];
    spx_word16_t y[*out_len];
    for (i=0;i<*in_len;i++)
-      x[i] = floor(.5+in[i]);
+      x[i] = WORD2INT(in[i]);
    speex_resampler_process_native(st, channel_index, x, in_len, y, out_len);
    for (i=0;i<*out_len;i++)
       out[i] = y[i];
@@ -264,7 +270,7 @@ void speex_resampler_process_int(SpeexResamplerState *st, int channel_index, con
       x[i] = in[i];
    speex_resampler_process_native(st, channel_index, x, in_len, y, out_len);
    for (i=0;i<*in_len;i++)
-      out[i] = floor(.5+y[i]);
+      out[i] = WORD2INT(y[i]);
 }
 #endif
 
