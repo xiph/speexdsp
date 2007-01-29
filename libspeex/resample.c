@@ -1,12 +1,7 @@
 /* Copyright (C) 2007 Jean-Marc Valin
       
    File: resample.c
-   Resampling code
-      
-   The design goals of this code are:
-      - Very fast algorithm
-      - Low memory requirement
-      - Good *perceptual* quality (and not best SNR)
+   Arbitrary resampling code
 
    Redistribution and use in source and binary forms, with or without
    modification, are permitted provided that the following conditions are
@@ -33,6 +28,27 @@
    STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
    ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
    POSSIBILITY OF SUCH DAMAGE.
+*/
+
+/*
+   The design goals of this code are:
+      - Very fast algorithm
+      - Low memory requirement
+      - Good *perceptual* quality (and not best SNR)
+
+   The code is working, but it's in a very early stage, so it may have
+   artifacts, noise or subliminal messages from satan. Also, the API 
+   isn't stable and I can actually promise that I *will* change the API
+   some time in the future.
+
+TODO list:
+      - Variable length filter (depending on frequency/ratio and quality)
+      - Quality setting to control filter length (and sinc window?)
+      - Variable calculation resolution depending on quality setting
+         - Single vs double in float mode
+         - 16-bit vs 32-bit (sinc only) in fixed-point mode
+      - Make it possible to change the filter length without major artifacts
+
 */
 
 #ifdef HAVE_CONFIG_H
@@ -94,11 +110,11 @@ static spx_word16_t sinc(float cutoff, float x, int N)
    /*fprintf (stderr, "%f ", x);*/
    x *= cutoff;
    if (fabs(x)<1e-6f)
-      return WORD2INT(32768.f*cutoff);
+      return WORD2INT(32768.*cutoff);
    else if (fabs(x) > .5f*N)
       return 0;
    /*FIXME: Can it really be any slower than this? */
-   return WORD2INT(32768.f*cutoff*sin(M_PI*x)/(M_PI*x) * (.5f+.5f*cos(2*x*M_PI/N)));
+   return WORD2INT(32768.*cutoff*sin(M_PI*x)/(M_PI*x) * (.42+.5*cos(2*x*M_PI/N)+.08*cos(4*x*M_PI/N)));
 }
 #else
 /* The slow way of computing a sinc for the table. Should improve that some day */
@@ -108,10 +124,10 @@ static spx_word16_t sinc(float cutoff, float x, int N)
    x *= cutoff;
    if (fabs(x)<1e-6)
       return cutoff;
-   else if (fabs(x) > .5f*N)
+   else if (fabs(x) > .5*N)
       return 0;
    /*FIXME: Can it really be any slower than this? */
-   return cutoff*sin(M_PI*x)/(M_PI*x) * (.5+.5*cos(2*x*M_PI/N));
+   return cutoff*sin(M_PI*x)/(M_PI*x) * (.42+.5*cos(2*x*M_PI/N)+.08*cos(4*x*M_PI/N));
 }
 #endif
 
