@@ -89,6 +89,7 @@ struct SpeexResamplerState_ {
    int    num_rate;
    int    den_rate;
    
+   int    quality;
    int    nb_channels;
    int    last_sample;
    int    samp_frac_num;
@@ -97,6 +98,8 @@ struct SpeexResamplerState_ {
    int    frac_advance;
    float  cutoff;
    int    oversample;
+   int    initialised;
+   
    
    spx_word16_t *mem;
    spx_word16_t *sinc_table;
@@ -134,31 +137,86 @@ static spx_word16_t sinc(float cutoff, float x, int N)
 }
 #endif
 
-/*SpeexResamplerState *speex_resampler_init(int nb_channels, int ratio_num, int ratio_den, int in_rate, int out_rate, int quality)*/
-
-SpeexResamplerState *speex_resampler_init(int nb_channels, int in_rate, int out_rate, int in_rate_den, int out_rate_den)
+static void update_filter(SpeexResamplerState *st)
 {
    int i;
+   
+   st->oversample = OVERSAMPLE;
+
+   st->filt_len = 8 + 12*st->quality;
+   
+   /* Choose the resampling type that requires the least amount of memory */
+   if (st->den_rate <= st->oversample)
+   {
+      if (!st->sinc_table)
+         st->sinc_table = (spx_word16_t *)speex_alloc(st->filt_len*st->den_rate*sizeof(spx_word16_t));
+      else if (st->sinc_table_length < st->filt_len*st->den_rate)
+      {
+         st->sinc_table = (spx_word16_t *)speex_realloc(st->sinc_table,st->filt_len*st->den_rate*sizeof(spx_word16_t));
+         st->sinc_table_length = st->filt_len*st->den_rate;
+      }
+      for (i=0;i<st->den_rate;i++)
+      {
+         int j;
+         for (j=0;j<st->filt_len;j++)
+         {
+            st->sinc_table[i*st->filt_len+j] = sinc(st->cutoff,((j-st->filt_len/2+1)-((float)i)/st->den_rate), st->filt_len);
+         }
+      }
+      st->type = SPEEX_RESAMPLER_DIRECT;
+      /*fprintf (stderr, "resampler uses direct sinc table and normalised cutoff %f\n", cutoff);*/
+   } else {
+      if (!st->sinc_table)
+         st->sinc_table = (spx_word16_t *)speex_alloc((st->filt_len*st->oversample+8)*sizeof(spx_word16_t));
+      else if (st->sinc_table_length < st->filt_len*st->oversample+8)
+      {
+         st->sinc_table = (spx_word16_t *)speex_realloc(st->sinc_table,(st->filt_len*st->oversample+8)*sizeof(spx_word16_t));
+         st->sinc_table_length = st->filt_len*st->oversample+8;
+      }
+      for (i=-4;i<st->oversample*st->filt_len+4;i++)
+         st->sinc_table[i+4] = sinc(st->cutoff,(i/(float)st->oversample - st->filt_len/2), st->filt_len);
+      st->type = SPEEX_RESAMPLER_INTERPOLATE;
+      /*fprintf (stderr, "resampler uses interpolated sinc table and normalised cutoff %f\n", cutoff);*/
+   }
+   st->int_advance = st->num_rate/st->den_rate;
+   st->frac_advance = st->num_rate%st->den_rate;
+
+   if (!st->mem)
+      st->mem = (spx_word16_t*)speex_alloc(st->nb_channels*(st->filt_len-1) * sizeof(spx_word16_t));
+   else
+      st->mem = (spx_word16_t*)speex_realloc(st->mem, st->nb_channels*(st->filt_len-1) * sizeof(spx_word16_t));
+   for (i=0;i<st->nb_channels*(st->filt_len-1);i++)
+      st->mem[i] = 0;
+
+}
+
+
+SpeexResamplerState *speex_resampler_init(int nb_channels, int ratio_num, int ratio_den, int in_rate, int out_rate, int quality)
+{
    SpeexResamplerState *st = (SpeexResamplerState *)speex_alloc(sizeof(SpeexResamplerState));
+   st->initialised = 0;
    st->in_rate = 0;
    st->out_rate = 0;
    st->num_rate = 0;
    st->den_rate = 0;
+   st->quality = -1;
+   st->sinc_table_length = 0;
+   st->mem = 0;
    
    st->cutoff = 1.f;
    st->nb_channels = nb_channels;
    st->last_sample = 0;
-   st->filt_len = FILTER_SIZE;
-   st->oversample = OVERSAMPLE;
-   st->mem = (spx_word16_t*)speex_alloc(nb_channels*(st->filt_len-1) * sizeof(spx_word16_t));
-   for (i=0;i<nb_channels*(st->filt_len-1);i++)
-      st->mem[i] = 0;
-   st->sinc_table_length = 0;
    
-   speex_resample_set_rate(st, in_rate, out_rate, in_rate_den, out_rate_den);
-
    st->in_stride = 1;
    st->out_stride = 1;
+
+   speex_resample_set_quality(st, quality);
+   speex_resample_set_rate(st, ratio_num, ratio_den, in_rate, out_rate);
+
+   
+   update_filter(st);
+   
+   st->initialised = 1;
    return st;
 }
 
@@ -312,57 +370,17 @@ void speex_resampler_process_interleaved_float(SpeexResamplerState *st, const fl
    st->out_stride = ostride_save;
 }
 
-static void update_filter(SpeexResamplerState *st)
-{
-   int i;
-   /* Choose the resampling type that requires the least amount of memory */
-   if (st->den_rate <= st->oversample)
-   {
-      if (!st->sinc_table)
-         st->sinc_table = (spx_word16_t *)speex_alloc(st->filt_len*st->den_rate*sizeof(spx_word16_t));
-      else if (st->sinc_table_length < st->filt_len*st->den_rate)
-      {
-         st->sinc_table = (spx_word16_t *)speex_realloc(st->sinc_table,st->filt_len*st->den_rate*sizeof(spx_word16_t));
-         st->sinc_table_length = st->filt_len*st->den_rate;
-      }
-      for (i=0;i<st->den_rate;i++)
-      {
-         int j;
-         for (j=0;j<st->filt_len;j++)
-         {
-            st->sinc_table[i*st->filt_len+j] = sinc(st->cutoff,((j-st->filt_len/2+1)-((float)i)/st->den_rate), st->filt_len);
-         }
-      }
-      st->type = SPEEX_RESAMPLER_DIRECT;
-      /*fprintf (stderr, "resampler uses direct sinc table and normalised cutoff %f\n", cutoff);*/
-   } else {
-      if (!st->sinc_table)
-         st->sinc_table = (spx_word16_t *)speex_alloc((st->filt_len*st->oversample+8)*sizeof(spx_word16_t));
-      else if (st->sinc_table_length < st->filt_len*st->oversample+8)
-      {
-         st->sinc_table = (spx_word16_t *)speex_realloc(st->sinc_table,(st->filt_len*st->oversample+8)*sizeof(spx_word16_t));
-         st->sinc_table_length = st->filt_len*st->oversample+8;
-      }
-      for (i=-4;i<st->oversample*st->filt_len+4;i++)
-         st->sinc_table[i+4] = sinc(st->cutoff,(i/(float)st->oversample - st->filt_len/2), st->filt_len);
-      st->type = SPEEX_RESAMPLER_INTERPOLATE;
-      /*fprintf (stderr, "resampler uses interpolated sinc table and normalised cutoff %f\n", cutoff);*/
-   }
-   st->int_advance = st->num_rate/st->den_rate;
-   st->frac_advance = st->num_rate%st->den_rate;
 
-}
-
-void speex_resample_set_rate(SpeexResamplerState *st, int in_rate, int out_rate, int in_rate_den, int out_rate_den)
+void speex_resample_set_rate(SpeexResamplerState *st, int ratio_num, int ratio_den, int in_rate, int out_rate)
 {
    int fact;
-   if (st->in_rate == in_rate && st->out_rate == out_rate && st->num_rate == in_rate && st->den_rate == out_rate)
+   if (st->in_rate == in_rate && st->out_rate == out_rate && st->num_rate == ratio_num && st->den_rate == ratio_den)
       return;
    
    st->in_rate = in_rate;
    st->out_rate = out_rate;
-   st->num_rate = in_rate;
-   st->den_rate = out_rate;
+   st->num_rate = ratio_num;
+   st->den_rate = ratio_den;
    /* FIXME: This is terribly inefficient, but who cares (at least for now)? */
    for (fact=2;fact<=sqrt(IMAX(in_rate, out_rate));fact++)
    {
@@ -373,18 +391,27 @@ void speex_resample_set_rate(SpeexResamplerState *st, int in_rate, int out_rate,
       }
    }
    
-   /* FIXME: Is there a danger of overflow? */
-   if (in_rate*out_rate_den > out_rate*in_rate_den)
+   if (ratio_num > ratio_den)
    {
       /* down-sampling */
-      st->cutoff = .92f * out_rate*in_rate_den / (in_rate*out_rate_den);
+      st->cutoff = .92f * ratio_den / ratio_num;
    } else {
       /* up-sampling */
       st->cutoff = .97f;
    }
-   update_filter(st);
+   
+   if (st->initialised)
+      update_filter(st);
 }
 
+void speex_resample_set_quality(SpeexResamplerState *st, int quality)
+{
+   if (st->quality == quality)
+      return;
+   st->quality = quality;
+   if (st->initialised)
+      update_filter(st);
+}
 
 void speex_resample_set_input_stride(SpeexResamplerState *st, int stride)
 {
