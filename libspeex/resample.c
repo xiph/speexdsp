@@ -96,6 +96,7 @@ struct SpeexResamplerState_ {
    int    int_advance;
    int    frac_advance;
    float  cutoff;
+   int    oversample;
    
    spx_word16_t *mem;
    spx_word16_t *sinc_table;
@@ -148,6 +149,7 @@ SpeexResamplerState *speex_resampler_init(int nb_channels, int in_rate, int out_
    st->nb_channels = nb_channels;
    st->last_sample = 0;
    st->filt_len = FILTER_SIZE;
+   st->oversample = OVERSAMPLE;
    st->mem = (spx_word16_t*)speex_alloc(nb_channels*(st->filt_len-1) * sizeof(spx_word16_t));
    for (i=0;i<nb_channels*(st->filt_len-1);i++)
       st->mem[i] = 0;
@@ -202,18 +204,18 @@ static void speex_resampler_process_native(SpeexResamplerState *st, int channel_
          float interp[4];
          const spx_word16_t *ptr;
          float alpha = ((float)st->samp_frac_num)/st->den_rate;
-         int offset = st->samp_frac_num*OVERSAMPLE/st->den_rate;
-         float frac = alpha*OVERSAMPLE - offset;
+         int offset = st->samp_frac_num*st->oversample/st->den_rate;
+         float frac = alpha*st->oversample - offset;
          /* This code is written like this to make it easy to optimise with SIMD.
             For most DSPs, it would be best to split the loops in two because most DSPs 
             have only two accumulators */
          for (j=0;st->last_sample-N+1+j < 0;j++)
          {
             spx_word16_t curr_mem = mem[st->last_sample+j];
-            accum[0] += MULT16_16(curr_mem,st->sinc_table[4+(j+1)*OVERSAMPLE-offset-2]);
-            accum[1] += MULT16_16(curr_mem,st->sinc_table[4+(j+1)*OVERSAMPLE-offset-1]);
-            accum[2] += MULT16_16(curr_mem,st->sinc_table[4+(j+1)*OVERSAMPLE-offset]);
-            accum[3] += MULT16_16(curr_mem,st->sinc_table[4+(j+1)*OVERSAMPLE-offset+1]);
+            accum[0] += MULT16_16(curr_mem,st->sinc_table[4+(j+1)*st->oversample-offset-2]);
+            accum[1] += MULT16_16(curr_mem,st->sinc_table[4+(j+1)*st->oversample-offset-1]);
+            accum[2] += MULT16_16(curr_mem,st->sinc_table[4+(j+1)*st->oversample-offset]);
+            accum[3] += MULT16_16(curr_mem,st->sinc_table[4+(j+1)*st->oversample-offset+1]);
          }
          ptr = in+st->last_sample-N+1+j;
          /* Do the new part */
@@ -221,10 +223,10 @@ static void speex_resampler_process_native(SpeexResamplerState *st, int channel_
          {
             spx_word16_t curr_in = *ptr;
             ptr += st->in_stride;
-            accum[0] += MULT16_16(curr_in,st->sinc_table[4+(j+1)*OVERSAMPLE-offset-2]);
-            accum[1] += MULT16_16(curr_in,st->sinc_table[4+(j+1)*OVERSAMPLE-offset-1]);
-            accum[2] += MULT16_16(curr_in,st->sinc_table[4+(j+1)*OVERSAMPLE-offset]);
-            accum[3] += MULT16_16(curr_in,st->sinc_table[4+(j+1)*OVERSAMPLE-offset+1]);
+            accum[0] += MULT16_16(curr_in,st->sinc_table[4+(j+1)*st->oversample-offset-2]);
+            accum[1] += MULT16_16(curr_in,st->sinc_table[4+(j+1)*st->oversample-offset-1]);
+            accum[2] += MULT16_16(curr_in,st->sinc_table[4+(j+1)*st->oversample-offset]);
+            accum[3] += MULT16_16(curr_in,st->sinc_table[4+(j+1)*st->oversample-offset+1]);
          }
          /* Compute interpolation coefficients. I'm not sure whether this corresponds to cubic interpolation
             but I know it's MMSE-optimal on a sinc */
@@ -314,7 +316,7 @@ static void update_filter(SpeexResamplerState *st)
 {
    int i;
    /* Choose the resampling type that requires the least amount of memory */
-   if (st->den_rate <= OVERSAMPLE)
+   if (st->den_rate <= st->oversample)
    {
       if (!st->sinc_table)
          st->sinc_table = (spx_word16_t *)speex_alloc(st->filt_len*st->den_rate*sizeof(spx_word16_t));
@@ -335,14 +337,14 @@ static void update_filter(SpeexResamplerState *st)
       /*fprintf (stderr, "resampler uses direct sinc table and normalised cutoff %f\n", cutoff);*/
    } else {
       if (!st->sinc_table)
-         st->sinc_table = (spx_word16_t *)speex_alloc((st->filt_len*OVERSAMPLE+8)*sizeof(spx_word16_t));
-      else if (st->sinc_table_length < st->filt_len*OVERSAMPLE+8)
+         st->sinc_table = (spx_word16_t *)speex_alloc((st->filt_len*st->oversample+8)*sizeof(spx_word16_t));
+      else if (st->sinc_table_length < st->filt_len*st->oversample+8)
       {
-         st->sinc_table = (spx_word16_t *)speex_realloc(st->sinc_table,(st->filt_len*OVERSAMPLE+8)*sizeof(spx_word16_t));
-         st->sinc_table_length = st->filt_len*OVERSAMPLE+8;
+         st->sinc_table = (spx_word16_t *)speex_realloc(st->sinc_table,(st->filt_len*st->oversample+8)*sizeof(spx_word16_t));
+         st->sinc_table_length = st->filt_len*st->oversample+8;
       }
-      for (i=-4;i<OVERSAMPLE*st->filt_len+4;i++)
-         st->sinc_table[i+4] = sinc(st->cutoff,(i/(float)OVERSAMPLE - st->filt_len/2), st->filt_len);
+      for (i=-4;i<st->oversample*st->filt_len+4;i++)
+         st->sinc_table[i+4] = sinc(st->cutoff,(i/(float)st->oversample - st->filt_len/2), st->filt_len);
       st->type = SPEEX_RESAMPLER_INTERPOLATE;
       /*fprintf (stderr, "resampler uses interpolated sinc table and normalised cutoff %f\n", cutoff);*/
    }
