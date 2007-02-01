@@ -142,9 +142,20 @@ static void update_filter(SpeexResamplerState *st)
    int i;
    
    st->oversample = OVERSAMPLE;
-
+   if (st->quality > 7)
+      st->oversample *= 2;
    st->filt_len = 8 + 12*st->quality;
    
+   if (st->num_rate > st->den_rate)
+   {
+      /* down-sampling */
+      st->cutoff = .92f * st->den_rate / st->num_rate;
+      st->filt_len *= st->num_rate / st->den_rate;
+   } else {
+      /* up-sampling */
+      st->cutoff = .97f;
+   }
+
    /* Choose the resampling type that requires the least amount of memory */
    if (st->den_rate <= st->oversample)
    {
@@ -390,16 +401,7 @@ void speex_resample_set_rate(SpeexResamplerState *st, int ratio_num, int ratio_d
          st->den_rate /= fact;
       }
    }
-   
-   if (ratio_num > ratio_den)
-   {
-      /* down-sampling */
-      st->cutoff = .92f * ratio_den / ratio_num;
-   } else {
-      /* up-sampling */
-      st->cutoff = .97f;
-   }
-   
+      
    if (st->initialised)
       update_filter(st);
 }
