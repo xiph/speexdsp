@@ -222,17 +222,17 @@ static void update_filter(SpeexResamplerState *st)
       st->mem = (spx_word16_t*)speex_alloc(st->nb_channels*(st->filt_len-1) * sizeof(spx_word16_t));
       for (i=0;i<st->nb_channels*(st->filt_len-1);i++)
          st->mem[i] = 0;
-      speex_warning("init filter");
+      /*speex_warning("init filter");*/
    } else if (!st->started)
    {
       st->mem = (spx_word16_t*)speex_realloc(st->mem, st->nb_channels*(st->filt_len-1) * sizeof(spx_word16_t));
       for (i=0;i<st->nb_channels*(st->filt_len-1);i++)
          st->mem[i] = 0;
-      speex_warning("reinit filter");
+      /*speex_warning("reinit filter");*/
    } else if (st->filt_len > old_length)
    {
       /* Increase the filter length */
-      speex_warning("increase filter size");
+      /*speex_warning("increase filter size");*/
       st->mem = (spx_word16_t*)speex_realloc(st->mem, st->nb_channels*(st->filt_len-1) * sizeof(spx_word16_t));
       for (i=0;i<st->nb_channels;i++)
       {
@@ -249,7 +249,7 @@ static void update_filter(SpeexResamplerState *st)
    } else if (st->filt_len < old_length)
    {
       /* Reduce filter length */
-      speex_warning("decrease filter size (unimplemented)");
+      /*speex_warning("decrease filter size (unimplemented)");*/
    }
 
 }

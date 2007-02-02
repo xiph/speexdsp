@@ -64,11 +64,9 @@ int main(int argc, char **argv)
       if (feof(stdin))
          break;
       for (i=0;i<NN;i++)
-         fin[i]=3.f*in[i];
+         fin[i]=in[i];
       in_len = NN;
       out_len = 2*NN;
-      if (count==2)
-         speex_resampler_set_quality(st, 10);
       speex_resampler_process_float(st, 0, fin, &in_len, fout, &out_len);
       for (i=0;i<out_len;i++)
          out[i]=floor(.5+fout[i]);
