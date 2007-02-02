@@ -47,9 +47,10 @@ int main(int argc, char **argv)
    short *in;
    short *out;
    float *fin, *fout;
-   SpeexResamplerState *st = speex_resampler_init(1, 8000, 12000, 8000, 12000, 10);
-   speex_resample_set_rate(st, 8000, 15999, 8000, 15999);
-   speex_resample_skip_zeros(st);
+   int count = 0;
+   SpeexResamplerState *st = speex_resampler_init(1, 8000, 12000, 8000, 12000, 5);
+   speex_resampler_set_rate(st, 16000, 8001, 8000, 15999);
+   speex_resampler_skip_zeros(st);
    
    in = malloc(NN*sizeof(short));
    out = malloc(2*NN*sizeof(short));
@@ -66,10 +67,13 @@ int main(int argc, char **argv)
          fin[i]=3.f*in[i];
       in_len = NN;
       out_len = 2*NN;
+      if (count==2)
+         speex_resampler_set_quality(st, 10);
       speex_resampler_process_float(st, 0, fin, &in_len, fout, &out_len);
       for (i=0;i<out_len;i++)
          out[i]=floor(.5+fout[i]);
       fwrite(out, sizeof(short), out_len, stdout);
+      count++;
    }
    speex_resampler_destroy(st);
    free(in);

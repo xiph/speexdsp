@@ -62,6 +62,12 @@
 extern "C" {
 #endif
 
+#define SPEEX_RESAMPLER_QUALITY_MAX 10
+#define SPEEX_RESAMPLER_QUALITY_MIN 0
+#define SPEEX_RESAMPLER_QUALITY_DEFAULT 4
+#define SPEEX_RESAMPLER_QUALITY_VOIP 3
+#define SPEEX_RESAMPLER_QUALITY_DESKTOP 5
+   
 struct SpeexResamplerState_;
 typedef struct SpeexResamplerState_ SpeexResamplerState;
 //typedef SpeexResamplerState;
@@ -76,17 +82,17 @@ void speex_resampler_process_int(SpeexResamplerState *st, int channel_index, con
 
 void speex_resampler_process_interleaved_float(SpeexResamplerState *st, const float *in, int *in_len, float *out, int *out_len);
 
-void speex_resample_set_rate(SpeexResamplerState *st, int ratio_num, int ratio_den, int in_rate, int out_rate);
+void speex_resampler_set_rate(SpeexResamplerState *st, int ratio_num, int ratio_den, int in_rate, int out_rate);
 
-void speex_resample_set_quality(SpeexResamplerState *st, int quality);
+void speex_resampler_set_quality(SpeexResamplerState *st, int quality);
 
-void speex_resample_set_input_stride(SpeexResamplerState *st, int stride);
+void speex_resampler_set_input_stride(SpeexResamplerState *st, int stride);
 
 void speex_resample_set_output_stride(SpeexResamplerState *st, int stride);
 
-void speex_resample_skip_zeros(SpeexResamplerState *st);
+void speex_resampler_skip_zeros(SpeexResamplerState *st);
 
-void speex_resample_reset_mem(SpeexResamplerState *st);
+void speex_resampler_reset_mem(SpeexResamplerState *st);
 
 #ifdef __cplusplus
 }
