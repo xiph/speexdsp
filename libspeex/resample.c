@@ -65,7 +65,6 @@ void speex_free (void *ptr) {free(ptr);}
 #include "misc.h"
 #endif
 
-
 #include <math.h>
 #include "speex/speex_resampler.h"
 
@@ -80,6 +79,26 @@ void speex_free (void *ptr) {free(ptr);}
 #define OVERSAMPLE 8
 
 #define IMAX(a,b) ((a) > (b) ? (a) : (b))
+
+struct QualityMapping {
+   int base_length;
+   int oversample;
+};
+
+
+struct QualityMapping quality_map[11] = {
+   {  8,  4}, /* 0 */
+   { 16,  4}, /* 1 */
+   { 32,  4}, /* 2 */
+   { 48,  8}, /* 3 */
+   { 64,  8}, /* 4 */
+   { 80,  8}, /* 5 */
+   { 96,  8}, /* 6 */
+   {128, 16}, /* 7 */
+   {160, 16}, /* 8 */
+   {192, 16}, /* 9 */
+   {256, 16}, /* 10 */
+};
 
 typedef enum {SPEEX_RESAMPLER_DIRECT=0, SPEEX_RESAMPLER_INTERPOLATE=1} SpeexSincType;
 
@@ -141,16 +160,17 @@ static void update_filter(SpeexResamplerState *st)
 {
    int i;
    
-   st->oversample = OVERSAMPLE;
-   if (st->quality > 7)
-      st->oversample *= 2;
-   st->filt_len = 8 + 12*st->quality;
+   st->oversample = quality_map[st->quality].oversample;
+   st->filt_len = quality_map[st->quality].base_length;
    
    if (st->num_rate > st->den_rate)
    {
       /* down-sampling */
       st->cutoff = .92f * st->den_rate / st->num_rate;
-      st->filt_len *= st->num_rate / st->den_rate;
+      /* FIXME: divide the numerator and denominator by a certain amount if they're too large */
+      st->filt_len = st->filt_len*st->num_rate / st->den_rate;
+      /* Round down to make sure we have a multiple of 4 */
+      st->filt_len &= (~0x3);
    } else {
       /* up-sampling */
       st->cutoff = .97f;
@@ -408,6 +428,10 @@ void speex_resample_set_rate(SpeexResamplerState *st, int ratio_num, int ratio_d
 
 void speex_resample_set_quality(SpeexResamplerState *st, int quality)
 {
+   if (quality < 0)
+      quality = 0;
+   if (quality > 10)
+      quality = 10;
    if (st->quality == quality)
       return;
    st->quality = quality;
