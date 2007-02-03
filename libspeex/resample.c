@@ -265,7 +265,7 @@ static void update_filter(SpeexResamplerState *st)
       {
          int j;
          /* Copy data going backward */
-         for (j=0;j<old_length-1;j++)
+         for (j=0;j<st->filt_len-1+st->magic_samples;j++)
             st->mem[i*st->mem_alloc_size+j] = st->mem[i*st->mem_alloc_size+j+st->magic_samples];
       }
    }
@@ -334,7 +334,7 @@ static void speex_resampler_process_native(SpeexResamplerState *st, int channel_
       /* magic_samples needs to be set to zero to avoid infinite recursion */
       st->magic_samples = 0;
       speex_resampler_process_native(st, channel_index, mem+N-1, &tmp_in_len, out, &tmp_out_len);
-      speex_warning_int("extra samples:", tmp_out_len);
+      /*speex_warning_int("extra samples:", tmp_out_len);*/
       out += tmp_out_len;
    }
    while (!(st->last_sample >= *in_len || out_sample >= *out_len))
