@@ -49,7 +49,7 @@ TODO list:
          - Single vs double in float mode
          - 16-bit vs 32-bit (sinc only) in fixed-point mode
       - Make it possible to change the filter length without major artifacts
-
+      - Fix multi-channel (need one sample pos per channel)
 */
 
 #ifdef HAVE_CONFIG_H
@@ -122,6 +122,7 @@ struct SpeexResamplerState_ {
    /* FIXME: Need those per-channel */
    int    last_sample;
    int    samp_frac_num;
+   int    magic_samples;
    
    spx_word16_t *mem;
    spx_word16_t *sinc_table;
@@ -235,6 +236,7 @@ static void update_filter(SpeexResamplerState *st)
    {
       /* Increase the filter length */
       /*speex_warning("increase filter size");*/
+      int old_alloc_size = st->mem_alloc_size;
       if (st->filt_len-1 > st->mem_alloc_size)
       {
          st->mem = (spx_word16_t*)speex_realloc(st->mem, st->nb_channels*(st->filt_len-1) * sizeof(spx_word16_t));
@@ -245,10 +247,10 @@ static void update_filter(SpeexResamplerState *st)
          int j;
          /* Copy data going backward */
          for (j=0;j<old_length-1;j++)
-            st->mem[i*(st->filt_len-1)+(st->filt_len-2-j)] = st->mem[i*(old_length-1)+(old_length-2-j)];
+            st->mem[i*st->mem_alloc_size+(st->filt_len-2-j)] = st->mem[i*old_alloc_size+(old_length-2-j)];
          /* Then put zeros for lack of anything better */
          for (;j<st->filt_len-1;j++)
-            st->mem[i*(st->filt_len-1)+(st->filt_len-2-j)] = 0;
+            st->mem[i*st->mem_alloc_size+(st->filt_len-2-j)] = 0;
          /* Adjust last_sample */
          st->last_sample += (st->filt_len - old_length)/2;
       }
@@ -258,6 +260,14 @@ static void update_filter(SpeexResamplerState *st)
       /*speex_warning("decrease filter size (unimplemented)");*/
       /* Adjust last_sample (which will likely end up negative) */
       /*st->last_sample += (st->filt_len - old_length)/2;*/
+      st->magic_samples = (old_length - st->filt_len)/2;
+      for (i=0;i<st->nb_channels;i++)
+      {
+         int j;
+         /* Copy data going backward */
+         for (j=0;j<old_length-1;j++)
+            st->mem[i*st->mem_alloc_size+j] = st->mem[i*st->mem_alloc_size+j+st->magic_samples];
+      }
    }
 
 }
@@ -280,10 +290,14 @@ SpeexResamplerState *speex_resampler_init(int nb_channels, int ratio_num, int ra
    
    st->cutoff = 1.f;
    st->nb_channels = nb_channels;
-   st->last_sample = 0;
-   
    st->in_stride = 1;
    st->out_stride = 1;
+   
+   /* FIXME: Make that per channel */
+   st->last_sample = 0;
+   st->magic_samples = 0;
+   st->samp_frac_num = 0;
+   
 
    speex_resampler_set_quality(st, quality);
    speex_resampler_set_rate(st, ratio_num, ratio_den, in_rate, out_rate);
@@ -308,8 +322,21 @@ static void speex_resampler_process_native(SpeexResamplerState *st, int channel_
    int N = st->filt_len;
    int out_sample = 0;
    spx_word16_t *mem;
-   mem = st->mem + channel_index * (N-1);
+   int tmp_out_len = 0;
+   mem = st->mem + channel_index * st->mem_alloc_size;
    st->started = 1;
+   if (st->magic_samples)
+   {
+      int tmp_in_len;
+      tmp_in_len = st->magic_samples;
+      tmp_out_len = *out_len;
+      /* FIXME: Need to handle the case where the out array is too small */
+      /* magic_samples needs to be set to zero to avoid infinite recursion */
+      st->magic_samples = 0;
+      speex_resampler_process_native(st, channel_index, mem+N-1, &tmp_in_len, out, &tmp_out_len);
+      speex_warning_int("extra samples:", tmp_out_len);
+      out += tmp_out_len;
+   }
    while (!(st->last_sample >= *in_len || out_sample >= *out_len))
    {
       int j;
@@ -386,7 +413,7 @@ static void speex_resampler_process_native(SpeexResamplerState *st, int channel_
    }
    if (st->last_sample < *in_len)
       *in_len = st->last_sample;
-   *out_len = out_sample;
+   *out_len = out_sample+tmp_out_len;
    st->last_sample -= *in_len;
    
    for (j=0;j<N-1-*in_len;j++)
