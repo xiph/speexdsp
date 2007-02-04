@@ -185,7 +185,7 @@ static int resampler_basic_direct_single(SpeexResamplerState *st, int channel_in
       }
       
       /* Do the new part */
-      ptr = in+last_sample-N+1+j;
+      ptr = in+st->in_stride*(last_sample-N+1+j);
       for (;j<N;j++)
       {
          sum += MULT16_16(*ptr,st->sinc_table[samp_frac_num*st->filt_len+j]);
@@ -239,7 +239,7 @@ static int resampler_basic_interpolate_single(SpeexResamplerState *st, int chann
          accum[2] += MULT16_16(curr_mem,st->sinc_table[4+(j+1)*st->oversample-offset]);
          accum[3] += MULT16_16(curr_mem,st->sinc_table[4+(j+1)*st->oversample-offset+1]);
       }
-      ptr = in+last_sample-N+1+j;
+      ptr = in+st->in_stride*(last_sample-N+1+j);
       /* Do the new part */
       for (;j<N;j++)
       {
