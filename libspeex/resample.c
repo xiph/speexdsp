@@ -491,14 +491,19 @@ static void speex_resampler_process_native(SpeexResamplerState *st, int channel_
 void speex_resampler_process_float(SpeexResamplerState *st, int channel_index, const float *in, int *in_len, float *out, int *out_len)
 {
    int i;
+   int istride_save, ostride_save;
    spx_word16_t x[*in_len];
    spx_word16_t y[*out_len];
+   istride_save = st->in_stride;
+   ostride_save = st->out_stride;
    for (i=0;i<*in_len;i++)
-      x[i] = WORD2INT(in[i]);
+      x[i] = WORD2INT(in[i*st->in_stride]);
+   st->in_stride = st->out_stride = 1;
    speex_resampler_process_native(st, channel_index, x, in_len, y, out_len);
+   st->in_stride = istride_save;
+   st->out_stride = ostride_save;
    for (i=0;i<*out_len;i++)
-      out[i] = y[i];
-
+      out[i*st->out_stride] = y[i];
 }
 void speex_resampler_process_int(SpeexResamplerState *st, int channel_index, const spx_int16_t *in, int *in_len, spx_int16_t *out, int *out_len)
 {
@@ -512,13 +517,19 @@ void speex_resampler_process_float(SpeexResamplerState *st, int channel_index, c
 void speex_resampler_process_int(SpeexResamplerState *st, int channel_index, const spx_int16_t *in, int *in_len, spx_int16_t *out, int *out_len)
 {
    int i;
+   int istride_save, ostride_save;
    spx_word16_t x[*in_len];
    spx_word16_t y[*out_len];
-   for (i=0;i<*out_len;i++)
-      x[i] = in[i];
-   speex_resampler_process_native(st, channel_index, x, in_len, y, out_len);
+   istride_save = st->in_stride;
+   ostride_save = st->out_stride;
    for (i=0;i<*in_len;i++)
-      out[i] = WORD2INT(y[i]);
+      x[i] = in[i+st->in_stride];
+   st->in_stride = st->out_stride = 1;
+   speex_resampler_process_native(st, channel_index, x, in_len, y, out_len);
+   st->in_stride = istride_save;
+   st->out_stride = ostride_save;
+   for (i=0;i<*out_len;i++)
+      out[i+st->out_stride] = WORD2INT(y[i]);
 }
 #endif
 
