@@ -85,19 +85,27 @@ struct QualityMapping {
    float upsample_bandwidth;
 };
 
-
+/* This table maps conversion quality to internal parameters. There are two
+   reasons that explain why the up-sampling bandwidth is larger than the 
+   down-sampling bandwidth:
+   1) When up-sampling, we can assume that the spectrum is already attenuated
+      close to the Nyquist rate (from an A/D or a previous resampling filter)
+   2) Any aliasing that occurs very close to the Nyquist rate will be masked
+      by the sinusoids/noise just below the Nyquist rate (guaranteed only for
+      up-sampling).
+*/
 struct QualityMapping quality_map[11] = {
-   {  8,  4, 0.85f, 0.90f}, /* 0 */
-   { 16,  4, 0.86f, 0.91f}, /* 1 */
-   { 32,  4, 0.87f, 0.93f}, /* 2 */
-   { 48,  8, 0.89f, 0.95f}, /* 3 */
-   { 64,  8, 0.91f, 0.96f}, /* 4 */
-   { 80,  8, 0.93f, 0.97f}, /* 5 */
-   { 96,  8, 0.94f, 0.97f}, /* 6 */
-   {128, 16, 0.95f, 0.98f}, /* 7 */
-   {160, 16, 0.96f, 0.98f}, /* 8 */
-   {192, 16, 0.97f, 0.99f}, /* 9 */
-   {256, 16, 0.98f, 0.99f}, /* 10 */
+   {  8,  4, 0.70f, 0.80f}, /* 0 */
+   { 16,  4, 0.74f, 0.83f}, /* 1 */
+   { 32,  4, 0.77f, 0.87f}, /* 2 */
+   { 48,  8, 0.84f, 0.90f}, /* 3 */
+   { 64,  8, 0.88f, 0.92f}, /* 4 */
+   { 80,  8, 0.90f, 0.94f}, /* 5 */
+   { 96,  8, 0.91f, 0.94f}, /* 6 */
+   {128, 16, 0.93f, 0.95f}, /* 7 */
+   {160, 16, 0.94f, 0.96f}, /* 8 */
+   {192, 16, 0.95f, 0.96f}, /* 9 */
+   {256, 16, 0.96f, 0.97f}, /* 10 */
 };
 
 typedef enum {SPEEX_RESAMPLER_DIRECT_SINGLE=0, SPEEX_RESAMPLER_INTERPOLATE_SINGLE=1} SpeexSincType;
