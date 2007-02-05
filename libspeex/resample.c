@@ -48,7 +48,6 @@ TODO list:
          - 16-bit vs 32-bit (sinc only) in fixed-point mode
       - Make sure the filter update works even when changing params 
              after only a few samples procesed
-      - Fix multi-channel (need one sample pos per channel)
 */
 
 #ifdef HAVE_CONFIG_H
@@ -82,21 +81,23 @@ void speex_free (void *ptr) {free(ptr);}
 struct QualityMapping {
    int base_length;
    int oversample;
+   float downsample_bandwidth;
+   float upsample_bandwidth;
 };
 
 
 struct QualityMapping quality_map[11] = {
-   {  8,  4}, /* 0 */
-   { 16,  4}, /* 1 */
-   { 32,  4}, /* 2 */
-   { 48,  8}, /* 3 */
-   { 64,  8}, /* 4 */
-   { 80,  8}, /* 5 */
-   { 96,  8}, /* 6 */
-   {128, 16}, /* 7 */
-   {160, 16}, /* 8 */
-   {192, 16}, /* 9 */
-   {256, 16}, /* 10 */
+   {  8,  4, 0.85f, 0.90f}, /* 0 */
+   { 16,  4, 0.86f, 0.91f}, /* 1 */
+   { 32,  4, 0.87f, 0.93f}, /* 2 */
+   { 48,  8, 0.89f, 0.95f}, /* 3 */
+   { 64,  8, 0.91f, 0.96f}, /* 4 */
+   { 80,  8, 0.93f, 0.97f}, /* 5 */
+   { 96,  8, 0.94f, 0.97f}, /* 6 */
+   {128, 16, 0.95f, 0.98f}, /* 7 */
+   {160, 16, 0.96f, 0.98f}, /* 8 */
+   {192, 16, 0.97f, 0.99f}, /* 9 */
+   {256, 16, 0.98f, 0.99f}, /* 10 */
 };
 
 typedef enum {SPEEX_RESAMPLER_DIRECT_SINGLE=0, SPEEX_RESAMPLER_INTERPOLATE_SINGLE=1} SpeexSincType;
@@ -120,7 +121,7 @@ struct SpeexResamplerState_ {
    int    initialised;
    int    started;
    
-   /* FIXME: Need those per-channel */
+   /* These are per-channel */
    int    *last_sample;
    int    *samp_frac_num;
    int    *magic_samples;
@@ -290,14 +291,14 @@ static void update_filter(SpeexResamplerState *st)
    if (st->num_rate > st->den_rate)
    {
       /* down-sampling */
-      st->cutoff = .92f * st->den_rate / st->num_rate;
+      st->cutoff = quality_map[st->quality].downsample_bandwidth * st->den_rate / st->num_rate;
       /* FIXME: divide the numerator and denominator by a certain amount if they're too large */
       st->filt_len = st->filt_len*st->num_rate / st->den_rate;
       /* Round down to make sure we have a multiple of 4 */
       st->filt_len &= (~0x3);
    } else {
       /* up-sampling */
-      st->cutoff = .97f;
+      st->cutoff = quality_map[st->quality].upsample_bandwidth;
    }
 
    /* Choose the resampling type that requires the least amount of memory */
