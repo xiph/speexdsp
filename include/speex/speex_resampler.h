@@ -70,28 +70,89 @@ extern "C" {
    
 struct SpeexResamplerState_;
 typedef struct SpeexResamplerState_ SpeexResamplerState;
-//typedef SpeexResamplerState;
 
+/** Create a new resampler. The sampling rate ratio is an arbitrary rational number 
+ * with both the numerator and denominator being 32-bit integers.
+ * @param nb_channels Number of channels to be processed
+ * @param ratio_num Numerator of the sampling rate ratio
+ * @param ratio_den Denominator of the sampling rate ratio
+ * @param in_rate Nominal input sampling rate rounded to the nearest integer (in Hz)
+ * @param out_rate Nominal output sampling rate rounded to the nearest integer (in Hz)
+ * @param quality Resampling quality (0-10)
+ * @return Newly created resampler state
+ */
 SpeexResamplerState *speex_resampler_init(int nb_channels, int ratio_num, int ratio_den, int in_rate, int out_rate, int quality);
 
+/** Destroy a resampler state.
+ * @param st Resampler state
+ */
 void speex_resampler_destroy(SpeexResamplerState *st);
 
+/** Resample a float array.
+ * @param st Resampler state
+ * @param channel_index Index of the channel to process for the multi-channel base (0 otherwise)
+ * @param in Input buffer
+ * @param in_len Number of input samples in the input buffer. Returns the number of samples processed
+ * @param out Output buffer
+ * @param out_len Size of the output buffer. Returns the number of samples written
+ */
 void speex_resampler_process_float(SpeexResamplerState *st, int channel_index, const float *in, int *in_len, float *out, int *out_len);
 
+/** Resample an int array.
+ * @param st Resampler state
+ * @param channel_index Index of the channel to process for the multi-channel base (0 otherwise)
+ * @param in Input buffer
+ * @param in_len Number of input samples in the input buffer. Returns the number of samples processed
+ * @param out Output buffer
+ * @param out_len Size of the output buffer. Returns the number of samples written
+ */
 void speex_resampler_process_int(SpeexResamplerState *st, int channel_index, const spx_int16_t *in, int *in_len, spx_int16_t *out, int *out_len);
 
+/** Resample an interleaved float array.
+ * @param st Resampler state
+ * @param in Input buffer
+ * @param in_len Number of input samples in the input buffer. Returns the number of samples processed. This is all per-channel.
+ * @param out Output buffer
+ * @param out_len Size of the output buffer. Returns the number of samples written. This is all per-channel.
+ */
 void speex_resampler_process_interleaved_float(SpeexResamplerState *st, const float *in, int *in_len, float *out, int *out_len);
 
+/** Set (change) the input/output sampling rates and resampling ratio.
+ * @param st Resampler state
+ * @param ratio_num Numerator of the sampling rate ratio
+ * @param ratio_den Denominator of the sampling rate ratio
+ * @param in_rate Nominal input sampling rate rounded to the nearest integer (in Hz)
+ * @param out_rate Nominal output sampling rate rounded to the nearest integer (in Hz)
+ */
 void speex_resampler_set_rate(SpeexResamplerState *st, int ratio_num, int ratio_den, int in_rate, int out_rate);
 
+/** Set (change) the conversion quality
+ * @param st Resampler state
+ * @param quality Resampling quality (0-10)
+ */
 void speex_resampler_set_quality(SpeexResamplerState *st, int quality);
 
+/** Set (change) the input stride
+ * @param st Resampler state
+ * @param stride Input stride
+ */
 void speex_resampler_set_input_stride(SpeexResamplerState *st, int stride);
 
+/** Set (change) the output stride
+ * @param st Resampler state
+ * @param stride Output stride
+ */
 void speex_resample_set_output_stride(SpeexResamplerState *st, int stride);
 
+/** Make sure that the first samples to go out of the resamplers don't have leading zeros.
+ * This is only useful before starting to use a newly created resampler.
+ * @param st Resampler state
+ */
 void speex_resampler_skip_zeros(SpeexResamplerState *st);
 
+/** Reset a resampler so a new (unrelated) stream can be processed
+ * @param st Resampler state
+ */
 void speex_resampler_reset_mem(SpeexResamplerState *st);
 
 #ifdef __cplusplus
