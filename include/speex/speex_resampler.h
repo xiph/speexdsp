@@ -76,9 +76,9 @@ typedef struct SpeexResamplerState_ SpeexResamplerState;
  * @param nb_channels Number of channels to be processed
  * @param ratio_num Numerator of the sampling rate ratio
  * @param ratio_den Denominator of the sampling rate ratio
- * @param in_rate Nominal input sampling rate rounded to the nearest integer (in Hz)
- * @param out_rate Nominal output sampling rate rounded to the nearest integer (in Hz)
- * @param quality Resampling quality (0-10)
+ * @param in_rate Nominal input sampling rate rounded to the nearest integer (in Hz). This does not need to be accurate.
+ * @param out_rate Nominal output sampling rate rounded to the nearest integer (in Hz). This does not need to be accurate.
+ * @param quality Resampling quality between 0 and 10, where 0 has poor quality and 10 has very high quality.
  * @return Newly created resampler state
  */
 SpeexResamplerState *speex_resampler_init(int nb_channels, int ratio_num, int ratio_den, int in_rate, int out_rate, int quality);
@@ -88,7 +88,7 @@ SpeexResamplerState *speex_resampler_init(int nb_channels, int ratio_num, int ra
  */
 void speex_resampler_destroy(SpeexResamplerState *st);
 
-/** Resample a float array.
+/** Resample a float array. The input and output may *not* alias.
  * @param st Resampler state
  * @param channel_index Index of the channel to process for the multi-channel base (0 otherwise)
  * @param in Input buffer
@@ -98,7 +98,7 @@ void speex_resampler_destroy(SpeexResamplerState *st);
  */
 void speex_resampler_process_float(SpeexResamplerState *st, int channel_index, const float *in, int *in_len, float *out, int *out_len);
 
-/** Resample an int array.
+/** Resample an int array. The input and output may *not* alias.
  * @param st Resampler state
  * @param channel_index Index of the channel to process for the multi-channel base (0 otherwise)
  * @param in Input buffer
@@ -108,7 +108,7 @@ void speex_resampler_process_float(SpeexResamplerState *st, int channel_index, c
  */
 void speex_resampler_process_int(SpeexResamplerState *st, int channel_index, const spx_int16_t *in, int *in_len, spx_int16_t *out, int *out_len);
 
-/** Resample an interleaved float array.
+/** Resample an interleaved float array. The input and output may *not* alias.
  * @param st Resampler state
  * @param in Input buffer
  * @param in_len Number of input samples in the input buffer. Returns the number of samples processed. This is all per-channel.
@@ -121,24 +121,24 @@ void speex_resampler_process_interleaved_float(SpeexResamplerState *st, const fl
  * @param st Resampler state
  * @param ratio_num Numerator of the sampling rate ratio
  * @param ratio_den Denominator of the sampling rate ratio
- * @param in_rate Nominal input sampling rate rounded to the nearest integer (in Hz)
- * @param out_rate Nominal output sampling rate rounded to the nearest integer (in Hz)
+ * @param in_rate Nominal input sampling rate rounded to the nearest integer (in Hz). This does not need to be accurate.
+ * @param out_rate Nominal output sampling rate rounded to the nearest integer (in Hz). This does not need to be accurate.
  */
 void speex_resampler_set_rate(SpeexResamplerState *st, int ratio_num, int ratio_den, int in_rate, int out_rate);
 
-/** Set (change) the conversion quality
+/** Set (change) the conversion quality.
  * @param st Resampler state
- * @param quality Resampling quality (0-10)
+ * @param quality Resampling quality between 0 and 10, where 0 has poor quality and 10 has very high quality.
  */
 void speex_resampler_set_quality(SpeexResamplerState *st, int quality);
 
-/** Set (change) the input stride
+/** Set (change) the input stride.
  * @param st Resampler state
  * @param stride Input stride
  */
 void speex_resampler_set_input_stride(SpeexResamplerState *st, int stride);
 
-/** Set (change) the output stride
+/** Set (change) the output stride.
  * @param st Resampler state
  * @param stride Output stride
  */
@@ -150,7 +150,7 @@ void speex_resample_set_output_stride(SpeexResamplerState *st, int stride);
  */
 void speex_resampler_skip_zeros(SpeexResamplerState *st);
 
-/** Reset a resampler so a new (unrelated) stream can be processed
+/** Reset a resampler so a new (unrelated) stream can be processed.
  * @param st Resampler state
  */
 void speex_resampler_reset_mem(SpeexResamplerState *st);
