@@ -98,7 +98,7 @@ struct QualityMapping {
       by the sinusoids/noise just below the Nyquist rate (guaranteed only for
       up-sampling).
 */
-struct QualityMapping quality_map[11] = {
+const struct QualityMapping quality_map[11] = {
    {  8,  4, 0.70f, 0.80f}, /* 0 */
    { 16,  4, 0.74f, 0.83f}, /* 1 */
    { 32,  4, 0.77f, 0.87f}, /* 2 */
