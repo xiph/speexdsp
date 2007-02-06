@@ -66,6 +66,10 @@ void speex_free (void *ptr) {free(ptr);}
 #include <math.h>
 #include "speex/speex_resampler.h"
 
+#ifndef M_PI
+#define M_PI 3.14159263
+#endif
+
 #ifdef FIXED_POINT
 #define WORD2INT(x) ((x) < -32767 ? -32768 : ((x) > 32766 ? 32767 : (x)))  
 #else
