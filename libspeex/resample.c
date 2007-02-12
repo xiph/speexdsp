@@ -82,35 +82,6 @@ void speex_free (void *ptr) {free(ptr);}
 
 #define IMAX(a,b) ((a) > (b) ? (a) : (b))
 
-struct QualityMapping {
-   int base_length;
-   int oversample;
-   float downsample_bandwidth;
-   float upsample_bandwidth;
-};
-
-/* This table maps conversion quality to internal parameters. There are two
-   reasons that explain why the up-sampling bandwidth is larger than the 
-   down-sampling bandwidth:
-   1) When up-sampling, we can assume that the spectrum is already attenuated
-      close to the Nyquist rate (from an A/D or a previous resampling filter)
-   2) Any aliasing that occurs very close to the Nyquist rate will be masked
-      by the sinusoids/noise just below the Nyquist rate (guaranteed only for
-      up-sampling).
-*/
-const struct QualityMapping quality_map[11] = {
-   {  8,  4, 0.830f, 0.860f}, /* Q0 */  /* 63.5% cutoff ( ~20 dB stop) 4  */
-   { 16,  4, 0.850f, 0.880f}, /* Q1 */  /* 75.3% cutoff ( ~40 dB stop) 4  */ 
-   { 32,  4, 0.882f, 0.910f}, /* Q2 */  /* 82.3% cutoff ( ~60 dB stop) 6  */
-   { 48,  8, 0.895f, 0.917f}, /* Q3 */  /* 84.9% cutoff ( ~80 dB stop) 8  */
-   { 64,  8, 0.921f, 0.940f}, /* Q4 */  /* 88.7% cutoff ( ~80 dB stop) 8  */
-   { 80,  8, 0.922f, 0.940f}, /* Q5 */  /* 89.1% cutoff (~100 dB stop) 10 */
-   { 96,  8, 0.940f, 0.945f}, /* Q6 */  /* 91.5% cutoff (~100 dB stop) 10 */
-   {128, 16, 0.950f, 0.950f}, /* Q7 */  /* 93.1% cutoff (~100 dB stop) 10 */
-   {160, 16, 0.960f, 0.960f}, /* Q8 */  /* 94.5% cutoff (~100 dB stop) 10 */
-   {192, 16, 0.968f, 0.968f}, /* Q9 */  /* 95.5% cutoff (~100 dB stop) 10 */
-   {256, 16, 0.975f, 0.975f}, /* Q10 */ /* 96.6% cutoff (~100 dB stop) 10 */
-};
 
 typedef enum {SPEEX_RESAMPLER_DIRECT_SINGLE=0, SPEEX_RESAMPLER_INTERPOLATE_SINGLE=1} SpeexSincType;
 
@@ -194,6 +165,38 @@ static struct FuncDef _KAISER6 = {kaiser6_table, 32};
 static struct FuncDef _KAISER4 = {kaiser4_table, 32};
 #define KAISER4 (&_KAISER4)
 
+struct QualityMapping {
+   int base_length;
+   int oversample;
+   float downsample_bandwidth;
+   float upsample_bandwidth;
+   struct FuncDef *window_func;
+};
+
+
+/* This table maps conversion quality to internal parameters. There are two
+   reasons that explain why the up-sampling bandwidth is larger than the 
+   down-sampling bandwidth:
+   1) When up-sampling, we can assume that the spectrum is already attenuated
+      close to the Nyquist rate (from an A/D or a previous resampling filter)
+   2) Any aliasing that occurs very close to the Nyquist rate will be masked
+      by the sinusoids/noise just below the Nyquist rate (guaranteed only for
+      up-sampling).
+*/
+const struct QualityMapping quality_map[11] = {
+   {  8,  4, 0.830f, 0.860f, KAISER4 }, /* Q0 */  /* 63.5% cutoff ( ~20 dB stop) 4  */
+   { 16,  4, 0.850f, 0.880f, KAISER4 }, /* Q1 */  /* 75.3% cutoff ( ~40 dB stop) 4  */ 
+   { 32,  4, 0.882f, 0.910f, KAISER6 }, /* Q2 */  /* 82.3% cutoff ( ~60 dB stop) 6  */
+   { 48,  8, 0.895f, 0.917f, KAISER8 }, /* Q3 */  /* 84.9% cutoff ( ~80 dB stop) 8  */
+   { 64,  8, 0.921f, 0.940f, KAISER8 }, /* Q4 */  /* 88.7% cutoff ( ~80 dB stop) 8  */
+   { 80,  8, 0.922f, 0.940f, KAISER10}, /* Q5 */  /* 89.1% cutoff (~100 dB stop) 10 */
+   { 96,  8, 0.940f, 0.945f, KAISER10}, /* Q6 */  /* 91.5% cutoff (~100 dB stop) 10 */
+   {128, 16, 0.950f, 0.950f, KAISER10}, /* Q7 */  /* 93.1% cutoff (~100 dB stop) 10 */
+   {160, 16, 0.960f, 0.960f, KAISER10}, /* Q8 */  /* 94.5% cutoff (~100 dB stop) 10 */
+   {192, 16, 0.968f, 0.968f, KAISER10}, /* Q9 */  /* 95.5% cutoff (~100 dB stop) 10 */
+   {256, 16, 0.975f, 0.975f, KAISER10}, /* Q10 */ /* 96.6% cutoff (~100 dB stop) 10 */
+};
+
 static double compute_func(float x, struct FuncDef *func)
 {
    float y, frac;
@@ -229,7 +232,7 @@ int main(int argc, char **argv)
 
 #ifdef FIXED_POINT
 /* The slow way of computing a sinc for the table. Should improve that some day */
-static spx_word16_t sinc(float cutoff, float x, int N)
+static spx_word16_t sinc(float cutoff, float x, int N, struct FuncDef *window_func)
 {
    /*fprintf (stderr, "%f ", x);*/
    x *= cutoff;
@@ -238,11 +241,11 @@ static spx_word16_t sinc(float cutoff, float x, int N)
    else if (fabs(x) > .5f*N)
       return 0;
    /*FIXME: Can it really be any slower than this? */
-   return WORD2INT(32768.*cutoff*sin(M_PI*x)/(M_PI*x) * compute_func(fabs(2.*x/N), KAISER10));
+   return WORD2INT(32768.*cutoff*sin(M_PI*x)/(M_PI*x) * compute_func(fabs(2.*x/N), window_func));
 }
 #else
 /* The slow way of computing a sinc for the table. Should improve that some day */
-static spx_word16_t sinc(float cutoff, float x, int N)
+static spx_word16_t sinc(float cutoff, float x, int N, struct FuncDef *window_func)
 {
    /*fprintf (stderr, "%f ", x);*/
    x *= cutoff;
@@ -251,7 +254,7 @@ static spx_word16_t sinc(float cutoff, float x, int N)
    else if (fabs(x) > .5*N)
       return 0;
    /*FIXME: Can it really be any slower than this? */
-   return cutoff*sin(M_PI*x)/(M_PI*x) * compute_func(fabs(2.*x/N), KAISER10);
+   return cutoff*sin(M_PI*x)/(M_PI*x) * compute_func(fabs(2.*x/N), window_func);
 }
 #endif
 
@@ -407,7 +410,7 @@ static void update_filter(SpeexResamplerState *st)
          int j;
          for (j=0;j<st->filt_len;j++)
          {
-            st->sinc_table[i*st->filt_len+j] = sinc(st->cutoff,((j-st->filt_len/2+1)-((float)i)/st->den_rate), st->filt_len);
+            st->sinc_table[i*st->filt_len+j] = sinc(st->cutoff,((j-st->filt_len/2+1)-((float)i)/st->den_rate), st->filt_len, quality_map[st->quality].window_func);
          }
       }
       st->type = SPEEX_RESAMPLER_DIRECT_SINGLE;
@@ -422,7 +425,7 @@ static void update_filter(SpeexResamplerState *st)
          st->sinc_table_length = st->filt_len*st->oversample+8;
       }
       for (i=-4;i<st->oversample*st->filt_len+4;i++)
-         st->sinc_table[i+4] = sinc(st->cutoff,(i/(float)st->oversample - st->filt_len/2), st->filt_len);
+         st->sinc_table[i+4] = sinc(st->cutoff,(i/(float)st->oversample - st->filt_len/2), st->filt_len, quality_map[st->quality].window_func);
       st->type = SPEEX_RESAMPLER_INTERPOLATE_SINGLE;
       st->resampler_ptr = resampler_basic_interpolate_single;
       /*fprintf (stderr, "resampler uses interpolated sinc table and normalised cutoff %f\n", cutoff);*/
