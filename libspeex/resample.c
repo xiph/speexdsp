@@ -487,8 +487,12 @@ static void update_filter(SpeexResamplerState *st)
 
 }
 
+SpeexResamplerState *speex_resampler_init(int nb_channels, int in_rate, int out_rate, int quality)
+{
+   return speex_resampler_init_frac(nb_channels, in_rate, out_rate, in_rate, out_rate, quality);
+}
 
-SpeexResamplerState *speex_resampler_init(int nb_channels, int ratio_num, int ratio_den, int in_rate, int out_rate, int quality)
+SpeexResamplerState *speex_resampler_init_frac(int nb_channels, int ratio_num, int ratio_den, int in_rate, int out_rate, int quality)
 {
    int i;
    SpeexResamplerState *st = (SpeexResamplerState *)speex_alloc(sizeof(SpeexResamplerState));
@@ -522,7 +526,7 @@ SpeexResamplerState *speex_resampler_init(int nb_channels, int ratio_num, int ra
    }
 
    speex_resampler_set_quality(st, quality);
-   speex_resampler_set_rate(st, ratio_num, ratio_den, in_rate, out_rate);
+   speex_resampler_set_rate_frac(st, ratio_num, ratio_den, in_rate, out_rate);
 
    
    update_filter(st);
@@ -658,7 +662,12 @@ void speex_resampler_process_interleaved_int(SpeexResamplerState *st, const spx_
    st->out_stride = ostride_save;
 }
 
-void speex_resampler_set_rate(SpeexResamplerState *st, int ratio_num, int ratio_den, int in_rate, int out_rate)
+void speex_resampler_set_rate(SpeexResamplerState *st, int in_rate, int out_rate)
+{
+   speex_resampler_set_rate_frac(st, in_rate, out_rate, in_rate, out_rate);
+}
+
+void speex_resampler_set_rate_frac(SpeexResamplerState *st, int ratio_num, int ratio_den, int in_rate, int out_rate)
 {
    int fact;
    if (st->in_rate == in_rate && st->out_rate == out_rate && st->num_rate == ratio_num && st->den_rate == ratio_den)
