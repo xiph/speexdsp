@@ -220,7 +220,11 @@ void speex_resample_set_output_stride(SpeexResamplerState *st,
                                       int stride);
 
 /** Make sure that the first samples to go out of the resamplers don't have 
- * leading zeros. This is only useful before starting to use a newly created resampler.
+ * leading zeros. This is only useful before starting to use a newly created 
+ * resampler. It is recommended to use that when resampling an audio file, as
+ * it will generate a file with the same length. For real-time processing,
+ * it is probably easier not to use this call (so that the output duration
+ * is the same for the first frame).
  * @param st Resampler state
  */
 void speex_resampler_skip_zeros(SpeexResamplerState *st);
