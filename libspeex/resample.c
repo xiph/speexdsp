@@ -643,6 +643,20 @@ void speex_resampler_process_interleaved_float(SpeexResamplerState *st, const fl
    st->out_stride = ostride_save;
 }
 
+void speex_resampler_process_interleaved_int(SpeexResamplerState *st, const spx_int16_t *in, int *in_len, spx_int16_t *out, int *out_len)
+{
+   int i;
+   int istride_save, ostride_save;
+   istride_save = st->in_stride;
+   ostride_save = st->out_stride;
+   st->in_stride = st->out_stride = st->nb_channels;
+   for (i=0;i<st->nb_channels;i++)
+   {
+      speex_resampler_process_int(st, i, in+i, in_len, out+i, out_len);
+   }
+   st->in_stride = istride_save;
+   st->out_stride = ostride_save;
+}
 
 void speex_resampler_set_rate(SpeexResamplerState *st, int ratio_num, int ratio_den, int in_rate, int out_rate)
 {

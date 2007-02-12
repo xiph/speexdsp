@@ -88,7 +88,7 @@ SpeexResamplerState *speex_resampler_init(int nb_channels, int ratio_num, int ra
  */
 void speex_resampler_destroy(SpeexResamplerState *st);
 
-/** Resample a float array. The input and output may *not* alias.
+/** Resample a float array. The input and output buffers must *not* overlap.
  * @param st Resampler state
  * @param channel_index Index of the channel to process for the multi-channel base (0 otherwise)
  * @param in Input buffer
@@ -98,7 +98,7 @@ void speex_resampler_destroy(SpeexResamplerState *st);
  */
 void speex_resampler_process_float(SpeexResamplerState *st, int channel_index, const float *in, int *in_len, float *out, int *out_len);
 
-/** Resample an int array. The input and output may *not* alias.
+/** Resample an int array. The input and output buffers must *not* overlap.
  * @param st Resampler state
  * @param channel_index Index of the channel to process for the multi-channel base (0 otherwise)
  * @param in Input buffer
@@ -108,7 +108,7 @@ void speex_resampler_process_float(SpeexResamplerState *st, int channel_index, c
  */
 void speex_resampler_process_int(SpeexResamplerState *st, int channel_index, const spx_int16_t *in, int *in_len, spx_int16_t *out, int *out_len);
 
-/** Resample an interleaved float array. The input and output may *not* alias.
+/** Resample an interleaved float array. The input and output buffers must *not* overlap.
  * @param st Resampler state
  * @param in Input buffer
  * @param in_len Number of input samples in the input buffer. Returns the number of samples processed. This is all per-channel.
@@ -116,6 +116,15 @@ void speex_resampler_process_int(SpeexResamplerState *st, int channel_index, con
  * @param out_len Size of the output buffer. Returns the number of samples written. This is all per-channel.
  */
 void speex_resampler_process_interleaved_float(SpeexResamplerState *st, const float *in, int *in_len, float *out, int *out_len);
+
+/** Resample an interleaved int array. The input and output buffers must *not* overlap.
+ * @param st Resampler state
+ * @param in Input buffer
+ * @param in_len Number of input samples in the input buffer. Returns the number of samples processed. This is all per-channel.
+ * @param out Output buffer
+ * @param out_len Size of the output buffer. Returns the number of samples written. This is all per-channel.
+ */
+void speex_resampler_process_interleaved_int(SpeexResamplerState *st, const spx_int16_t *in, int *in_len, spx_int16_t *out, int *out_len);
 
 /** Set (change) the input/output sampling rates and resampling ratio.
  * @param st Resampler state
