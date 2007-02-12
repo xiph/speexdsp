@@ -99,17 +99,17 @@ struct QualityMapping {
       up-sampling).
 */
 const struct QualityMapping quality_map[11] = {
-   {  8,  4, 0.70f, 0.80f}, /* 0 */
-   { 16,  4, 0.74f, 0.83f}, /* 1 */
-   { 32,  4, 0.77f, 0.87f}, /* 2 */
-   { 48,  8, 0.84f, 0.90f}, /* 3 */
-   { 64,  8, 0.88f, 0.92f}, /* 4 */
-   { 80,  8, 0.90f, 0.94f}, /* 5 */
-   { 96,  8, 0.91f, 0.94f}, /* 6 */
-   {128, 16, 0.93f, 0.95f}, /* 7 */
-   {160, 16, 0.94f, 0.96f}, /* 8 */
-   {192, 16, 0.95f, 0.96f}, /* 9 */
-   {256, 16, 0.96f, 0.97f}, /* 10 */
+   {  8,  4, 0.830f, 0.860f}, /* Q0 */  /* 63.5% cutoff ( ~20 dB stop) 4  */
+   { 16,  4, 0.850f, 0.880f}, /* Q1 */  /* 75.3% cutoff ( ~40 dB stop) 4  */ 
+   { 32,  4, 0.882f, 0.910f}, /* Q2 */  /* 82.3% cutoff ( ~60 dB stop) 6  */
+   { 48,  8, 0.895f, 0.917f}, /* Q3 */  /* 84.9% cutoff ( ~80 dB stop) 8  */
+   { 64,  8, 0.921f, 0.940f}, /* Q4 */  /* 88.7% cutoff ( ~80 dB stop) 8  */
+   { 80,  8, 0.922f, 0.940f}, /* Q5 */  /* 89.1% cutoff (~100 dB stop) 10 */
+   { 96,  8, 0.940f, 0.945f}, /* Q6 */  /* 91.5% cutoff (~100 dB stop) 10 */
+   {128, 16, 0.950f, 0.950f}, /* Q7 */  /* 93.1% cutoff (~100 dB stop) 10 */
+   {160, 16, 0.960f, 0.960f}, /* Q8 */  /* 94.5% cutoff (~100 dB stop) 10 */
+   {192, 16, 0.968f, 0.968f}, /* Q9 */  /* 95.5% cutoff (~100 dB stop) 10 */
+   {256, 16, 0.975f, 0.975f}, /* Q10 */ /* 96.6% cutoff (~100 dB stop) 10 */
 };
 
 typedef enum {SPEEX_RESAMPLER_DIRECT_SINGLE=0, SPEEX_RESAMPLER_INTERPOLATE_SINGLE=1} SpeexSincType;
