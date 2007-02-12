@@ -148,6 +148,57 @@ struct SpeexResamplerState_ {
    SpeexSincType type;
 } ;
 
+/*static double kaiser10_8[11] = {0.92831446, 1.00000000, 0.92831446, 0.74011713, 0.50119680, 0.28205962, 0.12670280, 0.04193980, 0.00839739, 0.00035515, 0.00035515};
+static double kaiser10_16[19] = {0.98162644, 1.00000000, 0.98162644, 0.92831446, 0.84522401, 0.74011713, 0.62226347, 0.50119680, 0.38553619, 0.28205962, 0.19515633, 0.12670280, 0.07632451, 0.04193980, 0.02044510, 0.00839739, 0.00257636, 0.00035515, 0.00035515};*/
+static double kaiser10_table[36] = {
+   0.99537781, 1.00000000, 0.99537781, 0.98162644, 0.95908712, 0.92831446,
+   0.89005583, 0.84522401, 0.79486424, 0.74011713, 0.68217934, 0.62226347,
+   0.56155915, 0.50119680, 0.44221549, 0.38553619, 0.33194107, 0.28205962,
+   0.23636152, 0.19515633, 0.15859932, 0.12670280, 0.09935205, 0.07632451,
+   0.05731132, 0.04193980, 0.02979584, 0.02044510, 0.01345224, 0.00839739,
+   0.00488951, 0.00257636, 0.00115101, 0.00035515, 0.00000000, 0.00000000};
+
+struct FuncDef {
+   double *table;
+   int oversample;
+};
+      
+static struct FuncDef _KAISER10 = {kaiser10_table, 32};
+#define KAISER10 (&_KAISER10)
+
+static double compute_func(float x, struct FuncDef *func)
+{
+   float y, frac;
+   double interp[4];
+   int ind; 
+   y = x*func->oversample;
+   ind = (int)floor(y);
+   frac = (y-ind);
+   /* CSE with handle the repeated powers */
+   interp[3] =  -0.1666666667*frac + 0.1666666667*(frac*frac*frac);
+   interp[2] = frac + 0.5*(frac*frac) - 0.5*(frac*frac*frac);
+   /*interp[2] = 1.f - 0.5f*frac - frac*frac + 0.5f*frac*frac*frac;*/
+   interp[0] = -0.3333333333*frac + 0.5*(frac*frac) - 0.1666666667*(frac*frac*frac);
+   /* Just to make sure we don't have rounding problems */
+   interp[1] = 1.f-interp[3]-interp[2]-interp[0];
+   
+   /*sum = frac*accum[1] + (1-frac)*accum[2];*/
+   return interp[0]*func->table[ind] + interp[1]*func->table[ind+1] + interp[2]*func->table[ind+2] + interp[3]*func->table[ind+3];
+}
+
+#if 0
+#include <stdio.h>
+int main(int argc, char **argv)
+{
+   int i;
+   for (i=0;i<256;i++)
+   {
+      printf ("%f\n", interp_func(i/256., kaiser10c, 32));
+   }
+   return 0;
+}
+#endif
+
 #ifdef FIXED_POINT
 /* The slow way of computing a sinc for the table. Should improve that some day */
 static spx_word16_t sinc(float cutoff, float x, int N)
@@ -159,7 +210,7 @@ static spx_word16_t sinc(float cutoff, float x, int N)
    else if (fabs(x) > .5f*N)
       return 0;
    /*FIXME: Can it really be any slower than this? */
-   return WORD2INT(32768.*cutoff*sin(M_PI*x)/(M_PI*x) * (.42+.5*cos(2*x*M_PI/N)+.08*cos(4*x*M_PI/N)));
+   return WORD2INT(32768.*cutoff*sin(M_PI*x)/(M_PI*x) * compute_func(fabs(2.*x/N), KAISER10));
 }
 #else
 /* The slow way of computing a sinc for the table. Should improve that some day */
@@ -172,7 +223,7 @@ static spx_word16_t sinc(float cutoff, float x, int N)
    else if (fabs(x) > .5*N)
       return 0;
    /*FIXME: Can it really be any slower than this? */
-   return cutoff*sin(M_PI*x)/(M_PI*x) * (.42+.5*cos(2*x*M_PI/N)+.08*cos(4*x*M_PI/N));
+   return cutoff*sin(M_PI*x)/(M_PI*x) * compute_func(fabs(2.*x/N), KAISER10);
 }
 #endif
 
