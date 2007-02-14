@@ -183,6 +183,15 @@ void speex_resampler_set_rate(SpeexResamplerState *st,
                               int in_rate, 
                               int out_rate);
 
+/** Get the current input/output sampling rates (integer value).
+ * @param st Resampler state
+ * @param in_rate Input sampling rate (integer number of Hz) copied.
+ * @param out_rate Output sampling rate (integer number of Hz) copied.
+ */
+void speex_resampler_get_rate(SpeexResamplerState *st, 
+                              int *in_rate, 
+                              int *out_rate);
+
 /** Set (change) the input/output sampling rates and resampling ratio 
  * (fractional values in Hz supported).
  * @param st Resampler state
@@ -197,6 +206,16 @@ void speex_resampler_set_rate_frac(SpeexResamplerState *st,
                                    int in_rate, 
                                    int out_rate);
 
+/** Get the current resampling ratio. This will be reduced to the least
+ * common denominator.
+ * @param st Resampler state
+ * @param ratio_num Numerator of the sampling rate ratio copied
+ * @param ratio_den Denominator of the sampling rate ratio copied
+ */
+void speex_resampler_get_ratio(SpeexResamplerState *st, 
+                                   int *ratio_num, 
+                                   int *ratio_den);
+
 /** Set (change) the conversion quality.
  * @param st Resampler state
  * @param quality Resampling quality between 0 and 10, where 0 has poor 
@@ -205,6 +224,14 @@ void speex_resampler_set_rate_frac(SpeexResamplerState *st,
 void speex_resampler_set_quality(SpeexResamplerState *st, 
                                  int quality);
 
+/** Get the conversion quality.
+ * @param st Resampler state
+ * @param quality Resampling quality between 0 and 10, where 0 has poor 
+ * quality and 10 has very high quality.
+ */
+void speex_resampler_get_quality(SpeexResamplerState *st, 
+                                 int *quality);
+
 /** Set (change) the input stride.
  * @param st Resampler state
  * @param stride Input stride
@@ -212,12 +239,26 @@ void speex_resampler_set_quality(SpeexResamplerState *st,
 void speex_resampler_set_input_stride(SpeexResamplerState *st, 
                                       int stride);
 
+/** Get the input stride.
+ * @param st Resampler state
+ * @param stride Input stride copied
+ */
+void speex_resampler_get_input_stride(SpeexResamplerState *st, 
+                                      int *stride);
+
 /** Set (change) the output stride.
  * @param st Resampler state
  * @param stride Output stride
  */
 void speex_resample_set_output_stride(SpeexResamplerState *st, 
                                       int stride);
+
+/** Get the output stride.
+ * @param st Resampler state copied
+ * @param stride Output stride
+ */
+void speex_resample_get_output_stride(SpeexResamplerState *st, 
+                                      int *stride);
 
 /** Make sure that the first samples to go out of the resamplers don't have 
  * leading zeros. This is only useful before starting to use a newly created 

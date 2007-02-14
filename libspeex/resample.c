@@ -83,8 +83,6 @@ void speex_free (void *ptr) {free(ptr);}
 #define IMAX(a,b) ((a) > (b) ? (a) : (b))
 
 
-typedef enum {SPEEX_RESAMPLER_DIRECT_SINGLE=0, SPEEX_RESAMPLER_INTERPOLATE_SINGLE=1} SpeexSincType;
-
 typedef int (*resampler_basic_func)(SpeexResamplerState *, int , const spx_word16_t *, int *, spx_word16_t *, int *);
 
 struct SpeexResamplerState_ {
@@ -116,7 +114,6 @@ struct SpeexResamplerState_ {
          
    int    in_stride;
    int    out_stride;
-   SpeexSincType type;
 } ;
 
 static double kaiser10_table[36] = {
@@ -413,7 +410,6 @@ static void update_filter(SpeexResamplerState *st)
             st->sinc_table[i*st->filt_len+j] = sinc(st->cutoff,((j-st->filt_len/2+1)-((float)i)/st->den_rate), st->filt_len, quality_map[st->quality].window_func);
          }
       }
-      st->type = SPEEX_RESAMPLER_DIRECT_SINGLE;
       st->resampler_ptr = resampler_basic_direct_single;
       /*fprintf (stderr, "resampler uses direct sinc table and normalised cutoff %f\n", cutoff);*/
    } else {
@@ -426,7 +422,6 @@ static void update_filter(SpeexResamplerState *st)
       }
       for (i=-4;i<st->oversample*st->filt_len+4;i++)
          st->sinc_table[i+4] = sinc(st->cutoff,(i/(float)st->oversample - st->filt_len/2), st->filt_len, quality_map[st->quality].window_func);
-      st->type = SPEEX_RESAMPLER_INTERPOLATE_SINGLE;
       st->resampler_ptr = resampler_basic_interpolate_single;
       /*fprintf (stderr, "resampler uses interpolated sinc table and normalised cutoff %f\n", cutoff);*/
    }
@@ -561,13 +556,23 @@ static void speex_resampler_process_native(SpeexResamplerState *st, int channel_
    if (st->magic_samples)
    {
       int tmp_in_len;
+      int tmp_magic;
       tmp_in_len = st->magic_samples[channel_index];
       tmp_out_len = *out_len;
       /* FIXME: Need to handle the case where the out array is too small */
       /* magic_samples needs to be set to zero to avoid infinite recursion */
-      st->magic_samples = 0;
+      tmp_magic = st->magic_samples[channel_index];
+      st->magic_samples[channel_index] = 0;
       speex_resampler_process_native(st, channel_index, mem+N-1, &tmp_in_len, out, &tmp_out_len);
       /*speex_warning_int("extra samples:", tmp_out_len);*/
+      /* If we couldn't process all "magic" input samples, save the rest for next time */
+      if (tmp_in_len < tmp_magic)
+      {
+         int i;
+         st->magic_samples[channel_index] = tmp_magic-tmp_in_len;
+         for (i=0;i<st->magic_samples[channel_index];i++)
+            mem[N-1+i]=mem[N-1+i+tmp_in_len];
+      }
       out += tmp_out_len;
    }
    
@@ -667,6 +672,12 @@ void speex_resampler_set_rate(SpeexResamplerState *st, int in_rate, int out_rate
    speex_resampler_set_rate_frac(st, in_rate, out_rate, in_rate, out_rate);
 }
 
+void speex_resampler_get_rate(SpeexResamplerState *st, int *in_rate, int *out_rate)
+{
+   *in_rate = st->in_rate;
+   *out_rate = st->out_rate;
+}
+
 void speex_resampler_set_rate_frac(SpeexResamplerState *st, int ratio_num, int ratio_den, int in_rate, int out_rate)
 {
    int fact;
@@ -691,6 +702,12 @@ void speex_resampler_set_rate_frac(SpeexResamplerState *st, int ratio_num, int r
       update_filter(st);
 }
 
+void speex_resampler_get_ratio(SpeexResamplerState *st, int *ratio_num, int *ratio_den)
+{
+   *ratio_num = st->num_rate;
+   *ratio_den = st->den_rate;
+}
+
 void speex_resampler_set_quality(SpeexResamplerState *st, int quality)
 {
    if (quality < 0)
@@ -704,14 +721,29 @@ void speex_resampler_set_quality(SpeexResamplerState *st, int quality)
       update_filter(st);
 }
 
+void speex_resampler_get_quality(SpeexResamplerState *st, int *quality)
+{
+   *quality = st->quality;
+}
+
 void speex_resampler_set_input_stride(SpeexResamplerState *st, int stride)
 {
    st->in_stride = stride;
 }
 
+void speex_resampler_get_input_stride(SpeexResamplerState *st, int *stride)
+{
+   *stride = st->in_stride;
+}
+
 void speex_resampler_set_output_stride(SpeexResamplerState *st, int stride)
 {
    st->out_stride = stride;
+}
+
+void speex_resampler_get_output_stride(SpeexResamplerState *st, int *stride)
+{
+   *stride = st->out_stride;
 }
 
 void speex_resampler_skip_zeros(SpeexResamplerState *st)
