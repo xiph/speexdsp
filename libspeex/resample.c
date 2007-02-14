@@ -193,7 +193,7 @@ const struct QualityMapping quality_map[11] = {
    {192, 16, 0.968f, 0.968f, KAISER10}, /* Q9 */  /* 95.5% cutoff (~100 dB stop) 10 */
    {256, 16, 0.975f, 0.975f, KAISER10}, /* Q10 */ /* 96.6% cutoff (~100 dB stop) 10 */
 };
-
+/*8,24,40,56,80,104,128,160,200,256,320*/
 static double compute_func(float x, struct FuncDef *func)
 {
    float y, frac;
@@ -553,7 +553,7 @@ static void speex_resampler_process_native(SpeexResamplerState *st, int channel_
    st->started = 1;
    
    /* Handle the case where we have samples left from a reduction in filter length */
-   if (st->magic_samples)
+   if (st->magic_samples[channel_index])
    {
       int tmp_in_len;
       int tmp_magic;
