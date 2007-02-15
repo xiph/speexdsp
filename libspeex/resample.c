@@ -232,26 +232,26 @@ int main(int argc, char **argv)
 static spx_word16_t sinc(float cutoff, float x, int N, struct FuncDef *window_func)
 {
    /*fprintf (stderr, "%f ", x);*/
-   x *= cutoff;
+   float xx = x * cutoff;
    if (fabs(x)<1e-6f)
       return WORD2INT(32768.*cutoff);
    else if (fabs(x) > .5f*N)
       return 0;
    /*FIXME: Can it really be any slower than this? */
-   return WORD2INT(32768.*cutoff*sin(M_PI*x)/(M_PI*x) * compute_func(fabs(2.*x/N), window_func));
+   return WORD2INT(32768.*cutoff*sin(M_PI*xx)/(M_PI*xx) * compute_func(fabs(2.*x/N), window_func));
 }
 #else
 /* The slow way of computing a sinc for the table. Should improve that some day */
 static spx_word16_t sinc(float cutoff, float x, int N, struct FuncDef *window_func)
 {
    /*fprintf (stderr, "%f ", x);*/
-   x *= cutoff;
+   float xx = x * cutoff;
    if (fabs(x)<1e-6)
       return cutoff;
    else if (fabs(x) > .5*N)
       return 0;
    /*FIXME: Can it really be any slower than this? */
-   return cutoff*sin(M_PI*x)/(M_PI*x) * compute_func(fabs(2.*x/N), window_func);
+   return cutoff*sin(M_PI*xx)/(M_PI*xx) * compute_func(fabs(2.*x/N), window_func);
 }
 #endif
 
