@@ -281,6 +281,18 @@ static spx_word16_t sinc(float cutoff, float x, int N, struct FuncDef *window_fu
 }
 #endif
 
+static void cubic_coef(float frac, float interp[4])
+{
+   /* Compute interpolation coefficients. I'm not sure whether this corresponds to cubic interpolation
+   but I know it's MMSE-optimal on a sinc */
+   interp[0] =  -0.16667f*frac + 0.16667f*frac*frac*frac;
+   interp[1] = frac + 0.5f*frac*frac - 0.5f*frac*frac*frac;
+   /*interp[2] = 1.f - 0.5f*frac - frac*frac + 0.5f*frac*frac*frac;*/
+   interp[3] = -0.33333f*frac + 0.5f*frac*frac - 0.16667f*frac*frac*frac;
+   /* Just to make sure we don't have rounding problems */
+   interp[2] = 1.-interp[0]-interp[1]-interp[3];
+}
+
 static int resampler_basic_direct_single(SpeexResamplerState *st, int channel_index, const spx_word16_t *in, int *in_len, spx_word16_t *out, int *out_len)
 {
    int N = st->filt_len;
@@ -307,6 +319,52 @@ static int resampler_basic_direct_single(SpeexResamplerState *st, int channel_in
       for (;j<N;j++)
       {
          sum += MULT16_16(*ptr,st->sinc_table[samp_frac_num*st->filt_len+j]);
+         ptr += st->in_stride;
+      }
+   
+      *out = PSHR32(sum,15);
+      out += st->out_stride;
+      out_sample++;
+      last_sample += st->int_advance;
+      samp_frac_num += st->frac_advance;
+      if (samp_frac_num >= st->den_rate)
+      {
+         samp_frac_num -= st->den_rate;
+         last_sample++;
+      }
+   }
+   st->last_sample[channel_index] = last_sample;
+   st->samp_frac_num[channel_index] = samp_frac_num;
+   return out_sample;
+}
+
+/* This is the same as the previous function, except with a double-precision accumulator */
+static int resampler_basic_direct_double(SpeexResamplerState *st, int channel_index, const spx_word16_t *in, int *in_len, spx_word16_t *out, int *out_len)
+{
+   int N = st->filt_len;
+   int out_sample = 0;
+   spx_word16_t *mem;
+   int last_sample = st->last_sample[channel_index];
+   int samp_frac_num = st->samp_frac_num[channel_index];
+   mem = st->mem + channel_index * st->mem_alloc_size;
+   while (!(last_sample >= *in_len || out_sample >= *out_len))
+   {
+      int j;
+      double sum=0;
+      
+      /* We already have all the filter coefficients pre-computed in the table */
+      const spx_word16_t *ptr;
+      /* Do the memory part */
+      for (j=0;last_sample-N+1+j < 0;j++)
+      {
+         sum += MULT16_16(mem[last_sample+j],(double)st->sinc_table[samp_frac_num*st->filt_len+j]);
+      }
+      
+      /* Do the new part */
+      ptr = in+st->in_stride*(last_sample-N+1+j);
+      for (;j<N;j++)
+      {
+         sum += MULT16_16(*ptr,(double)st->sinc_table[samp_frac_num*st->filt_len+j]);
          ptr += st->in_stride;
       }
    
@@ -368,15 +426,69 @@ static int resampler_basic_interpolate_single(SpeexResamplerState *st, int chann
          accum[2] += MULT16_16(curr_in,st->sinc_table[4+(j+1)*st->oversample-offset]);
          accum[3] += MULT16_16(curr_in,st->sinc_table[4+(j+1)*st->oversample-offset+1]);
       }
-      /* Compute interpolation coefficients. I'm not sure whether this corresponds to cubic interpolation
-      but I know it's MMSE-optimal on a sinc */
-      interp[0] =  -0.16667f*frac + 0.16667f*frac*frac*frac;
-      interp[1] = frac + 0.5f*frac*frac - 0.5f*frac*frac*frac;
-      /*interp[2] = 1.f - 0.5f*frac - frac*frac + 0.5f*frac*frac*frac;*/
-      interp[3] = -0.33333f*frac + 0.5f*frac*frac - 0.16667f*frac*frac*frac;
-      /* Just to make sure we don't have rounding problems */
-      interp[2] = 1.f-interp[0]-interp[1]-interp[3];
-      /*sum = frac*accum[1] + (1-frac)*accum[2];*/
+      cubic_coef(frac, interp);
+      sum = interp[0]*accum[0] + interp[1]*accum[1] + interp[2]*accum[2] + interp[3]*accum[3];
+   
+      *out = PSHR32(sum,15);
+      out += st->out_stride;
+      out_sample++;
+      last_sample += st->int_advance;
+      samp_frac_num += st->frac_advance;
+      if (samp_frac_num >= st->den_rate)
+      {
+         samp_frac_num -= st->den_rate;
+         last_sample++;
+      }
+   }
+   st->last_sample[channel_index] = last_sample;
+   st->samp_frac_num[channel_index] = samp_frac_num;
+   return out_sample;
+}
+
+/* This is the same as the previous function, except with a double-precision accumulator */
+static int resampler_basic_interpolate_double(SpeexResamplerState *st, int channel_index, const spx_word16_t *in, int *in_len, spx_word16_t *out, int *out_len)
+{
+   int N = st->filt_len;
+   int out_sample = 0;
+   spx_word16_t *mem;
+   int last_sample = st->last_sample[channel_index];
+   int samp_frac_num = st->samp_frac_num[channel_index];
+   mem = st->mem + channel_index * st->mem_alloc_size;
+   while (!(last_sample >= *in_len || out_sample >= *out_len))
+   {
+      int j;
+      spx_word32_t sum=0;
+      
+      /* We need to interpolate the sinc filter */
+      double accum[4] = {0.f,0.f, 0.f, 0.f};
+      float interp[4];
+      const spx_word16_t *ptr;
+      float alpha = ((float)samp_frac_num)/st->den_rate;
+      int offset = samp_frac_num*st->oversample/st->den_rate;
+      float frac = alpha*st->oversample - offset;
+         /* This code is written like this to make it easy to optimise with SIMD.
+      For most DSPs, it would be best to split the loops in two because most DSPs 
+      have only two accumulators */
+      for (j=0;last_sample-N+1+j < 0;j++)
+      {
+         double curr_mem = mem[last_sample+j];
+         accum[0] += MULT16_16(curr_mem,st->sinc_table[4+(j+1)*st->oversample-offset-2]);
+         accum[1] += MULT16_16(curr_mem,st->sinc_table[4+(j+1)*st->oversample-offset-1]);
+         accum[2] += MULT16_16(curr_mem,st->sinc_table[4+(j+1)*st->oversample-offset]);
+         accum[3] += MULT16_16(curr_mem,st->sinc_table[4+(j+1)*st->oversample-offset+1]);
+      }
+      ptr = in+st->in_stride*(last_sample-N+1+j);
+      /* Do the new part */
+      for (;j<N;j++)
+      {
+         double curr_in = *ptr;
+         ptr += st->in_stride;
+         accum[0] += MULT16_16(curr_in,st->sinc_table[4+(j+1)*st->oversample-offset-2]);
+         accum[1] += MULT16_16(curr_in,st->sinc_table[4+(j+1)*st->oversample-offset-1]);
+         accum[2] += MULT16_16(curr_in,st->sinc_table[4+(j+1)*st->oversample-offset]);
+         accum[3] += MULT16_16(curr_in,st->sinc_table[4+(j+1)*st->oversample-offset+1]);
+      }
+      cubic_coef(frac, interp);
       sum = interp[0]*accum[0] + interp[1]*accum[1] + interp[2]*accum[2] + interp[3]*accum[3];
    
       *out = PSHR32(sum,15);
@@ -436,7 +548,10 @@ static void update_filter(SpeexResamplerState *st)
             st->sinc_table[i*st->filt_len+j] = sinc(st->cutoff,((j-st->filt_len/2+1)-((float)i)/st->den_rate), st->filt_len, quality_map[st->quality].window_func);
          }
       }
-      st->resampler_ptr = resampler_basic_direct_single;
+      if (st->quality>8)
+         st->resampler_ptr = resampler_basic_direct_double;
+      else
+         st->resampler_ptr = resampler_basic_direct_single;
       /*fprintf (stderr, "resampler uses direct sinc table and normalised cutoff %f\n", cutoff);*/
    } else {
       if (!st->sinc_table)
@@ -448,7 +563,10 @@ static void update_filter(SpeexResamplerState *st)
       }
       for (i=-4;i<st->oversample*st->filt_len+4;i++)
          st->sinc_table[i+4] = sinc(st->cutoff,(i/(float)st->oversample - st->filt_len/2), st->filt_len, quality_map[st->quality].window_func);
-      st->resampler_ptr = resampler_basic_interpolate_single;
+      if (st->quality>8)
+         st->resampler_ptr = resampler_basic_interpolate_double;
+      else
+         st->resampler_ptr = resampler_basic_interpolate_single;
       /*fprintf (stderr, "resampler uses interpolated sinc table and normalised cutoff %f\n", cutoff);*/
    }
    st->int_advance = st->num_rate/st->den_rate;
