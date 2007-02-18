@@ -116,6 +116,28 @@ struct SpeexResamplerState_ {
    int    out_stride;
 } ;
 
+static double kaiser12_table[68] = {
+   0.99859849, 1.00000000, 0.99859849, 0.99440475, 0.98745105, 0.97779076,
+   0.96549770, 0.95066529, 0.93340547, 0.91384741, 0.89213598, 0.86843014,
+   0.84290116, 0.81573067, 0.78710866, 0.75723148, 0.72629970, 0.69451601,
+   0.66208321, 0.62920216, 0.59606986, 0.56287762, 0.52980938, 0.49704014,
+   0.46473455, 0.43304576, 0.40211431, 0.37206735, 0.34301800, 0.31506490,
+   0.28829195, 0.26276832, 0.23854851, 0.21567274, 0.19416736, 0.17404546,
+   0.15530766, 0.13794294, 0.12192957, 0.10723616, 0.09382272, 0.08164178,
+   0.07063950, 0.06075685, 0.05193064, 0.04409466, 0.03718069, 0.03111947,
+   0.02584161, 0.02127838, 0.01736250, 0.01402878, 0.01121463, 0.00886058,
+   0.00691064, 0.00531256, 0.00401805, 0.00298291, 0.00216702, 0.00153438,
+   0.00105297, 0.00069463, 0.00043489, 0.00025272, 0.00013031, 0.0000527734,
+   0.00001000, 0.00000000};
+/*
+static double kaiser12_table[36] = {
+   0.99440475, 1.00000000, 0.99440475, 0.97779076, 0.95066529, 0.91384741,
+   0.86843014, 0.81573067, 0.75723148, 0.69451601, 0.62920216, 0.56287762,
+   0.49704014, 0.43304576, 0.37206735, 0.31506490, 0.26276832, 0.21567274,
+   0.17404546, 0.13794294, 0.10723616, 0.08164178, 0.06075685, 0.04409466,
+   0.03111947, 0.02127838, 0.01402878, 0.00886058, 0.00531256, 0.00298291,
+   0.00153438, 0.00069463, 0.00025272, 0.0000527734, 0.00000500, 0.00000000};
+*/
 static double kaiser10_table[36] = {
    0.99537781, 1.00000000, 0.99537781, 0.98162644, 0.95908712, 0.92831446,
    0.89005583, 0.84522401, 0.79486424, 0.74011713, 0.68217934, 0.62226347,
@@ -153,6 +175,10 @@ struct FuncDef {
    int oversample;
 };
       
+static struct FuncDef _KAISER12 = {kaiser12_table, 64};
+#define KAISER12 (&_KAISER12)
+/*static struct FuncDef _KAISER12 = {kaiser12_table, 32};
+#define KAISER12 (&_KAISER12)*/
 static struct FuncDef _KAISER10 = {kaiser10_table, 32};
 #define KAISER10 (&_KAISER10)
 static struct FuncDef _KAISER8 = {kaiser8_table, 32};
@@ -190,8 +216,8 @@ const struct QualityMapping quality_map[11] = {
    { 96,  8, 0.940f, 0.945f, KAISER10}, /* Q6 */  /* 91.5% cutoff (~100 dB stop) 10 */
    {128, 16, 0.950f, 0.950f, KAISER10}, /* Q7 */  /* 93.1% cutoff (~100 dB stop) 10 */
    {160, 16, 0.960f, 0.960f, KAISER10}, /* Q8 */  /* 94.5% cutoff (~100 dB stop) 10 */
-   {192, 16, 0.968f, 0.968f, KAISER10}, /* Q9 */  /* 95.5% cutoff (~100 dB stop) 10 */
-   {256, 16, 0.975f, 0.975f, KAISER10}, /* Q10 */ /* 96.6% cutoff (~100 dB stop) 10 */
+   {192, 16, 0.968f, 0.968f, KAISER12}, /* Q9 */  /* 95.5% cutoff (~100 dB stop) 10 */
+   {256, 16, 0.975f, 0.975f, KAISER12}, /* Q10 */ /* 96.6% cutoff (~100 dB stop) 10 */
 };
 /*8,24,40,56,80,104,128,160,200,256,320*/
 static double compute_func(float x, struct FuncDef *func)
@@ -221,7 +247,7 @@ int main(int argc, char **argv)
    int i;
    for (i=0;i<256;i++)
    {
-      printf ("%f\n", compute_func(i/256., KAISER4));
+      printf ("%f\n", compute_func(i/256., KAISER12));
    }
    return 0;
 }
@@ -342,7 +368,7 @@ static int resampler_basic_interpolate_single(SpeexResamplerState *st, int chann
          accum[2] += MULT16_16(curr_in,st->sinc_table[4+(j+1)*st->oversample-offset]);
          accum[3] += MULT16_16(curr_in,st->sinc_table[4+(j+1)*st->oversample-offset+1]);
       }
-         /* Compute interpolation coefficients. I'm not sure whether this corresponds to cubic interpolation
+      /* Compute interpolation coefficients. I'm not sure whether this corresponds to cubic interpolation
       but I know it's MMSE-optimal on a sinc */
       interp[0] =  -0.16667f*frac + 0.16667f*frac*frac*frac;
       interp[1] = frac + 0.5f*frac*frac - 0.5f*frac*frac*frac;
