@@ -807,13 +807,13 @@ void speex_resampler_process_int(SpeexResamplerState *st, int channel_index, con
    istride_save = st->in_stride;
    ostride_save = st->out_stride;
    for (i=0;i<*in_len;i++)
-      x[i] = in[i+st->in_stride];
+      x[i] = in[i*st->in_stride];
    st->in_stride = st->out_stride = 1;
    speex_resampler_process_native(st, channel_index, x, in_len, y, out_len);
    st->in_stride = istride_save;
    st->out_stride = ostride_save;
    for (i=0;i<*out_len;i++)
-      out[i+st->out_stride] = WORD2INT(y[i]);
+      out[i*st->out_stride] = WORD2INT(y[i]);
 }
 #endif
 

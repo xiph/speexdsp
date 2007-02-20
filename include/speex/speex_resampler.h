@@ -49,6 +49,7 @@
 #define spx_word16_t float
 #define spx_word32_t float
 #define MULT16_16(a,b) ((a)*(b))
+#define MULT16_32_Q15(a,b) ((a)*(b))
 #define PSHR32(a,b) (a)
 #endif
 
