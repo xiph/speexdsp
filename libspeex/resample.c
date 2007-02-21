@@ -163,14 +163,6 @@ static double kaiser6_table[36] = {
    0.19505503, 0.16360756, 0.13508755, 0.10953262, 0.08693120, 0.06722600,
    0.05031820, 0.03607231, 0.02432151, 0.01487334, 0.00752000, 0.00000000};
 
-static double kaiser4_table[36] = {
-   0.99831452, 1.00000000, 0.99831452, 0.99327105, 0.98490841, 0.97329088,
-   0.95850750, 0.94067123, 0.91991776, 0.89640418, 0.87030740, 0.84182235,
-   0.81116010, 0.77854570, 0.74421601, 0.70841739, 0.67140328, 0.63343178,
-   0.59476318, 0.55565754, 0.51637222, 0.47715958, 0.43826468, 0.39992313,
-   0.36235905, 0.32578323, 0.29039137, 0.25636266, 0.22385840, 0.19302093,
-   0.16397278, 0.13681602, 0.11163187, 0.08848053, 0.06740000, 0.00000000};
-
 struct FuncDef {
    double *table;
    int oversample;
@@ -186,8 +178,6 @@ static struct FuncDef _KAISER8 = {kaiser8_table, 32};
 #define KAISER8 (&_KAISER8)
 static struct FuncDef _KAISER6 = {kaiser6_table, 32};
 #define KAISER6 (&_KAISER6)
-static struct FuncDef _KAISER4 = {kaiser4_table, 32};
-#define KAISER4 (&_KAISER4)
 
 struct QualityMapping {
    int base_length;
@@ -208,8 +198,8 @@ struct QualityMapping {
       up-sampling).
 */
 const struct QualityMapping quality_map[11] = {
-   {  8,  4, 0.830f, 0.860f, KAISER4 }, /* Q0 */  /* 63.5% cutoff ( ~20 dB stop) 4  */
-   { 16,  4, 0.850f, 0.880f, KAISER4 }, /* Q1 */  /* 75.3% cutoff ( ~40 dB stop) 4  */ 
+   {  8,  4, 0.830f, 0.860f, KAISER6 }, /* Q0 */
+   { 16,  4, 0.850f, 0.880f, KAISER6 }, /* Q1 */
    { 32,  4, 0.882f, 0.910f, KAISER6 }, /* Q2 */  /* 82.3% cutoff ( ~60 dB stop) 6  */
    { 48,  8, 0.895f, 0.917f, KAISER8 }, /* Q3 */  /* 84.9% cutoff ( ~80 dB stop) 8  */
    { 64,  8, 0.921f, 0.940f, KAISER8 }, /* Q4 */  /* 88.7% cutoff ( ~80 dB stop) 8  */
