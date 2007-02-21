@@ -41,23 +41,56 @@
 
 #ifdef OUTSIDE_SPEEX
 
+/********* WARNING: MENTAL SANITY ENDS HERE *************/
+
+/* If the resampler is defined outside of Speex, we change the symbol names so that 
+   there won't be any clash if linking with Speex later on. */
+
+/* #define RANDOM_PREFIX your software name */
+#ifndef RANDOM_PREFIX
+#error Please define RANDOM_PREFIX (above) to something specific to your project to prevent symbol name clashes
+#endif
+
+#define speex_resampler_init RANDOM_PREFIX ## _resampler_init
+#define speex_resampler_init_frac RANDOM_PREFIX ## _resampler_init_frac
+#define speex_resampler_destroy RANDOM_PREFIX ## _resampler_destroy
+#define speex_resampler_process_float RANDOM_PREFIX ## _resampler_process_float
+#define speex_resampler_process_int RANDOM_PREFIX ## _resampler_process_int
+#define speex_resampler_process_interleaved_float RANDOM_PREFIX ## _resampler_process_interleaved_float
+#define speex_resampler_process_interleaved_int RANDOM_PREFIX ## _resampler_process_interleaved_int
+#define speex_resampler_set_rate RANDOM_PREFIX ## _resampler_set_rate
+#define speex_resampler_get_rate RANDOM_PREFIX ## _resampler_get_rate
+#define speex_resampler_set_rate_frac RANDOM_PREFIX ## _resampler_set_rate_frac
+#define speex_resampler_get_ratio RANDOM_PREFIX ## _resampler_get_ratio
+#define speex_resampler_set_quality RANDOM_PREFIX ## _resampler_set_quality
+#define speex_resampler_get_quality RANDOM_PREFIX ## _resampler_get_quality
+#define speex_resampler_set_input_stride RANDOM_PREFIX ## _resampler_set_input_stride
+#define speex_resampler_get_input_stride RANDOM_PREFIX ## _resampler_get_input_stride
+#define speex_resample_set_output_stride RANDOM_PREFIX ## _resample_set_output_stride
+#define speex_resample_get_output_stride RANDOM_PREFIX ## _resample_get_output_stride
+#define speex_resampler_skip_zeros RANDOM_PREFIX ## _resampler_skip_zeros
+#define speex_resampler_reset_mem RANDOM_PREFIX ## _resampler_reset_mem
+
 #define spx_int16_t short
+
 #ifdef FIXED_POINT
 #define spx_word16_t short
 #define spx_word32_t int
-#else
+
+#else /* FIXED_POINT */
+
 #define spx_word16_t float
 #define spx_word32_t float
 #define MULT16_16(a,b) ((a)*(b))
 #define MULT16_32_Q15(a,b) ((a)*(b))
 #define PSHR32(a,b) (a)
-#endif
+#endif /* FIXED_POINT */
 
-#else
+#else /* OUTSIDE_SPEEX */
 
 #include "speex/speex_types.h"
 
-#endif
+#endif /* OUTSIDE_SPEEX */
 
 #ifdef __cplusplus
 extern "C" {

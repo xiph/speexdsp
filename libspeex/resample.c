@@ -59,12 +59,13 @@ TODO list:
 void *speex_alloc (int size) {return calloc(size,1);}
 void *speex_realloc (void *ptr, int size) {return realloc(ptr, size);}
 void speex_free (void *ptr) {free(ptr);}
+#include "speex_resampler.h"
 #else
+#include "speex/speex_resampler.h"
 #include "misc.h"
 #endif
 
 #include <math.h>
-#include "speex/speex_resampler.h"
 
 #ifndef M_PI
 #define M_PI 3.14159263
