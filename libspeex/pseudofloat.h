@@ -2,6 +2,15 @@
 /**
    @file pseudofloat.h
    @brief Pseudo-floating point
+ * This header file provides a lightweight floating point type for
+ * use on fixed-point platforms when a large dynamic range is 
+ * required. The new type is not compatible with the 32-bit IEEE format,
+ * it is not even remotely as accurate as 32-bit floats, and is not
+ * even guaranteed to produce even remotely correct results for code
+ * other than Speex. It makes all kinds of shortcuts that are acceptable
+ * for Speex, but may not be acceptable for your application. You're
+ * quite welcome to reuse this code and improve it, but don't assume
+ * it works out of the box. Most likely, it doesn't.
  */
 /*
    Redistribution and use in source and binary forms, with or without
