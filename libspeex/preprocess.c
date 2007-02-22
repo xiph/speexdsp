@@ -255,7 +255,11 @@ static void conj_window(spx_word16_t *w, int len)
    for (i=0;i<len;i++)
    {
       spx_word16_t tmp;
+#ifdef FIXED_POINT
+      spx_word16_t x = DIV32_16(MULT16_16(32767,i),len);
+#else      
       spx_word16_t x = DIV32_16(MULT16_16(QCONST16(4.f,13),i),len);
+#endif
       int inv=0;
       if (x<QCONST16(1.f,13))
       {
