@@ -63,18 +63,9 @@ typedef struct SBEncState {
 
    const spx_word16_t *window;    /**< LPC analysis window */
    spx_word16_t *lagWindow;       /**< Auto-correlation window */
-   spx_word16_t *autocorr;        /**< Auto-correlation (for LPC analysis) */
-   spx_coef_t *lpc;               /**< LPC coefficients */
-   spx_lsp_t *lsp;                /**< LSP coefficients */
-   spx_lsp_t *qlsp;               /**< Quantized LSPs */
    spx_lsp_t *old_lsp;            /**< LSPs of previous frame */
    spx_lsp_t *old_qlsp;           /**< Quantized LSPs of previous frame */
-   spx_lsp_t *interp_lsp;         /**< Interpolated LSPs for current sub-frame */
-   spx_lsp_t *interp_qlsp;        /**< Interpolated quantized LSPs for current sub-frame */
-   spx_coef_t *interp_lpc;        /**< Interpolated LPCs for current sub-frame */
    spx_coef_t *interp_qlpc;       /**< Interpolated quantized LPCs for current sub-frame */
-   spx_coef_t *bw_lpc1;           /**< Bandwidth-expanded version of LPCs (#1) */
-   spx_coef_t *bw_lpc2;           /**< Bandwidth-expanded version of LPCs (#2) */
 
    spx_mem_t *mem_sp;             /**< Synthesis signal memory */
    spx_mem_t *mem_sp2;

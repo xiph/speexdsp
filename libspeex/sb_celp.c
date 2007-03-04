@@ -236,17 +236,8 @@ void *sb_encoder_init(const SpeexMode *m)
    for (i=0;i<st->lpcSize+1;i++)
       st->lagWindow[i]=16384*exp(-.5*sqr(2*M_PI*st->lag_factor*i));
 
-   st->autocorr = (spx_word16_t*)speex_alloc((st->lpcSize+1)*sizeof(spx_word16_t));
-   st->lpc = (spx_coef_t*)speex_alloc(st->lpcSize*sizeof(spx_coef_t));
-   st->bw_lpc1 = (spx_coef_t*)speex_alloc(st->lpcSize*sizeof(spx_coef_t));
-   st->bw_lpc2 = (spx_coef_t*)speex_alloc(st->lpcSize*sizeof(spx_coef_t));
-   st->lsp = (spx_lsp_t*)speex_alloc(st->lpcSize*sizeof(spx_lsp_t));
-   st->qlsp = (spx_lsp_t*)speex_alloc(st->lpcSize*sizeof(spx_lsp_t));
    st->old_lsp = (spx_lsp_t*)speex_alloc(st->lpcSize*sizeof(spx_lsp_t));
    st->old_qlsp = (spx_lsp_t*)speex_alloc(st->lpcSize*sizeof(spx_lsp_t));
-   st->interp_lsp = (spx_lsp_t*)speex_alloc(st->lpcSize*sizeof(spx_lsp_t));
-   st->interp_qlsp = (spx_lsp_t*)speex_alloc(st->lpcSize*sizeof(spx_lsp_t));
-   st->interp_lpc = (spx_coef_t*)speex_alloc(st->lpcSize*sizeof(spx_coef_t));
    st->interp_qlpc = (spx_coef_t*)speex_alloc(st->lpcSize*sizeof(spx_coef_t));
    st->pi_gain = (spx_word32_t*)speex_alloc((st->nbSubframes)*sizeof(spx_word32_t));
    st->exc_rms = (spx_word16_t*)speex_alloc((st->nbSubframes)*sizeof(spx_word16_t));
@@ -294,17 +285,8 @@ void sb_encoder_destroy(void *state)
 
    speex_free(st->lagWindow);
 
-   speex_free(st->autocorr);
-   speex_free(st->lpc);
-   speex_free(st->bw_lpc1);
-   speex_free(st->bw_lpc2);
-   speex_free(st->lsp);
-   speex_free(st->qlsp);
    speex_free(st->old_lsp);
    speex_free(st->old_qlsp);
-   speex_free(st->interp_lsp);
-   speex_free(st->interp_qlsp);
-   speex_free(st->interp_lpc);
    speex_free(st->interp_qlpc);
    speex_free(st->pi_gain);
    speex_free(st->exc_rms);
@@ -336,7 +318,15 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
    spx_int32_t dtx;
    spx_word16_t *in = (spx_word16_t*)vin;
    spx_word16_t e_low=0, e_high=0;
-
+   VARDECL(spx_coef_t *lpc);
+   VARDECL(spx_coef_t *interp_lpc);
+   VARDECL(spx_coef_t *bw_lpc1);
+   VARDECL(spx_coef_t *bw_lpc2);
+   VARDECL(spx_lsp_t *lsp);
+   VARDECL(spx_lsp_t *qlsp);
+   VARDECL(spx_lsp_t *interp_lsp);
+   VARDECL(spx_lsp_t *interp_qlsp);
+      
    st = (SBEncState*)state;
    stack=st->stack;
    mode = (const SpeexSBMode*)(st->mode->mode);
@@ -378,8 +368,20 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
    else
       dtx=0;
 
+   ALLOC(lpc, st->lpcSize, spx_coef_t);
+   ALLOC(interp_lpc, st->lpcSize, spx_coef_t);
+   ALLOC(bw_lpc1, st->lpcSize, spx_coef_t);
+   ALLOC(bw_lpc2, st->lpcSize, spx_coef_t);
+   
+   ALLOC(lsp, st->lpcSize, spx_lsp_t);
+   ALLOC(qlsp, st->lpcSize, spx_lsp_t);
+   ALLOC(interp_lsp, st->lpcSize, spx_lsp_t);
+   ALLOC(interp_qlsp, st->lpcSize, spx_lsp_t);
+   
    {
+      VARDECL(spx_word16_t *autocorr);
       VARDECL(spx_word16_t *w_sig);
+      ALLOC(autocorr, st->lpcSize+1, spx_word16_t);
       ALLOC(w_sig, st->windowSize, spx_word16_t);
       /* Window for analysis */
       /* FIXME: This is a kludge */
@@ -392,27 +394,27 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
             w_sig[i] = EXTRACT16(SHR32(MULT16_16(high[i],st->window[i]),SIG_SHIFT));
       }
       /* Compute auto-correlation */
-      _spx_autocorr(w_sig, st->autocorr, st->lpcSize+1, st->windowSize);
+      _spx_autocorr(w_sig, autocorr, st->lpcSize+1, st->windowSize);
+      autocorr[0] = ADD16(autocorr[0],MULT16_16_Q15(autocorr[0],st->lpc_floor)); /* Noise floor in auto-correlation domain */
+
+      /* Lag windowing: equivalent to filtering in the power-spectrum domain */
+      for (i=0;i<st->lpcSize+1;i++)
+         autocorr[i] = MULT16_16_Q14(autocorr[i],st->lagWindow[i]);
+
+      /* Levinson-Durbin */
+      _spx_lpc(lpc, autocorr, st->lpcSize);
    }
-   st->autocorr[0] = ADD16(st->autocorr[0],MULT16_16_Q15(st->autocorr[0],st->lpc_floor)); /* Noise floor in auto-correlation domain */
-
-   /* Lag windowing: equivalent to filtering in the power-spectrum domain */
-   for (i=0;i<st->lpcSize+1;i++)
-      st->autocorr[i] = MULT16_16_Q14(st->autocorr[i],st->lagWindow[i]);
-
-   /* Levinson-Durbin */
-   _spx_lpc(st->lpc, st->autocorr, st->lpcSize);
 
    /* LPC to LSPs (x-domain) transform */
-   roots=lpc_to_lsp (st->lpc, st->lpcSize, st->lsp, 10, LSP_DELTA1, stack);
+   roots=lpc_to_lsp (lpc, st->lpcSize, lsp, 10, LSP_DELTA1, stack);
    if (roots!=st->lpcSize)
    {
-      roots = lpc_to_lsp (st->lpc, st->lpcSize, st->lsp, 10, LSP_DELTA2, stack);
+      roots = lpc_to_lsp (lpc, st->lpcSize, lsp, 10, LSP_DELTA2, stack);
       if (roots!=st->lpcSize) {
          /*If we can't find all LSP's, do some damage control and use a flat filter*/
          for (i=0;i<st->lpcSize;i++)
          {
-            st->lsp[i]=st->old_lsp[i];
+            lsp[i]=st->old_lsp[i];
          }
       }
    }
@@ -524,14 +526,14 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
 
 
    /* LSP quantization */
-   SUBMODE(lsp_quant)(st->lsp, st->qlsp, st->lpcSize, bits);   
+   SUBMODE(lsp_quant)(lsp, qlsp, st->lpcSize, bits);   
 
    if (st->first)
    {
       for (i=0;i<st->lpcSize;i++)
-         st->old_lsp[i] = st->lsp[i];
+         st->old_lsp[i] = lsp[i];
       for (i=0;i<st->lpcSize;i++)
-         st->old_qlsp[i] = st->qlsp[i];
+         st->old_qlsp[i] = qlsp[i];
    }
    
    ALLOC(mem, st->lpcSize, spx_mem_t);
@@ -557,17 +559,17 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
       ALLOC(sw, st->subframeSize, spx_word16_t);
       
       /* LSP interpolation (quantized and unquantized) */
-      lsp_interpolate(st->old_lsp, st->lsp, st->interp_lsp, st->lpcSize, sub, st->nbSubframes);
-      lsp_interpolate(st->old_qlsp, st->qlsp, st->interp_qlsp, st->lpcSize, sub, st->nbSubframes);
+      lsp_interpolate(st->old_lsp, lsp, interp_lsp, st->lpcSize, sub, st->nbSubframes);
+      lsp_interpolate(st->old_qlsp, qlsp, interp_qlsp, st->lpcSize, sub, st->nbSubframes);
 
-      lsp_enforce_margin(st->interp_lsp, st->lpcSize, LSP_MARGIN);
-      lsp_enforce_margin(st->interp_qlsp, st->lpcSize, LSP_MARGIN);
+      lsp_enforce_margin(interp_lsp, st->lpcSize, LSP_MARGIN);
+      lsp_enforce_margin(interp_qlsp, st->lpcSize, LSP_MARGIN);
 
-      lsp_to_lpc(st->interp_lsp, st->interp_lpc, st->lpcSize,stack);
-      lsp_to_lpc(st->interp_qlsp, st->interp_qlpc, st->lpcSize, stack);
+      lsp_to_lpc(interp_lsp, interp_lpc, st->lpcSize,stack);
+      lsp_to_lpc(interp_qlsp, st->interp_qlpc, st->lpcSize, stack);
 
-      bw_lpc(st->gamma1, st->interp_lpc, st->bw_lpc1, st->lpcSize);
-      bw_lpc(st->gamma2, st->interp_lpc, st->bw_lpc2, st->lpcSize);
+      bw_lpc(st->gamma1, interp_lpc, bw_lpc1, st->lpcSize);
+      bw_lpc(st->gamma2, interp_lpc, bw_lpc2, st->lpcSize);
 
       /* Compute mid-band (4000 Hz for wideband) response of low-band and high-band
          filters */
@@ -650,7 +652,7 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
 
          scale = SHL32(MULT16_16(PDIV32_16(SHL32(EXTEND32(gc),SIG_SHIFT-6),filter_ratio),(1+el)),6);
 
-         compute_impulse_response(st->interp_qlpc, st->bw_lpc1, st->bw_lpc2, syn_resp, st->subframeSize, st->lpcSize, stack);
+         compute_impulse_response(st->interp_qlpc, bw_lpc1, bw_lpc2, syn_resp, st->subframeSize, st->lpcSize, stack);
 
          
          /* Reset excitation */
@@ -664,12 +666,12 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
 
          for (i=0;i<st->lpcSize;i++)
             mem[i]=st->mem_sw[i];
-         filter_mem16(res, st->bw_lpc1, st->bw_lpc2, res, st->subframeSize, st->lpcSize, mem, stack);
+         filter_mem16(res, bw_lpc1, bw_lpc2, res, st->subframeSize, st->lpcSize, mem, stack);
 
          /* Compute weighted signal */
          for (i=0;i<st->lpcSize;i++)
             mem[i]=st->mem_sw[i];
-         filter_mem16(sp, st->bw_lpc1, st->bw_lpc2, sw, st->subframeSize, st->lpcSize, mem, stack);
+         filter_mem16(sp, bw_lpc1, bw_lpc2, sw, st->subframeSize, st->lpcSize, mem, stack);
 
          /* Compute target signal */
          for (i=0;i<st->subframeSize;i++)
@@ -682,7 +684,7 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
             innov[i]=0;
 
          /*print_vec(target, st->subframeSize, "\ntarget");*/
-         SUBMODE(innovation_quant)(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2, 
+         SUBMODE(innovation_quant)(target, st->interp_qlpc, bw_lpc1, bw_lpc2, 
                                    SUBMODE(innovation_params), st->lpcSize, st->subframeSize, 
                                    innov, syn_resp, bits, stack, st->complexity, SUBMODE(double_codebook));
          /*print_vec(target, st->subframeSize, "after");*/
@@ -698,7 +700,7 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
             for (i=0;i<st->subframeSize;i++)
                target[i]=MULT16_16_P13(QCONST16(2.5f,13), target[i]);
 
-            SUBMODE(innovation_quant)(target, st->interp_qlpc, st->bw_lpc1, st->bw_lpc2, 
+            SUBMODE(innovation_quant)(target, st->interp_qlpc, bw_lpc1, bw_lpc2, 
                                       SUBMODE(innovation_params), st->lpcSize, st->subframeSize, 
                                       innov2, syn_resp, bits, stack, st->complexity, 0);
             signal_mul(innov2, innov2, MULT16_32_P15(QCONST16(0.4f,15),scale), st->subframeSize);
@@ -727,13 +729,13 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
       iir_mem16(exc, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, st->mem_sp, stack);
       
       /* Compute weighted signal again, from synthesized speech (not sure it's the right thing) */
-      filter_mem16(sp, st->bw_lpc1, st->bw_lpc2, sw, st->subframeSize, st->lpcSize, st->mem_sw, stack);
+      filter_mem16(sp, bw_lpc1, bw_lpc2, sw, st->subframeSize, st->lpcSize, st->mem_sw, stack);
    }
 
    for (i=0;i<st->lpcSize;i++)
-      st->old_lsp[i] = st->lsp[i];
+      st->old_lsp[i] = lsp[i];
    for (i=0;i<st->lpcSize;i++)
-      st->old_qlsp[i] = st->qlsp[i];
+      st->old_qlsp[i] = qlsp[i];
 
    st->first=0;
 
@@ -1245,7 +1247,7 @@ int sb_encoder_ctl(void *state, int request, void *ptr)
          int i;
          st->first = 1;
          for (i=0;i<st->lpcSize;i++)
-            st->lsp[i]=(M_PI*((float)(i+1)))/(st->lpcSize+1);
+            st->old_lsp[i]=(M_PI*((float)(i+1)))/(st->lpcSize+1);
          for (i=0;i<st->lpcSize;i++)
             st->mem_sw[i]=st->mem_sp[i]=st->mem_sp2[i]=0;
          for (i=0;i<QMF_ORDER;i++)
