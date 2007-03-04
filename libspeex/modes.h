@@ -46,6 +46,20 @@
 #define SB_SUBMODES 8
 #define SB_SUBMODE_BITS 3
 
+/* Used internally, NOT TO BE USED in applications */
+/** Used internally*/
+#define SPEEX_GET_PI_GAIN 100
+/** Used internally*/
+#define SPEEX_GET_EXC     101
+/** Used internally*/
+#define SPEEX_GET_INNOV   102
+/** Used internally*/
+#define SPEEX_GET_DTX_STATUS   103
+/** Used internally*/
+#define SPEEX_SET_INNOVATION_SAVE   104
+/** Used internally*/
+#define SPEEX_SET_WIDEBAND   105
+
 
 /** Quantizes LSPs */
 typedef void (*lsp_quant_func)(spx_lsp_t *, spx_lsp_t *, int, SpeexBits *);

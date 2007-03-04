@@ -155,20 +155,6 @@ extern "C" {
 /** Get status of input/output high-pass filtering */
 #define SPEEX_GET_HIGHPASS 45
 
-/* Used internally, NOT TO BE USED in applications */
-/** Used internally*/
-#define SPEEX_GET_PI_GAIN 100
-/** Used internally*/
-#define SPEEX_GET_EXC     101
-/** Used internally*/
-#define SPEEX_GET_INNOV   102
-/** Used internally*/
-#define SPEEX_GET_DTX_STATUS   103
-/** Used internally*/
-#define SPEEX_SET_INNOVATION_SAVE   104
-/** Used internally*/
-#define SPEEX_SET_WIDEBAND   105
-
 
 /* Preserving compatibility:*/
 /** Equivalent to SPEEX_SET_ENH */
