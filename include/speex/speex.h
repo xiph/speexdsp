@@ -322,7 +322,9 @@ void speex_encoder_destroy(void *state);
 /** Uses an existing encoder state to encode one frame of speech pointed to by
     "in". The encoded bit-stream is saved in "bits".
  @param state Encoder state
- @param in Frame that will be encoded with a +-2^15 range
+ @param in Frame that will be encoded with a +-2^15 range. This data MAY be 
+        overwritten by the encoder and should be considered uninitialised 
+        after the call.
  @param bits Bit-stream where the data will be written
  @return 0 if frame needs not be transmitted (DTX only), 1 otherwise
  */
