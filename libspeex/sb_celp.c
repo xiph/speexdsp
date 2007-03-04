@@ -786,9 +786,7 @@ void *sb_decoder_init(const SpeexMode *m)
 
    st->excBuf = (spx_word16_t*)speex_alloc((st->subframeSize)*sizeof(spx_word16_t));
 
-   st->qlsp = (spx_lsp_t*)speex_alloc((st->lpcSize)*sizeof(spx_lsp_t));
    st->old_qlsp = (spx_lsp_t*)speex_alloc((st->lpcSize)*sizeof(spx_lsp_t));
-   st->interp_qlsp = (spx_lsp_t*)speex_alloc(st->lpcSize*sizeof(spx_lsp_t));
    st->interp_qlpc = (spx_coef_t*)speex_alloc(st->lpcSize*sizeof(spx_coef_t));
 
    st->pi_gain = (spx_word32_t*)speex_alloc((st->nbSubframes)*sizeof(spx_word32_t));
@@ -819,9 +817,7 @@ void sb_decoder_destroy(void *state)
    speex_free(st->g0_mem);
    speex_free(st->g1_mem);
    speex_free(st->excBuf);
-   speex_free(st->qlsp);
    speex_free(st->old_qlsp);
-   speex_free(st->interp_qlsp);
    speex_free(st->interp_qlpc);
    speex_free(st->pi_gain);
    speex_free(st->exc_rms);
@@ -878,6 +874,8 @@ int sb_decode(void *state, SpeexBits *bits, void *vout)
    VARDECL(spx_word32_t *low_pi_gain);
    VARDECL(spx_word16_t *low_exc_rms);
    VARDECL(spx_coef_t *ak);
+   VARDECL(spx_lsp_t *qlsp);
+   VARDECL(spx_lsp_t *interp_qlsp);
    spx_int32_t dtx;
    const SpeexSBMode *mode;
    spx_word16_t *out = (spx_word16_t*)vout;
@@ -958,12 +956,14 @@ int sb_decode(void *state, SpeexBits *bits, void *vout)
    speex_decoder_ctl(st->st_low, SPEEX_GET_PI_GAIN, low_pi_gain);
    speex_decoder_ctl(st->st_low, SPEEX_GET_EXC, low_exc_rms);
 
-   SUBMODE(lsp_unquant)(st->qlsp, st->lpcSize, bits);
+   ALLOC(qlsp, st->lpcSize, spx_lsp_t);
+   ALLOC(interp_qlsp, st->lpcSize, spx_lsp_t);
+   SUBMODE(lsp_unquant)(qlsp, st->lpcSize, bits);
    
    if (st->first)
    {
       for (i=0;i<st->lpcSize;i++)
-         st->old_qlsp[i] = st->qlsp[i];
+         st->old_qlsp[i] = qlsp[i];
    }
    
    ALLOC(ak, st->lpcSize, spx_coef_t);
@@ -990,12 +990,12 @@ int sb_decode(void *state, SpeexBits *bits, void *vout)
       }
       
       /* LSP interpolation */
-      lsp_interpolate(st->old_qlsp, st->qlsp, st->interp_qlsp, st->lpcSize, sub, st->nbSubframes);
+      lsp_interpolate(st->old_qlsp, qlsp, interp_qlsp, st->lpcSize, sub, st->nbSubframes);
 
-      lsp_enforce_margin(st->interp_qlsp, st->lpcSize, LSP_MARGIN);
+      lsp_enforce_margin(interp_qlsp, st->lpcSize, LSP_MARGIN);
 
       /* LSP to LPC */
-      lsp_to_lpc(st->interp_qlsp, ak, st->lpcSize, stack);
+      lsp_to_lpc(interp_qlsp, ak, st->lpcSize, stack);
 
       /* Calculate reponse ratio between the low and high filter in the middle
          of the band (4000 Hz) */
@@ -1087,7 +1087,7 @@ int sb_decode(void *state, SpeexBits *bits, void *vout)
    
    qmf_synth(out, out+st->frame_size, h0, out, st->full_frame_size, QMF_ORDER, st->g0_mem, st->g1_mem, stack);
    for (i=0;i<st->lpcSize;i++)
-      st->old_qlsp[i] = st->qlsp[i];
+      st->old_qlsp[i] = qlsp[i];
 
    st->first=0;
 

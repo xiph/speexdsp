@@ -121,9 +121,7 @@ typedef struct SBDecState {
    spx_word32_t *g0_mem, *g1_mem;
 
    spx_word16_t *excBuf;
-   spx_lsp_t *qlsp;
    spx_lsp_t *old_qlsp;
-   spx_lsp_t *interp_qlsp;
    spx_coef_t *interp_qlpc;
 
    spx_mem_t *mem_sp;
