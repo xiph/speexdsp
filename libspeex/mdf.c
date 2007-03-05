@@ -148,7 +148,7 @@ struct SpeexEchoState_ {
    spx_word32_t *PHI;    /* scratch */
    spx_word32_t *W;      /* (Background) filter weights */
 #ifdef TWO_PATH
-   spx_word32_t *foreground; /* Foreground filter weights */
+   spx_word16_t *foreground; /* Foreground filter weights */
    spx_word32_t  Davg1;  /* 1st recursive average of the residual power difference */
    spx_word32_t  Davg2;  /* 2nd recursive average of the residual power difference */
    spx_float_t   Dvar1;  /* Estimated variance of 1st estimator */
@@ -262,6 +262,34 @@ static inline void spectral_mul_accum(const spx_word16_t *X, const spx_word32_t 
    }
    acc[N-1] = PSHR32(tmp1,WEIGHT_SHIFT);
 }
+static inline void spectral_mul_accum16(const spx_word16_t *X, const spx_word16_t *Y, spx_word16_t *acc, int N, int M)
+{
+   int i,j;
+   spx_word32_t tmp1=0,tmp2=0;
+   for (j=0;j<M;j++)
+   {
+      tmp1 = MAC16_16(tmp1, X[j*N],Y[j*N]);
+   }
+   acc[0] = PSHR32(tmp1,WEIGHT_SHIFT);
+   for (i=1;i<N-1;i+=2)
+   {
+      tmp1 = tmp2 = 0;
+      for (j=0;j<M;j++)
+      {
+         tmp1 = SUB32(MAC16_16(tmp1, X[j*N+i],Y[j*N+i]), MULT16_16(X[j*N+i+1],Y[j*N+i+1]));
+         tmp2 = MAC16_16(MAC16_16(tmp2, X[j*N+i+1],Y[j*N+i]), X[j*N+i], Y[j*N+i+1]);
+      }
+      acc[i] = PSHR32(tmp1,WEIGHT_SHIFT);
+      acc[i+1] = PSHR32(tmp2,WEIGHT_SHIFT);
+   }
+   tmp1 = tmp2 = 0;
+   for (j=0;j<M;j++)
+   {
+      tmp1 = MAC16_16(tmp1, X[(j+1)*N-1],Y[(j+1)*N-1]);
+   }
+   acc[N-1] = PSHR32(tmp1,WEIGHT_SHIFT);
+}
+
 #else
 static inline void spectral_mul_accum(const spx_word16_t *X, const spx_word32_t *Y, spx_word16_t *acc, int N, int M)
 {
@@ -281,6 +309,7 @@ static inline void spectral_mul_accum(const spx_word16_t *X, const spx_word32_t 
       Y += N;
    }
 }
+#define spectral_mul_accum16 spectral_mul_accum
 #endif
 
 /** Compute weighted cross-power spectrum of a half-complex (packed) vector with conjugate */
@@ -375,7 +404,7 @@ SpeexEchoState *speex_echo_state_init(int frame_size, int filter_length)
    st->E = (spx_word16_t*)speex_alloc(N*sizeof(spx_word16_t));
    st->W = (spx_word32_t*)speex_alloc(M*N*sizeof(spx_word32_t));
 #ifdef TWO_PATH
-   st->foreground = (spx_word32_t*)speex_alloc(M*N*sizeof(spx_word32_t));
+   st->foreground = (spx_word16_t*)speex_alloc(M*N*sizeof(spx_word16_t));
 #endif
    st->PHI = (spx_word32_t*)speex_alloc(N*sizeof(spx_word32_t));
    st->power = (spx_word32_t*)speex_alloc((frame_size+1)*sizeof(spx_word32_t));
@@ -669,7 +698,7 @@ void speex_echo_cancellation(SpeexEchoState *st, const spx_int16_t *in, const sp
    
 #ifdef TWO_PATH
    /* Compute foreground filter */
-   spectral_mul_accum(st->X, st->foreground, st->Y, N, M);   
+   spectral_mul_accum16(st->X, st->foreground, st->Y, N, M);   
    spx_ifft(st->fft_table, st->Y, st->e);
    for (i=0;i<st->frame_size;i++)
       st->x[i+st->frame_size] = SUB16(st->input[i], st->e[i+st->frame_size]);
@@ -777,7 +806,7 @@ void speex_echo_cancellation(SpeexEchoState *st, const spx_int16_t *in, const sp
       st->Dvar1 = st->Dvar2 = FLOAT_ZERO;
       /* Copy background filter to foreground filter */
       for (i=0;i<N*M;i++)
-         st->foreground[i] = st->W[i];
+         st->foreground[i] = EXTRACT16(PSHR32(st->W[i],16));
       /* Apply a smooth transition so as to not introduce blocking artifacts */
       for (i=0;i<st->frame_size;i++)
          st->e[i+st->frame_size] = MULT16_16_Q15(st->window[i+st->frame_size],st->e[i+st->frame_size]) + MULT16_16_Q15(st->window[i],st->y[i+st->frame_size]);
@@ -794,7 +823,7 @@ void speex_echo_cancellation(SpeexEchoState *st, const spx_int16_t *in, const sp
       {
          /* Copy foreground filter to background filter */
          for (i=0;i<N*M;i++)
-            st->W[i] = st->foreground[i];
+            st->W[i] = SHL32(EXTEND32(st->foreground[i]),16);
          /* We also need to copy the output so as to get correct adaptation */
          for (i=0;i<st->frame_size;i++)
             st->y[i+st->frame_size] = st->e[i+st->frame_size];
