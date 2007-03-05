@@ -190,27 +190,34 @@ void jitter_buffer_put(JitterBuffer *jitter, const JitterBufferPacket *packet)
    jitter->span[i]=packet->span;
    jitter->len[i]=packet->len;
    
-   /* Adjust the buffer size depending on network conditions */
+   /* Adjust the buffer size depending on network conditions.
+      The arrival margin is how much in advance (or late) the packet it */
    arrival_margin = (packet->timestamp - jitter->current_timestamp) - jitter->buffer_margin*jitter->tick_size;
    
    if (arrival_margin >= -LATE_BINS*jitter->tick_size)
    {
+      /* Here we compute the histogram based on the time of arrival of the packet.
+         This is based on a (first-order) recursive average. We keep both a short-term
+         histogram and a long-term histogram */
       spx_int32_t int_margin;
+      /* First, apply the "damping" of the recursive average to all bins */
       for (i=0;i<MAX_MARGIN;i++)
       {
          jitter->shortterm_margin[i] *= .98;
          jitter->longterm_margin[i] *= .995;
       }
+      /* What histogram bin the packet should be counted in */
       int_margin = LATE_BINS + arrival_margin/jitter->tick_size;
       if (int_margin>MAX_MARGIN-1)
          int_margin = MAX_MARGIN-1;
+      /* Add the packet to the right bin */
       if (int_margin>=0)
       {
          jitter->shortterm_margin[int_margin] += .02;
          jitter->longterm_margin[int_margin] += .005;
       }
    } else {
-      
+      /* Packet has arrived *way* too late, we pretty much consider it lost and not take it into account in the histogram */
       /*fprintf (stderr, "way too late = %d\n", arrival_margin);*/
       if (jitter->lost_count>20)
       {
@@ -258,14 +265,17 @@ int jitter_buffer_get(JitterBuffer *jitter, JitterBufferPacket *packet, spx_uint
    
    late_ratio_short = 0;
    late_ratio_long = 0;
+   /* Count the proportion of packets that are late */
    for (i=0;i<LATE_BINS;i++)
    {
       late_ratio_short += jitter->shortterm_margin[i];
       late_ratio_long += jitter->longterm_margin[i];
    }
+   /* Count the proportion of packets that are just on time */
    ontime_ratio_short = jitter->shortterm_margin[LATE_BINS];
    ontime_ratio_long = jitter->longterm_margin[LATE_BINS];
    early_ratio_short = early_ratio_long = 0;
+   /* Count the proportion of packets that are early */
    for (i=LATE_BINS+1;i<MAX_MARGIN;i++)
    {
       early_ratio_short += jitter->shortterm_margin[i];
@@ -277,7 +287,7 @@ int jitter_buffer_get(JitterBuffer *jitter, JitterBufferPacket *packet, spx_uint
       /*fprintf (stderr, "%f %f\n", early_ratio_short + ontime_ratio_short + late_ratio_short, early_ratio_long + ontime_ratio_long + late_ratio_long);*/
    }
    
-   /* Adjusting the buffering */
+   /* Adjusting the buffering bssed on the amount of packets that are early/on time/late */
    
    if (late_ratio_short > .1 || late_ratio_long > .03)
    {
