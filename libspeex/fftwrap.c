@@ -169,14 +169,7 @@ void spx_fft(void *table, spx_word16_t *in, spx_word16_t *out)
    int shift;
    struct kiss_config *t = (struct kiss_config *)table;
    shift = maximize_range(in, in, 32000, t->N);
-   kiss_fftr(t->forward, in, t->freq_data);
-   out[0] = t->freq_data[0].r;
-   for (i=1;i<t->N>>1;i++)
-   {
-      out[(i<<1)-1] = t->freq_data[i].r;
-      out[(i<<1)] = t->freq_data[i].i;
-   }
-   out[(i<<1)-1] = t->freq_data[i].r;
+   kiss_fftr2(t->forward, in, out);
    renorm_range(in, in, shift, t->N);
    renorm_range(out, out, shift, t->N);
 }
@@ -189,14 +182,9 @@ void spx_fft(void *table, spx_word16_t *in, spx_word16_t *out)
    float scale;
    struct kiss_config *t = (struct kiss_config *)table;
    scale = 1./t->N;
-   kiss_fftr(t->forward, in, t->freq_data);
-   out[0] = scale*t->freq_data[0].r;
-   for (i=1;i<t->N>>1;i++)
-   {
-      out[(i<<1)-1] = scale*t->freq_data[i].r;
-      out[(i<<1)] = scale*t->freq_data[i].i;
-   }
-   out[(i<<1)-1] = scale*t->freq_data[i].r;
+   kiss_fftr2(t->forward, in, out);
+   for (i=0;i<t->N;i++)
+      out[i] *= scale;
 }
 #endif
 
@@ -204,17 +192,7 @@ void spx_ifft(void *table, spx_word16_t *in, spx_word16_t *out)
 {
    int i;
    struct kiss_config *t = (struct kiss_config *)table;
-   t->freq_data[0].r = in[0];
-   t->freq_data[0].i = 0;
-   for (i=1;i<t->N>>1;i++)
-   {
-      t->freq_data[i].r = in[(i<<1)-1];
-      t->freq_data[i].i = in[(i<<1)];
-   }
-   t->freq_data[i].r = in[(i<<1)-1];
-   t->freq_data[i].i = 0;
-
-   kiss_fftri(t->backward, t->freq_data, out);
+   kiss_fftri2(t->backward, in, out);
 }
 
 
