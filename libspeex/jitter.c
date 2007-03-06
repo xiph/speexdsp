@@ -144,6 +144,7 @@ void jitter_buffer_put(JitterBuffer *jitter, const JitterBufferPacket *packet)
    /* Cleanup buffer (remove old packets that weren't played) */
    for (i=0;i<SPEEX_JITTER_MAX_BUFFER_SIZE;i++)
    {
+      /* Make sure we don't discard a "just-late" packet in case we want to play it next (if we interpolate). */
       if (jitter->buf[i] && LE32(jitter->timestamp[i] + jitter->span[i], jitter->pointer_timestamp))
       {
          /*fprintf (stderr, "cleaned (not played)\n");*/
@@ -338,7 +339,7 @@ int jitter_buffer_get(JitterBuffer *jitter, JitterBufferPacket *packet, spx_uint
    {
       for (i=0;i<SPEEX_JITTER_MAX_BUFFER_SIZE;i++)
       {
-         if (jitter->buf[i] && jitter->timestamp[i]<=jitter->pointer_timestamp && GE32(jitter->timestamp[i]+jitter->span[i],jitter->pointer_timestamp+chunk_size))
+         if (jitter->buf[i] && LE32(jitter->timestamp[i], jitter->pointer_timestamp) && GE32(jitter->timestamp[i]+jitter->span[i],jitter->pointer_timestamp+chunk_size))
             break;
       }
    }
@@ -348,7 +349,7 @@ int jitter_buffer_get(JitterBuffer *jitter, JitterBufferPacket *packet, spx_uint
    {
       for (i=0;i<SPEEX_JITTER_MAX_BUFFER_SIZE;i++)
       {
-         if (jitter->buf[i] && jitter->timestamp[i]<=jitter->pointer_timestamp && GT32(jitter->timestamp[i]+jitter->span[i],jitter->pointer_timestamp))
+         if (jitter->buf[i] && LE32(jitter->timestamp[i], jitter->pointer_timestamp) && GT32(jitter->timestamp[i]+jitter->span[i],jitter->pointer_timestamp))
             break;
       }
    }
@@ -435,6 +436,12 @@ int jitter_buffer_get_pointer_timestamp(JitterBuffer *jitter)
 void jitter_buffer_tick(JitterBuffer *jitter)
 {
    jitter->current_timestamp += jitter->tick_size;
+}
+
+/* Let the jitter buffer know it's the right time to adjust the buffering delay to the network conditions */
+int jitter_buffer_update_delay(JitterBuffer *jitter)
+{
+   
 }
 
 /* Used like the ioctl function to control the jitter buffer parameters */
