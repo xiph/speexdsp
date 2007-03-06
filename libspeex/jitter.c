@@ -432,8 +432,6 @@ int jitter_buffer_update_delay(JitterBuffer *jitter)
    float ontime_ratio_long;
    float early_ratio_short;
    float early_ratio_long;
-   int chunk_size;
-   int incomplete = 0;
    
    if (LT32(jitter->current_timestamp+jitter->tick_size, jitter->pointer_timestamp))
    {
@@ -475,8 +473,8 @@ int jitter_buffer_update_delay(JitterBuffer *jitter)
       }
       jitter->shortterm_margin[0] = 0;
       jitter->longterm_margin[0] = 0;            
-      /*jitter->pointer_timestamp -= jitter->tick_size;
-      jitter->current_timestamp -= jitter->tick_size;*/
+      /*jitter->pointer_timestamp -= jitter->tick_size;*/
+      jitter->current_timestamp -= jitter->tick_size;
       
       return JITTER_BUFFER_ADJUST_INTERPOLATE;
    
@@ -494,8 +492,8 @@ int jitter_buffer_update_delay(JitterBuffer *jitter)
       jitter->longterm_margin[MAX_MARGIN-1] = 0;      
       /*fprintf (stderr, "drop frame\n");*/
       /*fprintf (stderr, "d");*/
-      /*jitter->pointer_timestamp += jitter->tick_size;
-      jitter->current_timestamp += jitter->tick_size;*/
+      /*jitter->pointer_timestamp += jitter->tick_size;*/
+      jitter->current_timestamp += jitter->tick_size;
       
       return JITTER_BUFFER_ADJUST_DROP;
    }
