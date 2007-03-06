@@ -82,6 +82,9 @@ struct _JitterBufferPacket {
 /** Get minimum amount of extra buffering required (margin) */
 #define JITTER_BUFFER_GET_MARGIN 1
 
+#define JITTER_BUFFER_ADJUST_INTERPOLATE -1
+#define JITTER_BUFFER_ADJUST_OK 0
+#define JITTER_BUFFER_ADJUST_DROP 1
 
 /** Initialises jitter buffer 
  * 
@@ -137,6 +140,8 @@ void jitter_buffer_tick(JitterBuffer *jitter);
  * @return 0 if no error, -1 if request in unknown
 */
 int jitter_buffer_ctl(JitterBuffer *jitter, int request, void *ptr);
+
+int jitter_buffer_update_delay(JitterBuffer *jitter);
 
 /* @} */
 

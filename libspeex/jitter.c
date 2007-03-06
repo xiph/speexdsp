@@ -288,42 +288,6 @@ int jitter_buffer_get(JitterBuffer *jitter, JitterBufferPacket *packet, spx_uint
       /*fprintf (stderr, "%f %f\n", early_ratio_short + ontime_ratio_short + late_ratio_short, early_ratio_long + ontime_ratio_long + late_ratio_long);*/
    }
    
-   /* Adjusting the buffering bssed on the amount of packets that are early/on time/late */
-   
-   if (late_ratio_short > .1 || late_ratio_long > .03)
-   {
-      /* If too many packets are arriving late */
-      jitter->shortterm_margin[MAX_MARGIN-1] += jitter->shortterm_margin[MAX_MARGIN-2];
-      jitter->longterm_margin[MAX_MARGIN-1] += jitter->longterm_margin[MAX_MARGIN-2];
-      for (i=MAX_MARGIN-3;i>=0;i--)
-      {
-         jitter->shortterm_margin[i+1] = jitter->shortterm_margin[i];
-         jitter->longterm_margin[i+1] = jitter->longterm_margin[i];         
-      }
-      jitter->shortterm_margin[0] = 0;
-      jitter->longterm_margin[0] = 0;            
-      jitter->pointer_timestamp -= jitter->tick_size;
-      jitter->current_timestamp -= jitter->tick_size;
-      /*fprintf (stderr, "i");*/
-      /*fprintf (stderr, "interpolate (getting some slack)\n");*/
-   } else if (late_ratio_short + ontime_ratio_short < .005 && late_ratio_long + ontime_ratio_long < .01 && early_ratio_short > .8)
-   {
-      /* Many frames arriving early */
-      jitter->shortterm_margin[0] += jitter->shortterm_margin[1];
-      jitter->longterm_margin[0] += jitter->longterm_margin[1];
-      for (i=1;i<MAX_MARGIN-1;i++)
-      {
-         jitter->shortterm_margin[i] = jitter->shortterm_margin[i+1];
-         jitter->longterm_margin[i] = jitter->longterm_margin[i+1];         
-      }
-      jitter->shortterm_margin[MAX_MARGIN-1] = 0;
-      jitter->longterm_margin[MAX_MARGIN-1] = 0;      
-      /*fprintf (stderr, "drop frame\n");*/
-      /*fprintf (stderr, "d");*/
-      jitter->pointer_timestamp += jitter->tick_size;
-      jitter->current_timestamp += jitter->tick_size;
-      /*fprintf (stderr, "dropping packet (getting more aggressive)\n");*/
-   }
    
    /* Searching for the packet that fits best */
    
@@ -423,6 +387,26 @@ int jitter_buffer_get(JitterBuffer *jitter, JitterBufferPacket *packet, spx_uint
    packet->span = jitter->tick_size;
    jitter->pointer_timestamp += chunk_size;
    packet->len = 0;
+   
+   /* Adjusting the buffering bssed on the amount of packets that are early/on time/late */   
+   if (late_ratio_short > .1 || late_ratio_long > .03)
+   {
+      /* If too many packets are arriving late */
+      jitter->shortterm_margin[MAX_MARGIN-1] += jitter->shortterm_margin[MAX_MARGIN-2];
+      jitter->longterm_margin[MAX_MARGIN-1] += jitter->longterm_margin[MAX_MARGIN-2];
+      for (i=MAX_MARGIN-3;i>=0;i--)
+      {
+         jitter->shortterm_margin[i+1] = jitter->shortterm_margin[i];
+         jitter->longterm_margin[i+1] = jitter->longterm_margin[i];         
+      }
+      jitter->shortterm_margin[0] = 0;
+      jitter->longterm_margin[0] = 0;            
+      jitter->pointer_timestamp -= jitter->tick_size;
+      jitter->current_timestamp -= jitter->tick_size;
+      /*fprintf (stderr, "i");*/
+      /*fprintf (stderr, "interpolate (getting some slack)\n");*/
+   }
+
    return JITTER_BUFFER_MISSING;
 
 }
@@ -441,7 +425,82 @@ void jitter_buffer_tick(JitterBuffer *jitter)
 /* Let the jitter buffer know it's the right time to adjust the buffering delay to the network conditions */
 int jitter_buffer_update_delay(JitterBuffer *jitter)
 {
+   int i, j;
+   float late_ratio_short;
+   float late_ratio_long;
+   float ontime_ratio_short;
+   float ontime_ratio_long;
+   float early_ratio_short;
+   float early_ratio_long;
+   int chunk_size;
+   int incomplete = 0;
    
+   if (LT32(jitter->current_timestamp+jitter->tick_size, jitter->pointer_timestamp))
+   {
+      jitter->current_timestamp = jitter->pointer_timestamp;
+      speex_warning("did you forget to call jitter_buffer_tick() by any chance?");
+   }
+   /*fprintf (stderr, "get packet %d %d\n", jitter->pointer_timestamp, jitter->current_timestamp);*/
+
+   /* FIXME: This should be only what remaining of the current tick */
+   late_ratio_short = 0;
+   late_ratio_long = 0;
+   /* Count the proportion of packets that are late */
+   for (i=0;i<LATE_BINS;i++)
+   {
+      late_ratio_short += jitter->shortterm_margin[i];
+      late_ratio_long += jitter->longterm_margin[i];
+   }
+   /* Count the proportion of packets that are just on time */
+   ontime_ratio_short = jitter->shortterm_margin[LATE_BINS];
+   ontime_ratio_long = jitter->longterm_margin[LATE_BINS];
+   early_ratio_short = early_ratio_long = 0;
+   /* Count the proportion of packets that are early */
+   for (i=LATE_BINS+1;i<MAX_MARGIN;i++)
+   {
+      early_ratio_short += jitter->shortterm_margin[i];
+      early_ratio_long += jitter->longterm_margin[i];
+   }
+   
+   /* Adjusting the buffering bssed on the amount of packets that are early/on time/late */   
+   if (late_ratio_short > .1 || late_ratio_long > .03)
+   {
+      /* If too many packets are arriving late */
+      jitter->shortterm_margin[MAX_MARGIN-1] += jitter->shortterm_margin[MAX_MARGIN-2];
+      jitter->longterm_margin[MAX_MARGIN-1] += jitter->longterm_margin[MAX_MARGIN-2];
+      for (i=MAX_MARGIN-3;i>=0;i--)
+      {
+         jitter->shortterm_margin[i+1] = jitter->shortterm_margin[i];
+         jitter->longterm_margin[i+1] = jitter->longterm_margin[i];         
+      }
+      jitter->shortterm_margin[0] = 0;
+      jitter->longterm_margin[0] = 0;            
+      /*jitter->pointer_timestamp -= jitter->tick_size;
+      jitter->current_timestamp -= jitter->tick_size;*/
+      
+      return JITTER_BUFFER_ADJUST_INTERPOLATE;
+   
+   } else if (late_ratio_short + ontime_ratio_short < .005 && late_ratio_long + ontime_ratio_long < .01 && early_ratio_short > .8)
+   {
+      /* Many frames arriving early */
+      jitter->shortterm_margin[0] += jitter->shortterm_margin[1];
+      jitter->longterm_margin[0] += jitter->longterm_margin[1];
+      for (i=1;i<MAX_MARGIN-1;i++)
+      {
+         jitter->shortterm_margin[i] = jitter->shortterm_margin[i+1];
+         jitter->longterm_margin[i] = jitter->longterm_margin[i+1];         
+      }
+      jitter->shortterm_margin[MAX_MARGIN-1] = 0;
+      jitter->longterm_margin[MAX_MARGIN-1] = 0;      
+      /*fprintf (stderr, "drop frame\n");*/
+      /*fprintf (stderr, "d");*/
+      /*jitter->pointer_timestamp += jitter->tick_size;
+      jitter->current_timestamp += jitter->tick_size;*/
+      
+      return JITTER_BUFFER_ADJUST_DROP;
+   }
+   
+   return JITTER_BUFFER_ADJUST_OK;
 }
 
 /* Used like the ioctl function to control the jitter buffer parameters */
