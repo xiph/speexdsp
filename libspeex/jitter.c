@@ -516,6 +516,7 @@ int jitter_buffer_update_delay(JitterBuffer *jitter, JitterBufferPacket *packet,
 /* Used like the ioctl function to control the jitter buffer parameters */
 int jitter_buffer_ctl(JitterBuffer *jitter, int request, void *ptr)
 {
+   int count, i;
    switch(request)
    {
       case JITTER_BUFFER_SET_MARGIN:
@@ -523,6 +524,17 @@ int jitter_buffer_ctl(JitterBuffer *jitter, int request, void *ptr)
          break;
       case JITTER_BUFFER_GET_MARGIN:
          *(spx_int32_t*)ptr = jitter->buffer_margin;
+         break;
+      case JITTER_BUFFER_GET_AVALIABLE_COUNT:
+         count = 0;
+         for (i=0;i<SPEEX_JITTER_MAX_BUFFER_SIZE;i++)
+         {
+            if (jitter->buf[i] && LE32(jitter->pointer_timestamp, jitter->timestamp[i]))
+            {
+               count++;
+            }
+         }
+         *(spx_int32_t*)ptr = count;
          break;
       default:
          speex_warning_int("Unknown jitter_buffer_ctl request: ", request);

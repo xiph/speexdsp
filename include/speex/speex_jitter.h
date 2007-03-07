@@ -81,6 +81,9 @@ struct _JitterBufferPacket {
 #define JITTER_BUFFER_SET_MARGIN 0
 /** Get minimum amount of extra buffering required (margin) */
 #define JITTER_BUFFER_GET_MARGIN 1
+/* JITTER_BUFFER_SET_AVALIABLE_COUNT wouldn't make sense */
+/** Get the amount of avaliable packets currently buffered */
+#define JITTER_BUFFER_GET_AVALIABLE_COUNT 3
 
 #define JITTER_BUFFER_ADJUST_INTERPOLATE -1
 #define JITTER_BUFFER_ADJUST_OK 0
