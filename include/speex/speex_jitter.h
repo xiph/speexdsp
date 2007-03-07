@@ -141,7 +141,7 @@ void jitter_buffer_tick(JitterBuffer *jitter);
 */
 int jitter_buffer_ctl(JitterBuffer *jitter, int request, void *ptr);
 
-int jitter_buffer_update_delay(JitterBuffer *jitter);
+int jitter_buffer_update_delay(JitterBuffer *jitter, JitterBufferPacket *packet, spx_uint32_t *start_offset);
 
 /* @} */
 

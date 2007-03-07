@@ -71,7 +71,8 @@ struct JitterBuffer_ {
    int tick_size;                                                         /**< Output granularity                  */
    int reset_state;                                                       /**< True if state was just reset        */
    int buffer_margin;                                                     /**< How many frames we want to keep in the buffer (lower bound) */
-   
+   int interp_requested;                                                  /**< An interpolation is requested by speex_jitter_update_delay() */
+
    int lost_count;                                                        /**< Number of consecutive lost packets  */
    float shortterm_margin[MAX_MARGIN];                                    /**< Short term margin histogram         */
    float longterm_margin[MAX_MARGIN];                                     /**< Long term margin histogram          */
@@ -252,6 +253,17 @@ int jitter_buffer_get(JitterBuffer *jitter, JitterBufferPacket *packet, spx_uint
    int chunk_size;
    int incomplete = 0;
    
+   if (jitter->interp_requested)
+   {
+      jitter->interp_requested = 0;
+      if (start_offset)
+         *start_offset = 0;
+      packet->timestamp = jitter->pointer_timestamp;
+      packet->span = jitter->tick_size;
+      jitter->pointer_timestamp += chunk_size;
+      packet->len = 0;
+      return JITTER_BUFFER_MISSING;
+   }
    if (LT32(jitter->current_timestamp+jitter->tick_size, jitter->pointer_timestamp))
    {
       jitter->current_timestamp = jitter->pointer_timestamp;
@@ -423,7 +435,7 @@ void jitter_buffer_tick(JitterBuffer *jitter)
 }
 
 /* Let the jitter buffer know it's the right time to adjust the buffering delay to the network conditions */
-int jitter_buffer_update_delay(JitterBuffer *jitter)
+int jitter_buffer_update_delay(JitterBuffer *jitter, JitterBufferPacket *packet, spx_uint32_t *start_offset)
 {
    int i, j;
    float late_ratio_short;
@@ -473,9 +485,9 @@ int jitter_buffer_update_delay(JitterBuffer *jitter)
       }
       jitter->shortterm_margin[0] = 0;
       jitter->longterm_margin[0] = 0;            
-      /*jitter->pointer_timestamp -= jitter->tick_size;*/
+      jitter->pointer_timestamp -= jitter->tick_size;
       jitter->current_timestamp -= jitter->tick_size;
-      
+      jitter->interp_requested = 1;
       return JITTER_BUFFER_ADJUST_INTERPOLATE;
    
    } else if (late_ratio_short + ontime_ratio_short < .005 && late_ratio_long + ontime_ratio_long < .01 && early_ratio_short > .8)
@@ -492,9 +504,8 @@ int jitter_buffer_update_delay(JitterBuffer *jitter)
       jitter->longterm_margin[MAX_MARGIN-1] = 0;      
       /*fprintf (stderr, "drop frame\n");*/
       /*fprintf (stderr, "d");*/
-      /*jitter->pointer_timestamp += jitter->tick_size;*/
+      jitter->pointer_timestamp += jitter->tick_size;
       jitter->current_timestamp += jitter->tick_size;
-      
       return JITTER_BUFFER_ADJUST_DROP;
    }
    
@@ -592,6 +603,7 @@ void speex_jitter_get(SpeexJitter *jitter, short *out, int *current_timestamp)
             out[i]=0;
       }
    }
+   jitter_buffer_update_delay(jitter->packets, &packet, NULL);
    jitter_buffer_tick(jitter->packets);
 }
 
