@@ -46,7 +46,7 @@
 #define NULL 0
 #endif
 
-#define LATE_BINS 10
+#define LATE_BINS 15
 #define MAX_MARGIN 30                     /**< Number of bins in margin histogram */
 
 #define SPEEX_JITTER_MAX_BUFFER_SIZE 200   /**< Maximum number of packets in jitter buffer */
@@ -71,6 +71,7 @@ struct JitterBuffer_ {
    int tick_size;                                                         /**< Output granularity                  */
    int reset_state;                                                       /**< True if state was just reset        */
    int buffer_margin;                                                     /**< How many frames we want to keep in the buffer (lower bound) */
+   int late_cutoff;                                                       /**< How late must a packet be for it not to be considered at all */
    int interp_requested;                                                  /**< An interpolation is requested by speex_jitter_update_delay() */
 
    int lost_count;                                                        /**< Number of consecutive lost packets  */
@@ -90,6 +91,7 @@ JitterBuffer *jitter_buffer_init(int tick)
          jitter->buf[i]=NULL;
       jitter->tick_size = tick;
       jitter->buffer_margin = 1;
+      jitter->late_cutoff = 50;
       jitter_buffer_reset(jitter);
    }
    return jitter;
@@ -194,9 +196,9 @@ void jitter_buffer_put(JitterBuffer *jitter, const JitterBufferPacket *packet)
    
    /* Adjust the buffer size depending on network conditions.
       The arrival margin is how much in advance (or late) the packet it */
-   arrival_margin = (packet->timestamp - jitter->current_timestamp) - jitter->buffer_margin*jitter->tick_size;
+   arrival_margin = (packet->timestamp - jitter->current_timestamp)/jitter->tick_size - jitter->buffer_margin;
    
-   if (arrival_margin >= -LATE_BINS*jitter->tick_size)
+   if (arrival_margin >= -jitter->late_cutoff)
    {
       /* Here we compute the histogram based on the time of arrival of the packet.
          This is based on a (first-order) recursive average. We keep both a short-term
@@ -209,15 +211,14 @@ void jitter_buffer_put(JitterBuffer *jitter, const JitterBufferPacket *packet)
          jitter->longterm_margin[i] *= .995;
       }
       /* What histogram bin the packet should be counted in */
-      int_margin = LATE_BINS + arrival_margin/jitter->tick_size;
+      int_margin = LATE_BINS + arrival_margin;
       if (int_margin>MAX_MARGIN-1)
          int_margin = MAX_MARGIN-1;
+      if (int_margin<0)
+         int_margin = 0;
       /* Add the packet to the right bin */
-      if (int_margin>=0)
-      {
-         jitter->shortterm_margin[int_margin] += .02;
-         jitter->longterm_margin[int_margin] += .005;
-      }
+      jitter->shortterm_margin[int_margin] += .02;
+      jitter->longterm_margin[int_margin] += .005;
    } else {
       /* Packet has arrived *way* too late, we pretty much consider it lost and not take it into account in the histogram */
       /*fprintf (stderr, "way too late = %d\n", arrival_margin);*/
