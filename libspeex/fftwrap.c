@@ -137,7 +137,6 @@ void spx_ifft(void *table, float *in, float *out)
 struct kiss_config {
    kiss_fftr_cfg forward;
    kiss_fftr_cfg backward;
-   kiss_fft_cpx *freq_data;
    int N;
 };
 
@@ -145,7 +144,6 @@ void *spx_fft_init(int size)
 {
    struct kiss_config *table;
    table = (struct kiss_config*)speex_alloc(sizeof(struct kiss_config));
-   table->freq_data = (kiss_fft_cpx*)speex_alloc(sizeof(kiss_fft_cpx)*((size>>1)+1));
    table->forward = kiss_fftr_alloc(size,0,NULL,NULL);
    table->backward = kiss_fftr_alloc(size,1,NULL,NULL);
    table->N = size;
@@ -157,7 +155,6 @@ void spx_fft_destroy(void *table)
    struct kiss_config *t = (struct kiss_config *)table;
    kiss_fftr_free(t->forward);
    kiss_fftr_free(t->backward);
-   speex_free(t->freq_data);
    speex_free(table);
 }
 
