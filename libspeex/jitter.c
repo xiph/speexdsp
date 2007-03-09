@@ -261,7 +261,7 @@ int jitter_buffer_get(JitterBuffer *jitter, JitterBufferPacket *packet, spx_uint
          *start_offset = 0;
       packet->timestamp = jitter->pointer_timestamp;
       packet->span = jitter->tick_size;
-      jitter->pointer_timestamp += chunk_size;
+      jitter->pointer_timestamp += jitter->tick_size;
       packet->len = 0;
       return JITTER_BUFFER_MISSING;
    }
