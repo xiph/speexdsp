@@ -89,6 +89,9 @@ struct kiss_fft_state{
 #define C_MUL(m,a,b) \
     do{ (m).r = (a).r*(b).r - (a).i*(b).i;\
         (m).i = (a).r*(b).i + (a).i*(b).r; }while(0)
+
+#define C_MUL4(m,a,b) C_MUL(m,a,b)
+
 #   define C_FIXDIV(c,div) /* NOOP */
 #   define C_MULBYSCALAR( c, s ) \
     do{ (c).r *= (s);\
