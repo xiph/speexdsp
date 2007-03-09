@@ -197,7 +197,7 @@ struct QualityMapping {
       by the sinusoids/noise just below the Nyquist rate (guaranteed only for
       up-sampling).
 */
-const struct QualityMapping quality_map[11] = {
+static const struct QualityMapping quality_map[11] = {
    {  8,  4, 0.830f, 0.860f, KAISER6 }, /* Q0 */
    { 16,  4, 0.850f, 0.880f, KAISER6 }, /* Q1 */
    { 32,  4, 0.882f, 0.910f, KAISER6 }, /* Q2 */  /* 82.3% cutoff ( ~60 dB stop) 6  */
