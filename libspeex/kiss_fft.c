@@ -24,20 +24,6 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
  fixed or floating point complex numbers.  It also delares the kf_ internal functions.
  */
 
-static kiss_fft_cpx *scratchbuf=NULL;
-static size_t nscratchbuf=0;
-static kiss_fft_cpx *tmpbuf=NULL;
-static size_t ntmpbuf=0;
-
-#define CHECKBUF(buf,nbuf,n) \
-    do { \
-        if ( nbuf < (size_t)(n) ) {\
-            speex_free(buf); \
-            buf = (kiss_fft_cpx*)KISS_FFT_MALLOC(sizeof(kiss_fft_cpx)*(n)); \
-            nbuf = (size_t)(n); \
-        } \
-   }while(0)
-        
 static void kf_bfly2(
         kiss_fft_cpx * Fout,
         const size_t fstride,
@@ -263,10 +249,13 @@ static void kf_bfly_generic(
     int u,k,q1,q;
     kiss_fft_cpx * twiddles = st->twiddles;
     kiss_fft_cpx t;
+    kiss_fft_cpx scratchbuf[17];
     int Norig = st->nfft;
 
-    CHECKBUF(scratchbuf,nscratchbuf,p);
-
+    /*CHECKBUF(scratchbuf,nscratchbuf,p);*/
+    if (p>17)
+       speex_error("KissFFT: max radix supported is 17");
+    
     for ( u=0; u<m; ++u ) {
         k=u;
         for ( q1=0 ; q1<p ; ++q1 ) {
@@ -405,12 +394,14 @@ kiss_fft_cfg kiss_fft_alloc(int nfft,int inverse_fft,void * mem,size_t * lenmem 
     
 void kiss_fft_stride(kiss_fft_cfg st,const kiss_fft_cpx *fin,kiss_fft_cpx *fout,int in_stride)
 {
-    if (fin == fout) {
-        CHECKBUF(tmpbuf,ntmpbuf,st->nfft);
-        kf_work(tmpbuf,fin,1,in_stride, st->factors,st);
-        speex_move(fout,tmpbuf,sizeof(kiss_fft_cpx)*st->nfft);
-    }else{
-        kf_work( fout, fin, 1,in_stride, st->factors,st );
+    if (fin == fout) 
+    {
+       speex_error("In-place FFT not supported");
+       /*CHECKBUF(tmpbuf,ntmpbuf,st->nfft);
+       kf_work(tmpbuf,fin,1,in_stride, st->factors,st);
+       speex_move(fout,tmpbuf,sizeof(kiss_fft_cpx)*st->nfft);*/
+    } else {
+       kf_work( fout, fin, 1,in_stride, st->factors,st );
     }
 }
 
@@ -419,16 +410,3 @@ void kiss_fft(kiss_fft_cfg cfg,const kiss_fft_cpx *fin,kiss_fft_cpx *fout)
     kiss_fft_stride(cfg,fin,fout,1);
 }
 
-
-/* not really necessary to call, but if someone is doing in-place ffts, they may want to free the 
-   buffers from CHECKBUF
- */ 
-void kiss_fft_cleanup(void)
-{
-    speex_free(scratchbuf);
-    scratchbuf = NULL;
-    nscratchbuf=0;
-    speex_free(tmpbuf);
-    tmpbuf=NULL;
-    ntmpbuf=0;
-}
