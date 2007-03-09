@@ -70,7 +70,7 @@ static void kf_bfly4(
 
     tw3 = tw2 = tw1 = st->twiddles;
 
-    if (!st->inverse) {
+    /*if (!st->inverse) {
        int i;
        kiss_fft_cpx *x=Fout;
        for (i=0;i<4*m;i++)
@@ -78,7 +78,7 @@ static void kf_bfly4(
           x[i].r = PSHR16(x[i].r,2);
           x[i].i = PSHR16(x[i].i,2);
        }
-    }
+    }*/
     if (st->inverse)
     {
        do {
@@ -105,14 +105,18 @@ static void kf_bfly4(
     } else
     {
        do {
-          C_MUL(scratch[0],Fout[m] , *tw1 );
-          C_MUL(scratch[1],Fout[m2] , *tw2 );
-          C_MUL(scratch[2],Fout[m3] , *tw3 );
+          C_MUL4(scratch[0],Fout[m] , *tw1 );
+          C_MUL4(scratch[1],Fout[m2] , *tw2 );
+          C_MUL4(scratch[2],Fout[m3] , *tw3 );
           
+          Fout->r = PSHR16(Fout->r, 2);
+          Fout->i = PSHR16(Fout->i, 2);
           C_SUB( scratch[5] , *Fout, scratch[1] );
           C_ADDTO(*Fout, scratch[1]);
           C_ADD( scratch[3] , scratch[0] , scratch[2] );
           C_SUB( scratch[4] , scratch[0] , scratch[2] );
+          Fout[m2].r = PSHR16(Fout[m2].r, 2);
+          Fout[m2].i = PSHR16(Fout[m2].i, 2);
           C_SUB( Fout[m2], *Fout, scratch[3] );
           tw1 += fstride;
           tw2 += fstride*2;
