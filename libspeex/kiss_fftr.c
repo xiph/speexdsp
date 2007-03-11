@@ -242,10 +242,18 @@ void kiss_fftr2(kiss_fftr_cfg st,const kiss_fft_scalar *timedata,kiss_fft_scalar
       twr = SHR32(SUB32(MULT16_16(f2k.r,st->super_twiddles[k].r),MULT16_16(f2k.i,st->super_twiddles[k].i)), 1);
       twi = SHR32(ADD32(MULT16_16(f2k.i,st->super_twiddles[k].r),MULT16_16(f2k.r,st->super_twiddles[k].i)), 1);
       
+#ifdef FIXED_POINT
       freqdata[2*k-1] = PSHR32(f1kr + twr, 15);
       freqdata[2*k] = PSHR32(f1ki + twi, 15);
       freqdata[2*(ncfft-k)-1] = PSHR32(f1kr - twr, 15);
       freqdata[2*(ncfft-k)] = PSHR32(twi - f1ki, 15);
+#else
+      freqdata[2*k-1] = .5f*(f1kr + twr);
+      freqdata[2*k] = .5f*(f1ki + twi);
+      freqdata[2*(ncfft-k)-1] = .5f*(f1kr - twr);
+      freqdata[2*(ncfft-k)] = .5f*(twi - f1ki);
+      
+#endif
    }
 }
 
