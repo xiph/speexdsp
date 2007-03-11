@@ -1,5 +1,6 @@
 /*
 Copyright (c) 2003-2004, Mark Borgerding
+Copyright (c) 2005-2007, Jean-Marc Valin
 
 All rights reserved.
 
@@ -38,12 +39,6 @@ static void kf_bfly2(
     kiss_fft_cpx t;
     if (!st->inverse) {
        int i,j;
-       kiss_fft_cpx *x=Fout;
-       for (i=0;i<2*m*N;i++)
-       {
-          x[i].r = SHR16(x[i].r,1);
-          x[i].i = SHR16(x[i].i,1);
-       }
        kiss_fft_cpx * Fout_beg = Fout;
        for (i=0;i<N;i++)
        {
@@ -52,10 +47,16 @@ static void kf_bfly2(
           tw1 = st->twiddles;
           for(j=0;j<m;j++)
           {
-             C_MUL (t,  *Fout2 , *tw1);
+             /* Almost the same as the code path below, except that we divide the input by two
+              (while keeping the best accuracy possible) */
+             spx_word32_t tr, ti;
+             tr = SHR32(SUB32(MULT16_16(Fout2->r , tw1->r),MULT16_16(Fout2->i , tw1->i)), 1);
+             ti = SHR32(ADD32(MULT16_16(Fout2->i , tw1->r),MULT16_16(Fout2->r , tw1->i)), 1);
              tw1 += fstride;
-             C_SUB( *Fout2 ,  *Fout , t );
-             C_ADDTO( *Fout ,  t );
+             Fout2->r = PSHR32(SUB32(SHL32(EXTEND32(Fout->r), 14), tr), 15);
+             Fout2->i = PSHR32(SUB32(SHL32(EXTEND32(Fout->i), 14), ti), 15);
+             Fout->r = PSHR32(ADD32(SHL32(EXTEND32(Fout->r), 14), tr), 15);
+             Fout->i = PSHR32(ADD32(SHL32(EXTEND32(Fout->i), 14), ti), 15);
              ++Fout2;
              ++Fout;
           }
