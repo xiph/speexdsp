@@ -315,7 +315,6 @@ static void kf_bfly_generic(
         }
     }
 }
-#include <stdio.h>
                
 static
 void kf_shuffle(
