@@ -162,7 +162,6 @@ void spx_fft_destroy(void *table)
 
 void spx_fft(void *table, spx_word16_t *in, spx_word16_t *out)
 {
-   int i;
    int shift;
    struct kiss_config *t = (struct kiss_config *)table;
    shift = maximize_range(in, in, 32000, t->N);
@@ -187,7 +186,6 @@ void spx_fft(void *table, spx_word16_t *in, spx_word16_t *out)
 
 void spx_ifft(void *table, spx_word16_t *in, spx_word16_t *out)
 {
-   int i;
    struct kiss_config *t = (struct kiss_config *)table;
    kiss_fftri2(t->backward, in, out);
 }

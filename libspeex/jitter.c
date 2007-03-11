@@ -244,7 +244,8 @@ void jitter_buffer_put(JitterBuffer *jitter, const JitterBufferPacket *packet)
 /** Get one packet from the jitter buffer */
 int jitter_buffer_get(JitterBuffer *jitter, JitterBufferPacket *packet, spx_uint32_t *start_offset)
 {
-   int i, j;
+   int i;
+   unsigned int j;
    float late_ratio_short;
    float late_ratio_long;
    float ontime_ratio_short;
@@ -438,7 +439,7 @@ void jitter_buffer_tick(JitterBuffer *jitter)
 /* Let the jitter buffer know it's the right time to adjust the buffering delay to the network conditions */
 int jitter_buffer_update_delay(JitterBuffer *jitter, JitterBufferPacket *packet, spx_uint32_t *start_offset)
 {
-   int i, j;
+   int i;
    float late_ratio_short;
    float late_ratio_long;
    float ontime_ratio_short;
