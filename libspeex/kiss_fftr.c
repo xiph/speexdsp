@@ -173,7 +173,8 @@ void kiss_fftr2(kiss_fftr_cfg st,const kiss_fft_scalar *timedata,kiss_fft_scalar
 {
    /* input buffer timedata is stored row-wise */
    int k,ncfft;
-   kiss_fft_cpx fpnk,fpk,f1k,f2k,tw,tdc;
+   kiss_fft_cpx f2k,tdc;
+   spx_word32_t f1kr, f1ki, twr, twi;
 
    if ( st->substate->inverse) {
       speex_error("kiss fft usage error: improper alloc\n");
@@ -201,8 +202,9 @@ void kiss_fftr2(kiss_fftr_cfg st,const kiss_fft_scalar *timedata,kiss_fft_scalar
    freqdata[0] = tdc.r + tdc.i;
    freqdata[2*ncfft-1] = tdc.r - tdc.i;
 
-   for ( k=1;k <= ncfft/2 ; ++k ) {
-      fpk    = st->tmpbuf[k]; 
+   for ( k=1;k <= ncfft/2 ; ++k )
+   {
+      /*fpk    = st->tmpbuf[k]; 
       fpnk.r =   st->tmpbuf[ncfft-k].r;
       fpnk.i = - st->tmpbuf[ncfft-k].i;
       C_FIXDIV(fpk,2);
@@ -210,12 +212,40 @@ void kiss_fftr2(kiss_fftr_cfg st,const kiss_fft_scalar *timedata,kiss_fft_scalar
 
       C_ADD( f1k, fpk , fpnk );
       C_SUB( f2k, fpk , fpnk );
+      
       C_MUL( tw , f2k , st->super_twiddles[k]);
 
       freqdata[2*k-1] = HALF_OF(f1k.r + tw.r);
       freqdata[2*k] = HALF_OF(f1k.i + tw.i);
       freqdata[2*(ncfft-k)-1] = HALF_OF(f1k.r - tw.r);
       freqdata[2*(ncfft-k)] = HALF_OF(tw.i - f1k.i);
+      */
+
+      /*f1k.r = PSHR32(ADD32(EXTEND32(st->tmpbuf[k].r), EXTEND32(st->tmpbuf[ncfft-k].r)),1);
+      f1k.i = PSHR32(SUB32(EXTEND32(st->tmpbuf[k].i), EXTEND32(st->tmpbuf[ncfft-k].i)),1);
+      f2k.r = PSHR32(SUB32(EXTEND32(st->tmpbuf[k].r), EXTEND32(st->tmpbuf[ncfft-k].r)),1);
+      f2k.i = SHR32(ADD32(EXTEND32(st->tmpbuf[k].i), EXTEND32(st->tmpbuf[ncfft-k].i)),1);
+      
+      C_MUL( tw , f2k , st->super_twiddles[k]);
+
+      freqdata[2*k-1] = HALF_OF(f1k.r + tw.r);
+      freqdata[2*k] = HALF_OF(f1k.i + tw.i);
+      freqdata[2*(ncfft-k)-1] = HALF_OF(f1k.r - tw.r);
+      freqdata[2*(ncfft-k)] = HALF_OF(tw.i - f1k.i);
+   */
+      f2k.r = SHR32(SUB32(EXTEND32(st->tmpbuf[k].r), EXTEND32(st->tmpbuf[ncfft-k].r)),1);
+      f2k.i = PSHR32(ADD32(EXTEND32(st->tmpbuf[k].i), EXTEND32(st->tmpbuf[ncfft-k].i)),1);
+      
+      f1kr = SHL32(ADD32(EXTEND32(st->tmpbuf[k].r), EXTEND32(st->tmpbuf[ncfft-k].r)),13);
+      f1ki = SHL32(SUB32(EXTEND32(st->tmpbuf[k].i), EXTEND32(st->tmpbuf[ncfft-k].i)),13);
+      
+      twr = SHR32(SUB32(MULT16_16(f2k.r,st->super_twiddles[k].r),MULT16_16(f2k.i,st->super_twiddles[k].i)), 1);
+      twi = SHR32(ADD32(MULT16_16(f2k.i,st->super_twiddles[k].r),MULT16_16(f2k.r,st->super_twiddles[k].i)), 1);
+      
+      freqdata[2*k-1] = PSHR32(f1kr + twr, 15);
+      freqdata[2*k] = PSHR32(f1ki + twi, 15);
+      freqdata[2*(ncfft-k)-1] = PSHR32(f1kr - twr, 15);
+      freqdata[2*(ncfft-k)] = PSHR32(twi - f1ki, 15);
    }
 }
 
