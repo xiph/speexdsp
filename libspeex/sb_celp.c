@@ -1006,8 +1006,8 @@ int sb_decode(void *state, SpeexBits *bits, void *vout)
          rh = LPC_SCALING;
          for (i=0;i<st->lpcSize;i+=2)
          {
-            rh += st->interp_qlpc[i+1] - st->interp_qlpc[i];
-            st->pi_gain[sub] += st->interp_qlpc[i] + st->interp_qlpc[i+1];
+            rh += ak[i+1] - ak[i];
+            st->pi_gain[sub] += ak[i] + ak[i+1];
          }
 
          rl = low_pi_gain[sub];

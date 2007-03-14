@@ -1698,7 +1698,7 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
          for (i=0;i<st->lpcSize;i+=2)
          {
             /*pi_g += -st->interp_qlpc[i] +  st->interp_qlpc[i+1];*/
-            pi_g = ADD32(pi_g, SUB32(EXTEND32(st->interp_qlpc[i+1]),EXTEND32(st->interp_qlpc[i])));
+            pi_g = ADD32(pi_g, SUB32(EXTEND32(ak[i+1]),EXTEND32(ak[i])));
          }
          st->pi_gain[sub] = pi_g;
       }
