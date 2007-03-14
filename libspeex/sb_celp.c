@@ -882,6 +882,8 @@ int sb_decode(void *state, SpeexBits *bits, void *vout)
    const SpeexSBMode *mode;
    spx_word16_t *out = (spx_word16_t*)vout;
    spx_word16_t *low_innov_alias;
+   spx_word32_t exc_ener_sum = 0;
+   
    st = (SBDecState*)state;
    stack=st->stack;
    mode = (const SpeexSBMode*)(st->mode->mode);
@@ -1083,9 +1085,9 @@ int sb_decode(void *state, SpeexBits *bits, void *vout)
       for (i=0;i<st->lpcSize;i++)
          st->interp_qlpc[i] = ak[i];
       st->exc_rms[sub] = compute_rms16(st->excBuf, st->subframeSize);
-
+      exc_ener_sum = ADD32(exc_ener_sum, DIV32(MULT16_16(st->exc_rms[sub],st->exc_rms[sub]), st->nbSubframes));
    }
-   st->last_ener = compute_rms16(out+st->frame_size, st->frame_size);
+   st->last_ener = spx_sqrt(exc_ener_sum);
    
    qmf_synth(out, out+st->frame_size, h0, out, st->full_frame_size, QMF_ORDER, st->g0_mem, st->g1_mem, stack);
    for (i=0;i<st->lpcSize;i++)
