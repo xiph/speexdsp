@@ -629,7 +629,11 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
                quant=31;
             speex_bits_pack(bits, quant, 5);
          }
-
+         if (st->innov_rms_save)
+         {
+            st->innov_rms_save[sub] = eh;
+         }
+         st->exc_rms[sub] = eh;
       } else {
          spx_word16_t gc;       /*Q7*/
          spx_word32_t scale;    /*Q14*/
@@ -716,11 +720,11 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
          {
             st->innov_rms_save[sub] = MULT16_16_Q15(QCONST16(.70711f, 15), compute_rms(innov, st->subframeSize));
          }
+         st->exc_rms[sub] = compute_rms16(exc, st->subframeSize);
          
 
       }
 
-      st->exc_rms[sub] = compute_rms16(exc, st->subframeSize);
       
       /*Keep the previous memory*/
       for (i=0;i<st->lpcSize;i++)
