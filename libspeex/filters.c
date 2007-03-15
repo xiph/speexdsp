@@ -62,6 +62,24 @@ void bw_lpc(spx_word16_t gamma, const spx_coef_t *lpc_in, spx_coef_t *lpc_out, i
    }
 }
 
+void sanitize_values32(spx_word32_t *vec, spx_word32_t min_val, spx_word32_t max_val, int len)
+{
+   int i;
+   for (i=0;i<len;i++)
+   {
+      /* It's important we do the test that way so we can catch NaNs, which are neither greater nor smaller */
+      if (!(vec[i]>=min_val && vec[i] <= max_val))
+      {
+         if (vec[i] < min_val)
+            vec[i] = min_val;
+         else if (vec[i] > max_val)
+            vec[i] = max_val;
+         else /* Has to be NaN */
+            vec[i] = 0;
+      }
+   }
+}
+
 void highpass(const spx_word16_t *x, spx_word16_t *y, int len, int filtID, spx_mem_t *mem)
 {
    int i;

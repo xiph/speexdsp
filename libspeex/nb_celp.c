@@ -1526,7 +1526,11 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
 #ifdef EPIC_48K
          }
 #endif
-
+         /* Ensuring that things aren't blowing up as would happen if e.g. an encoder is 
+         crafting packets to make us produce NaNs and slow down the decoder (vague DoS threat).
+         We can probably be even more aggressive and limit to 15000 or so. */
+         sanitize_values32(exc32, NEG32(QCONST32(32000,SIG_SHIFT-1)), QCONST32(32000,SIG_SHIFT-1), st->subframeSize);
+         
          tmp = gain_3tap_to_1tap(pitch_gain);
 
          pitch_average += tmp;
