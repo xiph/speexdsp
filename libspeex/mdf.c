@@ -360,12 +360,36 @@ static inline void mdf_adjust_prop(const spx_word32_t *W, int N, int M, spx_word
    /*printf ("\n");*/
 }
 
+#ifdef DUMP_ECHO_CANCEL_DATA
+#include <stdio.h>
+static FILE *rFile=NULL, *pFile=NULL, *oFile=NULL;
+
+static void dump_audio(const spx_int16_t *rec, const spx_int16_t *play, const spx_int16_t *out, int len)
+{
+   if (!(rFile && pFile && oFile))
+   {
+      speex_error("Dump files not open");
+   }
+   fwrite(rec, sizeof(spx_int16_t), len, rFile);
+   fwrite(play, sizeof(spx_int16_t), len, pFile);
+   fwrite(out, sizeof(spx_int16_t), len, oFile);
+}
+#endif
+
 /** Creates a new echo canceller state */
 SpeexEchoState *speex_echo_state_init(int frame_size, int filter_length)
 {
    int i,N,M;
    SpeexEchoState *st = (SpeexEchoState *)speex_alloc(sizeof(SpeexEchoState));
 
+#ifdef DUMP_ECHO_CANCEL_DATA
+   if (rFile || pFile || oFile)
+      speex_error("Opening dump files twice");
+   rFile = fopen("aec_rec.sw", "w");
+   pFile = fopen("aec_play.sw", "w");
+   oFile = fopen("aec_out.sw", "w");
+#endif
+   
    st->frame_size = frame_size;
    st->window_size = 2*frame_size;
    N = st->window_size;
@@ -553,6 +577,13 @@ void speex_echo_state_destroy(SpeexEchoState *st)
 #endif
    speex_free(st->play_buf);
    speex_free(st);
+   
+#ifdef DUMP_ECHO_CANCEL_DATA
+   fclose(rFile);
+   fclose(pFile);
+   fclose(oFile);
+   rFile = pFile = oFile = NULL;
+#endif
 }
 
 void speex_echo_capture(SpeexEchoState *st, const spx_int16_t *rec, spx_int16_t *out)
@@ -861,7 +892,11 @@ void speex_echo_cancellation(SpeexEchoState *st, const spx_int16_t *in, const sp
       out[i] = (spx_int16_t)tmp_out;
       st->memE = tmp_out;
    }
-
+   
+#ifdef DUMP_ECHO_CANCEL_DATA
+   dump_audio(in, far_end, out, st->frame_size);
+#endif
+   
    /* Compute error signal (filter update version) */ 
    for (i=0;i<st->frame_size;i++)
    {
