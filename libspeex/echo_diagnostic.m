@@ -1,11 +1,18 @@
 % Attempts to diagnose AEC problems from recorded samples
 %
-% out = echo_diagnostic(rec, play, tail_length)
+% out = echo_diagnostic(rec_file, play_file, out_file, tail_length)
 %
 % Computes the full matrix inversion to cancel echo from the 
-% recording 'rec' using the far end signal 'play' using a filter
-% length of 'tail_length'
-function out = echo_diagnostic(rec, play, tail_length)
+% recording 'rec_file' using the far end signal 'play_file' using 
+% a filter length of 'tail_length'. The output is saved to 'out_file'.
+function out = echo_diagnostic(rec_file, play_file, out_file, tail_length)
+
+F=fopen(rec_file,'rb');
+rec=fread(F,Inf,'short');
+fclose (F);
+F=fopen(play_file,'rb');
+play=fread(F,Inf,'short');
+fclose (F);
 
 rec = [rec; zeros(1024,1)];
 play = [play; zeros(1024,1)];
@@ -59,3 +66,7 @@ bb = corr(1:tail_length);
 h = AtA\bb;
 
 out = (rec - filter(h, 1, play));
+
+F=fopen(out_file,'w');
+fwrite(F,out,'short');
+fclose (F);
