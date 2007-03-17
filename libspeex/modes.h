@@ -60,6 +60,9 @@
 /** Used internally*/
 #define SPEEX_SET_WIDEBAND   105
 
+/** Used internally*/
+#define SPEEX_GET_STACK   106
+
 
 /** Quantizes LSPs */
 typedef void (*lsp_quant_func)(spx_lsp_t *, spx_lsp_t *, int, SpeexBits *);

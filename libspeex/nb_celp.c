@@ -1928,6 +1928,9 @@ int nb_encoder_ctl(void *state, int request, void *ptr)
    case SPEEX_SET_WIDEBAND:
       st->isWideband = *((spx_int32_t*)ptr);
       break;
+   case SPEEX_GET_STACK:
+      *((char**)ptr) = st->stack;
+      break;
    default:
       speex_warning_int("Unknown nb_ctl request: ", request);
       return -1;
@@ -2034,6 +2037,9 @@ int nb_decoder_ctl(void *state, int request, void *ptr)
       break;
    case SPEEX_SET_WIDEBAND:
       st->isWideband = *((spx_int32_t*)ptr);
+      break;
+   case SPEEX_GET_STACK:
+      *((char**)ptr) = st->stack;
       break;
    default:
       speex_warning_int("Unknown nb_ctl request: ", request);

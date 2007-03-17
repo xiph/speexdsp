@@ -192,16 +192,18 @@ void *sb_encoder_init(const SpeexMode *m)
    st = (SBEncState*)speex_alloc(sizeof(SBEncState));
    if (!st)
       return NULL;
-#if defined(VAR_ARRAYS) || defined (USE_ALLOCA)
-   st->stack = NULL;
-#else
-   st->stack = (char*)speex_alloc_scratch(SB_ENC_STACK);
-#endif
    st->mode = m;
    mode = (const SpeexSBMode*)m->mode;
 
 
    st->st_low = speex_encoder_init(mode->nb_mode);
+#if defined(VAR_ARRAYS) || defined (USE_ALLOCA)
+   st->stack = NULL;
+#else
+   /*st->stack = (char*)speex_alloc_scratch(SB_ENC_STACK);*/
+   speex_encoder_ctl(st->st_low, SPEEX_GET_STACK, &st->stack);
+#endif
+
    st->full_frame_size = 2*mode->frameSize;
    st->frame_size = mode->frameSize;
    st->subframeSize = mode->subframeSize;
@@ -275,7 +277,7 @@ void sb_encoder_destroy(void *state)
 
    speex_encoder_destroy(st->st_low);
 #if !(defined(VAR_ARRAYS) || defined (USE_ALLOCA))
-   speex_free_scratch(st->stack);
+   /*speex_free_scratch(st->stack);*/
 #endif
 
    speex_free(st->high);
@@ -758,20 +760,18 @@ void *sb_decoder_init(const SpeexMode *m)
    st = (SBDecState*)speex_alloc(sizeof(SBDecState));
    if (!st)
       return NULL;
+   st->mode = m;
+   mode=(const SpeexSBMode*)m->mode;
+   st->encode_submode = 1;
+
+   st->st_low = speex_decoder_init(mode->nb_mode);
 #if defined(VAR_ARRAYS) || defined (USE_ALLOCA)
    st->stack = NULL;
 #else
-   st->stack = (char*)speex_alloc_scratch(SB_DEC_STACK);
+   /*st->stack = (char*)speex_alloc_scratch(SB_DEC_STACK);*/
+   speex_decoder_ctl(st->st_low, SPEEX_GET_STACK, &st->stack);
 #endif
-   st->mode = m;
-   mode=(const SpeexSBMode*)m->mode;
 
-   st->encode_submode = 1;
-
-
-
-
-   st->st_low = speex_decoder_init(mode->nb_mode);
    st->full_frame_size = 2*mode->frameSize;
    st->frame_size = mode->frameSize;
    st->subframeSize = mode->subframeSize;
@@ -817,7 +817,7 @@ void sb_decoder_destroy(void *state)
    st = (SBDecState*)state;
    speex_decoder_destroy(st->st_low);
 #if !(defined(VAR_ARRAYS) || defined (USE_ALLOCA))
-   speex_free_scratch(st->stack);
+   /*speex_free_scratch(st->stack);*/
 #endif
 
    speex_free(st->g0_mem);
@@ -1341,7 +1341,9 @@ int sb_encoder_ctl(void *state, int request, void *ptr)
    case SPEEX_SET_WIDEBAND:
       speex_encoder_ctl(st->st_low, SPEEX_SET_WIDEBAND, ptr);
       break;
-
+   case SPEEX_GET_STACK:
+      *((char**)ptr) = st->stack;
+      break;
    default:
       speex_warning_int("Unknown nb_ctl request: ", request);
       return -1;
@@ -1464,7 +1466,9 @@ int sb_decoder_ctl(void *state, int request, void *ptr)
    case SPEEX_SET_WIDEBAND:
       speex_decoder_ctl(st->st_low, SPEEX_SET_WIDEBAND, ptr);
       break;
-
+   case SPEEX_GET_STACK:
+      *((char**)ptr) = st->stack;
+      break;
    default:
       speex_warning_int("Unknown nb_ctl request: ", request);
       return -1;
