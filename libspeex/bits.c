@@ -97,7 +97,7 @@ void speex_bits_read_from(SpeexBits *bits, char *chars, int len)
    int nchars = len / BYTES_PER_CHAR;
    if (nchars > bits->buf_size)
    {
-      speex_warning_int("Packet is larger than allocated buffer: ", len);
+      speex_notify("Packet is larger than allocated buffer");
       if (bits->owner)
       {
          char *tmp = (char*)speex_realloc(bits->chars, nchars);
@@ -110,7 +110,7 @@ void speex_bits_read_from(SpeexBits *bits, char *chars, int len)
             speex_warning("Could not resize input buffer: truncating input");
          }
       } else {
-         speex_warning("Do not own input buffer: truncating input");
+         speex_warning("Do not own input buffer: truncating oversize input");
          nchars=bits->buf_size;
       }
    }
@@ -159,10 +159,10 @@ void speex_bits_read_whole_bytes(SpeexBits *bits, char *chars, int nbytes)
             bits->chars=tmp;
          } else {
             nchars=bits->buf_size-(bits->nbBits>>LOG2_BITS_PER_CHAR)-1;
-            speex_warning("Could not resize input buffer: truncating input");
+            speex_warning("Could not resize input buffer: truncating oversize input");
          }
       } else {
-         speex_warning("Do not own input buffer: truncating input");
+         speex_warning("Do not own input buffer: truncating oversize input");
          nchars=bits->buf_size;
       }
    }
@@ -223,7 +223,7 @@ void speex_bits_pack(SpeexBits *bits, int data, int nbBits)
 
    if (bits->charPtr+((nbBits+bits->bitPtr)>>LOG2_BITS_PER_CHAR) >= bits->buf_size)
    {
-      speex_warning("Buffer too small to pack bits");
+      speex_notify("Buffer too small to pack bits");
       if (bits->owner)
       {
          int new_nchars = ((bits->buf_size+5)*3)>>1;

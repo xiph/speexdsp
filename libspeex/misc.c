@@ -132,7 +132,7 @@ void *speex_move (void *dest, void *src, int n)
 #ifndef OVERRIDE_SPEEX_ERROR
 void speex_error(const char *str)
 {
-   fprintf (stderr, "Fatal error: %s\n", str);
+   fprintf (stderr, "Fatal (internal) error: %s\n", str);
    exit(1);
 }
 #endif
@@ -140,14 +140,27 @@ void speex_error(const char *str)
 #ifndef OVERRIDE_SPEEX_WARNING
 void speex_warning(const char *str)
 {
+#ifndef DISABLE_WARNINGS
    fprintf (stderr, "warning: %s\n", str);
+#endif
 }
 #endif
 
 #ifndef OVERRIDE_SPEEX_WARNING_INT
 void speex_warning_int(const char *str, int val)
 {
+#ifndef DISABLE_WARNINGS
    fprintf (stderr, "warning: %s %d\n", str, val);
+#endif
+}
+#endif
+
+#ifndef OVERRIDE_SPEEX_NOTIFY
+void speex_notify(const char *str)
+{
+#ifndef DISABLE_NOTIFICATIONS
+   fprintf (stderr, "notification: %s\n", str);
+#endif
 }
 #endif
 

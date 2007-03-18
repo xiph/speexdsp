@@ -98,14 +98,17 @@ void speex_free_scratch (void *ptr);
 /** Speex wrapper for mem_move */
 void *speex_move (void *dest, void *src, int n);
 
-/** Print error message to stderr */
+/** Abort with an error message to stderr (internal Speex error) */
 void speex_error(const char *str);
 
-/** Print warning message to stderr */
+/** Print warning message to stderr (programming error) */
 void speex_warning(const char *str);
 
 /** Print warning message with integer argument to stderr */
 void speex_warning_int(const char *str, int val);
+
+/** Print notification message to stderr */
+void speex_notify(const char *str);
 
 /** Generate a random number */
 spx_word16_t speex_rand(spx_word16_t std, spx_int32_t *seed);

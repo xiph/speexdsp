@@ -1257,7 +1257,7 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
             speex_mode_query(&speex_wb_mode, SPEEX_SUBMODE_BITS_PER_FRAME, &advance);
             if (advance < 0)
             {
-               speex_warning ("Invalid wideband mode encountered. Corrupted stream?");
+               speex_notify("Invalid mode encountered. The stream is corrupted.");
                return -2;
             } 
             advance -= (SB_SUBMODE_BITS+1);
@@ -1272,7 +1272,7 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
                speex_mode_query(&speex_wb_mode, SPEEX_SUBMODE_BITS_PER_FRAME, &advance);
                if (advance < 0)
                {
-                  speex_warning ("Invalid wideband mode encountered: corrupted stream?");
+                  speex_notify("Invalid mode encountered. The stream is corrupted.");
                   return -2;
                } 
                advance -= (SB_SUBMODE_BITS+1);
@@ -1280,7 +1280,7 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
                wideband = speex_bits_unpack_unsigned(bits, 1);
                if (wideband)
                {
-                  speex_warning ("More than two wideband layers found: corrupted stream?");
+                  speex_notify("More than two wideband layers found. The stream is corrupted.");
                   return -2;
                }
 
@@ -1305,7 +1305,7 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
                return ret;
          } else if (m>8) /* Invalid mode */
          {
-            speex_warning("Invalid mode encountered: corrupted stream?");
+            speex_notify("Invalid mode encountered. The stream is corrupted.");
             return -2;
          }
       

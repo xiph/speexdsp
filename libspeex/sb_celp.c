@@ -931,7 +931,7 @@ int sb_decode(void *state, SpeexBits *bits, void *vout)
       }
       if (st->submodeID != 0 && st->submodes[st->submodeID] == NULL)
       {
-         speex_warning("Invalid mode encountered: corrupted stream?");
+         speex_notify("Invalid mode encountered. The stream is corrupted.");
          return -2;
       }
    }
