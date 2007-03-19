@@ -229,6 +229,7 @@ struct SpeexPreprocessState_ {
 #ifndef FIXED_POINT
    int    agc_enabled;
    float  agc_level;
+   float  loudness_accum;
    float *loudness_weight;   /**< Perceptual loudness curve */
    float  loudness;          /**< Loudness estimate */
    float  agc_gain;          /**< Current AGC gain */
@@ -509,12 +510,13 @@ SpeexPreprocessState *speex_preprocess_state_init(int frame_size, int sampling_r
          st->loudness_weight[i]=.01f;
       st->loudness_weight[i] *= st->loudness_weight[i];
    }
-   st->loudness = pow(AMP_SCALE*st->agc_level,LOUDNESS_EXP);
+   /*st->loudness = pow(AMP_SCALE*st->agc_level,LOUDNESS_EXP);*/
+   st->loudness = 1e-15;
    st->agc_gain = 1;
    st->nb_loudness_adapt = 0;
-   st->max_gain = 10;
-   st->max_increase_step = exp(0.11513f * 6.*st->frame_size / st->sampling_rate);
-   st->max_decrease_step = exp(-0.11513f * 30.*st->frame_size / st->sampling_rate);
+   st->max_gain = 30;
+   st->max_increase_step = exp(0.11513f * 12.*st->frame_size / st->sampling_rate);
+   st->max_decrease_step = exp(-0.11513f * 40.*st->frame_size / st->sampling_rate);
    st->prev_loudness = 1;
    st->init_max = 1;
 #endif
@@ -578,17 +580,19 @@ static void speex_compute_agc(SpeexPreprocessState *st, spx_word16_t Pframe, spx
    loudness=sqrt(loudness);
       /*if (loudness < 2*pow(st->loudness, 1.0/LOUDNESS_EXP) &&
    loudness*2 > pow(st->loudness, 1.0/LOUDNESS_EXP))*/
-   if (Pframe>.5f)
+   if (Pframe>.3f)
    {
       st->nb_loudness_adapt++;
-      rate=2.0f*Pframe*Pframe/(1+st->nb_loudness_adapt);
+      /*rate=2.0f*Pframe*Pframe/(1+st->nb_loudness_adapt);*/
+      rate = .03*Pframe*Pframe;
       st->loudness = (1-rate)*st->loudness + (rate)*pow(AMP_SCALE*loudness, LOUDNESS_EXP);
+      st->loudness_accum = (1-rate)*st->loudness_accum + rate;
       if (st->init_max < st->max_gain && st->nb_adapt > 20)
-         st->init_max *= 1.f + .05f*Pframe*Pframe;
+         st->init_max *= 1.f + .1f*Pframe*Pframe;
    }
    /*printf ("%f %f %f %f\n", Pframe, loudness, pow(st->loudness, 1.0f/LOUDNESS_EXP), st->loudness2);*/
    
-   target_gain = AMP_SCALE*st->agc_level*pow(st->loudness, -1.0f/LOUDNESS_EXP);
+   target_gain = AMP_SCALE*st->agc_level*pow(st->loudness/(1e-4+st->loudness_accum), -1.0f/LOUDNESS_EXP);
 
    if ((Pframe>.5  && st->nb_adapt > 20) || target_gain < st->agc_gain)
    {
@@ -603,7 +607,7 @@ static void speex_compute_agc(SpeexPreprocessState *st, spx_word16_t Pframe, spx
    
       st->agc_gain = target_gain;
    }
-   /*printf ("%f %f %f\n", loudness, (float)AMP_SCALE_1*pow(st->loudness, 1.0f/LOUDNESS_EXP), st->agc_gain);*/
+   /*fprintf (stderr, "%f %f %f\n", loudness, (float)AMP_SCALE_1*pow(st->loudness, 1.0f/LOUDNESS_EXP), st->agc_gain);*/
       
    for (i=0;i<2*N;i++)
       ft[i] *= st->agc_gain;
