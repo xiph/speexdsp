@@ -78,20 +78,7 @@
 #define spx_int32_t int
 #define spx_uint16_t unsigned short
 #define spx_uint32_t unsigned int
-
-#ifdef FIXED_POINT
-#define spx_word16_t spx_int16_t
-#define spx_word32_t spx_int32_t
-
-#else /* FIXED_POINT */
-
-#define spx_word16_t float
-#define spx_word32_t float
-#define MULT16_16(a,b) ((a)*(b))
-#define MULT16_32_Q15(a,b) ((a)*(b))
-#define PSHR32(a,b) (a)
-#endif /* FIXED_POINT */
-
+      
 #else /* OUTSIDE_SPEEX */
 
 #include "speex/speex_types.h"

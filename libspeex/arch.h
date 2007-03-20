@@ -35,7 +35,9 @@
 #ifndef ARCH_H
 #define ARCH_H
 
+#ifndef OUTSIDE_SPEEX
 #include "speex/speex_types.h"
+#endif
 
 #define ABS(x) ((x) < 0 ? (-(x)) : (x))      /**< Absolute integer value. */
 #define ABS16(x) ((x) < 0 ? (-(x)) : (x))    /**< Absolute 16-bit value.  */
