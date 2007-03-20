@@ -16,7 +16,7 @@ libspeex_la_SOURCES = nb_celp.c 	sb_celp.c 	lpc.c 	ltp.c 	lsp.c 	quant_lsp.c \
 				exc_10_16_table.c 	exc_20_32_table.c 	hexc_10_32_table.c 	misc.c 	speex_header.c \
 				speex_callbacks.c 	math_approx.c 	stereo.c 	preprocess.c 	smallft.c 	lbr_48k_tables.c \
 				jitter.c 	mdf.c vorbis_psy.c fftwrap.c kiss_fft.c _kiss_fft_guts.h kiss_fft.h \
-	kiss_fftr.c kiss_fftr.h window.c filterbank.c
+	kiss_fftr.c kiss_fftr.h window.c filterbank.c resample.c
 
 noinst_HEADERS = lsp.h 	nb_celp.h 	lpc.h 	lpc_bfin.h 	ltp.h 	quant_lsp.h \
 				cb_search.h 	filters.h 	stack_alloc.h 	vq.h 	vq_sse.h 	vq_arm4.h 	vq_bfin.h \
