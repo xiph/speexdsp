@@ -41,12 +41,12 @@ corr1 = real(ifft(fft(rec(1:N2)).*conj(fft(play(1:N2)))));
 corr2 = real(ifft(fft(rec(N2+1:end)).*conj(fft(play(N2+1:end)))));
 
 [a,b1] = max(corr1);
-if b1 > N/2
-      b1 = b1-N;
+if b1 > N2/2
+      b1 = b1-N2;
 end
 [a,b2] = max(corr2);
-if b2 > N/2
-      b2 = b2-N;
+if b2 > N2/2
+      b2 = b2-N2;
 end
 drift = (b1-b2)/N2;
 printf ('Drift estimate is %f%% (%d samples)\n', 100*drift, b1-b2);
