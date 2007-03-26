@@ -196,7 +196,7 @@ void jitter_buffer_put(JitterBuffer *jitter, const JitterBufferPacket *packet)
    
    /* Adjust the buffer size depending on network conditions.
       The arrival margin is how much in advance (or late) the packet it */
-   arrival_margin = (packet->timestamp - jitter->current_timestamp)/jitter->tick_size - jitter->buffer_margin;
+   arrival_margin = (((spx_int32_t)packet->timestamp) - ((spx_int32_t)jitter->current_timestamp))/jitter->tick_size - jitter->buffer_margin;
    
    if (arrival_margin >= -jitter->late_cutoff)
    {
@@ -242,7 +242,7 @@ void jitter_buffer_put(JitterBuffer *jitter, const JitterBufferPacket *packet)
 }
 
 /** Get one packet from the jitter buffer */
-int jitter_buffer_get(JitterBuffer *jitter, JitterBufferPacket *packet, spx_uint32_t *start_offset)
+int jitter_buffer_get(JitterBuffer *jitter, JitterBufferPacket *packet, spx_int32_t *start_offset)
 {
    int i;
    unsigned int j;
@@ -377,7 +377,7 @@ int jitter_buffer_get(JitterBuffer *jitter, JitterBufferPacket *packet, spx_uint
       jitter->buf[i] = NULL;
       /* Set timestamp and span (if requested) */
       if (start_offset)
-         *start_offset = jitter->timestamp[i]-jitter->pointer_timestamp;
+         *start_offset = (spx_int32_t)jitter->timestamp[i]-(spx_int32_t)jitter->pointer_timestamp;
       packet->timestamp = jitter->timestamp[i];
       packet->span = jitter->span[i];
       /* Point at the end of the current packet */
@@ -437,7 +437,7 @@ void jitter_buffer_tick(JitterBuffer *jitter)
 }
 
 /* Let the jitter buffer know it's the right time to adjust the buffering delay to the network conditions */
-int jitter_buffer_update_delay(JitterBuffer *jitter, JitterBufferPacket *packet, spx_uint32_t *start_offset)
+int jitter_buffer_update_delay(JitterBuffer *jitter, JitterBufferPacket *packet, spx_int32_t *start_offset)
 {
    int i;
    float late_ratio_short;

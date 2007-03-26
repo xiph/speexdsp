@@ -121,7 +121,7 @@ void jitter_buffer_put(JitterBuffer *jitter, const JitterBufferPacket *packet);
  * @param packet Returned packet
  * @param current_timestamp Timestamp for the returned packet 
 */
-int jitter_buffer_get(JitterBuffer *jitter, JitterBufferPacket *packet, spx_uint32_t *current_timestamp);
+int jitter_buffer_get(JitterBuffer *jitter, JitterBufferPacket *packet, spx_int32_t *start_offset);
 
 /** Get pointer timestamp of jitter buffer
  * 
@@ -144,7 +144,7 @@ void jitter_buffer_tick(JitterBuffer *jitter);
 */
 int jitter_buffer_ctl(JitterBuffer *jitter, int request, void *ptr);
 
-int jitter_buffer_update_delay(JitterBuffer *jitter, JitterBufferPacket *packet, spx_uint32_t *start_offset);
+int jitter_buffer_update_delay(JitterBuffer *jitter, JitterBufferPacket *packet, spx_int32_t *start_offset);
 
 /* @} */
 
