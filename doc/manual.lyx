@@ -131,81 +131,6 @@ All this led us to the choice of CELP
 \end_layout
 
 \begin_layout Standard
-The main characteristics can be summarized as follows:
-\end_layout
-
-\begin_layout Itemize
-Free software/open-source
-\begin_inset LatexCommand \index{open-source}
-
-\end_inset
-
-, patent
-\begin_inset LatexCommand \index{patent}
-
-\end_inset
-
- and royalty-free
-\end_layout
-
-\begin_layout Itemize
-Integration of narrowband
-\begin_inset LatexCommand \index{narrowband}
-
-\end_inset
-
- and wideband
-\begin_inset LatexCommand \index{wideband}
-
-\end_inset
-
- using an embedded bit-stream
-\end_layout
-
-\begin_layout Itemize
-Wide range of bit-rates available (from 2 kbps to 44 kbps)
-\end_layout
-
-\begin_layout Itemize
-Dynamic bit-rate switching and Variable Bit-Rate
-\begin_inset LatexCommand \index{variable bit-rate}
-
-\end_inset
-
- (VBR)
-\end_layout
-
-\begin_layout Itemize
-Voice Activity Detection
-\begin_inset LatexCommand \index{voice activity detection}
-
-\end_inset
-
- (VAD, integrated with VBR)
-\end_layout
-
-\begin_layout Itemize
-Variable complexity
-\begin_inset LatexCommand \index{complexity}
-
-\end_inset
-
-
-\end_layout
-
-\begin_layout Itemize
-Ultra-wideband mode at 32 kHz (up to 48 kHz)
-\end_layout
-
-\begin_layout Itemize
-Intensity stereo encoding option
-\end_layout
-
-\begin_layout Itemize
-Fixed-point implementation (work in progress)
-\end_layout
-
-\begin_layout Standard
 This document is divided in the following way.
  Section 
 \begin_inset LatexCommand \ref{sec:Feature-description}
@@ -277,9 +202,9 @@ Concepts
 \end_layout
 
 \begin_layout Standard
-Here are some concepts in speech coding that help better understand the
- rest of the manual.
- Emphasis is placed on the Speex features.
+Before introducing all the Speex features, here are some concepts in speech
+ coding that help better understand the rest of the manual.
+ Emphasis is placed on Speex.
 \end_layout
 
 \begin_layout Subsection*
@@ -292,7 +217,7 @@ Sampling rate
 \end_layout
 
 \begin_layout Standard
-Speex is mainly designed for 3 different sampling rates: 8 kHz, 16 kHz,
+Speex is mainly designed for three different sampling rates: 8 kHz, 16 kHz,
  and 32 kHz.
  These are respectively refered to as narrowband
 \begin_inset LatexCommand \index{narrowband}
@@ -529,6 +454,85 @@ look-ahead
 Codec
 \end_layout
 
+\begin_layout Standard
+The main characteristics of Speex can be summarized as follows:
+\end_layout
+
+\begin_layout Itemize
+Free software/open-source
+\begin_inset LatexCommand \index{open-source}
+
+\end_inset
+
+, patent
+\begin_inset LatexCommand \index{patent}
+
+\end_inset
+
+ and royalty-free
+\end_layout
+
+\begin_layout Itemize
+Integration of narrowband
+\begin_inset LatexCommand \index{narrowband}
+
+\end_inset
+
+ and wideband
+\begin_inset LatexCommand \index{wideband}
+
+\end_inset
+
+ using an embedded bit-stream
+\end_layout
+
+\begin_layout Itemize
+Wide range of bit-rates available (from 2.15 kbps to 44 kbps)
+\end_layout
+
+\begin_layout Itemize
+Dynamic bit-rate switching (AMR) and Variable Bit-Rate
+\begin_inset LatexCommand \index{variable bit-rate}
+
+\end_inset
+
+ (VBR) operation
+\end_layout
+
+\begin_layout Itemize
+Voice Activity Detection
+\begin_inset LatexCommand \index{voice activity detection}
+
+\end_inset
+
+ (VAD, integrated with VBR) and discontinuous transmission (DTX)
+\end_layout
+
+\begin_layout Itemize
+Variable complexity
+\begin_inset LatexCommand \index{complexity}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+Embedded wideband structure (scalable sampling rate)
+\end_layout
+
+\begin_layout Itemize
+Ultra-wideband mode at 32 kHz
+\end_layout
+
+\begin_layout Itemize
+Intensity stereo encoding option
+\end_layout
+
+\begin_layout Itemize
+Fixed-point implementation (work in progress)
+\end_layout
+
 \begin_layout Section
 Preprocessor
 \end_layout
@@ -587,8 +591,67 @@ The voice activity detector (VAD) provided by the preprocessor is more advanced
 Adaptive Jitter Buffer
 \end_layout
 
+\begin_layout Standard
+When transmitting voice (or any content for that matter) over UDP or RTP,
+ packet may be lost, arrive with different delay, or even out of order.
+ The purpose of a jitter buffer is to reorder packets and buffer them long
+ enough (but no longer than necessary) so they can be sent to be decoded.
+ 
+\end_layout
+
 \begin_layout Section
 Acoustic Echo Canceller
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Standard
+\begin_inset ERT
+status collapsed
+
+\begin_layout Standard
+
+
+\backslash
+begin{center}
+\end_layout
+
+\end_inset
+
+
+\begin_inset Graphics
+	filename echo_path.eps
+	width 10cm
+
+\end_inset
+
+
+\begin_inset ERT
+status collapsed
+
+\begin_layout Standard
+
+
+\backslash
+end{center}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Caption
+Acoustic echo model
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
