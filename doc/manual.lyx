@@ -1,4 +1,4 @@
-#LyX 1.4.3 created this file. For more info see http://www.lyx.org/
+#LyX 1.4.4 created this file. For more info see http://www.lyx.org/
 \lyxformat 245
 \begin_document
 \begin_header
@@ -1729,6 +1729,31 @@ http://www.embeddedstar.com/articles/2003/7/article20030720-1.html
  same.
 \end_layout
 
+\begin_layout Standard
+As of version 1.2beta2, a new 
+\family typewriter
+echo_diagnostic.m
+\family default
+ tool is included in the source distribution.
+ The first step is to define DUMP_ECHO_CANCEL_DATA during the build.
+ This causes the echo canceller to automatically save the near-end, far-end
+ and output signals to files (aec_rec.sw aec_play.sw and aec_out.sw).
+ These are exactly what the AEC receives and outputs.
+ From there, it is necessary to start Octave and type:
+\end_layout
+
+\begin_layout LyX-Code
+echo_diagnostic('aec_rec.sw', 'aec_play.sw', 'aec_diagnostic.sw', 1024);
+\end_layout
+
+\begin_layout Standard
+The value of 1024 is the filter length and can be changed.
+ There will be some (hopefully) useful messages printed and echo cancelled
+ audio will be saved to aec_diagnostic.sw .
+ If even that output is bad (almost no cancellation) then there is  probably
+ problem with the playback or recording process.
+\end_layout
+
 \begin_layout Section
 Codec Options (speex_*_ctl)
 \begin_inset LatexCommand \label{sub:Codec-Options}
@@ -1736,6 +1761,20 @@ Codec Options (speex_*_ctl)
 \end_inset
 
 
+\end_layout
+
+\begin_layout Quote
+\align center
+
+\emph on
+Entities should not be multiplied beyond necessity -- William of Ockham.
+\end_layout
+
+\begin_layout Quote
+\align center
+
+\emph on
+Just because there's an option doesn't mean you have to use it -- me.
 \end_layout
 
 \begin_layout Standard
@@ -1749,6 +1788,13 @@ speex_encoder_ctl
 speex_decoder_ctl
 \emph default
  functions.
+ Despite that, the defaults are good for many applications and 
+\series bold
+optional settings should only be used when one understands them and knows
+ that they are needed
+\series default
+.
+ A common error is to attempt to set many unnecessary settings.
  These functions are similar to the 
 \emph on
 ioctl
@@ -3493,6 +3539,14 @@ Introduction to CELP Coding
 \end_inset
 
 
+\end_layout
+
+\begin_layout Quote
+\align center
+
+\emph on
+Do not meddle in the affairs of poles, for they are subtle and quick to
+ leave the unit circle.
 \end_layout
 
 \begin_layout Standard
