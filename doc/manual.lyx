@@ -604,6 +604,27 @@ Acoustic Echo Canceller
 \end_layout
 
 \begin_layout Standard
+In any hands-free communication system (Fig.
+ 
+\begin_inset LatexCommand \ref{fig:Acoustic-echo-model}
+
+\end_inset
+
+), speech from the remote end is played in the local loudspeaker, propagates
+ in the room and is captured by the microphone.
+ If the audio captured from the microphone is sent directly to the remote
+ end, then the remove user hears an echo of his voice.
+ An acoustic echo canceller is designed to remove the acoustic echo before
+ it is sent to the remote end.
+ It is important to understand that the echo canceller is meant to improve
+ the quality on the 
+\series bold
+remote
+\series default
+ end.
+\end_layout
+
+\begin_layout Standard
 \begin_inset Float figure
 wide false
 sideways false
@@ -647,6 +668,11 @@ end{center}
 
 \begin_layout Caption
 Acoustic echo model
+\begin_inset LatexCommand \label{fig:Acoustic-echo-model}
+
+\end_inset
+
+
 \end_layout
 
 \end_inset
