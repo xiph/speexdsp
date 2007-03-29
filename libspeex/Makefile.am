@@ -2,7 +2,7 @@
 #AUTOMAKE_OPTIONS = no-dependencies
 
 
-EXTRA_DIST=resample.c
+EXTRA_DIST=echo_diagnostic.m
 
 INCLUDES = -I$(top_srcdir)/include -I$(top_builddir)/include -I$(top_builddir) @OGG_CFLAGS@
 
