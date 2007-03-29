@@ -1844,6 +1844,68 @@ The value of 1024 is the filter length and can be changed.
 \end_layout
 
 \begin_layout Section
+Jitter Buffer
+\end_layout
+
+\begin_layout Standard
+There are two jitter buffers.
+ Both can be enabled by including:
+\end_layout
+
+\begin_layout LyX-Code
+#include <speex/speex_jitter.c>
+\end_layout
+
+\begin_layout Subsection
+Generic Jitter Buffer
+\end_layout
+
+\begin_layout Subsection
+Speex Jitter Buffer
+\end_layout
+
+\begin_layout Section
+Resampler
+\end_layout
+
+\begin_layout Standard
+As of version 1.2beta2, Speex includes a resampling modules.
+ To make use of the resampler, it is necessary to include its header file:
+\end_layout
+
+\begin_layout LyX-Code
+#include <speex/speex_resampler.h>
+\end_layout
+
+\begin_layout Standard
+For each stream that is to be resampled, it is necessary to create a resampler
+ state with:
+\end_layout
+
+\begin_layout LyX-Code
+SpeexResamplerState *resampler;
+\end_layout
+
+\begin_layout LyX-Code
+resampler = speex_resampler_init(nb_channels, input_rate, output_rate, quality);
+\end_layout
+
+\begin_layout Standard
+where nb_channels is the number of channels that will be used (either interleave
+d or non-interleaved), input_rate is the sampling rate of the input stream,
+ output_rate is the sampling rate of the output stream and quality is the
+ requested quality setting (0 to 10).
+ The quality parameter is useful for controlling the quality/complexity/latency
+ tradeoff.
+ Using a higher quality setting means less noise/aliasing, a higher complexity
+ and a higher latency.
+ Usually, a quality of 3 is acceptable for most desktop uses and quality
+ 10 is mostly recommended for pro audio work.
+ Quality 0 usually has a decent sound (certainly better than using linear
+ interpolation resampling), but artifacts may be heard.
+\end_layout
+
+\begin_layout Section
 Codec Options (speex_*_ctl)
 \begin_inset LatexCommand \label{sub:Codec-Options}
 
