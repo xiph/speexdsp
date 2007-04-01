@@ -208,12 +208,12 @@ static const struct QualityMapping quality_map[11] = {
    { 32,  4, 0.882f, 0.910f, KAISER6 }, /* Q2 */  /* 82.3% cutoff ( ~60 dB stop) 6  */
    { 48,  8, 0.895f, 0.917f, KAISER8 }, /* Q3 */  /* 84.9% cutoff ( ~80 dB stop) 8  */
    { 64,  8, 0.921f, 0.940f, KAISER8 }, /* Q4 */  /* 88.7% cutoff ( ~80 dB stop) 8  */
-   { 80,  8, 0.922f, 0.940f, KAISER10}, /* Q5 */  /* 89.1% cutoff (~100 dB stop) 10 */
-   { 96,  8, 0.940f, 0.945f, KAISER10}, /* Q6 */  /* 91.5% cutoff (~100 dB stop) 10 */
+   { 80, 16, 0.922f, 0.940f, KAISER10}, /* Q5 */  /* 89.1% cutoff (~100 dB stop) 10 */
+   { 96, 16, 0.940f, 0.945f, KAISER10}, /* Q6 */  /* 91.5% cutoff (~100 dB stop) 10 */
    {128, 16, 0.950f, 0.950f, KAISER10}, /* Q7 */  /* 93.1% cutoff (~100 dB stop) 10 */
    {160, 16, 0.960f, 0.960f, KAISER10}, /* Q8 */  /* 94.5% cutoff (~100 dB stop) 10 */
-   {192, 16, 0.968f, 0.968f, KAISER12}, /* Q9 */  /* 95.5% cutoff (~100 dB stop) 10 */
-   {256, 16, 0.975f, 0.975f, KAISER12}, /* Q10 */ /* 96.6% cutoff (~100 dB stop) 10 */
+   {192, 32, 0.968f, 0.968f, KAISER12}, /* Q9 */  /* 95.5% cutoff (~100 dB stop) 10 */
+   {256, 32, 0.975f, 0.975f, KAISER12}, /* Q10 */ /* 96.6% cutoff (~100 dB stop) 10 */
 };
 /*8,24,40,56,80,104,128,160,200,256,320*/
 static double compute_func(float x, struct FuncDef *func)
@@ -548,6 +548,16 @@ static void update_filter(SpeexResamplerState *st)
       st->filt_len = st->filt_len*st->num_rate / st->den_rate;
       /* Round down to make sure we have a multiple of 4 */
       st->filt_len &= (~0x3);
+      if (2*st->den_rate < st->num_rate)
+         st->oversample >>= 1;
+      if (4*st->den_rate < st->num_rate)
+         st->oversample >>= 1;
+      if (8*st->den_rate < st->num_rate)
+         st->oversample >>= 1;
+      if (16*st->den_rate < st->num_rate)
+         st->oversample >>= 1;
+      if (st->oversample < 1)
+         st->oversample = 1;
    } else {
       /* up-sampling */
       st->cutoff = quality_map[st->quality].upsample_bandwidth;
