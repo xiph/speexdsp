@@ -41,15 +41,15 @@
 
 #define NN 256
 
-int main(int argc, char **argv)
+int main()
 {
-   int i;
+   spx_uint32_t i;
    short *in;
    short *out;
    float *fin, *fout;
    int count = 0;
-   SpeexResamplerState *st = speex_resampler_init(1, 8000, 12000, 10);
-   speex_resampler_set_rate(st, 8000, 15999);
+   SpeexResamplerState *st = speex_resampler_init(1, 8000, 12000, 10, NULL);
+   speex_resampler_set_rate(st, 96000, 44100);
    speex_resampler_skip_zeros(st);
    
    in = malloc(NN*sizeof(short));
@@ -58,8 +58,8 @@ int main(int argc, char **argv)
    fout = malloc(2*NN*sizeof(float));
    while (1)
    {
-      int in_len;
-      int out_len;
+      spx_uint32_t in_len;
+      spx_uint32_t out_len;
       fread(in, sizeof(short), NN, stdin);
       if (feof(stdin))
          break;

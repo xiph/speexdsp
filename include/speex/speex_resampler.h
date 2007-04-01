@@ -94,7 +94,17 @@ extern "C" {
 #define SPEEX_RESAMPLER_QUALITY_DEFAULT 4
 #define SPEEX_RESAMPLER_QUALITY_VOIP 3
 #define SPEEX_RESAMPLER_QUALITY_DESKTOP 5
+
+enum {
+   RESAMPLER_ERR_SUCCESS         = 0,
+   RESAMPLER_ERR_ALLOC_FAILED    = 1,
+   RESAMPLER_ERR_BAD_STATE       = 2,
+   RESAMPLER_ERR_INVALID_ARG     = 3,
+   RESAMPLER_ERR_PTR_OVERLAP     = 4,
    
+   RESAMPLER_ERR_MAX_ERROR
+};
+
 struct SpeexResamplerState_;
 typedef struct SpeexResamplerState_ SpeexResamplerState;
 
@@ -110,7 +120,8 @@ typedef struct SpeexResamplerState_ SpeexResamplerState;
 SpeexResamplerState *speex_resampler_init(spx_uint32_t nb_channels, 
                                           spx_uint32_t in_rate, 
                                           spx_uint32_t out_rate, 
-                                          int quality);
+                                          int quality,
+                                          int *err);
 
 /** Create a new resampler with fractional input/output rates. The sampling 
  * rate ratio is an arbitrary rational number with both the numerator and 
@@ -130,7 +141,8 @@ SpeexResamplerState *speex_resampler_init_frac(spx_uint32_t nb_channels,
                                                spx_uint32_t ratio_den, 
                                                spx_uint32_t in_rate, 
                                                spx_uint32_t out_rate, 
-                                               int quality);
+                                               int quality,
+                                               int *err);
 
 /** Destroy a resampler state.
  * @param st Resampler state
@@ -147,7 +159,7 @@ void speex_resampler_destroy(SpeexResamplerState *st);
  * @param out Output buffer
  * @param out_len Size of the output buffer. Returns the number of samples written
  */
-void speex_resampler_process_float(SpeexResamplerState *st, 
+int speex_resampler_process_float(SpeexResamplerState *st, 
                                    spx_uint32_t channel_index, 
                                    const float *in, 
                                    spx_uint32_t *in_len, 
@@ -164,7 +176,7 @@ void speex_resampler_process_float(SpeexResamplerState *st,
  * @param out Output buffer
  * @param out_len Size of the output buffer. Returns the number of samples written
  */
-void speex_resampler_process_int(SpeexResamplerState *st, 
+int speex_resampler_process_int(SpeexResamplerState *st, 
                                  spx_uint32_t channel_index, 
                                  const spx_int16_t *in, 
                                  spx_uint32_t *in_len, 
@@ -180,7 +192,7 @@ void speex_resampler_process_int(SpeexResamplerState *st,
  * @param out_len Size of the output buffer. Returns the number of samples written.
  * This is all per-channel.
  */
-void speex_resampler_process_interleaved_float(SpeexResamplerState *st, 
+int speex_resampler_process_interleaved_float(SpeexResamplerState *st, 
                                                const float *in, 
                                                spx_uint32_t *in_len, 
                                                float *out, 
@@ -195,7 +207,7 @@ void speex_resampler_process_interleaved_float(SpeexResamplerState *st,
  * @param out_len Size of the output buffer. Returns the number of samples written.
  * This is all per-channel.
  */
-void speex_resampler_process_interleaved_int(SpeexResamplerState *st, 
+int speex_resampler_process_interleaved_int(SpeexResamplerState *st, 
                                              const spx_int16_t *in, 
                                              spx_uint32_t *in_len, 
                                              spx_int16_t *out, 
@@ -206,7 +218,7 @@ void speex_resampler_process_interleaved_int(SpeexResamplerState *st,
  * @param in_rate Input sampling rate (integer number of Hz).
  * @param out_rate Output sampling rate (integer number of Hz).
  */
-void speex_resampler_set_rate(SpeexResamplerState *st, 
+int speex_resampler_set_rate(SpeexResamplerState *st, 
                               spx_uint32_t in_rate, 
                               spx_uint32_t out_rate);
 
@@ -227,7 +239,7 @@ void speex_resampler_get_rate(SpeexResamplerState *st,
  * @param in_rate Input sampling rate rounded to the nearest integer (in Hz).
  * @param out_rate Output sampling rate rounded to the nearest integer (in Hz).
  */
-void speex_resampler_set_rate_frac(SpeexResamplerState *st, 
+int speex_resampler_set_rate_frac(SpeexResamplerState *st, 
                                    spx_uint32_t ratio_num, 
                                    spx_uint32_t ratio_den, 
                                    spx_uint32_t in_rate, 
@@ -248,7 +260,7 @@ void speex_resampler_get_ratio(SpeexResamplerState *st,
  * @param quality Resampling quality between 0 and 10, where 0 has poor 
  * quality and 10 has very high quality.
  */
-void speex_resampler_set_quality(SpeexResamplerState *st, 
+int speex_resampler_set_quality(SpeexResamplerState *st, 
                                  int quality);
 
 /** Get the conversion quality.
@@ -295,12 +307,12 @@ void speex_resample_get_output_stride(SpeexResamplerState *st,
  * is the same for the first frame).
  * @param st Resampler state
  */
-void speex_resampler_skip_zeros(SpeexResamplerState *st);
+int speex_resampler_skip_zeros(SpeexResamplerState *st);
 
 /** Reset a resampler so a new (unrelated) stream can be processed.
  * @param st Resampler state
  */
-void speex_resampler_reset_mem(SpeexResamplerState *st);
+int speex_resampler_reset_mem(SpeexResamplerState *st);
 
 #ifdef __cplusplus
 }
