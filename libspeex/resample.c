@@ -56,9 +56,9 @@ TODO list:
 
 #ifdef OUTSIDE_SPEEX
 #include <stdlib.h>
-void *speex_alloc (int size) {return calloc(size,1);}
-void *speex_realloc (void *ptr, int size) {return realloc(ptr, size);}
-void speex_free (void *ptr) {free(ptr);}
+static void *speex_alloc (int size) {return calloc(size,1);}
+static void *speex_realloc (void *ptr, int size) {return realloc(ptr, size);}
+static void speex_free (void *ptr) {free(ptr);}
 #include "speex_resampler.h"
 #include "arch.h"
 #else /* OUTSIDE_SPEEX */
@@ -1042,3 +1042,21 @@ int speex_resampler_reset_mem(SpeexResamplerState *st)
    return RESAMPLER_ERR_SUCCESS;
 }
 
+const char *speex_resampler_strerror(int err)
+{
+   switch (err)
+   {
+      case RESAMPLER_ERR_SUCCESS:
+         return "Success.";
+      case RESAMPLER_ERR_ALLOC_FAILED:
+         return "Memory allocation failed.";
+      case RESAMPLER_ERR_BAD_STATE:
+         return "Bad resampler state.";
+      case RESAMPLER_ERR_INVALID_ARG:
+         return "Invalid argument.";
+      case RESAMPLER_ERR_PTR_OVERLAP:
+         return "Input and output buffers overlap.";
+      default:
+         return "Unknown error. Bad error code or strange version mismatch.";
+   }
+}

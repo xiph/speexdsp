@@ -69,10 +69,11 @@
 #define speex_resampler_get_quality CAT_PREFIX(RANDOM_PREFIX,_resampler_get_quality)
 #define speex_resampler_set_input_stride CAT_PREFIX(RANDOM_PREFIX,_resampler_set_input_stride)
 #define speex_resampler_get_input_stride CAT_PREFIX(RANDOM_PREFIX,_resampler_get_input_stride)
-#define speex_resample_set_output_stride CAT_PREFIX(RANDOM_PREFIX,_resample_set_output_stride)
-#define speex_resample_get_output_stride CAT_PREFIX(RANDOM_PREFIX,_resample_get_output_stride)
+#define speex_resampler_set_output_stride CAT_PREFIX(RANDOM_PREFIX,_resampler_set_output_stride)
+#define speex_resampler_get_output_stride CAT_PREFIX(RANDOM_PREFIX,_resampler_get_output_stride)
 #define speex_resampler_skip_zeros CAT_PREFIX(RANDOM_PREFIX,_resampler_skip_zeros)
 #define speex_resampler_reset_mem CAT_PREFIX(RANDOM_PREFIX,_resampler_reset_mem)
+#define speex_resampler_strerror CAT_PREFIX(RANDOM_PREFIX,_resampler_strerror)
 
 #define spx_int16_t short
 #define spx_int32_t int
@@ -289,14 +290,14 @@ void speex_resampler_get_input_stride(SpeexResamplerState *st,
  * @param st Resampler state
  * @param stride Output stride
  */
-void speex_resample_set_output_stride(SpeexResamplerState *st, 
+void speex_resampler_set_output_stride(SpeexResamplerState *st, 
                                       spx_uint32_t stride);
 
 /** Get the output stride.
  * @param st Resampler state copied
  * @param stride Output stride
  */
-void speex_resample_get_output_stride(SpeexResamplerState *st, 
+void speex_resampler_get_output_stride(SpeexResamplerState *st, 
                                       spx_uint32_t *stride);
 
 /** Make sure that the first samples to go out of the resamplers don't have 
@@ -313,6 +314,12 @@ int speex_resampler_skip_zeros(SpeexResamplerState *st);
  * @param st Resampler state
  */
 int speex_resampler_reset_mem(SpeexResamplerState *st);
+
+/** Returns the English meaning for an error code
+ * @param err Error code
+ * @return English string
+ */
+const char *speex_resampler_strerror(int err);
 
 #ifdef __cplusplus
 }
