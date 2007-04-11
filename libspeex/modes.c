@@ -721,7 +721,7 @@ int speex_lib_ctl(int request, void *ptr)
 
 SpeexMode *speex_lib_get_mode (int mode)
 {
-  if (mode < 0 || mode > SPEEX_NB_MODES) return NULL;
+  if (mode < 0 || mode >= SPEEX_NB_MODES) return NULL;
 
   return speex_mode_list[mode];
 }
