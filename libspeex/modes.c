@@ -662,7 +662,7 @@ const SpeexMode * speex_lib_get_mode (int mode)
   if (mode == SPEEX_MODEID_NB_48K) return &speex_nb_48k_mode;
 #endif
 
-  if (mode < 0 || mode > SPEEX_NB_MODES) return NULL;
+  if (mode < 0 || mode >= SPEEX_NB_MODES) return NULL;
 
   return speex_mode_list[mode];
 }
