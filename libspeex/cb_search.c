@@ -181,7 +181,7 @@ int   update_target
                t[subvect_size*i+m] = ADD16(t[subvect_size*i+m], res[m]);
 
 #ifdef FIXED_POINT
-         if (sign)
+         if (sign==1)
          {
             for (j=0;j<subvect_size;j++)
                e[subvect_size*i+j]=SHL32(EXTEND32(shape_cb[rind*subvect_size+j]),SIG_SHIFT-5);
