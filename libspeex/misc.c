@@ -63,30 +63,6 @@ long long spx_mips=0;
 #endif
 
 
-spx_uint32_t be_int(spx_uint32_t i)
-{
-   spx_uint32_t ret=i;
-#ifndef WORDS_BIGENDIAN
-   ret =  i>>24;
-   ret += (i>>8)&0x0000ff00;
-   ret += (i<<8)&0x00ff0000;
-   ret += (i<<24);
-#endif
-   return ret;
-}
-
-spx_uint32_t le_int(spx_uint32_t i)
-{
-   spx_uint32_t ret=i;
-#ifdef WORDS_BIGENDIAN
-   ret =  i>>24;
-   ret += (i>>8)&0x0000ff00;
-   ret += (i<<8)&0x00ff0000;
-   ret += (i<<24);
-#endif
-   return ret;
-}
-
 #ifndef OVERRIDE_SPEEX_ALLOC
 void *speex_alloc (int size)
 {

@@ -75,10 +75,21 @@
 void print_vec(float *vec, int len, char *name);
 #endif
 
-/** Convert big endian */
-spx_uint32_t be_int(spx_uint32_t i);
 /** Convert little endian */
-spx_uint32_t le_int(spx_uint32_t i);
+static inline spx_int32_t le_int(spx_int32_t i)
+{
+#ifdef WORDS_BIGENDIAN
+   spx_uint32_t ui, ret;
+   ui = i;
+   ret =  ui>>24;
+   ret |= (ui>>8)&0x0000ff00;
+   ret |= (ui<<8)&0x00ff0000;
+   ret |= (ui<<24);
+   return ret;
+#else
+   return i;
+#endif
+}
 
 /** Speex wrapper for calloc. To do your own dynamic allocation, all you need to do is replace this function, speex_realloc and speex_free */
 void *speex_alloc (int size);
