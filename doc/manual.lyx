@@ -8,7 +8,7 @@
 \fontscheme pslatex
 \graphics default
 \paperfontsize 10
-\spacing onehalf
+\spacing single
 \papersize letterpaper
 \use_geometry true
 \use_amsmath 2
@@ -36,7 +36,7 @@
 \begin_layout Title
 The Speex Codec Manual
 \newline
-(version 1.2-beta2)
+For Version 1.2 Beta 2
 \end_layout
 
 \begin_layout Author
@@ -46,7 +46,24 @@ Jean-Marc Valin
 \begin_layout Standard
 
 \newpage
-Copyright (c) 2002-2006 Jean-Marc Valin/Xiph.org Foundation
+
+\end_layout
+
+\begin_layout Standard
+Copyright 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Standard
+
+
+\backslash
+copyright
+\end_layout
+
+\end_inset
+
+ 2002-2007 Jean-Marc Valin/Xiph.org Foundation
 \end_layout
 
 \begin_layout Standard
@@ -87,47 +104,125 @@ Introduction to Speex
 \end_layout
 
 \begin_layout Standard
-The Speex project (
+The Speex codec (
 \family typewriter
 http://www.speex.org/
 \family default
-) has been started because there was a need for a speech codec that was
- open-source and free from software patents.
- These are essential conditions for being used by any open-source software.
- There is already Vorbis that does general audio, but it is not really suitable
- for speech.
- Also, unlike many other speech codecs, Speex is not targeted at cell phones
- but rather at voice over IP (VoIP) and file-based compression.
+) exists because there is a need for a speech codec that is open-source
+ and free from software patent royalties.
+ These are essential conditions for being usable by any open-source software.
+ In essence, Speex is to speech what Vorbis is to audio/music.
+ Unlike many other speech codecs, Speex is not designed for mobile phones
+ but rather for packet networks and voice over IP (VoIP) application.
+ File-based compression is of course also supported.
  
 \end_layout
 
 \begin_layout Standard
-As design goals, we wanted to have a codec that would allow both very good
- quality speech and low bit-rate (unfortunately not at the same time!),
- which led us to developing a codec with multiple bit-rates.
- Of course very good quality also meant we had to do wideband (16 kHz sampling
- rate) in addition to narrowband (telephone quality, 8 kHz sampling rate).
+The Speex codec is designed to be very flexible and support a wide range
+ of speech quality and bit-rate.
+ Support for very good quality speech also means that Speex can encode wideband
+ speech (16 kHz sampling rate) in addition to narrowband speech (telephone
+ quality, 8 kHz sampling rate).
 \end_layout
 
 \begin_layout Standard
-Designing for VoIP instead of cell phone use means that Speex must be robust
- to lost packets, but not to corrupted ones since packets either arrive
- unaltered or don't arrive at all.
- Also, the idea was to have a reasonable complexity and memory requirement
- without compromising too much on the efficiency of the codec.
+Designing for VoIP instead of mobile phones means that Speex is robust to
+ lost packets, but not to corrupted ones.
+ This is based on the assumption that in VoIP, packets either arrive unaltered
+ or don't arrive at all.
+ Because Speex is targeted at a wide range of devices, it has modest complexity
+ (variable) and memory footprint.
 \end_layout
 
 \begin_layout Standard
-All this led us to the choice of CELP
+All the design goals led to the choice of CELP
 \begin_inset LatexCommand \index{CELP}
 
 \end_inset
 
- as the encoding technique to use for Speex.
- One of the main reasons is that CELP has long proved that it could do the
- job and scale well to both low bit-rates (think DoD CELP @ 4.8 kbps) and
- high bit-rates (think G.728 @ 16 kbps).
+ as the encoding technique.
+ One of the main reasons is that CELP has long proved that it could work
+ reliably and scale well to both low bit-rates (e.g.
+ DoD CELP @ 4.8 kbps) and high bit-rates (e.g.
+ G.728 @ 16 kbps).
  
+\end_layout
+
+\begin_layout Section
+Getting help
+\begin_inset LatexCommand \label{sec:Getting-help}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+As for many open source projects, there are many ways to get help with Speex.
+ These include:
+\end_layout
+
+\begin_layout Itemize
+This manual
+\end_layout
+
+\begin_layout Itemize
+Other documentation on the Speex website (http://www.speex.org/)
+\end_layout
+
+\begin_layout Itemize
+Mailing list: Discuss any Speex-related topic on speex-dev@xiph.org (not
+ just for developers)
+\end_layout
+
+\begin_layout Itemize
+IRC: The main channel is #speex on irc.freenode.net.
+ Note that due to time differences, it may take a while to get someone,
+ so please be patient.
+\end_layout
+
+\begin_layout Itemize
+Email the author privately at jean-marc.valin@usherbrooke.ca 
+\series bold
+only
+\series default
+ for private/delicate topics you do not wish to discuss publically.
+\end_layout
+
+\begin_layout Standard
+Before asking for help (mailing list or IRC), 
+\series bold
+it is important to first read this manual
+\series default
+.
+ It is generally considered rude to ask on a mailing list about topics that
+ are clearly detailed in the documentation.
+ On the other hand, it's perfectly OK (and encouraged) to ask for clarifications
+ about something covered in the manual.
+ This manual does not (yet) cover everything about Speex, so everyone is
+ encouraged to ask questions, send comments, feature requests, or just let
+ us know how Speex is being used.
+ 
+\end_layout
+
+\begin_layout Standard
+Here are some additional guidelines related to the mailing list.
+ Before reporting bugs in Speex to the list, it is strongly recommended
+ (if possible) to first test whether these bugs can be reproduced using
+ the speexenc and speexdec (see Section 
+\begin_inset LatexCommand \ref{sec:Command-line-encoder/decoder}
+
+\end_inset
+
+) command-line utilities.
+ Bugs reported based on 3rd party code are both harder to find and far too
+ often caused by errors that have nothing to do with Speex.
+ 
+\end_layout
+
+\begin_layout Section
+About this document
 \end_layout
 
 \begin_layout Standard
@@ -137,27 +232,40 @@ This document is divided in the following way.
 
 \end_inset
 
- describes the different Speex features and defines some terms that will
- be used in later sections.
+ describes the different Speex features and defines many basic terms that
+ are used throughout this manual.
  Section 
 \begin_inset LatexCommand \ref{sec:Command-line-encoder/decoder}
 
 \end_inset
 
- provides information about the standard command-line tools, while 
+ documents the standard command-line tools provided in the Speex distribution.
+ Section 
 \begin_inset LatexCommand \ref{sec:Programming-with-Speex}
 
 \end_inset
 
- contains information about programming using the Speex API.
+ includes detailed instructions about programming using the libspeex
+\begin_inset LatexCommand \index{libspeex}
+
+\end_inset
+
+ API.
  Section 
 \begin_inset LatexCommand \ref{sec:Formats-and-standards}
 
 \end_inset
 
  has some information related to Speex and standards.
- The three last sections describe the internals of the codec and require
- some signal processing knowledge.
+ 
+\end_layout
+
+\begin_layout Standard
+The three last sections describe the algorithms used in Speex.
+ These sections require signal processing knowledge, but are not required
+ for merely using Speex.
+ They are intended for people who want to understand how Speex really works
+ and/or want to do research based on Speex.
  Section 
 \begin_inset LatexCommand \ref{sec:Introduction-to-CELP}
 
@@ -174,8 +282,6 @@ This document is divided in the following way.
 \end_inset
 
  are specific to Speex.
- Note that if you are only interested in using Speex, those three last sections
- are not required.
 \end_layout
 
 \begin_layout Standard
@@ -194,7 +300,7 @@ Codec description
 \end_layout
 
 \begin_layout Standard
-This section describes the main features provided by Speex.
+This section describes Speex and its features into more details.
 \end_layout
 
 \begin_layout Section
@@ -204,7 +310,8 @@ Concepts
 \begin_layout Standard
 Before introducing all the Speex features, here are some concepts in speech
  coding that help better understand the rest of the manual.
- Emphasis is placed on Speex.
+ Although some are general concepts in speech/audio processing, others are
+ specific to Speex.
 \end_layout
 
 \begin_layout Subsection*
@@ -217,8 +324,25 @@ Sampling rate
 \end_layout
 
 \begin_layout Standard
-Speex is mainly designed for three different sampling rates: 8 kHz, 16 kHz,
- and 32 kHz.
+The sampling rate expressed in Hertz (Hz) is the number of samples taken
+ from a signal per second.
+ For a sampling rate of 
+\begin_inset Formula $F_{s}$
+\end_inset
+
+ kHz, the highest frequency that can be represented is equal to 
+\begin_inset Formula $F_{s}/2$
+\end_inset
+
+ kHz (
+\begin_inset Formula $F_{s}/2$
+\end_inset
+
+ is known as the Nyquist frequency).
+ This is a fundamental property in signal processing and is described by
+ the sampling theorem.
+ Speex is mainly designed for three different sampling rates: 8 kHz, 16
+ kHz, and 32 kHz.
  These are respectively refered to as narrowband
 \begin_inset LatexCommand \index{narrowband}
 
@@ -235,20 +359,50 @@ Speex is mainly designed for three different sampling rates: 8 kHz, 16 kHz,
 \end_inset
 
 .
- For a sampling rate of 
-\begin_inset Formula $F_{s}$
-\end_inset
+ 
+\end_layout
 
- kHz, the highest frequency that can be represented is equal to 
-\begin_inset Formula $F_{s}/2$
-\end_inset
+\begin_layout Subsection*
+Bit-rate
+\end_layout
 
- kHz.
- This is a consequence of Nyquist's sampling theorem (and 
-\begin_inset Formula $F_{s}/2$
-\end_inset
-
- is known as the Nyquist frequency).
+\begin_layout Standard
+When encoding a speech signal, the bit-rate is defined as the number of
+ bits per unit of time required to encode the speech.
+ It is measured in 
+\emph on
+bits per second
+\emph default
+ (bps), or generally 
+\emph on
+kilobits per second
+\emph default
+.
+ It is important to make the distinction between 
+\emph on
+kilo
+\series bold
+bits
+\series default
+ per second
+\emph default
+ (k
+\series bold
+b
+\series default
+ps) and 
+\emph on
+kilo
+\series bold
+bytes
+\series default
+ per second
+\emph default
+ (k
+\series bold
+B
+\series default
+ps).
 \end_layout
 
 \begin_layout Subsection*
@@ -257,12 +411,16 @@ Quality
 
 \end_inset
 
-
+ (variable)
 \end_layout
 
 \begin_layout Standard
-Speex encoding is controlled most of the time by a quality parameter that
- ranges from 0 to 10.
+Speex is a lossy codec, which means that it achives compression at the expense
+ of fidelity of the input speech signal.
+ Unlike some other speech codecs, it is possible to control the tradeoff
+ made between quality and bit-rate.
+ The Speex encoding process is controlled most of the time by a quality
+ parameter that ranges from 0 to 10.
  In constant bit-rate
 \begin_inset LatexCommand \index{constant bit-rate}
 
@@ -409,15 +567,16 @@ Perceptual enhancement
 \end_layout
 
 \begin_layout Standard
-Perceptual enhancement is a part of the decoder which, when turned on, tries
- to reduce (the perception of) the noise produced by the coding/decoding
- process.
- In most cases, perceptual enhancement make the sound further from the original
- 
+Perceptual enhancement is a part of the decoder which, when turned on, attempts
+ to reduce the perception of the noise/distortion produced by the encoding/decod
+ing process.
+ In most cases, perceptual enhancement brings the sound further from the
+ original 
 \emph on
 objectively
 \emph default
- (if you use SNR), but in the end it still 
+ (e.g.
+ considering only SNR), but in the end it still 
 \emph on
 sounds
 \emph default
@@ -425,7 +584,7 @@ sounds
 \end_layout
 
 \begin_layout Subsection*
-Algorithmic delay
+Latency and algorithmic delay
 \begin_inset LatexCommand \index{algorithmic delay}
 
 \end_inset
@@ -530,7 +689,7 @@ Intensity stereo encoding option
 \end_layout
 
 \begin_layout Itemize
-Fixed-point implementation (work in progress)
+Fixed-point implementation
 \end_layout
 
 \begin_layout Section
@@ -691,7 +850,8 @@ Compiling
 \end_layout
 
 \begin_layout Standard
-Compiling Speex under UNIX or any platform supported by autoconf (e.g.
+Compiling Speex under UNIX/Linux or any other platform supported by autoconf
+ (e.g.
  Win32/cygwin) is as easy as typing:
 \end_layout
 
@@ -712,7 +872,8 @@ The options supported by the Speex configure script are:
 \end_layout
 
 \begin_layout Description
---prefix=<path> Specifies where to install Speex
+--prefix=<path> Specifies the base path for installing Speex (e.g.
+ /usr)
 \end_layout
 
 \begin_layout Description
@@ -724,13 +885,13 @@ The options supported by the Speex configure script are:
 \end_layout
 
 \begin_layout Description
---disable-wideband Disable the wideband part of Speex (typically to same
+--disable-wideband Disable the wideband part of Speex (typically to save
  space)
 \end_layout
 
 \begin_layout Description
---enable-valgrind Enable extra information when (and only when) running
- with valgrind
+--enable-valgrind Enable extra hits for valgrind for debugging purposes
+ (do not use by default)
 \end_layout
 
 \begin_layout Description
@@ -781,8 +942,94 @@ The options supported by the Speex configure script are:
 \end_layout
 
 \begin_layout Description
---enable-16bit-precision Reduces precision to 16 bits in time-critical areas
- (fixed-point only)
+--enable-vorbis-psycho Make the encoder use the Vorbis psycho-acoustic model.
+ This is very experimental and may be removed in the future.
+\end_layout
+
+\begin_layout Section
+Platforms
+\end_layout
+
+\begin_layout Standard
+Speex is known to compile and work on a large number of architectures, both
+ floating-point and fixed-point.
+ In general, any architecture that can natively compute the multiplication
+ of two signed 16-bit numbers (32-bit result) and runs at a sufficient clock
+ rate (architecture-dependent) is capable of running Speex.
+ Architectures that are 
+\series bold
+known
+\series default
+ to be supported (it probably works on many others) are:
+\end_layout
+
+\begin_layout Itemize
+x86 & x86-64
+\end_layout
+
+\begin_layout Itemize
+Power
+\end_layout
+
+\begin_layout Itemize
+SPARC
+\end_layout
+
+\begin_layout Itemize
+ARM
+\end_layout
+
+\begin_layout Itemize
+Blackfin
+\end_layout
+
+\begin_layout Itemize
+TI C54xx & C55xx
+\end_layout
+
+\begin_layout Itemize
+TI C6xxx
+\end_layout
+
+\begin_layout Itemize
+TriMedia (experimental)
+\end_layout
+
+\begin_layout Standard
+Operating systems on top of which Speex is known to work include (it probably
+ works on many others):
+\end_layout
+
+\begin_layout Itemize
+Linux
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Formula $\mu$
+\end_inset
+
+Clinux
+\end_layout
+
+\begin_layout Itemize
+MacOS X
+\end_layout
+
+\begin_layout Itemize
+BSD
+\end_layout
+
+\begin_layout Itemize
+Other UNIX/POSIX variants
+\end_layout
+
+\begin_layout Itemize
+Symbian
+\end_layout
+
+\begin_layout Standard
+The source code directory include additional information for compiling on
+ certain architectures or operating systems in README.xxx files.
 \end_layout
 
 \begin_layout Standard
@@ -1077,12 +1324,13 @@ Programming with Speex (the libspeex
 
 \begin_layout Standard
 This section explains how to use the Speex API.
- Examples of code can also be found in appendix 
+ Examples of code can also be found in Appendix 
 \begin_inset LatexCommand \ref{sec:Sample-code}
 
 \end_inset
 
-.
+ and the complete API documentation is included in the Documentation section
+ of the Speex website (http://www.speex.org/).
 \end_layout
 
 \begin_layout Section
@@ -1095,7 +1343,7 @@ Encoding
 \end_layout
 
 \begin_layout Standard
-In order to encode speech using Speex, you first need to:
+In order to encode speech using Speex, one first needs to:
 \end_layout
 
 \begin_layout LyX-Code
@@ -1103,7 +1351,7 @@ In order to encode speech using Speex, you first need to:
 \end_layout
 
 \begin_layout Standard
-You then need to declare a Speex bit-packing struct
+Then a Speex bit-packing struct must be declared as:
 \end_layout
 
 \begin_layout LyX-Code
@@ -1111,7 +1359,7 @@ SpeexBits bits;
 \end_layout
 
 \begin_layout Standard
-and a Speex encoder state
+along with a Speex encoder state
 \end_layout
 
 \begin_layout LyX-Code
@@ -1146,7 +1394,11 @@ speex_wb_mode
 \emph on
 frame_size
 \emph default
- variable with:
+ variable (expressed in 
+\series bold
+samples
+\series default
+, not bytes) with:
 \end_layout
 
 \begin_layout LyX-Code
@@ -1325,7 +1577,11 @@ speex_wb_mode
 \emph on
 frame_size
 \emph default
- variable with:
+ variable (expressed in 
+\series bold
+samples
+\series default
+, not bytes) with:
 \end_layout
 
 \begin_layout LyX-Code
@@ -1887,7 +2143,8 @@ SpeexResamplerState *resampler;
 \end_layout
 
 \begin_layout LyX-Code
-resampler = speex_resampler_init(nb_channels, input_rate, output_rate, quality);
+resampler = speex_resampler_init(nb_channels, input_rate, output_rate, quality,
+ &err);
 \end_layout
 
 \begin_layout Standard
@@ -1903,6 +2160,49 @@ d or non-interleaved), input_rate is the sampling rate of the input stream,
  10 is mostly recommended for pro audio work.
  Quality 0 usually has a decent sound (certainly better than using linear
  interpolation resampling), but artifacts may be heard.
+\end_layout
+
+\begin_layout Standard
+The actual resampling is performed using
+\end_layout
+
+\begin_layout LyX-Code
+err = speex_resampler_process_int(resampler, channelID, in, &in_length,
+ out, &out_length);
+\end_layout
+
+\begin_layout Standard
+where channelID is the ID of the channel to be processed.
+ For a mono stream, use 0.
+ The 
+\emph on
+in
+\emph default
+ pointer points to the first sample of the input buffer for the selected
+ channel and 
+\emph on
+out
+\emph default
+ points to the first sample of the output.
+ The size of the input and output buffers are specified by 
+\emph on
+in_length
+\emph default
+ and 
+\emph on
+out_length
+\emph default
+ respectively.
+ Upon completion, these values are replaced by the number of samples read
+ and written by the resampler.
+ Unless an error occurs, either all input samples will be read or all output
+ samples will be written to (or both).
+ For floating-point samples, the function speex_resampler_process_float()
+ behaves similarly.
+\end_layout
+
+\begin_layout Standard
+If multiple channels are to be processed at once, 
 \end_layout
 
 \begin_layout Section
@@ -1980,7 +2280,8 @@ SPEEX_GET_ENH** Get perceptual enhancer status (integer)
 \end_layout
 
 \begin_layout Description
-SPEEX_GET_FRAME_SIZE Get the frame size used for the current mode (integer)
+SPEEX_GET_FRAME_SIZE Get the number of samples per frame for the current
+ mode (integer)
 \end_layout
 
 \begin_layout Description
@@ -2396,6 +2697,19 @@ sideways false
 status open
 
 \begin_layout Standard
+\begin_inset ERT
+status collapsed
+
+\begin_layout Standard
+
+
+\backslash
+begin{center}
+\end_layout
+
+\end_inset
+
+
 \begin_inset Tabular
 <lyxtabular version="3" rows="17" columns="3">
 <features>
@@ -2904,6 +3218,19 @@ reserved
 </cell>
 </row>
 </lyxtabular>
+
+\end_inset
+
+
+\begin_inset ERT
+status collapsed
+
+\begin_layout Standard
+
+
+\backslash
+end{center}
+\end_layout
 
 \end_inset
 
@@ -4707,6 +5034,19 @@ sideways false
 status open
 
 \begin_layout Standard
+\begin_inset ERT
+status collapsed
+
+\begin_layout Standard
+
+
+\backslash
+begin{center}
+\end_layout
+
+\end_inset
+
+
 \begin_inset Tabular
 <lyxtabular version="3" rows="12" columns="11">
 <features>
@@ -5938,6 +6278,19 @@ frame
 \end_inset
 
 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Standard
+
+
+\backslash
+end{center}
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Caption
@@ -5990,6 +6343,19 @@ sideways false
 status open
 
 \begin_layout Standard
+\begin_inset ERT
+status collapsed
+
+\begin_layout Standard
+
+
+\backslash
+begin{center}
+\end_layout
+
+\end_inset
+
+
 \begin_inset Tabular
 <lyxtabular version="3" rows="17" columns="4">
 <features>
@@ -6658,6 +7024,19 @@ Terminator code
 \end_inset
 
 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Standard
+
+
+\backslash
+end{center}
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Caption
@@ -6858,6 +7237,19 @@ sideways false
 status open
 
 \begin_layout Standard
+\begin_inset ERT
+status collapsed
+
+\begin_layout Standard
+
+
+\backslash
+begin{center}
+\end_layout
+
+\end_inset
+
+
 \begin_inset Tabular
 <lyxtabular version="3" rows="7" columns="7">
 <features>
@@ -7324,6 +7716,19 @@ frame
 </cell>
 </row>
 </lyxtabular>
+
+\end_inset
+
+
+\begin_inset ERT
+status collapsed
+
+\begin_layout Standard
+
+
+\backslash
+end{center}
+\end_layout
 
 \end_inset
 
