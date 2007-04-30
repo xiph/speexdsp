@@ -1411,6 +1411,29 @@ In practice,
 frame_size
 \emph default
  will correspond to 20 ms when using 8, 16, or 32 kHz sampling rate.
+ There are many parameters that can be set for the Speex encoder, but the
+ most useful one is the quality parameter that controls the quality vs bit-rate
+ tradeoff.
+ This is set by:
+\end_layout
+
+\begin_layout LyX-Code
+speex_encoder_ctl(enc_state,SPEEX_SET_QUALITY,&quality);
+\end_layout
+
+\begin_layout Standard
+where 
+\emph on
+quality
+\emph default
+ is an integer value ranging from 0 to 10 (inclusively).
+ The mapping between quality and bit-rate is described in Fig.
+ 
+\begin_inset LatexCommand \ref{cap:quality_vs_bps}
+
+\end_inset
+
+ for narrowband.
 \end_layout
 
 \begin_layout Standard
@@ -6358,8 +6381,9 @@ begin{center}
 
 
 \begin_inset Tabular
-<lyxtabular version="3" rows="17" columns="4">
+<lyxtabular version="3" rows="17" columns="5">
 <features>
+<column alignment="center" valignment="top" leftline="true" width="0pt">
 <column alignment="center" valignment="top" leftline="true" width="0pt">
 <column alignment="center" valignment="top" leftline="true" width="0pt">
 <column alignment="center" valignment="top" leftline="true" width="0pt">
@@ -6370,6 +6394,15 @@ begin{center}
 
 \begin_layout Standard
 Mode
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+Quality
 \end_layout
 
 \end_inset
@@ -6426,6 +6459,15 @@ Quality/description
 \begin_inset Text
 
 \begin_layout Standard
+-
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
 250
 \end_layout
 
@@ -6435,7 +6477,7 @@ Quality/description
 \begin_inset Text
 
 \begin_layout Standard
-N/A
+0
 \end_layout
 
 \end_inset
@@ -6456,6 +6498,15 @@ No transmission (DTX)
 
 \begin_layout Standard
 1
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+0
 \end_layout
 
 \end_inset
@@ -6489,6 +6540,15 @@ Vocoder (mostly for comfort noise)
 </cell>
 </row>
 <row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+2
+\end_layout
+
+\end_inset
+</cell>
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
@@ -6540,6 +6600,15 @@ Very noticeable artifacts/noise, good intelligibility
 \begin_inset Text
 
 \begin_layout Standard
+3-4
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
 8,000
 \end_layout
 
@@ -6570,6 +6639,15 @@ Artifacts/noise sometimes noticeable
 
 \begin_layout Standard
 4
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+5-6
 \end_layout
 
 \end_inset
@@ -6616,6 +6694,15 @@ Artifacts usually noticeable only with headphones
 \begin_inset Text
 
 \begin_layout Standard
+7-8
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
 15,000
 \end_layout
 
@@ -6646,6 +6733,15 @@ Need good headphones to tell the difference
 
 \begin_layout Standard
 6
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+9
 \end_layout
 
 \end_inset
@@ -6692,6 +6788,15 @@ Hard to tell the difference even with good headphones
 \begin_inset Text
 
 \begin_layout Standard
+10
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
 24,600
 \end_layout
 
@@ -6722,6 +6827,15 @@ Completely transparent for voice, good quality music
 
 \begin_layout Standard
 8
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+1
 \end_layout
 
 \end_inset
@@ -6768,7 +6882,7 @@ Very noticeable artifacts/noise, good intelligibility
 \begin_inset Text
 
 \begin_layout Standard
-N/A
+-
 \end_layout
 
 \end_inset
@@ -6777,7 +6891,16 @@ N/A
 \begin_inset Text
 
 \begin_layout Standard
-N/A
+-
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+-
 \end_layout
 
 \end_inset
@@ -6806,7 +6929,7 @@ reserved
 \begin_inset Text
 
 \begin_layout Standard
-N/A
+-
 \end_layout
 
 \end_inset
@@ -6815,7 +6938,16 @@ N/A
 \begin_inset Text
 
 \begin_layout Standard
-N/A
+-
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+-
 \end_layout
 
 \end_inset
@@ -6844,7 +6976,7 @@ reserved
 \begin_inset Text
 
 \begin_layout Standard
-N/A
+-
 \end_layout
 
 \end_inset
@@ -6853,7 +6985,16 @@ N/A
 \begin_inset Text
 
 \begin_layout Standard
-N/A
+-
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+-
 \end_layout
 
 \end_inset
@@ -6882,7 +7023,7 @@ reserved
 \begin_inset Text
 
 \begin_layout Standard
-N/A
+-
 \end_layout
 
 \end_inset
@@ -6891,7 +7032,16 @@ N/A
 \begin_inset Text
 
 \begin_layout Standard
-N/A
+-
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+-
 \end_layout
 
 \end_inset
@@ -6920,7 +7070,7 @@ reserved
 \begin_inset Text
 
 \begin_layout Standard
-N/A
+-
 \end_layout
 
 \end_inset
@@ -6929,7 +7079,16 @@ N/A
 \begin_inset Text
 
 \begin_layout Standard
-N/A
+-
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+-
 \end_layout
 
 \end_inset
@@ -6958,7 +7117,7 @@ Application-defined, interpreted by callback or skipped
 \begin_inset Text
 
 \begin_layout Standard
-N/A
+-
 \end_layout
 
 \end_inset
@@ -6967,7 +7126,16 @@ N/A
 \begin_inset Text
 
 \begin_layout Standard
-N/A
+-
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+-
 \end_layout
 
 \end_inset
@@ -6996,7 +7164,7 @@ Speex in-band signaling
 \begin_inset Text
 
 \begin_layout Standard
-N/A
+-
 \end_layout
 
 \end_inset
@@ -7005,7 +7173,16 @@ N/A
 \begin_inset Text
 
 \begin_layout Standard
-N/A
+-
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+-
 \end_layout
 
 \end_inset
