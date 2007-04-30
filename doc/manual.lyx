@@ -1637,7 +1637,7 @@ output_frame
 (short *)
 \emph default
  and points to the area where the decoded speech frame will be written.
- A NULL value as the first argument indicates that we don't have the bits
+ A NULL value as the second argument indicates that we don't have the bits
  for the current frame.
  When a frame is lost, the Speex decoder will do its best to "guess" the
  correct signal.
@@ -2202,7 +2202,8 @@ out_length
 \end_layout
 
 \begin_layout Standard
-If multiple channels are to be processed at once, 
+It is also possible to process multiple channels at once.
+ 
 \end_layout
 
 \begin_layout Section
