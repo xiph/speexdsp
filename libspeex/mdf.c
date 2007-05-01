@@ -732,8 +732,8 @@ void speex_echo_cancellation(SpeexEchoState *st, const spx_int16_t *in, const sp
    spectral_mul_accum16(st->X, st->foreground, st->Y, N, M);   
    spx_ifft(st->fft_table, st->Y, st->e);
    for (i=0;i<st->frame_size;i++)
-      st->x[i+st->frame_size] = SUB16(st->input[i], st->e[i+st->frame_size]);
-   Sff = mdf_inner_prod(st->x+st->frame_size, st->x+st->frame_size, st->frame_size);
+      st->e[i] = SUB16(st->input[i], st->e[i+st->frame_size]);
+   Sff = mdf_inner_prod(st->e, st->e, st->frame_size);
 #endif
    
    /* Adjust proportional adaption rate */
@@ -793,13 +793,13 @@ void speex_echo_cancellation(SpeexEchoState *st, const spx_int16_t *in, const sp
 #ifdef TWO_PATH
    /* Difference in response, this is used to estimate the variance of our residual power estimate */
    for (i=0;i<st->frame_size;i++)
-      st->x[i+st->frame_size] = SUB16(st->e[i+st->frame_size], st->y[i+st->frame_size]);
-   Dbf = 10+mdf_inner_prod(st->x+st->frame_size, st->x+st->frame_size, st->frame_size);
+      st->e[i] = SUB16(st->e[i+st->frame_size], st->y[i+st->frame_size]);
+   Dbf = 10+mdf_inner_prod(st->e, st->e, st->frame_size);
 #endif
 
    for (i=0;i<st->frame_size;i++)
-      st->x[i+st->frame_size] = SUB16(st->input[i], st->y[i+st->frame_size]);
-   See = mdf_inner_prod(st->x+st->frame_size, st->x+st->frame_size, st->frame_size);
+      st->e[i] = SUB16(st->input[i], st->y[i+st->frame_size]);
+   See = mdf_inner_prod(st->e, st->e, st->frame_size);
 #ifndef TWO_PATH
    Sff = See;
 #endif
@@ -859,7 +859,7 @@ void speex_echo_cancellation(SpeexEchoState *st, const spx_int16_t *in, const sp
          for (i=0;i<st->frame_size;i++)
             st->y[i+st->frame_size] = st->e[i+st->frame_size];
          for (i=0;i<st->frame_size;i++)
-            st->x[i+st->frame_size] = SUB16(st->input[i], st->y[i+st->frame_size]);
+            st->e[i] = SUB16(st->input[i], st->y[i+st->frame_size]);
          See = Sff;
          st->Davg1 = st->Davg2 = 0;
          st->Dvar1 = st->Dvar2 = FLOAT_ZERO;
@@ -900,8 +900,8 @@ void speex_echo_cancellation(SpeexEchoState *st, const spx_int16_t *in, const sp
    /* Compute error signal (filter update version) */ 
    for (i=0;i<st->frame_size;i++)
    {
+      st->e[i+st->frame_size] = st->e[i];
       st->e[i] = 0;
-      st->e[i+st->frame_size] = st->x[i+st->frame_size];
    }
 
    /* Compute a bunch of correlations */
