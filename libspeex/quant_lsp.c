@@ -417,7 +417,7 @@ void lsp_quant_48k(spx_lsp_t *lsp, spx_lsp_t *qlsp, int order, SpeexBits *bits)
 
 #ifdef FIXED_POINT
    for (i=0;i<order;i++)
-      qlsp[i]=PSHR(qlsp[i],2);
+      qlsp[i]=PSHR16(qlsp[i],2);
 #else
    for (i=0;i<order;i++)
       qlsp[i]=qlsp[i]*0.00097655;

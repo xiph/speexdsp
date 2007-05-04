@@ -1,38 +1,48 @@
-For 1.1.13:
-Input buffer in new enhancer
-(remove the if's in loops in interp_pitch())
-Fix --force-nb
-Fix wideband PLC
-change filter structure in vorbis-psy (use the numerator=LPC version)
-Fix overflow in mdf
+For 1.2beta2:
+*Use full complex values for fft results?
+*get rid of crap that shouldn't be exposed in speex.h
+*Reduce wideband RAM requirements
+*Make foreground filter 16 bits in AEC.
+*Enable resampler in build
+*Add dumping of data for debug purposes.
+*remove wideband pseudo-stack
+*pitch prediction saturation to prevent NaN-based DoS attacks.
+*Fix jitter buffer
+
+speex_decoder_ctl() call to detect silence
+Complete resampler API (error codes)
+Fix resampler corner case
+Use lower sinc oversampling when down-sampling
+**Fix register issue on Blackfin
+Merge TriMedia stuff
+Make it possible to decode a "raw" packet with SpeexBits
+Control delay in new AEC API.
 
 Later:
-use 16-bit version of the filters in ltp.c
-get rid of crap that shouldn't be exposed in speex.h
+Do VAD properly
+Warning/error handling
+--enable-{aec,preprocessor,jitter,resampler}
+
+
+Optimisations
+- Add restrict in a few places?
+- enable 4x4 version of pitch_xcorr()?
 
 Would be nice:
+Implement wideband split as IIR instead of QMF.
 
-Allocator override (speex_lib_ctl)
+Allocator override (speex_lib_ctl?)
 Better error handling
 Fixed-point:
   - Wideband
-  - Initialization
   - Jitter buffer
 Denoiser:
-  - Smooth gain (remove musical noise)
   - Better noise adaptation
-  - Do some tuning
 AGC:
-  - Use median filtering instead of "non-linear mean"
-
-
+  - Use median filtering instead of "non-linear mean"?
 
 Features
--Add maximum/minimum bit-rate control for VBR
 -Improve error handling (with perror-like call?)
-
-Long-term quality improvements
--Improve perceptual enhancement (including wideband)
 
 Standards
 -Complete Speex RTP profile
@@ -41,4 +51,3 @@ Standards
 ideas:
 Peelable stream (double codebook, higher bands, stereo)
 LPC from spectral domain
-Better psycho-acoustic model. Masking curve from Vorbis?

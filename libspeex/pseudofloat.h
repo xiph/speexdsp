@@ -2,6 +2,15 @@
 /**
    @file pseudofloat.h
    @brief Pseudo-floating point
+ * This header file provides a lightweight floating point type for
+ * use on fixed-point platforms when a large dynamic range is 
+ * required. The new type is not compatible with the 32-bit IEEE format,
+ * it is not even remotely as accurate as 32-bit floats, and is not
+ * even guaranteed to produce even remotely correct results for code
+ * other than Speex. It makes all kinds of shortcuts that are acceptable
+ * for Speex, but may not be acceptable for your application. You're
+ * quite welcome to reuse this code and improve it, but don't assume
+ * it works out of the box. Most likely, it doesn't.
  */
 /*
    Redistribution and use in source and binary forms, with or without
@@ -65,18 +74,8 @@ static inline spx_float_t PSEUDOFLOAT(spx_int32_t x)
       spx_float_t r = {0,0};
       return r;
    }
-   while (x>32767)
-   {
-      x >>= 1;
-      /*x *= .5;*/
-      e++;
-   }
-   while (x<16383)
-   {
-      x <<= 1;
-      /*x *= 2;*/
-      e--;
-   }
+   e = spx_ilog2(ABS32(x))-14;
+   x = VSHR32(x, e);
    if (sign)
    {
       spx_float_t r;
@@ -167,9 +166,9 @@ static inline spx_float_t FLOAT_SUB(spx_float_t a, spx_float_t b)
 static inline int FLOAT_LT(spx_float_t a, spx_float_t b)
 {
    if (a.m==0)
-      return b.m<0;
+      return b.m>0;
    else if (b.m==0)
-      return a.m>0;   
+      return a.m<0;   
    if ((a).e > (b).e)
       return ((a).m>>1) < ((b).m>>MIN(15,(a).e-(b).e+1));
    else 
@@ -205,6 +204,14 @@ static inline spx_float_t FLOAT_MULT(spx_float_t a, spx_float_t b)
    return r;   
 }
 
+static inline spx_float_t FLOAT_AMULT(spx_float_t a, spx_float_t b)
+{
+   spx_float_t r;
+   r.m = (spx_int16_t)((spx_int32_t)(a).m*(b).m>>15);
+   r.e = (a).e+(b).e+15;
+   return r;   
+}
+
 
 static inline spx_float_t FLOAT_SHL(spx_float_t a, int b)
 {
@@ -217,68 +224,53 @@ static inline spx_float_t FLOAT_SHL(spx_float_t a, int b)
 static inline spx_int16_t FLOAT_EXTRACT16(spx_float_t a)
 {
    if (a.e<0)
-      return EXTRACT16((EXTEND32(a.m)+(1<<(-a.e-1)))>>-a.e);
+      return EXTRACT16((EXTEND32(a.m)+(EXTEND32(1)<<(-a.e-1)))>>-a.e);
    else
       return a.m<<a.e;
 }
 
+static inline spx_int32_t FLOAT_EXTRACT32(spx_float_t a)
+{
+   if (a.e<0)
+      return (EXTEND32(a.m)+(EXTEND32(1)<<(-a.e-1)))>>-a.e;
+   else
+      return EXTEND32(a.m)<<a.e;
+}
+
 static inline spx_int32_t FLOAT_MUL32(spx_float_t a, spx_word32_t b)
 {
-   if (a.e<-15)
-      return SHR32(MULT16_32_Q15(a.m, b),-a.e-15);
-   else
-      return SHL32(MULT16_32_Q15(a.m, b),15+a.e);
+   return VSHR32(MULT16_32_Q15(a.m, b),-a.e-15);
 }
 
 static inline spx_float_t FLOAT_MUL32U(spx_word32_t a, spx_word32_t b)
 {
-   int e=0;
+   int e1, e2;
    spx_float_t r;
-   /* FIXME: Handle the sign */
-   if (a==0)
+   if (a==0 || b==0)
    {
       return FLOAT_ZERO;
    }
-   while (a>32767)
-   {
-      a >>= 1;
-      e++;
-   }
-   while (a<16384)
-   {
-      a <<= 1;
-      e--;
-   }
-   while (b>32767)
-   {
-      b >>= 1;
-      e++;
-   }
-   while (b<16384)
-   {
-      b <<= 1;
-      e--;
-   }
+   e1 = spx_ilog2(ABS32(a));
+   a = VSHR32(a, e1-14);
+   e2 = spx_ilog2(ABS32(b));
+   b = VSHR32(b, e2-14);
    r.m = MULT16_16_Q15(a,b);
-   r.e = e+15;
+   r.e = e1+e2-13;
    return r;
 }
 
+/* Do NOT attempt to divide by a negative number */
 static inline spx_float_t FLOAT_DIV32_FLOAT(spx_word32_t a, spx_float_t b)
 {
    int e=0;
    spx_float_t r;
-   /* FIXME: Handle the sign */
    if (a==0)
    {
       return FLOAT_ZERO;
    }
-   while (a<SHL32(EXTEND32(b.m),14))
-   {
-      a <<= 1;
-      e--;
-   }
-   while (a>=SHL32(EXTEND32(b.m-1),15))
+   e = spx_ilog2(ABS32(a))-spx_ilog2(b.m-1)-15;
+   a = VSHR32(a, e);
+   if (ABS32(a)>=SHL32(EXTEND32(b.m-1),15))
    {
       a >>= 1;
       e++;
@@ -289,41 +281,47 @@ static inline spx_float_t FLOAT_DIV32_FLOAT(spx_word32_t a, spx_float_t b)
 }
 
 
+/* Do NOT attempt to divide by a negative number */
 static inline spx_float_t FLOAT_DIV32(spx_word32_t a, spx_word32_t b)
 {
-   int e=0;
+   int e0=0,e=0;
    spx_float_t r;
-   /* FIXME: Handle the sign */
    if (a==0)
    {
       return FLOAT_ZERO;
    }
-   while (b>32767)
+   if (b>32767)
    {
-      b >>= 1;
-      e--;
+      e0 = spx_ilog2(b)-14;
+      b = VSHR32(b, e0);
+      e0 = -e0;
    }
-   while (a<SHL32(b,14))
-   {
-      a <<= 1;
-      e--;
-   }
-   while (a>=SHL32(b-1,15))
+   e = spx_ilog2(ABS32(a))-spx_ilog2(b-1)-15;
+   a = VSHR32(a, e);
+   if (ABS32(a)>=SHL32(EXTEND32(b-1),15))
    {
       a >>= 1;
       e++;
    }
+   e += e0;
    r.m = DIV32_16(a,b);
    r.e = e;
    return r;
 }
 
+/* Do NOT attempt to divide by a negative number */
 static inline spx_float_t FLOAT_DIVU(spx_float_t a, spx_float_t b)
 {
    int e=0;
    spx_int32_t num;
    spx_float_t r;
+   if (b.m<=0)
+   {
+      speex_warning_int("Attempted to divide by", b.m);
+      return FLOAT_ONE;
+   }
    num = a.m;
+   a.m = ABS16(a.m);
    while (a.m >= b.m)
    {
       e++;
@@ -339,7 +337,7 @@ static inline spx_float_t FLOAT_SQRT(spx_float_t a)
 {
    spx_float_t r;
    spx_int32_t m;
-   m = a.m << 14;
+   m = SHL32(EXTEND32(a.m), 14);
    r.e = a.e - 14;
    if (r.e & 1)
    {
@@ -359,9 +357,11 @@ static inline spx_float_t FLOAT_SQRT(spx_float_t a)
 #define FLOAT_HALF 0.5f
 #define PSEUDOFLOAT(x) (x)
 #define FLOAT_MULT(a,b) ((a)*(b))
+#define FLOAT_AMULT(a,b) ((a)*(b))
 #define FLOAT_MUL32(a,b) ((a)*(b))
 #define FLOAT_DIV32(a,b) ((a)/(b))
 #define FLOAT_EXTRACT16(a) (a)
+#define FLOAT_EXTRACT32(a) (a)
 #define FLOAT_ADD(a,b) ((a)+(b))
 #define FLOAT_SUB(a,b) ((a)-(b))
 #define REALFLOAT(x) (x)

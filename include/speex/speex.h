@@ -35,6 +35,10 @@
 
 #ifndef SPEEX_H
 #define SPEEX_H
+/** @defgroup Codec Speex encoder and decoder
+ *  This is the Speex codec itself.
+ *  @{
+ */
 
 #include "speex/speex_bits.h"
 #include "speex/speex_types.h"
@@ -150,20 +154,6 @@ extern "C" {
 #define SPEEX_SET_HIGHPASS 44
 /** Get status of input/output high-pass filtering */
 #define SPEEX_GET_HIGHPASS 45
-
-/* Used internally, NOT TO BE USED in applications */
-/** Used internally*/
-#define SPEEX_GET_PI_GAIN 100
-/** Used internally*/
-#define SPEEX_GET_EXC     101
-/** Used internally*/
-#define SPEEX_GET_INNOV   102
-/** Used internally*/
-#define SPEEX_GET_DTX_STATUS   103
-/** Used internally*/
-#define SPEEX_SET_INNOVATION_SAVE   104
-/** Used internally*/
-#define SPEEX_SET_WIDEBAND   105
 
 
 /* Preserving compatibility:*/
@@ -307,7 +297,7 @@ typedef struct SpeexMode {
  * encode, you need one state per channel.
  *
  * @param mode The mode to use (either speex_nb_mode or speex_wb.mode) 
- * @return A newly created encoder
+ * @return A newly created encoder state or NULL if state allocation fails
  */
 void *speex_encoder_init(const SpeexMode *mode);
 
@@ -318,7 +308,9 @@ void speex_encoder_destroy(void *state);
 /** Uses an existing encoder state to encode one frame of speech pointed to by
     "in". The encoded bit-stream is saved in "bits".
  @param state Encoder state
- @param in Frame that will be encoded with a +-2^15 range
+ @param in Frame that will be encoded with a +-2^15 range. This data MAY be 
+        overwritten by the encoder and should be considered uninitialised 
+        after the call.
  @param bits Bit-stream where the data will be written
  @return 0 if frame needs not be transmitted (DTX only), 1 otherwise
  */
@@ -338,7 +330,7 @@ int speex_encode_int(void *state, spx_int16_t *in, SpeexBits *bits);
  * @param state Encoder state
  * @param request ioctl-type request (one of the SPEEX_* macros)
  * @param ptr Data exchanged to-from function
- * @return 0 if no error, -1 if request in unknown
+ * @return 0 if no error, -1 if request in unknown, -2 for invalid parameter
  */
 int speex_encoder_ctl(void *state, int request, void *ptr);
 
@@ -349,7 +341,7 @@ int speex_encoder_ctl(void *state, int request, void *ptr);
  * decode, you need one state per channel.
  *
  * @param mode Speex mode (one of speex_nb_mode or speex_wb_mode)
- * @return A newly created decoder state
+ * @return A newly created decoder state or NULL if state allocation fails
  */ 
 void *speex_decoder_init(const SpeexMode *mode);
 
@@ -384,7 +376,7 @@ int speex_decode_int(void *state, SpeexBits *bits, spx_int16_t *out);
  * @param state Decoder state
  * @param request ioctl-type request (one of the SPEEX_* macros)
  * @param ptr Data exchanged to-from function
- * @return 0 if no error, -1 if request in unknown
+ * @return 0 if no error, -1 if request in unknown, -2 for invalid parameter
  */
 int speex_decoder_ctl(void *state, int request, void *ptr);
 
@@ -394,12 +386,14 @@ int speex_decoder_ctl(void *state, int request, void *ptr);
  * @param mode Speex mode
  * @param request ioctl-type request (one of the SPEEX_* macros)
  * @param ptr Data exchanged to-from function
+ * @return 0 if no error, -1 if request in unknown, -2 for invalid parameter
  */
 int speex_mode_query(const SpeexMode *mode, int request, void *ptr);
 
 /** Functions for controlling the behavior of libspeex
  * @param request ioctl-type request (one of the SPEEX_LIB_* macros)
  * @param ptr Data exchanged to-from function
+ * @return 0 if no error, -1 if request in unknown, -2 for invalid parameter
  */
 int speex_lib_ctl(int request, void *ptr);
 
@@ -427,5 +421,5 @@ const SpeexMode * speex_lib_get_mode (int mode);
 }
 #endif
 
-
+/** @}*/
 #endif

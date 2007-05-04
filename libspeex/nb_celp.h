@@ -96,12 +96,12 @@ typedef struct EncState {
    spx_mem_t *mem_exc2;          /**< Filter memory for excitation (whole frame) */
    spx_mem_t mem_hp[2];          /**< High-pass filter memory */
    spx_word32_t *pi_gain;        /**< Gain of LPC filter at theta=pi (fe/2) */
-   spx_sig_t *innov_save;        /**< If non-NULL, innovation is copied here */
+   spx_word16_t *innov_rms_save; /**< If non-NULL, innovation RMS is copied here */
          
    VBRState *vbr;                /**< State of the VBR data */
    float  vbr_quality;           /**< Quality setting for VBR encoding */
    float  relative_quality;      /**< Relative quality that will be needed by VBR */
-   int    vbr_enabled;           /**< 1 for enabling VBR, 0 otherwise */
+   spx_int32_t vbr_enabled;      /**< 1 for enabling VBR, 0 otherwise */
    spx_int32_t vbr_max;          /**< Max bit-rate allowed in VBR mode */
    int    vad_enabled;           /**< 1 for enabling VAD, 0 otherwise */
    int    dtx_enabled;           /**< 1 for enabling DTX, 0 otherwise */
@@ -148,7 +148,7 @@ typedef struct DecState {
    spx_mem_t *mem_sp;           /**< Filter memory for synthesis signal */
    spx_mem_t mem_hp[2];         /**< High-pass filter memory */
    spx_word32_t *pi_gain;       /**< Gain of LPC filter at theta=pi (fe/2) */
-   spx_sig_t *innov_save;       /** If non-NULL, innovation is copied here */
+   spx_word16_t *innov_save;       /** If non-NULL, innovation is copied here */
    
    /* This is used in packet loss concealment */
    int    last_pitch;           /**< Pitch of last correctly decoded frame */

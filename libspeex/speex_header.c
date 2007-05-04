@@ -133,14 +133,14 @@ SpeexHeader *speex_packet_to_header(char *packet, int size)
    for (i=0;i<8;i++)
       if (packet[i]!=h[i])
       {
-         speex_warning ("This doesn't look like a Speex file");
+         speex_notify("This doesn't look like a Speex file");
          return NULL;
       }
    
    /*FIXME: Do we allow larger headers?*/
    if (size < (int)sizeof(SpeexHeader))
    {
-      speex_warning("Speex header too small");
+      speex_notify("Speex header too small");
       return NULL;
    }
    

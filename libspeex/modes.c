@@ -495,7 +495,7 @@ static const SpeexSBMode sb_wb_mode = {
 #endif
    .012,   /*lag_factor*/
    QCONST16(.0002,15), /*lpc_floor*/
-   0.9,
+   QCONST16(0.9f,15),
    {NULL, &wb_submode1, &wb_submode2, &wb_submode3, &wb_submode4, NULL, NULL, NULL},
    3,
    {1, 8, 2, 3, 4, 5, 5, 6, 6, 7, 7},
@@ -541,7 +541,7 @@ static const SpeexSBMode sb_uwb_mode = {
 #endif
    .012,   /*lag_factor*/
    QCONST16(.0002,15), /*lpc_floor*/
-   0.7,
+   QCONST16(0.7f,15),
    {NULL, &wb_submode1, NULL, NULL, NULL, NULL, NULL, NULL},
    1,
    {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
@@ -608,11 +608,7 @@ static const SpeexSubmode nb_48k_submode = {
    split_cb_search_shape_sign,
    split_cb_shape_sign_unquant,
    &split_cb_nb_48k,
-#ifdef FIXED_POINT
-   22938, 16384, 11796, 18022,
-#else
-   0.7, 0.5, .36, .55,
-#endif
+   QCONST16(.7,15),
    144
 };
 
@@ -622,7 +618,6 @@ static const SpeexNBMode nb_48k_mode = {
    240,    /*frameSize*/
    48,     /*subframeSize*/
    10,     /*lpcSize*/
-   640,    /*bufSize*/
    17,     /*pitchStart*/
    144,    /*pitchEnd*/
    0.9,    /*gamma1*/
@@ -667,7 +662,7 @@ const SpeexMode * speex_lib_get_mode (int mode)
   if (mode == SPEEX_MODEID_NB_48K) return &speex_nb_48k_mode;
 #endif
 
-  if (mode < 0 || mode > SPEEX_NB_MODES) return NULL;
+  if (mode < 0 || mode >= SPEEX_NB_MODES) return NULL;
 
   return speex_mode_list[mode];
 }

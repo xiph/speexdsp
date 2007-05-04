@@ -6,15 +6,15 @@ AM_CONFIG_HEADER([config.h])
 
 SPEEX_MAJOR_VERSION=1
 SPEEX_MINOR_VERSION=1
-SPEEX_MICRO_VERSION=13
-SPEEX_EXTRA_VERSION=
+SPEEX_MICRO_VERSION=14
+SPEEX_EXTRA_VERSION=-svn
 #SPEEX_VERSION=
 SPEEX_VERSION=$SPEEX_MAJOR_VERSION.$SPEEX_MINOR_VERSION.$SPEEX_MICRO_VERSION$SPEEX_EXTRA_VERSION
-SPEEX_VERSION="1.2-beta1"
+#SPEEX_VERSION="1.2beta1"
 
-SPEEX_LT_CURRENT=3
+SPEEX_LT_CURRENT=5
 SPEEX_LT_REVISION=0
-SPEEX_LT_AGE=2
+SPEEX_LT_AGE=4
 
 AC_SUBST(SPEEX_LT_CURRENT)
 AC_SUBST(SPEEX_LT_REVISION)
@@ -94,9 +94,9 @@ AC_ARG_ENABLE(wideband, [  --disable-wideband      Disable wideband codec],
   AC_DEFINE([DISABLE_WIDEBAND], , [Disable wideband codec])
 fi])
 
-AC_ARG_ENABLE(vorbis-psy, [  --enable-vorbis-psy       Enable Vorbis-style psychoacoustics],
+AC_ARG_ENABLE(vorbis-psy, [  --enable-vorbis-psy       Enable Vorbis-style psychoacoustics (EXPERIMENTAL)],
 [if test "$enableval" = yes; then
-  AC_DEFINE([VORBIS_PSYCHO], , [Enable Vorbis-style psychoacoustics])
+  AC_DEFINE([VORBIS_PSYCHO], , [Enable Vorbis-style psychoacoustics (EXPERIMENTAL)])
 fi])
 
 AC_ARG_ENABLE(valgrind, [  --enable-valgrind       Enable valgrind extra checks],

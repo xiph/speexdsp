@@ -11,5 +11,6 @@ pkginclude_HEADERS =  speex.h \
 	speex_stereo.h \
 	speex_preprocess.h \
 	speex_jitter.h \
-	speex_echo.h
+	speex_echo.h \
+	speex_resampler.h
 

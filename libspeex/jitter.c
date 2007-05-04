@@ -41,9 +41,12 @@
 #include <speex/speex.h>
 #include <speex/speex_bits.h>
 #include <speex/speex_jitter.h>
-#include <stdio.h>
 
-#define LATE_BINS 10
+#ifndef NULL
+#define NULL 0
+#endif
+
+#define LATE_BINS 15
 #define MAX_MARGIN 30                     /**< Number of bins in margin histogram */
 
 #define SPEEX_JITTER_MAX_BUFFER_SIZE 200   /**< Maximum number of packets in jitter buffer */
@@ -68,7 +71,9 @@ struct JitterBuffer_ {
    int tick_size;                                                         /**< Output granularity                  */
    int reset_state;                                                       /**< True if state was just reset        */
    int buffer_margin;                                                     /**< How many frames we want to keep in the buffer (lower bound) */
-   
+   int late_cutoff;                                                       /**< How late must a packet be for it not to be considered at all */
+   int interp_requested;                                                  /**< An interpolation is requested by speex_jitter_update_delay() */
+
    int lost_count;                                                        /**< Number of consecutive lost packets  */
    float shortterm_margin[MAX_MARGIN];                                    /**< Short term margin histogram         */
    float longterm_margin[MAX_MARGIN];                                     /**< Long term margin histogram          */
@@ -86,6 +91,7 @@ JitterBuffer *jitter_buffer_init(int tick)
          jitter->buf[i]=NULL;
       jitter->tick_size = tick;
       jitter->buffer_margin = 1;
+      jitter->late_cutoff = 50;
       jitter_buffer_reset(jitter);
    }
    return jitter;
@@ -141,6 +147,7 @@ void jitter_buffer_put(JitterBuffer *jitter, const JitterBufferPacket *packet)
    /* Cleanup buffer (remove old packets that weren't played) */
    for (i=0;i<SPEEX_JITTER_MAX_BUFFER_SIZE;i++)
    {
+      /* Make sure we don't discard a "just-late" packet in case we want to play it next (if we interpolate). */
       if (jitter->buf[i] && LE32(jitter->timestamp[i] + jitter->span[i], jitter->pointer_timestamp))
       {
          /*fprintf (stderr, "cleaned (not played)\n");*/
@@ -187,27 +194,33 @@ void jitter_buffer_put(JitterBuffer *jitter, const JitterBufferPacket *packet)
    jitter->span[i]=packet->span;
    jitter->len[i]=packet->len;
    
-   /* Adjust the buffer size depending on network conditions */
-   arrival_margin = (packet->timestamp - jitter->current_timestamp) - jitter->buffer_margin*jitter->tick_size;
+   /* Adjust the buffer size depending on network conditions.
+      The arrival margin is how much in advance (or late) the packet it */
+   arrival_margin = (((spx_int32_t)packet->timestamp) - ((spx_int32_t)jitter->current_timestamp))/jitter->tick_size - jitter->buffer_margin;
    
-   if (arrival_margin >= -LATE_BINS*jitter->tick_size)
+   if (arrival_margin >= -jitter->late_cutoff)
    {
+      /* Here we compute the histogram based on the time of arrival of the packet.
+         This is based on a (first-order) recursive average. We keep both a short-term
+         histogram and a long-term histogram */
       spx_int32_t int_margin;
+      /* First, apply the "damping" of the recursive average to all bins */
       for (i=0;i<MAX_MARGIN;i++)
       {
          jitter->shortterm_margin[i] *= .98;
          jitter->longterm_margin[i] *= .995;
       }
-      int_margin = LATE_BINS + arrival_margin/jitter->tick_size;
+      /* What histogram bin the packet should be counted in */
+      int_margin = LATE_BINS + arrival_margin;
       if (int_margin>MAX_MARGIN-1)
          int_margin = MAX_MARGIN-1;
-      if (int_margin>=0)
-      {
-         jitter->shortterm_margin[int_margin] += .02;
-         jitter->longterm_margin[int_margin] += .005;
-      }
+      if (int_margin<0)
+         int_margin = 0;
+      /* Add the packet to the right bin */
+      jitter->shortterm_margin[int_margin] += .02;
+      jitter->longterm_margin[int_margin] += .005;
    } else {
-      
+      /* Packet has arrived *way* too late, we pretty much consider it lost and not take it into account in the histogram */
       /*fprintf (stderr, "way too late = %d\n", arrival_margin);*/
       if (jitter->lost_count>20)
       {
@@ -229,9 +242,10 @@ void jitter_buffer_put(JitterBuffer *jitter, const JitterBufferPacket *packet)
 }
 
 /** Get one packet from the jitter buffer */
-int jitter_buffer_get(JitterBuffer *jitter, JitterBufferPacket *packet, spx_uint32_t *start_offset)
+int jitter_buffer_get(JitterBuffer *jitter, JitterBufferPacket *packet, spx_int32_t *start_offset)
 {
-   int i, j;
+   int i;
+   unsigned int j;
    float late_ratio_short;
    float late_ratio_long;
    float ontime_ratio_short;
@@ -241,6 +255,17 @@ int jitter_buffer_get(JitterBuffer *jitter, JitterBufferPacket *packet, spx_uint
    int chunk_size;
    int incomplete = 0;
    
+   if (jitter->interp_requested)
+   {
+      jitter->interp_requested = 0;
+      if (start_offset)
+         *start_offset = 0;
+      packet->timestamp = jitter->pointer_timestamp;
+      packet->span = jitter->tick_size;
+      jitter->pointer_timestamp += jitter->tick_size;
+      packet->len = 0;
+      return JITTER_BUFFER_MISSING;
+   }
    if (LT32(jitter->current_timestamp+jitter->tick_size, jitter->pointer_timestamp))
    {
       jitter->current_timestamp = jitter->pointer_timestamp;
@@ -255,14 +280,17 @@ int jitter_buffer_get(JitterBuffer *jitter, JitterBufferPacket *packet, spx_uint
    
    late_ratio_short = 0;
    late_ratio_long = 0;
+   /* Count the proportion of packets that are late */
    for (i=0;i<LATE_BINS;i++)
    {
       late_ratio_short += jitter->shortterm_margin[i];
       late_ratio_long += jitter->longterm_margin[i];
    }
+   /* Count the proportion of packets that are just on time */
    ontime_ratio_short = jitter->shortterm_margin[LATE_BINS];
    ontime_ratio_long = jitter->longterm_margin[LATE_BINS];
    early_ratio_short = early_ratio_long = 0;
+   /* Count the proportion of packets that are early */
    for (i=LATE_BINS+1;i<MAX_MARGIN;i++)
    {
       early_ratio_short += jitter->shortterm_margin[i];
@@ -274,42 +302,6 @@ int jitter_buffer_get(JitterBuffer *jitter, JitterBufferPacket *packet, spx_uint
       /*fprintf (stderr, "%f %f\n", early_ratio_short + ontime_ratio_short + late_ratio_short, early_ratio_long + ontime_ratio_long + late_ratio_long);*/
    }
    
-   /* Adjusting the buffering */
-   
-   if (late_ratio_short > .1 || late_ratio_long > .03)
-   {
-      /* If too many packets are arriving late */
-      jitter->shortterm_margin[MAX_MARGIN-1] += jitter->shortterm_margin[MAX_MARGIN-2];
-      jitter->longterm_margin[MAX_MARGIN-1] += jitter->longterm_margin[MAX_MARGIN-2];
-      for (i=MAX_MARGIN-3;i>=0;i--)
-      {
-         jitter->shortterm_margin[i+1] = jitter->shortterm_margin[i];
-         jitter->longterm_margin[i+1] = jitter->longterm_margin[i];         
-      }
-      jitter->shortterm_margin[0] = 0;
-      jitter->longterm_margin[0] = 0;            
-      jitter->pointer_timestamp -= jitter->tick_size;
-      jitter->current_timestamp -= jitter->tick_size;
-      /*fprintf (stderr, "i");*/
-      /*fprintf (stderr, "interpolate (getting some slack)\n");*/
-   } else if (late_ratio_short + ontime_ratio_short < .005 && late_ratio_long + ontime_ratio_long < .01 && early_ratio_short > .8)
-   {
-      /* Many frames arriving early */
-      jitter->shortterm_margin[0] += jitter->shortterm_margin[1];
-      jitter->longterm_margin[0] += jitter->longterm_margin[1];
-      for (i=1;i<MAX_MARGIN-1;i++)
-      {
-         jitter->shortterm_margin[i] = jitter->shortterm_margin[i+1];
-         jitter->longterm_margin[i] = jitter->longterm_margin[i+1];         
-      }
-      jitter->shortterm_margin[MAX_MARGIN-1] = 0;
-      jitter->longterm_margin[MAX_MARGIN-1] = 0;      
-      /*fprintf (stderr, "drop frame\n");*/
-      /*fprintf (stderr, "d");*/
-      jitter->pointer_timestamp += jitter->tick_size;
-      jitter->current_timestamp += jitter->tick_size;
-      /*fprintf (stderr, "dropping packet (getting more aggressive)\n");*/
-   }
    
    /* Searching for the packet that fits best */
    
@@ -325,7 +317,7 @@ int jitter_buffer_get(JitterBuffer *jitter, JitterBufferPacket *packet, spx_uint
    {
       for (i=0;i<SPEEX_JITTER_MAX_BUFFER_SIZE;i++)
       {
-         if (jitter->buf[i] && jitter->timestamp[i]<=jitter->pointer_timestamp && GE32(jitter->timestamp[i]+jitter->span[i],jitter->pointer_timestamp+chunk_size))
+         if (jitter->buf[i] && LE32(jitter->timestamp[i], jitter->pointer_timestamp) && GE32(jitter->timestamp[i]+jitter->span[i],jitter->pointer_timestamp+chunk_size))
             break;
       }
    }
@@ -335,7 +327,7 @@ int jitter_buffer_get(JitterBuffer *jitter, JitterBufferPacket *packet, spx_uint
    {
       for (i=0;i<SPEEX_JITTER_MAX_BUFFER_SIZE;i++)
       {
-         if (jitter->buf[i] && jitter->timestamp[i]<=jitter->pointer_timestamp && GT32(jitter->timestamp[i]+jitter->span[i],jitter->pointer_timestamp))
+         if (jitter->buf[i] && LE32(jitter->timestamp[i], jitter->pointer_timestamp) && GT32(jitter->timestamp[i]+jitter->span[i],jitter->pointer_timestamp))
             break;
       }
    }
@@ -385,7 +377,7 @@ int jitter_buffer_get(JitterBuffer *jitter, JitterBufferPacket *packet, spx_uint
       jitter->buf[i] = NULL;
       /* Set timestamp and span (if requested) */
       if (start_offset)
-         *start_offset = jitter->timestamp[i]-jitter->pointer_timestamp;
+         *start_offset = (spx_int32_t)jitter->timestamp[i]-(spx_int32_t)jitter->pointer_timestamp;
       packet->timestamp = jitter->timestamp[i];
       packet->span = jitter->span[i];
       /* Point at the end of the current packet */
@@ -409,6 +401,26 @@ int jitter_buffer_get(JitterBuffer *jitter, JitterBufferPacket *packet, spx_uint
    packet->span = jitter->tick_size;
    jitter->pointer_timestamp += chunk_size;
    packet->len = 0;
+   
+   /* Adjusting the buffering bssed on the amount of packets that are early/on time/late */   
+   if (late_ratio_short > .1 || late_ratio_long > .03)
+   {
+      /* If too many packets are arriving late */
+      jitter->shortterm_margin[MAX_MARGIN-1] += jitter->shortterm_margin[MAX_MARGIN-2];
+      jitter->longterm_margin[MAX_MARGIN-1] += jitter->longterm_margin[MAX_MARGIN-2];
+      for (i=MAX_MARGIN-3;i>=0;i--)
+      {
+         jitter->shortterm_margin[i+1] = jitter->shortterm_margin[i];
+         jitter->longterm_margin[i+1] = jitter->longterm_margin[i];         
+      }
+      jitter->shortterm_margin[0] = 0;
+      jitter->longterm_margin[0] = 0;            
+      jitter->pointer_timestamp -= jitter->tick_size;
+      jitter->current_timestamp -= jitter->tick_size;
+      /*fprintf (stderr, "i");*/
+      /*fprintf (stderr, "interpolate (getting some slack)\n");*/
+   }
+
    return JITTER_BUFFER_MISSING;
 
 }
@@ -424,7 +436,113 @@ void jitter_buffer_tick(JitterBuffer *jitter)
    jitter->current_timestamp += jitter->tick_size;
 }
 
+/* Let the jitter buffer know it's the right time to adjust the buffering delay to the network conditions */
+int jitter_buffer_update_delay(JitterBuffer *jitter, JitterBufferPacket *packet, spx_int32_t *start_offset)
+{
+   int i;
+   float late_ratio_short;
+   float late_ratio_long;
+   float ontime_ratio_short;
+   float ontime_ratio_long;
+   float early_ratio_short;
+   float early_ratio_long;
+   
+   if (LT32(jitter->current_timestamp+jitter->tick_size, jitter->pointer_timestamp))
+   {
+      jitter->current_timestamp = jitter->pointer_timestamp;
+      speex_warning("did you forget to call jitter_buffer_tick() by any chance?");
+   }
+   /*fprintf (stderr, "get packet %d %d\n", jitter->pointer_timestamp, jitter->current_timestamp);*/
 
+   /* FIXME: This should be only what remaining of the current tick */
+   late_ratio_short = 0;
+   late_ratio_long = 0;
+   /* Count the proportion of packets that are late */
+   for (i=0;i<LATE_BINS;i++)
+   {
+      late_ratio_short += jitter->shortterm_margin[i];
+      late_ratio_long += jitter->longterm_margin[i];
+   }
+   /* Count the proportion of packets that are just on time */
+   ontime_ratio_short = jitter->shortterm_margin[LATE_BINS];
+   ontime_ratio_long = jitter->longterm_margin[LATE_BINS];
+   early_ratio_short = early_ratio_long = 0;
+   /* Count the proportion of packets that are early */
+   for (i=LATE_BINS+1;i<MAX_MARGIN;i++)
+   {
+      early_ratio_short += jitter->shortterm_margin[i];
+      early_ratio_long += jitter->longterm_margin[i];
+   }
+   
+   /* Adjusting the buffering bssed on the amount of packets that are early/on time/late */   
+   if (late_ratio_short > .1 || late_ratio_long > .03)
+   {
+      /* If too many packets are arriving late */
+      jitter->shortterm_margin[MAX_MARGIN-1] += jitter->shortterm_margin[MAX_MARGIN-2];
+      jitter->longterm_margin[MAX_MARGIN-1] += jitter->longterm_margin[MAX_MARGIN-2];
+      for (i=MAX_MARGIN-3;i>=0;i--)
+      {
+         jitter->shortterm_margin[i+1] = jitter->shortterm_margin[i];
+         jitter->longterm_margin[i+1] = jitter->longterm_margin[i];         
+      }
+      jitter->shortterm_margin[0] = 0;
+      jitter->longterm_margin[0] = 0;            
+      jitter->pointer_timestamp -= jitter->tick_size;
+      jitter->current_timestamp -= jitter->tick_size;
+      jitter->interp_requested = 1;
+      return JITTER_BUFFER_ADJUST_INTERPOLATE;
+   
+   } else if (late_ratio_short + ontime_ratio_short < .005 && late_ratio_long + ontime_ratio_long < .01 && early_ratio_short > .8)
+   {
+      /* Many frames arriving early */
+      jitter->shortterm_margin[0] += jitter->shortterm_margin[1];
+      jitter->longterm_margin[0] += jitter->longterm_margin[1];
+      for (i=1;i<MAX_MARGIN-1;i++)
+      {
+         jitter->shortterm_margin[i] = jitter->shortterm_margin[i+1];
+         jitter->longterm_margin[i] = jitter->longterm_margin[i+1];         
+      }
+      jitter->shortterm_margin[MAX_MARGIN-1] = 0;
+      jitter->longterm_margin[MAX_MARGIN-1] = 0;      
+      /*fprintf (stderr, "drop frame\n");*/
+      /*fprintf (stderr, "d");*/
+      jitter->pointer_timestamp += jitter->tick_size;
+      jitter->current_timestamp += jitter->tick_size;
+      return JITTER_BUFFER_ADJUST_DROP;
+   }
+   
+   return JITTER_BUFFER_ADJUST_OK;
+}
+
+/* Used like the ioctl function to control the jitter buffer parameters */
+int jitter_buffer_ctl(JitterBuffer *jitter, int request, void *ptr)
+{
+   int count, i;
+   switch(request)
+   {
+      case JITTER_BUFFER_SET_MARGIN:
+         jitter->buffer_margin = *(spx_int32_t*)ptr;
+         break;
+      case JITTER_BUFFER_GET_MARGIN:
+         *(spx_int32_t*)ptr = jitter->buffer_margin;
+         break;
+      case JITTER_BUFFER_GET_AVALIABLE_COUNT:
+         count = 0;
+         for (i=0;i<SPEEX_JITTER_MAX_BUFFER_SIZE;i++)
+         {
+            if (jitter->buf[i] && LE32(jitter->pointer_timestamp, jitter->timestamp[i]))
+            {
+               count++;
+            }
+         }
+         *(spx_int32_t*)ptr = count;
+         break;
+      default:
+         speex_warning_int("Unknown jitter_buffer_ctl request: ", request);
+         return -1;
+   }
+   return 0;
+}
 
 
 
@@ -499,6 +617,7 @@ void speex_jitter_get(SpeexJitter *jitter, short *out, int *current_timestamp)
             out[i]=0;
       }
    }
+   jitter_buffer_update_delay(jitter->packets, &packet, NULL);
    jitter_buffer_tick(jitter->packets);
 }
 

@@ -80,7 +80,7 @@ int oe_write_page(ogg_page *page, FILE *fp)
 #define MAX_FRAME_BYTES 2000
 
 /* Convert input audio bits, endians and channels */
-static int read_samples(FILE *fin,int frame_size, int bits, int channels, int lsb, short * input, char *buff, int *size)
+static int read_samples(FILE *fin,int frame_size, int bits, int channels, int lsb, short * input, char *buff, spx_int32_t *size)
 {   
    unsigned char in[MAX_FRAME_BYTES*2];
    int i;
@@ -253,13 +253,13 @@ int main(int argc, char **argv)
    char *inFile, *outFile;
    FILE *fin, *fout;
    short input[MAX_FRAME_SIZE];
-   int frame_size;
+   spx_int32_t frame_size;
    int quiet=0;
-   int vbr_enabled=0;
+   spx_int32_t vbr_enabled=0;
    spx_int32_t vbr_max=0;
    int abr_enabled=0;
-   int vad_enabled=0;
-   int dtx_enabled=0;
+   spx_int32_t vad_enabled=0;
+   spx_int32_t dtx_enabled=0;
    int nbBytes;
    const SpeexMode *mode=NULL;
    int modeID = -1;
@@ -300,10 +300,11 @@ int main(int argc, char **argv)
       {0, 0, 0, 0}
    };
    int print_bitrate=0;
-   int rate=0, size;
+   spx_int32_t rate=0;
+   spx_int32_t size;
    int chan=1;
    int fmt=16;
-   int quality=-1;
+   spx_int32_t quality=-1;
    float vbr_quality=-1;
    int lsb=1;
    ogg_stream_state os;
@@ -314,20 +315,20 @@ int main(int argc, char **argv)
    int id=-1;
    SpeexHeader header;
    int nframes=1;
-   int complexity=3;
+   spx_int32_t complexity=3;
    char *vendor_string = "Encoded with Speex " SPEEX_VERSION;
    char *comments;
    int comments_length;
    int close_in=0, close_out=0;
    int eos=0;
-   int bitrate=0;
+   spx_int32_t bitrate=0;
    double cumul_bits=0, enc_frames=0;
    char first_bytes[12];
    int wave_input=0;
-   int tmp;
+   spx_int32_t tmp;
    SpeexPreprocessState *preprocess = NULL;
    int denoise_enabled=0, agc_enabled=0;
-   int lookahead = 0;
+   spx_int32_t lookahead = 0;
    
    comment_init(&comments, &comments_length, vendor_string);
 

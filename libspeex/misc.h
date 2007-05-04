@@ -40,7 +40,7 @@
 #define SPEEX_MINOR_VERSION 1         /**< Minor Speex version. */
 #define SPEEX_MICRO_VERSION 13        /**< Micro Speex version. */
 #define SPEEX_EXTRA_VERSION ""        /**< Extra Speex version. */
-#define SPEEX_VERSION "speex-1.2-beta1"  /**< Speex version string. */
+#define SPEEX_VERSION "speex-1.2beta1"  /**< Speex version string. */
 #endif
 
 /* A couple test to catch stupid option combinations */
@@ -75,10 +75,21 @@
 void print_vec(float *vec, int len, char *name);
 #endif
 
-/** Convert big endian */
-spx_uint32_t be_int(spx_uint32_t i);
 /** Convert little endian */
-spx_uint32_t le_int(spx_uint32_t i);
+static inline spx_int32_t le_int(spx_int32_t i)
+{
+#ifdef WORDS_BIGENDIAN
+   spx_uint32_t ui, ret;
+   ui = i;
+   ret =  ui>>24;
+   ret |= (ui>>8)&0x0000ff00;
+   ret |= (ui<<8)&0x00ff0000;
+   ret |= (ui<<24);
+   return ret;
+#else
+   return i;
+#endif
+}
 
 /** Speex wrapper for calloc. To do your own dynamic allocation, all you need to do is replace this function, speex_realloc and speex_free */
 void *speex_alloc (int size);
@@ -98,20 +109,17 @@ void speex_free_scratch (void *ptr);
 /** Speex wrapper for mem_move */
 void *speex_move (void *dest, void *src, int n);
 
-/** Speex wrapper for memcpy */
-void speex_memcpy_bytes(char *dst, char *src, int nbytes);
-
-/** Speex wrapper for memset */
-void speex_memset_bytes(char *dst, char src, int nbytes);
-
-/** Print error message to stderr */
+/** Abort with an error message to stderr (internal Speex error) */
 void speex_error(const char *str);
 
-/** Print warning message to stderr */
+/** Print warning message to stderr (programming error) */
 void speex_warning(const char *str);
 
 /** Print warning message with integer argument to stderr */
 void speex_warning_int(const char *str, int val);
+
+/** Print notification message to stderr */
+void speex_notify(const char *str);
 
 /** Generate a random number */
 spx_word16_t speex_rand(spx_word16_t std, spx_int32_t *seed);

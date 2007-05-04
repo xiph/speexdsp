@@ -27,9 +27,9 @@ int main(int argc, char **argv)
    void *st;
    void *dec;
    SpeexBits bits;
-   int tmp;
+   spx_int32_t tmp;
    int bitCount=0;
-   int skip_group_delay;
+   spx_int32_t skip_group_delay;
    SpeexCallback callback;
 
    sigpow = 0;

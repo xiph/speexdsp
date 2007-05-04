@@ -46,6 +46,23 @@
 #define SB_SUBMODES 8
 #define SB_SUBMODE_BITS 3
 
+/* Used internally, NOT TO BE USED in applications */
+/** Used internally*/
+#define SPEEX_GET_PI_GAIN 100
+/** Used internally*/
+#define SPEEX_GET_EXC     101
+/** Used internally*/
+#define SPEEX_GET_INNOV   102
+/** Used internally*/
+#define SPEEX_GET_DTX_STATUS   103
+/** Used internally*/
+#define SPEEX_SET_INNOVATION_SAVE   104
+/** Used internally*/
+#define SPEEX_SET_WIDEBAND   105
+
+/** Used internally*/
+#define SPEEX_GET_STACK   106
+
 
 /** Quantizes LSPs */
 typedef void (*lsp_quant_func)(spx_lsp_t *, spx_lsp_t *, int, SpeexBits *);
@@ -130,7 +147,7 @@ typedef struct SpeexSBMode {
    spx_word16_t gamma2;   /**< Perceptual filter parameter #1 */
    float   lag_factor;    /**< Lag-windowing parameter */
    spx_word16_t   lpc_floor;     /**< Noise floor for LPC analysis */
-   float   folding_gain;
+   spx_word16_t   folding_gain;
 
    const SpeexSubmode *submodes[SB_SUBMODES]; /**< Sub-mode data for the mode */
    int     defaultSubmode; /**< Default sub-mode to use when encoding */

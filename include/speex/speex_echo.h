@@ -55,16 +55,19 @@ struct SpeexEchoState_;
 typedef struct SpeexEchoState_ SpeexEchoState;
 
 /** Creates a new echo canceller state */
-SpeexEchoState *speex_echo_state_init(int frame_size, int filter_length, int nb_mic, int nb_speakers);
+SpeexEchoState *mc_echo_state_init(int frame_size, int filter_length, int nb_mic, int nb_speakers);
 
 /** Destroys an echo canceller state */
 void mc_echo_state_destroy(SpeexEchoState *st);
 
 /** Performs echo cancellation a frame */
+void mc_echo_cancellation(SpeexEchoState *st, const spx_int16_t *rec, const spx_int16_t *play, spx_int16_t *out);
+
+/** Performs echo cancellation a frame */
 void mc_echo_cancel(SpeexEchoState *st, const spx_int16_t *rec, const spx_int16_t *play, spx_int16_t *out, spx_int32_t *Yout);
 
 /** Perform echo cancellation using internal playback buffer */
-void mc_echo_capture(SpeexEchoState *st, const spx_int16_t *rec, spx_int16_t *out, spx_int32_t *Yout);
+void mc_echo_capture(SpeexEchoState *st, const spx_int16_t *rec, spx_int16_t *out);
 
 /** Let the echo canceller know that a frame was just played */
 void mc_echo_playback(SpeexEchoState *st, const spx_int16_t *play);
