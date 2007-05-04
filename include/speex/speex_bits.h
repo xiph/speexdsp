@@ -64,6 +64,9 @@ void speex_bits_init(SpeexBits *bits);
 /** Initializes SpeexBits struct using a pre-allocated buffer*/
 void speex_bits_init_buffer(SpeexBits *bits, void *buff, int buf_size);
 
+/** Sets the bits in a SpeexBits struct to use data from an existing buffer (for decoding without copying data) */
+void speex_bits_set_bit_buffer(SpeexBits *bits, void *buff, int buf_size);
+
 /** Frees all resources associated to a SpeexBits struct. Right now this does nothing since no resources are allocated, but this could change in the future.*/
 void speex_bits_destroy(SpeexBits *bits);
 

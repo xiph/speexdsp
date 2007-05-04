@@ -67,6 +67,20 @@ void speex_bits_init_buffer(SpeexBits *bits, void *buff, int buf_size)
    speex_bits_reset(bits);
 }
 
+void speex_bits_set_bit_buffer(SpeexBits *bits, void *buff, int buf_size)
+{
+   bits->chars = (char*)buff;
+   bits->buf_size = buf_size;
+
+   bits->owner=0;
+
+   bits->nbBits=buf_size<<LOG2_BITS_PER_CHAR;
+   bits->charPtr=0;
+   bits->bitPtr=0;
+   bits->overflow=0;
+   
+}
+
 void speex_bits_destroy(SpeexBits *bits)
 {
    if (bits->owner)
