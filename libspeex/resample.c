@@ -658,9 +658,8 @@ static void update_filter(SpeexResamplerState *st)
    {
       spx_uint32_t i;
       /* Reduce filter length, this a bit tricky */
-      /*speex_warning("decrease filter size (unimplemented)");*/
-      /* Adjust last_sample (which will likely end up negative) */
-      /*st->last_sample += (st->filt_len - old_length)/2;*/
+      /* We must copy the memory that's no longer used into a new "magic" 
+         section that will be used directly as input the next time(s)*/
       for (i=0;i<st->nb_channels;i++)
       {
          spx_uint32_t j;
@@ -775,6 +774,7 @@ static int speex_resampler_process_native(SpeexResamplerState *st, spx_uint32_t 
             mem[N-1+i]=mem[N-1+i+tmp_in_len];
       }
       out += tmp_out_len;
+      *out_len -= tmp_out_len;
    }
    
    /* Call the right resampler through the function ptr */
