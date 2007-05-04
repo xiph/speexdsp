@@ -657,16 +657,19 @@ static void update_filter(SpeexResamplerState *st)
    } else if (st->filt_len < old_length)
    {
       spx_uint32_t i;
-      /* Reduce filter length, this a bit tricky */
-      /* We must copy the memory that's no longer used into a new "magic" 
-         section that will be used directly as input the next time(s)*/
+      /* Reduce filter length, this a bit tricky. We need to store some of the memory as "magic"
+         samples so they can beused directly as input the next time(s) */
       for (i=0;i<st->nb_channels;i++)
       {
          spx_uint32_t j;
+         spx_uint32_t old_magic = st->magic_samples[i];
+         
          st->magic_samples[i] = (old_length - st->filt_len)/2;
+         /* We must copy some of the memory that's no longer used */
          /* Copy data going backward */
-         for (j=0;j<st->filt_len-1+st->magic_samples[i];j++)
+         for (j=0;j<st->filt_len-1+st->magic_samples[i]+old_magic;j++)
             st->mem[i*st->mem_alloc_size+j] = st->mem[i*st->mem_alloc_size+j+st->magic_samples[i]];
+         st->magic_samples[i] += old_magic;
       }
    }
 
@@ -759,7 +762,6 @@ static int speex_resampler_process_native(SpeexResamplerState *st, spx_uint32_t 
       spx_uint32_t tmp_magic;
       tmp_in_len = st->magic_samples[channel_index];
       tmp_out_len = *out_len;
-      /* FIXME: Need to handle the case where the out array is too small */
       /* magic_samples needs to be set to zero to avoid infinite recursion */
       tmp_magic = st->magic_samples[channel_index];
       st->magic_samples[channel_index] = 0;
