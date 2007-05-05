@@ -633,7 +633,7 @@ static void update_filter(SpeexResamplerState *st)
       /*speex_warning("reinit filter");*/
    } else if (st->filt_len > old_length)
    {
-      spx_uint32_t i;
+      spx_int32_t i;
       /* Increase the filter length */
       /*speex_warning("increase filter size");*/
       int old_alloc_size = st->mem_alloc_size;
@@ -642,17 +642,33 @@ static void update_filter(SpeexResamplerState *st)
          st->mem = (spx_word16_t*)speex_realloc(st->mem, st->nb_channels*(st->filt_len-1) * sizeof(spx_word16_t));
          st->mem_alloc_size = st->filt_len-1;
       }
-      for (i=0;i<st->nb_channels;i++)
+      for (i=st->nb_channels-1;i>=0;i--)
       {
-         spx_uint32_t j;
+         spx_int32_t j;
+         spx_uint32_t olen = old_length;
+         if (st->magic_samples[i])
+         {
+            /* Try and remove the magic samples as if nothing had happened */
+            
+            /* FIXME: This is wrong but for now we need it to avoid going over the array bounds */
+            if (st->magic_samples[i] > (st->filt_len - old_length)/2)
+               st->magic_samples[i] = (st->filt_len - old_length)/2;
+            
+            olen = old_length + 2*st->magic_samples[i];
+            for (j=old_length-2+st->magic_samples[i];j>=0;j--)
+               st->mem[i*st->mem_alloc_size+j+st->magic_samples[i]] = st->mem[i*old_alloc_size+j];
+            for (j=0;j<st->magic_samples[i];j++)
+               st->mem[i*st->mem_alloc_size+j] = 0;
+            st->magic_samples[i] = 0;
+         }
          /* Copy data going backward */
-         for (j=0;j<old_length-1;j++)
-            st->mem[i*st->mem_alloc_size+(st->filt_len-2-j)] = st->mem[i*old_alloc_size+(old_length-2-j)];
+         for (j=0;j<olen-1;j++)
+            st->mem[i*st->mem_alloc_size+(st->filt_len-2-j)] = st->mem[i*old_alloc_size+(olen-2-j)];
          /* Then put zeros for lack of anything better */
          for (;j<st->filt_len-1;j++)
             st->mem[i*st->mem_alloc_size+(st->filt_len-2-j)] = 0;
          /* Adjust last_sample */
-         st->last_sample[i] += (st->filt_len - old_length)/2;
+         st->last_sample[i] += (st->filt_len - olen)/2;
       }
    } else if (st->filt_len < old_length)
    {
