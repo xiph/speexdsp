@@ -32,6 +32,10 @@
 
 */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "medfilter.h"
 #include "misc.h"
 
