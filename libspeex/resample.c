@@ -615,6 +615,10 @@ static void update_filter(SpeexResamplerState *st)
    st->int_advance = st->num_rate/st->den_rate;
    st->frac_advance = st->num_rate%st->den_rate;
 
+   
+   /* Here's the place where we update the filter memory to take into account
+      the change in filter length. It's probably the messiest part of the code
+      due to handling of lots of corner cases. */
    if (!st->mem)
    {
       spx_uint32_t i;
@@ -646,14 +650,11 @@ static void update_filter(SpeexResamplerState *st)
       {
          spx_int32_t j;
          spx_uint32_t olen = old_length;
-         if (st->magic_samples[i])
+         /*if (st->magic_samples[i])*/
          {
             /* Try and remove the magic samples as if nothing had happened */
             
             /* FIXME: This is wrong but for now we need it to avoid going over the array bounds */
-            if (st->magic_samples[i] > (st->filt_len - old_length)/2)
-               st->magic_samples[i] = (st->filt_len - old_length)/2;
-            
             olen = old_length + 2*st->magic_samples[i];
             for (j=old_length-2+st->magic_samples[i];j>=0;j--)
                st->mem[i*st->mem_alloc_size+j+st->magic_samples[i]] = st->mem[i*old_alloc_size+j];
@@ -661,14 +662,23 @@ static void update_filter(SpeexResamplerState *st)
                st->mem[i*st->mem_alloc_size+j] = 0;
             st->magic_samples[i] = 0;
          }
-         /* Copy data going backward */
-         for (j=0;j<olen-1;j++)
-            st->mem[i*st->mem_alloc_size+(st->filt_len-2-j)] = st->mem[i*old_alloc_size+(olen-2-j)];
-         /* Then put zeros for lack of anything better */
-         for (;j<st->filt_len-1;j++)
-            st->mem[i*st->mem_alloc_size+(st->filt_len-2-j)] = 0;
-         /* Adjust last_sample */
-         st->last_sample[i] += (st->filt_len - olen)/2;
+         if (st->filt_len > olen)
+         {
+            /* If the new filter length is still bigger than the "augmented" length */
+            /* Copy data going backward */
+            for (j=0;j<olen-1;j++)
+               st->mem[i*st->mem_alloc_size+(st->filt_len-2-j)] = st->mem[i*st->mem_alloc_size+(olen-2-j)];
+            /* Then put zeros for lack of anything better */
+            for (;j<st->filt_len-1;j++)
+               st->mem[i*st->mem_alloc_size+(st->filt_len-2-j)] = 0;
+            /* Adjust last_sample */
+            st->last_sample[i] += (st->filt_len - olen)/2;
+         } else {
+            /* Put back some of the magic! */
+            st->magic_samples[i] = (olen - st->filt_len)/2;
+            for (j=0;j<st->filt_len-1+st->magic_samples[i];j++)
+               st->mem[i*st->mem_alloc_size+j] = st->mem[i*st->mem_alloc_size+j+st->magic_samples[i]];
+         }
       }
    } else if (st->filt_len < old_length)
    {
