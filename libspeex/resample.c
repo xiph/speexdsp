@@ -684,12 +684,11 @@ static void update_filter(SpeexResamplerState *st)
    {
       spx_uint32_t i;
       /* Reduce filter length, this a bit tricky. We need to store some of the memory as "magic"
-         samples so they can beused directly as input the next time(s) */
+         samples so they can be used directly as input the next time(s) */
       for (i=0;i<st->nb_channels;i++)
       {
          spx_uint32_t j;
          spx_uint32_t old_magic = st->magic_samples[i];
-         
          st->magic_samples[i] = (old_length - st->filt_len)/2;
          /* We must copy some of the memory that's no longer used */
          /* Copy data going backward */
@@ -784,14 +783,19 @@ static int speex_resampler_process_native(SpeexResamplerState *st, spx_uint32_t 
    /* Handle the case where we have samples left from a reduction in filter length */
    if (st->magic_samples[channel_index])
    {
+      int istride_save;
       spx_uint32_t tmp_in_len;
       spx_uint32_t tmp_magic;
+      
+      istride_save = st->in_stride;
       tmp_in_len = st->magic_samples[channel_index];
       tmp_out_len = *out_len;
       /* magic_samples needs to be set to zero to avoid infinite recursion */
       tmp_magic = st->magic_samples[channel_index];
       st->magic_samples[channel_index] = 0;
+      st->in_stride = 1;
       speex_resampler_process_native(st, channel_index, mem+N-1, &tmp_in_len, out, &tmp_out_len);
+      st->in_stride = istride_save;
       /*speex_warning_int("extra samples:", tmp_out_len);*/
       /* If we couldn't process all "magic" input samples, save the rest for next time */
       if (tmp_in_len < tmp_magic)
@@ -801,7 +805,7 @@ static int speex_resampler_process_native(SpeexResamplerState *st, spx_uint32_t 
          for (i=0;i<st->magic_samples[channel_index];i++)
             mem[N-1+i]=mem[N-1+i+tmp_in_len];
       }
-      out += tmp_out_len;
+      out += tmp_out_len*st->out_stride;
       *out_len -= tmp_out_len;
    }
    
@@ -947,11 +951,13 @@ int speex_resampler_process_interleaved_float(SpeexResamplerState *st, const flo
 {
    spx_uint32_t i;
    int istride_save, ostride_save;
+   spx_uint32_t bak_len = *out_len;
    istride_save = st->in_stride;
    ostride_save = st->out_stride;
    st->in_stride = st->out_stride = st->nb_channels;
    for (i=0;i<st->nb_channels;i++)
    {
+      *out_len = bak_len;
       speex_resampler_process_float(st, i, in+i, in_len, out+i, out_len);
    }
    st->in_stride = istride_save;
@@ -959,15 +965,18 @@ int speex_resampler_process_interleaved_float(SpeexResamplerState *st, const flo
    return RESAMPLER_ERR_SUCCESS;
 }
 
+               
 int speex_resampler_process_interleaved_int(SpeexResamplerState *st, const spx_int16_t *in, spx_uint32_t *in_len, spx_int16_t *out, spx_uint32_t *out_len)
 {
    spx_uint32_t i;
    int istride_save, ostride_save;
+   spx_uint32_t bak_len = *out_len;
    istride_save = st->in_stride;
    ostride_save = st->out_stride;
    st->in_stride = st->out_stride = st->nb_channels;
    for (i=0;i<st->nb_channels;i++)
    {
+      *out_len = bak_len;
       speex_resampler_process_int(st, i, in+i, in_len, out+i, out_len);
    }
    st->in_stride = istride_save;
