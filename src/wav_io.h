@@ -35,7 +35,7 @@
 #include <stdio.h>
 #include "speex/speex_types.h"
 
-#ifdef WORDS_BIGENDIAN
+#if !defined(__LITTLE_ENDIAN__) && ( defined(WORDS_BIGENDIAN) || defined(__BIG_ENDIAN__) )
 #define le_short(s) ((short) ((unsigned short) (s) << 8) | ((unsigned short) (s) >> 8))
 #define be_short(s) ((short) (s))
 #else
@@ -46,7 +46,7 @@
 /** Convert little endian */
 static inline spx_int32_t le_int(spx_int32_t i)
 {
-#ifdef WORDS_BIGENDIAN
+#if !defined(__LITTLE_ENDIAN__) && ( defined(WORDS_BIGENDIAN) || defined(__BIG_ENDIAN__) )
    spx_uint32_t ui, ret;
    ui = i;
    ret =  ui>>24;

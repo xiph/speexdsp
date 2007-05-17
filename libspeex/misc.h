@@ -78,7 +78,7 @@ void print_vec(float *vec, int len, char *name);
 /** Convert little endian */
 static inline spx_int32_t le_int(spx_int32_t i)
 {
-#ifdef WORDS_BIGENDIAN
+#if !defined(__LITTLE_ENDIAN__) && ( defined(WORDS_BIGENDIAN) || defined(__BIG_ENDIAN__) )
    spx_uint32_t ui, ret;
    ui = i;
    ret =  ui>>24;
