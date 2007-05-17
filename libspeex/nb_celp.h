@@ -148,7 +148,11 @@ typedef struct DecState {
    spx_mem_t *mem_sp;           /**< Filter memory for synthesis signal */
    spx_mem_t mem_hp[2];         /**< High-pass filter memory */
    spx_word32_t *pi_gain;       /**< Gain of LPC filter at theta=pi (fe/2) */
-   spx_word16_t *innov_save;       /** If non-NULL, innovation is copied here */
+   spx_word16_t *innov_save;    /** If non-NULL, innovation is copied here */
+   
+   spx_word16_t level;
+   spx_word16_t max_level;
+   spx_word16_t min_level;
    
    /* This is used in packet loss concealment */
    int    last_pitch;           /**< Pitch of last correctly decoded frame */

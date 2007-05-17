@@ -155,6 +155,10 @@ extern "C" {
 /** Get status of input/output high-pass filtering */
 #define SPEEX_GET_HIGHPASS 45
 
+/** Get "activity level" of the last decoded frame, i.e.
+    now much damage we cause if we remove the frame */
+#define SPEEX_GET_ACTIVITY 47
+
 
 /* Preserving compatibility:*/
 /** Equivalent to SPEEX_SET_ENH */

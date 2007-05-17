@@ -1720,6 +1720,14 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
    /*for (i=0;i<st->frameSize;i++)
      printf ("%d\n", (int)st->frame[i]);*/
 
+   /* Tracking output level */
+   st->level = 1+PSHR32(ol_gain,SIG_SHIFT);
+   st->max_level = MAX16(MULT16_16_Q15(QCONST16(.99f,15), st->max_level), st->level);
+   st->min_level = MIN16(ADD16(1,MULT16_16_Q14(QCONST16(1.01f,14), st->min_level)), st->level);
+   if (st->max_level < st->min_level+1)
+      st->max_level = st->min_level+1;
+   /*printf ("%f %f %f %d\n", og, st->min_level, st->max_level, update);*/
+   
    /* Store the LSPs for interpolation in the next frame */
    for (i=0;i<st->lpcSize;i++)
       st->old_qlsp[i] = qlsp[i];
@@ -2013,7 +2021,19 @@ int nb_decoder_ctl(void *state, int request, void *ptr)
    case SPEEX_GET_HIGHPASS:
       (*(spx_int32_t*)ptr) = st->highpass_enabled;
       break;
-
+   case SPEEX_GET_ACTIVITY:
+   {
+      float ret;
+      ret = log(st->level/st->min_level)/log(st->max_level/st->min_level);
+      if (ret>1)
+         ret = 1;
+      /* Done in a strange way to catch NaNs as well */
+      if (!(ret > 0))
+         ret = 0;
+      /*printf ("%f %f %f %f\n", st->level, st->min_level, st->max_level, ret);*/
+      (*(spx_int32_t*)ptr) = (int)(100*ret);
+   }
+   break;
    case SPEEX_GET_PI_GAIN:
       {
          int i;

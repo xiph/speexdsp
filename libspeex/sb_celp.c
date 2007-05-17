@@ -1441,7 +1441,9 @@ int sb_decoder_ctl(void *state, int request, void *ptr)
    case SPEEX_GET_HIGHPASS:
       speex_decoder_ctl(st->st_low, SPEEX_GET_HIGHPASS, ptr);
       break;
-
+   case SPEEX_GET_ACTIVITY:
+      speex_decoder_ctl(st->st_low, SPEEX_GET_ACTIVITY, ptr);
+      break;
    case SPEEX_GET_PI_GAIN:
       {
          int i;
