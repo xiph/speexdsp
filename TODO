@@ -8,15 +8,18 @@ For 1.2beta2:
 *remove wideband pseudo-stack
 *pitch prediction saturation to prevent NaN-based DoS attacks.
 *Fix jitter buffer
+*Use lower sinc oversampling when down-sampling
+*Fix register issue on Blackfin
+*Complete resampler API (error codes)
+*le_short problems
+*Fix resampler corner case
+*Make it possible to decode a "raw" packet with SpeexBits
+*speex_decoder_ctl() call to detect silence
 
-speex_decoder_ctl() call to detect silence
-Complete resampler API (error codes)
-Fix resampler corner case
-Use lower sinc oversampling when down-sampling
-**Fix register issue on Blackfin
 Merge TriMedia stuff
-Make it possible to decode a "raw" packet with SpeexBits
 Control delay in new AEC API.
+Big endian issues on MacOS
+
 
 Later:
 Do VAD properly
