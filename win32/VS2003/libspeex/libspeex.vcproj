@@ -297,6 +297,12 @@
 				RelativePath="..\..\..\libspeex\exc_8_128_table.c">
 			</File>
 			<File
+				RelativePath="..\..\..\libspeex\fftwrap.c">
+			</File>
+			<File
+				RelativePath="..\..\..\libspeex\filterbank.c">
+			</File>
+			<File
 				RelativePath="..\..\..\libspeex\filters.c">
 			</File>
 			<File
@@ -316,6 +322,12 @@
 			</File>
 			<File
 				RelativePath="..\..\..\libspeex\jitter.c">
+			</File>
+			<File
+				RelativePath="..\..\..\libspeex\kiss_fft.c">
+			</File>
+			<File
+				RelativePath="..\..\..\libspeex\kiss_fftr.c">
 			</File>
 			<File
 				RelativePath=".\libspeex.def">
@@ -392,10 +404,22 @@
 				RelativePath="..\..\config.h">
 			</File>
 			<File
+				RelativePath="..\..\..\libspeex\fftwrap.h">
+			</File>
+			<File
+				RelativePath="..\..\..\libspeex\filterbank.h">
+			</File>
+			<File
 				RelativePath="..\..\..\libspeex\filters.h">
 			</File>
 			<File
 				RelativePath="..\..\..\libspeex\filters_sse.h">
+			</File>
+			<File
+				RelativePath="..\..\..\libspeex\kiss_fft.h">
+			</File>
+			<File
+				RelativePath="..\..\..\libspeex\kiss_fftr.h">
 			</File>
 			<File
 				RelativePath="..\..\..\libspeex\lpc.h">
