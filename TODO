@@ -15,10 +15,10 @@ For 1.2beta2:
 *Fix resampler corner case
 *Make it possible to decode a "raw" packet with SpeexBits
 *speex_decoder_ctl() call to detect silence
+*Big endian issues on MacOS
 
 Merge TriMedia stuff
 Control delay in new AEC API.
-Big endian issues on MacOS
 
 
 Later:
