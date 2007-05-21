@@ -578,6 +578,7 @@ void speex_jitter_get(SpeexJitter *jitter, short *out, int *current_timestamp)
 {
    int i;
    int ret;
+   spx_int32_t activity;
    char data[2048];
    JitterBufferPacket packet;
    packet.data = data;
@@ -617,7 +618,9 @@ void speex_jitter_get(SpeexJitter *jitter, short *out, int *current_timestamp)
             out[i]=0;
       }
    }
-   jitter_buffer_update_delay(jitter->packets, &packet, NULL);
+   speex_decoder_ctl(jitter->dec, SPEEX_GET_ACTIVITY, &activity);
+   if (activity < 30)
+      jitter_buffer_update_delay(jitter->packets, &packet, NULL);
    jitter_buffer_tick(jitter->packets);
 }
 
