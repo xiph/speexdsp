@@ -7401,6 +7401,13 @@ For the wideband mode, the entire narrowband frame is packed before the
 \end_inset
 
 .
+ For wideband, the mode ID is the same as the Speex quality setting and
+ is defined in table 
+\begin_inset LatexCommand \ref{tab:wideband-quality}
+
+\end_inset
+
+.
  This also means that a wideband frame may be correctly decoded by a narrowband
  decoder with the only caveat that if more than one frame is packed in the
  same packet, the decoder will need to skip the high-band parts in order
@@ -8329,6 +8336,11 @@ end{center}
 
 \begin_layout Caption
 Quality versus bit-rate for the wideband encoder
+\begin_inset LatexCommand \label{tab:wideband-quality}
+
+\end_inset
+
+
 \end_layout
 
 \end_inset
@@ -8787,7 +8799,7 @@ IETF RTP Profile
 \end_layout
 
 \begin_layout Standard
-\begin_inset Include \verbatiminput{draft-herlein-speex-rtp-profile-02.txt}
+\begin_inset Include \verbatiminput{draft-ietf-avt-rtp-speex-01-tmp.txt}
 preview false
 
 \end_inset
