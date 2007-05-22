@@ -369,6 +369,9 @@
 				RelativePath="..\..\..\libspeex\quant_lsp.c">
 			</File>
 			<File
+				RelativePath="..\..\..\libspeex\resample.c">
+			</File>
+			<File
 				RelativePath="..\..\..\libspeex\sb_celp.c">
 			</File>
 			<File
@@ -474,6 +477,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\include\speex\speex_preprocess.h">
+			</File>
+			<File
+				RelativePath="..\..\..\include\speex\speex_resampler.h">
 			</File>
 			<File
 				RelativePath="..\..\..\include\speex\speex_stereo.h">
