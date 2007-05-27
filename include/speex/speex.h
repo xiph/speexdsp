@@ -156,7 +156,7 @@ extern "C" {
 #define SPEEX_GET_HIGHPASS 45
 
 /** Get "activity level" of the last decoded frame, i.e.
-    now much damage we cause if we remove the frame */
+    how much damage we cause if we remove the frame */
 #define SPEEX_GET_ACTIVITY 47
 
 

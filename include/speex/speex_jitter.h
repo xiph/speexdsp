@@ -69,7 +69,7 @@ struct _JitterBufferPacket {
 #define JITTER_BUFFER_OK 0
 /** Packet is missing */
 #define JITTER_BUFFER_MISSING 1
-/** Packet is incomplete (does not cover the entive tick */
+/** Packet is incomplete (does not cover the entire tick */
 #define JITTER_BUFFER_INCOMPLETE 2
 /** There was an error in the jitter buffer */
 #define JITTER_BUFFER_INTERNAL_ERROR -1
@@ -81,9 +81,13 @@ struct _JitterBufferPacket {
 #define JITTER_BUFFER_SET_MARGIN 0
 /** Get minimum amount of extra buffering required (margin) */
 #define JITTER_BUFFER_GET_MARGIN 1
-/* JITTER_BUFFER_SET_AVALIABLE_COUNT wouldn't make sense */
-/** Get the amount of avaliable packets currently buffered */
+/* JITTER_BUFFER_SET_AVAILABLE_COUNT wouldn't make sense */
+/** Get the amount of available packets currently buffered */
+#define JITTER_BUFFER_GET_AVAILABLE_COUNT 3
+/** Included because of an early misspelling (will remove in next release) */
 #define JITTER_BUFFER_GET_AVALIABLE_COUNT 3
+
+
 
 #define JITTER_BUFFER_ADJUST_INTERPOLATE -1
 #define JITTER_BUFFER_ADJUST_OK 0

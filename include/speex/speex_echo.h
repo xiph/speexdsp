@@ -74,7 +74,7 @@ SpeexEchoState *speex_echo_state_init(int frame_size, int filter_length);
 void speex_echo_state_destroy(SpeexEchoState *st);
 
 /** Performs echo cancellation a frame, based on the audio sent to the speaker (no delay is added
- * to playback ni this form)
+ * to playback in this form)
  *
  * @param st Echo canceller state
  * @param rec signal from the microphone (near end + far end echo)
