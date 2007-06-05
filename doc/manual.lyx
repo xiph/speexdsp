@@ -1,17 +1,25 @@
-#LyX 1.4.4 created this file. For more info see http://www.lyx.org/
-\lyxformat 245
+#LyX 1.5.0rc1 created this file. For more info see http://www.lyx.org/
+\lyxformat 271
 \begin_document
 \begin_header
 \textclass scrbook
 \language english
 \inputencoding auto
-\fontscheme pslatex
+\font_roman times
+\font_sans helvet
+\font_typewriter courier
+\font_default_family default
+\font_sc false
+\font_osf false
+\font_sf_scale 100
+\font_tt_scale 100
 \graphics default
 \paperfontsize 10
 \spacing single
 \papersize letterpaper
 \use_geometry true
 \use_amsmath 2
+\use_esint 0
 \cite_engine basic
 \use_bibtopic false
 \paperorientation portrait
@@ -28,7 +36,8 @@
 \papersides 1
 \paperpagestyle headings
 \tracking_changes false
-\output_changes true
+\output_changes false
+\author "Jean-Marc Valin,,," 
 \end_header
 
 \begin_body
@@ -80,7 +89,7 @@ on License".
 
 \newpage
 
-\begin_inset LatexCommand \tableofcontents{}
+\begin_inset LatexCommand tableofcontents
 
 \end_inset
 
@@ -110,10 +119,10 @@ http://www.speex.org/
 \family default
 ) exists because there is a need for a speech codec that is open-source
  and free from software patent royalties.
- These are essential conditions for being usable by any open-source software.
+ These are essential conditions for being usable in any open-source software.
  In essence, Speex is to speech what Vorbis is to audio/music.
  Unlike many other speech codecs, Speex is not designed for mobile phones
- but rather for packet networks and voice over IP (VoIP) application.
+ but rather for packet networks and voice over IP (VoIP) applications.
  File-based compression is of course also supported.
  
 \end_layout
@@ -131,13 +140,14 @@ Designing for VoIP instead of mobile phones means that Speex is robust to
  lost packets, but not to corrupted ones.
  This is based on the assumption that in VoIP, packets either arrive unaltered
  or don't arrive at all.
- Because Speex is targeted at a wide range of devices, it has modest complexity
- (variable) and memory footprint.
+ Because Speex is targeted at a wide range of devices, it has modest (adjustable
+) complexity and a small memory footprint.
 \end_layout
 
 \begin_layout Standard
 All the design goals led to the choice of CELP
-\begin_inset LatexCommand \index{CELP}
+\begin_inset LatexCommand index
+name "CELP"
 
 \end_inset
 
@@ -151,7 +161,8 @@ All the design goals led to the choice of CELP
 
 \begin_layout Section
 Getting help
-\begin_inset LatexCommand \label{sec:Getting-help}
+\begin_inset LatexCommand label
+name "sec:Getting-help"
 
 \end_inset
 
@@ -195,7 +206,7 @@ Before asking for help (mailing list or IRC),
 \series bold
 it is important to first read this manual
 \series default
-.
+ (OK, so if you made it here it's already a good sign).
  It is generally considered rude to ask on a mailing list about topics that
  are clearly detailed in the documentation.
  On the other hand, it's perfectly OK (and encouraged) to ask for clarifications
@@ -211,7 +222,8 @@ Here are some additional guidelines related to the mailing list.
  Before reporting bugs in Speex to the list, it is strongly recommended
  (if possible) to first test whether these bugs can be reproduced using
  the speexenc and speexdec (see Section 
-\begin_inset LatexCommand \ref{sec:Command-line-encoder/decoder}
+\begin_inset LatexCommand ref
+reference "sec:Command-line-encoder/decoder"
 
 \end_inset
 
@@ -228,31 +240,36 @@ About this document
 \begin_layout Standard
 This document is divided in the following way.
  Section 
-\begin_inset LatexCommand \ref{sec:Feature-description}
+\begin_inset LatexCommand ref
+reference "sec:Feature-description"
 
 \end_inset
 
  describes the different Speex features and defines many basic terms that
  are used throughout this manual.
  Section 
-\begin_inset LatexCommand \ref{sec:Command-line-encoder/decoder}
+\begin_inset LatexCommand ref
+reference "sec:Command-line-encoder/decoder"
 
 \end_inset
 
  documents the standard command-line tools provided in the Speex distribution.
  Section 
-\begin_inset LatexCommand \ref{sec:Programming-with-Speex}
+\begin_inset LatexCommand ref
+reference "sec:Programming-with-Speex"
 
 \end_inset
 
  includes detailed instructions about programming using the libspeex
-\begin_inset LatexCommand \index{libspeex}
+\begin_inset LatexCommand index
+name "libspeex"
 
 \end_inset
 
  API.
  Section 
-\begin_inset LatexCommand \ref{sec:Formats-and-standards}
+\begin_inset LatexCommand ref
+reference "sec:Formats-and-standards"
 
 \end_inset
 
@@ -267,17 +284,20 @@ The three last sections describe the algorithms used in Speex.
  They are intended for people who want to understand how Speex really works
  and/or want to do research based on Speex.
  Section 
-\begin_inset LatexCommand \ref{sec:Introduction-to-CELP}
+\begin_inset LatexCommand ref
+reference "sec:Introduction-to-CELP"
 
 \end_inset
 
  explains the general idea behind CELP, while sections 
-\begin_inset LatexCommand \ref{sec:Speex-narrowband-mode}
+\begin_inset LatexCommand ref
+reference "sec:Speex-narrowband-mode"
 
 \end_inset
 
  and 
-\begin_inset LatexCommand \ref{sec:Speex-wideband-mode}
+\begin_inset LatexCommand ref
+reference "sec:Speex-wideband-mode"
 
 \end_inset
 
@@ -292,7 +312,8 @@ The three last sections describe the algorithms used in Speex.
 
 \begin_layout Chapter
 Codec description
-\begin_inset LatexCommand \label{sec:Feature-description}
+\begin_inset LatexCommand label
+name "sec:Feature-description"
 
 \end_inset
 
@@ -316,7 +337,8 @@ Before introducing all the Speex features, here are some concepts in speech
 
 \begin_layout Subsection*
 Sampling rate
-\begin_inset LatexCommand \index{sampling rate}
+\begin_inset LatexCommand index
+name "sampling rate"
 
 \end_inset
 
@@ -344,17 +366,20 @@ The sampling rate expressed in Hertz (Hz) is the number of samples taken
  Speex is mainly designed for three different sampling rates: 8 kHz, 16
  kHz, and 32 kHz.
  These are respectively refered to as narrowband
-\begin_inset LatexCommand \index{narrowband}
+\begin_inset LatexCommand index
+name "narrowband"
 
 \end_inset
 
 , wideband
-\begin_inset LatexCommand \index{wideband}
+\begin_inset LatexCommand index
+name "wideband"
 
 \end_inset
 
  and ultra-wideband
-\begin_inset LatexCommand \index{ultra-wideband}
+\begin_inset LatexCommand index
+name "ultra-wideband"
 
 \end_inset
 
@@ -384,7 +409,10 @@ kilo
 \series bold
 bits
 \series default
- per second
+\emph default
+ 
+\emph on
+per second
 \emph default
  (k
 \series bold
@@ -396,7 +424,10 @@ kilo
 \series bold
 bytes
 \series default
- per second
+\emph default
+ 
+\emph on
+per second
 \emph default
  (k
 \series bold
@@ -407,7 +438,8 @@ ps).
 
 \begin_layout Subsection*
 Quality
-\begin_inset LatexCommand \index{quality}
+\begin_inset LatexCommand index
+name "quality"
 
 \end_inset
 
@@ -422,7 +454,8 @@ Speex is a lossy codec, which means that it achives compression at the expense
  The Speex encoding process is controlled most of the time by a quality
  parameter that ranges from 0 to 10.
  In constant bit-rate
-\begin_inset LatexCommand \index{constant bit-rate}
+\begin_inset LatexCommand index
+name "constant bit-rate"
 
 \end_inset
 
@@ -433,7 +466,8 @@ Speex is a lossy codec, which means that it achives compression at the expense
 
 \begin_layout Subsection*
 Complexity
-\begin_inset LatexCommand \index{complexity}
+\begin_inset LatexCommand index
+name "complexity"
 
 \end_inset
 
@@ -458,7 +492,8 @@ bzip2
  5 times higher than for complexity 1.
  In practice, the best trade-off is between complexity 2 and 4, though higher
  settings are often useful when encoding non-speech sounds like DTMF
-\begin_inset LatexCommand \index{DTMF}
+\begin_inset LatexCommand index
+name "DTMF"
 
 \end_inset
 
@@ -467,7 +502,8 @@ bzip2
 
 \begin_layout Subsection*
 Variable Bit-Rate
-\begin_inset LatexCommand \index{variable bit-rate}
+\begin_inset LatexCommand index
+name "variable bit-rate"
 
 \end_inset
 
@@ -499,7 +535,8 @@ difficulty
 
 \begin_layout Subsection*
 Average Bit-Rate
-\begin_inset LatexCommand \index{average bit-rate}
+\begin_inset LatexCommand index
+name "average bit-rate"
 
 \end_inset
 
@@ -516,7 +553,8 @@ Average bit-rate solves one of the problems of VBR, as it dynamically adjusts
 
 \begin_layout Subsection*
 Voice Activity Detection
-\begin_inset LatexCommand \index{voice activity detection}
+\begin_inset LatexCommand index
+name "voice activity detection"
 
 \end_inset
 
@@ -543,7 +581,8 @@ comfort noise generation
 
 \begin_layout Subsection*
 Discontinuous Transmission
-\begin_inset LatexCommand \index{discontinuous transmission}
+\begin_inset LatexCommand index
+name "discontinuous transmission"
 
 \end_inset
 
@@ -559,7 +598,8 @@ Discontinuous transmission is an addition to VAD/VBR operation, that allows
 
 \begin_layout Subsection*
 Perceptual enhancement
-\begin_inset LatexCommand \index{perceptual enhancement}
+\begin_inset LatexCommand index
+name "perceptual enhancement"
 
 \end_inset
 
@@ -585,7 +625,8 @@ sounds
 
 \begin_layout Subsection*
 Latency and algorithmic delay
-\begin_inset LatexCommand \index{algorithmic delay}
+\begin_inset LatexCommand index
+name "algorithmic delay"
 
 \end_inset
 
@@ -619,12 +660,14 @@ The main characteristics of Speex can be summarized as follows:
 
 \begin_layout Itemize
 Free software/open-source
-\begin_inset LatexCommand \index{open-source}
+\begin_inset LatexCommand index
+name "open-source"
 
 \end_inset
 
 , patent
-\begin_inset LatexCommand \index{patent}
+\begin_inset LatexCommand index
+name "patent"
 
 \end_inset
 
@@ -633,12 +676,14 @@ Free software/open-source
 
 \begin_layout Itemize
 Integration of narrowband
-\begin_inset LatexCommand \index{narrowband}
+\begin_inset LatexCommand index
+name "narrowband"
 
 \end_inset
 
  and wideband
-\begin_inset LatexCommand \index{wideband}
+\begin_inset LatexCommand index
+name "wideband"
 
 \end_inset
 
@@ -651,7 +696,8 @@ Wide range of bit-rates available (from 2.15 kbps to 44 kbps)
 
 \begin_layout Itemize
 Dynamic bit-rate switching (AMR) and Variable Bit-Rate
-\begin_inset LatexCommand \index{variable bit-rate}
+\begin_inset LatexCommand index
+name "variable bit-rate"
 
 \end_inset
 
@@ -660,7 +706,8 @@ Dynamic bit-rate switching (AMR) and Variable Bit-Rate
 
 \begin_layout Itemize
 Voice Activity Detection
-\begin_inset LatexCommand \index{voice activity detection}
+\begin_inset LatexCommand index
+name "voice activity detection"
 
 \end_inset
 
@@ -669,7 +716,8 @@ Voice Activity Detection
 
 \begin_layout Itemize
 Variable complexity
-\begin_inset LatexCommand \index{complexity}
+\begin_inset LatexCommand index
+name "complexity"
 
 \end_inset
 
@@ -681,7 +729,7 @@ Embedded wideband structure (scalable sampling rate)
 \end_layout
 
 \begin_layout Itemize
-Ultra-wideband mode at 32 kHz
+Ultra-wideband sampling rate at 32 kHz
 \end_layout
 
 \begin_layout Itemize
@@ -765,7 +813,8 @@ Acoustic Echo Canceller
 \begin_layout Standard
 In any hands-free communication system (Fig.
  
-\begin_inset LatexCommand \ref{fig:Acoustic-echo-model}
+\begin_inset LatexCommand ref
+reference "fig:Acoustic-echo-model"
 
 \end_inset
 
@@ -825,9 +874,18 @@ end{center}
 
 \end_layout
 
-\begin_layout Caption
+\begin_layout Standard
+\begin_inset Caption
+
+\begin_layout Standard
 Acoustic echo model
-\begin_inset LatexCommand \label{fig:Acoustic-echo-model}
+\begin_inset LatexCommand label
+name "fig:Acoustic-echo-model"
+
+\end_inset
+
+
+\end_layout
 
 \end_inset
 
@@ -900,7 +958,8 @@ The options supported by the Speex configure script are:
 
 \begin_layout Description
 --enable-fixed-point
-\begin_inset LatexCommand \index{fixed-point}
+\begin_inset LatexCommand index
+name "fixed-point"
 
 \end_inset
 
@@ -920,7 +979,8 @@ The options supported by the Speex configure script are:
 
 \begin_layout Description
 --enable-fixed-point-debug Use only for debugging the fixed-point
-\begin_inset LatexCommand \index{fixed-point}
+\begin_inset LatexCommand index
+name "fixed-point"
 
 \end_inset
 
@@ -929,7 +989,7 @@ The options supported by the Speex configure script are:
 
 \begin_layout Description
 --enable-epic-48k Enable a special (and non-compatible) 4.8 kbps narrowband
- mode
+ mode (broken in 1.1.x and 1.2beta)
 \end_layout
 
 \begin_layout Description
@@ -1040,7 +1100,8 @@ The source code directory include additional information for compiling on
 
 \begin_layout Chapter
 Command-line encoder/decoder
-\begin_inset LatexCommand \label{sec:Command-line-encoder/decoder}
+\begin_inset LatexCommand label
+name "sec:Command-line-encoder/decoder"
 
 \end_inset
 
@@ -1064,7 +1125,8 @@ speexdec
 
 \emph on
 speexenc
-\begin_inset LatexCommand \index{speexenc}
+\begin_inset LatexCommand index
+name "speexenc"
 
 \end_inset
 
@@ -1219,7 +1281,8 @@ n Sampling rate for raw input
 
 \emph on
 speexdec
-\begin_inset LatexCommand \index{speexdec}
+\begin_inset LatexCommand index
+name "speexdec"
 
 \end_inset
 
@@ -1305,17 +1368,20 @@ n Simulate n % random packet loss
 
 \begin_layout Chapter
 Programming with Speex (the libspeex
-\begin_inset LatexCommand \index{libspeex}
+\begin_inset LatexCommand index
+name "libspeex"
 
 \end_inset
 
  API
-\begin_inset LatexCommand \index{API}
+\begin_inset LatexCommand index
+name "API"
 
 \end_inset
 
 )
-\begin_inset LatexCommand \label{sec:Programming-with-Speex}
+\begin_inset LatexCommand label
+name "sec:Programming-with-Speex"
 
 \end_inset
 
@@ -1325,7 +1391,8 @@ Programming with Speex (the libspeex
 \begin_layout Standard
 This section explains how to use the Speex API.
  Examples of code can also be found in Appendix 
-\begin_inset LatexCommand \ref{sec:Sample-code}
+\begin_inset LatexCommand ref
+reference "sec:Sample-code"
 
 \end_inset
 
@@ -1335,7 +1402,8 @@ This section explains how to use the Speex API.
 
 \begin_layout Section
 Encoding
-\begin_inset LatexCommand \label{sub:Encoding}
+\begin_inset LatexCommand label
+name "sub:Encoding"
 
 \end_inset
 
@@ -1388,8 +1456,8 @@ speex_nb_mode
 speex_wb_mode
 \emph default
 .
- In most cases, you will need to know the frame size used by the mode you
- are using.
+ In most cases, you will need to know the frame size used at the sampling
+ rate you are using.
  You can get that value in the 
 \emph on
 frame_size
@@ -1429,7 +1497,8 @@ quality
  is an integer value ranging from 0 to 10 (inclusively).
  The mapping between quality and bit-rate is described in Fig.
  
-\begin_inset LatexCommand \ref{cap:quality_vs_bps}
+\begin_inset LatexCommand ref
+reference "cap:quality_vs_bps"
 
 \end_inset
 
@@ -1461,9 +1530,9 @@ input_frame
 \emph on
 (
 \emph default
-short
+short 
 \emph on
- *)
+*)
 \emph default
  pointing to the beginning of a speech frame, 
 \emph on
@@ -1512,11 +1581,11 @@ speex_encode()
  ARM) more complicated.
  Internally, 
 \emph on
-speex_encode() 
+speex_encode()
 \emph default
-and
+ and 
 \emph on
- speex_encode_int()
+speex_encode_int()
 \emph default
  are processed in the same way.
  Whether the encoder uses the fixed-point version is only decided by the
@@ -1542,7 +1611,8 @@ That's about it for the encoder.
 
 \begin_layout Section
 Decoding
-\begin_inset LatexCommand \label{sub:Decoding}
+\begin_inset LatexCommand label
+name "sub:Decoding"
 
 \end_inset
 
@@ -1692,7 +1762,8 @@ speex_decoder_destroy(dec_state);
 
 \begin_layout Section
 Preprocessor
-\begin_inset LatexCommand \label{sub:Preprocessor}
+\begin_inset LatexCommand label
+name "sub:Preprocessor"
 
 \end_inset
 
@@ -1701,7 +1772,8 @@ Preprocessor
 
 \begin_layout Standard
 In order to use the Speex preprocessor
-\begin_inset LatexCommand \index{preprocessor}
+\begin_inset LatexCommand index
+name "preprocessor"
 
 \end_inset
 
@@ -1786,7 +1858,8 @@ speex_preprocess_state_destroy(preprocess_state);
 
 \begin_layout Section
 Echo Cancellation
-\begin_inset LatexCommand \label{sub:Echo-Cancellation}
+\begin_inset LatexCommand label
+name "sub:Echo-Cancellation"
 
 \end_inset
 
@@ -1795,12 +1868,14 @@ Echo Cancellation
 
 \begin_layout Standard
 The Speex library now includes an echo cancellation
-\begin_inset LatexCommand \index{echo cancellation}
+\begin_inset LatexCommand index
+name "echo cancellation"
 
 \end_inset
 
  algorithm suitable for Acoustic Echo Cancellation
-\begin_inset LatexCommand \index{acoustic echo cancellation}
+\begin_inset LatexCommand index
+name "acoustic echo cancellation"
 
 \end_inset
 
@@ -1835,7 +1910,8 @@ filter_length
 tail length
 \shape default
 
-\begin_inset LatexCommand \index{tail length}
+\begin_inset LatexCommand index
+name "tail length"
 
 \end_inset
 
@@ -1919,7 +1995,8 @@ If you wish to further reduce the echo present in the signal, you can do
 associating the echo canceller to the preprocessor
 \family default
  (see Section 
-\begin_inset LatexCommand \ref{sub:Preprocessor}
+\begin_inset LatexCommand ref
+reference "sub:Preprocessor"
 
 \end_inset
 
@@ -2231,7 +2308,8 @@ It is also possible to process multiple channels at once.
 
 \begin_layout Section
 Codec Options (speex_*_ctl)
-\begin_inset LatexCommand \label{sub:Codec-Options}
+\begin_inset LatexCommand label
+name "sub:Codec-Options"
 
 \end_inset
 
@@ -2292,45 +2370,39 @@ The different values of request allowed are (note that some only apply to
 
 \begin_layout Description
 SPEEX_SET_ENH** Set perceptual enhancer
-\begin_inset LatexCommand \index{perceptual enhancement}
+\begin_inset LatexCommand index
+name "perceptual enhancement"
 
 \end_inset
 
- to on (1) or off (0) (integer)
+ to on (1) or off (0) (spx_int32_t)
 \end_layout
 
 \begin_layout Description
-SPEEX_GET_ENH** Get perceptual enhancer status (integer)
+SPEEX_GET_ENH** Get perceptual enhancer status (spx_int32_t)
 \end_layout
 
 \begin_layout Description
 SPEEX_GET_FRAME_SIZE Get the number of samples per frame for the current
- mode (integer)
+ mode (spx_int32_t)
 \end_layout
 
 \begin_layout Description
-SPEEX_SET_QUALITY* Set the encoder speech quality (integer 0 to 10)
+SPEEX_SET_QUALITY* Set the encoder speech quality (spx_int32_t 0 to 10)
 \end_layout
 
 \begin_layout Description
-SPEEX_GET_QUALITY* Get the current encoder speech quality (integer 0 to
- 10)
+SPEEX_GET_QUALITY* Get the current encoder speech quality (spx_int32_t 0
+ to 10)
 \end_layout
 
 \begin_layout Description
-SPEEX_SET_MODE*
-\begin_inset Formula $\dagger$
-\end_inset
-
- Use the source, Luke!
+SPEEX_SET_MODE* Set the mode number, as specified in the RTP spec (spx_int32_t)
 \end_layout
 
 \begin_layout Description
-SPEEX_GET_MODE*
-\begin_inset Formula $\dagger$
-\end_inset
-
- Use the source, Luke!
+SPEEX_GET_MODE* Get the current mode number, as specified in the RTP spec
+ (spx_int32_t)
 \end_layout
 
 \begin_layout Description
@@ -2366,16 +2438,17 @@ SPEEX_GET_HIGH_MODE*
 \end_layout
 
 \begin_layout Description
-SPEEX_SET_VBR* Set variable bit-rate (VBR) to on (1) or off (0) (integer)
+SPEEX_SET_VBR* Set variable bit-rate (VBR) to on (1) or off (0) (spx_int32_t)
 \end_layout
 
 \begin_layout Description
 SPEEX_GET_VBR* Get variable bit-rate
-\begin_inset LatexCommand \index{variable bit-rate}
+\begin_inset LatexCommand index
+name "variable bit-rate"
 
 \end_inset
 
- (VBR) status (integer)
+ (VBR) status (spx_int32_t)
 \end_layout
 
 \begin_layout Description
@@ -2388,84 +2461,105 @@ SPEEX_GET_VBR_QUALITY* Get the current encoder VBR speech quality (float
 \end_layout
 
 \begin_layout Description
-SPEEX_SET_COMPLEXITY* Set the CPU resources allowed for the encoder (integer
+SPEEX_SET_COMPLEXITY* Set the CPU resources allowed for the encoder (spx_int32_t
  1 to 10)
 \end_layout
 
 \begin_layout Description
-SPEEX_GET_COMPLEXITY* Get the CPU resources allowed for the encoder (integer
+SPEEX_GET_COMPLEXITY* Get the CPU resources allowed for the encoder (spx_int32_t
  1 to 10)
 \end_layout
 
 \begin_layout Description
 SPEEX_SET_BITRATE* Set the bit-rate to use to the closest value not exceeding
- the parameter (integer in bps)
+ the parameter (spx_int32_t in bps)
 \end_layout
 
 \begin_layout Description
-SPEEX_GET_BITRATE Get the current bit-rate in use (integer in bps)
+SPEEX_GET_BITRATE Get the current bit-rate in use (spx_int32_t in bps)
 \end_layout
 
 \begin_layout Description
-SPEEX_SET_SAMPLING_RATE Set real sampling rate (integer in Hz)
+SPEEX_SET_SAMPLING_RATE Set real sampling rate (spx_int32_t in Hz)
 \end_layout
 
 \begin_layout Description
-SPEEX_GET_SAMPLING_RATE Get real sampling rate (integer in Hz)
+SPEEX_GET_SAMPLING_RATE Get real sampling rate (spx_int32_t in Hz)
 \end_layout
 
 \begin_layout Description
-SPEEX_RESET_STATE Reset the encoder/decoder state to its original state
- (zeros all memories)
+SPEEX_RESET_STATE Reset the encoder/decoder state to its original state,
+ clearing all memories (no argument)
 \end_layout
 
 \begin_layout Description
 SPEEX_SET_VAD* Set voice activity detection
-\begin_inset LatexCommand \index{voice activity detection}
+\begin_inset LatexCommand index
+name "voice activity detection"
 
 \end_inset
 
- (VAD) to on (1) or off (0) (integer)
+ (VAD) to on (1) or off (0) (spx_int32_t)
 \end_layout
 
 \begin_layout Description
-SPEEX_GET_VAD* Get voice activity detection (VAD) status (integer)
+SPEEX_GET_VAD* Get voice activity detection (VAD) status (spx_int32_t)
 \end_layout
 
 \begin_layout Description
 SPEEX_SET_DTX* Set discontinuous transmission
-\begin_inset LatexCommand \index{discontinuous transmission}
+\begin_inset LatexCommand index
+name "discontinuous transmission"
 
 \end_inset
 
- (DTX) to on (1) or off (0) (integer)
+ (DTX) to on (1) or off (0) (spx_int32_t)
 \end_layout
 
 \begin_layout Description
-SPEEX_GET_DTX* Get discontinuous transmission (DTX) status (integer)
+SPEEX_GET_DTX* Get discontinuous transmission (DTX) status (spx_int32_t)
 \end_layout
 
 \begin_layout Description
 SPEEX_SET_ABR* Set average bit-rate
-\begin_inset LatexCommand \index{average bit-rate}
+\begin_inset LatexCommand index
+name "average bit-rate"
 
 \end_inset
 
- (ABR) to a value n in bits per second (integer in bps)
+ (ABR) to a value n in bits per second (spx_int32_t in bps)
 \end_layout
 
 \begin_layout Description
-SPEEX_GET_ABR* Get average bit-rate (ABR) setting (integer in bps)
+SPEEX_GET_ABR* Get average bit-rate (ABR) setting (spx_int32_t in bps)
 \end_layout
 
 \begin_layout Description
 SPEEX_SET_PLC_TUNING* Tell the encoder to optimize encoding for a certain
- percentage of packet loss (integer in percent)
+ percentage of packet loss (spx_int32_t in percent)
 \end_layout
 
 \begin_layout Description
-SPEEX_GET_PLC_TUNING* Get the current tuning of the encoder for PLC (integer
+SPEEX_GET_PLC_TUNING* Get the current tuning of the encoder for PLC (spx_int32_t
  in percent)
+\end_layout
+
+\begin_layout Description
+SPEEX_SET_VBR_MAX_BITRATE* Set the maximum bit-rate allowed in VBR operation
+ (spx_int32_t in bps)
+\end_layout
+
+\begin_layout Description
+SPEEX_GET_VBR_MAX_BITRATE* Get the current maximum bit-rate allowed in VBR
+ operation (spx_int32_t in bps)
+\end_layout
+
+\begin_layout Description
+SPEEX_SET_HIGHPASS Set the high-pass filter on (1) or off (0) (spx_int32_t)
+\end_layout
+
+\begin_layout Description
+SPEEX_TET_HIGHPASS Get the current high-pass filter status (spx_int32_t)
 \end_layout
 
 \begin_layout Description
@@ -2485,7 +2579,8 @@ SPEEX_GET_PLC_TUNING* Get the current tuning of the encoder for PLC (integer
 
 \begin_layout Section
 Mode queries
-\begin_inset LatexCommand \label{sub:Mode-queries}
+\begin_inset LatexCommand label
+name "sub:Mode-queries"
 
 \end_inset
 
@@ -2529,7 +2624,8 @@ ptr
 
 \begin_layout Section
 Preprocessor options
-\begin_inset LatexCommand \label{sub:Preprocessor-options}
+\begin_inset LatexCommand label
+name "sub:Preprocessor-options"
 
 \end_inset
 
@@ -2652,7 +2748,8 @@ SPEEX_PREPROCESS_GET_ECHO_STATE Get the associated echo canceller
 
 \begin_layout Section
 Packing and in-band signalling
-\begin_inset LatexCommand \index{in-band signalling}
+\begin_inset LatexCommand index
+name "in-band signalling"
 
 \end_inset
 
@@ -2671,7 +2768,8 @@ Sometimes it is desirable to pack more than one frame per packet (or other
  mechanism, it is possible to include a terminator code.
  That terminator consists of the code 15 (decimal) encoded with 5 bits,
  as shown in Table 
-\begin_inset LatexCommand \ref{cap:quality_vs_bps}
+\begin_inset LatexCommand ref
+reference "cap:quality_vs_bps"
 
 \end_inset
 
@@ -2702,7 +2800,8 @@ pseudo-frames
 
  of mode 14 which contain a 4-bit message type code, followed by the message.
  Table 
-\begin_inset LatexCommand \ref{cap:In-band-signalling-codes}
+\begin_inset LatexCommand ref
+reference "cap:In-band-signalling-codes"
 
 \end_inset
 
@@ -3261,9 +3360,18 @@ end{center}
 
 \end_layout
 
-\begin_layout Caption
+\begin_layout Standard
+\begin_inset Caption
+
+\begin_layout Standard
 In-band signalling codes
-\begin_inset LatexCommand \label{cap:In-band-signalling-codes}
+\begin_inset LatexCommand label
+name "cap:In-band-signalling-codes"
+
+\end_inset
+
+
+\end_layout
 
 \end_inset
 
@@ -3289,12 +3397,14 @@ Finally, applications may define custom in-band messages using mode 13.
 
 \begin_layout Chapter
 Formats and standards
-\begin_inset LatexCommand \index{standards}
+\begin_inset LatexCommand index
+name "standards"
 
 \end_inset
 
 
-\begin_inset LatexCommand \label{sec:Formats-and-standards}
+\begin_inset LatexCommand label
+name "sec:Formats-and-standards"
 
 \end_inset
 
@@ -3348,7 +3458,8 @@ For encoders, at least one narrowband or wideband mode MUST be supported.
 
 \begin_layout Section
 RTP
-\begin_inset LatexCommand \index{RTP}
+\begin_inset LatexCommand index
+name "RTP"
 
 \end_inset
 
@@ -3357,12 +3468,14 @@ RTP
 
 \begin_layout Standard
 The RTP payload draft is included in appendix 
-\begin_inset LatexCommand \ref{sec:IETF-draft}
+\begin_inset LatexCommand ref
+reference "sec:IETF-draft"
 
 \end_inset
 
  and the latest version is available at 
-\begin_inset LatexCommand \url{http://www.speex.org/drafts/latest}
+\begin_inset LatexCommand url
+target "http://www.speex.org/drafts/latest"
 
 \end_inset
 
@@ -3387,7 +3500,8 @@ audio/speex
 
 \begin_layout Section
 Ogg
-\begin_inset LatexCommand \index{Ogg}
+\begin_inset LatexCommand index
+name "Ogg"
 
 \end_inset
 
@@ -3398,7 +3512,8 @@ Ogg
 Speex bit-streams can be stored in Ogg files.
  In this case, the first packet of the Ogg file contains the Speex header
  described in table 
-\begin_inset LatexCommand \ref{cap:ogg_speex_header}
+\begin_inset LatexCommand ref
+reference "cap:ogg_speex_header"
 
 \end_inset
 
@@ -3999,9 +4114,18 @@ end{center}
 
 \end_layout
 
-\begin_layout Caption
+\begin_layout Standard
+\begin_inset Caption
+
+\begin_layout Standard
 Ogg/Speex header packet
-\begin_inset LatexCommand \label{cap:ogg_speex_header}
+\begin_inset LatexCommand label
+name "cap:ogg_speex_header"
+
+\end_inset
+
+
+\end_layout
 
 \end_inset
 
@@ -4031,12 +4155,14 @@ clearpage
 
 \begin_layout Chapter
 Introduction to CELP Coding
-\begin_inset LatexCommand \index{CELP}
+\begin_inset LatexCommand index
+name "CELP"
 
 \end_inset
 
 
-\begin_inset LatexCommand \label{sec:Introduction-to-CELP}
+\begin_inset LatexCommand label
+name "sec:Introduction-to-CELP"
 
 \end_inset
 
@@ -4055,7 +4181,8 @@ Do not meddle in the affairs of poles, for they are subtle and quick to
 Speex is based on CELP, which stands for Code Excited Linear Prediction.
  This section attempts to introduce the principles behind CELP, so if you
  are already familiar with CELP, you can safely skip to section 
-\begin_inset LatexCommand \ref{sec:Speex-narrowband-mode}
+\begin_inset LatexCommand ref
+reference "sec:Speex-narrowband-mode"
 
 \end_inset
 
@@ -4117,7 +4244,8 @@ The source-filter model of speech production assumes that the vocal cords
 The source-filter model is usually tied with the use of Linear prediction.
  The CELP model is based on source-filter model, as can be seen from the
  CELP decoder illustrated in Figure 
-\begin_inset LatexCommand \ref{fig:The-CELP-model}
+\begin_inset LatexCommand ref
+reference "fig:The-CELP-model"
 
 \end_inset
 
@@ -4168,9 +4296,13 @@ end{center}
 
 \end_layout
 
-\begin_layout Caption
+\begin_layout Standard
+\begin_inset Caption
+
+\begin_layout Standard
 The CELP model of speech synthesis (decoder)
-\begin_inset LatexCommand \label{fig:The-CELP-model}
+\begin_inset LatexCommand label
+name "fig:The-CELP-model"
 
 \end_inset
 
@@ -4182,9 +4314,15 @@ The CELP model of speech synthesis (decoder)
 
 \end_layout
 
+\end_inset
+
+
+\end_layout
+
 \begin_layout Section
 Linear Prediction (LPC)
-\begin_inset LatexCommand \index{linear prediction}
+\begin_inset LatexCommand index
+name "linear prediction"
 
 \end_inset
 
@@ -4292,7 +4430,8 @@ with
 \end_inset
 
 , the auto-correlation
-\begin_inset LatexCommand \index{auto-correlation}
+\begin_inset LatexCommand index
+name "auto-correlation"
 
 \end_inset
 
@@ -4318,7 +4457,8 @@ Because
 \end_inset
 
  is toeplitz hermitian, the Levinson-Durbin
-\begin_inset LatexCommand \index{Levinson-Durbin}
+\begin_inset LatexCommand index
+name "Levinson-Durbin"
 
 \end_inset
 
@@ -4354,7 +4494,8 @@ Because
 
 \begin_layout Section
 Pitch Prediction
-\begin_inset LatexCommand \index{pitch}
+\begin_inset LatexCommand index
+name "pitch"
 
 \end_inset
 
@@ -4459,12 +4600,14 @@ X(z)=\frac{C(z)}{A(z)\left(1-\beta z^{-T}\right)}\]
 
 \begin_layout Section
 Noise Weighting
-\begin_inset LatexCommand \index{error weighting}
+\begin_inset LatexCommand index
+name "error weighting"
 
 \end_inset
 
 
-\begin_inset LatexCommand \index{analysis-by-synthesis}
+\begin_inset LatexCommand index
+name "analysis-by-synthesis"
 
 \end_inset
 
@@ -4564,13 +4707,15 @@ The weighting filter is applied to the error signal used to optimize the
  function.
  Fig.
  
-\begin_inset LatexCommand \ref{cap:Standard-noise-shaping}
+\begin_inset LatexCommand ref
+reference "cap:Standard-noise-shaping"
 
 \end_inset
 
  illustrates the noise shaping that results from Eq.
  
-\begin_inset LatexCommand \ref{eq:gamma-weighting}
+\begin_inset LatexCommand ref
+reference "eq:gamma-weighting"
 
 \end_inset
 
@@ -4629,10 +4774,19 @@ end{center}
 
 \end_layout
 
-\begin_layout Caption
+\begin_layout Standard
+\begin_inset Caption
+
+\begin_layout Standard
 Standard noise shaping in CELP.
  Arbitrary y-axis offset.
-\begin_inset LatexCommand \label{cap:Standard-noise-shaping}
+\begin_inset LatexCommand label
+name "cap:Standard-noise-shaping"
+
+\end_inset
+
+
+\end_layout
 
 \end_inset
 
@@ -4682,12 +4836,14 @@ In order to achieve real-time encoding using limited computing resources,
 
 \begin_layout Chapter
 Speex narrowband mode
-\begin_inset LatexCommand \label{sec:Speex-narrowband-mode}
+\begin_inset LatexCommand label
+name "sec:Speex-narrowband-mode"
 
 \end_inset
 
 
-\begin_inset LatexCommand \index{narrowband}
+\begin_inset LatexCommand index
+name "narrowband"
 
 \end_inset
 
@@ -4727,7 +4883,8 @@ sub-vector fixed (innovation) codebooks
 
 \begin_layout Section
 Whole-Frame Analysis
-\begin_inset LatexCommand \index{linear prediction}
+\begin_inset LatexCommand index
+name "linear prediction"
 
 \end_inset
 
@@ -4745,7 +4902,8 @@ In narrowband, Speex frames are 20 ms long (160 samples) and are subdivided
 
 , as shown in Fig.
  
-\begin_inset LatexCommand \ref{cap:Frame-open-loop-analysis}
+\begin_inset LatexCommand ref
+reference "cap:Frame-open-loop-analysis"
 
 \end_inset
 
@@ -4758,7 +4916,8 @@ Linear prediction analysis is performed once per frame using an asymmetric
  Hamming window centered on the fourth sub-frame.
  Because linear prediction coefficients (LPC) are not robust to quantization,
  they are first are converted to line spectral pairs (LSP)
-\begin_inset LatexCommand \index{line spectral pair}
+\begin_inset LatexCommand index
+name "line spectral pair"
 
 \end_inset
 
@@ -4835,9 +4994,18 @@ end{center}
 
 \end_layout
 
-\begin_layout Caption
+\begin_layout Standard
+\begin_inset Caption
+
+\begin_layout Standard
 Frame open-loop analysis
-\begin_inset LatexCommand \label{cap:Frame-open-loop-analysis}
+\begin_inset LatexCommand label
+name "cap:Frame-open-loop-analysis"
+
+\end_inset
+
+
+\end_layout
 
 \end_inset
 
@@ -4896,9 +5064,18 @@ end{center}
 
 \end_layout
 
-\begin_layout Caption
+\begin_layout Standard
+\begin_inset Caption
+
+\begin_layout Standard
 Analysis-by-synthesis closed-loop optimization on a sub-frame.
-\begin_inset LatexCommand \label{cap:Sub-frame-AbS}
+\begin_inset LatexCommand label
+name "cap:Sub-frame-AbS"
+
+\end_inset
+
+
+\end_layout
 
 \end_inset
 
@@ -4913,7 +5090,8 @@ Analysis-by-synthesis closed-loop optimization on a sub-frame.
 \begin_layout Standard
 The analysis-by-synthesis (AbS) encoder loop is described in Fig.
  
-\begin_inset LatexCommand \ref{cap:Sub-frame-AbS}
+\begin_inset LatexCommand ref
+reference "cap:Sub-frame-AbS"
 
 \end_inset
 
@@ -5026,7 +5204,8 @@ There are 7 different narrowband bit-rates defined for Speex, ranging from
  250 bps to 24.6 kbps, although the modes below 5.9 kbps should not be used
  for speech.
  The bit-allocation for each mode is detailed in table 
-\begin_inset LatexCommand \ref{cap:bits-narrowband}
+\begin_inset LatexCommand ref
+reference "cap:bits-narrowband"
 
 \end_inset
 
@@ -6317,9 +6496,18 @@ end{center}
 
 \end_layout
 
-\begin_layout Caption
+\begin_layout Standard
+\begin_inset Caption
+
+\begin_layout Standard
 Bit allocation for narrowband modes
-\begin_inset LatexCommand \label{cap:bits-narrowband}
+\begin_inset LatexCommand label
+name "cap:bits-narrowband"
+
+\end_inset
+
+
+\end_layout
 
 \end_inset
 
@@ -6333,13 +6521,15 @@ Bit allocation for narrowband modes
 
 \begin_layout Standard
 So far, no MOS (Mean Opinion Score
-\begin_inset LatexCommand \index{mean opinion score}
+\begin_inset LatexCommand index
+name "mean opinion score"
 
 \end_inset
 
 ) subjective evaluation has been performed for Speex.
  In order to give an idea of the quality achievable with it, table 
-\begin_inset LatexCommand \ref{cap:quality_vs_bps}
+\begin_inset LatexCommand ref
+reference "cap:quality_vs_bps"
 
 \end_inset
 
@@ -6352,7 +6542,8 @@ So far, no MOS (Mean Opinion Score
  Note that the complexity is only approximate (within 0.5 mflops and using
  the lowest complexity setting).
  Decoding requires approximately 0.5 mflops
-\begin_inset LatexCommand \index{complexity}
+\begin_inset LatexCommand index
+name "complexity"
 
 \end_inset
 
@@ -6412,7 +6603,8 @@ Quality
 
 \begin_layout Standard
 Bit-rate
-\begin_inset LatexCommand \index{bit-rate}
+\begin_inset LatexCommand index
+name "bit-rate"
 
 \end_inset
 
@@ -6426,7 +6618,8 @@ Bit-rate
 
 \begin_layout Standard
 mflops
-\begin_inset LatexCommand \index{complexity}
+\begin_inset LatexCommand index
+name "complexity"
 
 \end_inset
 
@@ -7217,9 +7410,18 @@ end{center}
 
 \end_layout
 
-\begin_layout Caption
+\begin_layout Standard
+\begin_inset Caption
+
+\begin_layout Standard
 Quality versus bit-rate
-\begin_inset LatexCommand \label{cap:quality_vs_bps}
+\begin_inset LatexCommand label
+name "cap:quality_vs_bps"
+
+\end_inset
+
+
+\end_layout
 
 \end_inset
 
@@ -7233,7 +7435,8 @@ Quality versus bit-rate
 
 \begin_layout Section
 Perceptual enhancement
-\begin_inset LatexCommand \index{perceptual enhancement}
+\begin_inset LatexCommand index
+name "perceptual enhancement"
 
 \end_inset
 
@@ -7294,12 +7497,14 @@ where
 
 \begin_layout Chapter
 Speex wideband mode (sub-band CELP)
-\begin_inset LatexCommand \index{wideband}
+\begin_inset LatexCommand index
+name "wideband"
 
 \end_inset
 
 
-\begin_inset LatexCommand \label{sec:Speex-wideband-mode}
+\begin_inset LatexCommand label
+name "sec:Speex-wideband-mode"
 
 \end_inset
 
@@ -7320,7 +7525,8 @@ irror
 f
 \emph default
 ilter
-\begin_inset LatexCommand \index{quadrature mirror filter}
+\begin_inset LatexCommand index
+name "quadrature mirror filter"
 
 \end_inset
 
@@ -7328,7 +7534,8 @@ ilter
  The 16 kHz signal is thus divided into two 8 kHz signals, one representing
  the low band (0-4 kHz), the other the high band (4-8 kHz).
  The low band is encoded with the narrowband mode described in section 
-\begin_inset LatexCommand \ref{sec:Speex-narrowband-mode}
+\begin_inset LatexCommand ref
+reference "sec:Speex-narrowband-mode"
 
 \end_inset
 
@@ -7390,20 +7597,23 @@ Bit allocation
 For the wideband mode, the entire narrowband frame is packed before the
  high-band is encoded.
  The narrowband part of the bit-stream is as defined in table 
-\begin_inset LatexCommand \ref{cap:bits-narrowband}
+\begin_inset LatexCommand ref
+reference "cap:bits-narrowband"
 
 \end_inset
 
 .
  The high-band follows, as described in table 
-\begin_inset LatexCommand \ref{cap:bits-wideband}
+\begin_inset LatexCommand ref
+reference "cap:bits-wideband"
 
 \end_inset
 
 .
  For wideband, the mode ID is the same as the Speex quality setting and
  is defined in table 
-\begin_inset LatexCommand \ref{tab:wideband-quality}
+\begin_inset LatexCommand ref
+reference "tab:wideband-quality"
 
 \end_inset
 
@@ -7920,9 +8130,18 @@ end{center}
 
 \end_layout
 
-\begin_layout Caption
+\begin_layout Standard
+\begin_inset Caption
+
+\begin_layout Standard
 Bit allocation for high-band in wideband mode
-\begin_inset LatexCommand \label{cap:bits-wideband}
+\begin_inset LatexCommand label
+name "cap:bits-wideband"
+
+\end_inset
+
+
+\end_layout
 
 \end_inset
 
@@ -7976,7 +8195,8 @@ Mode/Quality
 
 \begin_layout Standard
 Bit-rate
-\begin_inset LatexCommand \index{bit-rate}
+\begin_inset LatexCommand index
+name "bit-rate"
 
 \end_inset
 
@@ -8334,9 +8554,18 @@ end{center}
 
 \end_layout
 
-\begin_layout Caption
+\begin_layout Standard
+\begin_inset Caption
+
+\begin_layout Standard
 Quality versus bit-rate for the wideband encoder
-\begin_inset LatexCommand \label{tab:wideband-quality}
+\begin_inset LatexCommand label
+name "tab:wideband-quality"
+
+\end_inset
+
+
+\end_layout
 
 \end_inset
 
@@ -8387,12 +8616,14 @@ FAQ
 
 \begin_layout Subsection*
 Vorbis is open-source
-\begin_inset LatexCommand \index{open-source}
+\begin_inset LatexCommand index
+name "open-source"
 
 \end_inset
 
  and patent-free
-\begin_inset LatexCommand \index{patent}
+\begin_inset LatexCommand index
+name "patent"
 
 \end_inset
 
@@ -8428,7 +8659,8 @@ Under what license is Speex released?
 \begin_layout Standard
 As of version 1.0 beta 1, Speex is released under Xiph's version of the (revised)
  BSD license (see Appendix 
-\begin_inset LatexCommand \ref{sec:Speex-License}
+\begin_inset LatexCommand ref
+reference "sec:Speex-License"
 
 \end_inset
 
@@ -8446,7 +8678,8 @@ Yes.
  This basically means you have to keep the copyright notice and you can't
  use our name to promote your product without authorization.
  For more details, see license in Appendix 
-\begin_inset LatexCommand \ref{sec:Speex-License}
+\begin_inset LatexCommand ref
+reference "sec:Speex-License"
 
 \end_inset
 
@@ -8455,12 +8688,14 @@ Yes.
 
 \begin_layout Subsection*
 Ogg
-\begin_inset LatexCommand \index{Ogg}
+\begin_inset LatexCommand index
+name "Ogg"
 
 \end_inset
 
 , Speex, Vorbis
-\begin_inset LatexCommand \index{Vorbis}
+\begin_inset LatexCommand index
+name "Vorbis"
 
 \end_inset
 
@@ -8497,7 +8732,8 @@ Speex files have the .spx extension.
 
 \begin_layout Subsection*
 Can I use Speex for compressing music
-\begin_inset LatexCommand \index{music}
+\begin_inset LatexCommand index
+name "music"
 
 \end_inset
 
@@ -8627,7 +8863,8 @@ It's hard to give precise figures since no formal listening tests have been
 
 \begin_layout Subsection*
 Can Speex pass DTMF
-\begin_inset LatexCommand \index{DTMF}
+\begin_inset LatexCommand index
+name "DTMF"
 
 \end_inset
 
@@ -8679,7 +8916,8 @@ not
 
 \begin_layout Subsection*
 CELP, ACELP
-\begin_inset LatexCommand \index{ACELP}
+\begin_inset LatexCommand index
+name "ACELP"
 
 \end_inset
 
@@ -8723,7 +8961,8 @@ d as a sum of unit pulses, thus making the codebook search much more efficient.
 
 \begin_layout Chapter
 Sample code
-\begin_inset LatexCommand \label{sec:Sample-code}
+\begin_inset LatexCommand label
+name "sec:Sample-code"
 
 \end_inset
 
@@ -8791,7 +9030,8 @@ preview false
 
 \begin_layout Chapter
 IETF RTP Profile
-\begin_inset LatexCommand \label{sec:IETF-draft}
+\begin_inset LatexCommand label
+name "sec:IETF-draft"
 
 \end_inset
 
@@ -8815,7 +9055,8 @@ preview false
 
 \begin_layout Chapter
 Speex License
-\begin_inset LatexCommand \label{sec:Speex-License}
+\begin_inset LatexCommand label
+name "sec:Speex-License"
 
 \end_inset
 
@@ -9354,7 +9595,7 @@ n.
 \end_layout
 
 \begin_layout Standard
-\begin_inset LatexCommand \printindex{}
+\begin_inset LatexCommand printindex
 
 \end_inset
 
