@@ -1,22 +1,4 @@
-For 1.2beta2:
-*Use full complex values for fft results?
-*get rid of crap that shouldn't be exposed in speex.h
-*Reduce wideband RAM requirements
-*Make foreground filter 16 bits in AEC.
-*Enable resampler in build
-*Add dumping of data for debug purposes.
-*remove wideband pseudo-stack
-*pitch prediction saturation to prevent NaN-based DoS attacks.
-*Fix jitter buffer
-*Use lower sinc oversampling when down-sampling
-*Fix register issue on Blackfin
-*Complete resampler API (error codes)
-*le_short problems
-*Fix resampler corner case
-*Make it possible to decode a "raw" packet with SpeexBits
-*speex_decoder_ctl() call to detect silence
-*Big endian issues on MacOS
-
+For 1.2beta3:
 Merge TriMedia stuff
 Control delay in new AEC API.
 
