@@ -11,7 +11,7 @@ Warning/error handling
 
 Optimisations
 - Add restrict in a few places?
-- enable 4x4 version of pitch_xcorr()?
+- enable 4x4 version of pitch_xcorr() at least on some archs?
 
 Would be nice:
 Implement wideband split as IIR instead of QMF.
