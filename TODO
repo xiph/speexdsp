@@ -1,33 +1,29 @@
 For 1.2beta3:
 Merge TriMedia stuff
 Control delay in new AEC API.
+packet dump
 
-
-Later:
+Eventually:
 Do VAD properly
 Warning/error handling
 --enable-{aec,preprocessor,jitter,resampler}
-
 
 Optimisations
 - Add restrict in a few places?
 - enable 4x4 version of pitch_xcorr() at least on some archs?
 
 Would be nice:
-Implement wideband split as IIR instead of QMF.
+Implement wideband split as IIR instead of QMF?
 
 Allocator override (speex_lib_ctl?)
-Better error handling
 Fixed-point:
-  - Wideband
+  - Vocoder
+  - Rest of wideband
   - Jitter buffer
 Denoiser:
   - Better noise adaptation
 AGC:
   - Use median filtering instead of "non-linear mean"?
-
-Features
--Improve error handling (with perror-like call?)
 
 Standards
 -Complete Speex RTP profile
@@ -36,5 +32,3 @@ Standards
 ideas:
 Peelable stream (double codebook, higher bands, stereo)
 LPC from spectral domain
-
-this too
