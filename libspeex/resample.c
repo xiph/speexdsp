@@ -84,6 +84,7 @@ static void speex_free (void *ptr) {free(ptr);}
 #define OVERSAMPLE 8
 
 #define IMAX(a,b) ((a) > (b) ? (a) : (b))
+#define IMIN(a,b) ((a) < (b) ? (a) : (b))
 
 #ifndef NULL
 #define NULL 0
@@ -1006,7 +1007,7 @@ int speex_resampler_set_rate_frac(SpeexResamplerState *st, spx_uint32_t ratio_nu
    st->num_rate = ratio_num;
    st->den_rate = ratio_den;
    /* FIXME: This is terribly inefficient, but who cares (at least for now)? */
-   for (fact=2;fact<=sqrt(IMAX(in_rate, out_rate));fact++)
+   for (fact=2;fact<=IMIN(st->num_rate, st->den_rate);fact++)
    {
       while ((st->num_rate % fact == 0) && (st->den_rate % fact == 0))
       {
