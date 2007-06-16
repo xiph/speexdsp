@@ -209,7 +209,7 @@ void *nb_encoder_init(const SpeexMode *m)
    st->highpass_enabled = 1;
    
 #ifdef ENABLE_VALGRIND
-   VALGRIND_MAKE_READABLE(st, (st->stack-(char*)st));
+   VALGRIND_MAKE_READABLE(st, NB_ENC_STACK);
 #endif
    return st;
 }
@@ -1101,7 +1101,7 @@ void *nb_decoder_init(const SpeexMode *m)
    st->highpass_enabled = 1;
 
 #ifdef ENABLE_VALGRIND
-   VALGRIND_MAKE_READABLE(st, (st->stack-(char*)st));
+   VALGRIND_MAKE_READABLE(st, NB_DEC_STACK);
 #endif
    return st;
 }
