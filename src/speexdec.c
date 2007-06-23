@@ -317,6 +317,7 @@ static void *process_header(ogg_packet *op, spx_int32_t enh_enabled, spx_int32_t
    {
       fprintf (stderr, "Mode number %d does not (yet/any longer) exist in this version\n", 
                header->mode);
+      free(header);
       return NULL;
    }
       
@@ -329,17 +330,20 @@ static void *process_header(ogg_packet *op, spx_int32_t enh_enabled, spx_int32_t
    if (header->speex_version_id > 1)
    {
       fprintf (stderr, "This file was encoded with Speex bit-stream version %d, which I don't know how to decode\n", header->speex_version_id);
+      free(header);
       return NULL;
    }
 
    if (mode->bitstream_version < header->mode_bitstream_version)
    {
       fprintf (stderr, "The file was encoded with a newer version of Speex. You need to upgrade in order to play it.\n");
+      free(header);
       return NULL;
    }
    if (mode->bitstream_version > header->mode_bitstream_version) 
    {
       fprintf (stderr, "The file was encoded with an older version of Speex. You would need to downgrade the version in order to play it.\n");
+      free(header);
       return NULL;
    }
    
@@ -347,6 +351,7 @@ static void *process_header(ogg_packet *op, spx_int32_t enh_enabled, spx_int32_t
    if (!st)
    {
       fprintf (stderr, "Decoder initialization failed.\n");
+      free(header);
       return NULL;
    }
    speex_decoder_ctl(st, SPEEX_SET_ENH, &enh_enabled);

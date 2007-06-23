@@ -969,7 +969,7 @@ void comment_add(char **comments, int* length, char *tag, char *val)
 
   p=(char*)realloc(p, len);
   if(p==NULL){
-     fprintf (stderr, "malloc failed in comment_init()\n");
+     fprintf (stderr, "realloc failed in comment_add()\n");
      exit(1);
   }
 
