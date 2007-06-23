@@ -803,6 +803,8 @@ void comment_init(char **comments, int* length, char *vendor_string)
   int len=4+vendor_length+4;
   char *p=(char*)malloc(len);
   if(p==NULL){
+     fprintf (stderr, "malloc failed in comment_init()\n");
+     exit(1);
   }
   writeint(p, 0, vendor_length);
   memcpy(p+4, vendor_string, vendor_length);
@@ -821,6 +823,8 @@ void comment_add(char **comments, int* length, char *tag, char *val)
 
   p=(char*)realloc(p, len);
   if(p==NULL){
+     fprintf (stderr, "realloc failed in comment_add()\n");
+     exit(1);
   }
 
   writeint(p, *length, tag_len+val_len);      /* length of comment */
