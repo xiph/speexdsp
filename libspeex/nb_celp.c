@@ -1606,20 +1606,20 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
          /*Vocoder mode*/
          if (st->submodeID==1) 
          {
-            float g=ol_pitch_coef*GAIN_SCALING_1;
-            g=1.5*(g-.2);
+            spx_word16_t g=ol_pitch_coef;
+            g=1.5*(g-.2f*GAIN_SCALING);
             if (g<0)
                g=0;
-            if (g>1)
-               g=1;
-
+            if (g>GAIN_SCALING)
+               g=GAIN_SCALING;
+            
             for (i=0;i<st->subframeSize;i++)
                exc[i]=0;
             while (st->voc_offset<st->subframeSize)
             {
                /* Not quite sure why we need the factor of two in the sqrt */
                if (st->voc_offset>=0)
-                  exc[st->voc_offset]=g*sqrt(2.0*ol_pitch)*PSHR32(ol_gain,SIG_SHIFT);
+                  exc[st->voc_offset]=g*GAIN_SCALING_1*sqrt(2.0*ol_pitch)*PSHR32(ol_gain,SIG_SHIFT);
                st->voc_offset+=ol_pitch;
             }
             st->voc_offset -= st->subframeSize;
@@ -1627,7 +1627,8 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
             for (i=0;i<st->subframeSize;i++)
             {
                spx_word16_t exci=exc[i];
-               exc[i]= .7*exc[i] + .3*st->voc_m1 + (1-.85*g)*PSHR32(innov[i],SIG_SHIFT) - .15*g*PSHR32(st->voc_m2,SIG_SHIFT);
+               exc[i]= ADD16(ADD16(MULT16_16_Q15(QCONST16(.7f,15),exc[i]) , MULT16_16_Q15(QCONST16(.3f,15),st->voc_m1)),
+                             SUB16((1-.85*g*GAIN_SCALING_1)*PSHR32(innov[i],SIG_SHIFT), .15*g*GAIN_SCALING_1*PSHR32(st->voc_m2,SIG_SHIFT)));
                st->voc_m1 = exci;
                st->voc_m2=innov[i];
                st->voc_mean = .8*st->voc_mean + .2*exc[i];
