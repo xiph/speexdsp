@@ -355,7 +355,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
 
 
       /*Open-loop pitch*/
-      if (st->complexity>2 || !st->submodes[st->submodeID] || st->vbr_enabled || st->vad_enabled || SUBMODE(forced_pitch_gain) ||
+      if ((st->complexity>2 && SUBMODE(have_subframe_gain)<3) || !st->submodes[st->submodeID] || st->vbr_enabled || st->vad_enabled || SUBMODE(forced_pitch_gain) ||
           SUBMODE(lbr_pitch) != -1)
       {
          int nol_pitch[6];
@@ -440,7 +440,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
 #endif
       {
          spx_word16_t g = compute_rms16(st->exc, st->frameSize);
-         if (ol_pitch>0)
+         if (st->submodeID!=1 && ol_pitch>0)
             ol_gain = MULT16_16(g, MULT16_16_Q14(QCONST16(1.1,14),
                                 spx_sqrt(QCONST32(1.,28)-MULT16_32_Q15(QCONST16(.8,15),SHL32(MULT16_16(ol_pitch_coef,ol_pitch_coef),16)))));
          else
@@ -1607,31 +1607,30 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
          if (st->submodeID==1) 
          {
             float g=ol_pitch_coef*GAIN_SCALING_1;
-
-            
-            for (i=0;i<st->subframeSize;i++)
-               exc[i]=0;
-            while (st->voc_offset<st->subframeSize)
-            {
-               if (st->voc_offset>=0)
-                  exc[st->voc_offset]=sqrt(1.0*ol_pitch);
-               st->voc_offset+=ol_pitch;
-            }
-            st->voc_offset -= st->subframeSize;
-
-            g=.5+2*(g-.6);
+            g=1.5*(g-.2);
             if (g<0)
                g=0;
             if (g>1)
                g=1;
+
+            for (i=0;i<st->subframeSize;i++)
+               exc[i]=0;
+            while (st->voc_offset<st->subframeSize)
+            {
+               /* Not quite sure why we need the factor of two in the sqrt */
+               if (st->voc_offset>=0)
+                  exc[st->voc_offset]=g*sqrt(2.0*ol_pitch)*PSHR32(ol_gain,SIG_SHIFT);
+               st->voc_offset+=ol_pitch;
+            }
+            st->voc_offset -= st->subframeSize;
+            
             for (i=0;i<st->subframeSize;i++)
             {
                spx_word16_t exci=exc[i];
-               /* FIXME: cleanup the innov[i]/SIG_SCALING */
-               exc[i]=.8*g*exc[i]*PSHR32(ol_gain,SIG_SHIFT) + .6*g*st->voc_m1*PSHR32(ol_gain,SIG_SHIFT) + (1-.5*g)*PSHR32(innov[i],SIG_SHIFT) - .5*g*PSHR32(st->voc_m2,SIG_SHIFT);
+               exc[i]= .7*exc[i] + .3*st->voc_m1 + (1-.85*g)*PSHR32(innov[i],SIG_SHIFT) - .15*g*PSHR32(st->voc_m2,SIG_SHIFT);
                st->voc_m1 = exci;
                st->voc_m2=innov[i];
-               st->voc_mean = .95*st->voc_mean + .05*exc[i];
+               st->voc_mean = .8*st->voc_mean + .2*exc[i];
                exc[i]-=st->voc_mean;
             }
          }
