@@ -1321,10 +1321,7 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
       ALLOC(lpc, st->lpcSize, spx_coef_t);
       bw_lpc(QCONST16(0.93f,15), st->interp_qlpc, lpc, st->lpcSize);
       {
-         float innov_gain=0;
-         float pgain=GAIN_SCALING_1*st->last_pitch_gain;
-         if (pgain>.6)
-            pgain=.6;
+         spx_word16_t innov_gain=0;
          /* FIXME: This was innov, not exc */
          innov_gain = compute_rms16(st->exc, st->frameSize);
          for (i=0;i<st->frameSize;i++)

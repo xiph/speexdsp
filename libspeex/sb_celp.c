@@ -35,7 +35,6 @@
 
 #include <math.h>
 #include "sb_celp.h"
-#include "stdlib.h"
 #include "filters.h"
 #include "lpc.h"
 #include "lsp.h"
@@ -46,6 +45,10 @@
 #include "ltp.h"
 #include "misc.h"
 #include "math_approx.h"
+
+#ifndef NULL
+#define NULL 0
+#endif
 
 /* Default size for the encoder and decoder stack (can be changed at compile time).
    This does not apply when using variable-size arrays or alloca. */

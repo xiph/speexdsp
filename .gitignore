@@ -2,6 +2,7 @@
 *.lo
 Makefile.in
 *~
+*.orig
 fixed
 float
 Speex.kdevelop.pcs
@@ -37,4 +38,4 @@ speex.pc
 speexdec
 src/speexenc
 stamp-*
-
+patches

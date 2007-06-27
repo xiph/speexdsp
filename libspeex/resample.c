@@ -998,7 +998,7 @@ void speex_resampler_get_rate(SpeexResamplerState *st, spx_uint32_t *in_rate, sp
 
 int speex_resampler_set_rate_frac(SpeexResamplerState *st, spx_uint32_t ratio_num, spx_uint32_t ratio_den, spx_uint32_t in_rate, spx_uint32_t out_rate)
 {
-   int fact;
+   spx_uint32_t fact;
    if (st->in_rate == in_rate && st->out_rate == out_rate && st->num_rate == ratio_num && st->den_rate == ratio_den)
       return RESAMPLER_ERR_SUCCESS;
    

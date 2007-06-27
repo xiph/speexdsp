@@ -86,7 +86,7 @@ static void kf_bfly4(
         kiss_fft_cpx * Fout,
         const size_t fstride,
         const kiss_fft_cfg st,
-        const size_t m,
+        int m,
         int N,
         int mm
         )
