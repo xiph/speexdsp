@@ -172,7 +172,7 @@ typedef struct DecState {
    /*Vocoder data*/
    spx_word16_t  voc_m1;
    spx_word32_t  voc_m2;
-   float  voc_mean;
+   spx_word16_t  voc_mean;
    int    voc_offset;
 
    int    dtx_enabled;

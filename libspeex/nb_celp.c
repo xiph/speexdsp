@@ -1594,7 +1594,7 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
          if (st->submodeID==1) 
          {
             spx_word16_t g=ol_pitch_coef;
-            g=1.5*(g-.2f*GAIN_SCALING);
+            g=MULT16_16_P14(QCONST16(1.5f,14),(g-QCONST16(.2f,6)));
             if (g<0)
                g=0;
             if (g>GAIN_SCALING)
@@ -1604,9 +1604,10 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
                exc[i]=0;
             while (st->voc_offset<st->subframeSize)
             {
-               /* Not quite sure why we need the factor of two in the sqrt */
+               /* exc[st->voc_offset]= g*sqrt(2*ol_pitch)*ol_gain;
+                  Not quite sure why we need the factor of two in the sqrt */
                if (st->voc_offset>=0)
-                  exc[st->voc_offset]=g*GAIN_SCALING_1*sqrt(2.0*ol_pitch)*PSHR32(ol_gain,SIG_SHIFT);
+                  exc[st->voc_offset]=MULT16_16(spx_sqrt(MULT16_16_16(2,ol_pitch)),EXTRACT16(PSHR32(MULT16_16(g,PSHR32(ol_gain,SIG_SHIFT)),6)));
                st->voc_offset+=ol_pitch;
             }
             st->voc_offset -= st->subframeSize;
@@ -1615,10 +1616,12 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
             {
                spx_word16_t exci=exc[i];
                exc[i]= ADD16(ADD16(MULT16_16_Q15(QCONST16(.7f,15),exc[i]) , MULT16_16_Q15(QCONST16(.3f,15),st->voc_m1)),
-                             SUB16((1-.85*g*GAIN_SCALING_1)*PSHR32(innov[i],SIG_SHIFT), .15*g*GAIN_SCALING_1*PSHR32(st->voc_m2,SIG_SHIFT)));
+                             SUB16(MULT16_16_Q15(Q15_ONE-MULT16_16_16(QCONST16(.85f,9),g),EXTRACT16(PSHR32(innov[i],SIG_SHIFT))),
+                                   MULT16_16_Q15(MULT16_16_16(QCONST16(.15f,9),g),EXTRACT16(PSHR32(st->voc_m2,SIG_SHIFT)))
+                                  ));
                st->voc_m1 = exci;
                st->voc_m2=innov[i];
-               st->voc_mean = .8*st->voc_mean + .2*exc[i];
+               st->voc_mean = EXTRACT16(PSHR32(ADD32(MULT16_16(QCONST16(.8f,15),st->voc_mean), MULT16_16(QCONST16(.2f,15),exc[i])), 15));
                exc[i]-=st->voc_mean;
             }
          }
