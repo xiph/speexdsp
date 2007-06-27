@@ -105,10 +105,10 @@ void *speex_move (void *dest, void *src, int n)
 }
 #endif
 
-#ifndef OVERRIDE_SPEEX_ERROR
-void speex_error(const char *str)
+#ifndef OVERRIDE_SPEEX_FATAL
+void _speex_fatal(const char *str, const char *file, int line)
 {
-   fprintf (stderr, "Fatal (internal) error: %s\n", str);
+   fprintf (stderr, "Fatal (internal) error in %s, line %d: %s\n", file, line, str);
    exit(1);
 }
 #endif

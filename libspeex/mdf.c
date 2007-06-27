@@ -368,7 +368,7 @@ static void dump_audio(const spx_int16_t *rec, const spx_int16_t *play, const sp
 {
    if (!(rFile && pFile && oFile))
    {
-      speex_error("Dump files not open");
+      speex_fatal("Dump files not open");
    }
    fwrite(rec, sizeof(spx_int16_t), len, rFile);
    fwrite(play, sizeof(spx_int16_t), len, pFile);
@@ -384,7 +384,7 @@ SpeexEchoState *speex_echo_state_init(int frame_size, int filter_length)
 
 #ifdef DUMP_ECHO_CANCEL_DATA
    if (rFile || pFile || oFile)
-      speex_error("Opening dump files twice");
+      speex_fatal("Opening dump files twice");
    rFile = fopen("aec_rec.sw", "w");
    pFile = fopen("aec_play.sw", "w");
    oFile = fopen("aec_out.sw", "w");

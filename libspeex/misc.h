@@ -91,6 +91,9 @@ static inline spx_int32_t le_int(spx_int32_t i)
 #endif
 }
 
+#define speex_fatal(str) _speex_fatal(str, __FILE__, __LINE__);
+#define speex_assert(cond) {if (!(cond)) {speex_fatal("assertion failed: " #cond);}}
+
 /** Speex wrapper for calloc. To do your own dynamic allocation, all you need to do is replace this function, speex_realloc and speex_free */
 void *speex_alloc (int size);
 
@@ -110,7 +113,7 @@ void speex_free_scratch (void *ptr);
 void *speex_move (void *dest, void *src, int n);
 
 /** Abort with an error message to stderr (internal Speex error) */
-void speex_error(const char *str);
+void _speex_fatal(const char *str, const char *file, int line);
 
 /** Print warning message to stderr (programming error) */
 void speex_warning(const char *str);

@@ -787,18 +787,15 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
       /*print_vec(st->bw_lpc1, 10, "bw_lpc");*/
 #endif
 
+      /*FIXME: This will break if we change the window size */
+      speex_assert(st->windowSize-st->frameSize == st->subframeSize);
+      if (sub==0)
       {
-         /*FIXME: This will break if we change the window size */
-         if (st->windowSize-st->frameSize != st->subframeSize)
-            speex_error("windowSize-frameSize != subframeSize");
-         if (sub==0)
-         {
-            for (i=0;i<st->subframeSize;i++)
-               real_exc[i] = sw[i] = st->winBuf[i];
-         } else {
-            for (i=0;i<st->subframeSize;i++)
-               real_exc[i] = sw[i] = in[i+((sub-1)*st->subframeSize)];
-         }
+         for (i=0;i<st->subframeSize;i++)
+            real_exc[i] = sw[i] = st->winBuf[i];
+      } else {
+         for (i=0;i<st->subframeSize;i++)
+            real_exc[i] = sw[i] = in[i+((sub-1)*st->subframeSize)];
       }
       fir_mem16(real_exc, interp_qlpc, real_exc, st->subframeSize, st->lpcSize, st->mem_exc2, stack);
       
@@ -845,7 +842,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
          exc[i]=0;
 
       /* If we have a long-term predictor (otherwise, something's wrong) */
-      if (SUBMODE(ltp_quant))
+      speex_assert (SUBMODE(ltp_quant));
       {
          int pit_min, pit_max;
          /* Long-term prediction */
@@ -894,10 +891,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
 #endif
 
          st->pitch[sub]=pitch;
-      } else {
-         speex_error ("No pitch prediction, what's wrong");
       }
-
       /* Quantization of innovation */
       for (i=0;i<st->subframeSize;i++)
          innov[i]=0;
@@ -944,7 +938,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
       signal_div(target, target, ener, st->subframeSize);
       
       /* Quantize innovation */
-      if (SUBMODE(innovation_quant))
+      speex_assert (SUBMODE(innovation_quant));
       {
          /* Codebook search */
          SUBMODE(innovation_quant)(target, interp_qlpc, bw_lpc1, bw_lpc2, 
@@ -980,10 +974,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
          {
             st->innov_rms_save[sub] = compute_rms(innov, st->subframeSize);
          }
-      } else {
-         speex_error("No fixed codebook");
       }
-
 
       for (i=0;i<st->subframeSize;i++)
          sw[i] = exc[i];
@@ -1477,7 +1468,7 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
          exc[i]=0;
 
       /*Adaptive codebook contribution*/
-      if (SUBMODE(ltp_unquant))
+      speex_assert (SUBMODE(ltp_unquant));
       {
          int pit_min, pit_max;
          /* Handle pitch constraints if any */
@@ -1542,8 +1533,6 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
             if (tmp > best_pitch_gain)
                best_pitch_gain = tmp;
          }
-      } else {
-         speex_error("No pitch prediction, what's wrong");
       }
       
       /* Unquantize the innovation */
@@ -1567,7 +1556,7 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
             ener = ol_gain;
          }
                   
-         if (SUBMODE(innovation_unquant))
+         speex_assert (SUBMODE(innovation_unquant));
          {
             /*Fixed codebook contribution*/
             SUBMODE(innovation_unquant)(innov, SUBMODE(innovation_params), st->subframeSize, bits, stack, &st->seed);
@@ -1599,8 +1588,6 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
                for (i=0;i<st->subframeSize;i++)
                   innov_save[i] = EXTRACT16(PSHR32(innov[i], SIG_SHIFT));
             }
-         } else {
-            speex_error("No fixed codebook");
          }
 
          /*Vocoder mode*/
