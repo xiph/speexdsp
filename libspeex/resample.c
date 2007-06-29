@@ -999,9 +999,12 @@ void speex_resampler_get_rate(SpeexResamplerState *st, spx_uint32_t *in_rate, sp
 int speex_resampler_set_rate_frac(SpeexResamplerState *st, spx_uint32_t ratio_num, spx_uint32_t ratio_den, spx_uint32_t in_rate, spx_uint32_t out_rate)
 {
    spx_uint32_t fact;
+   spx_uint32_t old_den;
+   spx_uint32_t i;
    if (st->in_rate == in_rate && st->out_rate == out_rate && st->num_rate == ratio_num && st->den_rate == ratio_den)
       return RESAMPLER_ERR_SUCCESS;
    
+   old_den = st->den_rate;
    st->in_rate = in_rate;
    st->out_rate = out_rate;
    st->num_rate = ratio_num;
@@ -1016,6 +1019,17 @@ int speex_resampler_set_rate_frac(SpeexResamplerState *st, spx_uint32_t ratio_nu
       }
    }
       
+   if (old_den > 0)
+   {
+      for (i=0;i<st->nb_channels;i++)
+      {
+         st->samp_frac_num[i]=st->samp_frac_num[i]*st->den_rate/old_den;
+         /* Safety net */
+         if (st->samp_frac_num[i] >= st->den_rate)
+            st->samp_frac_num[i] = st->den_rate-1;
+      }
+   }
+   
    if (st->initialised)
       update_filter(st);
    return RESAMPLER_ERR_SUCCESS;
