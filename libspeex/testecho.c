@@ -17,7 +17,7 @@
 
 int main(int argc, char **argv)
 {
-   int echo_fd, ref_fd, e_fd;
+   int echo_fd, ref_fd, e_fd, tmp;
    short echo_buf[NN], ref_buf[NN], e_buf[NN];
    SpeexEchoState *st;
    SpeexPreprocessState *den;
@@ -33,7 +33,7 @@ int main(int argc, char **argv)
 
    st = speex_echo_state_init(NN, TAIL);
    den = speex_preprocess_state_init(NN, 8000);
-   int tmp = 8000;
+   tmp = 8000;
    speex_echo_ctl(st, SPEEX_ECHO_SET_SAMPLING_RATE, &tmp);
    speex_preprocess_ctl(den, SPEEX_PREPROCESS_SET_ECHO_STATE, st);
 
