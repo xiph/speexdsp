@@ -36,8 +36,8 @@ int main(int argc, char **argv)
    sigpow = 0;
    errpow = 0;
 
-   st = speex_encoder_init(&speex_uwb_mode);
-   dec = speex_decoder_init(&speex_uwb_mode);
+   st = speex_encoder_init(speex_lib_get_mode(SPEEX_MODEID_UWB));
+   dec = speex_decoder_init(speex_lib_get_mode(SPEEX_MODEID_UWB));
 
    callback.callback_id = SPEEX_INBAND_CHAR;
    callback.func = speex_std_char_handler;

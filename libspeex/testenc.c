@@ -35,8 +35,8 @@ int main(int argc, char **argv)
    sigpow = 0;
    errpow = 0;
 
-   st = speex_encoder_init(&speex_nb_mode);
-   dec = speex_decoder_init(&speex_nb_mode);
+   st = speex_encoder_init(speex_lib_get_mode(SPEEX_MODEID_NB));
+   dec = speex_decoder_init(speex_lib_get_mode(SPEEX_MODEID_NB));
 
    /* BEGIN: You probably don't need the following in a real application */
    callback.callback_id = SPEEX_INBAND_CHAR;
