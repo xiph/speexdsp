@@ -574,7 +574,7 @@ void speex_jitter_put(SpeexJitter *jitter, char *packet, int len, int timestamp)
    jitter_buffer_put(jitter->packets, &p);
 }
 
-void speex_jitter_get(SpeexJitter *jitter, short *out, int *current_timestamp)
+void speex_jitter_get(SpeexJitter *jitter, spx_int16_t *out, int *current_timestamp)
 {
    int i;
    int ret;
