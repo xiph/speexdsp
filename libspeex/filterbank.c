@@ -59,7 +59,7 @@ FilterBank *filterbank_new(int banks, spx_word32_t sampling, int len, int type)
    int id1;
    int id2;
    df = DIV32(SHL32(sampling,15),MULT16_16(2,len));
-   max_mel = toBARK(EXTRACT16(MULT16_16_Q15(QCONST16(.5f,15),sampling)));
+   max_mel = toBARK(EXTRACT16(sampling/2));
    mel_interval = PDIV32(max_mel,banks-1);
    
    bank = (FilterBank*)speex_alloc(sizeof(FilterBank));
