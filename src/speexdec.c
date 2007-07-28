@@ -48,8 +48,6 @@
 #include <ogg/ogg.h>
 
 #if defined WIN32 || defined _WIN32
-#include <windows.h>
-#include "getopt_win.h"
 #include "wave_out.h"
 /* We need the following two to set stdout to binary */
 #include <io.h>
@@ -84,7 +82,6 @@
 #include <speex/speex_header.h>
 #include <speex/speex_stereo.h>
 #include <speex/speex_callbacks.h>
-#include "wav_io.h"
 
 #define MAX_FRAME_SIZE 2000
 
@@ -289,13 +286,17 @@ void usage()
 
 void version()
 {
-   printf ("speexdec (Speex decoder) version " SPEEX_VERSION " (compiled " __DATE__ ")\n");
+   const char* speex_version;
+   speex_lib_ctl(SPEEX_LIB_GET_VERSION_STRING, (void*)&speex_version);
+   printf ("speexdec (Speex decoder) version %s (compiled " __DATE__ ")\n", speex_version);
    printf ("Copyright (C) 2002-2006 Jean-Marc Valin\n");
 }
 
 void version_short()
 {
-   printf ("speexdec version " SPEEX_VERSION "\n");
+   const char* speex_version;
+   speex_lib_ctl(SPEEX_LIB_GET_VERSION_STRING, (void*)&speex_version);
+   printf ("speexdec version %s\n", speex_version);
    printf ("Copyright (C) 2002-2006 Jean-Marc Valin\n");
 }
 
