@@ -69,13 +69,13 @@ int main(int argc, char **argv)
       exit(1);
    }
    inFile = argv[1];
-   fin = fopen(inFile, "r");
+   fin = fopen(inFile, "rb");
    outFile = argv[2];
-   fout = fopen(outFile, "w+");
+   fout = fopen(outFile, "wb+");
    if (argc==4)
    {
       bitsFile = argv[3];
-      fbits = fopen(bitsFile, "w");
+      fbits = fopen(bitsFile, "wb");
    }
    speex_bits_init(&bits);
    while (!feof(fin))

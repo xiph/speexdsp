@@ -385,9 +385,9 @@ SpeexEchoState *speex_echo_state_init(int frame_size, int filter_length)
 #ifdef DUMP_ECHO_CANCEL_DATA
    if (rFile || pFile || oFile)
       speex_fatal("Opening dump files twice");
-   rFile = fopen("aec_rec.sw", "w");
-   pFile = fopen("aec_play.sw", "w");
-   oFile = fopen("aec_out.sw", "w");
+   rFile = fopen("aec_rec.sw", "wb");
+   pFile = fopen("aec_play.sw", "wb");
+   oFile = fopen("aec_out.sw", "wb");
 #endif
    
    st->frame_size = frame_size;
