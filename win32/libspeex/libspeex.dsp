@@ -42,7 +42,8 @@ RSC=rc.exe
 # PROP Target_Dir ""
 F90=df.exe
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /YX /FD /c
-# ADD CPP /nologo /GX /Ox /Ot /Og /Oi /Ob2 /I "../../include" /I "../" /D inline=__inline /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "HAVE_CONFIG_H" /YX /FD /c
+# ADD CPP /nologo /MD /GX /O2 /Ob2 /I "../../include" /I "../" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "HAVE_CONFIG_H" /FD /c
+# SUBTRACT CPP /YX
 # ADD BASE RSC /l 0x809 /d "NDEBUG"
 # ADD RSC /l 0x809 /d "NDEBUG"
 BSC32=bscmake.exe
@@ -50,7 +51,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LIB32=link.exe -lib
 # ADD BASE LIB32 /nologo
-# ADD LIB32 /nologo
+# ADD LIB32 /nologo /out:"..\..\lib\libspeex.lib"
 
 !ELSEIF  "$(CFG)" == "libspeex - Win32 Debug"
 
@@ -66,7 +67,8 @@ LIB32=link.exe -lib
 # PROP Target_Dir ""
 F90=df.exe
 # ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /YX /FD /GZ /c
-# ADD CPP /nologo /W3 /GX /Ox /Ot /Og /Oi /Ob2 /I "../../include" /I "../" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "HAVE_CONFIG_H" /YX /FD /c
+# ADD CPP /nologo /MDd /W3 /GX /Od /Ob2 /I "../../include" /I "../" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "HAVE_CONFIG_H" /FD /c
+# SUBTRACT CPP /YX
 # ADD BASE RSC /l 0x809 /d "_DEBUG"
 # ADD RSC /l 0x809 /d "_DEBUG"
 BSC32=bscmake.exe
@@ -74,7 +76,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LIB32=link.exe -lib
 # ADD BASE LIB32 /nologo
-# ADD LIB32 /nologo
+# ADD LIB32 /nologo /out:"..\..\lib\libspeex.lib"
 
 !ENDIF 
 
@@ -119,6 +121,14 @@ SOURCE=..\..\libspeex\exc_8_128_table.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\libspeex\fftwrap.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\libspeex\filterbank.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\libspeex\filters.c
 # End Source File
 # Begin Source File
@@ -143,6 +153,22 @@ SOURCE=..\..\libspeex\high_lsp_tables.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\libspeex\jitter.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\libspeex\kiss_fft.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\libspeex\kiss_fftr.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\libspeex\lbr_48k_tables.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\libspeex\lpc.c
 # End Source File
 # Begin Source File
@@ -163,6 +189,10 @@ SOURCE=..\..\libspeex\math_approx.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\libspeex\mdf.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\libspeex\misc.c
 # End Source File
 # Begin Source File
@@ -180,6 +210,10 @@ SOURCE=..\..\libspeex\preprocess.c
 # Begin Source File
 
 SOURCE=..\..\libspeex\quant_lsp.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\libspeex\resample.c
 # End Source File
 # Begin Source File
 
@@ -211,7 +245,15 @@ SOURCE=..\..\libspeex\vbr.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\libspeex\vorbis_psy.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\libspeex\vq.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\libspeex\window.c
 # End Source File
 # End Group
 # Begin Group "Header Files"
@@ -219,11 +261,51 @@ SOURCE=..\..\libspeex\vq.c
 # PROP Default_Filter "h;hpp;hxx;hm;inl"
 # Begin Source File
 
+SOURCE=..\..\libspeex\_kiss_fft_guts.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\libspeex\arch.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\libspeex\cb_search.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\libspeex\cb_search_sse.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\libspeex\fftwrap.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\libspeex\filterbank.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\libspeex\filters.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\libspeex\filters_sse.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\libspeex\fixed_debug.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\libspeex\fixed_generic.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\libspeex\kiss_fft.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\libspeex\kiss_fftr.h
 # End Source File
 # Begin Source File
 
@@ -239,6 +321,14 @@ SOURCE=..\..\libspeex\ltp.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\libspeex\ltp_sse.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\libspeex\math_approx.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\libspeex\misc.h
 # End Source File
 # Begin Source File
@@ -248,6 +338,10 @@ SOURCE=..\..\libspeex\modes.h
 # Begin Source File
 
 SOURCE=..\..\libspeex\nb_celp.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\libspeex\pseudofloat.h
 # End Source File
 # Begin Source File
 
@@ -263,27 +357,43 @@ SOURCE=..\..\libspeex\smallft.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\libspeex\speex.h
+SOURCE=..\..\include\speex\speex.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\libspeex\speex_bits.h
+SOURCE=..\..\include\speex\speex_bits.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\libspeex\speex_callbacks.h
+SOURCE=..\..\include\speex\speex_callbacks.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\libspeex\speex_denoise.h
+SOURCE=..\..\include\speex\speex_echo.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\libspeex\speex_header.h
+SOURCE=..\..\include\speex\speex_header.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\libspeex\speex_stereo.h
+SOURCE=..\..\include\speex\speex_jitter.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\include\speex\speex_preprocess.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\include\speex\speex_resampler.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\include\speex\speex_stereo.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\include\speex\speex_types.h
 # End Source File
 # Begin Source File
 
@@ -295,8 +405,20 @@ SOURCE=..\..\libspeex\vbr.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\libspeex\vorbis_psy.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\libspeex\vq.h
 # End Source File
+# Begin Source File
+
+SOURCE=..\..\libspeex\vq_sse.h
+# End Source File
 # End Group
+# Begin Source File
+
+SOURCE=..\config.h
+# End Source File
 # End Target
 # End Project
