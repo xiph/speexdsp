@@ -1,10 +1,8 @@
-Copyright 2002-2007 
-        Xiph.org Foundation
-        Jean-Marc Valin
-        David Rowe
-        EpicGames
-        Analog Devices
-        Commonwealth Scientific and Industrial Research Organisation (CSIRO)
+This collective work is Copyright (C) 2002-2007 by the Xiph.Org Foundation
+Individual portions may be copyright by individual contributors, including
+Jean-Marc Valin, David Rowe, EpicGames, Analog Devices, Commonwealth
+Scientific and Industrial Research Organisation (CSIRO), and are included
+in this collective work with permission of the copyright owners.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions
@@ -17,7 +15,7 @@ notice, this list of conditions and the following disclaimer.
 notice, this list of conditions and the following disclaimer in the
 documentation and/or other materials provided with the distribution.
 
-- Neither the name of the Xiph.org Foundation nor the names of its
+- Neither the name of the Xiph.Org Foundation nor the names of its
 contributors may be used to endorse or promote products derived from
 this software without specific prior written permission.
 
