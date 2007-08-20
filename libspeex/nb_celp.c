@@ -355,7 +355,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
 
 
       /*Open-loop pitch*/
-      if ((st->complexity>2 && SUBMODE(have_subframe_gain)<3) || !st->submodes[st->submodeID] || st->vbr_enabled || st->vad_enabled || SUBMODE(forced_pitch_gain) ||
+      if (!st->submodes[st->submodeID] || (st->complexity>2 && SUBMODE(have_subframe_gain)<3) || st->vbr_enabled || st->vad_enabled || SUBMODE(forced_pitch_gain) ||
           SUBMODE(lbr_pitch) != -1)
       {
          int nol_pitch[6];
