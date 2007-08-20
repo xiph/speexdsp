@@ -17,9 +17,10 @@ Implement wideband split as IIR instead of QMF?
 
 Allocator override (speex_lib_ctl?)
 Fixed-point:
-  - Vocoder
-  - Rest of wideband
+  - VBR
+  - encoder init (lag_window, lsp)
   - Jitter buffer
+  - AGC
 Denoiser:
   - Better noise adaptation
 AGC:
