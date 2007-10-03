@@ -98,7 +98,7 @@ typedef struct SpeexSubmode {
    lsp_quant_func    lsp_quant; /**< LSP quantization function */
    lsp_unquant_func  lsp_unquant; /**< LSP unquantization function */
 
-   /*Lont-term predictor functions*/
+   /*Long-term predictor functions*/
    ltp_quant_func    ltp_quant; /**< Long-term predictor (pitch) quantizer */
    ltp_unquant_func  ltp_unquant; /**< Long-term predictor (pitch) un-quantizer */
    const void       *ltp_params; /**< Pitch parameters (options) */
