@@ -635,13 +635,13 @@ void speex_echo_playback(SpeexEchoState *st, const spx_int16_t *play)
    }
 }
 
-/** Performs echo cancellation on a frame */
+/** Performs echo cancellation on a frame (deprecated, last arg now ignored) */
 void speex_echo_cancel(SpeexEchoState *st, const spx_int16_t *in, const spx_int16_t *far_end, spx_int16_t *out, spx_int32_t *Yout)
 {
    speex_echo_cancellation(st, in, far_end, out);
 }
 
-/** Performs echo cancellation on a frame (deprecated, last arg now ignored) */
+/** Performs echo cancellation on a frame */
 void speex_echo_cancellation(SpeexEchoState *st, const spx_int16_t *in, const spx_int16_t *far_end, spx_int16_t *out)
 {
    int i,j;

@@ -77,7 +77,7 @@ void speex_echo_state_destroy(SpeexEchoState *st);
  * to playback in this form)
  *
  * @param st Echo canceller state
- * @param rec signal from the microphone (near end + far end echo)
+ * @param rec Signal from the microphone (near end + far end echo)
  * @param play Signal played to the speaker (received from far end)
  * @param out Returns near-end signal with echo removed
  */
@@ -89,7 +89,7 @@ void speex_echo_cancel(SpeexEchoState *st, const spx_int16_t *rec, const spx_int
 /** Perform echo cancellation using internal playback buffer, which is delayed by two frames
  * to account for the delay introduced by most soundcards (but it could be off!)
  * @param st Echo canceller state
- * @param rec signal from the microphone (near end + far end echo)
+ * @param rec Signal from the microphone (near end + far end echo)
  * @param out Returns near-end signal with echo removed
 */
 void speex_echo_capture(SpeexEchoState *st, const spx_int16_t *rec, spx_int16_t *out);
