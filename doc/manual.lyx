@@ -45,7 +45,7 @@
 \begin_layout Title
 The Speex Codec Manual
 \newline
-Version 1.2 Beta 2
+Version 1.2 Beta 3
 \end_layout
 
 \begin_layout Author
@@ -1367,19 +1367,7 @@ n Simulate n % random packet loss
 \end_layout
 
 \begin_layout Chapter
-Programming with Speex (the libspeex
-\begin_inset LatexCommand index
-name "libspeex"
-
-\end_inset
-
- API
-\begin_inset LatexCommand index
-name "API"
-
-\end_inset
-
-)
+Programming with Speex
 \begin_inset LatexCommand label
 name "sec:Programming-with-Speex"
 
@@ -1401,6 +1389,16 @@ reference "sec:Sample-code"
 \end_layout
 
 \begin_layout Section
+Codec API (libspeex
+\begin_inset LatexCommand index
+name "libspeex"
+
+\end_inset
+
+)
+\end_layout
+
+\begin_layout Subsection
 Encoding
 \begin_inset LatexCommand label
 name "sub:Encoding"
@@ -1609,7 +1607,7 @@ That's about it for the encoder.
  
 \end_layout
 
-\begin_layout Section
+\begin_layout Subsection
 Decoding
 \begin_inset LatexCommand label
 name "sub:Decoding"
@@ -1760,553 +1758,7 @@ speex_bits_destroy(&bits);
 speex_decoder_destroy(dec_state);
 \end_layout
 
-\begin_layout Section
-Preprocessor
-\begin_inset LatexCommand label
-name "sub:Preprocessor"
-
-\end_inset
-
-
-\end_layout
-
-\begin_layout Standard
-In order to use the Speex preprocessor
-\begin_inset LatexCommand index
-name "preprocessor"
-
-\end_inset
-
-, you first need to:
-\end_layout
-
-\begin_layout LyX-Code
-#include <speex/speex_preprocess.h>
-\end_layout
-
-\begin_layout Standard
-Then, a preprocessor state can be created as:
-\end_layout
-
-\begin_layout LyX-Code
-SpeexPreprocessState *preprocess_state = speex_preprocess_state_init(frame_size,
- sampling_rate);
-\end_layout
-
-\begin_layout Standard
-It is recommended to use the same value for 
-\family typewriter
-frame_size
-\family default
- as is used by the encoder (20 
-\emph on
-ms
-\emph default
-).
-\end_layout
-
-\begin_layout Standard
-For each input frame, you need to call:
-\end_layout
-
-\begin_layout LyX-Code
-speex_preprocess_run(preprocess_state, audio_frame);
-\end_layout
-
-\begin_layout Standard
-where 
-\family typewriter
-audio_frame
-\family default
- is used both as input and output.
-\end_layout
-
-\begin_layout Standard
-In cases where the output audio is not useful for a certain frame, it is
- possible to use instead:
-\end_layout
-
-\begin_layout LyX-Code
-speex_preprocess_estimate_update(preprocess_state, audio_frame);
-\end_layout
-
-\begin_layout Standard
-This call will update all the preprocessor internal state variables without
- computing the output audio, thus saving some CPU cycles.
-\end_layout
-
-\begin_layout Standard
-The behaviour of the preprocessor can be changed using:
-\end_layout
-
-\begin_layout LyX-Code
-speex_preprocess_ctl(preprocess_state, request, ptr);
-\end_layout
-
-\begin_layout Standard
-which is used in the same way as the encoder and decoder equivalent.
- Options are listed in Section .
-\end_layout
-
-\begin_layout Standard
-The preprocessor state can be destroyed using:
-\end_layout
-
-\begin_layout LyX-Code
-speex_preprocess_state_destroy(preprocess_state);
-\end_layout
-
-\begin_layout Section
-Echo Cancellation
-\begin_inset LatexCommand label
-name "sub:Echo-Cancellation"
-
-\end_inset
-
-
-\end_layout
-
-\begin_layout Standard
-The Speex library now includes an echo cancellation
-\begin_inset LatexCommand index
-name "echo cancellation"
-
-\end_inset
-
- algorithm suitable for Acoustic Echo Cancellation
-\begin_inset LatexCommand index
-name "acoustic echo cancellation"
-
-\end_inset
-
- (AEC).
- In order to use the echo canceller, you first need to
-\end_layout
-
-\begin_layout LyX-Code
-#include <speex/speex_echo.h>
-\end_layout
-
-\begin_layout Standard
-Then, an echo canceller state can be created by:
-\end_layout
-
-\begin_layout LyX-Code
-SpeexEchoState *echo_state = speex_echo_state_init(frame_size, filter_length);
-\end_layout
-
-\begin_layout Standard
-where 
-\family typewriter
-frame_size
-\family default
- is the amount of data (in samples) you want to process at once and 
-\family typewriter
-filter_length
-\family default
- is the length (in samples) of the echo cancelling filter you want to use
- (also known as 
-\shape italic
-tail length
-\shape default
-
-\begin_inset LatexCommand index
-name "tail length"
-
-\end_inset
-
-).
- It is recommended to use a frame size in the order of 20 ms (or equal to
- the codec frame size) and make sure it is easy to perform an FFT of that
- size (powers of two are better than prime sizes).
- The recommended tail length is approximately the third of the room reverberatio
-n time.
- For example, in a small room, reverberation time is in the order of 300
- ms, so a tail length of 100 ms is a good choice (800 samples at 8000 Hz
- sampling rate).
-\end_layout
-
-\begin_layout Standard
-Once the echo canceller state is created, audio can be processed by:
-\end_layout
-
-\begin_layout LyX-Code
-speex_echo_cancellation(echo_state, input_frame, echo_frame, output_frame);
-\end_layout
-
-\begin_layout Standard
-where 
-\family typewriter
-input_frame
-\family default
- is the audio as captured by the microphone, 
-\family typewriter
-echo_frame
-\family default
- is the signal that was played in the speaker (and needs to be removed)
- and 
-\family typewriter
-output_frame
-\family default
- is the signal with echo removed.
- 
-\end_layout
-
-\begin_layout Standard
-One important thing to keep in mind is the relationship between 
-\family typewriter
-input_frame
-\family default
- and 
-\family typewriter
-echo_frame
-\family default
-.
- It is important that, at any time, any echo that is present in the input
- has already been sent to the echo canceller as 
-\family typewriter
-echo_frame
-\family default
-.
- In other words, the echo canceller cannot remove a signal that it hasn't
- yet received.
- On the other hand, the delay between the input signal and the echo signal
- must be small enough because otherwise part of the echo cancellation filter
- is inefficient.
- In the ideal case, you code would look like:
-\end_layout
-
-\begin_layout LyX-Code
-write_to_soundcard(echo_frame, frame_size);
-\end_layout
-
-\begin_layout LyX-Code
-read_from_soundcard(input_frame, frame_size);
-\end_layout
-
-\begin_layout LyX-Code
-speex_echo_cancellation(echo_state, input_frame, echo_frame, output_frame);
-\end_layout
-
-\begin_layout Standard
-If you wish to further reduce the echo present in the signal, you can do
- so by 
-\family typewriter
-associating the echo canceller to the preprocessor
-\family default
- (see Section 
-\begin_inset LatexCommand ref
-reference "sub:Preprocessor"
-
-\end_inset
-
-).
- This is done by calling:
-\end_layout
-
-\begin_layout LyX-Code
-speex_preprocess_ctl(preprocess_state, SPEEX_PREPROCESS_SET_ECHO_STATE,
- echo_state);
-\end_layout
-
-\begin_layout Standard
-in the initialisation.
-\end_layout
-
-\begin_layout Standard
-As of version 1.2-beta2, there is an alternative, simpler API that can be
- used instead of 
-\emph on
-speex_echo_cancellation()
-\emph default
-.
- When audio capture and playback are handled asynchronously (e.g.
- in different threads or using the 
-\emph on
-poll()
-\emph default
- or 
-\emph on
-select()
-\emph default
- system call), it can be difficult to keep track of what input_frame comes
- with what echo_frame.
- Instead, the playback comtext/thread can simply call:
-\end_layout
-
-\begin_layout LyX-Code
-speex_echo_playback(echo_state, echo_frame);
-\end_layout
-
-\begin_layout Standard
-every time an audio frame is played.
- Then, the capture context/thread calls:
-\end_layout
-
-\begin_layout LyX-Code
-speex_echo_capture(echo_state, input_frame, output_frame);
-\end_layout
-
-\begin_layout Standard
-for every frame captured.
- Internally, 
-\emph on
-speex_echo_playback()
-\emph default
- simply buffers the playback frame so it can be used by 
-\emph on
-speex_echo_capture()
-\emph default
- to call 
-\emph on
-speex_echo_cancel()
-\emph default
-.
- A side effect of using this alternate API is that the playback audio is
- delayed by two frames, which is the normal delay caused by the soundcard.
- When capture and playback are already synchronised, 
-\emph on
-speex_echo_cancellation()
-\emph default
- is preferable since it gives better control on the exact input/echo timing.
-\end_layout
-
-\begin_layout Standard
-The echo cancellation state can be destroyed with:
-\end_layout
-
-\begin_layout LyX-Code
-speex_echo_state_destroy(echo_state);
-\end_layout
-
-\begin_layout Standard
-It is also possible to reset the state of the echo canceller so it can be
- reused without the need to create another state with:
-\end_layout
-
-\begin_layout LyX-Code
-speex_echo_state_reset(echo_state);
-\end_layout
-
 \begin_layout Subsection
-Troubleshooting
-\end_layout
-
-\begin_layout Standard
-There are several things that may prevent the echo canceller from working
- properly.
- One of them is a bug (or something suboptimal) in the code, but there are
- many others you should consider first
-\end_layout
-
-\begin_layout Itemize
-Using a different soundcard to do the capture and plaback will *not* work,
- regardless of what you may think.
- The only exception to that is if the two cards can be made to have their
- sampling clock 
-\begin_inset Quotes eld
-\end_inset
-
-locked
-\begin_inset Quotes erd
-\end_inset
-
- on the same clock source.
-\end_layout
-
-\begin_layout Itemize
-The delay between the record and playback signals must be minimal.
- Any signal played has to 
-\begin_inset Quotes eld
-\end_inset
-
-appear
-\begin_inset Quotes erd
-\end_inset
-
- on the playback (far end) signal slightly before the echo canceller 
-\begin_inset Quotes eld
-\end_inset
-
-sees
-\begin_inset Quotes erd
-\end_inset
-
- it in the near end signal, but excessive delay means that part of the filter
- length is wasted.
- In the worst situations, the delay is such that it is longer than the filter
- length, in which case, no echo can be cancelled.
-\end_layout
-
-\begin_layout Itemize
-When it comes to echo tail length (filter length), longer is *not* better.
- Actually, the longer the tail length, the longer it takes for the filter
- to adapt.
- Of course, a tail length that is too short will not cancel enough echo,
- but the most common problem seen is that people set a very long tail length
- and then wonder why no echo is being cancelled.
-\end_layout
-
-\begin_layout Itemize
-Non-linear distortion cannot (by definition) be modeled by the linear adaptive
- filter used in the echo canceller and thus cannot be cancelled.
- Use good audio gear and avoid saturation/clipping.
-\end_layout
-
-\begin_layout Standard
-Also useful is reading 
-\emph on
-Echo Cancellation Demystified
-\emph default
- by Alexey Frunze
-\begin_inset Foot
-status collapsed
-
-\begin_layout Standard
-http://www.embeddedstar.com/articles/2003/7/article20030720-1.html
-\end_layout
-
-\end_inset
-
-, which explains the fundamental principles of echo cancellation.
- The details of the algorithm described in the article are different, but
- the general ideas of echo cancellation through adaptive filters are the
- same.
-\end_layout
-
-\begin_layout Standard
-As of version 1.2beta2, a new 
-\family typewriter
-echo_diagnostic.m
-\family default
- tool is included in the source distribution.
- The first step is to define DUMP_ECHO_CANCEL_DATA during the build.
- This causes the echo canceller to automatically save the near-end, far-end
- and output signals to files (aec_rec.sw aec_play.sw and aec_out.sw).
- These are exactly what the AEC receives and outputs.
- From there, it is necessary to start Octave and type:
-\end_layout
-
-\begin_layout LyX-Code
-echo_diagnostic('aec_rec.sw', 'aec_play.sw', 'aec_diagnostic.sw', 1024);
-\end_layout
-
-\begin_layout Standard
-The value of 1024 is the filter length and can be changed.
- There will be some (hopefully) useful messages printed and echo cancelled
- audio will be saved to aec_diagnostic.sw .
- If even that output is bad (almost no cancellation) then there is  probably
- problem with the playback or recording process.
-\end_layout
-
-\begin_layout Section
-Jitter Buffer
-\end_layout
-
-\begin_layout Standard
-There are two jitter buffers.
- Both can be enabled by including:
-\end_layout
-
-\begin_layout LyX-Code
-#include <speex/speex_jitter.c>
-\end_layout
-
-\begin_layout Subsection
-Generic Jitter Buffer
-\end_layout
-
-\begin_layout Subsection
-Speex Jitter Buffer
-\end_layout
-
-\begin_layout Section
-Resampler
-\end_layout
-
-\begin_layout Standard
-As of version 1.2beta2, Speex includes a resampling modules.
- To make use of the resampler, it is necessary to include its header file:
-\end_layout
-
-\begin_layout LyX-Code
-#include <speex/speex_resampler.h>
-\end_layout
-
-\begin_layout Standard
-For each stream that is to be resampled, it is necessary to create a resampler
- state with:
-\end_layout
-
-\begin_layout LyX-Code
-SpeexResamplerState *resampler;
-\end_layout
-
-\begin_layout LyX-Code
-resampler = speex_resampler_init(nb_channels, input_rate, output_rate, quality,
- &err);
-\end_layout
-
-\begin_layout Standard
-where nb_channels is the number of channels that will be used (either interleave
-d or non-interleaved), input_rate is the sampling rate of the input stream,
- output_rate is the sampling rate of the output stream and quality is the
- requested quality setting (0 to 10).
- The quality parameter is useful for controlling the quality/complexity/latency
- tradeoff.
- Using a higher quality setting means less noise/aliasing, a higher complexity
- and a higher latency.
- Usually, a quality of 3 is acceptable for most desktop uses and quality
- 10 is mostly recommended for pro audio work.
- Quality 0 usually has a decent sound (certainly better than using linear
- interpolation resampling), but artifacts may be heard.
-\end_layout
-
-\begin_layout Standard
-The actual resampling is performed using
-\end_layout
-
-\begin_layout LyX-Code
-err = speex_resampler_process_int(resampler, channelID, in, &in_length,
- out, &out_length);
-\end_layout
-
-\begin_layout Standard
-where channelID is the ID of the channel to be processed.
- For a mono stream, use 0.
- The 
-\emph on
-in
-\emph default
- pointer points to the first sample of the input buffer for the selected
- channel and 
-\emph on
-out
-\emph default
- points to the first sample of the output.
- The size of the input and output buffers are specified by 
-\emph on
-in_length
-\emph default
- and 
-\emph on
-out_length
-\emph default
- respectively.
- Upon completion, these values are replaced by the number of samples read
- and written by the resampler.
- Unless an error occurs, either all input samples will be read or all output
- samples will be written to (or both).
- For floating-point samples, the function speex_resampler_process_float()
- behaves similarly.
-\end_layout
-
-\begin_layout Standard
-It is also possible to process multiple channels at once.
- 
-\end_layout
-
-\begin_layout Section
 Codec Options (speex_*_ctl)
 \begin_inset LatexCommand label
 name "sub:Codec-Options"
@@ -2577,7 +2029,7 @@ SPEEX_TET_HIGHPASS Get the current high-pass filter status (spx_int32_t)
  normally only used internally
 \end_layout
 
-\begin_layout Section
+\begin_layout Subsection
 Mode queries
 \begin_inset LatexCommand label
 name "sub:Mode-queries"
@@ -2622,131 +2074,7 @@ ptr
  
 \end_layout
 
-\begin_layout Section
-Preprocessor options
-\begin_inset LatexCommand label
-name "sub:Preprocessor-options"
-
-\end_inset
-
-
-\end_layout
-
-\begin_layout Description
-SPEEX_PREPROCESS_SET_DENOISE Turns denoising on(1) or off(2) (integer)
-\end_layout
-
-\begin_layout Description
-SPEEX_PREPROCESS_GET_DENOISE Get denoising status (integer)
-\end_layout
-
-\begin_layout Description
-SPEEX_PREPROCESS_SET_AGC Turns automatic gain control (AGC) on(1) or off(2)
- (integer)
-\end_layout
-
-\begin_layout Description
-SPEEX_PREPROCESS_GET_AGC Get AGC status (integer)
-\end_layout
-
-\begin_layout Description
-SPEEX_PREPROCESS_SET_VAD Turns voice activity detector (VAD) on(1) or off(2)
- (integer)
-\end_layout
-
-\begin_layout Description
-SPEEX_PREPROCESS_GET_VAD Get VAD status (integer)
-\end_layout
-
-\begin_layout Description
-SPEEX_PREPROCESS_SET_AGC_LEVEL
-\end_layout
-
-\begin_layout Description
-SPEEX_PREPROCESS_GET_AGC_LEVEL
-\end_layout
-
-\begin_layout Description
-SPEEX_PREPROCESS_SET_DEREVERB Turns reverberation removal on(1) or off(2)
- (integer)
-\end_layout
-
-\begin_layout Description
-SPEEX_PREPROCESS_GET_DEREVERB Get reverberation removal status (integer)
-\end_layout
-
-\begin_layout Description
-SPEEX_PREPROCESS_SET_DEREVERB_LEVEL
-\end_layout
-
-\begin_layout Description
-SPEEX_PREPROCESS_GET_DEREVERB_LEVEL
-\end_layout
-
-\begin_layout Description
-SPEEX_PREPROCESS_SET_DEREVERB_DECAY
-\end_layout
-
-\begin_layout Description
-SPEEX_PREPROCESS_GET_DEREVERB_DECAY
-\end_layout
-
-\begin_layout Description
-SPEEX_PREPROCESS_SET_PROB_START
-\end_layout
-
-\begin_layout Description
-SPEEX_PREPROCESS_GET_PROB_START
-\end_layout
-
-\begin_layout Description
-SPEEX_PREPROCESS_SET_PROB_CONTINUE
-\end_layout
-
-\begin_layout Description
-SPEEX_PREPROCESS_GET_PROB_CONTINUE
-\end_layout
-
-\begin_layout Description
-SPEEX_PREPROCESS_SET_NOISE_SUPPRESS Set maximum attenuation of the noise
- in dB (negative number)
-\end_layout
-
-\begin_layout Description
-SPEEX_PREPROCESS_GET_NOISE_SUPPRESS Get maximum attenuation of the noise
- in dB (negative number)
-\end_layout
-
-\begin_layout Description
-SPEEX_PREPROCESS_SET_ECHO_SUPPRESS Set maximum attenuation of the residual
- echo in dB (negative number)
-\end_layout
-
-\begin_layout Description
-SPEEX_PREPROCESS_GET_ECHO_SUPPRESS Set maximum attenuation of the residual
- echo in dB (negative number)
-\end_layout
-
-\begin_layout Description
-SPEEX_PREPROCESS_SET_ECHO_SUPPRESS_ACTIVE Set maximum attenuation of the
- echo in dB when near end is active (negative number)
-\end_layout
-
-\begin_layout Description
-SPEEX_PREPROCESS_GET_ECHO_SUPPRESS_ACTIVE Set maximum attenuation of the
- echo in dB when near end is active (negative number)
-\end_layout
-
-\begin_layout Description
-SPEEX_PREPROCESS_SET_ECHO_STATE Set the associated echo canceller for residual
- echo suppression (NULL for no residual echo suppression)
-\end_layout
-
-\begin_layout Description
-SPEEX_PREPROCESS_GET_ECHO_STATE Get the associated echo canceller
-\end_layout
-
-\begin_layout Section
+\begin_layout Subsection
 Packing and in-band signalling
 \begin_inset LatexCommand index
 name "in-band signalling"
@@ -3387,6 +2715,675 @@ name "cap:In-band-signalling-codes"
 Finally, applications may define custom in-band messages using mode 13.
  The size of the message in bytes is encoded with 5 bits, so that the decoder
  can skip it if it doesn't know how to interpret it.
+\end_layout
+
+\begin_layout Section
+Speech Processing API (libspeexproc)
+\end_layout
+
+\begin_layout Subsection
+Preprocessor
+\begin_inset LatexCommand label
+name "sub:Preprocessor"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+In order to use the Speex preprocessor
+\begin_inset LatexCommand index
+name "preprocessor"
+
+\end_inset
+
+, you first need to:
+\end_layout
+
+\begin_layout LyX-Code
+#include <speex/speex_preprocess.h>
+\end_layout
+
+\begin_layout Standard
+Then, a preprocessor state can be created as:
+\end_layout
+
+\begin_layout LyX-Code
+SpeexPreprocessState *preprocess_state = speex_preprocess_state_init(frame_size,
+ sampling_rate);
+\end_layout
+
+\begin_layout Standard
+It is recommended to use the same value for 
+\family typewriter
+frame_size
+\family default
+ as is used by the encoder (20 
+\emph on
+ms
+\emph default
+).
+\end_layout
+
+\begin_layout Standard
+For each input frame, you need to call:
+\end_layout
+
+\begin_layout LyX-Code
+speex_preprocess_run(preprocess_state, audio_frame);
+\end_layout
+
+\begin_layout Standard
+where 
+\family typewriter
+audio_frame
+\family default
+ is used both as input and output.
+\end_layout
+
+\begin_layout Standard
+In cases where the output audio is not useful for a certain frame, it is
+ possible to use instead:
+\end_layout
+
+\begin_layout LyX-Code
+speex_preprocess_estimate_update(preprocess_state, audio_frame);
+\end_layout
+
+\begin_layout Standard
+This call will update all the preprocessor internal state variables without
+ computing the output audio, thus saving some CPU cycles.
+\end_layout
+
+\begin_layout Standard
+The behaviour of the preprocessor can be changed using:
+\end_layout
+
+\begin_layout LyX-Code
+speex_preprocess_ctl(preprocess_state, request, ptr);
+\end_layout
+
+\begin_layout Standard
+which is used in the same way as the encoder and decoder equivalent.
+ Options are listed in Section .
+\end_layout
+
+\begin_layout Standard
+The preprocessor state can be destroyed using:
+\end_layout
+
+\begin_layout LyX-Code
+speex_preprocess_state_destroy(preprocess_state);
+\end_layout
+
+\begin_layout Subsubsection
+Preprocessor options
+\begin_inset LatexCommand label
+name "sub:Preprocessor-options"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Description
+SPEEX_PREPROCESS_SET_DENOISE Turns denoising on(1) or off(2) (integer)
+\end_layout
+
+\begin_layout Description
+SPEEX_PREPROCESS_GET_DENOISE Get denoising status (integer)
+\end_layout
+
+\begin_layout Description
+SPEEX_PREPROCESS_SET_AGC Turns automatic gain control (AGC) on(1) or off(2)
+ (integer)
+\end_layout
+
+\begin_layout Description
+SPEEX_PREPROCESS_GET_AGC Get AGC status (integer)
+\end_layout
+
+\begin_layout Description
+SPEEX_PREPROCESS_SET_VAD Turns voice activity detector (VAD) on(1) or off(2)
+ (integer)
+\end_layout
+
+\begin_layout Description
+SPEEX_PREPROCESS_GET_VAD Get VAD status (integer)
+\end_layout
+
+\begin_layout Description
+SPEEX_PREPROCESS_SET_AGC_LEVEL
+\end_layout
+
+\begin_layout Description
+SPEEX_PREPROCESS_GET_AGC_LEVEL
+\end_layout
+
+\begin_layout Description
+SPEEX_PREPROCESS_SET_DEREVERB Turns reverberation removal on(1) or off(2)
+ (integer)
+\end_layout
+
+\begin_layout Description
+SPEEX_PREPROCESS_GET_DEREVERB Get reverberation removal status (integer)
+\end_layout
+
+\begin_layout Description
+SPEEX_PREPROCESS_SET_DEREVERB_LEVEL
+\end_layout
+
+\begin_layout Description
+SPEEX_PREPROCESS_GET_DEREVERB_LEVEL
+\end_layout
+
+\begin_layout Description
+SPEEX_PREPROCESS_SET_DEREVERB_DECAY
+\end_layout
+
+\begin_layout Description
+SPEEX_PREPROCESS_GET_DEREVERB_DECAY
+\end_layout
+
+\begin_layout Description
+SPEEX_PREPROCESS_SET_PROB_START
+\end_layout
+
+\begin_layout Description
+SPEEX_PREPROCESS_GET_PROB_START
+\end_layout
+
+\begin_layout Description
+SPEEX_PREPROCESS_SET_PROB_CONTINUE
+\end_layout
+
+\begin_layout Description
+SPEEX_PREPROCESS_GET_PROB_CONTINUE
+\end_layout
+
+\begin_layout Description
+SPEEX_PREPROCESS_SET_NOISE_SUPPRESS Set maximum attenuation of the noise
+ in dB (negative number)
+\end_layout
+
+\begin_layout Description
+SPEEX_PREPROCESS_GET_NOISE_SUPPRESS Get maximum attenuation of the noise
+ in dB (negative number)
+\end_layout
+
+\begin_layout Description
+SPEEX_PREPROCESS_SET_ECHO_SUPPRESS Set maximum attenuation of the residual
+ echo in dB (negative number)
+\end_layout
+
+\begin_layout Description
+SPEEX_PREPROCESS_GET_ECHO_SUPPRESS Set maximum attenuation of the residual
+ echo in dB (negative number)
+\end_layout
+
+\begin_layout Description
+SPEEX_PREPROCESS_SET_ECHO_SUPPRESS_ACTIVE Set maximum attenuation of the
+ echo in dB when near end is active (negative number)
+\end_layout
+
+\begin_layout Description
+SPEEX_PREPROCESS_GET_ECHO_SUPPRESS_ACTIVE Set maximum attenuation of the
+ echo in dB when near end is active (negative number)
+\end_layout
+
+\begin_layout Description
+SPEEX_PREPROCESS_SET_ECHO_STATE Set the associated echo canceller for residual
+ echo suppression (NULL for no residual echo suppression)
+\end_layout
+
+\begin_layout Description
+SPEEX_PREPROCESS_GET_ECHO_STATE Get the associated echo canceller
+\end_layout
+
+\begin_layout Subsection
+Echo Cancellation
+\begin_inset LatexCommand label
+name "sub:Echo-Cancellation"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The Speex library now includes an echo cancellation
+\begin_inset LatexCommand index
+name "echo cancellation"
+
+\end_inset
+
+ algorithm suitable for Acoustic Echo Cancellation
+\begin_inset LatexCommand index
+name "acoustic echo cancellation"
+
+\end_inset
+
+ (AEC).
+ In order to use the echo canceller, you first need to
+\end_layout
+
+\begin_layout LyX-Code
+#include <speex/speex_echo.h>
+\end_layout
+
+\begin_layout Standard
+Then, an echo canceller state can be created by:
+\end_layout
+
+\begin_layout LyX-Code
+SpeexEchoState *echo_state = speex_echo_state_init(frame_size, filter_length);
+\end_layout
+
+\begin_layout Standard
+where 
+\family typewriter
+frame_size
+\family default
+ is the amount of data (in samples) you want to process at once and 
+\family typewriter
+filter_length
+\family default
+ is the length (in samples) of the echo cancelling filter you want to use
+ (also known as 
+\shape italic
+tail length
+\shape default
+
+\begin_inset LatexCommand index
+name "tail length"
+
+\end_inset
+
+).
+ It is recommended to use a frame size in the order of 20 ms (or equal to
+ the codec frame size) and make sure it is easy to perform an FFT of that
+ size (powers of two are better than prime sizes).
+ The recommended tail length is approximately the third of the room reverberatio
+n time.
+ For example, in a small room, reverberation time is in the order of 300
+ ms, so a tail length of 100 ms is a good choice (800 samples at 8000 Hz
+ sampling rate).
+\end_layout
+
+\begin_layout Standard
+Once the echo canceller state is created, audio can be processed by:
+\end_layout
+
+\begin_layout LyX-Code
+speex_echo_cancellation(echo_state, input_frame, echo_frame, output_frame);
+\end_layout
+
+\begin_layout Standard
+where 
+\family typewriter
+input_frame
+\family default
+ is the audio as captured by the microphone, 
+\family typewriter
+echo_frame
+\family default
+ is the signal that was played in the speaker (and needs to be removed)
+ and 
+\family typewriter
+output_frame
+\family default
+ is the signal with echo removed.
+ 
+\end_layout
+
+\begin_layout Standard
+One important thing to keep in mind is the relationship between 
+\family typewriter
+input_frame
+\family default
+ and 
+\family typewriter
+echo_frame
+\family default
+.
+ It is important that, at any time, any echo that is present in the input
+ has already been sent to the echo canceller as 
+\family typewriter
+echo_frame
+\family default
+.
+ In other words, the echo canceller cannot remove a signal that it hasn't
+ yet received.
+ On the other hand, the delay between the input signal and the echo signal
+ must be small enough because otherwise part of the echo cancellation filter
+ is inefficient.
+ In the ideal case, you code would look like:
+\end_layout
+
+\begin_layout LyX-Code
+write_to_soundcard(echo_frame, frame_size);
+\end_layout
+
+\begin_layout LyX-Code
+read_from_soundcard(input_frame, frame_size);
+\end_layout
+
+\begin_layout LyX-Code
+speex_echo_cancellation(echo_state, input_frame, echo_frame, output_frame);
+\end_layout
+
+\begin_layout Standard
+If you wish to further reduce the echo present in the signal, you can do
+ so by 
+\family typewriter
+associating the echo canceller to the preprocessor
+\family default
+ (see Section 
+\begin_inset LatexCommand ref
+reference "sub:Preprocessor"
+
+\end_inset
+
+).
+ This is done by calling:
+\end_layout
+
+\begin_layout LyX-Code
+speex_preprocess_ctl(preprocess_state, SPEEX_PREPROCESS_SET_ECHO_STATE,
+ echo_state);
+\end_layout
+
+\begin_layout Standard
+in the initialisation.
+\end_layout
+
+\begin_layout Standard
+As of version 1.2-beta2, there is an alternative, simpler API that can be
+ used instead of 
+\emph on
+speex_echo_cancellation()
+\emph default
+.
+ When audio capture and playback are handled asynchronously (e.g.
+ in different threads or using the 
+\emph on
+poll()
+\emph default
+ or 
+\emph on
+select()
+\emph default
+ system call), it can be difficult to keep track of what input_frame comes
+ with what echo_frame.
+ Instead, the playback comtext/thread can simply call:
+\end_layout
+
+\begin_layout LyX-Code
+speex_echo_playback(echo_state, echo_frame);
+\end_layout
+
+\begin_layout Standard
+every time an audio frame is played.
+ Then, the capture context/thread calls:
+\end_layout
+
+\begin_layout LyX-Code
+speex_echo_capture(echo_state, input_frame, output_frame);
+\end_layout
+
+\begin_layout Standard
+for every frame captured.
+ Internally, 
+\emph on
+speex_echo_playback()
+\emph default
+ simply buffers the playback frame so it can be used by 
+\emph on
+speex_echo_capture()
+\emph default
+ to call 
+\emph on
+speex_echo_cancel()
+\emph default
+.
+ A side effect of using this alternate API is that the playback audio is
+ delayed by two frames, which is the normal delay caused by the soundcard.
+ When capture and playback are already synchronised, 
+\emph on
+speex_echo_cancellation()
+\emph default
+ is preferable since it gives better control on the exact input/echo timing.
+\end_layout
+
+\begin_layout Standard
+The echo cancellation state can be destroyed with:
+\end_layout
+
+\begin_layout LyX-Code
+speex_echo_state_destroy(echo_state);
+\end_layout
+
+\begin_layout Standard
+It is also possible to reset the state of the echo canceller so it can be
+ reused without the need to create another state with:
+\end_layout
+
+\begin_layout LyX-Code
+speex_echo_state_reset(echo_state);
+\end_layout
+
+\begin_layout Subsubsection
+Troubleshooting
+\end_layout
+
+\begin_layout Standard
+There are several things that may prevent the echo canceller from working
+ properly.
+ One of them is a bug (or something suboptimal) in the code, but there are
+ many others you should consider first
+\end_layout
+
+\begin_layout Itemize
+Using a different soundcard to do the capture and plaback will *not* work,
+ regardless of what you may think.
+ The only exception to that is if the two cards can be made to have their
+ sampling clock 
+\begin_inset Quotes eld
+\end_inset
+
+locked
+\begin_inset Quotes erd
+\end_inset
+
+ on the same clock source.
+\end_layout
+
+\begin_layout Itemize
+The delay between the record and playback signals must be minimal.
+ Any signal played has to 
+\begin_inset Quotes eld
+\end_inset
+
+appear
+\begin_inset Quotes erd
+\end_inset
+
+ on the playback (far end) signal slightly before the echo canceller 
+\begin_inset Quotes eld
+\end_inset
+
+sees
+\begin_inset Quotes erd
+\end_inset
+
+ it in the near end signal, but excessive delay means that part of the filter
+ length is wasted.
+ In the worst situations, the delay is such that it is longer than the filter
+ length, in which case, no echo can be cancelled.
+\end_layout
+
+\begin_layout Itemize
+When it comes to echo tail length (filter length), longer is *not* better.
+ Actually, the longer the tail length, the longer it takes for the filter
+ to adapt.
+ Of course, a tail length that is too short will not cancel enough echo,
+ but the most common problem seen is that people set a very long tail length
+ and then wonder why no echo is being cancelled.
+\end_layout
+
+\begin_layout Itemize
+Non-linear distortion cannot (by definition) be modeled by the linear adaptive
+ filter used in the echo canceller and thus cannot be cancelled.
+ Use good audio gear and avoid saturation/clipping.
+\end_layout
+
+\begin_layout Standard
+Also useful is reading 
+\emph on
+Echo Cancellation Demystified
+\emph default
+ by Alexey Frunze
+\begin_inset Foot
+status collapsed
+
+\begin_layout Standard
+http://www.embeddedstar.com/articles/2003/7/article20030720-1.html
+\end_layout
+
+\end_inset
+
+, which explains the fundamental principles of echo cancellation.
+ The details of the algorithm described in the article are different, but
+ the general ideas of echo cancellation through adaptive filters are the
+ same.
+\end_layout
+
+\begin_layout Standard
+As of version 1.2beta2, a new 
+\family typewriter
+echo_diagnostic.m
+\family default
+ tool is included in the source distribution.
+ The first step is to define DUMP_ECHO_CANCEL_DATA during the build.
+ This causes the echo canceller to automatically save the near-end, far-end
+ and output signals to files (aec_rec.sw aec_play.sw and aec_out.sw).
+ These are exactly what the AEC receives and outputs.
+ From there, it is necessary to start Octave and type:
+\end_layout
+
+\begin_layout LyX-Code
+echo_diagnostic('aec_rec.sw', 'aec_play.sw', 'aec_diagnostic.sw', 1024);
+\end_layout
+
+\begin_layout Standard
+The value of 1024 is the filter length and can be changed.
+ There will be some (hopefully) useful messages printed and echo cancelled
+ audio will be saved to aec_diagnostic.sw .
+ If even that output is bad (almost no cancellation) then there is  probably
+ problem with the playback or recording process.
+\end_layout
+
+\begin_layout Subsection
+Jitter Buffer
+\end_layout
+
+\begin_layout Standard
+The jitter buffer can be enabled by including:
+\end_layout
+
+\begin_layout LyX-Code
+#include <speex/speex_jitter.c>
+\end_layout
+
+\begin_layout Subsection
+Resampler
+\end_layout
+
+\begin_layout Standard
+Speex includes a resampling modules.
+ To make use of the resampler, it is necessary to include its header file:
+\end_layout
+
+\begin_layout LyX-Code
+#include <speex/speex_resampler.h>
+\end_layout
+
+\begin_layout Standard
+For each stream that is to be resampled, it is necessary to create a resampler
+ state with:
+\end_layout
+
+\begin_layout LyX-Code
+SpeexResamplerState *resampler;
+\end_layout
+
+\begin_layout LyX-Code
+resampler = speex_resampler_init(nb_channels, input_rate, output_rate, quality,
+ &err);
+\end_layout
+
+\begin_layout Standard
+where nb_channels is the number of channels that will be used (either interleave
+d or non-interleaved), input_rate is the sampling rate of the input stream,
+ output_rate is the sampling rate of the output stream and quality is the
+ requested quality setting (0 to 10).
+ The quality parameter is useful for controlling the quality/complexity/latency
+ tradeoff.
+ Using a higher quality setting means less noise/aliasing, a higher complexity
+ and a higher latency.
+ Usually, a quality of 3 is acceptable for most desktop uses and quality
+ 10 is mostly recommended for pro audio work.
+ Quality 0 usually has a decent sound (certainly better than using linear
+ interpolation resampling), but artifacts may be heard.
+\end_layout
+
+\begin_layout Standard
+The actual resampling is performed using
+\end_layout
+
+\begin_layout LyX-Code
+err = speex_resampler_process_int(resampler, channelID, in, &in_length,
+ out, &out_length);
+\end_layout
+
+\begin_layout Standard
+where channelID is the ID of the channel to be processed.
+ For a mono stream, use 0.
+ The 
+\emph on
+in
+\emph default
+ pointer points to the first sample of the input buffer for the selected
+ channel and 
+\emph on
+out
+\emph default
+ points to the first sample of the output.
+ The size of the input and output buffers are specified by 
+\emph on
+in_length
+\emph default
+ and 
+\emph on
+out_length
+\emph default
+ respectively.
+ Upon completion, these values are replaced by the number of samples read
+ and written by the resampler.
+ Unless an error occurs, either all input samples will be read or all output
+ samples will be written to (or both).
+ For floating-point samples, the function speex_resampler_process_float()
+ behaves similarly.
+\end_layout
+
+\begin_layout Standard
+It is also possible to process multiple channels at once.
+ 
+\end_layout
+
+\begin_layout Standard
+
 \end_layout
 
 \begin_layout Standard
