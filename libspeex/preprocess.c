@@ -737,6 +737,8 @@ int speex_preprocess_run(SpeexPreprocessState *st, spx_int16_t *x)
    spx_word16_t effective_echo_suppress;
    
    st->nb_adapt++;
+   if (st->nb_adapt>20000)
+      st->nb_adapt = 20000;
    st->min_count++;
    
    beta = MAX16(QCONST16(.03,15),DIV32_16(Q15_ONE,st->nb_adapt));
