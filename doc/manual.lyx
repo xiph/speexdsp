@@ -897,6 +897,22 @@ name "fig:Acoustic-echo-model"
 
 \end_layout
 
+\begin_layout Section
+Resampler
+\end_layout
+
+\begin_layout Standard
+In some cases, it may be useful to convert audio from one sampling rate
+ to another.
+ There are many reasons for that.
+ It can be for mixing streams that have different sampling rates, for supporting
+ sampling rates that the soundcard doesn't support, for transcoding, etc.
+ That's why there is now a resampler that is part of the Speex project.
+ This resampler can be used to convert between any two arbitrary rates (the
+ ratio must only be a rational number) and there is control over the quality/com
+plexity tradeoff.
+\end_layout
+
 \begin_layout Standard
 
 \newpage
@@ -2026,7 +2042,8 @@ SPEEX_TET_HIGHPASS Get the current high-pass filter status (spx_int32_t)
 \begin_inset Formula $\dagger$
 \end_inset
 
- normally only used internally
+ If you can't understand from the source code what this does, you should
+ not be using it in the first place
 \end_layout
 
 \begin_layout Subsection
@@ -3380,10 +3397,6 @@ out_length
 \begin_layout Standard
 It is also possible to process multiple channels at once.
  
-\end_layout
-
-\begin_layout Standard
-
 \end_layout
 
 \begin_layout Standard
