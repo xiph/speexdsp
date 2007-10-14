@@ -6,7 +6,7 @@ EXTRA_DIST=echo_diagnostic.m
 
 INCLUDES = -I$(top_srcdir)/include -I$(top_builddir)/include -I$(top_builddir) @OGG_CFLAGS@
 
-lib_LTLIBRARIES = libspeex.la libspeexvoip.la
+lib_LTLIBRARIES = libspeex.la libspeexdsp.la
 
 # Sources for compilation in the library
 libspeex_la_SOURCES = nb_celp.c 	sb_celp.c 	lpc.c 	ltp.c 	lsp.c 	quant_lsp.c \
@@ -16,7 +16,7 @@ libspeex_la_SOURCES = nb_celp.c 	sb_celp.c 	lpc.c 	ltp.c 	lsp.c 	quant_lsp.c \
 				exc_10_16_table.c 	exc_20_32_table.c 	hexc_10_32_table.c 	speex_header.c \
 				speex_callbacks.c 	stereo.c window.c
 
-libspeexvoip_la_SOURCES = preprocess.c 	smallft.c 	lbr_48k_tables.c \
+libspeexdsp_la_SOURCES = preprocess.c 	smallft.c 	lbr_48k_tables.c \
 				jitter.c 	mdf.c fftwrap.c kiss_fft.c _kiss_fft_guts.h kiss_fft.h \
 	kiss_fftr.c kiss_fftr.h filterbank.c resample.c
 
@@ -25,12 +25,12 @@ noinst_HEADERS = lsp.h 	nb_celp.h 	lpc.h 	lpc_bfin.h 	ltp.h 	quant_lsp.h \
 				modes.h 	sb_celp.h 	vbr.h 	misc.h 	misc_bfin.h 	ltp_sse.h 	ltp_arm4.h \
 				ltp_bfin.h 	filters_sse.h 	filters_arm4.h 	filters_bfin.h 	math_approx.h \
 				smallft.h 	arch.h 	fixed_arm4.h 	fixed_arm5e.h 	fixed_bfin.h 	fixed_debug.h \
-				fixed_generic.h 	cb_search_sse.h 	cb_search_arm4.h 	cb_search_bfin.h vorbis_psy.h \
+				fixed_generic.h 	cb_search_sse.h 	cb_search_arm4.h 	cb_search_bfin.h \
 		fftwrap.h pseudofloat.h lsp_bfin.h quant_lsp_bfin.h filterbank.h
 
 
 libspeex_la_LDFLAGS = -no-undefined -version-info @SPEEX_LT_CURRENT@:@SPEEX_LT_REVISION@:@SPEEX_LT_AGE@
-libspeexvoip_la_LDFLAGS = -no-undefined -version-info @SPEEX_LT_CURRENT@:@SPEEX_LT_REVISION@:@SPEEX_LT_AGE@
+libspeexdsp_la_LDFLAGS = -no-undefined -version-info @SPEEX_LT_CURRENT@:@SPEEX_LT_REVISION@:@SPEEX_LT_AGE@
 
 noinst_PROGRAMS = testenc testenc_wb testenc_uwb testdenoise testecho
 testenc_SOURCES = testenc.c
@@ -40,6 +40,6 @@ testenc_wb_LDADD = libspeex.la
 testenc_uwb_SOURCES = testenc_uwb.c
 testenc_uwb_LDADD = libspeex.la
 testdenoise_SOURCES = testdenoise.c
-testdenoise_LDADD = libspeexvoip.la
+testdenoise_LDADD = libspeexdsp.la
 testecho_SOURCES = testecho.c
-testecho_LDADD = libspeexvoip.la
+testecho_LDADD = libspeexdsp.la
