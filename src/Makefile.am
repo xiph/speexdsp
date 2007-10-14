@@ -21,5 +21,5 @@ speexenc_LDADD = $(top_builddir)/libspeex/libspeex.la $(top_builddir)/libspeex/l
 	$(OGG_LIBS)
 
 speexdec_SOURCES = speexdec.c wav_io.c
-speexdec_LDADD = $(top_builddir)/libspeex/libspeex.la $(top_builddir)/libspeex/libspeexvoip.la \
+speexdec_LDADD = $(top_builddir)/libspeex/libspeex.la \
 	$(OGG_LIBS)
