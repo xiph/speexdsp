@@ -35,7 +35,7 @@
 \papercolumns 1
 \papersides 1
 \paperpagestyle headings
-\listings_params "basicstyle={\ttfamily},language=C"
+\listings_params "basicstyle={\ttfamily},breaklines=true,language=C,xleftmargin=0mm"
 \tracking_changes false
 \output_changes false
 \author "" 
@@ -1411,7 +1411,11 @@ reference "sec:Sample-code"
 \end_layout
 
 \begin_layout Section
-Codec API (libspeex
+Codec API (
+\emph on
+libspeex
+\emph default
+
 \begin_inset LatexCommand index
 name "libspeex"
 
@@ -1432,6 +1436,16 @@ libspeex
 -lspeex -lm
 \emph default
  to the compiler command line.
+ One important thing to know is that 
+\series bold
+libspeex calls are reentrant, but not thread-safe
+\series default
+.
+ That means that it is fine to use calls from many threads, but 
+\series bold
+calls using the same state from multiple threads must be protected by mutexes
+\series default
+.
 \end_layout
 
 \begin_layout Subsection
@@ -1460,7 +1474,8 @@ status open
 
 \end_inset
 
-Then a Speex bit-packing struct must be declared as:
+Then in the code, a Speex bit-packing struct must be declared, along with
+ a Speex encoder state:
 \begin_inset listings
 inline false
 status open
@@ -1469,13 +1484,6 @@ status open
 
 SpeexBits bits;
 \end_layout
-
-\end_inset
-
-along with a Speex encoder state
-\begin_inset listings
-inline false
-status open
 
 \begin_layout Standard
 
@@ -1566,10 +1574,6 @@ speex_encoder_ctl(enc_state,SPEEX_SET_QUALITY,&quality);
 
 \end_inset
 
-
-\end_layout
-
-\begin_layout Standard
 where 
 \emph on
 quality
@@ -1946,8 +1950,8 @@ Entities should not be multiplied beyond necessity -- William of Ockham.
 \align center
 
 \emph on
-Just because there's an option of it doesn't mean you have to use it --
- me.
+Just because there's an option for it doesn't mean you have to turn it on
+ -- me.
 \end_layout
 
 \begin_layout Standard
@@ -2903,7 +2907,37 @@ Finally, applications may define custom in-band messages using mode 13.
 \end_layout
 
 \begin_layout Section
-Speech Processing API (libspeexdsp)
+Speech Processing API (
+\emph on
+libspeexdsp
+\emph default
+)
+\end_layout
+
+\begin_layout Standard
+As of version 1.2beta3, the non-codec parts of the Speex package are now
+ in a separate library called 
+\emph on
+libspeexdsp
+\emph default
+.
+ This library includes the preprocessor, the acoustic echo canceller, the
+ jitter buffer, and the resampler.
+ In a UNIX environment, it can be linked into a program by adding 
+\emph on
+-lspeexdsp -lm
+\emph default
+ to the compiler command line.
+ Just like for libspeex, 
+\series bold
+libspeexdsp calls are reentrant, but not thread-safe
+\series default
+.
+ That means that it is fine to use calls from many threads, but 
+\series bold
+calls using the same state from multiple threads must be protected by mutexes
+\series default
+.
 \end_layout
 
 \begin_layout Subsection
@@ -3642,9 +3676,6 @@ Jitter Buffer
 
 \begin_layout Standard
 The jitter buffer can be enabled by including:
-\end_layout
-
-\begin_layout Standard
 \begin_inset listings
 lstparams "breaklines=true"
 inline false
@@ -3657,11 +3688,7 @@ status open
 
 \end_inset
 
-
-\end_layout
-
-\begin_layout Standard
-and a new jitter buffer state can be initialised by:
+ and a new jitter buffer state can be initialised by:
 \end_layout
 
 \begin_layout Standard
@@ -3681,9 +3708,191 @@ JitterBuffer *state = jitter_buffer_init(tick);
 \end_layout
 
 \begin_layout Standard
-where the tick argument is the time resolution (in timestamp units) used
- for the jitter buffer, and is generally the period at which the data is
- played out of the jitter buffer.
+where the 
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+tick
+\end_layout
+
+\end_inset
+
+ argument is the time resolution (in timestamp units) used for the jitter
+ buffer, and is generally the period at which the data is played out of
+ the jitter buffer.
+ 
+\end_layout
+
+\begin_layout Standard
+The jitter buffer API is based on the 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Standard
+
+JitterBufferPacket
+\end_layout
+
+\end_inset
+
+ type, which is defined as:
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Standard
+
+typedef struct {
+\end_layout
+
+\begin_layout Standard
+
+   char        *data;       /* Data bytes contained in the packet */
+\end_layout
+
+\begin_layout Standard
+
+   spx_uint32_t len;        /* Length of the packet in bytes */
+\end_layout
+
+\begin_layout Standard
+
+   spx_uint32_t timestamp;  /* Timestamp for the packet */
+\end_layout
+
+\begin_layout Standard
+
+   spx_uint32_t span;       /* Time covered by the packet (timestamp units)
+ */
+\end_layout
+
+\begin_layout Standard
+
+} JitterBufferPacket; 
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+When a packet arrives, it need to be inserter into the jitter buffer by:
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Standard
+
+JitterBufferPacket packet;
+\end_layout
+
+\begin_layout Standard
+
+/* Fill in the packet fields */
+\end_layout
+
+\begin_layout Standard
+
+jitter_buffer_put(state, &packet);
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+When the decoder is ready to decode a packet the packet to be decoded can
+ be obtained by: 
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Standard
+
+int start_offset;
+\end_layout
+
+\begin_layout Standard
+
+err = jitter_buffer_get(state, &packet, &start_offset);
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+If 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Standard
+
+jitter_buffer_put()
+\end_layout
+
+\end_inset
+
+ and 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Standard
+
+jitter_buffer_get()
+\end_layout
+
+\end_inset
+
+ are called from different threads, then 
+\series bold
+you need to protect the jitter buffer state with a mutex
+\series default
+.
+ 
+\end_layout
+
+\begin_layout Standard
+Because the jitter buffer is designed not to use an explicit timer, it needs
+ to be told about the time explicitly.
+ This is done by calling: 
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Standard
+
+jitter_buffer_tick(state);
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+This needs to be done every time 
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+tick
+\end_layout
+
+\end_inset
+
+ units have elapsed.
  
 \end_layout
 
