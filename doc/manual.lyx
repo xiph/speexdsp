@@ -1389,29 +1389,7 @@ n Simulate n % random packet loss
 \end_layout
 
 \begin_layout Chapter
-Programming with Speex
-\begin_inset LatexCommand label
-name "sec:Programming-with-Speex"
-
-\end_inset
-
-
-\end_layout
-
-\begin_layout Standard
-This section explains how to use the Speex API.
- Examples of code can also be found in Appendix 
-\begin_inset LatexCommand ref
-reference "sec:Sample-code"
-
-\end_inset
-
- and the complete API documentation is included in the Documentation section
- of the Speex website (http://www.speex.org/).
-\end_layout
-
-\begin_layout Section
-Codec API (
+Using the Speex Codec API (
 \emph on
 libspeex
 \emph default
@@ -1422,6 +1400,12 @@ name "libspeex"
 \end_inset
 
 )
+\begin_inset LatexCommand label
+name "sec:Programming-with-Speex"
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -1446,9 +1430,17 @@ libspeex calls are reentrant, but not thread-safe
 calls using the same state from multiple threads must be protected by mutexes
 \series default
 .
+ Examples of code can also be found in Appendix 
+\begin_inset LatexCommand ref
+reference "sec:Sample-code"
+
+\end_inset
+
+ and the complete API documentation is included in the Documentation section
+ of the Speex website (http://www.speex.org/).
 \end_layout
 
-\begin_layout Subsection
+\begin_layout Section
 Encoding
 \begin_inset LatexCommand label
 name "sub:Encoding"
@@ -1718,7 +1710,7 @@ That's about it for the encoder.
  
 \end_layout
 
-\begin_layout Subsection
+\begin_layout Section
 Decoding
 \begin_inset LatexCommand label
 name "sub:Decoding"
@@ -1929,7 +1921,7 @@ speex_decoder_destroy(dec_state);
 
 \end_layout
 
-\begin_layout Subsection
+\begin_layout Section
 Codec Options (speex_*_ctl)
 \begin_inset LatexCommand label
 name "sub:Codec-Options"
@@ -2214,7 +2206,7 @@ SPEEX_TET_HIGHPASS Get the current high-pass filter status (spx_int32_t)
  not be using it in the first place
 \end_layout
 
-\begin_layout Subsection
+\begin_layout Section
 Mode queries
 \begin_inset LatexCommand label
 name "sub:Mode-queries"
@@ -2263,7 +2255,7 @@ ptr
  
 \end_layout
 
-\begin_layout Subsection
+\begin_layout Section
 Packing and in-band signalling
 \begin_inset LatexCommand index
 name "in-band signalling"
@@ -2904,9 +2896,11 @@ name "cap:In-band-signalling-codes"
 Finally, applications may define custom in-band messages using mode 13.
  The size of the message in bytes is encoded with 5 bits, so that the decoder
  can skip it if it doesn't know how to interpret it.
+\newpage
+
 \end_layout
 
-\begin_layout Section
+\begin_layout Chapter
 Speech Processing API (
 \emph on
 libspeexdsp
@@ -2940,7 +2934,7 @@ calls using the same state from multiple threads must be protected by mutexes
 .
 \end_layout
 
-\begin_layout Subsection
+\begin_layout Section
 Preprocessor
 \begin_inset LatexCommand label
 name "sub:Preprocessor"
@@ -2951,6 +2945,7 @@ name "sub:Preprocessor"
 \end_layout
 
 \begin_layout Standard
+\noindent
 In order to use the Speex preprocessor
 \begin_inset LatexCommand index
 name "preprocessor"
@@ -2958,9 +2953,6 @@ name "preprocessor"
 \end_inset
 
 , you first need to:
-\end_layout
-
-\begin_layout Standard
 \begin_inset listings
 inline false
 status open
@@ -2976,10 +2968,8 @@ status open
 \end_layout
 
 \begin_layout Standard
+\noindent
 Then, a preprocessor state can be created as:
-\end_layout
-
-\begin_layout Standard
 \begin_inset listings
 inline false
 status open
@@ -2996,7 +2986,8 @@ SpeexPreprocessState *preprocess_state = speex_preprocess_state_init(frame_size,
 \end_layout
 
 \begin_layout Standard
-It is recommended to use the same value for 
+\noindent
+and it is recommended to use the same value for 
 \family typewriter
 frame_size
 \family default
@@ -3027,15 +3018,13 @@ speex_preprocess_run(preprocess_state, audio_frame);
 \end_layout
 
 \begin_layout Standard
+\noindent
 where 
 \family typewriter
 audio_frame
 \family default
  is used both as input and output.
-\end_layout
-
-\begin_layout Standard
-In cases where the output audio is not useful for a certain frame, it is
+ In cases where the output audio is not useful for a certain frame, it is
  possible to use instead:
 \end_layout
 
@@ -3055,6 +3044,7 @@ speex_preprocess_estimate_update(preprocess_state, audio_frame);
 \end_layout
 
 \begin_layout Standard
+\noindent
 This call will update all the preprocessor internal state variables without
  computing the output audio, thus saving some CPU cycles.
 \end_layout
@@ -3079,8 +3069,15 @@ speex_preprocess_ctl(preprocess_state, request, ptr);
 \end_layout
 
 \begin_layout Standard
+\noindent
 which is used in the same way as the encoder and decoder equivalent.
- Options are listed in Section .
+ Options are listed in Section 
+\begin_inset LatexCommand ref
+reference "sub:Preprocessor-options"
+
+\end_inset
+
+.
 \end_layout
 
 \begin_layout Standard
@@ -3102,7 +3099,7 @@ speex_preprocess_state_destroy(preprocess_state);
 
 \end_layout
 
-\begin_layout Subsubsection
+\begin_layout Subsection
 Preprocessor options
 \begin_inset LatexCommand label
 name "sub:Preprocessor-options"
@@ -3110,6 +3107,12 @@ name "sub:Preprocessor-options"
 \end_inset
 
 
+\end_layout
+
+\begin_layout Standard
+As with the codec, the preprocessor also has options that can be controlled
+ using an ioctl()-like call.
+ The available options are:
 \end_layout
 
 \begin_layout Description
@@ -3226,7 +3229,7 @@ SPEEX_PREPROCESS_SET_ECHO_STATE Set the associated echo canceller for residual
 SPEEX_PREPROCESS_GET_ECHO_STATE Get the associated echo canceller
 \end_layout
 
-\begin_layout Subsection
+\begin_layout Section
 Echo Cancellation
 \begin_inset LatexCommand label
 name "sub:Echo-Cancellation"
@@ -3547,7 +3550,7 @@ speex_echo_state_reset(echo_state);
 
 \end_layout
 
-\begin_layout Subsubsection
+\begin_layout Subsection
 Troubleshooting
 \end_layout
 
@@ -3559,8 +3562,11 @@ There are several things that may prevent the echo canceller from working
 \end_layout
 
 \begin_layout Itemize
-Using a different soundcard to do the capture and plaback will *not* work,
- regardless of what you may think.
+Using a different soundcard to do the capture and plaback will 
+\series bold
+not
+\series default
+ work, regardless of what you may think.
  The only exception to that is if the two cards can be made to have their
  sampling clock 
 \begin_inset Quotes eld
@@ -3571,6 +3577,8 @@ locked
 \end_inset
 
  on the same clock source.
+ If not, the clocks will always have a small amount of drift, which will
+ prevent the echo canceller from adapting.
 \end_layout
 
 \begin_layout Itemize
@@ -3670,7 +3678,7 @@ The value of 1024 is the filter length and can be changed.
  problem with the playback or recording process.
 \end_layout
 
-\begin_layout Subsection
+\begin_layout Section
 Jitter Buffer
 \end_layout
 
@@ -3896,7 +3904,7 @@ tick
  
 \end_layout
 
-\begin_layout Subsection
+\begin_layout Section
 Resampler
 \end_layout
 
