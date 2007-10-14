@@ -17,9 +17,9 @@ noinst_HEADERS = wav_io.h
 bin_PROGRAMS = speexenc speexdec
 
 speexenc_SOURCES = speexenc.c wav_io.c skeleton.c
-speexenc_LDADD = $(top_builddir)/libspeex/libspeex.la \
+speexenc_LDADD = $(top_builddir)/libspeex/libspeex.la $(top_builddir)/libspeex/libspeexvoip.la \
 	$(OGG_LIBS)
 
 speexdec_SOURCES = speexdec.c wav_io.c
-speexdec_LDADD = $(top_builddir)/libspeex/libspeex.la \
+speexdec_LDADD = $(top_builddir)/libspeex/libspeex.la $(top_builddir)/libspeex/libspeexvoip.la \
 	$(OGG_LIBS)
