@@ -9664,7 +9664,7 @@ Jitter Buffer for Speex
 \end_layout
 
 \begin_layout Standard
-\begin_inset Include \lstinputlisting{speex_jitter_buffer.c}[caption={Example of using the jitter buffer for Speex packets},label={example-speex-jitter},numbers=left,numberstyle={\footnotesize}]
+\begin_inset Include \lstinputlisting{../speexclient/speex_jitter_buffer.c}[caption={Example of using the jitter buffer for Speex packets},label={example-speex-jitter},numbers=left,numberstyle={\footnotesize}]
 preview false
 
 \end_inset
@@ -9714,15 +9714,11 @@ name "sec:Speex-License"
 \end_layout
 
 \begin_layout Standard
-\begin_inset Include \verbatiminput{/home/jm/dsp/speex/COPYING}
+\begin_inset Include \verbatiminput{../COPYING}
 preview false
 
 \end_inset
 
-
-\end_layout
-
-\begin_layout Standard
 
 \end_layout
 
