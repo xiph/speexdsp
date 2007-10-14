@@ -35,8 +35,10 @@
 \papercolumns 1
 \papersides 1
 \paperpagestyle headings
+\listings_params "basicstyle={\ttfamily},language=C"
 \tracking_changes false
 \output_changes false
+\author "" 
 \author "" 
 \end_header
 
@@ -1134,7 +1136,11 @@ speexenc
 speexdec
 \emph default
 ).
- This section describes how to use these tools.
+ Those tools produce and read Speex files encapsulated in the Ogg container.
+ Although it is possible to encapsulate Speex in any container, Ogg is the
+ recommended container for files.
+ This section describes how to use the command line tools for Speex files
+ in Ogg.
 \end_layout
 
 \begin_layout Section
@@ -1414,6 +1420,20 @@ name "libspeex"
 )
 \end_layout
 
+\begin_layout Standard
+The 
+\emph on
+libspeex
+\emph default
+ library contains all the functions for encoding and decoding speech with
+ the Speex codec.
+ When linking on a UNIX system, one must add 
+\emph on
+-lspeex -lm
+\emph default
+ to the compiler command line.
+\end_layout
+
 \begin_layout Subsection
 Encoding
 \begin_inset LatexCommand label
@@ -1428,36 +1448,60 @@ name "sub:Encoding"
 In order to encode speech using Speex, one first needs to:
 \end_layout
 
-\begin_layout LyX-Code
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Standard
+
 #include <speex/speex.h>
 \end_layout
 
-\begin_layout Standard
-Then a Speex bit-packing struct must be declared as:
-\end_layout
+\end_inset
 
-\begin_layout LyX-Code
+Then a Speex bit-packing struct must be declared as:
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Standard
+
 SpeexBits bits;
 \end_layout
 
-\begin_layout Standard
-along with a Speex encoder state
-\end_layout
+\end_inset
 
-\begin_layout LyX-Code
+along with a Speex encoder state
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Standard
+
 void *enc_state;
 \end_layout
 
-\begin_layout Standard
-The two are initialized by:
-\end_layout
+\end_inset
 
-\begin_layout LyX-Code
+The two are initialized by:
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Standard
+
 speex_bits_init(&bits);
 \end_layout
 
-\begin_layout LyX-Code
+\begin_layout Standard
+
 enc_state = speex_encoder_init(&speex_nb_mode);
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -1483,8 +1527,19 @@ samples
 , not bytes) with:
 \end_layout
 
-\begin_layout LyX-Code
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Standard
+
 speex_encoder_ctl(enc_state,SPEEX_GET_FRAME_SIZE,&frame_size);
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -1499,8 +1554,19 @@ frame_size
  This is set by:
 \end_layout
 
-\begin_layout LyX-Code
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Standard
+
 speex_encoder_ctl(enc_state,SPEEX_SET_QUALITY,&quality);
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -1523,16 +1589,29 @@ reference "cap:quality_vs_bps"
 Once the initialization is done, for every input frame:
 \end_layout
 
-\begin_layout LyX-Code
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Standard
+
 speex_bits_reset(&bits);
 \end_layout
 
-\begin_layout LyX-Code
+\begin_layout Standard
+
 speex_encode_int(enc_state, input_frame, &bits);
 \end_layout
 
-\begin_layout LyX-Code
+\begin_layout Standard
+
 nbBytes = speex_bits_write(&bits, byte_ptr, MAX_NB_BYTES);
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -1610,12 +1689,24 @@ speex_encode_int()
 After you're done with the encoding, free all resources with:
 \end_layout
 
-\begin_layout LyX-Code
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Standard
+
 speex_bits_destroy(&bits);
 \end_layout
 
-\begin_layout LyX-Code
+\begin_layout Standard
+
 speex_encoder_destroy(enc_state);
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -1635,38 +1726,59 @@ name "sub:Decoding"
 
 \begin_layout Standard
 In order to decode speech using Speex, you first need to:
-\end_layout
+\begin_inset listings
+inline false
+status open
 
-\begin_layout LyX-Code
+\begin_layout Standard
+
 #include <speex/speex.h>
 \end_layout
 
-\begin_layout Standard
-You also need to declare a Speex bit-packing struct
-\end_layout
+\end_inset
 
-\begin_layout LyX-Code
+You also need to declare a Speex bit-packing struct
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Standard
+
 SpeexBits bits;
 \end_layout
 
-\begin_layout Standard
-and a Speex decoder state
-\end_layout
+\end_inset
 
-\begin_layout LyX-Code
+and a Speex decoder state
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Standard
+
 void *dec_state;
 \end_layout
 
-\begin_layout Standard
-The two are initialized by:
-\end_layout
+\end_inset
 
-\begin_layout LyX-Code
+The two are initialized by:
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Standard
+
 speex_bits_init(&bits);
 \end_layout
 
-\begin_layout LyX-Code
+\begin_layout Standard
+
 dec_state = speex_decoder_init(&speex_nb_mode);
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -1691,8 +1803,19 @@ samples
 , not bytes) with:
 \end_layout
 
-\begin_layout LyX-Code
-speex_decoder_ctl(dec_state, SPEEX_GET_FRAME_SIZE, &frame_size); 
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Standard
+
+speex_decoder_ctl(dec_state, SPEEX_GET_FRAME_SIZE, &frame_size);
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -1701,8 +1824,19 @@ There is also a parameter that can be set for the decoder: whether or not
  This can be set by: 
 \end_layout
 
-\begin_layout LyX-Code
-speex_decoder_ctl(dec_state, SPEEX_SET_ENH, &enh); 
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Standard
+
+speex_decoder_ctl(dec_state, SPEEX_SET_ENH, &enh);
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -1718,15 +1852,23 @@ enh
 Again, once the decoder initialization is done, for every input frame:
 \end_layout
 
-\begin_layout LyX-Code
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Standard
+
 speex_bits_read_from(&bits, input_bytes, nbBytes);
 \end_layout
 
-\begin_layout LyX-Code
+\begin_layout Standard
+
 speex_decode_int(dec_state, &bits, output_frame);
 \end_layout
 
-\begin_layout Standard
+\end_inset
+
 where input_bytes is a 
 \emph on
 (char *)
@@ -1760,18 +1902,27 @@ speex_decode()
 (float *)
 \emph default
  as the output for the audio.
+ After you're done with the decoding, free all resources with:
 \end_layout
 
 \begin_layout Standard
-After you're done with the decoding, free all resources with:
-\end_layout
+\begin_inset listings
+inline false
+status open
 
-\begin_layout LyX-Code
+\begin_layout Standard
+
 speex_bits_destroy(&bits);
 \end_layout
 
-\begin_layout LyX-Code
+\begin_layout Standard
+
 speex_decoder_destroy(dec_state);
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Subsection
@@ -1795,7 +1946,8 @@ Entities should not be multiplied beyond necessity -- William of Ockham.
 \align center
 
 \emph on
-Just because there's an option doesn't mean you have to use it -- me.
+Just because there's an option of it doesn't mean you have to use it --
+ me.
 \end_layout
 
 \begin_layout Standard
@@ -1823,12 +1975,24 @@ ioctl
  system call and their prototypes are:
 \end_layout
 
-\begin_layout LyX-Code
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Standard
+
 void speex_encoder_ctl(void *encoder, int request, void *ptr);
 \end_layout
 
-\begin_layout LyX-Code
+\begin_layout Standard
+
 void speex_decoder_ctl(void *encoder, int request, void *ptr);
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -2062,13 +2226,17 @@ er_ctl calls.
  Since modes are read-only, it is only possible to get information about
  a particular mode.
  The function used to do that is:
-\end_layout
+\begin_inset listings
+inline false
+status open
 
-\begin_layout LyX-Code
+\begin_layout Standard
+
 void speex_mode_query(SpeexMode *mode, int request, void *ptr);
 \end_layout
 
-\begin_layout Standard
+\end_inset
+
 The admissible values for request are (unless otherwise note, the values
  are returned through 
 \emph on
@@ -2735,7 +2903,7 @@ Finally, applications may define custom in-band messages using mode 13.
 \end_layout
 
 \begin_layout Section
-Speech Processing API (libspeexproc)
+Speech Processing API (libspeexdsp)
 \end_layout
 
 \begin_layout Subsection
@@ -2758,17 +2926,39 @@ name "preprocessor"
 , you first need to:
 \end_layout
 
-\begin_layout LyX-Code
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Standard
+
 #include <speex/speex_preprocess.h>
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
 Then, a preprocessor state can be created as:
 \end_layout
 
-\begin_layout LyX-Code
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Standard
+
 SpeexPreprocessState *preprocess_state = speex_preprocess_state_init(frame_size,
  sampling_rate);
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -2787,8 +2977,19 @@ ms
 For each input frame, you need to call:
 \end_layout
 
-\begin_layout LyX-Code
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Standard
+
 speex_preprocess_run(preprocess_state, audio_frame);
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -2804,8 +3005,19 @@ In cases where the output audio is not useful for a certain frame, it is
  possible to use instead:
 \end_layout
 
-\begin_layout LyX-Code
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Standard
+
 speex_preprocess_estimate_update(preprocess_state, audio_frame);
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -2817,8 +3029,19 @@ This call will update all the preprocessor internal state variables without
 The behaviour of the preprocessor can be changed using:
 \end_layout
 
-\begin_layout LyX-Code
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Standard
+
 speex_preprocess_ctl(preprocess_state, request, ptr);
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -2830,8 +3053,19 @@ which is used in the same way as the encoder and decoder equivalent.
 The preprocessor state can be destroyed using:
 \end_layout
 
-\begin_layout LyX-Code
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Standard
+
 speex_preprocess_state_destroy(preprocess_state);
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Subsubsection
@@ -2985,16 +3219,38 @@ name "acoustic echo cancellation"
  In order to use the echo canceller, you first need to
 \end_layout
 
-\begin_layout LyX-Code
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Standard
+
 #include <speex/speex_echo.h>
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
 Then, an echo canceller state can be created by:
 \end_layout
 
-\begin_layout LyX-Code
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Standard
+
 SpeexEchoState *echo_state = speex_echo_state_init(frame_size, filter_length);
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -3032,8 +3288,19 @@ n time.
 Once the echo canceller state is created, audio can be processed by:
 \end_layout
 
-\begin_layout LyX-Code
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Standard
+
 speex_echo_cancellation(echo_state, input_frame, echo_frame, output_frame);
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -3076,27 +3343,34 @@ echo_frame
  must be small enough because otherwise part of the echo cancellation filter
  is inefficient.
  In the ideal case, you code would look like:
-\end_layout
+\begin_inset listings
+lstparams "breaklines=true"
+inline false
+status open
 
-\begin_layout LyX-Code
+\begin_layout Standard
+
 write_to_soundcard(echo_frame, frame_size);
 \end_layout
 
-\begin_layout LyX-Code
+\begin_layout Standard
+
 read_from_soundcard(input_frame, frame_size);
 \end_layout
 
-\begin_layout LyX-Code
+\begin_layout Standard
+
 speex_echo_cancellation(echo_state, input_frame, echo_frame, output_frame);
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
 If you wish to further reduce the echo present in the signal, you can do
- so by 
-\family typewriter
-associating the echo canceller to the preprocessor
-\family default
- (see Section 
+ so by associating the echo canceller to the preprocessor (see Section 
 \begin_inset LatexCommand ref
 reference "sub:Preprocessor"
 
@@ -3104,14 +3378,19 @@ reference "sub:Preprocessor"
 
 ).
  This is done by calling:
-\end_layout
-
-\begin_layout LyX-Code
-speex_preprocess_ctl(preprocess_state, SPEEX_PREPROCESS_SET_ECHO_STATE,
- echo_state);
-\end_layout
+\begin_inset listings
+lstparams "breaklines=true"
+inline false
+status open
 
 \begin_layout Standard
+
+speex_preprocess_ctl(preprocess_state, SPEEX_PREPROCESS_SET_ECHO_STATE,echo_stat
+e);
+\end_layout
+
+\end_inset
+
 in the initialisation.
 \end_layout
 
@@ -3136,8 +3415,19 @@ select()
  Instead, the playback comtext/thread can simply call:
 \end_layout
 
-\begin_layout LyX-Code
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Standard
+
 speex_echo_playback(echo_state, echo_frame);
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -3145,8 +3435,19 @@ every time an audio frame is played.
  Then, the capture context/thread calls:
 \end_layout
 
-\begin_layout LyX-Code
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Standard
+
 speex_echo_capture(echo_state, input_frame, output_frame);
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -3177,8 +3478,19 @@ speex_echo_cancellation()
 The echo cancellation state can be destroyed with:
 \end_layout
 
-\begin_layout LyX-Code
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Standard
+
 speex_echo_state_destroy(echo_state);
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -3186,8 +3498,19 @@ It is also possible to reset the state of the echo canceller so it can be
  reused without the need to create another state with:
 \end_layout
 
-\begin_layout LyX-Code
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Standard
+
 speex_echo_state_reset(echo_state);
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Subsubsection
@@ -3289,8 +3612,20 @@ echo_diagnostic.m
  From there, it is necessary to start Octave and type:
 \end_layout
 
-\begin_layout LyX-Code
+\begin_layout Standard
+\begin_inset listings
+lstparams "language=Matlab"
+inline false
+status open
+
+\begin_layout Standard
+
 echo_diagnostic('aec_rec.sw', 'aec_play.sw', 'aec_diagnostic.sw', 1024);
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -3309,8 +3644,47 @@ Jitter Buffer
 The jitter buffer can be enabled by including:
 \end_layout
 
-\begin_layout LyX-Code
-#include <speex/speex_jitter.c>
+\begin_layout Standard
+\begin_inset listings
+lstparams "breaklines=true"
+inline false
+status open
+
+\begin_layout Standard
+
+#include <speex/speex_jitter.h>
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+and a new jitter buffer state can be initialised by:
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "breaklines=true"
+inline false
+status open
+
+\begin_layout Standard
+
+JitterBuffer *state = jitter_buffer_init(tick);
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+where the tick argument is the time resolution (in timestamp units) used
+ for the jitter buffer, and is generally the period at which the data is
+ played out of the jitter buffer.
+ 
 \end_layout
 
 \begin_layout Subsection
@@ -3322,8 +3696,19 @@ Speex includes a resampling modules.
  To make use of the resampler, it is necessary to include its header file:
 \end_layout
 
-\begin_layout LyX-Code
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Standard
+
 #include <speex/speex_resampler.h>
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -3331,13 +3716,25 @@ For each stream that is to be resampled, it is necessary to create a resampler
  state with:
 \end_layout
 
-\begin_layout LyX-Code
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Standard
+
 SpeexResamplerState *resampler;
 \end_layout
 
-\begin_layout LyX-Code
+\begin_layout Standard
+
 resampler = speex_resampler_init(nb_channels, input_rate, output_rate, quality,
  &err);
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -3359,12 +3756,19 @@ d or non-interleaved), input_rate is the sampling rate of the input stream,
 The actual resampling is performed using
 \end_layout
 
-\begin_layout LyX-Code
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Standard
+
 err = speex_resampler_process_int(resampler, channelID, in, &in_length,
  out, &out_length);
 \end_layout
 
-\begin_layout Standard
+\end_inset
+
 where channelID is the ID of the channel to be processed.
  For a mono stream, use 0.
  The 
@@ -9005,7 +9409,7 @@ sampleenc takes a raw 16 bits/sample file, encodes it and outputs a Speex
 \end_layout
 
 \begin_layout Standard
-\begin_inset Include \verbatiminput{sampleenc.c}
+\begin_inset Include \lstinputlisting{sampleenc.c}[caption={Source code for sampleenc},label={sampleenc-source-code},numbers=left,numberstyle={\footnotesize}]
 preview false
 
 \end_inset
@@ -9024,7 +9428,7 @@ sampledec reads a Speex stream from stdin, decodes it and outputs it to
 \end_layout
 
 \begin_layout Standard
-\begin_inset Include \verbatiminput{sampledec.c}
+\begin_inset Include \lstinputlisting{sampledec.c}[caption={Source code for sampledec},label={sampledec-source-code},numbers=left,numberstyle={\footnotesize}]
 preview false
 
 \end_inset
