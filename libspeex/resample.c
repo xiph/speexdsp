@@ -41,15 +41,19 @@
    all the major bugs and I don't expect the API to change anymore, there
    may be something I've missed. So use with caution.
 
-   This algorithm is based on this resampling algorithm by Julius O. Smith:
-   http://ccrma.stanford.edu/~jos/resample/
+   This algorithm is based on this original resampling algorithm:
+   Smith, Julius O. Digital Audio Resampling Home Page
+   Center for Computer Research in Music and Acoustics (CCRMA), 
+   Stanford University, 2007.
+   Web published at http://www-ccrma.stanford.edu/~jos/resample/.
+
    There is one main difference, though. This resampler uses cubic 
    interpolation instead of linear interpolation in the above paper. This
    makes the table much smaller and makes it possible to compute that table
-   on a per-stream basis. In turn, having a table for each stream makes it
-   possible to both reduce complexity on simple ratios (e.g. 2/3), and get
-   rid of the rounding operations in the inner loop. The latter both reduces
-   CPU time and makes the algorithm more SIMD-friendly.
+   on a per-stream basis. In turn, being able to tweak the table for each 
+   stream makes it possible to both reduce complexity on simple ratios 
+   (e.g. 2/3), and get rid of the rounding operations in the inner loop. 
+   The latter both reduces CPU time and makes the algorithm more SIMD-friendly.
 */
 
 #ifdef HAVE_CONFIG_H
