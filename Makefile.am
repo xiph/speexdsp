@@ -8,7 +8,7 @@ m4datadir = $(datadir)/aclocal
 m4data_DATA = speex.m4
 
 pkgconfigdir = $(libdir)/pkgconfig
-pkgconfig_DATA = speex.pc
+pkgconfig_DATA = speex.pc speexdsp.pc
 
 EXTRA_DIST = Speex.spec Speex.spec.in Speex.kdevelop speex.m4 speex.pc.in README.blackfin README.symbian README.TI-DSP
 

@@ -193,7 +193,7 @@ AC_SUBST(SIZE16)
 AC_SUBST(SIZE32)
 
 AC_OUTPUT([Makefile libspeex/Makefile src/Makefile doc/Makefile Speex.spec
-           include/Makefile include/speex/Makefile speex.pc
+           include/Makefile include/speex/Makefile speex.pc speexdsp.pc
            win32/Makefile win32/libspeex/Makefile win32/speexenc/Makefile
            win32/speexdec/Makefile symbian/Makefile 
            win32/VS2003/Makefile
