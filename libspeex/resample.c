@@ -37,10 +37,9 @@
       - Low memory requirement
       - Good *perceptual* quality (and not best SNR)
 
-   The code is working, but it's in a very early stage, so it may have
-   artifacts, noise or subliminal messages from satan. Also, the API 
-   isn't stable and I can actually promise that I *will* change the API
-   some time in the future.
+   Warning: This resampler is relatively new. Although I think I got rid of 
+   all the major bugs and I don't expect the API to change anymore, there
+   may be something I've missed. So use with caution.
 
    This algorithm is based on this resampling algorithm by Julius O. Smith:
    http://ccrma.stanford.edu/~jos/resample/
