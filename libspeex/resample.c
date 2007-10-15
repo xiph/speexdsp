@@ -42,12 +42,15 @@
    isn't stable and I can actually promise that I *will* change the API
    some time in the future.
 
-TODO list:
-      - Variable calculation resolution depending on quality setting
-         - Single vs double in float mode
-         - 16-bit vs 32-bit (sinc only) in fixed-point mode
-      - Make sure the filter update works even when changing params 
-             after only a few samples procesed
+   This algorithm is based on this resampling algorithm by Julius O. Smith:
+   http://ccrma.stanford.edu/~jos/resample/
+   There is one main difference, though. This resampler uses cubic 
+   interpolation instead of linear interpolation in the above paper. This
+   makes the table much smaller and makes it possible to compute that table
+   on a per-stream basis. In turn, having a table for each stream makes it
+   possible to both reduce complexity on simple ratios (e.g. 2/3), and get
+   rid of the rounding operations in the inner loop. The latter both reduces
+   CPU time and makes the algorithm more SIMD-friendly.
 */
 
 #ifdef HAVE_CONFIG_H
