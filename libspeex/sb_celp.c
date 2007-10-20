@@ -45,6 +45,7 @@
 #include "ltp.h"
 #include "misc.h"
 #include "math_approx.h"
+#include "os_support.h"
 
 #ifndef NULL
 #define NULL 0

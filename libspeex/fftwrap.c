@@ -41,6 +41,7 @@
 
 
 #include "misc.h"
+#include "os_support.h"
 
 #define MAX_FFT_SIZE 2048
 

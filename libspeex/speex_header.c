@@ -38,6 +38,7 @@
 #include "misc.h"
 #include <speex/speex_header.h>
 #include <speex/speex.h>
+#include "os_support.h"
 
 #ifndef NULL
 #define NULL 0

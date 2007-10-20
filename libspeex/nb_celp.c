@@ -47,6 +47,7 @@
 #include "vbr.h"
 #include "misc.h"
 #include "math_approx.h"
+#include "os_support.h"
 #include <speex/speex_callbacks.h>
 
 #ifdef VORBIS_PSYCHO

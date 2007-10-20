@@ -38,6 +38,7 @@
 
 #include <speex/speex_bits.h>
 #include "misc.h"
+#include "os_support.h"
 
 /* Maximum size of the bit-stream (for fixed-size allocation) */
 #ifndef MAX_CHARS_PER_FRAME

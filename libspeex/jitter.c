@@ -41,6 +41,7 @@
 #include <speex/speex.h>
 #include <speex/speex_bits.h>
 #include <speex/speex_jitter.h>
+#include "os_support.h"
 
 #ifndef NULL
 #define NULL 0

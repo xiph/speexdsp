@@ -38,6 +38,7 @@
 
 #include "modes.h"
 #include <math.h>
+#include "os_support.h"
 
 #ifndef NULL
 #define NULL 0

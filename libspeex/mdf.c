@@ -74,6 +74,7 @@
 #include "fftwrap.h"
 #include "pseudofloat.h"
 #include "math_approx.h"
+#include "os_support.h"
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846

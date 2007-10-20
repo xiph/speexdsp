@@ -45,8 +45,16 @@
 #define spx_cos_norm(x) (cos((.5f*M_PI)*(x)))
 #define spx_atan atan
 
-#endif
+/** Generate a pseudo-random number */
+static inline spx_word16_t speex_rand(spx_word16_t std, spx_int32_t *seed)
+{
+   spx_word32_t res;
+   *seed = 1664525 * *seed + 1013904223;
+   res = MULT16_16(EXTRACT16(SHR32(*seed,16)),std);
+   return EXTRACT16(PSHR32(SUB32(res, SHR32(res, 3)),14));
+}
 
+#endif
 
 
 static inline spx_int16_t spx_ilog2(spx_uint32_t x)
@@ -105,6 +113,19 @@ static inline spx_int16_t spx_ilog4(spx_uint32_t x)
 }
 
 #ifdef FIXED_POINT
+
+/** Generate a pseudo-random number */
+static inline spx_word16_t speex_rand(spx_word16_t std, spx_int32_t *seed)
+{
+   const unsigned int jflone = 0x3f800000;
+   const unsigned int jflmsk = 0x007fffff;
+   union {int i; float f;} ran;
+   *seed = 1664525 * *seed + 1013904223;
+   ran.i = jflone | (jflmsk & *seed);
+   ran.f -= 1.5;
+   return 3.4642*std*ran.f;
+}
+
 
 /* sqrt(x) ~= 0.22178 + 1.29227*x - 0.77070*x^2 + 0.25723*x^3 (for .25 < x < 1) */
 /*#define C0 3634

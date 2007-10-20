@@ -39,6 +39,7 @@
 #include "misc.h"
 #include <math.h>
 #include "math_approx.h"
+#include "os_support.h"
       
 #ifdef FIXED_POINT
 

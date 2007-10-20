@@ -71,6 +71,7 @@ static void speex_free (void *ptr) {free(ptr);}
                
 #include "speex/speex_resampler.h"
 #include "misc.h"
+#include "os_support.h"
 #endif /* OUTSIDE_SPEEX */
 
 #include <math.h>
