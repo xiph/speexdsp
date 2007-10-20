@@ -94,7 +94,7 @@ static inline spx_int32_t le_int(spx_int32_t i)
 #define speex_assert(cond) {if (!(cond)) {speex_fatal("assertion failed: " #cond);}}
 
 #ifndef RELEASE
-static void print_vec(float *vec, int len, char *name)
+static inline void print_vec(float *vec, int len, char *name)
 {
    int i;
    printf ("%s ", name);
@@ -111,7 +111,7 @@ long long spx_mips=0;
 
 /** Speex wrapper for calloc. To do your own dynamic allocation, all you need to do is replace this function, speex_realloc and speex_free */
 #ifndef OVERRIDE_SPEEX_ALLOC
-static void *speex_alloc (int size)
+static inline void *speex_alloc (int size)
 {
    return calloc(size,1);
 }
@@ -119,7 +119,7 @@ static void *speex_alloc (int size)
 
 /** Same as speex_alloc, except that the area is only needed inside a Speex call (might cause problem with wideband though) */
 #ifndef OVERRIDE_SPEEX_ALLOC_SCRATCH
-static void *speex_alloc_scratch (int size)
+static inline void *speex_alloc_scratch (int size)
 {
    return calloc(size,1);
 }
@@ -127,7 +127,7 @@ static void *speex_alloc_scratch (int size)
 
 /** Speex wrapper for realloc. To do your own dynamic allocation, all you need to do is replace this function, speex_alloc and speex_free */
 #ifndef OVERRIDE_SPEEX_REALLOC
-static void *speex_realloc (void *ptr, int size)
+static inline void *speex_realloc (void *ptr, int size)
 {
    return realloc(ptr, size);
 }
@@ -135,7 +135,7 @@ static void *speex_realloc (void *ptr, int size)
 
 /** Speex wrapper for calloc. To do your own dynamic allocation, all you need to do is replace this function, speex_realloc and speex_alloc */
 #ifndef OVERRIDE_SPEEX_FREE
-static void speex_free (void *ptr)
+static inline void speex_free (void *ptr)
 {
    free(ptr);
 }
@@ -143,7 +143,7 @@ static void speex_free (void *ptr)
 
 /** Same as speex_free, except that the area is only needed inside a Speex call (might cause problem with wideband though) */
 #ifndef OVERRIDE_SPEEX_FREE_SCRATCH
-static void speex_free_scratch (void *ptr)
+static inline void speex_free_scratch (void *ptr)
 {
    free(ptr);
 }
@@ -151,14 +151,14 @@ static void speex_free_scratch (void *ptr)
 
 /** Print warning message with integer argument to stderr */
 #ifndef OVERRIDE_SPEEX_MOVE
-static void *speex_move (void *dest, void *src, int n)
+static inline void *speex_move (void *dest, void *src, int n)
 {
    return memmove(dest,src,n);
 }
 #endif
 
 #ifndef OVERRIDE_SPEEX_FATAL
-static void _speex_fatal(const char *str, const char *file, int line)
+static inline void _speex_fatal(const char *str, const char *file, int line)
 {
    fprintf (stderr, "Fatal (internal) error in %s, line %d: %s\n", file, line, str);
    exit(1);
@@ -166,7 +166,7 @@ static void _speex_fatal(const char *str, const char *file, int line)
 #endif
 
 #ifndef OVERRIDE_SPEEX_WARNING
-static void speex_warning(const char *str)
+static inline void speex_warning(const char *str)
 {
 #ifndef DISABLE_WARNINGS
    fprintf (stderr, "warning: %s\n", str);
@@ -175,7 +175,7 @@ static void speex_warning(const char *str)
 #endif
 
 #ifndef OVERRIDE_SPEEX_WARNING_INT
-static void speex_warning_int(const char *str, int val)
+static inline void speex_warning_int(const char *str, int val)
 {
 #ifndef DISABLE_WARNINGS
    fprintf (stderr, "warning: %s %d\n", str, val);
@@ -184,7 +184,7 @@ static void speex_warning_int(const char *str, int val)
 #endif
 
 #ifndef OVERRIDE_SPEEX_NOTIFY
-static void speex_notify(const char *str)
+static inline void speex_notify(const char *str)
 {
 #ifndef DISABLE_NOTIFICATIONS
    fprintf (stderr, "notification: %s\n", str);
@@ -194,7 +194,7 @@ static void speex_notify(const char *str)
 
 #ifdef FIXED_POINT
 /** Generate a pseudo-random number */
-static spx_word16_t speex_rand(spx_word16_t std, spx_int32_t *seed)
+static inline spx_word16_t speex_rand(spx_word16_t std, spx_int32_t *seed)
 {
    spx_word32_t res;
    *seed = 1664525 * *seed + 1013904223;
@@ -203,7 +203,7 @@ static spx_word16_t speex_rand(spx_word16_t std, spx_int32_t *seed)
 }
 #else
 /** Generate a pseudo-random number */
-static spx_word16_t speex_rand(spx_word16_t std, spx_int32_t *seed)
+static inline spx_word16_t speex_rand(spx_word16_t std, spx_int32_t *seed)
 {
    const unsigned int jflone = 0x3f800000;
    const unsigned int jflmsk = 0x007fffff;
@@ -217,7 +217,7 @@ static spx_word16_t speex_rand(spx_word16_t std, spx_int32_t *seed)
 
 #ifndef OVERRIDE_SPEEX_PUTC
 /** Speex wrapper for putc */
-static void _speex_putc(int ch, void *file)
+static inline void _speex_putc(int ch, void *file)
 {
    FILE *f = (FILE *)file;
    fprintf(f, "%c", ch);
