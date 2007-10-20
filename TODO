@@ -2,6 +2,9 @@ For 1.2beta3:
 Merge TriMedia stuff
 Control delay in new AEC API.
 packet dump
+make sure speex_alloc() and speex_free() are exported properly
+split misc.h into spx_types.h and spx_sys.h
+
 
 Eventually:
 Do VAD properly
