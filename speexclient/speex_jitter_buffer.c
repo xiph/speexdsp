@@ -1,5 +1,9 @@
 #include <speex/speex_jitter.h>
 
+#ifndef NULL
+#define NULL 0
+#endif
+
 
 void speex_jitter_init(SpeexJitter *jitter, void *decoder, int sampling_rate)
 {
