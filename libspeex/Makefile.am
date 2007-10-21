@@ -12,11 +12,10 @@ lib_LTLIBRARIES = libspeex.la libspeexdsp.la
 libspeex_la_SOURCES = bits.c 	cb_search.c 	exc_10_32_table.c exc_20_32_table.c \
 	exc_5_64_table.c 	exc_8_128_table.c 	filters.c 	gain_table.c gain_table_lbr.c \
 	hexc_10_32_table.c 	hexc_table.c 	high_lsp_tables.c 	lbr_48k_tables.c lpc.c 	lsp.c 	ltp.c \
-	mdf.c 	preprocess.c 	quant_lsp.c sb_celp.c 	smallft.c 	speex.c \
-	speex_header.c 	stereo.c 	vbr.c 	vq.c _kiss_fft_guts.h buffer.c exc_10_16_table.c \
-	exc_5_256_table.c fftwrap.c filterbank.c jitter.c kiss_fft.c kiss_fft.h kiss_fftr.c \
-	kiss_fftr.h lsp_tables_nb.c modes.c nb_celp.c resample.c speex_callbacks.c \
-	vorbis_psy.c window.c
+	quant_lsp.c sb_celp.c 	speex.c \
+	speex_header.c 	stereo.c 	vbr.c 	vq.c buffer.c exc_10_16_table.c \
+	exc_5_256_table.c lsp_tables_nb.c modes.c nb_celp.c speex_callbacks.c \
+	window.c
 
 libspeexdsp_la_SOURCES = preprocess.c 	smallft.c 	lbr_48k_tables.c \
 				jitter.c 	mdf.c fftwrap.c kiss_fft.c _kiss_fft_guts.h kiss_fft.h \
