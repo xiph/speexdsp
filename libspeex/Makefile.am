@@ -9,12 +9,14 @@ INCLUDES = -I$(top_srcdir)/include -I$(top_builddir)/include -I$(top_builddir) @
 lib_LTLIBRARIES = libspeex.la libspeexdsp.la
 
 # Sources for compilation in the library
-libspeex_la_SOURCES = nb_celp.c 	sb_celp.c 	lpc.c 	ltp.c 	lsp.c 	quant_lsp.c \
-				lsp_tables_nb.c 	gain_table.c 	gain_table_lbr.c 	cb_search.c 	filters.c 	bits.c \
-				modes.c 	speex.c 	vq.c 	high_lsp_tables.c 	vbr.c 	hexc_table.c \
-				exc_5_256_table.c 	exc_5_64_table.c 	exc_8_128_table.c 	exc_10_32_table.c \
-				exc_10_16_table.c 	exc_20_32_table.c 	hexc_10_32_table.c 	speex_header.c \
-				speex_callbacks.c 	stereo.c window.c
+libspeex_la_SOURCES = bits.c 	cb_search.c 	exc_10_32_table.c exc_20_32_table.c \
+	exc_5_64_table.c 	exc_8_128_table.c 	filters.c 	gain_table.c gain_table_lbr.c \
+	hexc_10_32_table.c 	hexc_table.c 	high_lsp_tables.c 	lbr_48k_tables.c lpc.c 	lsp.c 	ltp.c \
+	mdf.c 	preprocess.c 	quant_lsp.c sb_celp.c 	smallft.c 	speex.c \
+	speex_header.c 	stereo.c 	vbr.c 	vq.c _kiss_fft_guts.h buffer.c exc_10_16_table.c \
+	exc_5_256_table.c fftwrap.c filterbank.c jitter.c kiss_fft.c kiss_fft.h kiss_fftr.c \
+	kiss_fftr.h lsp_tables_nb.c modes.c nb_celp.c resample.c speex_callbacks.c \
+	vorbis_psy.c window.c
 
 libspeexdsp_la_SOURCES = preprocess.c 	smallft.c 	lbr_48k_tables.c \
 				jitter.c 	mdf.c fftwrap.c kiss_fft.c _kiss_fft_guts.h kiss_fft.h \

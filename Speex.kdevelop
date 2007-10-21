@@ -9,16 +9,16 @@
     <ignoreparts/>
     <projectdirectory>.</projectdirectory>
     <absoluteprojectpath>false</absoluteprojectpath>
-    <description></description>
+    <description/>
     <secondaryLanguages/>
     <versioncontrol>kdevsubversion</versioncontrol>
-    <defaultencoding></defaultencoding>
+    <defaultencoding/>
     <projectname>Speex</projectname>
   </general>
   <kdevautoproject>
     <general>
       <activetarget>libspeex/libspeex.la</activetarget>
-      <useconfiguration>fixed</useconfiguration>
+      <useconfiguration>float</useconfiguration>
     </general>
     <run>
       <mainprogram>src/Speex</mainprogram>
@@ -40,14 +40,14 @@
         <cflags>-O2 -g -Wall</cflags>
         <envvars/>
         <configargs>--disable-shared</configargs>
-        <topsourcedir></topsourcedir>
-        <cppflags></cppflags>
-        <ldflags></ldflags>
-        <ccompilerbinary></ccompilerbinary>
-        <cxxcompilerbinary></cxxcompilerbinary>
-        <f77compilerbinary></f77compilerbinary>
-        <cxxflags></cxxflags>
-        <f77flags></f77flags>
+        <topsourcedir/>
+        <cppflags/>
+        <ldflags/>
+        <ccompilerbinary/>
+        <cxxcompilerbinary/>
+        <f77compilerbinary/>
+        <cxxflags/>
+        <f77flags/>
       </float>
       <fixed>
         <configargs>--enable-fixed-point --disable-shared</configargs>
@@ -57,14 +57,14 @@
         <f77compiler>kdevpgf77options</f77compiler>
         <cflags>-O2 -g -Wall</cflags>
         <envvars/>
-        <topsourcedir></topsourcedir>
-        <cppflags></cppflags>
-        <ldflags></ldflags>
-        <ccompilerbinary></ccompilerbinary>
-        <cxxcompilerbinary></cxxcompilerbinary>
-        <f77compilerbinary></f77compilerbinary>
-        <cxxflags></cxxflags>
-        <f77flags></f77flags>
+        <topsourcedir/>
+        <cppflags/>
+        <ldflags/>
+        <ccompilerbinary/>
+        <cxxcompilerbinary/>
+        <f77compilerbinary/>
+        <cxxflags/>
+        <f77flags/>
       </fixed>
       <default>
         <envvars/>
@@ -87,10 +87,10 @@
     <general>
       <dbgshell>libtool</dbgshell>
       <programargs/>
-      <gdbpath></gdbpath>
-      <configGdbScript></configGdbScript>
-      <runShellScript></runShellScript>
-      <runGdbScript></runGdbScript>
+      <gdbpath/>
+      <configGdbScript/>
+      <runShellScript/>
+      <runGdbScript/>
       <breakonloadinglibs>true</breakonloadinglibs>
       <separatetty>false</separatetty>
       <floatingtoolbar>false</floatingtoolbar>
@@ -136,6 +136,8 @@
       <usePermanentCaching>true</usePermanentCaching>
       <alwaysIncludeNamespaces>true</alwaysIncludeNamespaces>
       <includePaths>.;</includePaths>
+      <parseMissingHeadersExperimental>false</parseMissingHeadersExperimental>
+      <resolveIncludePathsUsingMakeExperimental>false</resolveIncludePathsUsingMakeExperimental>
     </codecompletion>
     <qt>
       <used>false</used>
@@ -148,7 +150,7 @@
       <designerpluginpaths/>
     </qt>
     <creategettersetter>
-      <prefixGet></prefixGet>
+      <prefixGet/>
       <prefixSet>set</prefixSet>
       <prefixVariable>m_,_</prefixVariable>
       <parameterName>theValue</parameterName>
