@@ -1957,13 +1957,6 @@ speex_encoder_ctl
 speex_decoder_ctl
 \emph default
  functions.
- Despite that, the defaults are good for many applications and 
-\series bold
-optional settings should only be used when one understands them and knows
- that they are needed
-\series default
-.
- A common error is to attempt to set many unnecessary settings.
  These functions are similar to the 
 \emph on
 ioctl
@@ -1992,127 +1985,388 @@ void speex_decoder_ctl(void *encoder, int request, void *ptr);
 \end_layout
 
 \begin_layout Standard
-The different values of request allowed are (note that some only apply to
- the encoder or the decoder):
+Despite those functions, the defaults are usually good for many applications
+ and 
+\series bold
+optional settings should only be used when one understands them and knows
+ that they are needed
+\series default
+.
+ A common error is to attempt to set many unnecessary settings.
+ 
+\end_layout
+
+\begin_layout Standard
+Here is a list of the values allowed for the requests.
+ Some only apply to the encoder or the decoder.
+ Because the last argument is of type 
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+void *
+\end_layout
+
+\end_inset
+
+, the 
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+_ctl()
+\end_layout
+
+\end_inset
+
+ functions are 
+\series bold
+not type safe
+\series default
+, and shoud thus be used with care.
+ The type 
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+spx_int32_t
+\end_layout
+
+\end_inset
+
+ is the same as the C99 
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+int32_t
+\end_layout
+
+\end_inset
+
+ type.
 \end_layout
 
 \begin_layout Description
-SPEEX_SET_ENH** Set perceptual enhancer
+SPEEX_SET_ENH
+\begin_inset Formula $\ddagger$
+\end_inset
+
+ Set perceptual enhancer
 \begin_inset LatexCommand index
 name "perceptual enhancement"
 
 \end_inset
 
- to on (1) or off (0) (spx_int32_t)
+ to on (1) or off (0) (
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+spx_int32_t
+\end_layout
+
+\end_inset
+
+)
 \end_layout
 
 \begin_layout Description
-SPEEX_GET_ENH** Get perceptual enhancer status (spx_int32_t)
+SPEEX_GET_ENH
+\begin_inset Formula $\ddagger$
+\end_inset
+
+ Get perceptual enhancer status (
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+spx_int32_t
+\end_layout
+
+\end_inset
+
+)
 \end_layout
 
 \begin_layout Description
 SPEEX_GET_FRAME_SIZE Get the number of samples per frame for the current
- mode (spx_int32_t)
+ mode (
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+spx_int32_t
+\end_layout
+
+\end_inset
+
+)
 \end_layout
 
 \begin_layout Description
-SPEEX_SET_QUALITY* Set the encoder speech quality (spx_int32_t 0 to 10)
-\end_layout
-
-\begin_layout Description
-SPEEX_GET_QUALITY* Get the current encoder speech quality (spx_int32_t 0
- to 10)
-\end_layout
-
-\begin_layout Description
-SPEEX_SET_MODE* Set the mode number, as specified in the RTP spec (spx_int32_t)
-\end_layout
-
-\begin_layout Description
-SPEEX_GET_MODE* Get the current mode number, as specified in the RTP spec
- (spx_int32_t)
-\end_layout
-
-\begin_layout Description
-SPEEX_SET_LOW_MODE*
+SPEEX_SET_QUALITY
 \begin_inset Formula $\dagger$
 \end_inset
 
- Use the source, Luke!
+ Set the encoder speech quality (
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+spx_int32_t
+\end_layout
+
+\end_inset
+
+ from 0 to 10)
 \end_layout
 
 \begin_layout Description
-SPEEX_GET_LOW_MODE*
+SPEEX_GET_QUALITY
 \begin_inset Formula $\dagger$
 \end_inset
 
- Use the source, Luke!
+ Get the current encoder speech quality (
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+spx_int32_t
+\end_layout
+
+\end_inset
+
+ from 0 to 10)
 \end_layout
 
 \begin_layout Description
-SPEEX_SET_HIGH_MODE*
+SPEEX_SET_MODE
 \begin_inset Formula $\dagger$
 \end_inset
 
- Use the source, Luke!
+ Set the mode number, as specified in the RTP spec (
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+spx_int32_t
+\end_layout
+
+\end_inset
+
+)
 \end_layout
 
 \begin_layout Description
-SPEEX_GET_HIGH_MODE*
+SPEEX_GET_MODE
 \begin_inset Formula $\dagger$
 \end_inset
 
- Use the source, Luke!
+ Get the current mode number, as specified in the RTP spec (
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+spx_int32_t
+\end_layout
+
+\end_inset
+
+)
 \end_layout
 
 \begin_layout Description
-SPEEX_SET_VBR* Set variable bit-rate (VBR) to on (1) or off (0) (spx_int32_t)
+SPEEX_SET_VBR
+\begin_inset Formula $\dagger$
+\end_inset
+
+ Set variable bit-rate (VBR) to on (1) or off (0) (
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+spx_int32_t
+\end_layout
+
+\end_inset
+
+)
 \end_layout
 
 \begin_layout Description
-SPEEX_GET_VBR* Get variable bit-rate
+SPEEX_GET_VBR
+\begin_inset Formula $\dagger$
+\end_inset
+
+ Get variable bit-rate
 \begin_inset LatexCommand index
 name "variable bit-rate"
 
 \end_inset
 
- (VBR) status (spx_int32_t)
+ (VBR) status (
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+spx_int32_t
+\end_layout
+
+\end_inset
+
+)
 \end_layout
 
 \begin_layout Description
-SPEEX_SET_VBR_QUALITY* Set the encoder VBR speech quality (float 0 to 10)
+SPEEX_SET_VBR_QUALITY
+\begin_inset Formula $\dagger$
+\end_inset
+
+ Set the encoder VBR speech quality (float 0 to 10)
 \end_layout
 
 \begin_layout Description
-SPEEX_GET_VBR_QUALITY* Get the current encoder VBR speech quality (float
- 0 to 10)
+SPEEX_GET_VBR_QUALITY
+\begin_inset Formula $\dagger$
+\end_inset
+
+ Get the current encoder VBR speech quality (float 0 to 10)
 \end_layout
 
 \begin_layout Description
-SPEEX_SET_COMPLEXITY* Set the CPU resources allowed for the encoder (spx_int32_t
- 1 to 10)
+SPEEX_SET_COMPLEXITY
+\begin_inset Formula $\dagger$
+\end_inset
+
+ Set the CPU resources allowed for the encoder (
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+spx_int32_t
+\end_layout
+
+\end_inset
+
+ from 1 to 10)
 \end_layout
 
 \begin_layout Description
-SPEEX_GET_COMPLEXITY* Get the CPU resources allowed for the encoder (spx_int32_t
- 1 to 10)
+SPEEX_GET_COMPLEXITY
+\begin_inset Formula $\dagger$
+\end_inset
+
+ Get the CPU resources allowed for the encoder (
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+spx_int32_t
+\end_layout
+
+\end_inset
+
+ from 1 to 10)
 \end_layout
 
 \begin_layout Description
-SPEEX_SET_BITRATE* Set the bit-rate to use to the closest value not exceeding
- the parameter (spx_int32_t in bps)
+SPEEX_SET_BITRATE
+\begin_inset Formula $\dagger$
+\end_inset
+
+ Set the bit-rate to use to the closest value not exceeding the parameter
+ (
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+spx_int32_t
+\end_layout
+
+\end_inset
+
+ in bits per second)
 \end_layout
 
 \begin_layout Description
-SPEEX_GET_BITRATE Get the current bit-rate in use (spx_int32_t in bps)
+SPEEX_GET_BITRATE Get the current bit-rate in use (
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+spx_int32_t
+\end_layout
+
+\end_inset
+
+ in bits per second)
 \end_layout
 
 \begin_layout Description
-SPEEX_SET_SAMPLING_RATE Set real sampling rate (spx_int32_t in Hz)
+SPEEX_SET_SAMPLING_RATE Set real sampling rate (
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+spx_int32_t
+\end_layout
+
+\end_inset
+
+ in Hz)
 \end_layout
 
 \begin_layout Description
-SPEEX_GET_SAMPLING_RATE Get real sampling rate (spx_int32_t in Hz)
+SPEEX_GET_SAMPLING_RATE Get real sampling rate (
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+spx_int32_t
+\end_layout
+
+\end_inset
+
+ in Hz)
 \end_layout
 
 \begin_layout Description
@@ -2121,89 +2375,268 @@ SPEEX_RESET_STATE Reset the encoder/decoder state to its original state,
 \end_layout
 
 \begin_layout Description
-SPEEX_SET_VAD* Set voice activity detection
+SPEEX_SET_VAD
+\begin_inset Formula $\dagger$
+\end_inset
+
+ Set voice activity detection
 \begin_inset LatexCommand index
 name "voice activity detection"
 
 \end_inset
 
- (VAD) to on (1) or off (0) (spx_int32_t)
+ (VAD) to on (1) or off (0) (
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+spx_int32_t
+\end_layout
+
+\end_inset
+
+)
 \end_layout
 
 \begin_layout Description
-SPEEX_GET_VAD* Get voice activity detection (VAD) status (spx_int32_t)
+SPEEX_GET_VAD
+\begin_inset Formula $\dagger$
+\end_inset
+
+ Get voice activity detection (VAD) status (
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+spx_int32_t
+\end_layout
+
+\end_inset
+
+)
 \end_layout
 
 \begin_layout Description
-SPEEX_SET_DTX* Set discontinuous transmission
+SPEEX_SET_DTX
+\begin_inset Formula $\dagger$
+\end_inset
+
+ Set discontinuous transmission
 \begin_inset LatexCommand index
 name "discontinuous transmission"
 
 \end_inset
 
- (DTX) to on (1) or off (0) (spx_int32_t)
+ (DTX) to on (1) or off (0) (
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+spx_int32_t
+\end_layout
+
+\end_inset
+
+)
 \end_layout
 
 \begin_layout Description
-SPEEX_GET_DTX* Get discontinuous transmission (DTX) status (spx_int32_t)
+SPEEX_GET_DTX
+\begin_inset Formula $\dagger$
+\end_inset
+
+ Get discontinuous transmission (DTX) status (
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+spx_int32_t
+\end_layout
+
+\end_inset
+
+)
 \end_layout
 
 \begin_layout Description
-SPEEX_SET_ABR* Set average bit-rate
+SPEEX_SET_ABR
+\begin_inset Formula $\dagger$
+\end_inset
+
+ Set average bit-rate
 \begin_inset LatexCommand index
 name "average bit-rate"
 
 \end_inset
 
- (ABR) to a value n in bits per second (spx_int32_t in bps)
+ (ABR) to a value n in bits per second (
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+spx_int32_t
+\end_layout
+
+\end_inset
+
+ in bits per second)
 \end_layout
 
 \begin_layout Description
-SPEEX_GET_ABR* Get average bit-rate (ABR) setting (spx_int32_t in bps)
+SPEEX_GET_ABR
+\begin_inset Formula $\dagger$
+\end_inset
+
+ Get average bit-rate (ABR) setting (
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+spx_int32_t
+\end_layout
+
+\end_inset
+
+ in bits per second)
 \end_layout
 
 \begin_layout Description
-SPEEX_SET_PLC_TUNING* Tell the encoder to optimize encoding for a certain
- percentage of packet loss (spx_int32_t in percent)
+SPEEX_SET_PLC_TUNING
+\begin_inset Formula $\dagger$
+\end_inset
+
+ Tell the encoder to optimize encoding for a certain percentage of packet
+ loss (
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+spx_int32_t
 \end_layout
 
-\begin_layout Description
-SPEEX_GET_PLC_TUNING* Get the current tuning of the encoder for PLC (spx_int32_t
+\end_inset
+
  in percent)
 \end_layout
 
 \begin_layout Description
-SPEEX_SET_VBR_MAX_BITRATE* Set the maximum bit-rate allowed in VBR operation
- (spx_int32_t in bps)
+SPEEX_GET_PLC_TUNING
+\begin_inset Formula $\dagger$
+\end_inset
+
+ Get the current tuning of the encoder for PLC (
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+spx_int32_t
+\end_layout
+
+\end_inset
+
+ in percent)
 \end_layout
 
 \begin_layout Description
-SPEEX_GET_VBR_MAX_BITRATE* Get the current maximum bit-rate allowed in VBR
- operation (spx_int32_t in bps)
+SPEEX_SET_VBR_MAX_BITRATE
+\begin_inset Formula $\dagger$
+\end_inset
+
+ Set the maximum bit-rate allowed in VBR operation (
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+spx_int32_t
+\end_layout
+
+\end_inset
+
+ in bits per second)
 \end_layout
 
 \begin_layout Description
-SPEEX_SET_HIGHPASS Set the high-pass filter on (1) or off (0) (spx_int32_t)
+SPEEX_GET_VBR_MAX_BITRATE
+\begin_inset Formula $\dagger$
+\end_inset
+
+ Get the current maximum bit-rate allowed in VBR operation (
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+spx_int32_t
+\end_layout
+
+\end_inset
+
+ in bits per second)
 \end_layout
 
 \begin_layout Description
-SPEEX_TET_HIGHPASS Get the current high-pass filter status (spx_int32_t)
+SPEEX_SET_HIGHPASS Set the high-pass filter on (1) or off (0) (
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+spx_int32_t
+\end_layout
+
+\end_inset
+
+)
 \end_layout
 
 \begin_layout Description
-* applies only to the encoder
+SPEEX_TET_HIGHPASS Get the current high-pass filter status (
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+spx_int32_t
 \end_layout
 
-\begin_layout Description
-** applies only to the decoder
+\end_inset
+
+)
 \end_layout
 
 \begin_layout Description
 \begin_inset Formula $\dagger$
 \end_inset
 
- If you can't understand from the source code what this does, you should
- not be using it in the first place
+ applies only to the encoder
+\end_layout
+
+\begin_layout Description
+\begin_inset Formula $\ddagger$
+\end_inset
+
+ applies only to the decoder
 \end_layout
 
 \begin_layout Section
@@ -3116,29 +3549,101 @@ As with the codec, the preprocessor also has options that can be controlled
 \end_layout
 
 \begin_layout Description
-SPEEX_PREPROCESS_SET_DENOISE Turns denoising on(1) or off(2) (integer)
+SPEEX_PREPROCESS_SET_DENOISE Turns denoising on(1) or off(2) (
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+spx_int32_t
+\end_layout
+
+\end_inset
+
+)
 \end_layout
 
 \begin_layout Description
-SPEEX_PREPROCESS_GET_DENOISE Get denoising status (integer)
+SPEEX_PREPROCESS_GET_DENOISE Get denoising status (
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+spx_int32_t
+\end_layout
+
+\end_inset
+
+)
 \end_layout
 
 \begin_layout Description
 SPEEX_PREPROCESS_SET_AGC Turns automatic gain control (AGC) on(1) or off(2)
- (integer)
+ (
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+spx_int32_t
+\end_layout
+
+\end_inset
+
+)
 \end_layout
 
 \begin_layout Description
-SPEEX_PREPROCESS_GET_AGC Get AGC status (integer)
+SPEEX_PREPROCESS_GET_AGC Get AGC status (
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+spx_int32_t
+\end_layout
+
+\end_inset
+
+)
 \end_layout
 
 \begin_layout Description
 SPEEX_PREPROCESS_SET_VAD Turns voice activity detector (VAD) on(1) or off(2)
- (integer)
+ (
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+spx_int32_t
+\end_layout
+
+\end_inset
+
+)
 \end_layout
 
 \begin_layout Description
-SPEEX_PREPROCESS_GET_VAD Get VAD status (integer)
+SPEEX_PREPROCESS_GET_VAD Get VAD status (
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+spx_int32_t
+\end_layout
+
+\end_inset
+
+)
 \end_layout
 
 \begin_layout Description
@@ -3151,11 +3656,35 @@ SPEEX_PREPROCESS_GET_AGC_LEVEL
 
 \begin_layout Description
 SPEEX_PREPROCESS_SET_DEREVERB Turns reverberation removal on(1) or off(2)
- (integer)
+ (
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+spx_int32_t
+\end_layout
+
+\end_inset
+
+)
 \end_layout
 
 \begin_layout Description
-SPEEX_PREPROCESS_GET_DEREVERB Get reverberation removal status (integer)
+SPEEX_PREPROCESS_GET_DEREVERB Get reverberation removal status (
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+spx_int32_t
+\end_layout
+
+\end_inset
+
+)
 \end_layout
 
 \begin_layout Description
@@ -3192,32 +3721,104 @@ SPEEX_PREPROCESS_GET_PROB_CONTINUE
 
 \begin_layout Description
 SPEEX_PREPROCESS_SET_NOISE_SUPPRESS Set maximum attenuation of the noise
- in dB (negative number)
+ in dB (negative 
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+spx_int32_t
+\end_layout
+
+\end_inset
+
+)
 \end_layout
 
 \begin_layout Description
 SPEEX_PREPROCESS_GET_NOISE_SUPPRESS Get maximum attenuation of the noise
- in dB (negative number)
+ in dB (negative 
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+spx_int32_t
+\end_layout
+
+\end_inset
+
+)
 \end_layout
 
 \begin_layout Description
 SPEEX_PREPROCESS_SET_ECHO_SUPPRESS Set maximum attenuation of the residual
- echo in dB (negative number)
+ echo in dB (negative 
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+spx_int32_t
+\end_layout
+
+\end_inset
+
+)
 \end_layout
 
 \begin_layout Description
 SPEEX_PREPROCESS_GET_ECHO_SUPPRESS Set maximum attenuation of the residual
- echo in dB (negative number)
+ echo in dB (negative 
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+spx_int32_t
+\end_layout
+
+\end_inset
+
+)
 \end_layout
 
 \begin_layout Description
 SPEEX_PREPROCESS_SET_ECHO_SUPPRESS_ACTIVE Set maximum attenuation of the
- echo in dB when near end is active (negative number)
+ echo in dB when near end is active (negative 
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+spx_int32_t
+\end_layout
+
+\end_inset
+
+)
 \end_layout
 
 \begin_layout Description
 SPEEX_PREPROCESS_GET_ECHO_SUPPRESS_ACTIVE Set maximum attenuation of the
- echo in dB when near end is active (negative number)
+ echo in dB when near end is active (negative 
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+spx_int32_t
+\end_layout
+
+\end_inset
+
+)
 \end_layout
 
 \begin_layout Description
@@ -4018,6 +4619,14 @@ out_length
 \begin_layout Standard
 It is also possible to process multiple channels at once.
  
+\end_layout
+
+\begin_layout Section
+Ring Buffer
+\end_layout
+
+\begin_layout Standard
+Put some stuff there...
 \end_layout
 
 \begin_layout Standard
@@ -5087,7 +5696,7 @@ Because
 \begin_inset Formula $\mathbf{R}$
 \end_inset
 
- is toeplitz hermitian, the Levinson-Durbin
+ is Hermitian Toeplitz, the Levinson-Durbin
 \begin_inset LatexCommand index
 name "Levinson-Durbin"
 
@@ -5145,14 +5754,10 @@ During voiced segments, the speech signal is periodic, so it is possible
 
 \begin_layout Standard
 \begin_inset Formula \[
-e[n]\simeq p[n]=\beta e[n-T]\]
+e[n]\simeq p[n]=\beta e[n-T]\ ,\]
 
 \end_inset
 
-
-\end_layout
-
-\begin_layout Standard
 where 
 \begin_inset Formula $T$
 \end_inset
@@ -5196,12 +5801,12 @@ innovation
 Code
 \emph default
  Excited Linear Prediction.
- The final excitation is given by:
+ The final excitation is given by
 \end_layout
 
 \begin_layout Standard
 \begin_inset Formula \[
-e[n]=p[n]+c[n]=\beta e[n-T]+c[n]\]
+e[n]=p[n]+c[n]=\beta e[n-T]+c[n]\ .\]
 
 \end_inset
 
@@ -5220,7 +5825,7 @@ z
 \begin_inset Formula $X(z)$
 \end_inset
 
- as 
+ as
 \begin_inset Formula \[
 X(z)=\frac{C(z)}{A(z)\left(1-\beta z^{-T}\right)}\]
 
@@ -5279,9 +5884,9 @@ vice versa
 \begin_inset Formula $1/A(z)$
 \end_inset
 
-, CELP codecs typically derive the noise weighting filter as: 
+, CELP codecs typically derive the noise weighting filter as 
 \begin_inset Formula \begin{equation}
-W(z)=\frac{A(z/\gamma_{1})}{A(z/\gamma_{2})}\label{eq:gamma-weighting}\end{equation}
+W(z)=\frac{A(z/\gamma_{1})}{A(z/\gamma_{2})}\ ,\label{eq:gamma-weighting}\end{equation}
 
 \end_inset
 
