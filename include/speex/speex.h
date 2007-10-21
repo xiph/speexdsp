@@ -421,6 +421,9 @@ extern const SpeexMode * const speex_mode_list[SPEEX_NB_MODES];
 /** Obtain one of the modes available */
 const SpeexMode * speex_lib_get_mode (int mode);
 
+/* We actually override the fucntion in the narrowband case so that we can avoid linking in the wideband stuff */
+#define speex_lib_get_mode(mode) ((mode)==SPEEX_MODEID_NB ? &speex_nb_mode : speex_lib_get_mode (mode))
+
 #ifdef __cplusplus
 }
 #endif

@@ -209,29 +209,6 @@ int nb_mode_query(const void *mode, int request, void *ptr)
    return 0;
 }
 
-int wb_mode_query(const void *mode, int request, void *ptr)
-{
-   const SpeexSBMode *m = (const SpeexSBMode*)mode;
-
-   switch (request)
-   {
-   case SPEEX_MODE_FRAME_SIZE:
-      *((int*)ptr)=2*m->frameSize;
-      break;
-   case SPEEX_SUBMODE_BITS_PER_FRAME:
-      if (*((int*)ptr)==0)
-         *((int*)ptr) = SB_SUBMODE_BITS+1;
-      else if (m->submodes[*((int*)ptr)]==NULL)
-         *((int*)ptr) = -1;
-      else
-         *((int*)ptr) = m->submodes[*((int*)ptr)]->bits_per_frame;
-      break;
-   default:
-      speex_warning_int("Unknown wb_mode_query request: ", request);
-      return -1;
-   }
-   return 0;
-}
 
 
 int speex_lib_ctl(int request, void *ptr)

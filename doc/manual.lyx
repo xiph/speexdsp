@@ -1110,6 +1110,106 @@ The source code directory include additional information for compiling on
  certain architectures or operating systems in README.xxx files.
 \end_layout
 
+\begin_layout Section
+Porting and Optimising
+\end_layout
+
+\begin_layout Standard
+Here are a few things to consider when porting or optimising Speex for a
+ new platform or an existing one.
+\end_layout
+
+\begin_layout Subsection
+CPU optimisation
+\end_layout
+
+\begin_layout Standard
+The following functions are usually the first ones you should consider optimisin
+g:
+\end_layout
+
+\begin_layout Itemize
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+filter_mem16()
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+iir_mem16()
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+pitch_xcorr()
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+Memory optimisation
+\end_layout
+
+\begin_layout Standard
+Memory optimisation is mainly something that should be considered for small
+ embedded platforms.
+ For PCs, Speex is already so tiny that it's just not worth doing any of
+ the things suggested here.
+ There are several ways to reduce the memory usage of Speex, both in terms
+ of code size and data size.
+ For optimising code size, the trick is to first remove features you do
+ not need.
+ Some examples of things that can easily be disabled 
+\series bold
+if you don't need them
+\series default
+ are:
+\end_layout
+
+\begin_layout Itemize
+Wideband support (--disable-wideband)
+\end_layout
+
+\begin_layout Itemize
+Support for stereo (removing stereo.c)
+\end_layout
+
+\begin_layout Itemize
+VBR support (vbr.c and a few lines in nb_celp.c)
+\end_layout
+
+\begin_layout Itemize
+Static codebooks that are not needed for the bit-rates you are using (*_table.c
+ files)
+\end_layout
+
 \begin_layout Standard
 
 \newpage

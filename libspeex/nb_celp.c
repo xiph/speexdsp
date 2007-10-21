@@ -1187,7 +1187,9 @@ static void nb_decode_lost(DecState *st, spx_word16_t *out, char *stack)
       st->pitch_gain_buf_idx = 0;
 }
 
-
+/* Just so we don't need to carry the complete wideband mode information */
+static const int wb_skip_table[8] = {0, 36, 112, 192, 352, 0, 0, 0};
+   
 int nb_decode(void *state, SpeexBits *bits, void *vout)
 {
    DecState *st;
@@ -1246,7 +1248,8 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
             int submode;
             int advance;
             advance = submode = speex_bits_unpack_unsigned(bits, SB_SUBMODE_BITS);
-            speex_mode_query(&speex_wb_mode, SPEEX_SUBMODE_BITS_PER_FRAME, &advance);
+            /*speex_mode_query(&speex_wb_mode, SPEEX_SUBMODE_BITS_PER_FRAME, &advance);*/
+            advance = wb_skip_table[submode];
             if (advance < 0)
             {
                speex_notify("Invalid mode encountered. The stream is corrupted.");
@@ -1261,7 +1264,8 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
             if (wideband)
             {
                advance = submode = speex_bits_unpack_unsigned(bits, SB_SUBMODE_BITS);
-               speex_mode_query(&speex_wb_mode, SPEEX_SUBMODE_BITS_PER_FRAME, &advance);
+               /*speex_mode_query(&speex_wb_mode, SPEEX_SUBMODE_BITS_PER_FRAME, &advance);*/
+               advance = wb_skip_table[submode];
                if (advance < 0)
                {
                   speex_notify("Invalid mode encountered. The stream is corrupted.");
