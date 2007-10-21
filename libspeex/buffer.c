@@ -1,10 +1,39 @@
+/* Copyright (C) 2007 Jean-Marc Valin
+      
+   File: buffer.c
+   This is a very simple ring buffer implementation. It is not thread-safe
+   so you need to do your own locking.
+
+   Redistribution and use in source and binary forms, with or without
+   modification, are permitted provided that the following conditions are
+   met:
+
+   1. Redistributions of source code must retain the above copyright notice,
+   this list of conditions and the following disclaimer.
+
+   2. Redistributions in binary form must reproduce the above copyright
+   notice, this list of conditions and the following disclaimer in the
+   documentation and/or other materials provided with the distribution.
+
+   3. The name of the author may not be used to endorse or promote products
+   derived from this software without specific prior written permission.
+
+   THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
+   IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+   OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+   DISCLAIMED. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT,
+   INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+   (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+   SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+   HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+   STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+   ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+   POSSIBILITY OF SUCH DAMAGE.
+*/
 
 #include "os_support.h"
 #include "misc.h"
-
-struct SpeexBuffer_;
-typedef struct SpeexBuffer_ SpeexBuffer;
-
+#include <speex/speex_buffer.h>
 
 struct SpeexBuffer_ {
    void *data;
@@ -23,6 +52,12 @@ SpeexBuffer *speex_buffer_init(int size)
    st->write_ptr = 0;
    st->available = 0;
    return st;
+}
+
+void speex_buffer_destroy(SpeexBuffer *st)
+{
+   speex_free(st->data);
+   speex_free(st);
 }
 
 int speex_buffer_write(SpeexBuffer *st, void *data, int len)
@@ -53,10 +88,35 @@ int speex_buffer_write(SpeexBuffer *st, void *data, int len)
    return len;
 }
 
-/*int speex_buffer_writezeros(SpeexBuffer *st, int len)
+int speex_buffer_writezeros(SpeexBuffer *st, int len)
 {
+   /* This is almost the same as for speex_buffer_write() but using 
+   speex_memset() instead of speex_move(). Update accordingly. */
+      int end;
+   int end1;
+   if (len > st->size)
+   {
+      len = st->size;
+   }
+   end = st->write_ptr + len;
+   end1 = end;
+   if (end1 > st->size)
+      end1 = st->size;
+   speex_memset(st->data + st->write_ptr, 0, end1 - st->write_ptr);
+   if (end > st->size)
+   {
+      end -= st->size;
+      speex_memset(st->data, 0, end);
+   }
+   st->available += len;
+   if (st->available > st->size)
+   {
+      st->available = st->size;
+      st->read_ptr = st->write_ptr;
+   }
+
    return len;
-}*/
+}
 
 int speex_buffer_read(SpeexBuffer *st, void *data, int len)
 {
@@ -86,7 +146,16 @@ int speex_buffer_get_available(SpeexBuffer *st)
    return st->available;
 }
 
-int speex_buffer_resize(SpeexBuffer *st, void *data, int len)
+int speex_buffer_resize(SpeexBuffer *st, int len)
 {
+   int old_len = st->size;
+   if (len > old_len)
+   {
+      st->data = speex_realloc(st->data, len);
+      /* FIXME: move data/pointers properly for growing the buffer */
+   } else {
+      /* FIXME: move data/pointers properly for shrinking the buffer */
+      st->data = speex_realloc(st->data, len);
+   }
    return len;
 }
