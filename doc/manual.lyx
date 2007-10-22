@@ -1124,8 +1124,41 @@ CPU optimisation
 \end_layout
 
 \begin_layout Standard
-The following functions are usually the first ones you should consider optimisin
-g:
+The single that will affect the CPU usage of Speex the most is whether it
+ is compiled for floating point or fixed-point.
+ If your CPU/DSP does not have a floating-point unit FPU, then compiling
+ as fixed-point will be orders of magnitudes faster.
+ If there is an FPU present, then it is important to test which version
+ is faster.
+ On the x86 architecture, floating-point is 
+\series bold
+generally
+\series default
+ faster, but not always.
+ To compile Speex as fixed-point, you need to pass --fixed-point to the
+ configure script or define the FIXED_POINT maccro for the compiler.
+\end_layout
+
+\begin_layout Standard
+Other important things to check on some DSP architectures are:
+\end_layout
+
+\begin_layout Itemize
+Make sure the cache is set to write-back mode
+\end_layout
+
+\begin_layout Itemize
+If the chip has SRAM instead of cache, make sure as much code and data are
+ in SRAM, rather than in RAM
+\end_layout
+
+\begin_layout Standard
+If you are going to be writing assembly, then the following functions are
+ 
+\series bold
+usually
+\series default
+ the first ones you should consider optimising:
 \end_layout
 
 \begin_layout Itemize
@@ -1173,6 +1206,21 @@ pitch_xcorr()
 
 \end_layout
 
+\begin_layout Itemize
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+interp_pitch()
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
 \begin_layout Subsection
 Memory optimisation
 \end_layout
@@ -1208,6 +1256,57 @@ VBR support (vbr.c and a few lines in nb_celp.c)
 \begin_layout Itemize
 Static codebooks that are not needed for the bit-rates you are using (*_table.c
  files)
+\end_layout
+
+\begin_layout Standard
+Speex also has several methods for allocating temporary arrays.
+ When using a compiler that supports C99 properly (as of 2007, Microsoft
+ compilers don't, but gcc does), it is best to define VAR_ARRAYS.
+ That makes use of the variable-size array feature of C99.
+ The next best is to define USE_ALLOCA so that Speex can use alloca() to
+ allocate the temporary arrays.
+ Note that on many systems, alloca() is buggy so it may not work.
+ If none of VAR_ARRAYS and USE_ALLOCA are defined, then Speex falls back
+ to allocating a large 
+\begin_inset Quotes eld
+\end_inset
+
+scratch space
+\begin_inset Quotes erd
+\end_inset
+
+ and doing its own internal allocation.
+ The main disadvantage of this solution is that it is wasteful.
+ It needs to allocate enough stack for the worst case scenario (worst bit-rate,
+ highest complexity setting, ...) and by default, the memory isn't shared between
+ multiple encoder/decoder states.
+ Still, if the 
+\begin_inset Quotes eld
+\end_inset
+
+manual
+\begin_inset Quotes erd
+\end_inset
+
+ allocation is the only option left, there are a few things that can be
+ improved.
+ By overriding the speex_alloc_scratch() call in os_support.h, it is possible
+ to always return the same memory area for all states
+\begin_inset Foot
+status collapsed
+
+\begin_layout Standard
+In this case, one must be careful with threads
+\end_layout
+
+\end_inset
+
+.
+ In addition to that, by redefining the NB_ENC_STACK and NB_DEC_STACK (or
+ similar for wideband), it is possible to only allocate memory for a scenario
+ that is known in advange.
+ In this case, it is important to measure the amount of memory required
+ for the specific sampling rate, bit-rate and complexity level being used.
 \end_layout
 
 \begin_layout Standard
