@@ -85,6 +85,9 @@ int speex_buffer_write(SpeexBuffer *st, void *data, int len)
       st->available = st->size;
       st->read_ptr = st->write_ptr;
    }
+   st->write_ptr += len;
+   if (st->write_ptr > st->size)
+      st->write_ptr -= st->size;
    return len;
 }
 
@@ -114,7 +117,9 @@ int speex_buffer_writezeros(SpeexBuffer *st, int len)
       st->available = st->size;
       st->read_ptr = st->write_ptr;
    }
-
+   st->write_ptr += len;
+   if (st->write_ptr > st->size)
+      st->write_ptr -= st->size;
    return len;
 }
 
@@ -138,6 +143,9 @@ int speex_buffer_read(SpeexBuffer *st, void *data, int len)
       speex_move(data+end1 - st->read_ptr, st->data, end);
    }
    st->available -= len;
+   st->read_ptr += len;
+   if (st->read_ptr > st->size)
+      st->read_ptr -= st->size;
    return len;
 }
 
