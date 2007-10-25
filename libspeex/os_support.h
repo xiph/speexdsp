@@ -31,6 +31,9 @@
    POSSIBILITY OF SUCH DAMAGE.
 */
 
+#ifndef OS_SUPPORT_H
+#define OS_SUPPORT_H
+
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -149,3 +152,6 @@ static inline void print_vec(float *vec, int len, char *name)
    printf ("\n");
 }
 #endif
+
+#endif
+
