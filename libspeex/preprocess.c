@@ -1166,6 +1166,9 @@ int speex_preprocess_ctl(SpeexPreprocessState *state, int request, void *ptr)
    case SPEEX_PREPROCESS_GET_ECHO_STATE:
       ptr = (void*)st->echo_state;
       break;
+   case SPEEX_PREPROCESS_GET_AGC_LOUDNESS:
+      (*(spx_int32_t*)ptr) = pow(st->loudness, 1.0/LOUDNESS_EXP);
+      break;
 
    default:
       speex_warning_int("Unknown speex_preprocess_ctl request: ", request);
