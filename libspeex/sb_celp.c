@@ -791,8 +791,8 @@ void *sb_decoder_init(const SpeexMode *m)
 
    st->first=1;
 
-   st->g0_mem = (spx_word32_t*)speex_alloc((QMF_ORDER)*sizeof(spx_word32_t));
-   st->g1_mem = (spx_word32_t*)speex_alloc((QMF_ORDER)*sizeof(spx_word32_t));
+   st->g0_mem = (spx_word16_t*)speex_alloc((QMF_ORDER)*sizeof(spx_word16_t));
+   st->g1_mem = (spx_word16_t*)speex_alloc((QMF_ORDER)*sizeof(spx_word16_t));
 
    st->excBuf = (spx_word16_t*)speex_alloc((st->subframeSize)*sizeof(spx_word16_t));
 

@@ -474,7 +474,7 @@ void qmf_decomp(const spx_word16_t *xx, const spx_word16_t *aa, spx_word16_t *y1
 }
 
 /* Re-synthesised a signal from the QMF low-band and high-band signals */
-void qmf_synth(const spx_word16_t *x1, const spx_word16_t *x2, const spx_word16_t *a, spx_word16_t *y, int N, int M, spx_word32_t *mem1, spx_word32_t *mem2, char *stack)
+void qmf_synth(const spx_word16_t *x1, const spx_word16_t *x2, const spx_word16_t *a, spx_word16_t *y, int N, int M, spx_word16_t *mem1, spx_word16_t *mem2, char *stack)
    /* assumptions:
       all odd x[i] are zero -- well, actually they are left out of the array now
       N and M are multiples of 4 */

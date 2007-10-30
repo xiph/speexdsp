@@ -59,7 +59,7 @@ void highpass(const spx_word16_t *x, spx_word16_t *y, int len, int filtID, spx_m
 
 
 void qmf_decomp(const spx_word16_t *xx, const spx_word16_t *aa, spx_word16_t *, spx_word16_t *y2, int N, int M, spx_word16_t *mem, char *stack);
-void qmf_synth(const spx_word16_t *x1, const spx_word16_t *x2, const spx_word16_t *a, spx_word16_t *y, int N, int M, spx_word32_t *mem1, spx_word32_t *mem2, char *stack);
+void qmf_synth(const spx_word16_t *x1, const spx_word16_t *x2, const spx_word16_t *a, spx_word16_t *y, int N, int M, spx_word16_t *mem1, spx_word16_t *mem2, char *stack);
 
 void filter_mem16(const spx_word16_t *x, const spx_coef_t *num, const spx_coef_t *den, spx_word16_t *y, int N, int ord, spx_mem_t *mem, char *stack);
 void iir_mem16(const spx_word16_t *x, const spx_coef_t *den, spx_word16_t *y, int N, int ord, spx_mem_t *mem, char *stack);
