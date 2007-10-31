@@ -82,11 +82,21 @@ struct _JitterBufferPacket {
 /** Get minimum amount of extra buffering required (margin) */
 #define JITTER_BUFFER_GET_MARGIN 1
 /* JITTER_BUFFER_SET_AVAILABLE_COUNT wouldn't make sense */
+
 /** Get the amount of available packets currently buffered */
 #define JITTER_BUFFER_GET_AVAILABLE_COUNT 3
 /** Included because of an early misspelling (will remove in next release) */
 #define JITTER_BUFFER_GET_AVALIABLE_COUNT 3
 
+/**  */
+#define JITTER_BUFFER_SET_DESTROY_CALLBACK 4
+/**  */
+#define JITTER_BUFFER_GET_DESTROY_CALLBACK 5
+
+/**  */
+#define JITTER_BUFFER_SET_DELAY_STEP 6
+/**  */
+#define JITTER_BUFFER_GET_DELAY_STEP 7
 
 
 #define JITTER_BUFFER_ADJUST_INTERPOLATE -1
@@ -125,7 +135,7 @@ void jitter_buffer_put(JitterBuffer *jitter, const JitterBufferPacket *packet);
  * @param packet Returned packet
  * @param current_timestamp Timestamp for the returned packet 
 */
-int jitter_buffer_get(JitterBuffer *jitter, JitterBufferPacket *packet, spx_int32_t *start_offset);
+int jitter_buffer_get(JitterBuffer *jitter, JitterBufferPacket *packet, spx_int32_t desired_span, spx_int32_t *start_offset);
 
 /** Get pointer timestamp of jitter buffer
  * 
