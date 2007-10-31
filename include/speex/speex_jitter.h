@@ -134,9 +134,18 @@ void jitter_buffer_put(JitterBuffer *jitter, const JitterBufferPacket *packet);
  * 
  * @param jitter Jitter buffer state
  * @param packet Returned packet
+ * @param desired_span Number of samples (or units) we wish to get from the buffer (no guarantee)
  * @param current_timestamp Timestamp for the returned packet 
 */
 int jitter_buffer_get(JitterBuffer *jitter, JitterBufferPacket *packet, spx_int32_t desired_span, spx_int32_t *start_offset);
+
+/** Used right after jitter_buffer_get() to obtain another packet that would have the same timestamp.
+ * This is mainly useful for media where a single "frame" can be split into several packets.
+ * 
+ * @param jitter Jitter buffer state
+ * @param packet Returned packet
+ */
+int jitter_buffer_get_another(JitterBuffer *jitter, JitterBufferPacket *packet);
 
 /** Get pointer timestamp of jitter buffer
  * 

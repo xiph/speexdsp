@@ -64,7 +64,8 @@
 struct JitterBuffer_ {
    spx_uint32_t pointer_timestamp;                                        /**< Timestamp of what we will *get* next */
    spx_uint32_t current_timestamp;                                        /**< Timestamp of the local clock (what we will *play* next) */
-
+   spx_uint32_t last_returned_timestamp;
+   
    JitterBufferPacket packets[SPEEX_JITTER_MAX_BUFFER_SIZE];              /**< Packets stored in the buffer */
    
    void (*destroy) (void *);                                              /**< Callback for destroying a packet */
@@ -289,7 +290,8 @@ int jitter_buffer_get(JitterBuffer *jitter, JitterBufferPacket *packet, spx_int3
 
    jitter->sub_clock = -1;
    jitter->current_timestamp = jitter->pointer_timestamp;
-   
+   jitter->last_returned_timestamp = jitter->pointer_timestamp;
+         
    if (jitter->interp_requested)
    {
       jitter->interp_requested = 0;
@@ -410,7 +412,10 @@ int jitter_buffer_get(JitterBuffer *jitter, JitterBufferPacket *packet, spx_int3
       /* Set timestamp and span (if requested) */
       if (start_offset)
          *start_offset = (spx_int32_t)jitter->packets[i].timestamp-(spx_int32_t)jitter->pointer_timestamp;
+      
       packet->timestamp = jitter->packets[i].timestamp;
+      jitter->last_returned_timestamp = packet->timestamp;
+      
       packet->span = jitter->packets[i].span;
       packet->user_data = jitter->packets[i].user_data;
       /* Point to the end of the current packet */
@@ -457,6 +462,40 @@ int jitter_buffer_get(JitterBuffer *jitter, JitterBufferPacket *packet, spx_int3
 
    return JITTER_BUFFER_MISSING;
 
+}
+
+int jitter_buffer_get_another(JitterBuffer *jitter, JitterBufferPacket *packet)
+{
+   int i, j;
+   for (i=0;i<SPEEX_JITTER_MAX_BUFFER_SIZE;i++)
+   {
+      if (jitter->packets[i].data && jitter->packets[i].timestamp==jitter->last_returned_timestamp)
+         break;
+   }
+   if (i!=SPEEX_JITTER_MAX_BUFFER_SIZE)
+   {
+      /* Copy packet */
+      packet->len = jitter->packets[i].len;
+      if (jitter->destroy)
+      {
+         packet->data = jitter->packets[i].data;
+      } else {
+         for (j=0;j<packet->len;j++)
+            packet->data[j] = jitter->packets[i].data[j];
+         /* Remove packet */
+         speex_free(jitter->packets[i].data);
+      }
+      jitter->packets[i].data = NULL;
+      packet->timestamp = jitter->packets[i].timestamp;
+      packet->span = jitter->packets[i].span;
+      packet->user_data = jitter->packets[i].user_data;
+      return JITTER_BUFFER_OK;
+   } else {
+      packet->data = NULL;
+      packet->len = 0;
+      packet->span = 0;
+      return JITTER_BUFFER_MISSING;
+   }
 }
 
 /** Get pointer timestamp of jitter buffer */
