@@ -292,6 +292,9 @@ int jitter_buffer_get(JitterBuffer *jitter, JitterBufferPacket *packet, spx_int3
    float early_ratio_long;
    int incomplete = 0;
    
+   if (jitter->current_timestamp + jitter->sub_clock > jitter->pointer_timestamp)
+      speex_warning("something's wrong with the time");
+
    jitter->sub_clock = -1;
    jitter->current_timestamp = jitter->pointer_timestamp;
    
@@ -473,8 +476,7 @@ void jitter_buffer_tick(JitterBuffer *jitter)
 {
    if (jitter->sub_clock == -1)
       jitter->sub_clock = 0;
-   else
-      jitter->sub_clock += jitter->resolution;
+   jitter->sub_clock += jitter->resolution;
 }
 
 /* Let the jitter buffer know it's the right time to adjust the buffering delay to the network conditions */
