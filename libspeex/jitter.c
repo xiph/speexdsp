@@ -34,8 +34,6 @@
 
 /* TODO:
  - Implement JITTER_BUFFER_SET_DESTROY_CALLBACK
- - Implement JITTER_BUFFER_SET_TIME_ADJUST
- - Get rid of tick()
  - Multiple get / get_multiple()
  - User data?
  - Use JitterBufferPacket internally
@@ -78,6 +76,8 @@ struct JitterBuffer_ {
    int span[SPEEX_JITTER_MAX_BUFFER_SIZE];                                /**< Timestamp of packet                 */
    int len[SPEEX_JITTER_MAX_BUFFER_SIZE];                                 /**< Number of bytes in packet           */
    
+   void (*destroy) (void *);                                           /**< Callback for destroying a packet */
+
    spx_int32_t sub_clock;                                                 /** Time since last get() call (incremented by tick()) */
    int resolution;                                                        /**< Time resolution for histogram (timestamp units) */
    int delay_step;                                                        /**< Size of the steps when adjusting buffering (timestamp units) */
@@ -105,6 +105,7 @@ JitterBuffer *jitter_buffer_init(int resolution)
       jitter->delay_step = resolution;
       jitter->buffer_margin = 1;
       jitter->late_cutoff = 50;
+      jitter->destroy = NULL;
       jitter_buffer_reset(jitter);
    }
    return jitter;
@@ -118,7 +119,10 @@ void jitter_buffer_reset(JitterBuffer *jitter)
    {
       if (jitter->buf[i])
       {
-         speex_free(jitter->buf[i]);
+         if (jitter->destroy)
+            jitter->destroy(jitter->buf[i]);
+         else
+            speex_free(jitter->buf[i]);
          jitter->buf[i] = NULL;
       }
    }
@@ -165,7 +169,10 @@ void jitter_buffer_put(JitterBuffer *jitter, const JitterBufferPacket *packet)
       if (jitter->buf[i] && LE32(jitter->timestamp[i] + jitter->span[i], jitter->pointer_timestamp))
       {
          /*fprintf (stderr, "cleaned (not played)\n");*/
-         speex_free(jitter->buf[i]);
+         if (jitter->destroy)
+            jitter->destroy(jitter->buf[i]);
+         else
+            speex_free(jitter->buf[i]);
          jitter->buf[i] = NULL;
       }
    }
@@ -191,7 +198,10 @@ void jitter_buffer_put(JitterBuffer *jitter, const JitterBufferPacket *packet)
             i=j;
          }
       }
-      speex_free(jitter->buf[i]);
+      if (jitter->destroy)
+         jitter->destroy(jitter->buf[i]);
+      else
+         speex_free(jitter->buf[i]);
       jitter->buf[i]=NULL;
       if (jitter->lost_count>20)
       {
@@ -201,9 +211,14 @@ void jitter_buffer_put(JitterBuffer *jitter, const JitterBufferPacket *packet)
    }
    
    /* Copy packet in buffer */
-   jitter->buf[i]=(char*)speex_alloc(packet->len);
-   for (j=0;j<packet->len;j++)
-      jitter->buf[i][j]=packet->data[j];
+   if (jitter->destroy)
+   {
+      jitter->buf[i] = packet->data;
+   } else {
+      jitter->buf[i]=(char*)speex_alloc(packet->len);
+      for (j=0;j<packet->len;j++)
+         jitter->buf[i][j]=packet->data[j];
+   }
    jitter->timestamp[i]=packet->timestamp;
    jitter->span[i]=packet->span;
    jitter->len[i]=packet->len;
@@ -387,10 +402,15 @@ int jitter_buffer_get(JitterBuffer *jitter, JitterBufferPacket *packet, spx_int3
       /* Check for potential overflow */
       packet->len = jitter->len[i];
       /* Copy packet */
-      for (j=0;j<packet->len;j++)
-         packet->data[j] = jitter->buf[i][j];
-      /* Remove packet */
-      speex_free(jitter->buf[i]);
+      if (jitter->destroy)
+      {
+         packet->data = jitter->buf[i];
+      } else {
+         for (j=0;j<packet->len;j++)
+            packet->data[j] = jitter->buf[i][j];
+         /* Remove packet */
+         speex_free(jitter->buf[i]);
+      }
       jitter->buf[i] = NULL;
       /* Set timestamp and span (if requested) */
       if (start_offset)
@@ -552,6 +572,12 @@ int jitter_buffer_ctl(JitterBuffer *jitter, int request, void *ptr)
             }
          }
          *(spx_int32_t*)ptr = count;
+         break;
+      case JITTER_BUFFER_SET_DESTROY_CALLBACK:
+         jitter->destroy = (void (*) (void *))ptr;
+         break;
+      case JITTER_BUFFER_GET_DESTROY_CALLBACK:
+         *(void (**) (void *))ptr = jitter->destroy;
          break;
       case JITTER_BUFFER_SET_DELAY_STEP:
          jitter->delay_step = *(spx_int32_t*)ptr;
