@@ -63,6 +63,7 @@ struct _JitterBufferPacket {
    spx_uint32_t len;        /**< Length of the packet in bytes */
    spx_uint32_t timestamp;  /**< Timestamp for the packet */
    spx_uint32_t span;       /**< Time covered by the packet (same units as timestamp) */
+   spx_uint32_t user_data;  /**< Put whatever data you like here (it's ignored by the jitter buffer) */
 };
 
 /** Packet has been retrieved */

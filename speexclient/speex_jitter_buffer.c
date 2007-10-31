@@ -55,7 +55,7 @@ void speex_jitter_get(SpeexJitter *jitter, spx_int16_t *out, int *current_timest
       }
    }
 
-   ret = jitter_buffer_get(jitter->packets, &packet, NULL);
+   ret = jitter_buffer_get(jitter->packets, &packet, jitter->frame_size, NULL);
    
    if (ret != JITTER_BUFFER_OK)
    {
