@@ -304,6 +304,8 @@ int jitter_buffer_get(JitterBuffer *jitter, JitterBufferPacket *packet, spx_int3
          *start_offset = 0;
       packet->timestamp = jitter->pointer_timestamp;
       packet->span = jitter->delay_step;
+      
+      /* Increment the pointer because it got decremented in the delay update */
       jitter->pointer_timestamp += jitter->delay_step;
       packet->len = 0;
       fprintf (stderr, "Deferred interpolate\n");
@@ -462,15 +464,13 @@ int jitter_buffer_get(JitterBuffer *jitter, JitterBufferPacket *packet, spx_int3
    jitter->loss_rate = .999*jitter->loss_rate + .001;
    if (start_offset)
       *start_offset = 0;
-   packet->timestamp = jitter->pointer_timestamp;
-   packet->span = desired_span;
-   jitter->pointer_timestamp += desired_span;
-   packet->len = 0;
    
-   /* Adjusting the buffering bssed on the amount of packets that are early/on time/late */   
+   /* Should we force an increase in the buffer or just do normal interpolation? */   
    if (late_ratio_short > .1 || late_ratio_long > .03)
    {
-      /* If too many packets are arriving late */
+      /* Increase buffering */
+      
+      /* Shift histogram */
       jitter->shortterm_margin[MAX_MARGIN-1] += jitter->shortterm_margin[MAX_MARGIN-2];
       jitter->longterm_margin[MAX_MARGIN-1] += jitter->longterm_margin[MAX_MARGIN-2];
       for (i=MAX_MARGIN-3;i>=0;i--)
@@ -479,12 +479,22 @@ int jitter_buffer_get(JitterBuffer *jitter, JitterBufferPacket *packet, spx_int3
          jitter->longterm_margin[i+1] = jitter->longterm_margin[i];         
       }
       jitter->shortterm_margin[0] = 0;
-      jitter->longterm_margin[0] = 0;            
+      jitter->longterm_margin[0] = 0;
+      
+      packet->timestamp = jitter->pointer_timestamp;
+      packet->span = jitter->delay_step;
+      /* Don't move the pointer_timestamp forward */
+      packet->len = 0;
+      
       jitter->pointer_timestamp -= jitter->delay_step;
       fprintf (stderr, "Forced to interpolate\n");
-
-      /*fprintf (stderr, "i");*/
-      /*fprintf (stderr, "interpolate (getting some slack)\n");*/
+   } else {
+      /* Normal packet loss */
+      packet->timestamp = jitter->pointer_timestamp;
+      packet->span = desired_span;
+      jitter->pointer_timestamp += desired_span;
+      packet->len = 0;
+      fprintf (stderr, "Normal loss\n");
    }
 
    return JITTER_BUFFER_MISSING;
