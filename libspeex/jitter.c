@@ -32,7 +32,15 @@
 
 */
 
-
+/*
+TODO:
+- Write generic functions for computing stats and shifting the histogram
+- Take into account the delay step when computing the stats and when shifting
+- Linked list structure for holding the packets instead of the current fixed-size array
+  + return memory to a pool
+  + allow pre-allocation of the pool
+  + optional max number of elements 
+*/
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -170,6 +178,43 @@ static void update_histogram(JitterBuffer *jitter, spx_int32_t arrival_margin)
       if (jitter->lost_count>20)
       {
          jitter_buffer_reset(jitter);
+      }
+   }
+}
+
+static void shift_histogram(JitterBuffer *jitter, int amount)
+{
+   int i, c;
+   if (amount == 0)
+      return;
+   if (amount > 0)
+   {
+      /* FIXME: This is terribly inefficient */
+      for (c=0;c<amount;c++)
+      {
+         jitter->shortterm_margin[MAX_MARGIN-1] += jitter->shortterm_margin[MAX_MARGIN-2];
+         jitter->longterm_margin[MAX_MARGIN-1] += jitter->longterm_margin[MAX_MARGIN-2];
+         for (i=MAX_MARGIN-3;i>=0;i--)
+         {
+            jitter->shortterm_margin[i+1] = jitter->shortterm_margin[i];
+            jitter->longterm_margin[i+1] = jitter->longterm_margin[i];
+         }
+         jitter->shortterm_margin[0] = 0;
+         jitter->longterm_margin[0] = 0;
+      }
+   } else {
+      /* FIXME: This is terribly inefficient */
+      for (c=0;c<-amount;c++)
+      {
+         jitter->shortterm_margin[0] += jitter->shortterm_margin[1];
+         jitter->longterm_margin[0] += jitter->longterm_margin[1];
+         for (i=1;i<MAX_MARGIN-1;i++)
+         {
+            jitter->shortterm_margin[i] = jitter->shortterm_margin[i+1];
+            jitter->longterm_margin[i] = jitter->longterm_margin[i+1];
+         }
+         jitter->shortterm_margin[MAX_MARGIN-1] = 0;
+         jitter->longterm_margin[MAX_MARGIN-1] = 0;
       }
    }
 }
