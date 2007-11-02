@@ -159,6 +159,12 @@ int jitter_buffer_get_pointer_timestamp(JitterBuffer *jitter);
 */
 void jitter_buffer_tick(JitterBuffer *jitter);
 
+/** Telling the jitter buffer about the remaining data in the application buffer
+ * @param jitter Jitter buffer state
+ * @param rem Amount of data buffered by the application (timestamp units)
+ */
+void jitter_buffer_remaining_span(JitterBuffer *jitter, spx_uint32_t rem);
+
 /** Used like the ioctl function to control the jitter buffer parameters
  * 
  * @param jitter Jitter buffer state

@@ -53,7 +53,7 @@
 
 #define SPEEX_JITTER_MAX_BUFFER_SIZE 200   /**< Maximum number of packets in jitter buffer */
 
-
+#define TSUB(a,b) ((spx_int32_t)((a)-(b)))
 
 #define GT32(a,b) (((spx_int32_t)((a)-(b)))>0)
 #define GE32(a,b) (((spx_int32_t)((a)-(b)))>=0)
@@ -65,8 +65,10 @@ struct JitterBuffer_ {
    spx_uint32_t pointer_timestamp;                                        /**< Timestamp of what we will *get* next */
    spx_uint32_t current_timestamp;                                        /**< Timestamp of the local clock (what we will *play* next) */
    spx_uint32_t last_returned_timestamp;
+   spx_uint32_t next_stop;
    
    JitterBufferPacket packets[SPEEX_JITTER_MAX_BUFFER_SIZE];              /**< Packets stored in the buffer */
+   spx_uint32_t arrival[SPEEX_JITTER_MAX_BUFFER_SIZE];              /**< Packet arrival time (0 means it was late, even though it's a valid timestamp) */
    
    void (*destroy) (void *);                                              /**< Callback for destroying a packet */
 
@@ -121,6 +123,7 @@ void jitter_buffer_reset(JitterBuffer *jitter)
    /* Timestamp is actually undefined at this point */
    jitter->pointer_timestamp = 0;
    jitter->current_timestamp = 0;
+   jitter->next_stop = 0;
    jitter->reset_state = 1;
    jitter->lost_count = 0;
    jitter->loss_rate = 0;
@@ -139,101 +142,14 @@ void jitter_buffer_destroy(JitterBuffer *jitter)
    speex_free(jitter);
 }
 
-/** Put one packet into the jitter buffer */
-void jitter_buffer_put(JitterBuffer *jitter, const JitterBufferPacket *packet)
+void update_histogram(JitterBuffer *jitter, spx_int32_t arrival_margin)
 {
-   int i,j;
-   spx_int32_t arrival_margin;
-   spx_int32_t arrival_time;
-   /*fprintf (stderr, "put packet %d %d\n", timestamp, span);*/
-   if (jitter->reset_state)
-   {
-      jitter->reset_state=0;
-      jitter->pointer_timestamp = packet->timestamp;
-      jitter->current_timestamp = packet->timestamp;
-      /*fprintf(stderr, "reset to %d\n", timestamp);*/
-   }
-   
-   /* Cleanup buffer (remove old packets that weren't played) */
-   for (i=0;i<SPEEX_JITTER_MAX_BUFFER_SIZE;i++)
-   {
-      /* Make sure we don't discard a "just-late" packet in case we want to play it next (if we interpolate). */
-      if (jitter->packets[i].data && LE32(jitter->packets[i].timestamp + jitter->packets[i].span, jitter->pointer_timestamp))
-      {
-         /*fprintf (stderr, "cleaned (not played)\n");*/
-         if (jitter->destroy)
-            jitter->destroy(jitter->packets[i].data);
-         else
-            speex_free(jitter->packets[i].data);
-         jitter->packets[i].data = NULL;
-      }
-   }
-
-   /*Find an empty slot in the buffer*/
-   for (i=0;i<SPEEX_JITTER_MAX_BUFFER_SIZE;i++)
-   {
-      if (jitter->packets[i].data==NULL)
-         break;
-   }
-
-   /*fprintf(stderr, "%d %d %f\n", timestamp, jitter->pointer_timestamp, jitter->drift_average);*/
-   /*No place left in the buffer*/
-   if (i==SPEEX_JITTER_MAX_BUFFER_SIZE)
-   {
-      int earliest=jitter->packets[0].timestamp;
-      i=0;
-      for (j=1;j<SPEEX_JITTER_MAX_BUFFER_SIZE;j++)
-      {
-         if (!jitter->packets[i].data || LT32(jitter->packets[j].timestamp,earliest))
-         {
-            earliest = jitter->packets[j].timestamp;
-            i=j;
-         }
-      }
-      if (jitter->destroy)
-         jitter->destroy(jitter->packets[i].data);
-      else
-         speex_free(jitter->packets[i].data);
-      jitter->packets[i].data=NULL;
-      if (jitter->lost_count>20)
-      {
-         jitter_buffer_reset(jitter);
-      }
-      /*fprintf (stderr, "Buffer is full, discarding earliest frame %d (currently at %d)\n", timestamp, jitter->pointer_timestamp);*/      
-   }
-   
-   /* Copy packet in buffer */
-   if (jitter->destroy)
-   {
-      jitter->packets[i].data = packet->data;
-   } else {
-      jitter->packets[i].data=(char*)speex_alloc(packet->len);
-      for (j=0;j<packet->len;j++)
-         jitter->packets[i].data[j]=packet->data[j];
-   }
-   jitter->packets[i].timestamp=packet->timestamp;
-   jitter->packets[i].span=packet->span;
-   jitter->packets[i].len=packet->len;
-   jitter->packets[i].user_data=packet->user_data;
-   
-   if (jitter->sub_clock == -1)
-      arrival_time = jitter->pointer_timestamp;
-   else
-      arrival_time = jitter->current_timestamp + jitter->sub_clock;
-   
-   if (jitter->current_timestamp + jitter->sub_clock > jitter->pointer_timestamp)
-      speex_warning("something's wrong with the time");
-   
-   /* Adjust the buffer size depending on network conditions.
-      The arrival margin is how much in advance (or late) the packet it */
-   /* FIXME: We might be one tick off in considering what's late */
-   arrival_margin = (((spx_int32_t)packet->timestamp) - ((spx_int32_t)arrival_time))/jitter->resolution - jitter->buffer_margin;
-   
+   int i;
    if (arrival_margin >= -jitter->late_cutoff)
    {
       /* Here we compute the histogram based on the time of arrival of the packet.
-         This is based on a (first-order) recursive average. We keep both a short-term
-         histogram and a long-term histogram */
+      This is based on a (first-order) recursive average. We keep both a short-term
+      histogram and a long-term histogram */
       spx_int32_t int_margin;
       /* First, apply the "damping" of the recursive average to all bins */
       for (i=0;i<MAX_MARGIN;i++)
@@ -258,18 +174,115 @@ void jitter_buffer_put(JitterBuffer *jitter, const JitterBufferPacket *packet)
          jitter_buffer_reset(jitter);
       }
    }
-#if 0 /* Enable to check how much is being buffered */
-   if (rand()%1000==0)
+}
+
+/** Put one packet into the jitter buffer */
+void jitter_buffer_put(JitterBuffer *jitter, const JitterBufferPacket *packet)
+{
+   int i,j;
+   int late;
+   spx_int32_t arrival_margin;
+   spx_int32_t arrival_time;
+   /*fprintf (stderr, "put packet %d %d\n", timestamp, span);*/
+   
+   /* Syncing on the first packet to arrive */
+   if (jitter->reset_state)
    {
-      int count = 0;
-      for (j=0;j<SPEEX_JITTER_MAX_BUFFER_SIZE;j++)
-      {
-         if (jitter->buf[j])
-            count++;
-      }
-      fprintf (stderr, "buffer_size = %d\n", count);
+      jitter->reset_state=0;
+      jitter->pointer_timestamp = packet->timestamp;
+      jitter->current_timestamp = packet->timestamp;
+      jitter->next_stop = packet->timestamp;
+      /*fprintf(stderr, "reset to %d\n", timestamp);*/
    }
-#endif
+   
+   /* Cleanup buffer (remove old packets that weren't played) */
+   for (i=0;i<SPEEX_JITTER_MAX_BUFFER_SIZE;i++)
+   {
+      /* Make sure we don't discard a "just-late" packet in case we want to play it next (if we interpolate). */
+      if (jitter->packets[i].data && LE32(jitter->packets[i].timestamp + jitter->packets[i].span, jitter->pointer_timestamp))
+      {
+         /*fprintf (stderr, "cleaned (not played)\n");*/
+         if (jitter->destroy)
+            jitter->destroy(jitter->packets[i].data);
+         else
+            speex_free(jitter->packets[i].data);
+         jitter->packets[i].data = NULL;
+      }
+   }
+
+   fprintf(stderr, "arrival: %d %d %d\n", packet->timestamp, jitter->next_stop, jitter->pointer_timestamp);
+   /* Check if packet is late (could still be useful though) */
+   if (LT32(packet->timestamp, jitter->next_stop))
+   {
+      fprintf(stderr, "late by %d\n", jitter->next_stop - packet->timestamp);
+      
+      /* The arrival margin is how much in advance (or in this case late) the packet it (in resolution units) */
+      arrival_margin = (((spx_int32_t)packet->timestamp) - ((spx_int32_t)jitter->next_stop))/jitter->resolution - jitter->buffer_margin;
+   
+      fprintf(stderr, "put arrival_margin = %d\n", arrival_margin);
+
+      update_histogram(jitter, arrival_margin);
+      late = 1;
+   } else {
+      late = 0;
+   }
+   
+   /* Only insert the packet if it's not hopelessly late (i.e. totally useless) */
+   if (GE32(packet->timestamp+packet->span, jitter->pointer_timestamp))
+   {
+
+      /*Find an empty slot in the buffer*/
+      for (i=0;i<SPEEX_JITTER_MAX_BUFFER_SIZE;i++)
+      {
+         if (jitter->packets[i].data==NULL)
+            break;
+      }
+      
+      /*No place left in the buffer, need to make room for it by discarding the oldest packet */
+      if (i==SPEEX_JITTER_MAX_BUFFER_SIZE)
+      {
+         int earliest=jitter->packets[0].timestamp;
+         i=0;
+         for (j=1;j<SPEEX_JITTER_MAX_BUFFER_SIZE;j++)
+         {
+            if (!jitter->packets[i].data || LT32(jitter->packets[j].timestamp,earliest))
+            {
+               earliest = jitter->packets[j].timestamp;
+               i=j;
+            }
+         }
+         if (jitter->destroy)
+            jitter->destroy(jitter->packets[i].data);
+         else
+            speex_free(jitter->packets[i].data);
+         jitter->packets[i].data=NULL;
+         if (jitter->lost_count>20)
+         {
+            jitter_buffer_reset(jitter);
+         }
+         /*fprintf (stderr, "Buffer is full, discarding earliest frame %d (currently at %d)\n", timestamp, jitter->pointer_timestamp);*/      
+      }
+   
+      /* Copy packet in buffer */
+      if (jitter->destroy)
+      {
+         jitter->packets[i].data = packet->data;
+      } else {
+         jitter->packets[i].data=(char*)speex_alloc(packet->len);
+         for (j=0;j<packet->len;j++)
+            jitter->packets[i].data[j]=packet->data[j];
+      }
+      jitter->packets[i].timestamp=packet->timestamp;
+      jitter->packets[i].span=packet->span;
+      jitter->packets[i].len=packet->len;
+      jitter->packets[i].user_data=packet->user_data;
+      if (late)
+         jitter->arrival[i] = 0;
+      else
+         jitter->arrival[i] = jitter->next_stop;
+   }
+   
+   
 }
 
 /** Get one packet from the jitter buffer */
@@ -301,6 +314,8 @@ int jitter_buffer_get(JitterBuffer *jitter, JitterBufferPacket *packet, spx_int3
       packet->span = jitter->delay_step;
       jitter->pointer_timestamp += jitter->delay_step;
       packet->len = 0;
+      fprintf (stderr, "Deferred interpolate\n");
+      
       return JITTER_BUFFER_MISSING;
    }
    /*fprintf (stderr, "get packet %d %d\n", jitter->pointer_timestamp, jitter->current_timestamp);*/
@@ -393,10 +408,29 @@ int jitter_buffer_get(JitterBuffer *jitter, JitterBufferPacket *packet, spx_int3
    /* If we find something */
    if (i!=SPEEX_JITTER_MAX_BUFFER_SIZE)
    {
+      
+      
       /* We (obviously) haven't lost this packet */
       jitter->lost_count = 0;
       jitter->loss_rate = .999*jitter->loss_rate;
-      /* Check for potential overflow */
+      
+      /* In this case, 0 isn't as a valid timestamp */
+      if (jitter->arrival[i] != 0)
+      {
+         spx_int32_t arrival_margin;
+         fprintf(stderr, "early by %d\n", jitter->packets[i].timestamp - jitter->arrival[i]);
+         
+         /* The arrival margin is how much in advance (or in this case late) the packet it (in resolution units) */
+         arrival_margin = (((spx_int32_t)jitter->packets[i].timestamp) - ((spx_int32_t)jitter->arrival[i]))/jitter->resolution - jitter->buffer_margin;
+   
+         fprintf(stderr, "get arrival_margin = %d\n", arrival_margin);
+
+         update_histogram(jitter, arrival_margin);
+
+      }
+      
+      
+      /* FIXME: Check for potential overflow */
       packet->len = jitter->packets[i].len;
       /* Copy packet */
       if (jitter->destroy)
@@ -420,6 +454,7 @@ int jitter_buffer_get(JitterBuffer *jitter, JitterBufferPacket *packet, spx_int3
       packet->user_data = jitter->packets[i].user_data;
       /* Point to the end of the current packet */
       jitter->pointer_timestamp = jitter->packets[i].timestamp+jitter->packets[i].span;
+
       if (incomplete)
          return JITTER_BUFFER_INCOMPLETE;
       else
@@ -456,6 +491,8 @@ int jitter_buffer_get(JitterBuffer *jitter, JitterBufferPacket *packet, spx_int3
       jitter->longterm_margin[0] = 0;            
       jitter->pointer_timestamp -= jitter->delay_step;
       jitter->current_timestamp -= jitter->delay_step;
+      fprintf (stderr, "Forced to interpolate\n");
+
       /*fprintf (stderr, "i");*/
       /*fprintf (stderr, "interpolate (getting some slack)\n");*/
    }
@@ -509,6 +546,12 @@ void jitter_buffer_tick(JitterBuffer *jitter)
    if (jitter->sub_clock == -1)
       jitter->sub_clock = 0;
    jitter->sub_clock += jitter->resolution;
+   jitter->next_stop = jitter->pointer_timestamp;
+}
+
+void jitter_buffer_remaining_span(JitterBuffer *jitter, spx_uint32_t rem)
+{
+   jitter->next_stop = jitter->pointer_timestamp - rem;
 }
 
 /* Let the jitter buffer know it's the right time to adjust the buffering delay to the network conditions */
@@ -560,6 +603,7 @@ int jitter_buffer_update_delay(JitterBuffer *jitter, JitterBufferPacket *packet,
       jitter->pointer_timestamp -= jitter->delay_step;
       jitter->current_timestamp -= jitter->delay_step;
       jitter->interp_requested = 1;
+      fprintf (stderr, "Decision to interpolate\n");
       return JITTER_BUFFER_ADJUST_INTERPOLATE;
    
    } else if (late_ratio_short + ontime_ratio_short < .005 && late_ratio_long + ontime_ratio_long < .01 && early_ratio_short > .8)
@@ -578,6 +622,7 @@ int jitter_buffer_update_delay(JitterBuffer *jitter, JitterBufferPacket *packet,
       /*fprintf (stderr, "d");*/
       jitter->pointer_timestamp += jitter->delay_step;
       jitter->current_timestamp += jitter->delay_step;
+      fprintf (stderr, "Decision to drop\n");
       return JITTER_BUFFER_ADJUST_DROP;
    }
    
