@@ -63,16 +63,14 @@
 /** Jitter buffer structure */
 struct JitterBuffer_ {
    spx_uint32_t pointer_timestamp;                                        /**< Timestamp of what we will *get* next */
-   spx_uint32_t current_timestamp;                                        /**< Timestamp of the local clock (what we will *play* next) */
    spx_uint32_t last_returned_timestamp;
    spx_uint32_t next_stop;
    
    JitterBufferPacket packets[SPEEX_JITTER_MAX_BUFFER_SIZE];              /**< Packets stored in the buffer */
-   spx_uint32_t arrival[SPEEX_JITTER_MAX_BUFFER_SIZE];              /**< Packet arrival time (0 means it was late, even though it's a valid timestamp) */
+   spx_uint32_t arrival[SPEEX_JITTER_MAX_BUFFER_SIZE];                    /**< Packet arrival time (0 means it was late, even though it's a valid timestamp) */
    
    void (*destroy) (void *);                                              /**< Callback for destroying a packet */
 
-   spx_int32_t sub_clock;                                                 /** Time since last get() call (incremented by tick()) */
    int resolution;                                                        /**< Time resolution for histogram (timestamp units) */
    int delay_step;                                                        /**< Size of the steps when adjusting buffering (timestamp units) */
    int reset_state;                                                       /**< True if state was just reset        */
@@ -97,6 +95,7 @@ JitterBuffer *jitter_buffer_init(int resolution)
          jitter->packets[i].data=NULL;
       jitter->resolution = resolution;
       jitter->delay_step = resolution;
+      //FIXME: Should this be 0 or 1?
       jitter->buffer_margin = 1;
       jitter->late_cutoff = 50;
       jitter->destroy = NULL;
@@ -122,7 +121,6 @@ void jitter_buffer_reset(JitterBuffer *jitter)
    }
    /* Timestamp is actually undefined at this point */
    jitter->pointer_timestamp = 0;
-   jitter->current_timestamp = 0;
    jitter->next_stop = 0;
    jitter->reset_state = 1;
    jitter->lost_count = 0;
@@ -142,7 +140,7 @@ void jitter_buffer_destroy(JitterBuffer *jitter)
    speex_free(jitter);
 }
 
-void update_histogram(JitterBuffer *jitter, spx_int32_t arrival_margin)
+static void update_histogram(JitterBuffer *jitter, spx_int32_t arrival_margin)
 {
    int i;
    if (arrival_margin >= -jitter->late_cutoff)
@@ -190,7 +188,6 @@ void jitter_buffer_put(JitterBuffer *jitter, const JitterBufferPacket *packet)
    {
       jitter->reset_state=0;
       jitter->pointer_timestamp = packet->timestamp;
-      jitter->current_timestamp = packet->timestamp;
       jitter->next_stop = packet->timestamp;
       /*fprintf(stderr, "reset to %d\n", timestamp);*/
    }
@@ -228,7 +225,7 @@ void jitter_buffer_put(JitterBuffer *jitter, const JitterBufferPacket *packet)
    }
    
    /* Only insert the packet if it's not hopelessly late (i.e. totally useless) */
-   if (GE32(packet->timestamp+packet->span, jitter->pointer_timestamp))
+   if (GE32(packet->timestamp+packet->span+jitter->delay_step, jitter->pointer_timestamp))
    {
 
       /*Find an empty slot in the buffer*/
@@ -298,11 +295,6 @@ int jitter_buffer_get(JitterBuffer *jitter, JitterBufferPacket *packet, spx_int3
    float early_ratio_long;
    int incomplete = 0;
    
-   if (jitter->current_timestamp + jitter->sub_clock > jitter->pointer_timestamp)
-      speex_warning("something's wrong with the time");
-
-   jitter->sub_clock = -1;
-   jitter->current_timestamp = jitter->pointer_timestamp;
    jitter->last_returned_timestamp = jitter->pointer_timestamp;
          
    if (jitter->interp_requested)
@@ -318,7 +310,6 @@ int jitter_buffer_get(JitterBuffer *jitter, JitterBufferPacket *packet, spx_int3
       
       return JITTER_BUFFER_MISSING;
    }
-   /*fprintf (stderr, "get packet %d %d\n", jitter->pointer_timestamp, jitter->current_timestamp);*/
    
    /* Compiling arrival statistics */
    
@@ -490,7 +481,6 @@ int jitter_buffer_get(JitterBuffer *jitter, JitterBufferPacket *packet, spx_int3
       jitter->shortterm_margin[0] = 0;
       jitter->longterm_margin[0] = 0;            
       jitter->pointer_timestamp -= jitter->delay_step;
-      jitter->current_timestamp -= jitter->delay_step;
       fprintf (stderr, "Forced to interpolate\n");
 
       /*fprintf (stderr, "i");*/
@@ -543,9 +533,6 @@ int jitter_buffer_get_pointer_timestamp(JitterBuffer *jitter)
 
 void jitter_buffer_tick(JitterBuffer *jitter)
 {
-   if (jitter->sub_clock == -1)
-      jitter->sub_clock = 0;
-   jitter->sub_clock += jitter->resolution;
    jitter->next_stop = jitter->pointer_timestamp;
 }
 
@@ -565,9 +552,6 @@ int jitter_buffer_update_delay(JitterBuffer *jitter, JitterBufferPacket *packet,
    float early_ratio_short;
    float early_ratio_long;
    
-   /*fprintf (stderr, "get packet %d %d\n", jitter->pointer_timestamp, jitter->current_timestamp);*/
-
-   /* FIXME: This should be only what remaining of the current tick */
    late_ratio_short = 0;
    late_ratio_long = 0;
    /* Count the proportion of packets that are late */
@@ -601,7 +585,6 @@ int jitter_buffer_update_delay(JitterBuffer *jitter, JitterBufferPacket *packet,
       jitter->shortterm_margin[0] = 0;
       jitter->longterm_margin[0] = 0;            
       jitter->pointer_timestamp -= jitter->delay_step;
-      jitter->current_timestamp -= jitter->delay_step;
       jitter->interp_requested = 1;
       fprintf (stderr, "Decision to interpolate\n");
       return JITTER_BUFFER_ADJUST_INTERPOLATE;
@@ -621,7 +604,6 @@ int jitter_buffer_update_delay(JitterBuffer *jitter, JitterBufferPacket *packet,
       /*fprintf (stderr, "drop frame\n");*/
       /*fprintf (stderr, "d");*/
       jitter->pointer_timestamp += jitter->delay_step;
-      jitter->current_timestamp += jitter->delay_step;
       fprintf (stderr, "Decision to drop\n");
       return JITTER_BUFFER_ADJUST_DROP;
    }
