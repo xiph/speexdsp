@@ -87,6 +87,7 @@ struct JitterBuffer_ {
 
    int resolution;                                                        /**< Time resolution for histogram (timestamp units) */
    int delay_step;                                                        /**< Size of the steps when adjusting buffering (timestamp units) */
+   int res_delay_step;                                                    /**< Size of the steps when adjusting buffering (resolution units) */
    int reset_state;                                                       /**< True if state was just reset        */
    int buffer_margin;                                                     /**< How many frames we want to keep in the buffer (lower bound) */
    int late_cutoff;                                                       /**< How late must a packet be for it not to be considered at all */
@@ -116,6 +117,7 @@ JitterBuffer *jitter_buffer_init(int resolution)
          jitter->packets[i].data=NULL;
       jitter->resolution = resolution;
       jitter->delay_step = resolution;
+      jitter->res_delay_step = 1;
       //FIXME: Should this be 0 or 1?
       jitter->buffer_margin = 1;
       jitter->late_cutoff = 50;
@@ -243,13 +245,20 @@ static void compute_statistics(JitterBuffer *jitter)
       jitter->late_ratio_short += jitter->shortterm_margin[i];
       jitter->late_ratio_long += jitter->longterm_margin[i];
    }
+   
    /* Count the proportion of packets that are just on time */
-   jitter->ontime_ratio_short = jitter->shortterm_margin[LATE_BINS];
-   jitter->ontime_ratio_long = jitter->longterm_margin[LATE_BINS];
+   jitter->ontime_ratio_short = 0;
+   jitter->ontime_ratio_long = 0;
+   for (;i<LATE_BINS+jitter->res_delay_step;i++)
+   {
+      jitter->ontime_ratio_short = jitter->shortterm_margin[i];
+      jitter->ontime_ratio_long = jitter->longterm_margin[i];
+   }
+   
    jitter->early_ratio_short = 0;
    jitter->early_ratio_long = 0;
    /* Count the proportion of packets that are early */
-   for (i=LATE_BINS+1;i<MAX_MARGIN;i++)
+   for (;i<MAX_MARGIN;i++)
    {
       jitter->early_ratio_short += jitter->shortterm_margin[i];
       jitter->early_ratio_long += jitter->longterm_margin[i];
@@ -522,14 +531,14 @@ int jitter_buffer_get(JitterBuffer *jitter, JitterBufferPacket *packet, spx_int3
       /* Increase buffering */
       
       /* Shift histogram to compensate */
-      shift_histogram(jitter, 1);
+      shift_histogram(jitter, jitter->res_delay_step);
       
       packet->timestamp = jitter->pointer_timestamp;
       packet->span = jitter->delay_step;
       /* Don't move the pointer_timestamp forward */
       packet->len = 0;
       
-      jitter->pointer_timestamp -= jitter->delay_step;
+      /*jitter->pointer_timestamp -= jitter->delay_step;*/
       fprintf (stderr, "Forced to interpolate\n");
    } else {
       /* Normal packet loss */
@@ -605,7 +614,7 @@ int jitter_buffer_update_delay(JitterBuffer *jitter, JitterBufferPacket *packet,
    if (jitter->late_ratio_short > .1 || jitter->late_ratio_long > .03)
    {
       /* If too many packets are arriving late */
-      shift_histogram(jitter, 1);
+      shift_histogram(jitter, jitter->res_delay_step);
       
       jitter->pointer_timestamp -= jitter->delay_step;
       jitter->interp_requested = 1;
@@ -615,7 +624,7 @@ int jitter_buffer_update_delay(JitterBuffer *jitter, JitterBufferPacket *packet,
    } else if (jitter->late_ratio_short + jitter->ontime_ratio_short < .005 && jitter->late_ratio_long + jitter->ontime_ratio_long < .01 && jitter->early_ratio_short > .8)
    {
       /* Many frames arriving early */
-      shift_histogram(jitter, -1);
+      shift_histogram(jitter, -jitter->res_delay_step);
       
       jitter->pointer_timestamp += jitter->delay_step;
       fprintf (stderr, "Decision to drop\n");
@@ -656,6 +665,7 @@ int jitter_buffer_ctl(JitterBuffer *jitter, int request, void *ptr)
          break;
       case JITTER_BUFFER_SET_DELAY_STEP:
          jitter->delay_step = *(spx_int32_t*)ptr;
+         jitter->res_delay_step = jitter->delay_step/jitter->resolution;
          break;
       case JITTER_BUFFER_GET_DELAY_STEP:
          *(spx_int32_t*)ptr = jitter->delay_step;

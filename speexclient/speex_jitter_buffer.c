@@ -1,4 +1,5 @@
 #include <speex/speex_jitter.h>
+#include "speex_jitter_buffer.h"
 
 #ifndef NULL
 #define NULL 0
