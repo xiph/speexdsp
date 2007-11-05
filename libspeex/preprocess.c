@@ -1127,16 +1127,16 @@ int speex_preprocess_ctl(SpeexPreprocessState *state, int request, void *ptr)
       break;
 
    case SPEEX_PREPROCESS_SET_PROB_START:
-      *(spx_int32_t*)ptr = MIN32(Q15_ONE,MAX32(0, *(spx_int32_t*)ptr));
-      st->speech_prob_start = DIV32_16(MULT16_16(32767,*(spx_int32_t*)ptr), 100);
+      *(spx_int32_t*)ptr = MIN32(100,MAX32(0, *(spx_int32_t*)ptr));
+      st->speech_prob_start = DIV32_16(MULT16_16(Q15ONE,*(spx_int32_t*)ptr), 100);
       break;
    case SPEEX_PREPROCESS_GET_PROB_START:
       (*(spx_int32_t*)ptr) = MULT16_16_Q15(st->speech_prob_start, 100);
       break;
 
    case SPEEX_PREPROCESS_SET_PROB_CONTINUE:
-      *(spx_int32_t*)ptr = MIN32(Q15_ONE,MAX32(0, *(spx_int32_t*)ptr));
-      st->speech_prob_continue = DIV32_16(MULT16_16(32767,*(spx_int32_t*)ptr), 100);
+      *(spx_int32_t*)ptr = MIN32(100,MAX32(0, *(spx_int32_t*)ptr));
+      st->speech_prob_continue = DIV32_16(MULT16_16(Q15ONE,*(spx_int32_t*)ptr), 100);
       break;
    case SPEEX_PREPROCESS_GET_PROB_CONTINUE:
       (*(spx_int32_t*)ptr) = MULT16_16_Q15(st->speech_prob_continue, 100);
