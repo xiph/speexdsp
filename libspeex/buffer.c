@@ -41,7 +41,7 @@
 #include <speex/speex_buffer.h>
 
 struct SpeexBuffer_ {
-   void *data;
+   char *data;
    int   size;
    int   read_ptr;
    int   write_ptr;
@@ -65,10 +65,11 @@ void speex_buffer_destroy(SpeexBuffer *st)
    speex_free(st);
 }
 
-int speex_buffer_write(SpeexBuffer *st, void *data, int len)
+int speex_buffer_write(SpeexBuffer *st, void *_data, int len)
 {
    int end;
    int end1;
+   char *data = _data;
    if (len > st->size)
    {
       data += len-st->size;
@@ -100,7 +101,7 @@ int speex_buffer_writezeros(SpeexBuffer *st, int len)
 {
    /* This is almost the same as for speex_buffer_write() but using 
    speex_memset() instead of speex_move(). Update accordingly. */
-      int end;
+   int end;
    int end1;
    if (len > st->size)
    {
@@ -128,9 +129,10 @@ int speex_buffer_writezeros(SpeexBuffer *st, int len)
    return len;
 }
 
-int speex_buffer_read(SpeexBuffer *st, void *data, int len)
+int speex_buffer_read(SpeexBuffer *st, void *_data, int len)
 {
    int end, end1;
+   char *data = _data;
    if (len > st->available)
    {
       speex_memset(data+st->available, 0, st->size-st->available);
