@@ -31,6 +31,11 @@
    POSSIBILITY OF SUCH DAMAGE.
 */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
+
 #include "os_support.h"
 #include "misc.h"
 #include <speex/speex_buffer.h>
