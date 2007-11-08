@@ -4,6 +4,9 @@ Control delay in new AEC API.
 packet dump
 make sure speex_alloc() and speex_free() are exported properly
 split misc.h into spx_types.h and spx_sys.h
+remove misc.h
+proper error reporting
+get rid of floats in initialisation (make the lag window a const array)
 
 
 Eventually:

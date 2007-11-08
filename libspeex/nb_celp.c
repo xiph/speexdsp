@@ -665,13 +665,17 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
    if (SUBMODE(forced_pitch_gain))
    {
       int quant;
+#ifdef FIXED_POINT
+      quant = PSHR16(MULT16_16_16(15, ol_pitch_coef),GAIN_SHIFT);
+#else
       quant = (int)floor(.5+15*ol_pitch_coef*GAIN_SCALING_1);
+#endif
       if (quant>15)
          quant=15;
       if (quant<0)
          quant=0;
       speex_bits_pack(bits, quant, 4);
-      ol_pitch_coef=GAIN_SCALING*0.066667*quant;
+      ol_pitch_coef=MULT16_16_P15(QCONST16(0.066667,15),SHL16(quant,GAIN_SHIFT));
    }
    
    
@@ -1401,7 +1405,7 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
    {
       int quant;
       quant = speex_bits_unpack_unsigned(bits, 4);
-      ol_pitch_coef=GAIN_SCALING*0.066667*quant;
+      ol_pitch_coef=MULT16_16_P15(QCONST16(0.066667,15),SHL16(quant,GAIN_SHIFT));
    }
    
    /* Get global excitation gain */
