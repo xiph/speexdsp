@@ -37,7 +37,7 @@
 
 
 #include "os_support.h"
-#include "misc.h"
+#include "arch.h"
 #include <speex/speex_buffer.h>
 
 struct SpeexBuffer_ {

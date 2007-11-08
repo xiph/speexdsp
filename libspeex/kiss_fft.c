@@ -19,7 +19,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 #endif
 
 #include "_kiss_fft_guts.h"
-#include "misc.h"
+#include "arch.h"
 #include "os_support.h"
 
 /* The guts header contains all the multiplication and addition macros that are defined for

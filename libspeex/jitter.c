@@ -52,7 +52,7 @@ TODO:
 #endif
 
 
-#include "misc.h"
+#include "arch.h"
 #include <speex/speex.h>
 #include <speex/speex_bits.h>
 #include <speex/speex_jitter.h>

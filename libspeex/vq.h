@@ -35,7 +35,7 @@
 #ifndef VQ_H
 #define VQ_H
 
-#include "misc.h"
+#include "arch.h"
 
 int scal_quant(spx_word16_t in, const spx_word16_t *boundary, int entries);
 int scal_quant32(spx_word32_t in, const spx_word32_t *boundary, int entries);

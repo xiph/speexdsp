@@ -43,7 +43,7 @@
 #include "quant_lsp.h"
 #include "vq.h"
 #include "ltp.h"
-#include "misc.h"
+#include "arch.h"
 #include "math_approx.h"
 #include "os_support.h"
 

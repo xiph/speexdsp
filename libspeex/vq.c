@@ -36,7 +36,7 @@
 
 #include "vq.h"
 #include "stack_alloc.h"
-#include "misc.h"
+#include "arch.h"
 
 #ifdef _USE_SSE
 #include <xmmintrin.h>

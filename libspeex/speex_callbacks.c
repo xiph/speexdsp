@@ -37,7 +37,7 @@
 #endif
 
 #include <speex/speex_callbacks.h>
-#include "misc.h"
+#include "arch.h"
 #include "os_support.h"
 
 int speex_inband_handler(SpeexBits *bits, SpeexCallback *callback_list, void *state)

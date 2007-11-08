@@ -44,7 +44,7 @@
 #ifndef PSEUDOFLOAT_H
 #define PSEUDOFLOAT_H
 
-#include "misc.h"
+#include "arch.h"
 #include "os_support.h"
 #include "math_approx.h"
 #include <math.h>

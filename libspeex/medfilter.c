@@ -37,7 +37,7 @@
 #endif
 
 #include "medfilter.h"
-#include "misc.h"
+#include "arch.h"
 
 MedianFilter *median_filter_new(int N)
 {

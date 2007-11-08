@@ -33,7 +33,7 @@
 #include "config.h"
 #endif
 
-#include "misc.h"
+#include "arch.h"
 
 #ifdef FIXED_POINT
 const spx_word16_t lpc_window[200] = {

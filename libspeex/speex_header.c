@@ -35,7 +35,7 @@
 #include "config.h"
 #endif
 
-#include "misc.h"
+#include "arch.h"
 #include <speex/speex_header.h>
 #include <speex/speex.h>
 #include "os_support.h"
@@ -43,6 +43,22 @@
 #ifndef NULL
 #define NULL 0
 #endif
+
+/** Convert little endian */
+static inline spx_int32_t le_int(spx_int32_t i)
+{
+#if !defined(__LITTLE_ENDIAN__) && ( defined(WORDS_BIGENDIAN) || defined(__BIG_ENDIAN__) )
+   spx_uint32_t ui, ret;
+   ui = i;
+   ret =  ui>>24;
+   ret |= (ui>>8)&0x0000ff00;
+   ret |= (ui<<8)&0x00ff0000;
+   ret |= (ui<<24);
+   return ret;
+#else
+   return i;
+#endif
+}
 
 #define ENDIAN_SWITCH(x) {x=le_int(x);}
 

@@ -62,7 +62,7 @@
 #include <math.h>
 #include "speex/speex_preprocess.h"
 #include "speex/speex_echo.h"
-#include "misc.h"
+#include "arch.h"
 #include "fftwrap.h"
 #include "filterbank.h"
 #include "math_approx.h"

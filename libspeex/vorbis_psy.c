@@ -35,7 +35,7 @@
 
 #ifdef VORBIS_PSYCHO
 
-#include "misc.h"
+#include "arch.h"
 #include "smallft.h"
 #include "lpc.h"
 #include "vorbis_psy.h"

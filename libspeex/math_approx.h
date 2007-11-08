@@ -35,7 +35,7 @@
 #ifndef MATH_APPROX_H
 #define MATH_APPROX_H
 
-#include "misc.h"
+#include "arch.h"
 
 #ifndef FIXED_POINT
 

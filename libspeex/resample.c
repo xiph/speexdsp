@@ -70,7 +70,7 @@ static void speex_free (void *ptr) {free(ptr);}
 #else /* OUTSIDE_SPEEX */
                
 #include "speex/speex_resampler.h"
-#include "misc.h"
+#include "arch.h"
 #include "os_support.h"
 #endif /* OUTSIDE_SPEEX */
 

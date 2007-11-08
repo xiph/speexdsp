@@ -43,7 +43,7 @@
 #include "sb_celp.h"
 #include "nb_celp.h"
 #include "vbr.h"
-#include "misc.h"
+#include "arch.h"
 #include <math.h>
 
 #ifndef NULL

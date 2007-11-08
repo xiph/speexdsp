@@ -40,7 +40,7 @@
 #define USE_KISS_FFT
 
 
-#include "misc.h"
+#include "arch.h"
 #include "os_support.h"
 
 #define MAX_FFT_SIZE 2048

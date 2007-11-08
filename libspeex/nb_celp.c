@@ -45,7 +45,7 @@
 #include "vq.h"
 #include <speex/speex_bits.h>
 #include "vbr.h"
-#include "misc.h"
+#include "arch.h"
 #include "math_approx.h"
 #include "os_support.h"
 #include <speex/speex_callbacks.h>

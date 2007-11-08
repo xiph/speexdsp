@@ -34,7 +34,7 @@
 
 #include <math.h>
 #include "smallft.h"
-#include "misc.h"
+#include "arch.h"
 #include "os_support.h"
 
 static void drfti1(int n, float *wa, int *ifac){

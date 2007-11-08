@@ -41,7 +41,7 @@
 #define M_PI 3.14159265358979323846
 #endif
 
-#include "misc.h"
+#include "arch.h"
 
 #ifdef BFIN_ASM
 #include "quant_lsp_bfin.h"

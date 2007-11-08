@@ -38,7 +38,7 @@
 
 #include <speex/speex.h>
 #include <speex/speex_bits.h>
-#include "misc.h"
+#include "arch.h"
 
 #define NB_SUBMODES 16
 #define NB_SUBMODE_BITS 4

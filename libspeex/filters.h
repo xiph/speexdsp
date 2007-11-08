@@ -35,7 +35,7 @@
 #ifndef FILTERS_H
 #define FILTERS_H
 
-#include "misc.h"
+#include "arch.h"
 
 spx_word16_t compute_rms(const spx_sig_t *x, int len);
 spx_word16_t compute_rms16(const spx_word16_t *x, int len);
