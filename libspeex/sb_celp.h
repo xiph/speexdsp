@@ -50,7 +50,6 @@ typedef struct SBEncState {
    int    nbSubframes;            /**< Number of high-band sub-frames*/
    int    windowSize;             /**< Length of high-band LPC window*/
    int    lpcSize;                /**< Order of high-band LPC analysis */
-   int    bufSize;                /**< Buffer size */
    int    first;                  /**< First frame? */
    float  lag_factor;             /**< Lag-windowing control parameter */
    spx_word16_t  lpc_floor;       /**< Controls LPC analysis noise floor */

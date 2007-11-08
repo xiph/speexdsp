@@ -214,7 +214,6 @@ void *sb_encoder_init(const SpeexMode *m)
    st->nbSubframes = mode->frameSize/mode->subframeSize;
    st->windowSize = st->frame_size+st->subframeSize;
    st->lpcSize=mode->lpcSize;
-   st->bufSize=mode->bufSize;
 
    st->encode_submode = 1;
    st->submodes=mode->submodes;
