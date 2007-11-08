@@ -1563,11 +1563,9 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
             /*Fixed codebook contribution*/
             SUBMODE(innovation_unquant)(innov, SUBMODE(innovation_params), st->subframeSize, bits, stack, &st->seed);
             /* De-normalize innovation and update excitation */
-#ifdef FIXED_POINT
+
             signal_mul(innov, innov, ener, st->subframeSize);
-#else
-            signal_mul(innov, innov, ener, st->subframeSize);
-#endif
+
             /* Decode second codebook (only for some modes) */
             if (SUBMODE(double_codebook))
             {
