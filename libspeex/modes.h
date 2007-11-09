@@ -138,7 +138,6 @@ typedef struct SpeexSBMode {
    int     frameSize;     /**< Size of frames used for encoding */
    int     subframeSize;  /**< Size of sub-frames used for encoding */
    int     lpcSize;       /**< Order of LPC filter */
-   int     bufSize;       /**< Signal buffer size in encoder */
    spx_word16_t gamma1;   /**< Perceptual filter parameter #1 */
    spx_word16_t gamma2;   /**< Perceptual filter parameter #1 */
    float   lag_factor;    /**< Lag-windowing parameter */

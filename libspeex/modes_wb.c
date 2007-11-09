@@ -182,7 +182,6 @@ static const SpeexSBMode sb_wb_mode = {
    160,    /*frameSize*/
    40,     /*subframeSize*/
    8,     /*lpcSize*/
-   640,    /*bufSize*/
 #ifdef FIXED_POINT
    29491, 19661, /* gamma1, gamma2 */
 #else
@@ -228,7 +227,6 @@ static const SpeexSBMode sb_uwb_mode = {
    320,    /*frameSize*/
    80,     /*subframeSize*/
    8,     /*lpcSize*/
-   1280,    /*bufSize*/
 #ifdef FIXED_POINT
    29491, 19661, /* gamma1, gamma2 */
 #else
