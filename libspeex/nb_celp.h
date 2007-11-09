@@ -64,10 +64,6 @@ typedef struct EncState {
    int    ol_voiced;             /**< Open-loop voiced/non-voiced decision */
    int   *pitch;
 
-#ifdef EPIC_48K
-   int    lbr_48k;
-#endif
-
 #ifdef VORBIS_PSYCHO
    VorbisPsy *psy;
    float *psy_window;
@@ -133,10 +129,6 @@ typedef struct DecState {
    int    min_pitch;            /**< Minimum pitch value allowed */
    int    max_pitch;            /**< Maximum pitch value allowed */
    spx_int32_t sampling_rate;
-
-#ifdef EPIC_48K
-   int    lbr_48k;
-#endif
 
    spx_word16_t  last_ol_gain;  /**< Open-loop gain for previous frame */
 

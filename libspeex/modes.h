@@ -126,10 +126,6 @@ typedef struct SpeexNBMode {
    float   lag_factor;     /**< Lag-windowing parameter */
    spx_word16_t   lpc_floor;      /**< Noise floor for LPC analysis */
 
-#ifdef EPIC_48K
-   int     lbr48k;         /**< 1 for the special 4.8 kbps mode */
-#endif
-
    const SpeexSubmode *submodes[NB_SUBMODES]; /**< Sub-mode data for the mode */
    int     defaultSubmode; /**< Default sub-mode to use when encoding */
    int     quality_map[11]; /**< Mode corresponding to each quality setting */
