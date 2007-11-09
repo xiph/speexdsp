@@ -96,15 +96,11 @@ AC_DEFINE_UNQUOTED(SPEEX_MINOR_VERSION, ${SPEEX_MINOR_VERSION}, [Version minor])
 AC_DEFINE_UNQUOTED(SPEEX_MICRO_VERSION, ${SPEEX_MICRO_VERSION}, [Version micro])
 AC_DEFINE_UNQUOTED(SPEEX_EXTRA_VERSION, "${SPEEX_EXTRA_VERSION}", [Version extra])
 
-AC_ARG_ENABLE(wideband, [  --disable-wideband      Disable wideband codec],
-[if test "$enableval" = no; then
-  AC_DEFINE([DISABLE_WIDEBAND], , [Disable wideband codec])
-fi])
-
-AC_ARG_ENABLE(vorbis-psy, [  --enable-vorbis-psy       Enable Vorbis-style psychoacoustics (EXPERIMENTAL)],
+AC_ARG_ENABLE(floating-point, [  --enable-floating-point   Compile as floating-point (default)],
 [if test "$enableval" = yes; then
-  AC_DEFINE([VORBIS_PSYCHO], , [Enable Vorbis-style psychoacoustics (EXPERIMENTAL)])
-fi])
+  AC_DEFINE([FLOATING_POINT], , [Compile as floating-point])
+fi],
+AC_DEFINE([FLOATING_POINT], , [Compile as floating-point]))
 
 AC_ARG_ENABLE(valgrind, [  --enable-valgrind       Enable valgrind extra checks],
 [if test "$enableval" = yes; then
@@ -143,20 +139,10 @@ AC_ARG_ENABLE(fixed-point-debug, [  --enable-fixed-point-debug  Debug fixed-poin
   AC_DEFINE([FIXED_DEBUG], , [Debug fixed-point implementation])
 fi])
 
-AC_ARG_ENABLE(epic-48k, [  --enable-epic-48k       Enable support for Epic 4.8 kbps mode],
-[if test "$enableval" = yes; then
-  AC_DEFINE([EPIC_48K], , [Enable support for Epic 4.8 kbps mode])
-fi])
-
 AC_ARG_ENABLE(ti-c55x, [  --enable-ti-c55x        Enable support for TI C55X DSP],
 [if test "$enableval" = yes; then
   has_char16=yes;
   AC_DEFINE([TI_C55X], , [Enable support for TI C55X DSP])
-fi])
-
-AC_ARG_ENABLE(16bit-precision, [  --enable-16bit-precision Reduce precision to 16 bits (EXPERIMENTAL)],
-[if test "$enableval" = yes; then
-  AC_DEFINE([PRECISION16], , [Reduce precision to 16 bits (EXPERIMENTAL)])
 fi])
 
 AC_CHECK_SIZEOF(short)
