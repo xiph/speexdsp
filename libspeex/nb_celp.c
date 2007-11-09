@@ -665,6 +665,8 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
    if (SUBMODE(forced_pitch_gain))
    {
       int quant;
+      /* This just damps the pitch a bit, because it tends to be too aggressive when forced */
+      ol_pitch_coef = MULT16_16_Q15(QCONST16(.9,15), ol_pitch_coef);
 #ifdef FIXED_POINT
       quant = PSHR16(MULT16_16_16(15, ol_pitch_coef),GAIN_SHIFT);
 #else
