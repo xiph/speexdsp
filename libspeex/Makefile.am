@@ -10,13 +10,13 @@ lib_LTLIBRARIES = libspeex.la libspeexdsp.la
 
 # Sources for compilation in the library
 libspeex_la_SOURCES = 	cb_search.c 	exc_10_32_table.c 	exc_8_128_table.c \
-		filters.c 	gain_table.c 	hexc_table.c 	high_lsp_tables.c 	lbr_48k_tables.c 	lsp.c \
+		filters.c 	gain_table.c 	hexc_table.c 	high_lsp_tables.c 	lsp.c \
 		ltp.c 	speex.c 	stereo.c 	vbr.c 	vq.c bits.c exc_10_16_table.c \
 	exc_20_32_table.c exc_5_256_table.c exc_5_64_table.c gain_table_lbr.c hexc_10_32_table.c \
 	lpc.c lsp_tables_nb.c modes.c modes_wb.c nb_celp.c quant_lsp.c sb_celp.c \
 	speex_callbacks.c speex_header.c window.c
 
-libspeexdsp_la_SOURCES = preprocess.c 	smallft.c 	lbr_48k_tables.c \
+libspeexdsp_la_SOURCES = preprocess.c 	smallft.c \
 				jitter.c 	mdf.c fftwrap.c kiss_fft.c _kiss_fft_guts.h kiss_fft.h \
 	kiss_fftr.c kiss_fftr.h filterbank.c resample.c buffer.c
 
