@@ -251,9 +251,7 @@ void *sb_encoder_init(const SpeexMode *m)
    st->mem_sw = (spx_mem_t*)speex_alloc((st->lpcSize)*sizeof(spx_mem_t));
 
    for (i=0;i<st->lpcSize;i++)
-   {
-      st->old_lsp[i]=LSP_SCALING*(M_PI*((float)(i+1)))/(st->lpcSize+1);
-   }
+      st->old_lsp[i]= DIV32(MULT16_16(QCONST16(3.1415927f, LSP_SHIFT), i+1), st->lpcSize+1);
 
    st->vbr_quality = 8;
    st->vbr_enabled = 0;
@@ -1252,7 +1250,7 @@ int sb_encoder_ctl(void *state, int request, void *ptr)
          int i;
          st->first = 1;
          for (i=0;i<st->lpcSize;i++)
-            st->old_lsp[i]=(M_PI*((float)(i+1)))/(st->lpcSize+1);
+            st->old_lsp[i]= DIV32(MULT16_16(QCONST16(3.1415927f, LSP_SHIFT), i+1), st->lpcSize+1);
          for (i=0;i<st->lpcSize;i++)
             st->mem_sw[i]=st->mem_sp[i]=st->mem_sp2[i]=0;
          for (i=0;i<QMF_ORDER;i++)
