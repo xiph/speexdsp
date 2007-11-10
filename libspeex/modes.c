@@ -328,7 +328,6 @@ static const SpeexNBMode nb_mode = {
 #else
    0.9, 0.6, /* gamma1, gamma2 */
 #endif
-   .012,   /*lag_factor*/
    QCONST16(.0002,15), /*lpc_floor*/
    {NULL, &nb_submode1, &nb_submode2, &nb_submode3, &nb_submode4, &nb_submode5, &nb_submode6, &nb_submode7,
    &nb_submode8, NULL, NULL, NULL, NULL, NULL, NULL, NULL},

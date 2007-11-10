@@ -51,7 +51,6 @@ typedef struct SBEncState {
    int    windowSize;             /**< Length of high-band LPC window*/
    int    lpcSize;                /**< Order of high-band LPC analysis */
    int    first;                  /**< First frame? */
-   float  lag_factor;             /**< Lag-windowing control parameter */
    spx_word16_t  lpc_floor;       /**< Controls LPC analysis noise floor */
    spx_word16_t  gamma1;          /**< Perceptual weighting coef 1 */
    spx_word16_t  gamma2;          /**< Perceptual weighting coef 2 */
@@ -61,7 +60,7 @@ typedef struct SBEncState {
    spx_word16_t *h0_mem, *h1_mem;
 
    const spx_word16_t *window;    /**< LPC analysis window */
-   spx_word16_t *lagWindow;       /**< Auto-correlation window */
+   const spx_word16_t *lagWindow;       /**< Auto-correlation window */
    spx_lsp_t *old_lsp;            /**< LSPs of previous frame */
    spx_lsp_t *old_qlsp;           /**< Quantized LSPs of previous frame */
    spx_coef_t *interp_qlpc;       /**< Interpolated quantized LPCs for current sub-frame */

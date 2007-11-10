@@ -7,3 +7,6 @@
 #ifndef _USE_SSE
 #  define USE_ALLOCA
 #endif
+
+/* Default to floating point */
+#define FLOATING_POINT

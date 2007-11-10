@@ -4,6 +4,8 @@ Implement speex_header_free()
 better error reporting
 get rid of floats in initialisation (make the lag window a const array)
 split encoder and decoder?
+improve float<->int conversion
+NaN checks?
 
 
 Eventually:

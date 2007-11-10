@@ -46,6 +46,9 @@
 /* A couple test to catch stupid option combinations */
 #ifdef FIXED_POINT
 
+#ifdef FLOATING_POINT
+#error You cannot compile as floating point and fixed point at the same time
+#endif
 #ifdef _USE_SSE
 #error SSE is only for floating-point
 #endif
@@ -58,6 +61,9 @@
 
 #else
 
+#ifndef FLOATING_POINT
+#error You now need to define either FIXED_POINT or FLOATING_POINT
+#endif
 #if defined (ARM4_ASM) || defined(ARM5E_ASM) || defined(BFIN_ASM)
 #error I suppose you can have a [ARM4/ARM5E/Blackfin] that has float instructions?
 #endif

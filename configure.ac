@@ -96,12 +96,6 @@ AC_DEFINE_UNQUOTED(SPEEX_MINOR_VERSION, ${SPEEX_MINOR_VERSION}, [Version minor])
 AC_DEFINE_UNQUOTED(SPEEX_MICRO_VERSION, ${SPEEX_MICRO_VERSION}, [Version micro])
 AC_DEFINE_UNQUOTED(SPEEX_EXTRA_VERSION, "${SPEEX_EXTRA_VERSION}", [Version extra])
 
-AC_ARG_ENABLE(floating-point, [  --enable-floating-point   Compile as floating-point (default)],
-[if test "$enableval" = yes; then
-  AC_DEFINE([FLOATING_POINT], , [Compile as floating-point])
-fi],
-AC_DEFINE([FLOATING_POINT], , [Compile as floating-point]))
-
 AC_ARG_ENABLE(valgrind, [  --enable-valgrind       Enable valgrind extra checks],
 [if test "$enableval" = yes; then
   AC_DEFINE([ENABLE_VALGRIND], , [Enable valgrind extra checks])
@@ -116,7 +110,10 @@ fi
 AC_ARG_ENABLE(fixed-point, [  --enable-fixed-point    Compile as fixed-point],
 [if test "$enableval" = yes; then
   AC_DEFINE([FIXED_POINT], , [Compile as fixed-point])
-fi])
+else
+  AC_DEFINE([FLOATING_POINT], , [Compile as floating-point])
+fi],
+AC_DEFINE([FLOATING_POINT], , [Compile as floating-point]))
 
 AC_ARG_ENABLE(arm4-asm, [  --enable-arm4-asm       Make use of ARM4 assembly optimizations],
 [if test "$enableval" = yes; then

@@ -123,7 +123,6 @@ typedef struct SpeexNBMode {
 
    spx_word16_t gamma1;    /**< Perceptual filter parameter #1 */
    spx_word16_t gamma2;    /**< Perceptual filter parameter #2 */
-   float   lag_factor;     /**< Lag-windowing parameter */
    spx_word16_t   lpc_floor;      /**< Noise floor for LPC analysis */
 
    const SpeexSubmode *submodes[NB_SUBMODES]; /**< Sub-mode data for the mode */
@@ -140,7 +139,6 @@ typedef struct SpeexSBMode {
    int     lpcSize;       /**< Order of LPC filter */
    spx_word16_t gamma1;   /**< Perceptual filter parameter #1 */
    spx_word16_t gamma2;   /**< Perceptual filter parameter #1 */
-   float   lag_factor;    /**< Lag-windowing parameter */
    spx_word16_t   lpc_floor;     /**< Noise floor for LPC analysis */
    spx_word16_t   folding_gain;
 

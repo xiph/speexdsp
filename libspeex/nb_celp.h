@@ -73,7 +73,6 @@ typedef struct EncState {
 
    spx_word16_t  gamma1;         /**< Perceptual filter: A(z/gamma1) */
    spx_word16_t  gamma2;         /**< Perceptual filter: A(z/gamma2) */
-   float  lag_factor;            /**< Lag windowing Gaussian width */
    spx_word16_t  lpc_floor;      /**< Noise floor multiplier for A[0] in LPC analysis*/
    char  *stack;                 /**< Pseudo-stack allocation for temporary memory */
    spx_word16_t *winBuf;         /**< Input buffer (original signal) */
@@ -82,7 +81,7 @@ typedef struct EncState {
    spx_word16_t *swBuf;          /**< Weighted signal buffer */
    spx_word16_t *sw;             /**< Start of weighted signal frame */
    const spx_word16_t *window;   /**< Temporary (Hanning) window */
-   spx_word16_t *lagWindow;      /**< Window applied to auto-correlation */
+   const spx_word16_t *lagWindow;      /**< Window applied to auto-correlation */
    spx_lsp_t *old_lsp;           /**< LSPs for previous frame */
    spx_lsp_t *old_qlsp;          /**< Quantized LSPs for previous frame */
    spx_mem_t *mem_sp;            /**< Filter memory for signal synthesis */

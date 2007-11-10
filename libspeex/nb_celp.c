@@ -108,6 +108,7 @@ const float exc_gain_quant_scal1[2]={0.70469f, 1.05127f};
 
 #define sqr(x) ((x)*(x))
 
+extern const spx_word16_t lag_window[];
 extern const spx_word16_t lpc_window[];
 
 void *nb_encoder_init(const SpeexMode *m)
@@ -137,7 +138,6 @@ void *nb_encoder_init(const SpeexMode *m)
    st->gamma2=mode->gamma2;
    st->min_pitch=mode->pitchStart;
    st->max_pitch=mode->pitchEnd;
-   st->lag_factor=mode->lag_factor;
    st->lpc_floor = mode->lpc_floor;
   
    st->submodes=mode->submodes;
@@ -166,9 +166,7 @@ void *nb_encoder_init(const SpeexMode *m)
    st->window= lpc_window;
    
    /* Create the window for autocorrelation (lag-windowing) */
-   st->lagWindow = (spx_word16_t*)speex_alloc((st->lpcSize+1)*sizeof(spx_word16_t));
-   for (i=0;i<st->lpcSize+1;i++)
-      st->lagWindow[i]=16384*exp(-.5*sqr(2*M_PI*st->lag_factor*i));
+   st->lagWindow = lag_window;
 
    st->old_lsp = (spx_lsp_t*)speex_alloc((st->lpcSize)*sizeof(spx_lsp_t));
    st->old_qlsp = (spx_lsp_t*)speex_alloc((st->lpcSize)*sizeof(spx_lsp_t));
@@ -224,8 +222,6 @@ void nb_encoder_destroy(void *state)
    speex_free (st->excBuf);
    speex_free (st->old_qlsp);
    speex_free (st->swBuf);
-
-   speex_free (st->lagWindow);
 
    speex_free (st->old_lsp);
    speex_free (st->mem_sp);
