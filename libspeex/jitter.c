@@ -74,6 +74,121 @@ TODO:
 #define LT32(a,b) (((spx_int32_t)((a)-(b)))<0)
 #define LE32(a,b) (((spx_int32_t)((a)-(b)))<=0)
 
+#define MAX_TIMINGS 20
+#define MAX_BUFFERS 3
+#define TOP_DELAY 25
+#define WINDOW_SIZE 200
+
+struct TimingBuffer {
+   int filled;
+   int curr_count;
+   spx_int16_t timing[MAX_TIMINGS];
+   spx_int16_t counts[MAX_TIMINGS];
+};
+
+static void tb_init(struct TimingBuffer *tb)
+{
+   tb->filled = 0;
+   tb->curr_count = 0;
+}
+
+static void tb_add(struct TimingBuffer *tb, spx_int16_t timing)
+{
+   int pos;
+   /*fprintf(stderr, "timing = %d\n", timing);*/
+   /*fprintf(stderr, "timing = %d, latest = %d, earliest = %d, filled = %d\n", timing, tb->timing[0], tb->timing[tb->filled-1], tb->filled);*/
+   if (tb->filled >= MAX_TIMINGS && timing >= tb->timing[tb->filled-1])
+   {
+      tb->curr_count++;
+      return;
+   }
+   pos = 0;
+   /* FIXME: Do bisection instead of linear search */
+   while (pos<tb->filled && timing >= tb->timing[pos])
+   {
+      pos++;
+   }
+   
+   /*fprintf(stderr, "pos = %d filled = %d\n", pos, tb->filled);*/
+   speex_assert(pos <= tb->filled && pos < MAX_TIMINGS);
+   fprintf(stderr, "OK\n");
+   if (pos < tb->filled)
+   {
+      int move_size = tb->filled-pos;
+      if (tb->filled == MAX_TIMINGS)
+         move_size -= 1;
+      /*fprintf(stderr, "speex_move(%d %d %d)\n", pos+1, pos, move_size);*/
+      speex_move(&tb->timing[pos+1], &tb->timing[pos], move_size*sizeof(tb->timing[0]));
+      speex_move(&tb->counts[pos+1], &tb->counts[pos], move_size*sizeof(tb->counts[0]));
+   }
+   /*fprintf(stderr, "moved\n");*/
+   tb->timing[pos] = timing;
+   tb->counts[pos] = tb->curr_count;
+   /*{
+      int i;
+      for (i=0;i<MAX_TIMINGS;i++)
+         fprintf(stderr, "%d ", tb->timing[i]);
+      fprintf(stderr, "\n");
+   }*/
+   tb->curr_count++;
+   if (tb->filled<MAX_TIMINGS)
+      tb->filled++;
+   /*fprintf(stderr, "added\n");*/
+}
+
+/** Based on available data, this computes the optimal delay for the jitter buffer. 
+   The optimised function is in timestamp units and is:
+   cost = delay + late_factor*[number of frames that would be late if we used that delay]
+   @param tb Array of buffers
+   @param late_factor Equivalent cost of a late frame (in timestamp units) 
+*/
+static spx_int16_t tbs_get_opt_delay(struct TimingBuffer *tb, spx_int32_t late_factor)
+{
+   int i;
+   spx_int16_t opt=0;
+   spx_int32_t best_cost=0x7fffffff;
+   int late = 0;
+   int pos[MAX_BUFFERS];
+   
+   /*fprintf(stderr, "tbs_get_opt_delay\n");*/
+   for (i=0;i<MAX_BUFFERS;i++)
+      pos[i] = 0;
+   
+   for (i=0;i<TOP_DELAY;i++)
+   {
+      int j;
+      int next=-1;
+      int latest = 32767;
+      for (j=0;j<MAX_BUFFERS;j++)
+      {
+         if (pos[j] < tb[j].filled && tb[j].timing[pos[j]] < latest)
+         {
+            next = j;
+            latest = tb[j].timing[pos[j]];
+         }
+      }
+      late++;
+      if (next != -1)
+      {
+         spx_int32_t cost;
+         pos[next]++;
+         /* When considering reducing delay, "on-time" frames could twice (this provides hysteresis) */
+         if (latest > 0)
+            late++;
+         cost = -latest + late_factor*late;
+         /*fprintf(stderr, "cost %d = -%d + %d * %d\n", cost, latest, late_factor, late);*/
+         if (cost < best_cost)
+         {
+            best_cost = cost;
+            opt = latest;
+         }
+      } else {
+         break;
+      }
+   }
+   return opt;
+}
+
 /** Jitter buffer structure */
 struct JitterBuffer_ {
    spx_uint32_t pointer_timestamp;                                        /**< Timestamp of what we will *get* next */
@@ -93,6 +208,9 @@ struct JitterBuffer_ {
    int late_cutoff;                                                       /**< How late must a packet be for it not to be considered at all */
    int interp_requested;                                                  /**< An interpolation is requested by speex_jitter_update_delay() */
 
+   struct TimingBuffer _tb[MAX_BUFFERS];                                  /**< Don't use those directly */
+   struct TimingBuffer *timeBuffers[MAX_BUFFERS];                       /**< Storing arrival time of latest frames so we can compute some stats */
+   
    float late_ratio_short;
    float late_ratio_long;
    float ontime_ratio_short;
@@ -118,7 +236,7 @@ JitterBuffer *jitter_buffer_init(int resolution)
       jitter->resolution = resolution;
       jitter->delay_step = resolution;
       jitter->res_delay_step = 1;
-      //FIXME: Should this be 0 or 1?
+      /*FIXME: Should this be 0 or 1?*/
       jitter->buffer_margin = 1;
       jitter->late_cutoff = 50;
       jitter->destroy = NULL;
@@ -153,6 +271,12 @@ void jitter_buffer_reset(JitterBuffer *jitter)
       jitter->shortterm_margin[i] = 0;
       jitter->longterm_margin[i] = 0;
    }
+   
+   for (i=0;i<MAX_BUFFERS;i++)
+   {
+      tb_init(&jitter->_tb[i]);
+      jitter->timeBuffers[i] = &jitter->_tb[i];
+   }
    /*fprintf (stderr, "reset\n");*/
 }
 
@@ -161,6 +285,37 @@ void jitter_buffer_destroy(JitterBuffer *jitter)
 {
    jitter_buffer_reset(jitter);
    speex_free(jitter);
+}
+
+static void update_timings(JitterBuffer *jitter, spx_int32_t timing)
+{
+   if (timing < -32767)
+      timing = -32767;
+   if (timing > 32767)
+      timing = 32767;
+   if (jitter->timeBuffers[0]->curr_count >= WINDOW_SIZE)
+   {
+      int i;
+      /*fprintf(stderr, "Rotate buffer\n");*/
+      struct TimingBuffer *tmp = jitter->timeBuffers[MAX_BUFFERS-1];
+      for (i=MAX_BUFFERS-1;i>=1;i--)
+         jitter->timeBuffers[i] = jitter->timeBuffers[i-1];
+      jitter->timeBuffers[0] = tmp;
+      tb_init(jitter->timeBuffers[0]);
+   }
+   tb_add(jitter->timeBuffers[0], timing);
+   spx_int16_t opt = tbs_get_opt_delay(jitter->_tb, 2);
+   /*fprintf(stderr, "opt adjustment is %d\n", opt);*/
+}
+
+static void shift_timings(JitterBuffer *jitter, spx_int16_t amount)
+{
+   int i, j;
+   for (i=0;i<MAX_BUFFERS;i++)
+   {
+      for (j=0;j<jitter->timeBuffers[i]->filled;i++)
+         jitter->timeBuffers[i]->timing[j] += amount;
+   }
 }
 
 static void update_histogram(JitterBuffer *jitter, spx_int32_t arrival_margin)
@@ -298,17 +453,17 @@ void jitter_buffer_put(JitterBuffer *jitter, const JitterBufferPacket *packet)
       }
    }
 
-   fprintf(stderr, "arrival: %d %d %d\n", packet->timestamp, jitter->next_stop, jitter->pointer_timestamp);
+   /*fprintf(stderr, "arrival: %d %d %d\n", packet->timestamp, jitter->next_stop, jitter->pointer_timestamp);*/
    /* Check if packet is late (could still be useful though) */
    if (LT32(packet->timestamp, jitter->next_stop))
    {
-      fprintf(stderr, "late by %d\n", jitter->next_stop - packet->timestamp);
+      /*fprintf(stderr, "late by %d\n", jitter->next_stop - packet->timestamp);*/
       
       /* The arrival margin is how much in advance (or in this case late) the packet it (in resolution units) */
       arrival_margin = (((spx_int32_t)packet->timestamp) - ((spx_int32_t)jitter->next_stop))/jitter->resolution - jitter->buffer_margin;
    
-      fprintf(stderr, "put arrival_margin = %d\n", arrival_margin);
-
+      /*fprintf(stderr, "put arrival_margin = %d\n", arrival_margin);*/
+      /*update_timings(jitter, ((spx_int32_t)packet->timestamp) - ((spx_int32_t)jitter->next_stop));*/
       update_histogram(jitter, arrival_margin);
       late = 1;
    } else {
@@ -393,7 +548,7 @@ int jitter_buffer_get(JitterBuffer *jitter, JitterBufferPacket *packet, spx_int3
       /* Increment the pointer because it got decremented in the delay update */
       jitter->pointer_timestamp += jitter->delay_step;
       packet->len = 0;
-      fprintf (stderr, "Deferred interpolate\n");
+      /*fprintf (stderr, "Deferred interpolate\n");*/
       
       return JITTER_BUFFER_MISSING;
    }
@@ -469,12 +624,14 @@ int jitter_buffer_get(JitterBuffer *jitter, JitterBufferPacket *packet, spx_int3
       if (jitter->arrival[i] != 0)
       {
          spx_int32_t arrival_margin;
-         fprintf(stderr, "early by %d\n", jitter->packets[i].timestamp - jitter->arrival[i]);
+         /*fprintf(stderr, "early by %d\n", jitter->packets[i].timestamp - jitter->arrival[i]);*/
          
          /* The arrival margin is how much in advance (or in this case late) the packet it (in resolution units) */
          arrival_margin = (((spx_int32_t)jitter->packets[i].timestamp) - ((spx_int32_t)jitter->arrival[i]))/jitter->resolution - jitter->buffer_margin;
    
-         fprintf(stderr, "get arrival_margin = %d\n", arrival_margin);
+         /*fprintf(stderr, "get arrival_margin = %d\n", arrival_margin);*/
+         
+         /*update_timings(jitter, ((spx_int32_t)jitter->packets[i].timestamp) - ((spx_int32_t)jitter->arrival[i]));*/
 
          update_histogram(jitter, arrival_margin);
 
@@ -539,14 +696,14 @@ int jitter_buffer_get(JitterBuffer *jitter, JitterBufferPacket *packet, spx_int3
       packet->len = 0;
       
       /*jitter->pointer_timestamp -= jitter->delay_step;*/
-      fprintf (stderr, "Forced to interpolate\n");
+      /*fprintf (stderr, "Forced to interpolate\n");*/
    } else {
       /* Normal packet loss */
       packet->timestamp = jitter->pointer_timestamp;
       packet->span = desired_span;
       jitter->pointer_timestamp += desired_span;
       packet->len = 0;
-      fprintf (stderr, "Normal loss\n");
+      /*fprintf (stderr, "Normal loss\n");*/
    }
 
    return JITTER_BUFFER_MISSING;
@@ -618,7 +775,7 @@ int jitter_buffer_update_delay(JitterBuffer *jitter, JitterBufferPacket *packet,
       
       jitter->pointer_timestamp -= jitter->delay_step;
       jitter->interp_requested = 1;
-      fprintf (stderr, "Decision to interpolate\n");
+      /*fprintf (stderr, "Decision to interpolate\n");*/
       return JITTER_BUFFER_ADJUST_INTERPOLATE;
    
    } else if (jitter->late_ratio_short + jitter->ontime_ratio_short < .005 && jitter->late_ratio_long + jitter->ontime_ratio_long < .01 && jitter->early_ratio_short > .8)
@@ -627,7 +784,7 @@ int jitter_buffer_update_delay(JitterBuffer *jitter, JitterBufferPacket *packet,
       shift_histogram(jitter, -jitter->res_delay_step);
       
       jitter->pointer_timestamp += jitter->delay_step;
-      fprintf (stderr, "Decision to drop\n");
+      /*fprintf (stderr, "Decision to drop\n");*/
       return JITTER_BUFFER_ADJUST_DROP;
    }
    
