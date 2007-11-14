@@ -70,29 +70,6 @@ int scal_quant32(spx_word32_t in, const spx_word32_t *boundary, int entries)
    return i;
 }
 
-/*Finds the index of the entry in a codebook that best matches the input*/
-int vq_index(float *in, const float *codebook, int len, int entries)
-{
-   int i,j;
-   float min_dist=0;
-   int best_index=0;
-   for (i=0;i<entries;i++)
-   {
-      float dist=0;
-      for (j=0;j<len;j++)
-      {
-         float tmp = in[j]-*codebook++;
-         dist += tmp*tmp;
-      }
-      if (i==0 || dist<min_dist)
-      {
-         min_dist=dist;
-         best_index=i;
-      }
-   }
-   return best_index;
-}
-
 
 #ifndef OVERRIDE_VQ_NBEST
 /*Finds the indices of the n-best entries in a codebook*/

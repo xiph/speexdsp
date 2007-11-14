@@ -46,7 +46,7 @@
 extern "C" {
 #endif
 
-/** State used for decoding (intensity) stereo information */
+/** If you access any of these fields directly, I'll personally come and bite you */
 typedef struct SpeexStereoState {
    float balance;      /**< Left/right balance info */
    float e_ratio;      /**< Ratio of energies: E(left+right)/[E(left)+E(right)]  */
@@ -56,8 +56,17 @@ typedef struct SpeexStereoState {
    float reserved2;    /**< Reserved for future use */
 } SpeexStereoState;
 
-/** Initialization value for a stereo state */
+/** Deprecated. Use speex_stereo_state_init() instead. */
 #define SPEEX_STEREO_STATE_INIT {1,.5,1,1,0,0}
+
+/** Initialise/create a stereo stereo state */
+SpeexStereoState *speex_stereo_state_init();
+
+/** Reset/re-initialise an already allocated stereo state */
+void speex_stereo_state_reset(SpeexStereoState *stereo);
+
+/** Destroy a stereo stereo state */
+void speex_stereo_state_destroy(SpeexStereoState *stereo);
 
 /** Transforms a stereo frame into a mono frame and stores intensity stereo info in 'bits' */
 void speex_encode_stereo(float *data, int frame_size, SpeexBits *bits);
