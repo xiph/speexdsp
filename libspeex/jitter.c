@@ -35,8 +35,10 @@
 /*
 TODO:
 - Make tick() smarter by using the desired and returned span of the last get()
-- rounding directly in the opt computation
 - Add short-term estimate
+- Defensive programming
+  + warn when last returned < last desired (begative buffering)
+  + warn if update_delay not called between get() and tick() or is called twice in a row
 - Linked list structure for holding the packets instead of the current fixed-size array
   + return memory to a pool
   + allow pre-allocation of the pool
@@ -223,6 +225,7 @@ static spx_int16_t compute_opt_delay(JitterBuffer *jitter)
          if (i==0)
             worst = latest;
          best = latest;
+         latest = ROUND_DOWN(latest, jitter->delay_step);
          pos[next]++;
          cost = -latest + late_factor*late;
          /*fprintf(stderr, "cost %d = %d + %f * %d\n", cost, -latest, late_factor, late);*/
@@ -588,7 +591,7 @@ int jitter_buffer_get(JitterBuffer *jitter, JitterBufferPacket *packet, spx_int3
       *start_offset = 0;
    
    opt = compute_opt_delay(jitter);
-   opt = ROUND_DOWN(opt, jitter->delay_step);
+   
    /* Should we force an increase in the buffer or just do normal interpolation? */   
    if (opt < 0)
    {
@@ -674,11 +677,6 @@ int jitter_buffer_update_delay(JitterBuffer *jitter, JitterBufferPacket *packet,
 {
    spx_int16_t opt = compute_opt_delay(jitter);
    /*fprintf(stderr, "opt adjustment is %d ", opt);*/
-
-   /* Round down to next delay_step */
-   opt = ROUND_DOWN(opt, jitter->delay_step);
-
-   /*fprintf(stderr, "(%d for multiple of %d)\n", opt, jitter->delay_step);*/
    
    if (opt < 0)
    {
@@ -687,17 +685,14 @@ int jitter_buffer_update_delay(JitterBuffer *jitter, JitterBufferPacket *packet,
       jitter->pointer_timestamp += opt;
       jitter->interp_requested = -opt;
       /*fprintf (stderr, "Decision to interpolate %d samples\n", -opt);*/
-      return JITTER_BUFFER_ADJUST_INTERPOLATE;
-   
    } else if (opt > 0)
    {
       shift_timings(jitter, -opt);
       jitter->pointer_timestamp += opt;
       /*fprintf (stderr, "Decision to drop %d samples\n", opt);*/
-      return JITTER_BUFFER_ADJUST_DROP;
-   } else {
-      return JITTER_BUFFER_ADJUST_OK;
    }
+   
+   return opt;
 }
 
 /* Used like the ioctl function to control the jitter buffer parameters */

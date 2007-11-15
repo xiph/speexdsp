@@ -62,6 +62,8 @@ struct _JitterBufferPacket {
    spx_uint32_t len;        /**< Length of the packet in bytes */
    spx_uint32_t timestamp;  /**< Timestamp for the packet */
    spx_uint32_t span;       /**< Time covered by the packet (same units as timestamp) */
+   spx_uint16_t sequence;   /**< RTP Sequence number if available (0 otherwise) */
+   spx_uint16_t flags;      /**< Info about the returned packet */
    spx_uint32_t user_data;  /**< Put whatever data you like here (it's ignored by the jitter buffer) */
 };
 
@@ -107,13 +109,6 @@ struct _JitterBufferPacket {
 #define JITTER_BUFFER_SET_LATE_COST 12
 #define JITTER_BUFFER_GET_LATE_COST 13
 
-
-
-
-
-#define JITTER_BUFFER_ADJUST_INTERPOLATE -1
-#define JITTER_BUFFER_ADJUST_OK 0
-#define JITTER_BUFFER_ADJUST_DROP 1
 
 /** Initialises jitter buffer 
  * 
