@@ -451,18 +451,19 @@ int jitter_buffer_get(JitterBuffer *jitter, JitterBufferPacket *packet, spx_int3
    
    jitter->last_returned_timestamp = jitter->pointer_timestamp;
          
-   if (jitter->interp_requested)
+   if (jitter->interp_requested != 0)
    {
-      jitter->interp_requested = 0;
       if (start_offset)
          *start_offset = 0;
       packet->timestamp = jitter->pointer_timestamp;
-      packet->span = jitter->delay_step;
+      packet->span = jitter->interp_requested;
       
       /* Increment the pointer because it got decremented in the delay update */
-      jitter->pointer_timestamp += jitter->delay_step;
+      jitter->pointer_timestamp += jitter->interp_requested;
       packet->len = 0;
       /*fprintf (stderr, "Deferred interpolate\n");*/
+      
+      jitter->interp_requested = 0;
       
       return JITTER_BUFFER_MISSING;
    }
@@ -680,7 +681,7 @@ int jitter_buffer_update_delay(JitterBuffer *jitter, JitterBufferPacket *packet,
       shift_timings(jitter, -opt);
       
       jitter->pointer_timestamp += opt;
-      jitter->interp_requested = 1;
+      jitter->interp_requested = -opt;
       /*fprintf (stderr, "Decision to interpolate %d samples\n", -opt);*/
       return JITTER_BUFFER_ADJUST_INTERPOLATE;
    
