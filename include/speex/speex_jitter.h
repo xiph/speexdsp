@@ -98,14 +98,17 @@ struct _JitterBufferPacket {
 /**  */
 #define JITTER_BUFFER_GET_DELAY_STEP 7
 
-#define JITTER_BUFFER_SET_LOSS_SIZE 8
-#define JITTER_BUFFER_GET_LOSS_SIZE 9
+#define JITTER_BUFFER_SET_CONCEALMENT_SIZE 8
+#define JITTER_BUFFER_GET_CONCEALMENT_SIZE 9
 
 #define JITTER_BUFFER_SET_MAX_LATE_RATE 10
 #define JITTER_BUFFER_GET_MAX_LATE_RATE 11
 
 #define JITTER_BUFFER_SET_LATE_COST 12
 #define JITTER_BUFFER_GET_LATE_COST 13
+
+
+
 
 
 #define JITTER_BUFFER_ADJUST_INTERPOLATE -1
@@ -117,7 +120,7 @@ struct _JitterBufferPacket {
  * @param tick Number of samples per "tick", i.e. the time period of the elements that will be retrieved
  * @return Newly created jitter buffer state
  */
-JitterBuffer *jitter_buffer_init(int tick);
+JitterBuffer *jitter_buffer_init(void);
 
 /** Restores jitter buffer to its original state 
  * 

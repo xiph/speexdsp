@@ -34,8 +34,9 @@
 
 /*
 TODO:
-- Write generic functions for computing stats and shifting the histogram
-- Take into account the delay step when computing the stats and when shifting
+- Make tick() smarter by using the desired and returned span of the last get()
+- rounding directly in the opt computation
+- Add short-term estimate
 - Linked list structure for holding the packets instead of the current fixed-size array
   + return memory to a pool
   + allow pre-allocation of the pool
@@ -70,6 +71,8 @@ TODO:
 #define GE32(a,b) (((spx_int32_t)((a)-(b)))>=0)
 #define LT32(a,b) (((spx_int32_t)((a)-(b)))<0)
 #define LE32(a,b) (((spx_int32_t)((a)-(b)))<=0)
+
+#define ROUND_DOWN(x, step) ((x)<0 ? ((x)-(step)+1)/(step)*(step) : (x)/(step)*(step)) 
 
 #define MAX_TIMINGS 20
 #define MAX_BUFFERS 3
@@ -145,7 +148,8 @@ struct JitterBuffer_ {
    
    void (*destroy) (void *);                                   /**< Callback for destroying a packet */
 
-   int delay_step;                                             /**< Size of the steps when adjusting buffering (timestamp units) */
+   spx_int32_t delay_step;                                     /**< Size of the steps when adjusting buffering (timestamp units) */
+   spx_int32_t concealment_size;                               /**< Size of the packet loss concealment "units" */
    int reset_state;                                            /**< True if state was just reset        */
    int buffer_margin;                                          /**< How many frames we want to keep in the buffer (lower bound) */
    int late_cutoff;                                            /**< How late must a packet be for it not to be considered at all */
@@ -253,7 +257,7 @@ static spx_int16_t compute_opt_delay(JitterBuffer *jitter)
 
 
 /** Initialise jitter buffer */
-JitterBuffer *jitter_buffer_init(int resolution)
+JitterBuffer *jitter_buffer_init(void)
 {
    JitterBuffer *jitter = (JitterBuffer*)speex_alloc(sizeof(JitterBuffer));
    if (jitter)
@@ -262,7 +266,8 @@ JitterBuffer *jitter_buffer_init(int resolution)
       spx_int32_t tmp;
       for (i=0;i<SPEEX_JITTER_MAX_BUFFER_SIZE;i++)
          jitter->packets[i].data=NULL;
-      jitter->delay_step = resolution;
+      jitter->delay_step = 1;
+      jitter->concealment_size = 1;
       /*FIXME: Should this be 0 or 1?*/
       jitter->buffer_margin = 0;
       jitter->late_cutoff = 50;
@@ -583,17 +588,17 @@ int jitter_buffer_get(JitterBuffer *jitter, JitterBufferPacket *packet, spx_int3
       *start_offset = 0;
    
    opt = compute_opt_delay(jitter);
-   
+   opt = ROUND_DOWN(opt, jitter->delay_step);
    /* Should we force an increase in the buffer or just do normal interpolation? */   
    if (opt < 0)
    {
-      /* Increase buffering */
+      /* Need to increase buffering */
       
       /* Shift histogram to compensate */
-      shift_timings(jitter, jitter->delay_step);
+      shift_timings(jitter, -opt);
       
       packet->timestamp = jitter->pointer_timestamp;
-      packet->span = jitter->delay_step;
+      packet->span = -opt;
       /* Don't move the pointer_timestamp forward */
       packet->len = 0;
       
@@ -602,6 +607,8 @@ int jitter_buffer_get(JitterBuffer *jitter, JitterBufferPacket *packet, spx_int3
    } else {
       /* Normal packet loss */
       packet->timestamp = jitter->pointer_timestamp;
+      
+      desired_span = ROUND_DOWN(desired_span, jitter->concealment_size);
       packet->span = desired_span;
       jitter->pointer_timestamp += desired_span;
       packet->len = 0;
@@ -669,10 +676,7 @@ int jitter_buffer_update_delay(JitterBuffer *jitter, JitterBufferPacket *packet,
    /*fprintf(stderr, "opt adjustment is %d ", opt);*/
 
    /* Round down to next delay_step */
-   if (opt < 0)
-      opt = ((opt-jitter->delay_step+1)/jitter->delay_step)*jitter->delay_step;
-   else
-      opt = (opt/jitter->delay_step)*jitter->delay_step;
+   opt = ROUND_DOWN(opt, jitter->delay_step);
 
    /*fprintf(stderr, "(%d for multiple of %d)\n", opt, jitter->delay_step);*/
    
@@ -731,9 +735,11 @@ int jitter_buffer_ctl(JitterBuffer *jitter, int request, void *ptr)
       case JITTER_BUFFER_GET_DELAY_STEP:
          *(spx_int32_t*)ptr = jitter->delay_step;
          break;
-      case JITTER_BUFFER_SET_LOSS_SIZE:
+      case JITTER_BUFFER_SET_CONCEALMENT_SIZE:
+         jitter->concealment_size = *(spx_int32_t*)ptr;
          break;
-      case JITTER_BUFFER_GET_LOSS_SIZE:
+      case JITTER_BUFFER_GET_CONCEALMENT_SIZE:
+         *(spx_int32_t*)ptr = jitter->concealment_size;
          break;
       case JITTER_BUFFER_SET_MAX_LATE_RATE:
          jitter->max_late_rate = *(spx_int32_t*)ptr;
