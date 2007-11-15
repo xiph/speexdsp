@@ -9,4 +9,6 @@
 #endif
 
 /* Default to floating point */
-#define FLOATING_POINT
+#ifndef FIXED_POINT
+#  define FLOATING_POINT
+#endif

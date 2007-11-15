@@ -25,7 +25,7 @@
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				UsePrecompiledHeader="0"
-				WarningLevel="4"
+				WarningLevel="3"
 				Detect64BitPortabilityProblems="TRUE"
 				DebugInformationFormat="4"
 				CompileAs="1"/>
@@ -74,9 +74,8 @@
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
 				BufferSecurityCheck="FALSE"
-				EnableEnhancedInstructionSet="1"
 				UsePrecompiledHeader="0"
-				WarningLevel="4"
+				WarningLevel="3"
 				Detect64BitPortabilityProblems="TRUE"
 				DebugInformationFormat="3"
 				CompileAs="1"
@@ -173,14 +172,14 @@
 				FavorSizeOrSpeed="1"
 				OptimizeForProcessor="3"
 				AdditionalIncludeDirectories="..\..\..\include;..\.."
-				PreprocessorDefinitions="_USE_SSE;WIN32;NDEBUG;_LIB;HAVE_CONFIG_H"
+				PreprocessorDefinitions="_USE_SSE;WIN32;NDEBUG;_WINDOWS;_USRDLL;HAVE_CONFIG_H"
 				StringPooling="TRUE"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
 				BufferSecurityCheck="FALSE"
 				EnableEnhancedInstructionSet="1"
 				UsePrecompiledHeader="0"
-				WarningLevel="4"
+				WarningLevel="3"
 				Detect64BitPortabilityProblems="TRUE"
 				DebugInformationFormat="3"
 				CompileAs="1"
@@ -190,7 +189,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				OutputFile="../../../bin/libspeex.dll"
-				ModuleDefinitionFile="libspeex.def"
+				ModuleDefinitionFile="..\..\libspeex.def"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
 				OptimizeForWindows98="1"
@@ -249,12 +248,6 @@
 				RelativePath="..\..\..\libspeex\exc_8_128_table.c">
 			</File>
 			<File
-				RelativePath="..\..\..\libspeex\fftwrap.c">
-			</File>
-			<File
-				RelativePath="..\..\..\libspeex\filterbank.c">
-			</File>
-			<File
 				RelativePath="..\..\..\libspeex\filters.c">
 			</File>
 			<File
@@ -273,18 +266,6 @@
 				RelativePath="..\..\..\libspeex\high_lsp_tables.c">
 			</File>
 			<File
-				RelativePath="..\..\..\libspeex\jitter.c">
-			</File>
-			<File
-				RelativePath="..\..\..\libspeex\kiss_fft.c">
-			</File>
-			<File
-				RelativePath="..\..\..\libspeex\kiss_fftr.c">
-			</File>
-			<File
-				RelativePath="..\..\..\libspeex\lbr_48k_tables.c">
-			</File>
-			<File
 				RelativePath="..\..\..\libspeex\lpc.c">
 			</File>
 			<File
@@ -297,34 +278,19 @@
 				RelativePath="..\..\..\libspeex\ltp.c">
 			</File>
 			<File
-				RelativePath="..\..\..\libspeex\math_approx.c">
-			</File>
-			<File
-				RelativePath="..\..\..\libspeex\mdf.c">
-			</File>
-			<File
-				RelativePath="..\..\..\libspeex\misc.c">
-			</File>
-			<File
 				RelativePath="..\..\..\libspeex\modes.c">
+			</File>
+			<File
+				RelativePath="..\..\..\libspeex\modes_wb.c">
 			</File>
 			<File
 				RelativePath="..\..\..\libspeex\nb_celp.c">
 			</File>
 			<File
-				RelativePath="..\..\..\libspeex\preprocess.c">
-			</File>
-			<File
 				RelativePath="..\..\..\libspeex\quant_lsp.c">
 			</File>
 			<File
-				RelativePath="..\..\..\libspeex\resample.c">
-			</File>
-			<File
 				RelativePath="..\..\..\libspeex\sb_celp.c">
-			</File>
-			<File
-				RelativePath="..\..\..\libspeex\smallft.c">
 			</File>
 			<File
 				RelativePath="..\..\..\libspeex\speex.c">
@@ -342,9 +308,6 @@
 				RelativePath="..\..\..\libspeex\vbr.c">
 			</File>
 			<File
-				RelativePath="..\..\..\libspeex\vorbis_psy.c">
-			</File>
-			<File
 				RelativePath="..\..\..\libspeex\vq.c">
 			</File>
 			<File
@@ -356,9 +319,6 @@
 			Filter="h;hpp;hxx;hm;inl;inc;xsd"
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}">
 			<File
-				RelativePath="..\..\..\libspeex\_kiss_fft_guts.h">
-			</File>
-			<File
 				RelativePath="..\..\..\libspeex\arch.h">
 			</File>
 			<File
@@ -366,15 +326,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\libspeex\cb_search_sse.h">
-			</File>
-			<File
-				RelativePath="..\..\config.h">
-			</File>
-			<File
-				RelativePath="..\..\..\libspeex\fftwrap.h">
-			</File>
-			<File
-				RelativePath="..\..\..\libspeex\filterbank.h">
 			</File>
 			<File
 				RelativePath="..\..\..\libspeex\filters.h">
@@ -387,12 +338,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\libspeex\fixed_generic.h">
-			</File>
-			<File
-				RelativePath="..\..\..\libspeex\kiss_fft.h">
-			</File>
-			<File
-				RelativePath="..\..\..\libspeex\kiss_fftr.h">
 			</File>
 			<File
 				RelativePath="..\..\..\libspeex\lpc.h">
@@ -410,16 +355,13 @@
 				RelativePath="..\..\..\libspeex\math_approx.h">
 			</File>
 			<File
-				RelativePath="..\..\..\libspeex\misc.h">
-			</File>
-			<File
 				RelativePath="..\..\..\libspeex\modes.h">
 			</File>
 			<File
 				RelativePath="..\..\..\libspeex\nb_celp.h">
 			</File>
 			<File
-				RelativePath="..\..\..\libspeex\pseudofloat.h">
+				RelativePath="..\..\..\libspeex\os_support.h">
 			</File>
 			<File
 				RelativePath="..\..\..\libspeex\quant_lsp.h">
@@ -428,16 +370,10 @@
 				RelativePath="..\..\..\libspeex\sb_celp.h">
 			</File>
 			<File
-				RelativePath="..\..\..\libspeex\smallft.h">
-			</File>
-			<File
 				RelativePath="..\..\..\libspeex\stack_alloc.h">
 			</File>
 			<File
 				RelativePath="..\..\..\libspeex\vbr.h">
-			</File>
-			<File
-				RelativePath="..\..\..\libspeex\vorbis_psy.h">
 			</File>
 			<File
 				RelativePath="..\..\..\libspeex\vq.h">
@@ -445,11 +381,6 @@
 			<File
 				RelativePath="..\..\..\libspeex\vq_sse.h">
 			</File>
-		</Filter>
-		<Filter
-			Name="Resource Files"
-			Filter="rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx"
-			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}">
 		</Filter>
 		<Filter
 			Name="Public Header Files"
@@ -464,19 +395,7 @@
 				RelativePath="..\..\..\include\speex\speex_callbacks.h">
 			</File>
 			<File
-				RelativePath="..\..\..\include\speex\speex_echo.h">
-			</File>
-			<File
 				RelativePath="..\..\..\include\speex\speex_header.h">
-			</File>
-			<File
-				RelativePath="..\..\..\include\speex\speex_jitter.h">
-			</File>
-			<File
-				RelativePath="..\..\..\include\speex\speex_preprocess.h">
-			</File>
-			<File
-				RelativePath="..\..\..\include\speex\speex_resampler.h">
 			</File>
 			<File
 				RelativePath="..\..\..\include\speex\speex_stereo.h">
@@ -485,8 +404,16 @@
 				RelativePath="..\..\..\include\speex\speex_types.h">
 			</File>
 		</Filter>
+		<Filter
+			Name="Resource Files"
+			Filter="rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx"
+			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}">
+		</Filter>
 		<File
-			RelativePath=".\libspeex.def">
+			RelativePath="..\..\config.h">
+		</File>
+		<File
+			RelativePath="..\..\libspeex.def">
 		</File>
 	</Files>
 	<Globals>
