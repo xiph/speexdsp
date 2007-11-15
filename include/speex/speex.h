@@ -410,19 +410,16 @@ extern const SpeexMode speex_wb_mode;
 /** Default "ultra-wideband" mode */
 extern const SpeexMode speex_uwb_mode;
 
-#ifdef EPIC_48K
-/** 4.8 kbps narrowband mode */
-extern const SpeexMode speex_nb_48k_mode;
-#endif
-
 /** List of all modes available */
 extern const SpeexMode * const speex_mode_list[SPEEX_NB_MODES];
 
 /** Obtain one of the modes available */
 const SpeexMode * speex_lib_get_mode (int mode);
 
-/* We actually override the fucntion in the narrowband case so that we can avoid linking in the wideband stuff */
+#ifndef WIN32
+/* We actually override the function in the narrowband case so that we can avoid linking in the wideband stuff */
 #define speex_lib_get_mode(mode) ((mode)==SPEEX_MODEID_NB ? &speex_nb_mode : speex_lib_get_mode (mode))
+#endif
 
 #ifdef __cplusplus
 }
