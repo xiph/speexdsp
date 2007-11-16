@@ -34,7 +34,6 @@
 
 /*
 TODO:
-- Make tick() smarter by using the desired and returned span of the last get()
 - Add short-term estimate
 - Defensive programming
   + warn when last returned < last desired (begative buffering)
@@ -144,6 +143,8 @@ struct JitterBuffer_ {
    spx_uint32_t pointer_timestamp;                             /**< Timestamp of what we will *get* next */
    spx_uint32_t last_returned_timestamp;
    spx_uint32_t next_stop;
+   
+   spx_int32_t buffered;                                       /**< Amount of data we think is still buffered by the application (timestamp units)*/
    
    JitterBufferPacket packets[SPEEX_JITTER_MAX_BUFFER_SIZE];   /**< Packets stored in the buffer */
    spx_uint32_t arrival[SPEEX_JITTER_MAX_BUFFER_SIZE];         /**< Packet arrival time (0 means it was late, even though it's a valid timestamp) */
@@ -274,7 +275,6 @@ JitterBuffer *jitter_buffer_init(void)
       /*FIXME: Should this be 0 or 1?*/
       jitter->buffer_margin = 0;
       jitter->late_cutoff = 50;
-      jitter->auto_tradeoff = 32000;
       jitter->destroy = NULL;
       jitter->latency_tradeoff = 0;
       tmp = 4;
@@ -304,6 +304,8 @@ void jitter_buffer_reset(JitterBuffer *jitter)
    jitter->next_stop = 0;
    jitter->reset_state = 1;
    jitter->lost_count = 0;
+   jitter->buffered = 0;
+   jitter->auto_tradeoff = 32000;
    
    for (i=0;i<MAX_BUFFERS;i++)
    {
@@ -473,6 +475,8 @@ int jitter_buffer_get(JitterBuffer *jitter, JitterBufferPacket *packet, spx_int3
       
       jitter->interp_requested = 0;
       
+      jitter->buffered = packet->span - desired_span;
+
       return JITTER_BUFFER_MISSING;
    }
    
@@ -574,6 +578,8 @@ int jitter_buffer_get(JitterBuffer *jitter, JitterBufferPacket *packet, spx_int3
       /* Point to the end of the current packet */
       jitter->pointer_timestamp = jitter->packets[i].timestamp+jitter->packets[i].span;
 
+      jitter->buffered = *start_offset + packet->span - desired_span;
+
       if (incomplete)
          return JITTER_BUFFER_INCOMPLETE;
       else
@@ -618,6 +624,7 @@ int jitter_buffer_get(JitterBuffer *jitter, JitterBufferPacket *packet, spx_int3
       /*fprintf (stderr, "Normal loss\n");*/
    }
 
+   jitter->buffered = packet->span - desired_span;
    return JITTER_BUFFER_MISSING;
 
 }
@@ -664,11 +671,20 @@ int jitter_buffer_get_pointer_timestamp(JitterBuffer *jitter)
 
 void jitter_buffer_tick(JitterBuffer *jitter)
 {
-   jitter->next_stop = jitter->pointer_timestamp;
+   if (jitter->buffered >= 0)
+   {
+      jitter->next_stop = jitter->pointer_timestamp - jitter->buffered;
+   } else {
+      jitter->next_stop = jitter->pointer_timestamp;
+      speex_warning_int("jitter buffer sees negative buffering, you code might be broken. Value is ", jitter->buffered);
+   }
+   jitter->buffered = 0;
 }
 
 void jitter_buffer_remaining_span(JitterBuffer *jitter, spx_uint32_t rem)
 {
+   if (jitter->buffered < 0)
+      speex_warning_int("jitter buffer sees negative buffering, you code might be broken. Value is ", jitter->buffered);
    jitter->next_stop = jitter->pointer_timestamp - rem;
 }
 
