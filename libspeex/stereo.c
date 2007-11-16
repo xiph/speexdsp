@@ -140,35 +140,51 @@ void speex_encode_stereo(float *data, int frame_size, SpeexBits *bits)
 void speex_encode_stereo_int(spx_int16_t *data, int frame_size, SpeexBits *bits)
 {
    int i, tmp;
-   float e_left=0, e_right=0, e_tot=0;
+   spx_word32_t e_left=0, e_right=0, e_tot=0;
    float balance, e_ratio;
+   spx_word32_t largest, smallest;
+   int signbit;
+   
+   /* In band marker */
+   speex_bits_pack(bits, 14, 5);
+   /* Stereo marker */
+   speex_bits_pack(bits, SPEEX_INBAND_STEREO, 4);
+
    for (i=0;i<frame_size;i++)
    {
-      e_left  += ((float)data[2*i])*data[2*i];
-      e_right += ((float)data[2*i+1])*data[2*i+1];
+      e_left  += SHR32(MULT16_16(data[2*i],data[2*i]),8);
+      e_right += SHR32(MULT16_16(data[2*i+1],data[2*i+1]),8);
+#ifdef FIXED_POINT
+      /* I think this is actually unbiased */
+      data[i] =  SHR16(data[2*i],1)+PSHR16(data[2*i+1],1);
+#else
       data[i] =  .5*(((float)data[2*i])+data[2*i+1]);
-      e_tot   += ((float)data[i])*data[i];
+#endif
+      e_tot   += SHR32(MULT16_16(data[i],data[i]),8);
    }
-   balance=(e_left+1)/(e_right+1);
-   e_ratio = e_tot/(1+e_left+e_right);
-
-   /*Quantization*/
-   speex_bits_pack(bits, 14, 5);
-   speex_bits_pack(bits, SPEEX_INBAND_STEREO, 4);
-   
+   if (e_left > e_right)
+   {
+      speex_bits_pack(bits, 0, 1);
+      largest = e_left;
+      smallest = e_right;
+   } else {
+      speex_bits_pack(bits, 1, 1);
+      largest = e_right;
+      smallest = e_left;
+   }
+   balance=(largest+1.)/(smallest+1.);
    balance=4*log(balance);
 
-   /*Pack sign*/
-   if (balance>0)
-      speex_bits_pack(bits, 0, 1);
-   else
-      speex_bits_pack(bits, 1, 1);
+   fprintf (stderr, "%d %d %f\n", largest, smallest, balance);
+   /*Quantization*/
    balance=floor(.5+fabs(balance));
    if (balance>30)
       balance=31;
    
    speex_bits_pack(bits, (int)balance, 5);
    
+   e_ratio = e_tot/(1.+e_left+e_right);
+
    /* FIXME: this is a hack */
    tmp=scal_quant(e_ratio*Q15_ONE, e_ratio_quant_bounds, 3);
    speex_bits_pack(bits, tmp, 2);
