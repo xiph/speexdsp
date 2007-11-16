@@ -79,11 +79,12 @@ TODO:
 #define MAX_BUFFERS 3
 #define TOP_DELAY 20
 
+/** Buffer that keeps the time of arrival of the latest packets */
 struct TimingBuffer {
-   int filled;
-   int curr_count;
-   spx_int16_t timing[MAX_TIMINGS];
-   spx_int16_t counts[MAX_TIMINGS];
+   int filled;                         /**< Number of entries occupied in "timing" and "counts"*/
+   int curr_count;                     /**< Number of packet timings we got (including those we discarded) */
+   spx_int16_t timing[MAX_TIMINGS];    /**< Sorted list of all timings ("latest" packets first) */
+   spx_int16_t counts[MAX_TIMINGS];    /**< Order the packets were put in (will be used for short-term estimate) */
 };
 
 static void tb_init(struct TimingBuffer *tb)
@@ -92,16 +93,18 @@ static void tb_init(struct TimingBuffer *tb)
    tb->curr_count = 0;
 }
 
+/* Add the timing of a new packet to the TimingBuffer */
 static void tb_add(struct TimingBuffer *tb, spx_int16_t timing)
 {
    int pos;
-   /*fprintf(stderr, "timing = %d\n", timing);*/
-   /*fprintf(stderr, "timing = %d, latest = %d, earliest = %d, filled = %d\n", timing, tb->timing[0], tb->timing[tb->filled-1], tb->filled);*/
+   /* Discard packet that won't make it into the list because they're too early */
    if (tb->filled >= MAX_TIMINGS && timing >= tb->timing[tb->filled-1])
    {
       tb->curr_count++;
       return;
    }
+   
+   /* Find where the timing info goes in the sorted list */
    pos = 0;
    /* FIXME: Do bisection instead of linear search */
    while (pos<tb->filled && timing >= tb->timing[pos])
@@ -109,31 +112,24 @@ static void tb_add(struct TimingBuffer *tb, spx_int16_t timing)
       pos++;
    }
    
-   /*fprintf(stderr, "pos = %d filled = %d\n", pos, tb->filled);*/
    speex_assert(pos <= tb->filled && pos < MAX_TIMINGS);
-   /*fprintf(stderr, "OK\n");*/
+   
+   /* Shift everything so we can perform the insertion */
    if (pos < tb->filled)
    {
       int move_size = tb->filled-pos;
       if (tb->filled == MAX_TIMINGS)
          move_size -= 1;
-      /*fprintf(stderr, "speex_move(%d %d %d)\n", pos+1, pos, move_size);*/
       speex_move(&tb->timing[pos+1], &tb->timing[pos], move_size*sizeof(tb->timing[0]));
       speex_move(&tb->counts[pos+1], &tb->counts[pos], move_size*sizeof(tb->counts[0]));
    }
-   /*fprintf(stderr, "moved\n");*/
+   /* Insert */
    tb->timing[pos] = timing;
    tb->counts[pos] = tb->curr_count;
-   /*{
-      int i;
-      for (i=0;i<MAX_TIMINGS;i++)
-         fprintf(stderr, "%d ", tb->timing[i]);
-      fprintf(stderr, "\n");
-   }*/
+   
    tb->curr_count++;
    if (tb->filled<MAX_TIMINGS)
       tb->filled++;
-   /*fprintf(stderr, "added\n");*/
 }
 
 
@@ -141,8 +137,8 @@ static void tb_add(struct TimingBuffer *tb, spx_int16_t timing)
 /** Jitter buffer structure */
 struct JitterBuffer_ {
    spx_uint32_t pointer_timestamp;                             /**< Timestamp of what we will *get* next */
-   spx_uint32_t last_returned_timestamp;
-   spx_uint32_t next_stop;
+   spx_uint32_t last_returned_timestamp;                       /**< Useful for getting the next packet with the same timestamp (for fragmented media) */
+   spx_uint32_t next_stop;                                     /**< Estimated time the next get() will be called */
    
    spx_int32_t buffered;                                       /**< Amount of data we think is still buffered by the application (timestamp units)*/
    
@@ -192,11 +188,14 @@ static spx_int16_t compute_opt_delay(JitterBuffer *jitter)
    
    tb = jitter->_tb;
    
+   /* Number of packet timings we have received (including those we didn't keep) */
    tot_count = 0;
    for (i=0;i<MAX_BUFFERS;i++)
       tot_count += tb[i].curr_count;
    if (tot_count==0)
       return 0;
+   
+   /* Compute cost for one lost packet */
    if (jitter->latency_tradeoff != 0)
       late_factor = jitter->latency_tradeoff * 100.0f / tot_count;
    else
@@ -206,11 +205,14 @@ static spx_int16_t compute_opt_delay(JitterBuffer *jitter)
    for (i=0;i<MAX_BUFFERS;i++)
       pos[i] = 0;
    
+   /* Pick the TOP_DELAY "latest" packets (doesn't need to actually be late 
+      for the current settings) */
    for (i=0;i<TOP_DELAY;i++)
    {
       int j;
       int next=-1;
       int latest = 32767;
+      /* Pick latest amoung all sub-windows */
       for (j=0;j<MAX_BUFFERS;j++)
       {
          if (pos[j] < tb[j].filled && tb[j].timing[pos[j]] < latest)
@@ -228,6 +230,8 @@ static spx_int16_t compute_opt_delay(JitterBuffer *jitter)
          best = latest;
          latest = ROUND_DOWN(latest, jitter->delay_step);
          pos[next]++;
+         
+         /* Actual cost function that tells us how bad using this delay would be */
          cost = -latest + late_factor*late;
          /*fprintf(stderr, "cost %d = %d + %f * %d\n", cost, -latest, late_factor, late);*/
          if (cost < best_cost)
@@ -239,8 +243,9 @@ static spx_int16_t compute_opt_delay(JitterBuffer *jitter)
          break;
       }
       
+      /* For the next timing we will consider, there will be one more late packet to count */
       late++;
-      /* Two-frame penalty if we're going to increase the amount of late frames */
+      /* Two-frame penalty if we're going to increase the amount of late frames (hysteresis) */
       if (latest >= 0 && !penalty_taken)
       {
          penalty_taken = 1;
@@ -254,6 +259,8 @@ static spx_int16_t compute_opt_delay(JitterBuffer *jitter)
    /*fprintf(stderr, "auto_tradeoff = %d (%d %d %d)\n", jitter->auto_tradeoff, best, worst, i);*/
    
    /* FIXME: Compute a short-term estimate too and combine with the long-term one */
+   
+   /* Prevents reducing the buffer size when we haven't really had much data */
    if (tot_count < TOP_DELAY && opt > 0)
       return 0;
    return opt;
@@ -322,12 +329,14 @@ void jitter_buffer_destroy(JitterBuffer *jitter)
    speex_free(jitter);
 }
 
+/** Take the following timing into consideration for future calculations */
 static void update_timings(JitterBuffer *jitter, spx_int32_t timing)
 {
    if (timing < -32767)
       timing = -32767;
    if (timing > 32767)
       timing = 32767;
+   /* If the current sub-window is full, perform a rotation and discard oldest sub-widow */
    if (jitter->timeBuffers[0]->curr_count >= jitter->subwindow_size)
    {
       int i;
@@ -341,6 +350,7 @@ static void update_timings(JitterBuffer *jitter, spx_int32_t timing)
    tb_add(jitter->timeBuffers[0], timing);
 }
 
+/** Compensate all timings when we do an adjustment of the buffering */
 static void shift_timings(JitterBuffer *jitter, spx_int16_t amount)
 {
    int i, j;

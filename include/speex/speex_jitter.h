@@ -90,22 +90,27 @@ struct _JitterBufferPacket {
 /** Included because of an early misspelling (will remove in next release) */
 #define JITTER_BUFFER_GET_AVALIABLE_COUNT 3
 
-/**  */
+/** Assign a function to destroy unused packet. When setting that, the jitter 
+    buffer no longer copies packet data. */
 #define JITTER_BUFFER_SET_DESTROY_CALLBACK 4
 /**  */
 #define JITTER_BUFFER_GET_DESTROY_CALLBACK 5
 
-/**  */
+/** Tell the jitter buffer to only adjust the delay in multiples of the step parameter provided */
 #define JITTER_BUFFER_SET_DELAY_STEP 6
 /**  */
 #define JITTER_BUFFER_GET_DELAY_STEP 7
 
+/** Tell the jitter buffer to only do concealment in multiples of the size parameter provided */
 #define JITTER_BUFFER_SET_CONCEALMENT_SIZE 8
 #define JITTER_BUFFER_GET_CONCEALMENT_SIZE 9
 
+/** Absolute max amount of loss that can be tolerated regardless of the delay. Typical loss 
+    should be half of that or less. */
 #define JITTER_BUFFER_SET_MAX_LATE_RATE 10
 #define JITTER_BUFFER_GET_MAX_LATE_RATE 11
 
+/** Equivalent cost of one percent late packet in timestamp units */
 #define JITTER_BUFFER_SET_LATE_COST 12
 #define JITTER_BUFFER_GET_LATE_COST 13
 
