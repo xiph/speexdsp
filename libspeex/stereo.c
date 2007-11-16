@@ -175,7 +175,7 @@ void speex_encode_stereo_int(spx_int16_t *data, int frame_size, SpeexBits *bits)
    balance=(largest+1.)/(smallest+1.);
    balance=4*log(balance);
 
-   fprintf (stderr, "%d %d %f\n", largest, smallest, balance);
+   /*fprintf (stderr, "%d %d %f\n", largest, smallest, balance);*/
    /*Quantization*/
    balance=floor(.5+fabs(balance));
    if (balance>30)
