@@ -57,6 +57,10 @@ static const float e_ratio_quant_bounds[3] = {0.2825f, 0.356f, 0.4485f};
 #else
 static const spx_word16_t e_ratio_quant[4] = {8192, 10332, 13009, 16384};
 static const spx_word16_t e_ratio_quant_bounds[3] = {9257, 11665, 14696};
+static const spx_word16_t balance_bounds[31] = {18, 23, 30, 38, 49, 63,  81, 104,
+   134, 172, 221,  284, 364, 468, 600, 771,
+   990, 1271, 1632, 2096, 2691, 3455, 4436, 5696,
+   7314, 9392, 12059, 15484, 19882, 25529, 32766};
 #endif
 
 /* This is an ugly compatibility hack that properly resets the stereo state
@@ -133,7 +137,7 @@ void speex_encode_stereo(float *data, int frame_size, SpeexBits *bits)
    speex_bits_pack(bits, (int)balance, 5);
    
    /* FIXME: this is a hack */
-   tmp=scal_quant(e_ratio*Q15_ONE, e_ratio_quant_bounds, 3);
+   tmp=scal_quant(e_ratio*Q15_ONE, e_ratio_quant_bounds, 4);
    speex_bits_pack(bits, tmp, 2);
 }
 
@@ -141,9 +145,10 @@ void speex_encode_stereo_int(spx_int16_t *data, int frame_size, SpeexBits *bits)
 {
    int i, tmp;
    spx_word32_t e_left=0, e_right=0, e_tot=0;
-   float balance, e_ratio;
+   spx_word32_t balance;
+   float e_ratio;
    spx_word32_t largest, smallest;
-   int signbit;
+   int balance_id;
    
    /* In band marker */
    speex_bits_pack(bits, 14, 5);
@@ -172,21 +177,32 @@ void speex_encode_stereo_int(spx_int16_t *data, int frame_size, SpeexBits *bits)
       largest = e_right;
       smallest = e_left;
    }
+#ifdef FIXED_POINT
+   {
+      int shift = spx_ilog2(largest)-15;
+      largest = VSHR32(largest, shift-4);
+      smallest = VSHR32(smallest, shift);
+      balance = DIV32(largest, ADD32(smallest, 1));
+      if (balance > 32767)
+         balance = 32767;
+      balance_id = scal_quant(balance, balance_bounds, 32);
+   }
+#else
    balance=(largest+1.)/(smallest+1.);
    balance=4*log(balance);
-
-   /*fprintf (stderr, "%d %d %f\n", largest, smallest, balance);*/
+   balance_id=floor(.5+fabs(balance));
+   if (balance_id>30)
+      balance_id=31;
+#endif
+   /*fprintf (stderr, "%d %d %d\n", largest, smallest, balance_id);*/
    /*Quantization*/
-   balance=floor(.5+fabs(balance));
-   if (balance>30)
-      balance=31;
    
-   speex_bits_pack(bits, (int)balance, 5);
+   speex_bits_pack(bits, balance_id, 5);
    
    e_ratio = e_tot/(1.+e_left+e_right);
 
    /* FIXME: this is a hack */
-   tmp=scal_quant(e_ratio*Q15_ONE, e_ratio_quant_bounds, 3);
+   tmp=scal_quant(e_ratio*Q15_ONE, e_ratio_quant_bounds, 4);
    speex_bits_pack(bits, tmp, 2);
 }
 
