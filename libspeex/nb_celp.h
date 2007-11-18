@@ -92,7 +92,8 @@ typedef struct EncState {
    spx_mem_t mem_hp[2];          /**< High-pass filter memory */
    spx_word32_t *pi_gain;        /**< Gain of LPC filter at theta=pi (fe/2) */
    spx_word16_t *innov_rms_save; /**< If non-NULL, innovation RMS is copied here */
-         
+
+#ifndef DISABLE_VBR
    VBRState *vbr;                /**< State of the VBR data */
    float  vbr_quality;           /**< Quality setting for VBR encoding */
    float  relative_quality;      /**< Relative quality that will be needed by VBR */
@@ -105,6 +106,8 @@ typedef struct EncState {
    float  abr_drift;
    float  abr_drift2;
    float  abr_count;
+#endif /* #ifndef DISABLE_VBR */
+   
    int    complexity;            /**< Complexity setting (0-10 from least complex to most complex) */
    spx_int32_t sampling_rate;
    int    plc_tuning;

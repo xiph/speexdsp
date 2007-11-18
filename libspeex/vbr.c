@@ -45,6 +45,7 @@
 #define MIN_ENERGY 6000
 #define NOISE_POW .3
 
+#ifndef DISABLE_VBR
 
 const float vbr_nb_thresh[9][11]={
    {-1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f}, /*   CNG   */
@@ -270,3 +271,5 @@ float vbr_analysis(VBRState *vbr, spx_word16_t *sig, int len, int pitch, float p
 void vbr_destroy(VBRState *vbr)
 {
 }
+
+#endif /* #ifndef DISABLE_VBR */

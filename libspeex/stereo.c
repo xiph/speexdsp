@@ -104,6 +104,7 @@ void speex_stereo_state_destroy(SpeexStereoState *stereo)
    speex_free(stereo);
 }
 
+#ifndef DISABLE_FLOAT_API
 void speex_encode_stereo(float *data, int frame_size, SpeexBits *bits)
 {
    int i, tmp;
@@ -140,6 +141,7 @@ void speex_encode_stereo(float *data, int frame_size, SpeexBits *bits)
    tmp=scal_quant(e_ratio*Q15_ONE, e_ratio_quant_bounds, 4);
    speex_bits_pack(bits, tmp, 2);
 }
+#endif /* #ifndef DISABLE_FLOAT_API */
 
 void speex_encode_stereo_int(spx_int16_t *data, int frame_size, SpeexBits *bits)
 {
@@ -215,6 +217,7 @@ void speex_encode_stereo_int(spx_int16_t *data, int frame_size, SpeexBits *bits)
    speex_bits_pack(bits, tmp, 2);
 }
 
+#ifndef DISABLE_FLOAT_API
 void speex_decode_stereo(float *data, int frame_size, SpeexStereoState *_stereo)
 {
    int i;
@@ -240,6 +243,7 @@ void speex_decode_stereo(float *data, int frame_size, SpeexStereoState *_stereo)
       data[2*i+1] = (float)MULT16_16_P14(stereo->smooth_right, tmp);
    }
 }
+#endif /* #ifndef DISABLE_FLOAT_API */
 
 void speex_decode_stereo_int(spx_int16_t *data, int frame_size, SpeexStereoState *_stereo)
 {

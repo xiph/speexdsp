@@ -253,6 +253,7 @@ void *sb_encoder_init(const SpeexMode *m)
    for (i=0;i<st->lpcSize;i++)
       st->old_lsp[i]= DIV32(MULT16_16(QCONST16(3.1415927f, LSP_SHIFT), i+1), st->lpcSize+1);
 
+#ifndef DISABLE_VBR
    st->vbr_quality = 8;
    st->vbr_enabled = 0;
    st->vbr_max = 0;
@@ -260,6 +261,7 @@ void *sb_encoder_init(const SpeexMode *m)
    st->vad_enabled = 0;
    st->abr_enabled = 0;
    st->relative_quality=0;
+#endif /* #ifndef DISABLE_VBR */
 
    st->complexity=2;
    speex_encoder_ctl(st->st_low, SPEEX_GET_SAMPLING_RATE, &st->sampling_rate);
@@ -336,6 +338,7 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
    /* Compute the two sub-bands by filtering with QMF h0*/
    qmf_decomp(in, h0, low, high, st->full_frame_size, QMF_ORDER, st->h0_mem, stack);
    
+#ifndef DISABLE_VBR
    if (st->vbr_enabled || st->vad_enabled)
    {
       /* Need to compute things here before the signal is trashed by the encoder */
@@ -343,6 +346,8 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
       e_low = compute_rms16(low, st->frame_size);
       e_high = compute_rms16(high, st->frame_size);
    }
+#endif /* #ifndef DISABLE_VBR */
+
    ALLOC(low_innov_rms, st->nbSubframes, spx_word16_t);
    speex_encoder_ctl(st->st_low, SPEEX_SET_INNOVATION_SAVE, low_innov_rms);
    /* Encode the narrowband part*/
@@ -418,6 +423,7 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
       }
    }
 
+#ifndef DISABLE_VBR
    /* VBR code */
    if ((st->vbr_enabled || st->vad_enabled) && !dtx)
    {
@@ -494,6 +500,7 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
       }
       /*fprintf (stderr, "%f %f\n", ratio, low_qual);*/
    }
+#endif /* #ifndef DISABLE_VBR */
 
    if (st->encode_submode)
    {
@@ -1127,6 +1134,7 @@ int sb_encoder_ctl(void *state, int request, void *ptr)
    case SPEEX_SET_MODE:
       speex_encoder_ctl(st, SPEEX_SET_QUALITY, ptr);
       break;
+#ifndef DISABLE_VBR
    case SPEEX_SET_VBR:
       st->vbr_enabled = (*(spx_int32_t*)ptr);
       speex_encoder_ctl(st->st_low, SPEEX_SET_VBR, ptr);
@@ -1141,6 +1149,8 @@ int sb_encoder_ctl(void *state, int request, void *ptr)
    case SPEEX_GET_VAD:
       (*(spx_int32_t*)ptr) = st->vad_enabled;
       break;
+#endif /* #ifndef DISABLE_VBR */
+#if !defined(DISABLE_VBR) && !defined(DISABLE_FLOAT_API)
    case SPEEX_SET_VBR_QUALITY:
       {
          spx_int32_t q;
@@ -1158,6 +1168,8 @@ int sb_encoder_ctl(void *state, int request, void *ptr)
    case SPEEX_GET_VBR_QUALITY:
       (*(float*)ptr) = st->vbr_quality;
       break;
+#endif /* #if !defined(DISABLE_VBR) && !defined(DISABLE_FLOAT_API) */
+#ifndef DISABLE_VBR
    case SPEEX_SET_ABR:
       st->abr_enabled = (*(spx_int32_t*)ptr);
       st->vbr_enabled = st->abr_enabled!=0;
@@ -1188,6 +1200,8 @@ int sb_encoder_ctl(void *state, int request, void *ptr)
    case SPEEX_GET_ABR:
       (*(spx_int32_t*)ptr) = st->abr_enabled;
       break;
+#endif /* #ifndef DISABLE_VBR */
+
    case SPEEX_SET_QUALITY:
       {
          spx_int32_t nb_qual;
@@ -1274,6 +1288,7 @@ int sb_encoder_ctl(void *state, int request, void *ptr)
    case SPEEX_GET_PLC_TUNING:
       speex_encoder_ctl(st->st_low, SPEEX_GET_PLC_TUNING, ptr);
       break;
+#ifndef DISABLE_VBR
    case SPEEX_SET_VBR_MAX_BITRATE:
       {
          st->vbr_max = (*(spx_int32_t*)ptr);
@@ -1305,6 +1320,7 @@ int sb_encoder_ctl(void *state, int request, void *ptr)
    case SPEEX_GET_VBR_MAX_BITRATE:
       (*(spx_int32_t*)ptr) = st->vbr_max;
       break;
+#endif /* #ifndef DISABLE_VBR */
    case SPEEX_SET_HIGHPASS:
       speex_encoder_ctl(st->st_low, SPEEX_SET_HIGHPASS, ptr);
       break;
@@ -1329,9 +1345,11 @@ int sb_encoder_ctl(void *state, int request, void *ptr)
             ((spx_word16_t*)ptr)[i] = st->exc_rms[i];
       }
       break;
+#ifndef DISABLE_VBR
    case SPEEX_GET_RELATIVE_QUALITY:
       (*(float*)ptr)=st->relative_quality;
       break;
+#endif /* #ifndef DISABLE_VBR */
    case SPEEX_SET_INNOVATION_SAVE:
       st->innov_rms_save = (spx_word16_t*)ptr;
       break;

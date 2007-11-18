@@ -188,13 +188,15 @@ static const SpeexSBMode sb_wb_mode = {
    0.9, 0.6, /* gamma1, gamma2 */
 #endif
    QCONST16(.0002,15), /*lpc_floor*/
-            QCONST16(0.9f,15),
-                     {NULL, &wb_submode1, &wb_submode2, &wb_submode3, &wb_submode4, NULL, NULL, NULL},
-                     3,
-                     {1, 8, 2, 3, 4, 5, 5, 6, 6, 7, 7},
-                     {1, 1, 1, 1, 1, 1, 2, 2, 3, 3, 4},
-                     vbr_hb_thresh,
-                     5
+   QCONST16(0.9f,15),
+   {NULL, &wb_submode1, &wb_submode2, &wb_submode3, &wb_submode4, NULL, NULL, NULL},
+   3,
+   {1, 8, 2, 3, 4, 5, 5, 6, 6, 7, 7},
+   {1, 1, 1, 1, 1, 1, 2, 2, 3, 3, 4},
+#ifndef DISABLE_VBR
+   vbr_hb_thresh,
+#endif
+   5
 };
 
 
@@ -232,13 +234,15 @@ static const SpeexSBMode sb_uwb_mode = {
    0.9, 0.6, /* gamma1, gamma2 */
 #endif
    QCONST16(.0002,15), /*lpc_floor*/
-            QCONST16(0.7f,15),
-                     {NULL, &wb_submode1, NULL, NULL, NULL, NULL, NULL, NULL},
-                     1,
-                     {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
-                     {0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
-                     vbr_uhb_thresh,
-                     2
+   QCONST16(0.7f,15),
+   {NULL, &wb_submode1, NULL, NULL, NULL, NULL, NULL, NULL},
+   1,
+   {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
+   {0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+#ifndef DISABLE_VBR
+   vbr_uhb_thresh,
+#endif
+   2
 };
 
 int wb_mode_query(const void *mode, int request, void *ptr)

@@ -72,6 +72,7 @@ typedef struct SBEncState {
    spx_word16_t *exc_rms;
    spx_word16_t *innov_rms_save;         /**< If non-NULL, innovation is copied here */
 
+#ifndef DISABLE_VBR
    float  vbr_quality;            /**< Quality setting for VBR encoding */
    int    vbr_enabled;            /**< 1 for enabling VBR, 0 otherwise */
    spx_int32_t vbr_max;           /**< Max bit-rate allowed in VBR mode (total) */
@@ -82,7 +83,8 @@ typedef struct SBEncState {
    float  abr_count;
    int    vad_enabled;            /**< 1 for enabling VAD, 0 otherwise */
    float  relative_quality;
-
+#endif /* #ifndef DISABLE_VBR */
+   
    int    encode_submode;
    const SpeexSubmode * const *submodes;
    int    submodeID;

@@ -84,6 +84,7 @@ int speex_decode_native(void *state, SpeexBits *bits, spx_word16_t *out)
 
 #ifdef FIXED_POINT
 
+#ifndef DISABLE_FLOAT_API
 int speex_encode(void *state, float *in, SpeexBits *bits)
 {
    int i;
@@ -101,6 +102,7 @@ int speex_encode(void *state, float *in, SpeexBits *bits)
    }
    return (*((SpeexMode**)state))->enc(state, short_in, bits);
 }
+#endif /* #ifndef DISABLE_FLOAT_API */
 
 int speex_encode_int(void *state, spx_int16_t *in, SpeexBits *bits)
 {
@@ -109,6 +111,7 @@ int speex_encode_int(void *state, spx_int16_t *in, SpeexBits *bits)
    return (mode)->enc(state, in, bits);
 }
 
+#ifndef DISABLE_FLOAT_API
 int speex_decode(void *state, SpeexBits *bits, float *out)
 {
    int i, ret;
@@ -120,6 +123,7 @@ int speex_decode(void *state, SpeexBits *bits, float *out)
       out[i] = short_out[i];
    return ret;
 }
+#endif /* #ifndef DISABLE_FLOAT_API */
 
 int speex_decode_int(void *state, SpeexBits *bits, spx_int16_t *out)
 {
