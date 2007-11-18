@@ -115,6 +115,16 @@ else
 fi],
 AC_DEFINE([FLOATING_POINT], , [Compile as floating-point]))
 
+AC_ARG_ENABLE(float-api, [  --disable-float-api     Disable the floating-point API],
+[if test "$enableval" = no; then
+  AC_DEFINE([DISABLE_FLOAT_API], , [Disable all parts of the API that are using floats])
+fi])
+
+AC_ARG_ENABLE(vbr, [  --disable-vbr           Disable VBR and VAD from the codec],
+[if test "$enableval" = no; then
+  AC_DEFINE([DISABLE_VBR], , [Disable VBR and VAD from the codec])
+fi])
+
 AC_ARG_ENABLE(arm4-asm, [  --enable-arm4-asm       Make use of ARM4 assembly optimizations],
 [if test "$enableval" = yes; then
   AC_DEFINE([ARM4_ASM], , [Make use of ARM4 assembly optimizations])
@@ -125,7 +135,7 @@ AC_ARG_ENABLE(arm5e-asm, [  --enable-arm5e-asm      Make use of ARM5E assembly o
   AC_DEFINE([ARM5E_ASM], , [Make use of ARM5E assembly optimizations])
 fi])
 
-AC_ARG_ENABLE(blackfin-asm, [  --enable-blackfin-asm      Make use of Blackfin assembly optimizations],
+AC_ARG_ENABLE(blackfin-asm, [  --enable-blackfin-asm   Make use of Blackfin assembly optimizations],
 [if test "$enableval" = yes; then
   AC_DEFINE([BFIN_ASM], , [Make use of Blackfin assembly optimizations])
   LDFLAGS="-Wl,-elf2flt=-s100000"
