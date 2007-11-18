@@ -145,10 +145,12 @@ void speex_encode_stereo_int(spx_int16_t *data, int frame_size, SpeexBits *bits)
 {
    int i, tmp;
    spx_word32_t e_left=0, e_right=0, e_tot=0;
-   spx_word32_t balance;
-   float e_ratio;
+   spx_word32_t balance, e_ratio;
    spx_word32_t largest, smallest;
    int balance_id;
+#ifdef FIXED_POINT
+   int shift;
+#endif
    
    /* In band marker */
    speex_bits_pack(bits, 14, 5);
@@ -177,16 +179,16 @@ void speex_encode_stereo_int(spx_int16_t *data, int frame_size, SpeexBits *bits)
       largest = e_right;
       smallest = e_left;
    }
+
+   /* Balance quantization */
 #ifdef FIXED_POINT
-   {
-      int shift = spx_ilog2(largest)-15;
-      largest = VSHR32(largest, shift-4);
-      smallest = VSHR32(smallest, shift);
-      balance = DIV32(largest, ADD32(smallest, 1));
-      if (balance > 32767)
-         balance = 32767;
-      balance_id = scal_quant(balance, balance_bounds, 32);
-   }
+   shift = spx_ilog2(largest)-15;
+   largest = VSHR32(largest, shift-4);
+   smallest = VSHR32(smallest, shift);
+   balance = DIV32(largest, ADD32(smallest, 1));
+   if (balance > 32767)
+      balance = 32767;
+   balance_id = scal_quant(EXTRACT16(balance), balance_bounds, 32);
 #else
    balance=(largest+1.)/(smallest+1.);
    balance=4*log(balance);
@@ -194,15 +196,22 @@ void speex_encode_stereo_int(spx_int16_t *data, int frame_size, SpeexBits *bits)
    if (balance_id>30)
       balance_id=31;
 #endif
-   /*fprintf (stderr, "%d %d %d\n", largest, smallest, balance_id);*/
-   /*Quantization*/
    
    speex_bits_pack(bits, balance_id, 5);
    
+   /* "coherence" quantisation */
+#ifdef FIXED_POINT
+   shift = spx_ilog2(e_tot);
+   e_tot = VSHR32(e_tot, shift-25);
+   e_left = VSHR32(e_left, shift-10);
+   e_right = VSHR32(e_right, shift-10);
+   e_ratio = DIV32(e_tot, e_left+e_right+1);
+#else
    e_ratio = e_tot/(1.+e_left+e_right);
-
-   /* FIXME: this is a hack */
-   tmp=scal_quant(e_ratio*Q15_ONE, e_ratio_quant_bounds, 4);
+#endif
+   
+   tmp=scal_quant(EXTRACT16(e_ratio), e_ratio_quant_bounds, 4);
+   /*fprintf (stderr, "%d %d %d %d\n", largest, smallest, balance_id, e_ratio);*/
    speex_bits_pack(bits, tmp, 2);
 }
 
