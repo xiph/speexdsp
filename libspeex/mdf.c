@@ -1042,7 +1042,7 @@ void speex_echo_cancellation(SpeexEchoState *st, const spx_int16_t *in, const sp
 #endif
 
    /* We consider that the filter has had minimal adaptation if the following is true*/
-   if (!st->adapted && st->sum_adapt > QCONST32(M,15) && MULT16_32_Q15(st->leak_estimate,Syy) > MULT16_32_Q15(QCONST16(.03f,15),Syy))
+   if (!st->adapted && st->sum_adapt > SHL32(EXTEND32(M),15) && MULT16_32_Q15(st->leak_estimate,Syy) > MULT16_32_Q15(QCONST16(.03f,15),Syy))
    {
       st->adapted = 1;
    }

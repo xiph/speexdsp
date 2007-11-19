@@ -277,7 +277,7 @@ static void conj_window(spx_word16_t *w, int len)
          x=QCONST16(2.f,13)-x+QCONST16(2.f,13); /* 4 - x */
       }
       x = MULT16_16_Q14(QCONST16(1.271903f,14), x);
-      tmp = SQR16_Q15(QCONST16(.5f,15)-MULT16_16_P15(QCONST16(.5f,15),spx_cos_norm(QCONST32(x,2))));
+      tmp = SQR16_Q15(QCONST16(.5f,15)-MULT16_16_P15(QCONST16(.5f,15),spx_cos_norm(SHL32(EXTEND32(x),2))));
       if (inv)
          tmp=SUB16(Q15_ONE,tmp);
       w[i]=spx_sqrt(SHL32(EXTEND32(tmp),15));
@@ -1067,14 +1067,14 @@ int speex_preprocess_ctl(SpeexPreprocessState *state, int request, void *ptr)
       break;
 
    case SPEEX_PREPROCESS_SET_AGC_LEVEL:
-      st->agc_level = (*(float*)ptr);
+      st->agc_level = (*(spx_int32_t*)ptr);
       if (st->agc_level<1)
          st->agc_level=1;
       if (st->agc_level>32768)
          st->agc_level=32768;
       break;
    case SPEEX_PREPROCESS_GET_AGC_LEVEL:
-      (*(float*)ptr) = st->agc_level;
+      (*(spx_int32_t*)ptr) = st->agc_level;
       break;
    case SPEEX_PREPROCESS_SET_AGC_INCREMENT:
       st->max_increase_step = exp(0.11513f * (*(spx_int32_t*)ptr)*st->frame_size / st->sampling_rate);
@@ -1113,17 +1113,21 @@ int speex_preprocess_ctl(SpeexPreprocessState *state, int request, void *ptr)
       break;
 
    case SPEEX_PREPROCESS_SET_DEREVERB_LEVEL:
-      st->reverb_level = (*(float*)ptr);
+      /* FIXME: Re-enable when de-reverberation is actually enabled again */
+      /*st->reverb_level = (*(float*)ptr);*/
       break;
    case SPEEX_PREPROCESS_GET_DEREVERB_LEVEL:
-      (*(float*)ptr) = st->reverb_level;
+      /* FIXME: Re-enable when de-reverberation is actually enabled again */
+      /*(*(float*)ptr) = st->reverb_level;*/
       break;
    
    case SPEEX_PREPROCESS_SET_DEREVERB_DECAY:
-      st->reverb_decay = (*(float*)ptr);
+      /* FIXME: Re-enable when de-reverberation is actually enabled again */
+      /*st->reverb_decay = (*(float*)ptr);*/
       break;
    case SPEEX_PREPROCESS_GET_DEREVERB_DECAY:
-      (*(float*)ptr) = st->reverb_decay;
+      /* FIXME: Re-enable when de-reverberation is actually enabled again */
+      /*(*(float*)ptr) = st->reverb_decay;*/
       break;
 
    case SPEEX_PREPROCESS_SET_PROB_START:
