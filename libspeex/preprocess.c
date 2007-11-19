@@ -1065,17 +1065,18 @@ int speex_preprocess_ctl(SpeexPreprocessState *state, int request, void *ptr)
    case SPEEX_PREPROCESS_GET_AGC:
       (*(spx_int32_t*)ptr) = st->agc_enabled;
       break;
-
+#ifndef DISABLE_FLOAT_API
    case SPEEX_PREPROCESS_SET_AGC_LEVEL:
-      st->agc_level = (*(spx_int32_t*)ptr);
+      st->agc_level = (*(float*)ptr);
       if (st->agc_level<1)
          st->agc_level=1;
       if (st->agc_level>32768)
          st->agc_level=32768;
       break;
    case SPEEX_PREPROCESS_GET_AGC_LEVEL:
-      (*(spx_int32_t*)ptr) = st->agc_level;
+      (*(float*)ptr) = st->agc_level;
       break;
+#endif /* #ifndef DISABLE_FLOAT_API */
    case SPEEX_PREPROCESS_SET_AGC_INCREMENT:
       st->max_increase_step = exp(0.11513f * (*(spx_int32_t*)ptr)*st->frame_size / st->sampling_rate);
       break;
