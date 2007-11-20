@@ -2,14 +2,13 @@ For 1.2beta3:
 Control delay in new AEC API.
 Implement speex_header_free()
 better error reporting
-get rid of floats in initialisation (make the lag window a const array)
-split encoder and decoder?
 improve float<->int conversion
 NaN checks?
 
 
 Eventually:
 Fix last frame of speexenc
+split encoder and decoder?
 Merge TriMedia stuff
 packet dump
 Do VAD properly

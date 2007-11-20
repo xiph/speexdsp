@@ -705,8 +705,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
          bw_lpc(st->gamma2, interp_lpc, bw_lpc2, st->lpcSize);
       else
       {
-         bw_lpc2[0]=1;
-         for (i=1;i<=st->lpcSize;i++)
+         for (i=0;i<st->lpcSize;i++)
             bw_lpc2[i]=0;
       }
       /*print_vec(st->bw_lpc1, 10, "bw_lpc");*/
