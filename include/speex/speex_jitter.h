@@ -117,10 +117,12 @@ struct _JitterBufferPacket {
 
 /** Initialises jitter buffer 
  * 
- * @param tick Number of samples per "tick", i.e. the time period of the elements that will be retrieved
+ * @param step_size Starting value for the size of concleanment packets and delay 
+       adjustment steps. Can be changed at any time using JITTER_BUFFER_SET_DELAY_STEP
+       and JITTER_BUFFER_GET_CONCEALMENT_SIZE.
  * @return Newly created jitter buffer state
  */
-JitterBuffer *jitter_buffer_init(void);
+JitterBuffer *jitter_buffer_init(int step_size);
 
 /** Restores jitter buffer to its original state 
  * 
