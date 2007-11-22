@@ -63,16 +63,17 @@ struct _JitterBufferPacket {
    spx_uint32_t timestamp;  /**< Timestamp for the packet */
    spx_uint32_t span;       /**< Time covered by the packet (same units as timestamp) */
    spx_uint16_t sequence;   /**< RTP Sequence number if available (0 otherwise) */
-   spx_uint16_t flags;      /**< Info about the returned packet */
    spx_uint32_t user_data;  /**< Put whatever data you like here (it's ignored by the jitter buffer) */
 };
 
 /** Packet has been retrieved */
 #define JITTER_BUFFER_OK 0
-/** Packet is missing */
+/** Packet is lost or is late */
 #define JITTER_BUFFER_MISSING 1
-/** Packet is incomplete (does not cover the entire tick */
-#define JITTER_BUFFER_INCOMPLETE 2
+/** A "fake" packet is meant to be inserted here to increase buffering */
+#define JITTER_BUFFER_INSERTION 2
+/** One (or more) packet got automatically deleted  */
+#define JITTER_BUFFER_DELETION 2
 /** There was an error in the jitter buffer */
 #define JITTER_BUFFER_INTERNAL_ERROR -1
 /** Invalid argument */
