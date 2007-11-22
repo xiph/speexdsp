@@ -72,8 +72,6 @@ struct _JitterBufferPacket {
 #define JITTER_BUFFER_MISSING 1
 /** A "fake" packet is meant to be inserted here to increase buffering */
 #define JITTER_BUFFER_INSERTION 2
-/** One (or more) packet got automatically deleted  */
-#define JITTER_BUFFER_DELETION 2
 /** There was an error in the jitter buffer */
 #define JITTER_BUFFER_INTERNAL_ERROR -1
 /** Invalid argument */
