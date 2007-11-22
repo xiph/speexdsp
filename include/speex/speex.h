@@ -212,11 +212,6 @@ extern "C" {
 /** modeID for the defined ultra-wideband mode */
 #define SPEEX_MODEID_UWB 2
 
-#ifdef EPIC_48K
-/** modeID for the Epic 48K mode */
-#define SPEEX_MODEID_NB_48K 1000
-#endif
-
 struct SpeexMode;
 
 

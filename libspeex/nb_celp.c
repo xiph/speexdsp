@@ -197,7 +197,6 @@ void *nb_encoder_init(const SpeexMode *m)
    st->abr_enabled = 0;
    st->abr_drift = 0;
    st->abr_drift2 = 0;
-   st->abr_drift = 0;
 #endif /* #ifndef DISABLE_VBR */
 
    st->plc_tuning = 2;
