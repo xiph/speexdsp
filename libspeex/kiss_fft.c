@@ -509,7 +509,7 @@ void kiss_fft_stride(kiss_fft_cfg st,const kiss_fft_cpx *fin,kiss_fft_cpx *fout,
        speex_fatal("In-place FFT not supported");
        /*CHECKBUF(tmpbuf,ntmpbuf,st->nfft);
        kf_work(tmpbuf,fin,1,in_stride, st->factors,st);
-       speex_move(fout,tmpbuf,sizeof(kiss_fft_cpx)*st->nfft);*/
+       SPEEX_MOVE(fout,tmpbuf,st->nfft);*/
     } else {
        kf_shuffle( fout, fin, 1,in_stride, st->factors,st);
        kf_work( fout, fin, 1,in_stride, st->factors,st, 1, in_stride, 1);

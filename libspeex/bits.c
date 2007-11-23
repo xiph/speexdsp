@@ -149,10 +149,7 @@ static void speex_bits_flush(SpeexBits *bits)
    int i;
    int nchars = ((bits->nbBits+BITS_PER_CHAR-1)>>LOG2_BITS_PER_CHAR);
    if (bits->charPtr>0)
-   {
-     for (i=bits->charPtr;i<nchars; i++) 
-       bits->chars[i-bits->charPtr]=bits->chars[i];
-   }
+      SPEEX_MOVE(bits->chars, &bits->chars[bits->charPtr], nchars-bits->charPtr);
    bits->nbBits -= bits->charPtr<<LOG2_BITS_PER_CHAR;
    bits->charPtr=0;
 }
@@ -225,8 +222,6 @@ int speex_bits_write_whole_bytes(SpeexBits *bits, char *chars, int max_nbytes)
       bits->chars[0]=bits->chars[max_nchars];
    else
       bits->chars[0]=0;
-   for (i=1;i<((bits->nbBits)>>LOG2_BITS_PER_CHAR)+1;i++)
-      bits->chars[i]=0;
    bits->charPtr=0;
    bits->nbBits &= (BITS_PER_CHAR-1);
    return max_nchars*BYTES_PER_CHAR;

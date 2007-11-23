@@ -40,6 +40,7 @@
 #include "filters.h"
 #include <speex/speex_bits.h>
 #include "math_approx.h"
+#include "os_support.h"
 
 #ifndef NULL
 #define NULL 0
@@ -495,8 +496,7 @@ int scaledown
       *cdbk_index=best_cdbk;
    }
 
-   for (i=0;i<nsf;i++)
-      exc[i]=0;
+   SPEEX_MEMSET(exc, 0, nsf);
    for (i=0;i<3;i++)
    {
       int j;
@@ -580,8 +580,7 @@ spx_word32_t *cumul_gain
    {
       speex_bits_pack(bits, 0, params->pitch_bits);
       speex_bits_pack(bits, 0, params->gain_bits);
-      for (i=0;i<nsf;i++)
-         exc[i]=0;
+      SPEEX_MEMSET(exc, 0, nsf);
       return start;
    }
    
@@ -618,16 +617,13 @@ spx_word32_t *cumul_gain
    for (i=0;i<N;i++)
    {
       pitch=nbest[i];
-      for (j=0;j<nsf;j++)
-         exc[j]=0;
+      SPEEX_MEMSET(exc, 0, nsf);
       err=pitch_gain_search_3tap(target, ak, awk1, awk2, exc, gain_cdbk, gain_cdbk_size, pitch, p, nsf,
                                  bits, stack, exc2, r, new_target, &cdbk_index, plc_tuning, *cumul_gain, scaledown);
       if (err<best_err || best_err<0)
       {
-         for (j=0;j<nsf;j++)
-            best_exc[j]=exc[j];
-         for (j=0;j<nsf;j++)
-            best_target[j]=new_target[j];
+         SPEEX_COPY(best_exc, exc, nsf);
+         SPEEX_COPY(best_target, new_target, nsf);
          best_err=err;
          best_pitch=pitch;
          best_gain_index=cdbk_index;
@@ -643,10 +639,8 @@ spx_word32_t *cumul_gain
 #endif
    /*printf ("%f\n", cumul_gain);*/
    /*printf ("encode pitch: %d %d\n", best_pitch, best_gain_index);*/
-   for (i=0;i<nsf;i++)
-      exc[i]=best_exc[i];
-   for (i=0;i<nsf;i++)
-      target[i]=best_target[i];
+   SPEEX_COPY(exc, best_exc, nsf);
+   SPEEX_COPY(target, best_target, nsf);
 #ifdef FIXED_POINT
    /* Scale target back up if needed */
    if (scaledown)
@@ -735,8 +729,7 @@ int cdbk_offset
    gain[0] = SHL16(gain[0],7);
    gain[1] = SHL16(gain[1],7);
    gain[2] = SHL16(gain[2],7);
-   for (i=0;i<nsf;i++)
-      exc_out[i]=0;
+   SPEEX_MEMSET(exc_out, 0, nsf);
    for (i=0;i<3;i++)
    {
       int j;

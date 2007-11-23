@@ -120,8 +120,8 @@ static void tb_add(struct TimingBuffer *tb, spx_int16_t timing)
       int move_size = tb->filled-pos;
       if (tb->filled == MAX_TIMINGS)
          move_size -= 1;
-      speex_move(&tb->timing[pos+1], &tb->timing[pos], move_size*sizeof(tb->timing[0]));
-      speex_move(&tb->counts[pos+1], &tb->counts[pos], move_size*sizeof(tb->counts[0]));
+      SPEEX_COPY(&tb->timing[pos+1], &tb->timing[pos], move_size);
+      SPEEX_COPY(&tb->counts[pos+1], &tb->counts[pos], move_size);
    }
    /* Insert */
    tb->timing[pos] = timing;

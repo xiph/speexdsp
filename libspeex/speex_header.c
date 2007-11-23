@@ -123,7 +123,7 @@ char *speex_header_to_packet(SpeexHeader *header, int *size)
    SpeexHeader *le_header;
    le_header = (SpeexHeader*)speex_alloc(sizeof(SpeexHeader));
    
-   speex_move(le_header, header, sizeof(SpeexHeader));
+   SPEEX_COPY(le_header, header, 1);
    
    /*Make sure everything is now little-endian*/
    ENDIAN_SWITCH(le_header->speex_version_id);
@@ -163,7 +163,7 @@ SpeexHeader *speex_packet_to_header(char *packet, int size)
    
    le_header = (SpeexHeader*)speex_alloc(sizeof(SpeexHeader));
    
-   speex_move(le_header, packet, sizeof(SpeexHeader));
+   SPEEX_COPY(le_header, (SpeexHeader*)packet, 1);
    
    /*Make sure everything is converted correctly from little-endian*/
    ENDIAN_SWITCH(le_header->speex_version_id);
