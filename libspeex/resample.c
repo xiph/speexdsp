@@ -337,13 +337,16 @@ static int resampler_basic_direct_single(SpeexResamplerState *st, spx_uint32_t c
       }
       
       /* Do the new part */
-      ptr = in+st->in_stride*(last_sample-N+1+j);
-      for (;j<N;j++)
+      if (in != NULL)
       {
-         sum += MULT16_16(*ptr,st->sinc_table[samp_frac_num*st->filt_len+j]);
-         ptr += st->in_stride;
+         ptr = in+st->in_stride*(last_sample-N+1+j);
+         for (;j<N;j++)
+         {
+            sum += MULT16_16(*ptr,st->sinc_table[samp_frac_num*st->filt_len+j]);
+            ptr += st->in_stride;
+         }
       }
-   
+      
       *out = PSHR32(sum,15);
       out += st->out_stride;
       out_sample++;
@@ -385,13 +388,16 @@ static int resampler_basic_direct_double(SpeexResamplerState *st, spx_uint32_t c
       }
       
       /* Do the new part */
-      ptr = in+st->in_stride*(last_sample-N+1+j);
-      for (;j<N;j++)
+      if (in != NULL)
       {
-         sum += MULT16_16(*ptr,(double)st->sinc_table[samp_frac_num*st->filt_len+j]);
-         ptr += st->in_stride;
+         ptr = in+st->in_stride*(last_sample-N+1+j);
+         for (;j<N;j++)
+         {
+            sum += MULT16_16(*ptr,(double)st->sinc_table[samp_frac_num*st->filt_len+j]);
+            ptr += st->in_stride;
+         }
       }
-   
+      
       *out = sum;
       out += st->out_stride;
       out_sample++;
@@ -445,16 +451,20 @@ static int resampler_basic_interpolate_single(SpeexResamplerState *st, spx_uint3
          accum[2] += MULT16_16(curr_mem,st->sinc_table[4+(j+1)*st->oversample-offset]);
          accum[3] += MULT16_16(curr_mem,st->sinc_table[4+(j+1)*st->oversample-offset+1]);
       }
-      ptr = in+st->in_stride*(last_sample-N+1+j);
-      /* Do the new part */
-      for (;j<N;j++)
+      
+      if (in != NULL)
       {
-         spx_word16_t curr_in = *ptr;
-         ptr += st->in_stride;
-         accum[0] += MULT16_16(curr_in,st->sinc_table[4+(j+1)*st->oversample-offset-2]);
-         accum[1] += MULT16_16(curr_in,st->sinc_table[4+(j+1)*st->oversample-offset-1]);
-         accum[2] += MULT16_16(curr_in,st->sinc_table[4+(j+1)*st->oversample-offset]);
-         accum[3] += MULT16_16(curr_in,st->sinc_table[4+(j+1)*st->oversample-offset+1]);
+         ptr = in+st->in_stride*(last_sample-N+1+j);
+         /* Do the new part */
+         for (;j<N;j++)
+         {
+            spx_word16_t curr_in = *ptr;
+            ptr += st->in_stride;
+            accum[0] += MULT16_16(curr_in,st->sinc_table[4+(j+1)*st->oversample-offset-2]);
+            accum[1] += MULT16_16(curr_in,st->sinc_table[4+(j+1)*st->oversample-offset-1]);
+            accum[2] += MULT16_16(curr_in,st->sinc_table[4+(j+1)*st->oversample-offset]);
+            accum[3] += MULT16_16(curr_in,st->sinc_table[4+(j+1)*st->oversample-offset+1]);
+         }
       }
       cubic_coef(frac, interp);
       sum = MULT16_32_Q15(interp[0],accum[0]) + MULT16_32_Q15(interp[1],accum[1]) + MULT16_32_Q15(interp[2],accum[2]) + MULT16_32_Q15(interp[3],accum[3]);
@@ -509,16 +519,19 @@ static int resampler_basic_interpolate_double(SpeexResamplerState *st, spx_uint3
          accum[2] += MULT16_16(curr_mem,st->sinc_table[4+(j+1)*st->oversample-offset]);
          accum[3] += MULT16_16(curr_mem,st->sinc_table[4+(j+1)*st->oversample-offset+1]);
       }
-      ptr = in+st->in_stride*(last_sample-N+1+j);
-      /* Do the new part */
-      for (;j<N;j++)
+      if (in != NULL)
       {
-         double curr_in = *ptr;
-         ptr += st->in_stride;
-         accum[0] += MULT16_16(curr_in,st->sinc_table[4+(j+1)*st->oversample-offset-2]);
-         accum[1] += MULT16_16(curr_in,st->sinc_table[4+(j+1)*st->oversample-offset-1]);
-         accum[2] += MULT16_16(curr_in,st->sinc_table[4+(j+1)*st->oversample-offset]);
-         accum[3] += MULT16_16(curr_in,st->sinc_table[4+(j+1)*st->oversample-offset+1]);
+         ptr = in+st->in_stride*(last_sample-N+1+j);
+         /* Do the new part */
+         for (;j<N;j++)
+         {
+            double curr_in = *ptr;
+            ptr += st->in_stride;
+            accum[0] += MULT16_16(curr_in,st->sinc_table[4+(j+1)*st->oversample-offset-2]);
+            accum[1] += MULT16_16(curr_in,st->sinc_table[4+(j+1)*st->oversample-offset-1]);
+            accum[2] += MULT16_16(curr_in,st->sinc_table[4+(j+1)*st->oversample-offset]);
+            accum[3] += MULT16_16(curr_in,st->sinc_table[4+(j+1)*st->oversample-offset+1]);
+         }
       }
       cubic_coef(frac, interp);
       sum = interp[0]*accum[0] + interp[1]*accum[1] + interp[2]*accum[2] + interp[3]*accum[3];
@@ -966,7 +979,10 @@ int speex_resampler_process_interleaved_float(SpeexResamplerState *st, const flo
    for (i=0;i<st->nb_channels;i++)
    {
       *out_len = bak_len;
-      speex_resampler_process_float(st, i, in+i, in_len, out+i, out_len);
+      if (in != NULL)
+         speex_resampler_process_float(st, i, in+i, in_len, out+i, out_len);
+      else
+         speex_resampler_process_float(st, i, NULL, in_len, out+i, out_len);
    }
    st->in_stride = istride_save;
    st->out_stride = ostride_save;
@@ -985,7 +1001,10 @@ int speex_resampler_process_interleaved_int(SpeexResamplerState *st, const spx_i
    for (i=0;i<st->nb_channels;i++)
    {
       *out_len = bak_len;
-      speex_resampler_process_int(st, i, in+i, in_len, out+i, out_len);
+      if (in != NULL)
+         speex_resampler_process_int(st, i, in+i, in_len, out+i, out_len);
+      else
+         speex_resampler_process_int(st, i, NULL, in_len, out+i, out_len);
    }
    st->in_stride = istride_save;
    st->out_stride = ostride_save;
