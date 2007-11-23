@@ -548,7 +548,7 @@ int plc_tuning,
 spx_word32_t *cumul_gain
 )
 {
-   int i,j;
+   int i;
    int cdbk_index, pitch=0, best_gain_index=0;
    VARDECL(spx_sig_t *best_exc);
    VARDECL(spx_word16_t *new_target);

@@ -146,7 +146,6 @@ void speex_bits_read_from(SpeexBits *bits, char *chars, int len)
 
 static void speex_bits_flush(SpeexBits *bits)
 {
-   int i;
    int nchars = ((bits->nbBits+BITS_PER_CHAR-1)>>LOG2_BITS_PER_CHAR);
    if (bits->charPtr>0)
       SPEEX_MOVE(bits->chars, &bits->chars[bits->charPtr], nchars-bits->charPtr);

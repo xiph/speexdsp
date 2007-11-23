@@ -474,7 +474,7 @@ int jitter_buffer_get(JitterBuffer *jitter, JitterBufferPacket *packet, spx_int3
    {
       int found = 0;
       /* Find the oldest packet */
-      spx_uint32_t oldest;
+      spx_uint32_t oldest=0;
       for (i=0;i<SPEEX_JITTER_MAX_BUFFER_SIZE;i++)
       {
          if (jitter->packets[i].data && (!found || LT32(jitter->packets[i].timestamp,oldest)))
