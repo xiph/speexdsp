@@ -840,9 +840,14 @@ static int speex_resampler_process_native(SpeexResamplerState *st, spx_uint32_t 
    
    for (j=0;j<N-1-(spx_int32_t)*in_len;j++)
       mem[j] = mem[j+*in_len];
-   for (;j<N-1;j++)
-      mem[j] = in[st->in_stride*(j+*in_len-N+1)];
-   
+   if (in != NULL)
+   {
+      for (;j<N-1;j++)
+         mem[j] = in[st->in_stride*(j+*in_len-N+1)];
+   } else {
+      for (;j<N-1;j++)
+         mem[j] = 0;      
+   }
    return RESAMPLER_ERR_SUCCESS;
 }
 
@@ -862,10 +867,16 @@ int speex_resampler_process_float(SpeexResamplerState *st, spx_uint32_t channel_
    ALLOC(y, *out_len, spx_word16_t);*/
    istride_save = st->in_stride;
    ostride_save = st->out_stride;
-   for (i=0;i<*in_len;i++)
-      x[i] = WORD2INT(in[i*st->in_stride]);
-   st->in_stride = st->out_stride = 1;
-   speex_resampler_process_native(st, channel_index, x, in_len, y, out_len);
+   if (in != NULL)
+   {
+      for (i=0;i<*in_len;i++)
+         x[i] = WORD2INT(in[i*st->in_stride]);
+      st->in_stride = st->out_stride = 1;
+      speex_resampler_process_native(st, channel_index, x, in_len, y, out_len);
+   } else {
+      st->in_stride = st->out_stride = 1;
+      speex_resampler_process_native(st, channel_index, NULL, in_len, y, out_len);
+   }
    st->in_stride = istride_save;
    st->out_stride = ostride_save;
    for (i=0;i<*out_len;i++)
@@ -885,10 +896,16 @@ int speex_resampler_process_float(SpeexResamplerState *st, spx_uint32_t channel_
          ichunk=FIXED_STACK_ALLOC;
       if (ochunk>FIXED_STACK_ALLOC)
          ochunk=FIXED_STACK_ALLOC;
-      for (i=0;i<ichunk;i++)
-         x[i] = WORD2INT(in[i*st->in_stride]);
-      st->in_stride = st->out_stride = 1;
-      speex_resampler_process_native(st, channel_index, x, &ichunk, y, &ochunk);
+      if (in != NULL)
+      {
+         for (i=0;i<ichunk;i++)
+            x[i] = WORD2INT(in[i*st->in_stride]);
+         st->in_stride = st->out_stride = 1;
+         speex_resampler_process_native(st, channel_index, x, &ichunk, y, &ochunk);
+      } else {
+         st->in_stride = st->out_stride = 1;
+         speex_resampler_process_native(st, channel_index, NULL, &ichunk, y, &ochunk);
+      }
       st->in_stride = istride_save;
       st->out_stride = ostride_save;
       for (i=0;i<ochunk;i++)
@@ -925,10 +942,16 @@ int speex_resampler_process_int(SpeexResamplerState *st, spx_uint32_t channel_in
    ALLOC(y, *out_len, spx_word16_t);*/
    istride_save = st->in_stride;
    ostride_save = st->out_stride;
-   for (i=0;i<*in_len;i++)
-      x[i] = in[i*st->in_stride];
-   st->in_stride = st->out_stride = 1;
-   speex_resampler_process_native(st, channel_index, x, in_len, y, out_len);
+   if (in != NULL)
+   {
+      for (i=0;i<*in_len;i++)
+         x[i] = in[i*st->in_stride];
+      st->in_stride = st->out_stride = 1;
+      speex_resampler_process_native(st, channel_index, x, in_len, y, out_len);
+   } else {
+      st->in_stride = st->out_stride = 1;
+      speex_resampler_process_native(st, channel_index, NULL, in_len, y, out_len);
+   }
    st->in_stride = istride_save;
    st->out_stride = ostride_save;
    for (i=0;i<*out_len;i++)
@@ -948,10 +971,16 @@ int speex_resampler_process_int(SpeexResamplerState *st, spx_uint32_t channel_in
          ichunk=FIXED_STACK_ALLOC;
       if (ochunk>FIXED_STACK_ALLOC)
          ochunk=FIXED_STACK_ALLOC;
-      for (i=0;i<ichunk;i++)
-         x[i] = in[i*st->in_stride];
-      st->in_stride = st->out_stride = 1;
-      speex_resampler_process_native(st, channel_index, x, &ichunk, y, &ochunk);
+      if (in != NULL)
+      {
+         for (i=0;i<ichunk;i++)
+            x[i] = in[i*st->in_stride];
+         st->in_stride = st->out_stride = 1;
+         speex_resampler_process_native(st, channel_index, x, &ichunk, y, &ochunk);
+      } else {
+         st->in_stride = st->out_stride = 1;
+         speex_resampler_process_native(st, channel_index, NULL, &ichunk, y, &ochunk);
+      }
       st->in_stride = istride_save;
       st->out_stride = ostride_save;
       for (i=0;i<ochunk;i++)
