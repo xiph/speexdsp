@@ -592,6 +592,7 @@ int jitter_buffer_get(JitterBuffer *jitter, JitterBufferPacket *packet, spx_int3
       if (jitter->destroy)
       {
          packet->data = jitter->packets[i].data;
+         packet->len = jitter->packets[i].len;
       } else {
          if (jitter->packets[i].len > packet->len)
          {
