@@ -588,17 +588,17 @@ int jitter_buffer_get(JitterBuffer *jitter, JitterBufferPacket *packet, spx_int3
       }
       
       
-      if (jitter->packets[i].len > packet->len)
-      {
-         speex_warning_int("jitter_buffer_get(): packet too large to fit. Size is", jitter->packets[i].len);
-      } else {
-         packet->len = jitter->packets[i].len;
-      }
       /* Copy packet */
       if (jitter->destroy)
       {
          packet->data = jitter->packets[i].data;
       } else {
+         if (jitter->packets[i].len > packet->len)
+         {
+            speex_warning_int("jitter_buffer_get(): packet too large to fit. Size is", jitter->packets[i].len);
+         } else {
+            packet->len = jitter->packets[i].len;
+         }
          for (j=0;j<packet->len;j++)
             packet->data[j] = jitter->packets[i].data[j];
          /* Remove packet */
