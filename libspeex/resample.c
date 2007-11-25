@@ -1133,6 +1133,16 @@ void speex_resampler_get_output_stride(SpeexResamplerState *st, spx_uint32_t *st
    *stride = st->out_stride;
 }
 
+int speex_resampler_get_input_latency(SpeexResamplerState *st)
+{
+  return st->filt_len / 2;
+}
+
+int speex_resampler_get_output_latency(SpeexResamplerState *st)
+{
+  return ((st->filt_len / 2) * st->den_rate + (st->num_rate >> 1)) / st->num_rate;
+}
+
 int speex_resampler_skip_zeros(SpeexResamplerState *st)
 {
    spx_uint32_t i;
