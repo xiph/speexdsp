@@ -181,3 +181,8 @@ SpeexHeader *speex_packet_to_header(char *packet, int size)
    return le_header;
 
 }
+
+void speex_header_free(void *ptr)
+{
+   speex_free(ptr);
+}
