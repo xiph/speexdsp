@@ -1,12 +1,21 @@
 For 1.2beta3:
-Control delay in new AEC API.
-better error reporting
-NaN checks?
+- Control delay in new AEC API.
+- NaN checks?
+- Better error reporting
+
+For 1.2:
+Major points:
+- Make documentation match the actual code (especially jitter buffer, AEC and preprocessor)
+- Get AGC to work in fixed-point even if not totally converted
+- Stabilise all APIs (need feedback)
+- Short-term estimate in jitter buffer
+
+Minor issues:
+- Fix last frame of speexenc
 
 
-Eventually:
+Post 1.2:
 improve float<->int conversion
-Fix last frame of speexenc
 split encoder and decoder?
 Merge TriMedia stuff
 packet dump
@@ -16,6 +25,7 @@ Do VAD properly
 Optimisations
 - Add restrict in a few places?
 - enable 4x4 version of pitch_xcorr() at least on some archs?
+- use __builtin_expect() (likely()/unlikely())
 
 Would be nice:
 Implement wideband split as IIR instead of QMF?
@@ -23,7 +33,6 @@ Implement wideband split as IIR instead of QMF?
 Allocator override (speex_lib_ctl?)
 Fixed-point:
   - VBR
-  - encoder init (lag_window, lsp)
   - Jitter buffer
   - AGC
 Denoiser:
