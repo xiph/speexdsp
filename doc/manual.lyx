@@ -1,4 +1,4 @@
-#LyX 1.5.0 created this file. For more info see http://www.lyx.org/
+#LyX 1.5.1 created this file. For more info see http://www.lyx.org/
 \lyxformat 276
 \begin_document
 \begin_header
@@ -1136,7 +1136,13 @@ generally
 \series default
  faster, but not always.
  To compile Speex as fixed-point, you need to pass --fixed-point to the
- configure script or define the FIXED_POINT maccro for the compiler.
+ configure script or define the FIXED_POINT macro for the compiler.
+ As of 1.2beta3, it is now possible to disable the floating-point compatibility
+ API, which means that your code can link without a float emulation library.
+ To do that configure with --disable-float-api or define the DISABLE_FLOAT_API
+ macro.
+ Until the VBR feature is ported to fixed-point, you will also need to configure
+ with --disable-vbr or define DISABLE_VBR.
 \end_layout
 
 \begin_layout Standard
@@ -1250,7 +1256,7 @@ Support for stereo (removing stereo.c)
 \end_layout
 
 \begin_layout Itemize
-VBR support (vbr.c and a few lines in nb_celp.c)
+VBR support (--disable-vbr or DISABLE_VBR)
 \end_layout
 
 \begin_layout Itemize
