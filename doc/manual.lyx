@@ -4513,7 +4513,7 @@ status open
 
 \begin_layout Standard
 
-JitterBuffer *state = jitter_buffer_init(tick);
+JitterBuffer *state = jitter_buffer_init(step);
 \end_layout
 
 \end_inset
@@ -4529,15 +4529,20 @@ status collapsed
 
 \begin_layout Standard
 
-tick
+step
 \end_layout
 
 \end_inset
 
- argument is the time resolution (in timestamp units) used for the jitter
- buffer, and is generally the period at which the data is played out of
- the jitter buffer.
- 
+ argument is the default time step (in timestamp units) used for adjusting
+ the delay and doing concealment.
+ A value of 1 is always correct, but higher values may be more convenient
+ sometimes.
+ For example, if you are only able to do concealment on 20ms frames, there
+ is no point in the jitter buffer asking you to do it on one sample.
+ Another example is that for video, it makes no sense to adjust the delay
+ by less than a full frame.
+ The value provided can always be changed at a later time.
 \end_layout
 
 \begin_layout Standard
@@ -4634,7 +4639,7 @@ int start_offset;
 
 \begin_layout Standard
 
-err = jitter_buffer_get(state, &packet, &start_offset);
+err = jitter_buffer_get(state, &packet, desired_span, &start_offset);
 \end_layout
 
 \end_inset
@@ -4694,20 +4699,22 @@ jitter_buffer_tick(state);
 \end_layout
 
 \begin_layout Standard
-This needs to be done every time 
+This needs to be done periodically in the playing thread.
+ This will be the last jitter buffer call before going to sleep (until more
+ data is played back).
+ In some cases, it may be preferable to use 
 \begin_inset listings
-inline true
-status collapsed
+inline false
+status open
 
 \begin_layout Standard
 
-tick
+jitter_buffer_remaining_span(state, remaining);
 \end_layout
 
 \end_inset
 
- units have elapsed.
- 
+
 \end_layout
 
 \begin_layout Section
