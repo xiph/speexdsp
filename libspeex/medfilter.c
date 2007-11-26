@@ -32,8 +32,12 @@
 
 */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "medfilter.h"
-#include "misc.h"
+#include "arch.h"
 
 MedianFilter *median_filter_new(int N)
 {

@@ -119,4 +119,5 @@ echo "  autoconf"
 autoconf || exit 1
 
 cd $olddir
-$srcdir/configure --enable-maintainer-mode "$@" && echo
+#$srcdir/configure --enable-maintainer-mode "$@" && echo
+echo "You can now run configure"

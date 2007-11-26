@@ -62,10 +62,11 @@
 #include <math.h>
 #include "speex/speex_preprocess.h"
 #include "speex/speex_echo.h"
-#include "misc.h"
+#include "arch.h"
 #include "fftwrap.h"
 #include "filterbank.h"
 #include "math_approx.h"
+#include "os_support.h"
 
 #ifndef M_PI
 #define M_PI 3.14159263
@@ -215,7 +216,7 @@ struct SpeexPreprocessState_ {
    spx_word32_t *S;          /**< Smoothed power spectrum */
    spx_word32_t *Smin;       /**< See Cohen paper */
    spx_word32_t *Stmp;       /**< See Cohen paper */
-   int *update_prob;       /**< Propability of speech presence for noise update */
+   int *update_prob;         /**< Probability of speech presence for noise update */
 
    spx_word16_t *zeta;       /**< Smoothed a priori SNR */
    spx_word32_t *echo_noise;
@@ -276,7 +277,7 @@ static void conj_window(spx_word16_t *w, int len)
          x=QCONST16(2.f,13)-x+QCONST16(2.f,13); /* 4 - x */
       }
       x = MULT16_16_Q14(QCONST16(1.271903f,14), x);
-      tmp = SQR16_Q15(QCONST16(.5f,15)-MULT16_16_P15(QCONST16(.5f,15),spx_cos_norm(QCONST32(x,2))));
+      tmp = SQR16_Q15(QCONST16(.5f,15)-MULT16_16_P15(QCONST16(.5f,15),spx_cos_norm(SHL32(EXTEND32(x),2))));
       if (inv)
          tmp=SUB16(Q15_ONE,tmp);
       w[i]=spx_sqrt(SHL32(EXTEND32(tmp),15));
@@ -737,6 +738,8 @@ int speex_preprocess_run(SpeexPreprocessState *st, spx_int16_t *x)
    spx_word16_t effective_echo_suppress;
    
    st->nb_adapt++;
+   if (st->nb_adapt>20000)
+      st->nb_adapt = 20000;
    st->min_count++;
    
    beta = MAX16(QCONST16(.03,15),DIV32_16(Q15_ONE,st->nb_adapt));
@@ -1064,14 +1067,14 @@ int speex_preprocess_ctl(SpeexPreprocessState *state, int request, void *ptr)
       break;
 
    case SPEEX_PREPROCESS_SET_AGC_LEVEL:
-      st->agc_level = (*(float*)ptr);
+      st->agc_level = (*(spx_int32_t*)ptr);
       if (st->agc_level<1)
          st->agc_level=1;
       if (st->agc_level>32768)
          st->agc_level=32768;
       break;
    case SPEEX_PREPROCESS_GET_AGC_LEVEL:
-      (*(float*)ptr) = st->agc_level;
+      (*(spx_int32_t*)ptr) = st->agc_level;
       break;
    case SPEEX_PREPROCESS_SET_AGC_INCREMENT:
       st->max_increase_step = exp(0.11513f * (*(spx_int32_t*)ptr)*st->frame_size / st->sampling_rate);
@@ -1110,30 +1113,34 @@ int speex_preprocess_ctl(SpeexPreprocessState *state, int request, void *ptr)
       break;
 
    case SPEEX_PREPROCESS_SET_DEREVERB_LEVEL:
-      st->reverb_level = (*(float*)ptr);
+      /* FIXME: Re-enable when de-reverberation is actually enabled again */
+      /*st->reverb_level = (*(float*)ptr);*/
       break;
    case SPEEX_PREPROCESS_GET_DEREVERB_LEVEL:
-      (*(float*)ptr) = st->reverb_level;
+      /* FIXME: Re-enable when de-reverberation is actually enabled again */
+      /*(*(float*)ptr) = st->reverb_level;*/
       break;
    
    case SPEEX_PREPROCESS_SET_DEREVERB_DECAY:
-      st->reverb_decay = (*(float*)ptr);
+      /* FIXME: Re-enable when de-reverberation is actually enabled again */
+      /*st->reverb_decay = (*(float*)ptr);*/
       break;
    case SPEEX_PREPROCESS_GET_DEREVERB_DECAY:
-      (*(float*)ptr) = st->reverb_decay;
+      /* FIXME: Re-enable when de-reverberation is actually enabled again */
+      /*(*(float*)ptr) = st->reverb_decay;*/
       break;
 
    case SPEEX_PREPROCESS_SET_PROB_START:
-      *(spx_int32_t*)ptr = MIN32(Q15_ONE,MAX32(0, *(spx_int32_t*)ptr));
-      st->speech_prob_start = DIV32_16(MULT16_16(32767,*(spx_int32_t*)ptr), 100);
+      *(spx_int32_t*)ptr = MIN32(100,MAX32(0, *(spx_int32_t*)ptr));
+      st->speech_prob_start = DIV32_16(MULT16_16(Q15ONE,*(spx_int32_t*)ptr), 100);
       break;
    case SPEEX_PREPROCESS_GET_PROB_START:
       (*(spx_int32_t*)ptr) = MULT16_16_Q15(st->speech_prob_start, 100);
       break;
 
    case SPEEX_PREPROCESS_SET_PROB_CONTINUE:
-      *(spx_int32_t*)ptr = MIN32(Q15_ONE,MAX32(0, *(spx_int32_t*)ptr));
-      st->speech_prob_continue = DIV32_16(MULT16_16(32767,*(spx_int32_t*)ptr), 100);
+      *(spx_int32_t*)ptr = MIN32(100,MAX32(0, *(spx_int32_t*)ptr));
+      st->speech_prob_continue = DIV32_16(MULT16_16(Q15ONE,*(spx_int32_t*)ptr), 100);
       break;
    case SPEEX_PREPROCESS_GET_PROB_CONTINUE:
       (*(spx_int32_t*)ptr) = MULT16_16_Q15(st->speech_prob_continue, 100);
@@ -1163,6 +1170,11 @@ int speex_preprocess_ctl(SpeexPreprocessState *state, int request, void *ptr)
    case SPEEX_PREPROCESS_GET_ECHO_STATE:
       ptr = (void*)st->echo_state;
       break;
+#ifndef FIXED_POINT
+   case SPEEX_PREPROCESS_GET_AGC_LOUDNESS:
+      (*(spx_int32_t*)ptr) = pow(st->loudness, 1.0/LOUDNESS_EXP);
+      break;
+#endif
 
    default:
       speex_warning_int("Unknown speex_preprocess_ctl request: ", request);

@@ -178,6 +178,10 @@ int speex_preprocess_ctl(SpeexPreprocessState *st, int request, void *ptr);
 /** Get maximal gain in dB (int32) */
 #define SPEEX_PREPROCESS_GET_AGC_MAX_GAIN 31
 
+/*  Can't set loudness */
+/** Get loudness */
+#define SPEEX_PREPROCESS_GET_AGC_LOUDNESS 33
+
 #ifdef __cplusplus
 }
 #endif

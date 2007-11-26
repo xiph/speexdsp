@@ -37,7 +37,9 @@
 #include "filters.h"
 #include "stack_alloc.h"
 #include "vq.h"
-#include "misc.h"
+#include "arch.h"
+#include "math_approx.h"
+#include "os_support.h"
 
 #ifdef _USE_SSE
 #include "cb_search_sse.h"
@@ -359,7 +361,11 @@ int   update_target
       /*"erase" nbest list*/
       for (j=0;j<N;j++)
          ndist[j]=VERY_LARGE32;
-
+      /* This is not strictly necessary, but it provides an additonal safety 
+         to prevent crashes in case something goes wrong in the previous
+         steps (e.g. NaNs) */
+      for (j=0;j<N;j++)
+         best_nind[j] = best_ntarget[j] = 0;
       /*For all n-bests of previous subvector*/
       for (j=0;j<N;j++)
       {
@@ -397,6 +403,7 @@ int   update_target
                         best_nind[n] = best_nind[n-1];
                         best_ntarget[n] = best_ntarget[n-1];
                      }
+                     /* n is equal to m here, so they're interchangeable */
                      ndist[m] = err;
                      best_nind[n] = best_index[k];
                      best_ntarget[n] = j;

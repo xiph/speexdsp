@@ -1,17 +1,25 @@
-#LyX 1.4.4 created this file. For more info see http://www.lyx.org/
-\lyxformat 245
+#LyX 1.5.0 created this file. For more info see http://www.lyx.org/
+\lyxformat 276
 \begin_document
 \begin_header
 \textclass scrbook
 \language english
 \inputencoding auto
-\fontscheme pslatex
+\font_roman times
+\font_sans helvet
+\font_typewriter courier
+\font_default_family default
+\font_sc false
+\font_osf false
+\font_sf_scale 100
+\font_tt_scale 100
 \graphics default
 \paperfontsize 10
 \spacing single
 \papersize letterpaper
 \use_geometry true
 \use_amsmath 2
+\use_esint 0
 \cite_engine basic
 \use_bibtopic false
 \paperorientation portrait
@@ -27,8 +35,11 @@
 \papercolumns 1
 \papersides 1
 \paperpagestyle headings
+\listings_params "basicstyle={\ttfamily},breaklines=true,language=C,xleftmargin=0mm"
 \tracking_changes false
-\output_changes true
+\output_changes false
+\author "" 
+\author "" 
 \end_header
 
 \begin_body
@@ -36,7 +47,7 @@
 \begin_layout Title
 The Speex Codec Manual
 \newline
-For Version 1.2 Beta 2
+Version 1.2 Beta 3
 \end_layout
 
 \begin_layout Author
@@ -80,7 +91,7 @@ on License".
 
 \newpage
 
-\begin_inset LatexCommand \tableofcontents{}
+\begin_inset LatexCommand tableofcontents
 
 \end_inset
 
@@ -110,10 +121,10 @@ http://www.speex.org/
 \family default
 ) exists because there is a need for a speech codec that is open-source
  and free from software patent royalties.
- These are essential conditions for being usable by any open-source software.
+ These are essential conditions for being usable in any open-source software.
  In essence, Speex is to speech what Vorbis is to audio/music.
  Unlike many other speech codecs, Speex is not designed for mobile phones
- but rather for packet networks and voice over IP (VoIP) application.
+ but rather for packet networks and voice over IP (VoIP) applications.
  File-based compression is of course also supported.
  
 \end_layout
@@ -131,13 +142,14 @@ Designing for VoIP instead of mobile phones means that Speex is robust to
  lost packets, but not to corrupted ones.
  This is based on the assumption that in VoIP, packets either arrive unaltered
  or don't arrive at all.
- Because Speex is targeted at a wide range of devices, it has modest complexity
- (variable) and memory footprint.
+ Because Speex is targeted at a wide range of devices, it has modest (adjustable
+) complexity and a small memory footprint.
 \end_layout
 
 \begin_layout Standard
 All the design goals led to the choice of CELP
-\begin_inset LatexCommand \index{CELP}
+\begin_inset LatexCommand index
+name "CELP"
 
 \end_inset
 
@@ -151,7 +163,8 @@ All the design goals led to the choice of CELP
 
 \begin_layout Section
 Getting help
-\begin_inset LatexCommand \label{sec:Getting-help}
+\begin_inset LatexCommand label
+name "sec:Getting-help"
 
 \end_inset
 
@@ -195,7 +208,7 @@ Before asking for help (mailing list or IRC),
 \series bold
 it is important to first read this manual
 \series default
-.
+ (OK, so if you made it here it's already a good sign).
  It is generally considered rude to ask on a mailing list about topics that
  are clearly detailed in the documentation.
  On the other hand, it's perfectly OK (and encouraged) to ask for clarifications
@@ -211,7 +224,8 @@ Here are some additional guidelines related to the mailing list.
  Before reporting bugs in Speex to the list, it is strongly recommended
  (if possible) to first test whether these bugs can be reproduced using
  the speexenc and speexdec (see Section 
-\begin_inset LatexCommand \ref{sec:Command-line-encoder/decoder}
+\begin_inset LatexCommand ref
+reference "sec:Command-line-encoder/decoder"
 
 \end_inset
 
@@ -228,31 +242,36 @@ About this document
 \begin_layout Standard
 This document is divided in the following way.
  Section 
-\begin_inset LatexCommand \ref{sec:Feature-description}
+\begin_inset LatexCommand ref
+reference "sec:Feature-description"
 
 \end_inset
 
  describes the different Speex features and defines many basic terms that
  are used throughout this manual.
  Section 
-\begin_inset LatexCommand \ref{sec:Command-line-encoder/decoder}
+\begin_inset LatexCommand ref
+reference "sec:Command-line-encoder/decoder"
 
 \end_inset
 
  documents the standard command-line tools provided in the Speex distribution.
  Section 
-\begin_inset LatexCommand \ref{sec:Programming-with-Speex}
+\begin_inset LatexCommand ref
+reference "sec:Programming-with-Speex"
 
 \end_inset
 
  includes detailed instructions about programming using the libspeex
-\begin_inset LatexCommand \index{libspeex}
+\begin_inset LatexCommand index
+name "libspeex"
 
 \end_inset
 
  API.
  Section 
-\begin_inset LatexCommand \ref{sec:Formats-and-standards}
+\begin_inset LatexCommand ref
+reference "sec:Formats-and-standards"
 
 \end_inset
 
@@ -267,17 +286,20 @@ The three last sections describe the algorithms used in Speex.
  They are intended for people who want to understand how Speex really works
  and/or want to do research based on Speex.
  Section 
-\begin_inset LatexCommand \ref{sec:Introduction-to-CELP}
+\begin_inset LatexCommand ref
+reference "sec:Introduction-to-CELP"
 
 \end_inset
 
  explains the general idea behind CELP, while sections 
-\begin_inset LatexCommand \ref{sec:Speex-narrowband-mode}
+\begin_inset LatexCommand ref
+reference "sec:Speex-narrowband-mode"
 
 \end_inset
 
  and 
-\begin_inset LatexCommand \ref{sec:Speex-wideband-mode}
+\begin_inset LatexCommand ref
+reference "sec:Speex-wideband-mode"
 
 \end_inset
 
@@ -292,7 +314,8 @@ The three last sections describe the algorithms used in Speex.
 
 \begin_layout Chapter
 Codec description
-\begin_inset LatexCommand \label{sec:Feature-description}
+\begin_inset LatexCommand label
+name "sec:Feature-description"
 
 \end_inset
 
@@ -316,7 +339,8 @@ Before introducing all the Speex features, here are some concepts in speech
 
 \begin_layout Subsection*
 Sampling rate
-\begin_inset LatexCommand \index{sampling rate}
+\begin_inset LatexCommand index
+name "sampling rate"
 
 \end_inset
 
@@ -344,17 +368,20 @@ The sampling rate expressed in Hertz (Hz) is the number of samples taken
  Speex is mainly designed for three different sampling rates: 8 kHz, 16
  kHz, and 32 kHz.
  These are respectively refered to as narrowband
-\begin_inset LatexCommand \index{narrowband}
+\begin_inset LatexCommand index
+name "narrowband"
 
 \end_inset
 
 , wideband
-\begin_inset LatexCommand \index{wideband}
+\begin_inset LatexCommand index
+name "wideband"
 
 \end_inset
 
  and ultra-wideband
-\begin_inset LatexCommand \index{ultra-wideband}
+\begin_inset LatexCommand index
+name "ultra-wideband"
 
 \end_inset
 
@@ -384,7 +411,10 @@ kilo
 \series bold
 bits
 \series default
- per second
+\emph default
+ 
+\emph on
+per second
 \emph default
  (k
 \series bold
@@ -396,7 +426,10 @@ kilo
 \series bold
 bytes
 \series default
- per second
+\emph default
+ 
+\emph on
+per second
 \emph default
  (k
 \series bold
@@ -407,7 +440,8 @@ ps).
 
 \begin_layout Subsection*
 Quality
-\begin_inset LatexCommand \index{quality}
+\begin_inset LatexCommand index
+name "quality"
 
 \end_inset
 
@@ -422,7 +456,8 @@ Speex is a lossy codec, which means that it achives compression at the expense
  The Speex encoding process is controlled most of the time by a quality
  parameter that ranges from 0 to 10.
  In constant bit-rate
-\begin_inset LatexCommand \index{constant bit-rate}
+\begin_inset LatexCommand index
+name "constant bit-rate"
 
 \end_inset
 
@@ -433,7 +468,8 @@ Speex is a lossy codec, which means that it achives compression at the expense
 
 \begin_layout Subsection*
 Complexity
-\begin_inset LatexCommand \index{complexity}
+\begin_inset LatexCommand index
+name "complexity"
 
 \end_inset
 
@@ -458,7 +494,8 @@ bzip2
  5 times higher than for complexity 1.
  In practice, the best trade-off is between complexity 2 and 4, though higher
  settings are often useful when encoding non-speech sounds like DTMF
-\begin_inset LatexCommand \index{DTMF}
+\begin_inset LatexCommand index
+name "DTMF"
 
 \end_inset
 
@@ -467,7 +504,8 @@ bzip2
 
 \begin_layout Subsection*
 Variable Bit-Rate
-\begin_inset LatexCommand \index{variable bit-rate}
+\begin_inset LatexCommand index
+name "variable bit-rate"
 
 \end_inset
 
@@ -499,7 +537,8 @@ difficulty
 
 \begin_layout Subsection*
 Average Bit-Rate
-\begin_inset LatexCommand \index{average bit-rate}
+\begin_inset LatexCommand index
+name "average bit-rate"
 
 \end_inset
 
@@ -516,7 +555,8 @@ Average bit-rate solves one of the problems of VBR, as it dynamically adjusts
 
 \begin_layout Subsection*
 Voice Activity Detection
-\begin_inset LatexCommand \index{voice activity detection}
+\begin_inset LatexCommand index
+name "voice activity detection"
 
 \end_inset
 
@@ -543,7 +583,8 @@ comfort noise generation
 
 \begin_layout Subsection*
 Discontinuous Transmission
-\begin_inset LatexCommand \index{discontinuous transmission}
+\begin_inset LatexCommand index
+name "discontinuous transmission"
 
 \end_inset
 
@@ -559,7 +600,8 @@ Discontinuous transmission is an addition to VAD/VBR operation, that allows
 
 \begin_layout Subsection*
 Perceptual enhancement
-\begin_inset LatexCommand \index{perceptual enhancement}
+\begin_inset LatexCommand index
+name "perceptual enhancement"
 
 \end_inset
 
@@ -585,7 +627,8 @@ sounds
 
 \begin_layout Subsection*
 Latency and algorithmic delay
-\begin_inset LatexCommand \index{algorithmic delay}
+\begin_inset LatexCommand index
+name "algorithmic delay"
 
 \end_inset
 
@@ -619,12 +662,14 @@ The main characteristics of Speex can be summarized as follows:
 
 \begin_layout Itemize
 Free software/open-source
-\begin_inset LatexCommand \index{open-source}
+\begin_inset LatexCommand index
+name "open-source"
 
 \end_inset
 
 , patent
-\begin_inset LatexCommand \index{patent}
+\begin_inset LatexCommand index
+name "patent"
 
 \end_inset
 
@@ -633,12 +678,14 @@ Free software/open-source
 
 \begin_layout Itemize
 Integration of narrowband
-\begin_inset LatexCommand \index{narrowband}
+\begin_inset LatexCommand index
+name "narrowband"
 
 \end_inset
 
  and wideband
-\begin_inset LatexCommand \index{wideband}
+\begin_inset LatexCommand index
+name "wideband"
 
 \end_inset
 
@@ -651,7 +698,8 @@ Wide range of bit-rates available (from 2.15 kbps to 44 kbps)
 
 \begin_layout Itemize
 Dynamic bit-rate switching (AMR) and Variable Bit-Rate
-\begin_inset LatexCommand \index{variable bit-rate}
+\begin_inset LatexCommand index
+name "variable bit-rate"
 
 \end_inset
 
@@ -660,7 +708,8 @@ Dynamic bit-rate switching (AMR) and Variable Bit-Rate
 
 \begin_layout Itemize
 Voice Activity Detection
-\begin_inset LatexCommand \index{voice activity detection}
+\begin_inset LatexCommand index
+name "voice activity detection"
 
 \end_inset
 
@@ -669,7 +718,8 @@ Voice Activity Detection
 
 \begin_layout Itemize
 Variable complexity
-\begin_inset LatexCommand \index{complexity}
+\begin_inset LatexCommand index
+name "complexity"
 
 \end_inset
 
@@ -681,7 +731,7 @@ Embedded wideband structure (scalable sampling rate)
 \end_layout
 
 \begin_layout Itemize
-Ultra-wideband mode at 32 kHz
+Ultra-wideband sampling rate at 32 kHz
 \end_layout
 
 \begin_layout Itemize
@@ -765,7 +815,8 @@ Acoustic Echo Canceller
 \begin_layout Standard
 In any hands-free communication system (Fig.
  
-\begin_inset LatexCommand \ref{fig:Acoustic-echo-model}
+\begin_inset LatexCommand ref
+reference "fig:Acoustic-echo-model"
 
 \end_inset
 
@@ -825,9 +876,13 @@ end{center}
 
 \end_layout
 
-\begin_layout Caption
+\begin_layout Standard
+\begin_inset Caption
+
+\begin_layout Standard
 Acoustic echo model
-\begin_inset LatexCommand \label{fig:Acoustic-echo-model}
+\begin_inset LatexCommand label
+name "fig:Acoustic-echo-model"
 
 \end_inset
 
@@ -837,6 +892,27 @@ Acoustic echo model
 \end_inset
 
 
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section
+Resampler
+\end_layout
+
+\begin_layout Standard
+In some cases, it may be useful to convert audio from one sampling rate
+ to another.
+ There are many reasons for that.
+ It can be for mixing streams that have different sampling rates, for supporting
+ sampling rates that the soundcard doesn't support, for transcoding, etc.
+ That's why there is now a resampler that is part of the Speex project.
+ This resampler can be used to convert between any two arbitrary rates (the
+ ratio must only be a rational number) and there is control over the quality/com
+plexity tradeoff.
 \end_layout
 
 \begin_layout Standard
@@ -900,7 +976,8 @@ The options supported by the Speex configure script are:
 
 \begin_layout Description
 --enable-fixed-point
-\begin_inset LatexCommand \index{fixed-point}
+\begin_inset LatexCommand index
+name "fixed-point"
 
 \end_inset
 
@@ -920,7 +997,8 @@ The options supported by the Speex configure script are:
 
 \begin_layout Description
 --enable-fixed-point-debug Use only for debugging the fixed-point
-\begin_inset LatexCommand \index{fixed-point}
+\begin_inset LatexCommand index
+name "fixed-point"
 
 \end_inset
 
@@ -929,7 +1007,7 @@ The options supported by the Speex configure script are:
 
 \begin_layout Description
 --enable-epic-48k Enable a special (and non-compatible) 4.8 kbps narrowband
- mode
+ mode (broken in 1.1.x and 1.2beta)
 \end_layout
 
 \begin_layout Description
@@ -1032,6 +1110,205 @@ The source code directory include additional information for compiling on
  certain architectures or operating systems in README.xxx files.
 \end_layout
 
+\begin_layout Section
+Porting and Optimising
+\end_layout
+
+\begin_layout Standard
+Here are a few things to consider when porting or optimising Speex for a
+ new platform or an existing one.
+\end_layout
+
+\begin_layout Subsection
+CPU optimisation
+\end_layout
+
+\begin_layout Standard
+The single that will affect the CPU usage of Speex the most is whether it
+ is compiled for floating point or fixed-point.
+ If your CPU/DSP does not have a floating-point unit FPU, then compiling
+ as fixed-point will be orders of magnitudes faster.
+ If there is an FPU present, then it is important to test which version
+ is faster.
+ On the x86 architecture, floating-point is 
+\series bold
+generally
+\series default
+ faster, but not always.
+ To compile Speex as fixed-point, you need to pass --fixed-point to the
+ configure script or define the FIXED_POINT maccro for the compiler.
+\end_layout
+
+\begin_layout Standard
+Other important things to check on some DSP architectures are:
+\end_layout
+
+\begin_layout Itemize
+Make sure the cache is set to write-back mode
+\end_layout
+
+\begin_layout Itemize
+If the chip has SRAM instead of cache, make sure as much code and data are
+ in SRAM, rather than in RAM
+\end_layout
+
+\begin_layout Standard
+If you are going to be writing assembly, then the following functions are
+ 
+\series bold
+usually
+\series default
+ the first ones you should consider optimising:
+\end_layout
+
+\begin_layout Itemize
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+filter_mem16()
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+iir_mem16()
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+pitch_xcorr()
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+interp_pitch()
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+Memory optimisation
+\end_layout
+
+\begin_layout Standard
+Memory optimisation is mainly something that should be considered for small
+ embedded platforms.
+ For PCs, Speex is already so tiny that it's just not worth doing any of
+ the things suggested here.
+ There are several ways to reduce the memory usage of Speex, both in terms
+ of code size and data size.
+ For optimising code size, the trick is to first remove features you do
+ not need.
+ Some examples of things that can easily be disabled 
+\series bold
+if you don't need them
+\series default
+ are:
+\end_layout
+
+\begin_layout Itemize
+Wideband support (--disable-wideband)
+\end_layout
+
+\begin_layout Itemize
+Support for stereo (removing stereo.c)
+\end_layout
+
+\begin_layout Itemize
+VBR support (vbr.c and a few lines in nb_celp.c)
+\end_layout
+
+\begin_layout Itemize
+Static codebooks that are not needed for the bit-rates you are using (*_table.c
+ files)
+\end_layout
+
+\begin_layout Standard
+Speex also has several methods for allocating temporary arrays.
+ When using a compiler that supports C99 properly (as of 2007, Microsoft
+ compilers don't, but gcc does), it is best to define VAR_ARRAYS.
+ That makes use of the variable-size array feature of C99.
+ The next best is to define USE_ALLOCA so that Speex can use alloca() to
+ allocate the temporary arrays.
+ Note that on many systems, alloca() is buggy so it may not work.
+ If none of VAR_ARRAYS and USE_ALLOCA are defined, then Speex falls back
+ to allocating a large 
+\begin_inset Quotes eld
+\end_inset
+
+scratch space
+\begin_inset Quotes erd
+\end_inset
+
+ and doing its own internal allocation.
+ The main disadvantage of this solution is that it is wasteful.
+ It needs to allocate enough stack for the worst case scenario (worst bit-rate,
+ highest complexity setting, ...) and by default, the memory isn't shared between
+ multiple encoder/decoder states.
+ Still, if the 
+\begin_inset Quotes eld
+\end_inset
+
+manual
+\begin_inset Quotes erd
+\end_inset
+
+ allocation is the only option left, there are a few things that can be
+ improved.
+ By overriding the speex_alloc_scratch() call in os_support.h, it is possible
+ to always return the same memory area for all states
+\begin_inset Foot
+status collapsed
+
+\begin_layout Standard
+In this case, one must be careful with threads
+\end_layout
+
+\end_inset
+
+.
+ In addition to that, by redefining the NB_ENC_STACK and NB_DEC_STACK (or
+ similar for wideband), it is possible to only allocate memory for a scenario
+ that is known in advange.
+ In this case, it is important to measure the amount of memory required
+ for the specific sampling rate, bit-rate and complexity level being used.
+\end_layout
+
 \begin_layout Standard
 
 \newpage
@@ -1040,7 +1317,8 @@ The source code directory include additional information for compiling on
 
 \begin_layout Chapter
 Command-line encoder/decoder
-\begin_inset LatexCommand \label{sec:Command-line-encoder/decoder}
+\begin_inset LatexCommand label
+name "sec:Command-line-encoder/decoder"
 
 \end_inset
 
@@ -1057,14 +1335,19 @@ speexenc
 speexdec
 \emph default
 ).
- This section describes how to use these tools.
+ Those tools produce and read Speex files encapsulated in the Ogg container.
+ Although it is possible to encapsulate Speex in any container, Ogg is the
+ recommended container for files.
+ This section describes how to use the command line tools for Speex files
+ in Ogg.
 \end_layout
 
 \begin_layout Section
 
 \emph on
 speexenc
-\begin_inset LatexCommand \index{speexenc}
+\begin_inset LatexCommand index
+name "speexenc"
 
 \end_inset
 
@@ -1219,7 +1502,8 @@ n Sampling rate for raw input
 
 \emph on
 speexdec
-\begin_inset LatexCommand \index{speexdec}
+\begin_inset LatexCommand index
+name "speexdec"
 
 \end_inset
 
@@ -1304,18 +1588,19 @@ n Simulate n % random packet loss
 \end_layout
 
 \begin_layout Chapter
-Programming with Speex (the libspeex
-\begin_inset LatexCommand \index{libspeex}
+Using the Speex Codec API (
+\emph on
+libspeex
+\emph default
 
-\end_inset
-
- API
-\begin_inset LatexCommand \index{API}
+\begin_inset LatexCommand index
+name "libspeex"
 
 \end_inset
 
 )
-\begin_inset LatexCommand \label{sec:Programming-with-Speex}
+\begin_inset LatexCommand label
+name "sec:Programming-with-Speex"
 
 \end_inset
 
@@ -1323,9 +1608,30 @@ Programming with Speex (the libspeex
 \end_layout
 
 \begin_layout Standard
-This section explains how to use the Speex API.
+The 
+\emph on
+libspeex
+\emph default
+ library contains all the functions for encoding and decoding speech with
+ the Speex codec.
+ When linking on a UNIX system, one must add 
+\emph on
+-lspeex -lm
+\emph default
+ to the compiler command line.
+ One important thing to know is that 
+\series bold
+libspeex calls are reentrant, but not thread-safe
+\series default
+.
+ That means that it is fine to use calls from many threads, but 
+\series bold
+calls using the same state from multiple threads must be protected by mutexes
+\series default
+.
  Examples of code can also be found in Appendix 
-\begin_inset LatexCommand \ref{sec:Sample-code}
+\begin_inset LatexCommand ref
+reference "sec:Sample-code"
 
 \end_inset
 
@@ -1335,7 +1641,8 @@ This section explains how to use the Speex API.
 
 \begin_layout Section
 Encoding
-\begin_inset LatexCommand \label{sub:Encoding}
+\begin_inset LatexCommand label
+name "sub:Encoding"
 
 \end_inset
 
@@ -1346,36 +1653,54 @@ Encoding
 In order to encode speech using Speex, one first needs to:
 \end_layout
 
-\begin_layout LyX-Code
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Standard
+
 #include <speex/speex.h>
 \end_layout
 
-\begin_layout Standard
-Then a Speex bit-packing struct must be declared as:
-\end_layout
+\end_inset
 
-\begin_layout LyX-Code
+Then in the code, a Speex bit-packing struct must be declared, along with
+ a Speex encoder state:
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Standard
+
 SpeexBits bits;
 \end_layout
 
 \begin_layout Standard
-along with a Speex encoder state
-\end_layout
 
-\begin_layout LyX-Code
 void *enc_state;
 \end_layout
 
-\begin_layout Standard
-The two are initialized by:
-\end_layout
+\end_inset
 
-\begin_layout LyX-Code
+The two are initialized by:
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Standard
+
 speex_bits_init(&bits);
 \end_layout
 
-\begin_layout LyX-Code
+\begin_layout Standard
+
 enc_state = speex_encoder_init(&speex_nb_mode);
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -1388,8 +1713,8 @@ speex_nb_mode
 speex_wb_mode
 \emph default
 .
- In most cases, you will need to know the frame size used by the mode you
- are using.
+ In most cases, you will need to know the frame size used at the sampling
+ rate you are using.
  You can get that value in the 
 \emph on
 frame_size
@@ -1401,8 +1726,19 @@ samples
 , not bytes) with:
 \end_layout
 
-\begin_layout LyX-Code
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Standard
+
 speex_encoder_ctl(enc_state,SPEEX_GET_FRAME_SIZE,&frame_size);
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -1417,11 +1753,18 @@ frame_size
  This is set by:
 \end_layout
 
-\begin_layout LyX-Code
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Standard
+
 speex_encoder_ctl(enc_state,SPEEX_SET_QUALITY,&quality);
 \end_layout
 
-\begin_layout Standard
+\end_inset
+
 where 
 \emph on
 quality
@@ -1429,7 +1772,8 @@ quality
  is an integer value ranging from 0 to 10 (inclusively).
  The mapping between quality and bit-rate is described in Fig.
  
-\begin_inset LatexCommand \ref{cap:quality_vs_bps}
+\begin_inset LatexCommand ref
+reference "cap:quality_vs_bps"
 
 \end_inset
 
@@ -1440,16 +1784,29 @@ quality
 Once the initialization is done, for every input frame:
 \end_layout
 
-\begin_layout LyX-Code
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Standard
+
 speex_bits_reset(&bits);
 \end_layout
 
-\begin_layout LyX-Code
+\begin_layout Standard
+
 speex_encode_int(enc_state, input_frame, &bits);
 \end_layout
 
-\begin_layout LyX-Code
+\begin_layout Standard
+
 nbBytes = speex_bits_write(&bits, byte_ptr, MAX_NB_BYTES);
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -1461,9 +1818,9 @@ input_frame
 \emph on
 (
 \emph default
-short
+short 
 \emph on
- *)
+*)
 \emph default
  pointing to the beginning of a speech frame, 
 \emph on
@@ -1512,11 +1869,11 @@ speex_encode()
  ARM) more complicated.
  Internally, 
 \emph on
-speex_encode() 
+speex_encode()
 \emph default
-and
+ and 
 \emph on
- speex_encode_int()
+speex_encode_int()
 \emph default
  are processed in the same way.
  Whether the encoder uses the fixed-point version is only decided by the
@@ -1527,12 +1884,24 @@ and
 After you're done with the encoding, free all resources with:
 \end_layout
 
-\begin_layout LyX-Code
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Standard
+
 speex_bits_destroy(&bits);
 \end_layout
 
-\begin_layout LyX-Code
+\begin_layout Standard
+
 speex_encoder_destroy(enc_state);
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -1542,7 +1911,8 @@ That's about it for the encoder.
 
 \begin_layout Section
 Decoding
-\begin_inset LatexCommand \label{sub:Decoding}
+\begin_inset LatexCommand label
+name "sub:Decoding"
 
 \end_inset
 
@@ -1551,38 +1921,59 @@ Decoding
 
 \begin_layout Standard
 In order to decode speech using Speex, you first need to:
-\end_layout
+\begin_inset listings
+inline false
+status open
 
-\begin_layout LyX-Code
+\begin_layout Standard
+
 #include <speex/speex.h>
 \end_layout
 
-\begin_layout Standard
-You also need to declare a Speex bit-packing struct
-\end_layout
+\end_inset
 
-\begin_layout LyX-Code
+You also need to declare a Speex bit-packing struct
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Standard
+
 SpeexBits bits;
 \end_layout
 
-\begin_layout Standard
-and a Speex decoder state
-\end_layout
+\end_inset
 
-\begin_layout LyX-Code
+and a Speex decoder state
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Standard
+
 void *dec_state;
 \end_layout
 
-\begin_layout Standard
-The two are initialized by:
-\end_layout
+\end_inset
 
-\begin_layout LyX-Code
+The two are initialized by:
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Standard
+
 speex_bits_init(&bits);
 \end_layout
 
-\begin_layout LyX-Code
+\begin_layout Standard
+
 dec_state = speex_decoder_init(&speex_nb_mode);
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -1607,8 +1998,19 @@ samples
 , not bytes) with:
 \end_layout
 
-\begin_layout LyX-Code
-speex_decoder_ctl(dec_state, SPEEX_GET_FRAME_SIZE, &frame_size); 
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Standard
+
+speex_decoder_ctl(dec_state, SPEEX_GET_FRAME_SIZE, &frame_size);
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -1617,8 +2019,19 @@ There is also a parameter that can be set for the decoder: whether or not
  This can be set by: 
 \end_layout
 
-\begin_layout LyX-Code
-speex_decoder_ctl(dec_state, SPEEX_SET_ENH, &enh); 
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Standard
+
+speex_decoder_ctl(dec_state, SPEEX_SET_ENH, &enh);
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -1634,15 +2047,23 @@ enh
 Again, once the decoder initialization is done, for every input frame:
 \end_layout
 
-\begin_layout LyX-Code
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Standard
+
 speex_bits_read_from(&bits, input_bytes, nbBytes);
 \end_layout
 
-\begin_layout LyX-Code
+\begin_layout Standard
+
 speex_decode_int(dec_state, &bits, output_frame);
 \end_layout
 
-\begin_layout Standard
+\end_inset
+
 where input_bytes is a 
 \emph on
 (char *)
@@ -1676,562 +2097,33 @@ speex_decode()
 (float *)
 \emph default
  as the output for the audio.
+ After you're done with the decoding, free all resources with:
 \end_layout
 
 \begin_layout Standard
-After you're done with the decoding, free all resources with:
-\end_layout
+\begin_inset listings
+inline false
+status open
 
-\begin_layout LyX-Code
+\begin_layout Standard
+
 speex_bits_destroy(&bits);
 \end_layout
 
-\begin_layout LyX-Code
+\begin_layout Standard
+
 speex_decoder_destroy(dec_state);
 \end_layout
 
-\begin_layout Section
-Preprocessor
-\begin_inset LatexCommand \label{sub:Preprocessor}
-
 \end_inset
 
 
-\end_layout
-
-\begin_layout Standard
-In order to use the Speex preprocessor
-\begin_inset LatexCommand \index{preprocessor}
-
-\end_inset
-
-, you first need to:
-\end_layout
-
-\begin_layout LyX-Code
-#include <speex/speex_preprocess.h>
-\end_layout
-
-\begin_layout Standard
-Then, a preprocessor state can be created as:
-\end_layout
-
-\begin_layout LyX-Code
-SpeexPreprocessState *preprocess_state = speex_preprocess_state_init(frame_size,
- sampling_rate);
-\end_layout
-
-\begin_layout Standard
-It is recommended to use the same value for 
-\family typewriter
-frame_size
-\family default
- as is used by the encoder (20 
-\emph on
-ms
-\emph default
-).
-\end_layout
-
-\begin_layout Standard
-For each input frame, you need to call:
-\end_layout
-
-\begin_layout LyX-Code
-speex_preprocess_run(preprocess_state, audio_frame);
-\end_layout
-
-\begin_layout Standard
-where 
-\family typewriter
-audio_frame
-\family default
- is used both as input and output.
-\end_layout
-
-\begin_layout Standard
-In cases where the output audio is not useful for a certain frame, it is
- possible to use instead:
-\end_layout
-
-\begin_layout LyX-Code
-speex_preprocess_estimate_update(preprocess_state, audio_frame);
-\end_layout
-
-\begin_layout Standard
-This call will update all the preprocessor internal state variables without
- computing the output audio, thus saving some CPU cycles.
-\end_layout
-
-\begin_layout Standard
-The behaviour of the preprocessor can be changed using:
-\end_layout
-
-\begin_layout LyX-Code
-speex_preprocess_ctl(preprocess_state, request, ptr);
-\end_layout
-
-\begin_layout Standard
-which is used in the same way as the encoder and decoder equivalent.
- Options are listed in Section .
-\end_layout
-
-\begin_layout Standard
-The preprocessor state can be destroyed using:
-\end_layout
-
-\begin_layout LyX-Code
-speex_preprocess_state_destroy(preprocess_state);
-\end_layout
-
-\begin_layout Section
-Echo Cancellation
-\begin_inset LatexCommand \label{sub:Echo-Cancellation}
-
-\end_inset
-
-
-\end_layout
-
-\begin_layout Standard
-The Speex library now includes an echo cancellation
-\begin_inset LatexCommand \index{echo cancellation}
-
-\end_inset
-
- algorithm suitable for Acoustic Echo Cancellation
-\begin_inset LatexCommand \index{acoustic echo cancellation}
-
-\end_inset
-
- (AEC).
- In order to use the echo canceller, you first need to
-\end_layout
-
-\begin_layout LyX-Code
-#include <speex/speex_echo.h>
-\end_layout
-
-\begin_layout Standard
-Then, an echo canceller state can be created by:
-\end_layout
-
-\begin_layout LyX-Code
-SpeexEchoState *echo_state = speex_echo_state_init(frame_size, filter_length);
-\end_layout
-
-\begin_layout Standard
-where 
-\family typewriter
-frame_size
-\family default
- is the amount of data (in samples) you want to process at once and 
-\family typewriter
-filter_length
-\family default
- is the length (in samples) of the echo cancelling filter you want to use
- (also known as 
-\shape italic
-tail length
-\shape default
-
-\begin_inset LatexCommand \index{tail length}
-
-\end_inset
-
-).
- It is recommended to use a frame size in the order of 20 ms (or equal to
- the codec frame size) and make sure it is easy to perform an FFT of that
- size (powers of two are better than prime sizes).
- The recommended tail length is approximately the third of the room reverberatio
-n time.
- For example, in a small room, reverberation time is in the order of 300
- ms, so a tail length of 100 ms is a good choice (800 samples at 8000 Hz
- sampling rate).
-\end_layout
-
-\begin_layout Standard
-Once the echo canceller state is created, audio can be processed by:
-\end_layout
-
-\begin_layout LyX-Code
-speex_echo_cancellation(echo_state, input_frame, echo_frame, output_frame);
-\end_layout
-
-\begin_layout Standard
-where 
-\family typewriter
-input_frame
-\family default
- is the audio as captured by the microphone, 
-\family typewriter
-echo_frame
-\family default
- is the signal that was played in the speaker (and needs to be removed)
- and 
-\family typewriter
-output_frame
-\family default
- is the signal with echo removed.
- 
-\end_layout
-
-\begin_layout Standard
-One important thing to keep in mind is the relationship between 
-\family typewriter
-input_frame
-\family default
- and 
-\family typewriter
-echo_frame
-\family default
-.
- It is important that, at any time, any echo that is present in the input
- has already been sent to the echo canceller as 
-\family typewriter
-echo_frame
-\family default
-.
- In other words, the echo canceller cannot remove a signal that it hasn't
- yet received.
- On the other hand, the delay between the input signal and the echo signal
- must be small enough because otherwise part of the echo cancellation filter
- is inefficient.
- In the ideal case, you code would look like:
-\end_layout
-
-\begin_layout LyX-Code
-write_to_soundcard(echo_frame, frame_size);
-\end_layout
-
-\begin_layout LyX-Code
-read_from_soundcard(input_frame, frame_size);
-\end_layout
-
-\begin_layout LyX-Code
-speex_echo_cancellation(echo_state, input_frame, echo_frame, output_frame);
-\end_layout
-
-\begin_layout Standard
-If you wish to further reduce the echo present in the signal, you can do
- so by 
-\family typewriter
-associating the echo canceller to the preprocessor
-\family default
- (see Section 
-\begin_inset LatexCommand \ref{sub:Preprocessor}
-
-\end_inset
-
-).
- This is done by calling:
-\end_layout
-
-\begin_layout LyX-Code
-speex_preprocess_ctl(preprocess_state, SPEEX_PREPROCESS_SET_ECHO_STATE,
- echo_state);
-\end_layout
-
-\begin_layout Standard
-in the initialisation.
-\end_layout
-
-\begin_layout Standard
-As of version 1.2-beta2, there is an alternative, simpler API that can be
- used instead of 
-\emph on
-speex_echo_cancellation()
-\emph default
-.
- When audio capture and playback are handled asynchronously (e.g.
- in different threads or using the 
-\emph on
-poll()
-\emph default
- or 
-\emph on
-select()
-\emph default
- system call), it can be difficult to keep track of what input_frame comes
- with what echo_frame.
- Instead, the playback comtext/thread can simply call:
-\end_layout
-
-\begin_layout LyX-Code
-speex_echo_playback(echo_state, echo_frame);
-\end_layout
-
-\begin_layout Standard
-every time an audio frame is played.
- Then, the capture context/thread calls:
-\end_layout
-
-\begin_layout LyX-Code
-speex_echo_capture(echo_state, input_frame, output_frame);
-\end_layout
-
-\begin_layout Standard
-for every frame captured.
- Internally, 
-\emph on
-speex_echo_playback()
-\emph default
- simply buffers the playback frame so it can be used by 
-\emph on
-speex_echo_capture()
-\emph default
- to call 
-\emph on
-speex_echo_cancel()
-\emph default
-.
- A side effect of using this alternate API is that the playback audio is
- delayed by two frames, which is the normal delay caused by the soundcard.
- When capture and playback are already synchronised, 
-\emph on
-speex_echo_cancellation()
-\emph default
- is preferable since it gives better control on the exact input/echo timing.
-\end_layout
-
-\begin_layout Standard
-The echo cancellation state can be destroyed with:
-\end_layout
-
-\begin_layout LyX-Code
-speex_echo_state_destroy(echo_state);
-\end_layout
-
-\begin_layout Standard
-It is also possible to reset the state of the echo canceller so it can be
- reused without the need to create another state with:
-\end_layout
-
-\begin_layout LyX-Code
-speex_echo_state_reset(echo_state);
-\end_layout
-
-\begin_layout Subsection
-Troubleshooting
-\end_layout
-
-\begin_layout Standard
-There are several things that may prevent the echo canceller from working
- properly.
- One of them is a bug (or something suboptimal) in the code, but there are
- many others you should consider first
-\end_layout
-
-\begin_layout Itemize
-Using a different soundcard to do the capture and plaback will *not* work,
- regardless of what you may think.
- The only exception to that is if the two cards can be made to have their
- sampling clock 
-\begin_inset Quotes eld
-\end_inset
-
-locked
-\begin_inset Quotes erd
-\end_inset
-
- on the same clock source.
-\end_layout
-
-\begin_layout Itemize
-The delay between the record and playback signals must be minimal.
- Any signal played has to 
-\begin_inset Quotes eld
-\end_inset
-
-appear
-\begin_inset Quotes erd
-\end_inset
-
- on the playback (far end) signal slightly before the echo canceller 
-\begin_inset Quotes eld
-\end_inset
-
-sees
-\begin_inset Quotes erd
-\end_inset
-
- it in the near end signal, but excessive delay means that part of the filter
- length is wasted.
- In the worst situations, the delay is such that it is longer than the filter
- length, in which case, no echo can be cancelled.
-\end_layout
-
-\begin_layout Itemize
-When it comes to echo tail length (filter length), longer is *not* better.
- Actually, the longer the tail length, the longer it takes for the filter
- to adapt.
- Of course, a tail length that is too short will not cancel enough echo,
- but the most common problem seen is that people set a very long tail length
- and then wonder why no echo is being cancelled.
-\end_layout
-
-\begin_layout Itemize
-Non-linear distortion cannot (by definition) be modeled by the linear adaptive
- filter used in the echo canceller and thus cannot be cancelled.
- Use good audio gear and avoid saturation/clipping.
-\end_layout
-
-\begin_layout Standard
-Also useful is reading 
-\emph on
-Echo Cancellation Demystified
-\emph default
- by Alexey Frunze
-\begin_inset Foot
-status collapsed
-
-\begin_layout Standard
-http://www.embeddedstar.com/articles/2003/7/article20030720-1.html
-\end_layout
-
-\end_inset
-
-, which explains the fundamental principles of echo cancellation.
- The details of the algorithm described in the article are different, but
- the general ideas of echo cancellation through adaptive filters are the
- same.
-\end_layout
-
-\begin_layout Standard
-As of version 1.2beta2, a new 
-\family typewriter
-echo_diagnostic.m
-\family default
- tool is included in the source distribution.
- The first step is to define DUMP_ECHO_CANCEL_DATA during the build.
- This causes the echo canceller to automatically save the near-end, far-end
- and output signals to files (aec_rec.sw aec_play.sw and aec_out.sw).
- These are exactly what the AEC receives and outputs.
- From there, it is necessary to start Octave and type:
-\end_layout
-
-\begin_layout LyX-Code
-echo_diagnostic('aec_rec.sw', 'aec_play.sw', 'aec_diagnostic.sw', 1024);
-\end_layout
-
-\begin_layout Standard
-The value of 1024 is the filter length and can be changed.
- There will be some (hopefully) useful messages printed and echo cancelled
- audio will be saved to aec_diagnostic.sw .
- If even that output is bad (almost no cancellation) then there is  probably
- problem with the playback or recording process.
-\end_layout
-
-\begin_layout Section
-Jitter Buffer
-\end_layout
-
-\begin_layout Standard
-There are two jitter buffers.
- Both can be enabled by including:
-\end_layout
-
-\begin_layout LyX-Code
-#include <speex/speex_jitter.c>
-\end_layout
-
-\begin_layout Subsection
-Generic Jitter Buffer
-\end_layout
-
-\begin_layout Subsection
-Speex Jitter Buffer
-\end_layout
-
-\begin_layout Section
-Resampler
-\end_layout
-
-\begin_layout Standard
-As of version 1.2beta2, Speex includes a resampling modules.
- To make use of the resampler, it is necessary to include its header file:
-\end_layout
-
-\begin_layout LyX-Code
-#include <speex/speex_resampler.h>
-\end_layout
-
-\begin_layout Standard
-For each stream that is to be resampled, it is necessary to create a resampler
- state with:
-\end_layout
-
-\begin_layout LyX-Code
-SpeexResamplerState *resampler;
-\end_layout
-
-\begin_layout LyX-Code
-resampler = speex_resampler_init(nb_channels, input_rate, output_rate, quality,
- &err);
-\end_layout
-
-\begin_layout Standard
-where nb_channels is the number of channels that will be used (either interleave
-d or non-interleaved), input_rate is the sampling rate of the input stream,
- output_rate is the sampling rate of the output stream and quality is the
- requested quality setting (0 to 10).
- The quality parameter is useful for controlling the quality/complexity/latency
- tradeoff.
- Using a higher quality setting means less noise/aliasing, a higher complexity
- and a higher latency.
- Usually, a quality of 3 is acceptable for most desktop uses and quality
- 10 is mostly recommended for pro audio work.
- Quality 0 usually has a decent sound (certainly better than using linear
- interpolation resampling), but artifacts may be heard.
-\end_layout
-
-\begin_layout Standard
-The actual resampling is performed using
-\end_layout
-
-\begin_layout LyX-Code
-err = speex_resampler_process_int(resampler, channelID, in, &in_length,
- out, &out_length);
-\end_layout
-
-\begin_layout Standard
-where channelID is the ID of the channel to be processed.
- For a mono stream, use 0.
- The 
-\emph on
-in
-\emph default
- pointer points to the first sample of the input buffer for the selected
- channel and 
-\emph on
-out
-\emph default
- points to the first sample of the output.
- The size of the input and output buffers are specified by 
-\emph on
-in_length
-\emph default
- and 
-\emph on
-out_length
-\emph default
- respectively.
- Upon completion, these values are replaced by the number of samples read
- and written by the resampler.
- Unless an error occurs, either all input samples will be read or all output
- samples will be written to (or both).
- For floating-point samples, the function speex_resampler_process_float()
- behaves similarly.
-\end_layout
-
-\begin_layout Standard
-It is also possible to process multiple channels at once.
- 
 \end_layout
 
 \begin_layout Section
 Codec Options (speex_*_ctl)
-\begin_inset LatexCommand \label{sub:Codec-Options}
+\begin_inset LatexCommand label
+name "sub:Codec-Options"
 
 \end_inset
 
@@ -2249,7 +2141,8 @@ Entities should not be multiplied beyond necessity -- William of Ockham.
 \align center
 
 \emph on
-Just because there's an option doesn't mean you have to use it -- me.
+Just because there's an option for it doesn't mean you have to turn it on
+ -- me.
 \end_layout
 
 \begin_layout Standard
@@ -2263,13 +2156,6 @@ speex_encoder_ctl
 speex_decoder_ctl
 \emph default
  functions.
- Despite that, the defaults are good for many applications and 
-\series bold
-optional settings should only be used when one understands them and knows
- that they are needed
-\series default
-.
- A common error is to attempt to set many unnecessary settings.
  These functions are similar to the 
 \emph on
 ioctl
@@ -2277,215 +2163,685 @@ ioctl
  system call and their prototypes are:
 \end_layout
 
-\begin_layout LyX-Code
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Standard
+
 void speex_encoder_ctl(void *encoder, int request, void *ptr);
 \end_layout
 
-\begin_layout LyX-Code
+\begin_layout Standard
+
 void speex_decoder_ctl(void *encoder, int request, void *ptr);
 \end_layout
 
-\begin_layout Standard
-The different values of request allowed are (note that some only apply to
- the encoder or the decoder):
+\end_inset
+
+
 \end_layout
 
-\begin_layout Description
-SPEEX_SET_ENH** Set perceptual enhancer
-\begin_inset LatexCommand \index{perceptual enhancement}
+\begin_layout Standard
+Despite those functions, the defaults are usually good for many applications
+ and 
+\series bold
+optional settings should only be used when one understands them and knows
+ that they are needed
+\series default
+.
+ A common error is to attempt to set many unnecessary settings.
+ 
+\end_layout
+
+\begin_layout Standard
+Here is a list of the values allowed for the requests.
+ Some only apply to the encoder or the decoder.
+ Because the last argument is of type 
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+void *
+\end_layout
 
 \end_inset
 
- to on (1) or off (0) (integer)
+, the 
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+_ctl()
+\end_layout
+
+\end_inset
+
+ functions are 
+\series bold
+not type safe
+\series default
+, and shoud thus be used with care.
+ The type 
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+spx_int32_t
+\end_layout
+
+\end_inset
+
+ is the same as the C99 
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+int32_t
+\end_layout
+
+\end_inset
+
+ type.
 \end_layout
 
 \begin_layout Description
-SPEEX_GET_ENH** Get perceptual enhancer status (integer)
+SPEEX_SET_ENH
+\begin_inset Formula $\ddagger$
+\end_inset
+
+ Set perceptual enhancer
+\begin_inset LatexCommand index
+name "perceptual enhancement"
+
+\end_inset
+
+ to on (1) or off (0) (
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+spx_int32_t
+\end_layout
+
+\end_inset
+
+)
+\end_layout
+
+\begin_layout Description
+SPEEX_GET_ENH
+\begin_inset Formula $\ddagger$
+\end_inset
+
+ Get perceptual enhancer status (
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+spx_int32_t
+\end_layout
+
+\end_inset
+
+)
 \end_layout
 
 \begin_layout Description
 SPEEX_GET_FRAME_SIZE Get the number of samples per frame for the current
- mode (integer)
+ mode (
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+spx_int32_t
+\end_layout
+
+\end_inset
+
+)
 \end_layout
 
 \begin_layout Description
-SPEEX_SET_QUALITY* Set the encoder speech quality (integer 0 to 10)
-\end_layout
-
-\begin_layout Description
-SPEEX_GET_QUALITY* Get the current encoder speech quality (integer 0 to
- 10)
-\end_layout
-
-\begin_layout Description
-SPEEX_SET_MODE*
+SPEEX_SET_QUALITY
 \begin_inset Formula $\dagger$
 \end_inset
 
+ Set the encoder speech quality (
+\begin_inset listings
+inline true
+status collapsed
 
+\begin_layout Standard
+
+spx_int32_t
+\end_layout
+
+\end_inset
+
+ from 0 to 10)
 \end_layout
 
 \begin_layout Description
-SPEEX_GET_MODE*
+SPEEX_GET_QUALITY
 \begin_inset Formula $\dagger$
 \end_inset
 
+ Get the current encoder speech quality (
+\begin_inset listings
+inline true
+status collapsed
 
+\begin_layout Standard
+
+spx_int32_t
+\end_layout
+
+\end_inset
+
+ from 0 to 10)
 \end_layout
 
 \begin_layout Description
-SPEEX_SET_LOW_MODE*
+SPEEX_SET_MODE
 \begin_inset Formula $\dagger$
 \end_inset
 
+ Set the mode number, as specified in the RTP spec (
+\begin_inset listings
+inline true
+status collapsed
 
+\begin_layout Standard
+
+spx_int32_t
+\end_layout
+
+\end_inset
+
+)
 \end_layout
 
 \begin_layout Description
-SPEEX_GET_LOW_MODE*
+SPEEX_GET_MODE
 \begin_inset Formula $\dagger$
 \end_inset
 
+ Get the current mode number, as specified in the RTP spec (
+\begin_inset listings
+inline true
+status collapsed
 
+\begin_layout Standard
+
+spx_int32_t
+\end_layout
+
+\end_inset
+
+)
 \end_layout
 
 \begin_layout Description
-SPEEX_SET_HIGH_MODE*
+SPEEX_SET_VBR
 \begin_inset Formula $\dagger$
 \end_inset
 
+ Set variable bit-rate (VBR) to on (1) or off (0) (
+\begin_inset listings
+inline true
+status collapsed
 
+\begin_layout Standard
+
+spx_int32_t
+\end_layout
+
+\end_inset
+
+)
 \end_layout
 
 \begin_layout Description
-SPEEX_GET_HIGH_MODE*
+SPEEX_GET_VBR
 \begin_inset Formula $\dagger$
 \end_inset
 
-
-\end_layout
-
-\begin_layout Description
-SPEEX_SET_VBR* Set variable bit-rate (VBR) to on (1) or off (0) (integer)
-\end_layout
-
-\begin_layout Description
-SPEEX_GET_VBR* Get variable bit-rate
-\begin_inset LatexCommand \index{variable bit-rate}
+ Get variable bit-rate
+\begin_inset LatexCommand index
+name "variable bit-rate"
 
 \end_inset
 
- (VBR) status (integer)
-\end_layout
+ (VBR) status (
+\begin_inset listings
+inline true
+status collapsed
 
-\begin_layout Description
-SPEEX_SET_VBR_QUALITY* Set the encoder VBR speech quality (float 0 to 10)
-\end_layout
+\begin_layout Standard
 
-\begin_layout Description
-SPEEX_GET_VBR_QUALITY* Get the current encoder VBR speech quality (float
- 0 to 10)
+spx_int32_t
 \end_layout
-
-\begin_layout Description
-SPEEX_SET_COMPLEXITY* Set the CPU resources allowed for the encoder (integer
- 1 to 10)
-\end_layout
-
-\begin_layout Description
-SPEEX_GET_COMPLEXITY* Get the CPU resources allowed for the encoder (integer
- 1 to 10)
-\end_layout
-
-\begin_layout Description
-SPEEX_SET_BITRATE* Set the bit-rate to use to the closest value not exceeding
- the parameter (integer in bps)
-\end_layout
-
-\begin_layout Description
-SPEEX_GET_BITRATE Get the current bit-rate in use (integer in bps)
-\end_layout
-
-\begin_layout Description
-SPEEX_SET_SAMPLING_RATE Set real sampling rate (integer in Hz)
-\end_layout
-
-\begin_layout Description
-SPEEX_GET_SAMPLING_RATE Get real sampling rate (integer in Hz)
-\end_layout
-
-\begin_layout Description
-SPEEX_RESET_STATE Reset the encoder/decoder state to its original state
- (zeros all memories)
-\end_layout
-
-\begin_layout Description
-SPEEX_SET_VAD* Set voice activity detection
-\begin_inset LatexCommand \index{voice activity detection}
 
 \end_inset
 
- (VAD) to on (1) or off (0) (integer)
+)
 \end_layout
 
 \begin_layout Description
-SPEEX_GET_VAD* Get voice activity detection (VAD) status (integer)
+SPEEX_SET_VBR_QUALITY
+\begin_inset Formula $\dagger$
+\end_inset
+
+ Set the encoder VBR speech quality (float 0 to 10)
 \end_layout
 
 \begin_layout Description
-SPEEX_SET_DTX* Set discontinuous transmission
-\begin_inset LatexCommand \index{discontinuous transmission}
+SPEEX_GET_VBR_QUALITY
+\begin_inset Formula $\dagger$
+\end_inset
+
+ Get the current encoder VBR speech quality (float 0 to 10)
+\end_layout
+
+\begin_layout Description
+SPEEX_SET_COMPLEXITY
+\begin_inset Formula $\dagger$
+\end_inset
+
+ Set the CPU resources allowed for the encoder (
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+spx_int32_t
+\end_layout
 
 \end_inset
 
- (DTX) to on (1) or off (0) (integer)
+ from 1 to 10)
 \end_layout
 
 \begin_layout Description
-SPEEX_GET_DTX* Get discontinuous transmission (DTX) status (integer)
-\end_layout
+SPEEX_GET_COMPLEXITY
+\begin_inset Formula $\dagger$
+\end_inset
 
-\begin_layout Description
-SPEEX_SET_ABR* Set average bit-rate
-\begin_inset LatexCommand \index{average bit-rate}
+ Get the CPU resources allowed for the encoder (
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+spx_int32_t
+\end_layout
 
 \end_inset
 
- (ABR) to a value n in bits per second (integer in bps)
+ from 1 to 10)
 \end_layout
 
 \begin_layout Description
-SPEEX_GET_ABR* Get average bit-rate (ABR) setting (integer in bps)
+SPEEX_SET_BITRATE
+\begin_inset Formula $\dagger$
+\end_inset
+
+ Set the bit-rate to use to the closest value not exceeding the parameter
+ (
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+spx_int32_t
+\end_layout
+
+\end_inset
+
+ in bits per second)
 \end_layout
 
 \begin_layout Description
-SPEEX_SET_PLC_TUNING* Tell the encoder to optimize encoding for a certain
- percentage of packet loss (integer in percent)
+SPEEX_GET_BITRATE Get the current bit-rate in use (
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+spx_int32_t
+\end_layout
+
+\end_inset
+
+ in bits per second)
 \end_layout
 
 \begin_layout Description
-SPEEX_GET_PLC_TUNING* Get the current tuning of the encoder for PLC (integer
+SPEEX_SET_SAMPLING_RATE Set real sampling rate (
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+spx_int32_t
+\end_layout
+
+\end_inset
+
+ in Hz)
+\end_layout
+
+\begin_layout Description
+SPEEX_GET_SAMPLING_RATE Get real sampling rate (
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+spx_int32_t
+\end_layout
+
+\end_inset
+
+ in Hz)
+\end_layout
+
+\begin_layout Description
+SPEEX_RESET_STATE Reset the encoder/decoder state to its original state,
+ clearing all memories (no argument)
+\end_layout
+
+\begin_layout Description
+SPEEX_SET_VAD
+\begin_inset Formula $\dagger$
+\end_inset
+
+ Set voice activity detection
+\begin_inset LatexCommand index
+name "voice activity detection"
+
+\end_inset
+
+ (VAD) to on (1) or off (0) (
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+spx_int32_t
+\end_layout
+
+\end_inset
+
+)
+\end_layout
+
+\begin_layout Description
+SPEEX_GET_VAD
+\begin_inset Formula $\dagger$
+\end_inset
+
+ Get voice activity detection (VAD) status (
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+spx_int32_t
+\end_layout
+
+\end_inset
+
+)
+\end_layout
+
+\begin_layout Description
+SPEEX_SET_DTX
+\begin_inset Formula $\dagger$
+\end_inset
+
+ Set discontinuous transmission
+\begin_inset LatexCommand index
+name "discontinuous transmission"
+
+\end_inset
+
+ (DTX) to on (1) or off (0) (
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+spx_int32_t
+\end_layout
+
+\end_inset
+
+)
+\end_layout
+
+\begin_layout Description
+SPEEX_GET_DTX
+\begin_inset Formula $\dagger$
+\end_inset
+
+ Get discontinuous transmission (DTX) status (
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+spx_int32_t
+\end_layout
+
+\end_inset
+
+)
+\end_layout
+
+\begin_layout Description
+SPEEX_SET_ABR
+\begin_inset Formula $\dagger$
+\end_inset
+
+ Set average bit-rate
+\begin_inset LatexCommand index
+name "average bit-rate"
+
+\end_inset
+
+ (ABR) to a value n in bits per second (
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+spx_int32_t
+\end_layout
+
+\end_inset
+
+ in bits per second)
+\end_layout
+
+\begin_layout Description
+SPEEX_GET_ABR
+\begin_inset Formula $\dagger$
+\end_inset
+
+ Get average bit-rate (ABR) setting (
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+spx_int32_t
+\end_layout
+
+\end_inset
+
+ in bits per second)
+\end_layout
+
+\begin_layout Description
+SPEEX_SET_PLC_TUNING
+\begin_inset Formula $\dagger$
+\end_inset
+
+ Tell the encoder to optimize encoding for a certain percentage of packet
+ loss (
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+spx_int32_t
+\end_layout
+
+\end_inset
+
  in percent)
 \end_layout
 
 \begin_layout Description
-* applies only to the encoder
+SPEEX_GET_PLC_TUNING
+\begin_inset Formula $\dagger$
+\end_inset
+
+ Get the current tuning of the encoder for PLC (
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+spx_int32_t
+\end_layout
+
+\end_inset
+
+ in percent)
 \end_layout
 
 \begin_layout Description
-** applies only to the decoder
+SPEEX_SET_VBR_MAX_BITRATE
+\begin_inset Formula $\dagger$
+\end_inset
+
+ Set the maximum bit-rate allowed in VBR operation (
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+spx_int32_t
+\end_layout
+
+\end_inset
+
+ in bits per second)
+\end_layout
+
+\begin_layout Description
+SPEEX_GET_VBR_MAX_BITRATE
+\begin_inset Formula $\dagger$
+\end_inset
+
+ Get the current maximum bit-rate allowed in VBR operation (
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+spx_int32_t
+\end_layout
+
+\end_inset
+
+ in bits per second)
+\end_layout
+
+\begin_layout Description
+SPEEX_SET_HIGHPASS Set the high-pass filter on (1) or off (0) (
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+spx_int32_t
+\end_layout
+
+\end_inset
+
+)
+\end_layout
+
+\begin_layout Description
+SPEEX_TET_HIGHPASS Get the current high-pass filter status (
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+spx_int32_t
+\end_layout
+
+\end_inset
+
+)
 \end_layout
 
 \begin_layout Description
 \begin_inset Formula $\dagger$
 \end_inset
 
- normally only used internally
+ applies only to the encoder
+\end_layout
+
+\begin_layout Description
+\begin_inset Formula $\ddagger$
+\end_inset
+
+ applies only to the decoder
 \end_layout
 
 \begin_layout Section
 Mode queries
-\begin_inset LatexCommand \label{sub:Mode-queries}
+\begin_inset LatexCommand label
+name "sub:Mode-queries"
 
 \end_inset
 
@@ -2498,13 +2854,17 @@ er_ctl calls.
  Since modes are read-only, it is only possible to get information about
  a particular mode.
  The function used to do that is:
-\end_layout
+\begin_inset listings
+inline false
+status open
 
-\begin_layout LyX-Code
+\begin_layout Standard
+
 void speex_mode_query(SpeexMode *mode, int request, void *ptr);
 \end_layout
 
-\begin_layout Standard
+\end_inset
+
 The admissible values for request are (unless otherwise note, the values
  are returned through 
 \emph on
@@ -2528,131 +2888,9 @@ ptr
 \end_layout
 
 \begin_layout Section
-Preprocessor options
-\begin_inset LatexCommand \label{sub:Preprocessor-options}
-
-\end_inset
-
-
-\end_layout
-
-\begin_layout Description
-SPEEX_PREPROCESS_SET_DENOISE Turns denoising on(1) or off(2) (integer)
-\end_layout
-
-\begin_layout Description
-SPEEX_PREPROCESS_GET_DENOISE Get denoising status (integer)
-\end_layout
-
-\begin_layout Description
-SPEEX_PREPROCESS_SET_AGC Turns automatic gain control (AGC) on(1) or off(2)
- (integer)
-\end_layout
-
-\begin_layout Description
-SPEEX_PREPROCESS_GET_AGC Get AGC status (integer)
-\end_layout
-
-\begin_layout Description
-SPEEX_PREPROCESS_SET_VAD Turns voice activity detector (VAD) on(1) or off(2)
- (integer)
-\end_layout
-
-\begin_layout Description
-SPEEX_PREPROCESS_GET_VAD Get VAD status (integer)
-\end_layout
-
-\begin_layout Description
-SPEEX_PREPROCESS_SET_AGC_LEVEL
-\end_layout
-
-\begin_layout Description
-SPEEX_PREPROCESS_GET_AGC_LEVEL
-\end_layout
-
-\begin_layout Description
-SPEEX_PREPROCESS_SET_DEREVERB Turns reverberation removal on(1) or off(2)
- (integer)
-\end_layout
-
-\begin_layout Description
-SPEEX_PREPROCESS_GET_DEREVERB Get reverberation removal status (integer)
-\end_layout
-
-\begin_layout Description
-SPEEX_PREPROCESS_SET_DEREVERB_LEVEL
-\end_layout
-
-\begin_layout Description
-SPEEX_PREPROCESS_GET_DEREVERB_LEVEL
-\end_layout
-
-\begin_layout Description
-SPEEX_PREPROCESS_SET_DEREVERB_DECAY
-\end_layout
-
-\begin_layout Description
-SPEEX_PREPROCESS_GET_DEREVERB_DECAY
-\end_layout
-
-\begin_layout Description
-SPEEX_PREPROCESS_SET_PROB_START
-\end_layout
-
-\begin_layout Description
-SPEEX_PREPROCESS_GET_PROB_START
-\end_layout
-
-\begin_layout Description
-SPEEX_PREPROCESS_SET_PROB_CONTINUE
-\end_layout
-
-\begin_layout Description
-SPEEX_PREPROCESS_GET_PROB_CONTINUE
-\end_layout
-
-\begin_layout Description
-SPEEX_PREPROCESS_SET_NOISE_SUPPRESS Set maximum attenuation of the noise
- in dB (negative number)
-\end_layout
-
-\begin_layout Description
-SPEEX_PREPROCESS_GET_NOISE_SUPPRESS Get maximum attenuation of the noise
- in dB (negative number)
-\end_layout
-
-\begin_layout Description
-SPEEX_PREPROCESS_SET_ECHO_SUPPRESS Set maximum attenuation of the residual
- echo in dB (negative number)
-\end_layout
-
-\begin_layout Description
-SPEEX_PREPROCESS_GET_ECHO_SUPPRESS Set maximum attenuation of the residual
- echo in dB (negative number)
-\end_layout
-
-\begin_layout Description
-SPEEX_PREPROCESS_SET_ECHO_SUPPRESS_ACTIVE Set maximum attenuation of the
- echo in dB when near end is active (negative number)
-\end_layout
-
-\begin_layout Description
-SPEEX_PREPROCESS_GET_ECHO_SUPPRESS_ACTIVE Set maximum attenuation of the
- echo in dB when near end is active (negative number)
-\end_layout
-
-\begin_layout Description
-SPEEX_PREPROCESS_SET_ECHO_STATE Set the associated echo canceller for residual
- echo suppression (NULL for no residual echo suppression)
-\end_layout
-
-\begin_layout Description
-SPEEX_PREPROCESS_GET_ECHO_STATE Get the associated echo canceller
-\end_layout
-
-\begin_layout Section
 Packing and in-band signalling
-\begin_inset LatexCommand \index{in-band signalling}
+\begin_inset LatexCommand index
+name "in-band signalling"
 
 \end_inset
 
@@ -2671,7 +2909,8 @@ Sometimes it is desirable to pack more than one frame per packet (or other
  mechanism, it is possible to include a terminator code.
  That terminator consists of the code 15 (decimal) encoded with 5 bits,
  as shown in Table 
-\begin_inset LatexCommand \ref{cap:quality_vs_bps}
+\begin_inset LatexCommand ref
+reference "cap:quality_vs_bps"
 
 \end_inset
 
@@ -2702,7 +2941,8 @@ pseudo-frames
 
  of mode 14 which contain a 4-bit message type code, followed by the message.
  Table 
-\begin_inset LatexCommand \ref{cap:In-band-signalling-codes}
+\begin_inset LatexCommand ref
+reference "cap:In-band-signalling-codes"
 
 \end_inset
 
@@ -3261,9 +3501,18 @@ end{center}
 
 \end_layout
 
-\begin_layout Caption
+\begin_layout Standard
+\begin_inset Caption
+
+\begin_layout Standard
 In-band signalling codes
-\begin_inset LatexCommand \label{cap:In-band-signalling-codes}
+\begin_inset LatexCommand label
+name "cap:In-band-signalling-codes"
+
+\end_inset
+
+
+\end_layout
 
 \end_inset
 
@@ -3279,6 +3528,1304 @@ In-band signalling codes
 Finally, applications may define custom in-band messages using mode 13.
  The size of the message in bytes is encoded with 5 bits, so that the decoder
  can skip it if it doesn't know how to interpret it.
+\newpage
+
+\end_layout
+
+\begin_layout Chapter
+Speech Processing API (
+\emph on
+libspeexdsp
+\emph default
+)
+\end_layout
+
+\begin_layout Standard
+As of version 1.2beta3, the non-codec parts of the Speex package are now
+ in a separate library called 
+\emph on
+libspeexdsp
+\emph default
+.
+ This library includes the preprocessor, the acoustic echo canceller, the
+ jitter buffer, and the resampler.
+ In a UNIX environment, it can be linked into a program by adding 
+\emph on
+-lspeexdsp -lm
+\emph default
+ to the compiler command line.
+ Just like for libspeex, 
+\series bold
+libspeexdsp calls are reentrant, but not thread-safe
+\series default
+.
+ That means that it is fine to use calls from many threads, but 
+\series bold
+calls using the same state from multiple threads must be protected by mutexes
+\series default
+.
+\end_layout
+
+\begin_layout Section
+Preprocessor
+\begin_inset LatexCommand label
+name "sub:Preprocessor"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\noindent
+In order to use the Speex preprocessor
+\begin_inset LatexCommand index
+name "preprocessor"
+
+\end_inset
+
+, you first need to:
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Standard
+
+#include <speex/speex_preprocess.h>
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\noindent
+Then, a preprocessor state can be created as:
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Standard
+
+SpeexPreprocessState *preprocess_state = speex_preprocess_state_init(frame_size,
+ sampling_rate);
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\noindent
+and it is recommended to use the same value for 
+\family typewriter
+frame_size
+\family default
+ as is used by the encoder (20 
+\emph on
+ms
+\emph default
+).
+\end_layout
+
+\begin_layout Standard
+For each input frame, you need to call:
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Standard
+
+speex_preprocess_run(preprocess_state, audio_frame);
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\noindent
+where 
+\family typewriter
+audio_frame
+\family default
+ is used both as input and output.
+ In cases where the output audio is not useful for a certain frame, it is
+ possible to use instead:
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Standard
+
+speex_preprocess_estimate_update(preprocess_state, audio_frame);
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\noindent
+This call will update all the preprocessor internal state variables without
+ computing the output audio, thus saving some CPU cycles.
+\end_layout
+
+\begin_layout Standard
+The behaviour of the preprocessor can be changed using:
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Standard
+
+speex_preprocess_ctl(preprocess_state, request, ptr);
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\noindent
+which is used in the same way as the encoder and decoder equivalent.
+ Options are listed in Section 
+\begin_inset LatexCommand ref
+reference "sub:Preprocessor-options"
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+The preprocessor state can be destroyed using:
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Standard
+
+speex_preprocess_state_destroy(preprocess_state);
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+Preprocessor options
+\begin_inset LatexCommand label
+name "sub:Preprocessor-options"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+As with the codec, the preprocessor also has options that can be controlled
+ using an ioctl()-like call.
+ The available options are:
+\end_layout
+
+\begin_layout Description
+SPEEX_PREPROCESS_SET_DENOISE Turns denoising on(1) or off(2) (
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+spx_int32_t
+\end_layout
+
+\end_inset
+
+)
+\end_layout
+
+\begin_layout Description
+SPEEX_PREPROCESS_GET_DENOISE Get denoising status (
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+spx_int32_t
+\end_layout
+
+\end_inset
+
+)
+\end_layout
+
+\begin_layout Description
+SPEEX_PREPROCESS_SET_AGC Turns automatic gain control (AGC) on(1) or off(2)
+ (
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+spx_int32_t
+\end_layout
+
+\end_inset
+
+)
+\end_layout
+
+\begin_layout Description
+SPEEX_PREPROCESS_GET_AGC Get AGC status (
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+spx_int32_t
+\end_layout
+
+\end_inset
+
+)
+\end_layout
+
+\begin_layout Description
+SPEEX_PREPROCESS_SET_VAD Turns voice activity detector (VAD) on(1) or off(2)
+ (
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+spx_int32_t
+\end_layout
+
+\end_inset
+
+)
+\end_layout
+
+\begin_layout Description
+SPEEX_PREPROCESS_GET_VAD Get VAD status (
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+spx_int32_t
+\end_layout
+
+\end_inset
+
+)
+\end_layout
+
+\begin_layout Description
+SPEEX_PREPROCESS_SET_AGC_LEVEL
+\end_layout
+
+\begin_layout Description
+SPEEX_PREPROCESS_GET_AGC_LEVEL
+\end_layout
+
+\begin_layout Description
+SPEEX_PREPROCESS_SET_DEREVERB Turns reverberation removal on(1) or off(2)
+ (
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+spx_int32_t
+\end_layout
+
+\end_inset
+
+)
+\end_layout
+
+\begin_layout Description
+SPEEX_PREPROCESS_GET_DEREVERB Get reverberation removal status (
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+spx_int32_t
+\end_layout
+
+\end_inset
+
+)
+\end_layout
+
+\begin_layout Description
+SPEEX_PREPROCESS_SET_DEREVERB_LEVEL
+\end_layout
+
+\begin_layout Description
+SPEEX_PREPROCESS_GET_DEREVERB_LEVEL
+\end_layout
+
+\begin_layout Description
+SPEEX_PREPROCESS_SET_DEREVERB_DECAY
+\end_layout
+
+\begin_layout Description
+SPEEX_PREPROCESS_GET_DEREVERB_DECAY
+\end_layout
+
+\begin_layout Description
+SPEEX_PREPROCESS_SET_PROB_START
+\end_layout
+
+\begin_layout Description
+SPEEX_PREPROCESS_GET_PROB_START
+\end_layout
+
+\begin_layout Description
+SPEEX_PREPROCESS_SET_PROB_CONTINUE
+\end_layout
+
+\begin_layout Description
+SPEEX_PREPROCESS_GET_PROB_CONTINUE
+\end_layout
+
+\begin_layout Description
+SPEEX_PREPROCESS_SET_NOISE_SUPPRESS Set maximum attenuation of the noise
+ in dB (negative 
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+spx_int32_t
+\end_layout
+
+\end_inset
+
+)
+\end_layout
+
+\begin_layout Description
+SPEEX_PREPROCESS_GET_NOISE_SUPPRESS Get maximum attenuation of the noise
+ in dB (negative 
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+spx_int32_t
+\end_layout
+
+\end_inset
+
+)
+\end_layout
+
+\begin_layout Description
+SPEEX_PREPROCESS_SET_ECHO_SUPPRESS Set maximum attenuation of the residual
+ echo in dB (negative 
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+spx_int32_t
+\end_layout
+
+\end_inset
+
+)
+\end_layout
+
+\begin_layout Description
+SPEEX_PREPROCESS_GET_ECHO_SUPPRESS Set maximum attenuation of the residual
+ echo in dB (negative 
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+spx_int32_t
+\end_layout
+
+\end_inset
+
+)
+\end_layout
+
+\begin_layout Description
+SPEEX_PREPROCESS_SET_ECHO_SUPPRESS_ACTIVE Set maximum attenuation of the
+ echo in dB when near end is active (negative 
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+spx_int32_t
+\end_layout
+
+\end_inset
+
+)
+\end_layout
+
+\begin_layout Description
+SPEEX_PREPROCESS_GET_ECHO_SUPPRESS_ACTIVE Set maximum attenuation of the
+ echo in dB when near end is active (negative 
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+spx_int32_t
+\end_layout
+
+\end_inset
+
+)
+\end_layout
+
+\begin_layout Description
+SPEEX_PREPROCESS_SET_ECHO_STATE Set the associated echo canceller for residual
+ echo suppression (NULL for no residual echo suppression)
+\end_layout
+
+\begin_layout Description
+SPEEX_PREPROCESS_GET_ECHO_STATE Get the associated echo canceller
+\end_layout
+
+\begin_layout Section
+Echo Cancellation
+\begin_inset LatexCommand label
+name "sub:Echo-Cancellation"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The Speex library now includes an echo cancellation
+\begin_inset LatexCommand index
+name "echo cancellation"
+
+\end_inset
+
+ algorithm suitable for Acoustic Echo Cancellation
+\begin_inset LatexCommand index
+name "acoustic echo cancellation"
+
+\end_inset
+
+ (AEC).
+ In order to use the echo canceller, you first need to
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Standard
+
+#include <speex/speex_echo.h>
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Then, an echo canceller state can be created by:
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Standard
+
+SpeexEchoState *echo_state = speex_echo_state_init(frame_size, filter_length);
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+where 
+\family typewriter
+frame_size
+\family default
+ is the amount of data (in samples) you want to process at once and 
+\family typewriter
+filter_length
+\family default
+ is the length (in samples) of the echo cancelling filter you want to use
+ (also known as 
+\shape italic
+tail length
+\shape default
+
+\begin_inset LatexCommand index
+name "tail length"
+
+\end_inset
+
+).
+ It is recommended to use a frame size in the order of 20 ms (or equal to
+ the codec frame size) and make sure it is easy to perform an FFT of that
+ size (powers of two are better than prime sizes).
+ The recommended tail length is approximately the third of the room reverberatio
+n time.
+ For example, in a small room, reverberation time is in the order of 300
+ ms, so a tail length of 100 ms is a good choice (800 samples at 8000 Hz
+ sampling rate).
+\end_layout
+
+\begin_layout Standard
+Once the echo canceller state is created, audio can be processed by:
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Standard
+
+speex_echo_cancellation(echo_state, input_frame, echo_frame, output_frame);
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+where 
+\family typewriter
+input_frame
+\family default
+ is the audio as captured by the microphone, 
+\family typewriter
+echo_frame
+\family default
+ is the signal that was played in the speaker (and needs to be removed)
+ and 
+\family typewriter
+output_frame
+\family default
+ is the signal with echo removed.
+ 
+\end_layout
+
+\begin_layout Standard
+One important thing to keep in mind is the relationship between 
+\family typewriter
+input_frame
+\family default
+ and 
+\family typewriter
+echo_frame
+\family default
+.
+ It is important that, at any time, any echo that is present in the input
+ has already been sent to the echo canceller as 
+\family typewriter
+echo_frame
+\family default
+.
+ In other words, the echo canceller cannot remove a signal that it hasn't
+ yet received.
+ On the other hand, the delay between the input signal and the echo signal
+ must be small enough because otherwise part of the echo cancellation filter
+ is inefficient.
+ In the ideal case, you code would look like:
+\begin_inset listings
+lstparams "breaklines=true"
+inline false
+status open
+
+\begin_layout Standard
+
+write_to_soundcard(echo_frame, frame_size);
+\end_layout
+
+\begin_layout Standard
+
+read_from_soundcard(input_frame, frame_size);
+\end_layout
+
+\begin_layout Standard
+
+speex_echo_cancellation(echo_state, input_frame, echo_frame, output_frame);
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+If you wish to further reduce the echo present in the signal, you can do
+ so by associating the echo canceller to the preprocessor (see Section 
+\begin_inset LatexCommand ref
+reference "sub:Preprocessor"
+
+\end_inset
+
+).
+ This is done by calling:
+\begin_inset listings
+lstparams "breaklines=true"
+inline false
+status open
+
+\begin_layout Standard
+
+speex_preprocess_ctl(preprocess_state, SPEEX_PREPROCESS_SET_ECHO_STATE,echo_stat
+e);
+\end_layout
+
+\end_inset
+
+in the initialisation.
+\end_layout
+
+\begin_layout Standard
+As of version 1.2-beta2, there is an alternative, simpler API that can be
+ used instead of 
+\emph on
+speex_echo_cancellation()
+\emph default
+.
+ When audio capture and playback are handled asynchronously (e.g.
+ in different threads or using the 
+\emph on
+poll()
+\emph default
+ or 
+\emph on
+select()
+\emph default
+ system call), it can be difficult to keep track of what input_frame comes
+ with what echo_frame.
+ Instead, the playback comtext/thread can simply call:
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Standard
+
+speex_echo_playback(echo_state, echo_frame);
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+every time an audio frame is played.
+ Then, the capture context/thread calls:
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Standard
+
+speex_echo_capture(echo_state, input_frame, output_frame);
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+for every frame captured.
+ Internally, 
+\emph on
+speex_echo_playback()
+\emph default
+ simply buffers the playback frame so it can be used by 
+\emph on
+speex_echo_capture()
+\emph default
+ to call 
+\emph on
+speex_echo_cancel()
+\emph default
+.
+ A side effect of using this alternate API is that the playback audio is
+ delayed by two frames, which is the normal delay caused by the soundcard.
+ When capture and playback are already synchronised, 
+\emph on
+speex_echo_cancellation()
+\emph default
+ is preferable since it gives better control on the exact input/echo timing.
+\end_layout
+
+\begin_layout Standard
+The echo cancellation state can be destroyed with:
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Standard
+
+speex_echo_state_destroy(echo_state);
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+It is also possible to reset the state of the echo canceller so it can be
+ reused without the need to create another state with:
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Standard
+
+speex_echo_state_reset(echo_state);
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+Troubleshooting
+\end_layout
+
+\begin_layout Standard
+There are several things that may prevent the echo canceller from working
+ properly.
+ One of them is a bug (or something suboptimal) in the code, but there are
+ many others you should consider first
+\end_layout
+
+\begin_layout Itemize
+Using a different soundcard to do the capture and plaback will 
+\series bold
+not
+\series default
+ work, regardless of what you may think.
+ The only exception to that is if the two cards can be made to have their
+ sampling clock 
+\begin_inset Quotes eld
+\end_inset
+
+locked
+\begin_inset Quotes erd
+\end_inset
+
+ on the same clock source.
+ If not, the clocks will always have a small amount of drift, which will
+ prevent the echo canceller from adapting.
+\end_layout
+
+\begin_layout Itemize
+The delay between the record and playback signals must be minimal.
+ Any signal played has to 
+\begin_inset Quotes eld
+\end_inset
+
+appear
+\begin_inset Quotes erd
+\end_inset
+
+ on the playback (far end) signal slightly before the echo canceller 
+\begin_inset Quotes eld
+\end_inset
+
+sees
+\begin_inset Quotes erd
+\end_inset
+
+ it in the near end signal, but excessive delay means that part of the filter
+ length is wasted.
+ In the worst situations, the delay is such that it is longer than the filter
+ length, in which case, no echo can be cancelled.
+\end_layout
+
+\begin_layout Itemize
+When it comes to echo tail length (filter length), longer is *not* better.
+ Actually, the longer the tail length, the longer it takes for the filter
+ to adapt.
+ Of course, a tail length that is too short will not cancel enough echo,
+ but the most common problem seen is that people set a very long tail length
+ and then wonder why no echo is being cancelled.
+\end_layout
+
+\begin_layout Itemize
+Non-linear distortion cannot (by definition) be modeled by the linear adaptive
+ filter used in the echo canceller and thus cannot be cancelled.
+ Use good audio gear and avoid saturation/clipping.
+\end_layout
+
+\begin_layout Standard
+Also useful is reading 
+\emph on
+Echo Cancellation Demystified
+\emph default
+ by Alexey Frunze
+\begin_inset Foot
+status collapsed
+
+\begin_layout Standard
+http://www.embeddedstar.com/articles/2003/7/article20030720-1.html
+\end_layout
+
+\end_inset
+
+, which explains the fundamental principles of echo cancellation.
+ The details of the algorithm described in the article are different, but
+ the general ideas of echo cancellation through adaptive filters are the
+ same.
+\end_layout
+
+\begin_layout Standard
+As of version 1.2beta2, a new 
+\family typewriter
+echo_diagnostic.m
+\family default
+ tool is included in the source distribution.
+ The first step is to define DUMP_ECHO_CANCEL_DATA during the build.
+ This causes the echo canceller to automatically save the near-end, far-end
+ and output signals to files (aec_rec.sw aec_play.sw and aec_out.sw).
+ These are exactly what the AEC receives and outputs.
+ From there, it is necessary to start Octave and type:
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "language=Matlab"
+inline false
+status open
+
+\begin_layout Standard
+
+echo_diagnostic('aec_rec.sw', 'aec_play.sw', 'aec_diagnostic.sw', 1024);
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The value of 1024 is the filter length and can be changed.
+ There will be some (hopefully) useful messages printed and echo cancelled
+ audio will be saved to aec_diagnostic.sw .
+ If even that output is bad (almost no cancellation) then there is  probably
+ problem with the playback or recording process.
+\end_layout
+
+\begin_layout Section
+Jitter Buffer
+\end_layout
+
+\begin_layout Standard
+The jitter buffer can be enabled by including:
+\begin_inset listings
+lstparams "breaklines=true"
+inline false
+status open
+
+\begin_layout Standard
+
+#include <speex/speex_jitter.h>
+\end_layout
+
+\end_inset
+
+ and a new jitter buffer state can be initialised by:
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "breaklines=true"
+inline false
+status open
+
+\begin_layout Standard
+
+JitterBuffer *state = jitter_buffer_init(tick);
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+where the 
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+tick
+\end_layout
+
+\end_inset
+
+ argument is the time resolution (in timestamp units) used for the jitter
+ buffer, and is generally the period at which the data is played out of
+ the jitter buffer.
+ 
+\end_layout
+
+\begin_layout Standard
+The jitter buffer API is based on the 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Standard
+
+JitterBufferPacket
+\end_layout
+
+\end_inset
+
+ type, which is defined as:
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Standard
+
+typedef struct {
+\end_layout
+
+\begin_layout Standard
+
+   char        *data;       /* Data bytes contained in the packet */
+\end_layout
+
+\begin_layout Standard
+
+   spx_uint32_t len;        /* Length of the packet in bytes */
+\end_layout
+
+\begin_layout Standard
+
+   spx_uint32_t timestamp;  /* Timestamp for the packet */
+\end_layout
+
+\begin_layout Standard
+
+   spx_uint32_t span;       /* Time covered by the packet (timestamp units)
+ */
+\end_layout
+
+\begin_layout Standard
+
+} JitterBufferPacket; 
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+When a packet arrives, it need to be inserter into the jitter buffer by:
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Standard
+
+JitterBufferPacket packet;
+\end_layout
+
+\begin_layout Standard
+
+/* Fill in the packet fields */
+\end_layout
+
+\begin_layout Standard
+
+jitter_buffer_put(state, &packet);
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+When the decoder is ready to decode a packet the packet to be decoded can
+ be obtained by: 
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Standard
+
+int start_offset;
+\end_layout
+
+\begin_layout Standard
+
+err = jitter_buffer_get(state, &packet, &start_offset);
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+If 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Standard
+
+jitter_buffer_put()
+\end_layout
+
+\end_inset
+
+ and 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Standard
+
+jitter_buffer_get()
+\end_layout
+
+\end_inset
+
+ are called from different threads, then 
+\series bold
+you need to protect the jitter buffer state with a mutex
+\series default
+.
+ 
+\end_layout
+
+\begin_layout Standard
+Because the jitter buffer is designed not to use an explicit timer, it needs
+ to be told about the time explicitly.
+ This is done by calling: 
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Standard
+
+jitter_buffer_tick(state);
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+This needs to be done every time 
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+tick
+\end_layout
+
+\end_inset
+
+ units have elapsed.
+ 
+\end_layout
+
+\begin_layout Section
+Resampler
+\end_layout
+
+\begin_layout Standard
+Speex includes a resampling modules.
+ To make use of the resampler, it is necessary to include its header file:
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Standard
+
+#include <speex/speex_resampler.h>
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+For each stream that is to be resampled, it is necessary to create a resampler
+ state with:
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Standard
+
+SpeexResamplerState *resampler;
+\end_layout
+
+\begin_layout Standard
+
+resampler = speex_resampler_init(nb_channels, input_rate, output_rate, quality,
+ &err);
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+where nb_channels is the number of channels that will be used (either interleave
+d or non-interleaved), input_rate is the sampling rate of the input stream,
+ output_rate is the sampling rate of the output stream and quality is the
+ requested quality setting (0 to 10).
+ The quality parameter is useful for controlling the quality/complexity/latency
+ tradeoff.
+ Using a higher quality setting means less noise/aliasing, a higher complexity
+ and a higher latency.
+ Usually, a quality of 3 is acceptable for most desktop uses and quality
+ 10 is mostly recommended for pro audio work.
+ Quality 0 usually has a decent sound (certainly better than using linear
+ interpolation resampling), but artifacts may be heard.
+\end_layout
+
+\begin_layout Standard
+The actual resampling is performed using
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Standard
+
+err = speex_resampler_process_int(resampler, channelID, in, &in_length,
+ out, &out_length);
+\end_layout
+
+\end_inset
+
+where channelID is the ID of the channel to be processed.
+ For a mono stream, use 0.
+ The 
+\emph on
+in
+\emph default
+ pointer points to the first sample of the input buffer for the selected
+ channel and 
+\emph on
+out
+\emph default
+ points to the first sample of the output.
+ The size of the input and output buffers are specified by 
+\emph on
+in_length
+\emph default
+ and 
+\emph on
+out_length
+\emph default
+ respectively.
+ Upon completion, these values are replaced by the number of samples read
+ and written by the resampler.
+ Unless an error occurs, either all input samples will be read or all output
+ samples will be written to (or both).
+ For floating-point samples, the function speex_resampler_process_float()
+ behaves similarly.
+\end_layout
+
+\begin_layout Standard
+It is also possible to process multiple channels at once.
+ 
+\end_layout
+
+\begin_layout Section
+Ring Buffer
+\end_layout
+
+\begin_layout Standard
+Put some stuff there...
 \end_layout
 
 \begin_layout Standard
@@ -3289,12 +4836,14 @@ Finally, applications may define custom in-band messages using mode 13.
 
 \begin_layout Chapter
 Formats and standards
-\begin_inset LatexCommand \index{standards}
+\begin_inset LatexCommand index
+name "standards"
 
 \end_inset
 
 
-\begin_inset LatexCommand \label{sec:Formats-and-standards}
+\begin_inset LatexCommand label
+name "sec:Formats-and-standards"
 
 \end_inset
 
@@ -3348,7 +4897,8 @@ For encoders, at least one narrowband or wideband mode MUST be supported.
 
 \begin_layout Section
 RTP
-\begin_inset LatexCommand \index{RTP}
+\begin_inset LatexCommand index
+name "RTP"
 
 \end_inset
 
@@ -3357,12 +4907,14 @@ RTP
 
 \begin_layout Standard
 The RTP payload draft is included in appendix 
-\begin_inset LatexCommand \ref{sec:IETF-draft}
+\begin_inset LatexCommand ref
+reference "sec:IETF-draft"
 
 \end_inset
 
  and the latest version is available at 
-\begin_inset LatexCommand \url{http://www.speex.org/drafts/latest}
+\begin_inset LatexCommand url
+target "http://www.speex.org/drafts/latest"
 
 \end_inset
 
@@ -3387,7 +4939,8 @@ audio/speex
 
 \begin_layout Section
 Ogg
-\begin_inset LatexCommand \index{Ogg}
+\begin_inset LatexCommand index
+name "Ogg"
 
 \end_inset
 
@@ -3398,7 +4951,8 @@ Ogg
 Speex bit-streams can be stored in Ogg files.
  In this case, the first packet of the Ogg file contains the Speex header
  described in table 
-\begin_inset LatexCommand \ref{cap:ogg_speex_header}
+\begin_inset LatexCommand ref
+reference "cap:ogg_speex_header"
 
 \end_inset
 
@@ -3999,9 +5553,18 @@ end{center}
 
 \end_layout
 
-\begin_layout Caption
+\begin_layout Standard
+\begin_inset Caption
+
+\begin_layout Standard
 Ogg/Speex header packet
-\begin_inset LatexCommand \label{cap:ogg_speex_header}
+\begin_inset LatexCommand label
+name "cap:ogg_speex_header"
+
+\end_inset
+
+
+\end_layout
 
 \end_inset
 
@@ -4031,12 +5594,14 @@ clearpage
 
 \begin_layout Chapter
 Introduction to CELP Coding
-\begin_inset LatexCommand \index{CELP}
+\begin_inset LatexCommand index
+name "CELP"
 
 \end_inset
 
 
-\begin_inset LatexCommand \label{sec:Introduction-to-CELP}
+\begin_inset LatexCommand label
+name "sec:Introduction-to-CELP"
 
 \end_inset
 
@@ -4055,7 +5620,8 @@ Do not meddle in the affairs of poles, for they are subtle and quick to
 Speex is based on CELP, which stands for Code Excited Linear Prediction.
  This section attempts to introduce the principles behind CELP, so if you
  are already familiar with CELP, you can safely skip to section 
-\begin_inset LatexCommand \ref{sec:Speex-narrowband-mode}
+\begin_inset LatexCommand ref
+reference "sec:Speex-narrowband-mode"
 
 \end_inset
 
@@ -4117,7 +5683,8 @@ The source-filter model of speech production assumes that the vocal cords
 The source-filter model is usually tied with the use of Linear prediction.
  The CELP model is based on source-filter model, as can be seen from the
  CELP decoder illustrated in Figure 
-\begin_inset LatexCommand \ref{fig:The-CELP-model}
+\begin_inset LatexCommand ref
+reference "fig:The-CELP-model"
 
 \end_inset
 
@@ -4168,9 +5735,13 @@ end{center}
 
 \end_layout
 
-\begin_layout Caption
+\begin_layout Standard
+\begin_inset Caption
+
+\begin_layout Standard
 The CELP model of speech synthesis (decoder)
-\begin_inset LatexCommand \label{fig:The-CELP-model}
+\begin_inset LatexCommand label
+name "fig:The-CELP-model"
 
 \end_inset
 
@@ -4182,9 +5753,15 @@ The CELP model of speech synthesis (decoder)
 
 \end_layout
 
+\end_inset
+
+
+\end_layout
+
 \begin_layout Section
 Linear Prediction (LPC)
-\begin_inset LatexCommand \index{linear prediction}
+\begin_inset LatexCommand index
+name "linear prediction"
 
 \end_inset
 
@@ -4292,7 +5869,8 @@ with
 \end_inset
 
 , the auto-correlation
-\begin_inset LatexCommand \index{auto-correlation}
+\begin_inset LatexCommand index
+name "auto-correlation"
 
 \end_inset
 
@@ -4317,8 +5895,9 @@ Because
 \begin_inset Formula $\mathbf{R}$
 \end_inset
 
- is toeplitz hermitian, the Levinson-Durbin
-\begin_inset LatexCommand \index{Levinson-Durbin}
+ is Hermitian Toeplitz, the Levinson-Durbin
+\begin_inset LatexCommand index
+name "Levinson-Durbin"
 
 \end_inset
 
@@ -4354,7 +5933,8 @@ Because
 
 \begin_layout Section
 Pitch Prediction
-\begin_inset LatexCommand \index{pitch}
+\begin_inset LatexCommand index
+name "pitch"
 
 \end_inset
 
@@ -4373,14 +5953,10 @@ During voiced segments, the speech signal is periodic, so it is possible
 
 \begin_layout Standard
 \begin_inset Formula \[
-e[n]\simeq p[n]=\beta e[n-T]\]
+e[n]\simeq p[n]=\beta e[n-T]\ ,\]
 
 \end_inset
 
-
-\end_layout
-
-\begin_layout Standard
 where 
 \begin_inset Formula $T$
 \end_inset
@@ -4424,12 +6000,12 @@ innovation
 Code
 \emph default
  Excited Linear Prediction.
- The final excitation is given by:
+ The final excitation is given by
 \end_layout
 
 \begin_layout Standard
 \begin_inset Formula \[
-e[n]=p[n]+c[n]=\beta e[n-T]+c[n]\]
+e[n]=p[n]+c[n]=\beta e[n-T]+c[n]\ .\]
 
 \end_inset
 
@@ -4448,7 +6024,7 @@ z
 \begin_inset Formula $X(z)$
 \end_inset
 
- as 
+ as
 \begin_inset Formula \[
 X(z)=\frac{C(z)}{A(z)\left(1-\beta z^{-T}\right)}\]
 
@@ -4459,12 +6035,14 @@ X(z)=\frac{C(z)}{A(z)\left(1-\beta z^{-T}\right)}\]
 
 \begin_layout Section
 Noise Weighting
-\begin_inset LatexCommand \index{error weighting}
+\begin_inset LatexCommand index
+name "error weighting"
 
 \end_inset
 
 
-\begin_inset LatexCommand \index{analysis-by-synthesis}
+\begin_inset LatexCommand index
+name "analysis-by-synthesis"
 
 \end_inset
 
@@ -4505,9 +6083,9 @@ vice versa
 \begin_inset Formula $1/A(z)$
 \end_inset
 
-, CELP codecs typically derive the noise weighting filter as: 
+, CELP codecs typically derive the noise weighting filter as 
 \begin_inset Formula \begin{equation}
-W(z)=\frac{A(z/\gamma_{1})}{A(z/\gamma_{2})}\label{eq:gamma-weighting}\end{equation}
+W(z)=\frac{A(z/\gamma_{1})}{A(z/\gamma_{2})}\ ,\label{eq:gamma-weighting}\end{equation}
 
 \end_inset
 
@@ -4564,13 +6142,15 @@ The weighting filter is applied to the error signal used to optimize the
  function.
  Fig.
  
-\begin_inset LatexCommand \ref{cap:Standard-noise-shaping}
+\begin_inset LatexCommand ref
+reference "cap:Standard-noise-shaping"
 
 \end_inset
 
  illustrates the noise shaping that results from Eq.
  
-\begin_inset LatexCommand \ref{eq:gamma-weighting}
+\begin_inset LatexCommand ref
+reference "eq:gamma-weighting"
 
 \end_inset
 
@@ -4629,10 +6209,19 @@ end{center}
 
 \end_layout
 
-\begin_layout Caption
+\begin_layout Standard
+\begin_inset Caption
+
+\begin_layout Standard
 Standard noise shaping in CELP.
  Arbitrary y-axis offset.
-\begin_inset LatexCommand \label{cap:Standard-noise-shaping}
+\begin_inset LatexCommand label
+name "cap:Standard-noise-shaping"
+
+\end_inset
+
+
+\end_layout
 
 \end_inset
 
@@ -4682,12 +6271,14 @@ In order to achieve real-time encoding using limited computing resources,
 
 \begin_layout Chapter
 Speex narrowband mode
-\begin_inset LatexCommand \label{sec:Speex-narrowband-mode}
+\begin_inset LatexCommand label
+name "sec:Speex-narrowband-mode"
 
 \end_inset
 
 
-\begin_inset LatexCommand \index{narrowband}
+\begin_inset LatexCommand index
+name "narrowband"
 
 \end_inset
 
@@ -4727,7 +6318,8 @@ sub-vector fixed (innovation) codebooks
 
 \begin_layout Section
 Whole-Frame Analysis
-\begin_inset LatexCommand \index{linear prediction}
+\begin_inset LatexCommand index
+name "linear prediction"
 
 \end_inset
 
@@ -4745,7 +6337,8 @@ In narrowband, Speex frames are 20 ms long (160 samples) and are subdivided
 
 , as shown in Fig.
  
-\begin_inset LatexCommand \ref{cap:Frame-open-loop-analysis}
+\begin_inset LatexCommand ref
+reference "cap:Frame-open-loop-analysis"
 
 \end_inset
 
@@ -4758,7 +6351,8 @@ Linear prediction analysis is performed once per frame using an asymmetric
  Hamming window centered on the fourth sub-frame.
  Because linear prediction coefficients (LPC) are not robust to quantization,
  they are first are converted to line spectral pairs (LSP)
-\begin_inset LatexCommand \index{line spectral pair}
+\begin_inset LatexCommand index
+name "line spectral pair"
 
 \end_inset
 
@@ -4835,9 +6429,18 @@ end{center}
 
 \end_layout
 
-\begin_layout Caption
+\begin_layout Standard
+\begin_inset Caption
+
+\begin_layout Standard
 Frame open-loop analysis
-\begin_inset LatexCommand \label{cap:Frame-open-loop-analysis}
+\begin_inset LatexCommand label
+name "cap:Frame-open-loop-analysis"
+
+\end_inset
+
+
+\end_layout
 
 \end_inset
 
@@ -4896,9 +6499,18 @@ end{center}
 
 \end_layout
 
-\begin_layout Caption
+\begin_layout Standard
+\begin_inset Caption
+
+\begin_layout Standard
 Analysis-by-synthesis closed-loop optimization on a sub-frame.
-\begin_inset LatexCommand \label{cap:Sub-frame-AbS}
+\begin_inset LatexCommand label
+name "cap:Sub-frame-AbS"
+
+\end_inset
+
+
+\end_layout
 
 \end_inset
 
@@ -4913,7 +6525,8 @@ Analysis-by-synthesis closed-loop optimization on a sub-frame.
 \begin_layout Standard
 The analysis-by-synthesis (AbS) encoder loop is described in Fig.
  
-\begin_inset LatexCommand \ref{cap:Sub-frame-AbS}
+\begin_inset LatexCommand ref
+reference "cap:Sub-frame-AbS"
 
 \end_inset
 
@@ -5026,7 +6639,8 @@ There are 7 different narrowband bit-rates defined for Speex, ranging from
  250 bps to 24.6 kbps, although the modes below 5.9 kbps should not be used
  for speech.
  The bit-allocation for each mode is detailed in table 
-\begin_inset LatexCommand \ref{cap:bits-narrowband}
+\begin_inset LatexCommand ref
+reference "cap:bits-narrowband"
 
 \end_inset
 
@@ -6317,9 +7931,18 @@ end{center}
 
 \end_layout
 
-\begin_layout Caption
+\begin_layout Standard
+\begin_inset Caption
+
+\begin_layout Standard
 Bit allocation for narrowband modes
-\begin_inset LatexCommand \label{cap:bits-narrowband}
+\begin_inset LatexCommand label
+name "cap:bits-narrowband"
+
+\end_inset
+
+
+\end_layout
 
 \end_inset
 
@@ -6333,13 +7956,15 @@ Bit allocation for narrowband modes
 
 \begin_layout Standard
 So far, no MOS (Mean Opinion Score
-\begin_inset LatexCommand \index{mean opinion score}
+\begin_inset LatexCommand index
+name "mean opinion score"
 
 \end_inset
 
 ) subjective evaluation has been performed for Speex.
- In order to give an idea of the quality achivable with it, table 
-\begin_inset LatexCommand \ref{cap:quality_vs_bps}
+ In order to give an idea of the quality achievable with it, table 
+\begin_inset LatexCommand ref
+reference "cap:quality_vs_bps"
 
 \end_inset
 
@@ -6352,7 +7977,8 @@ So far, no MOS (Mean Opinion Score
  Note that the complexity is only approximate (within 0.5 mflops and using
  the lowest complexity setting).
  Decoding requires approximately 0.5 mflops
-\begin_inset LatexCommand \index{complexity}
+\begin_inset LatexCommand index
+name "complexity"
 
 \end_inset
 
@@ -6412,7 +8038,8 @@ Quality
 
 \begin_layout Standard
 Bit-rate
-\begin_inset LatexCommand \index{bit-rate}
+\begin_inset LatexCommand index
+name "bit-rate"
 
 \end_inset
 
@@ -6426,7 +8053,8 @@ Bit-rate
 
 \begin_layout Standard
 mflops
-\begin_inset LatexCommand \index{complexity}
+\begin_inset LatexCommand index
+name "complexity"
 
 \end_inset
 
@@ -7217,9 +8845,18 @@ end{center}
 
 \end_layout
 
-\begin_layout Caption
+\begin_layout Standard
+\begin_inset Caption
+
+\begin_layout Standard
 Quality versus bit-rate
-\begin_inset LatexCommand \label{cap:quality_vs_bps}
+\begin_inset LatexCommand label
+name "cap:quality_vs_bps"
+
+\end_inset
+
+
+\end_layout
 
 \end_inset
 
@@ -7233,7 +8870,8 @@ Quality versus bit-rate
 
 \begin_layout Section
 Perceptual enhancement
-\begin_inset LatexCommand \index{perceptual enhancement}
+\begin_inset LatexCommand index
+name "perceptual enhancement"
 
 \end_inset
 
@@ -7294,12 +8932,14 @@ where
 
 \begin_layout Chapter
 Speex wideband mode (sub-band CELP)
-\begin_inset LatexCommand \index{wideband}
+\begin_inset LatexCommand index
+name "wideband"
 
 \end_inset
 
 
-\begin_inset LatexCommand \label{sec:Speex-wideband-mode}
+\begin_inset LatexCommand label
+name "sec:Speex-wideband-mode"
 
 \end_inset
 
@@ -7320,7 +8960,8 @@ irror
 f
 \emph default
 ilter
-\begin_inset LatexCommand \index{quadrature mirror filter}
+\begin_inset LatexCommand index
+name "quadrature mirror filter"
 
 \end_inset
 
@@ -7328,7 +8969,8 @@ ilter
  The 16 kHz signal is thus divided into two 8 kHz signals, one representing
  the low band (0-4 kHz), the other the high band (4-8 kHz).
  The low band is encoded with the narrowband mode described in section 
-\begin_inset LatexCommand \ref{sec:Speex-narrowband-mode}
+\begin_inset LatexCommand ref
+reference "sec:Speex-narrowband-mode"
 
 \end_inset
 
@@ -7390,13 +9032,23 @@ Bit allocation
 For the wideband mode, the entire narrowband frame is packed before the
  high-band is encoded.
  The narrowband part of the bit-stream is as defined in table 
-\begin_inset LatexCommand \ref{cap:bits-narrowband}
+\begin_inset LatexCommand ref
+reference "cap:bits-narrowband"
 
 \end_inset
 
 .
  The high-band follows, as described in table 
-\begin_inset LatexCommand \ref{cap:bits-wideband}
+\begin_inset LatexCommand ref
+reference "cap:bits-wideband"
+
+\end_inset
+
+.
+ For wideband, the mode ID is the same as the Speex quality setting and
+ is defined in table 
+\begin_inset LatexCommand ref
+reference "tab:wideband-quality"
 
 \end_inset
 
@@ -7913,9 +9565,442 @@ end{center}
 
 \end_layout
 
-\begin_layout Caption
+\begin_layout Standard
+\begin_inset Caption
+
+\begin_layout Standard
 Bit allocation for high-band in wideband mode
-\begin_inset LatexCommand \label{cap:bits-wideband}
+\begin_inset LatexCommand label
+name "cap:bits-wideband"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float table
+placement h
+wide true
+sideways false
+status open
+
+\begin_layout Standard
+\begin_inset ERT
+status collapsed
+
+\begin_layout Standard
+
+
+\backslash
+begin{center}
+\end_layout
+
+\end_inset
+
+
+\begin_inset Tabular
+<lyxtabular version="3" rows="12" columns="3">
+<features>
+<column alignment="center" valignment="top" leftline="true" width="0pt">
+<column alignment="center" valignment="top" leftline="true" width="0pt">
+<column alignment="center" valignment="top" leftline="true" rightline="true" width="0pt">
+<row topline="true" bottomline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+Mode/Quality
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+Bit-rate
+\begin_inset LatexCommand index
+name "bit-rate"
+
+\end_inset
+
+ (bps)
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+Quality/description
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+0
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+3,950
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+Barely intelligible (mostly for comfort noise)
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+1
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+5,750
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+Very noticeable artifacts/noise, poor intelligibility
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+2
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+7,750
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+Very noticeable artifacts/noise, good intelligibility
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+3
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+9,800
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+Artifacts/noise sometimes annoying
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+4
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+12,800
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+Artifacts/noise usually noticeable
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+5
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+16,800
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+Artifacts/noise sometimes noticeable
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+6
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+20,600
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+Need good headphones to tell the difference
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+7
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+23,800
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+Need good headphones to tell the difference
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+8
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+27,800
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+Hard to tell the difference even with good headphones
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+9
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+34,200
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+Hard to tell the difference even with good headphones
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row topline="true" bottomline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+10
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+42,200
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+Completely transparent for voice, good quality music
+\end_layout
+
+\end_inset
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset
+
+
+\begin_inset ERT
+status collapsed
+
+\begin_layout Standard
+
+
+\backslash
+end{center}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Caption
+
+\begin_layout Standard
+Quality versus bit-rate for the wideband encoder
+\begin_inset LatexCommand label
+name "tab:wideband-quality"
+
+\end_inset
+
+
+\end_layout
 
 \end_inset
 
@@ -7961,348 +10046,9 @@ clearpage
 
 \begin_layout Chapter
 \start_of_appendix
-FAQ
-\end_layout
-
-\begin_layout Subsection*
-Vorbis is open-source
-\begin_inset LatexCommand \index{open-source}
-
-\end_inset
-
- and patent-free
-\begin_inset LatexCommand \index{patent}
-
-\end_inset
-
-; why do we need Speex?
-\end_layout
-
-\begin_layout Standard
-Vorbis is a great project but its goals are not the same as Speex.
- Vorbis is mostly aimed at compressing music and audio in general, while
- Speex targets speech only.
- For that reason Speex can achieve much better results than Vorbis on speech,
- typically 2-4 times higher compression at equal quality.
-\end_layout
-
-\begin_layout Subsection*
-Isn't there an open-source implementation of the GSM-FR codec? Why is Speex
- necessary?
-\end_layout
-
-\begin_layout Standard
-First of all, it's not clear whether GSM-FR is covered by a Philips patent
- (see http://kbs.cs.tu-berlin.de/~jutta/toast.html).
- Also, GSM-FR offers mediocre quality at a relatively high bit-rate, while
- Speex can offer equivalent quality at almost half the bit-rate.
- Last but not least, Speex offers a wide range of bit-rates and sampling
- rates, while GSM-FR is limited to 8 kHz speech at 13 kbps.
-\end_layout
-
-\begin_layout Subsection*
-Under what license is Speex released?
-\end_layout
-
-\begin_layout Standard
-As of version 1.0 beta 1, Speex is released under Xiph's version of the (revised)
- BSD license (see Appendix 
-\begin_inset LatexCommand \ref{sec:Speex-License}
-
-\end_inset
-
-).
- This license is one of the most permissive open-source licenses.
-\end_layout
-
-\begin_layout Subsection*
-Am I allowed to use Speex in commercial software?
-\end_layout
-
-\begin_layout Standard
-Yes.
- As long as you comply with the license.
- This basically means you have to keep the copyright notice and you can't
- use our name to promote your product without authorization.
- For more details, see license in Appendix 
-\begin_inset LatexCommand \ref{sec:Speex-License}
-
-\end_inset
-
-.
-\end_layout
-
-\begin_layout Subsection*
-Ogg
-\begin_inset LatexCommand \index{Ogg}
-
-\end_inset
-
-, Speex, Vorbis
-\begin_inset LatexCommand \index{Vorbis}
-
-\end_inset
-
-, what's the difference?
-\end_layout
-
-\begin_layout Standard
-Ogg is a container format for holding multimedia data.
- Vorbis is an audio codec that uses Ogg to store its bit-streams as files,
- hence the name Ogg Vorbis.
- Speex also uses the Ogg format to store its bit-streams as files, so technicall
-y they would be 
-\begin_inset Quotes eld
-\end_inset
-
-Ogg Speex
-\begin_inset Quotes erd
-\end_inset
-
- files (I prefer to call them just Speex files).
- One difference with Vorbis however, is that Speex is less tied with Ogg.
- Actually, if you just do Voice over IP (VoIP), you don't need Ogg at all.
-\end_layout
-
-\begin_layout Subsection*
-What's the extension for Speex?
-\end_layout
-
-\begin_layout Standard
-Speex files have the .spx extension.
- Note, however that the Speex tools (speexenc, speexdec) do not rely on
- the extension at all, so any extension will work.
-\end_layout
-
-\begin_layout Subsection*
-Can I use Speex for compressing music
-\begin_inset LatexCommand \index{music}
-
-\end_inset
-
-?
-\end_layout
-
-\begin_layout Standard
-Just like Vorbis is not really adapted to speech, Speex is really not adapted
- for music.
- In most cases, you'll be better of with Vorbis when it comes to music.
-\end_layout
-
-\begin_layout Subsection*
-I converted some MP3s to Speex and the quality is bad.
- What's wrong?
-\end_layout
-
-\begin_layout Standard
-This is called transcoding and it will always result in much poorer quality
- than the original MP3.
- Unless you have a really good (size) reason to do so, never transcode speech.
- This is even valid for self transcoding (tandeming), i.e.
- If you decode a Speex file and re-encode it again at the same bit-rate,
- you will lose quality.
-\end_layout
-
-\begin_layout Subsection*
-Does Speex run on Windows?
-\end_layout
-
-\begin_layout Standard
-Compilation on Windows has been supported since version 0.8.0.
- There are also several front-ends available from the website.
-\end_layout
-
-\begin_layout Subsection*
-Why is encoding so slow compared to decoding?
-\end_layout
-
-\begin_layout Standard
-For most kinds of compression, encoding is inherently slower than decoding.
- In the case of Speex, encoding consists of finding, for each vector of
- 5 to 10 samples, the entry that matches the best within a codebook consisting
- of 16 to 256 entries.
- On the other hand, at decoding all that needs to be done is look up the
- right entry in the codebook using the encoded index.
- Since a lookup is much faster than a search, the decoder works much faster
- than the encoder.
-\end_layout
-
-\begin_layout Subsection*
-Why is Speex so slow on my iPaq (or insert any platform without an FPU)?
-\end_layout
-
-\begin_layout Standard
-You probably didn't build Speex with the fixed-point option (--enable-fixed-poin
-t).
- Even if you did, not all modes have been ported to use fixed-point arithmetic,
- so the code may be slowed down by a few float operations left (e.g.
- in the wideband mode).
-\end_layout
-
-\begin_layout Subsection*
-I'm getting unusual background noise (hiss) when using libspeex in my applicatio
-n.
- How do I fix that?
-\end_layout
-
-\begin_layout Standard
-One of the causes could be scaling of the input speech.
- Speex expects signals to have a 
-\begin_inset Formula $\pm2^{15}$
-\end_inset
-
- (signed short) dynamic range.
- If the dynamic range of your signals is too small (e.g.
- 
-\begin_inset Formula $\pm1.0$
-\end_inset
-
-), you will suffer important quantization noise.
- A good target is to have a dynamic range around 
-\begin_inset Formula $\pm8000$
-\end_inset
-
- which is large enough, but small enough to make sure there's no clipping
- when converting back to signed short.
-\end_layout
-
-\begin_layout Subsection*
-I get very distorted speech when using libspeex in my application.
- What's wrong?
-\end_layout
-
-\begin_layout Standard
-There are many possible causes for that.
- One of them is errors in the way the bits are manipulated.
- Another possible cause is the use of the same encoder or decoder state
- for more than one audio stream (channel), which produces strange effects
- with the filter memories.
- If the input speech has an amplitude close to 
-\begin_inset Formula $\pm2^{15}$
-\end_inset
-
-, it is possible that at decoding, the amplitude be a bit higher than that,
- causing clipping when saving as 16-bit PCM.
-\end_layout
-
-\begin_layout Subsection*
-How does Speex compare to other proprietary codecs?
-\end_layout
-
-\begin_layout Standard
-It's hard to give precise figures since no formal listening tests have been
- performed yet.
- All I can say is that in terms of quality, Speex competes on the same ground
- as other proprietary codecs (not necessarily the best, but not the worst
- either).
- Speex also has many features that are not present in most other codecs.
- These include variable bit-rate (VBR), integration of narrowband and wideband,
- as well as stereo support.
- Of course, another area where Speex is really hard to beat is the quality/price
- ratio.
- Unlike many very expensive codecs, Speex is free and anyone may distribute
- or modify it at will.
-\end_layout
-
-\begin_layout Subsection*
-Can Speex pass DTMF
-\begin_inset LatexCommand \index{DTMF}
-
-\end_inset
-
-?
-\end_layout
-
-\begin_layout Standard
-I guess it all depends on the bit-rate used.
- Though no formal testing has yet been performed, I'd say is correctly at
- 8 kbps and above.
- Also, make sure you don't use the lowest complexity (see SPEEX_SET_COMPLEXITY
- or --comp option), as it causes significant noise.
-\end_layout
-
-\begin_layout Subsection*
-Can Speex pass V.9x modem signals correctly?
-\end_layout
-
-\begin_layout Standard
-If I could do that I'd be very rich by now :-) Seriously, that would break
- fundamental laws of information theory.
-\end_layout
-
-\begin_layout Subsection*
-What is your (Jean-Marc) relationship with the University of Sherbrooke
- and how does Speex fit into that?
-\end_layout
-
-\begin_layout Standard
-I have completed my 
-\emph on
-Ph.D.
-
-\emph default
- at the University of Sherbrooke in 2005 in mobile robotics.
- Although I did my master with the Sherbrooke speech coding group (in speech
- enhancement, not coding), was no longer associated with them when developing
- Speex.
- It should 
-\series bold
-not
-\series default
- be understood that they or the University of Sherbrooke have anything to
- do with the Speex project.
- Furthermore, Speex does not make use of any code or proprietary technology
- developed in the Sherbrooke speech coding group.
- 
-\end_layout
-
-\begin_layout Subsection*
-CELP, ACELP
-\begin_inset LatexCommand \index{ACELP}
-
-\end_inset
-
-, what's the difference?
-\end_layout
-
-\begin_layout Standard
-CELP stands for 
-\begin_inset Quotes eld
-\end_inset
-
-Code Excited Linear Prediction
-\begin_inset Quotes erd
-\end_inset
-
-, while ACELP stands for 
-\begin_inset Quotes eld
-\end_inset
-
-
-\emph on
-Algebraic
-\emph default
- Code Excited Linear Prediction
-\begin_inset Quotes erd
-\end_inset
-
-.
- That means ACELP is a CELP technique that uses an algebraic codebook represente
-d as a sum of unit pulses, thus making the codebook search much more efficient.
- This technique was invented at the University of Sherbrooke and is now
- one of the most widely used form of CELP.
- Unfortunately, since it is patented, it cannot be used in Speex.
-\end_layout
-
-\begin_layout Standard
-
-\newpage
-
-\end_layout
-
-\begin_layout Chapter
 Sample code
-\begin_inset LatexCommand \label{sec:Sample-code}
+\begin_inset LatexCommand label
+name "sec:Sample-code"
 
 \end_inset
 
@@ -8331,11 +10077,15 @@ sampleenc.c
 \begin_layout Standard
 sampleenc takes a raw 16 bits/sample file, encodes it and outputs a Speex
  stream to stdout.
- Note that the packing used is NOT compatible with that of speexenc/speexdec.
+ Note that the packing used is 
+\series bold
+not
+\series default
+ compatible with that of speexenc/speexdec.
 \end_layout
 
 \begin_layout Standard
-\begin_inset Include \verbatiminput{sampleenc.c}
+\begin_inset Include \lstinputlisting{sampleenc.c}[caption={Source code for sampleenc},label={sampleenc-source-code},numbers=left,numberstyle={\footnotesize}]
 preview false
 
 \end_inset
@@ -8350,11 +10100,34 @@ sampledec.c
 \begin_layout Standard
 sampledec reads a Speex stream from stdin, decodes it and outputs it to
  a raw 16 bits/sample file.
- Note that the packing used is NOT compatible with that of speexenc/speexdec.
+ Note that the packing used is 
+\series bold
+not
+\series default
+ compatible with that of speexenc/speexdec.
 \end_layout
 
 \begin_layout Standard
-\begin_inset Include \verbatiminput{sampledec.c}
+\begin_inset Include \lstinputlisting{sampledec.c}[caption={Source code for sampledec},label={sampledec-source-code},numbers=left,numberstyle={\footnotesize}]
+preview false
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+
+\newpage
+
+\end_layout
+
+\begin_layout Chapter
+Jitter Buffer for Speex
+\end_layout
+
+\begin_layout Standard
+\begin_inset Include \lstinputlisting{../speexclient/speex_jitter_buffer.c}[caption={Example of using the jitter buffer for Speex packets},label={example-speex-jitter},numbers=left,numberstyle={\footnotesize}]
 preview false
 
 \end_inset
@@ -8370,7 +10143,8 @@ preview false
 
 \begin_layout Chapter
 IETF RTP Profile
-\begin_inset LatexCommand \label{sec:IETF-draft}
+\begin_inset LatexCommand label
+name "sec:IETF-draft"
 
 \end_inset
 
@@ -8378,7 +10152,7 @@ IETF RTP Profile
 \end_layout
 
 \begin_layout Standard
-\begin_inset Include \verbatiminput{draft-herlein-speex-rtp-profile-02.txt}
+\begin_inset Include \verbatiminput{draft-ietf-avt-rtp-speex-01-tmp.txt}
 preview false
 
 \end_inset
@@ -8394,7 +10168,8 @@ preview false
 
 \begin_layout Chapter
 Speex License
-\begin_inset LatexCommand \label{sec:Speex-License}
+\begin_inset LatexCommand label
+name "sec:Speex-License"
 
 \end_inset
 
@@ -8402,40 +10177,12 @@ Speex License
 \end_layout
 
 \begin_layout Standard
-Redistribution and use in source and binary forms, with or without modification,
- are permitted provided that the following conditions are met:
-\end_layout
+\begin_inset Include \verbatiminput{../COPYING}
+preview false
 
-\begin_layout Itemize
-Redistributions of source code must retain the above copyright notice, this
- list of conditions and the following disclaimer.
-\end_layout
+\end_inset
 
-\begin_layout Itemize
-Redistributions in binary form must reproduce the above copyright notice,
- this list of conditions and the following disclaimer in the documentation
- and/or other materials provided with the distribution.
-\end_layout
 
-\begin_layout Itemize
-Neither the name of the Xiph.org Foundation nor the names of its contributors
- may be used to endorse or promote products derived from this software without
- specific prior written permission.
-\end_layout
-
-\begin_layout Standard
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS ``AS
- IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
- TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- PURPOSE ARE DISCLAIMED.
- IN NO EVENT SHALL THE FOUNDATION OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
- INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
- USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
- THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- 
 \end_layout
 
 \begin_layout Standard
@@ -8933,7 +10680,7 @@ n.
 \end_layout
 
 \begin_layout Standard
-\begin_inset LatexCommand \printindex{}
+\begin_inset LatexCommand printindex
 
 \end_inset
 

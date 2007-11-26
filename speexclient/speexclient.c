@@ -51,6 +51,7 @@
 #include <speex/speex_jitter.h>
 #include <speex/speex_preprocess.h>
 #include <speex/speex_echo.h>
+#include "speex_jitter_buffer.h"
 
 #include <sched.h>
 

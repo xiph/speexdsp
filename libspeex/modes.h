@@ -38,7 +38,7 @@
 
 #include <speex/speex.h>
 #include <speex/speex_bits.h>
-#include "misc.h"
+#include "arch.h"
 
 #define NB_SUBMODES 16
 #define NB_SUBMODE_BITS 4
@@ -98,7 +98,7 @@ typedef struct SpeexSubmode {
    lsp_quant_func    lsp_quant; /**< LSP quantization function */
    lsp_unquant_func  lsp_unquant; /**< LSP unquantization function */
 
-   /*Lont-term predictor functions*/
+   /*Long-term predictor functions*/
    ltp_quant_func    ltp_quant; /**< Long-term predictor (pitch) quantizer */
    ltp_unquant_func  ltp_unquant; /**< Long-term predictor (pitch) un-quantizer */
    const void       *ltp_params; /**< Pitch parameters (options) */
@@ -123,12 +123,7 @@ typedef struct SpeexNBMode {
 
    spx_word16_t gamma1;    /**< Perceptual filter parameter #1 */
    spx_word16_t gamma2;    /**< Perceptual filter parameter #2 */
-   float   lag_factor;     /**< Lag-windowing parameter */
    spx_word16_t   lpc_floor;      /**< Noise floor for LPC analysis */
-
-#ifdef EPIC_48K
-   int     lbr48k;         /**< 1 for the special 4.8 kbps mode */
-#endif
 
    const SpeexSubmode *submodes[NB_SUBMODES]; /**< Sub-mode data for the mode */
    int     defaultSubmode; /**< Default sub-mode to use when encoding */
@@ -142,10 +137,8 @@ typedef struct SpeexSBMode {
    int     frameSize;     /**< Size of frames used for encoding */
    int     subframeSize;  /**< Size of sub-frames used for encoding */
    int     lpcSize;       /**< Order of LPC filter */
-   int     bufSize;       /**< Signal buffer size in encoder */
    spx_word16_t gamma1;   /**< Perceptual filter parameter #1 */
    spx_word16_t gamma2;   /**< Perceptual filter parameter #1 */
-   float   lag_factor;    /**< Lag-windowing parameter */
    spx_word16_t   lpc_floor;     /**< Noise floor for LPC analysis */
    spx_word16_t   folding_gain;
 
@@ -153,7 +146,9 @@ typedef struct SpeexSBMode {
    int     defaultSubmode; /**< Default sub-mode to use when encoding */
    int     low_quality_map[11]; /**< Mode corresponding to each quality setting */
    int     quality_map[11]; /**< Mode corresponding to each quality setting */
+#ifndef DISABLE_VBR
    const float (*vbr_thresh)[11];
+#endif
    int     nb_modes;
 } SpeexSBMode;
 

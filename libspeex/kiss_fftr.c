@@ -16,6 +16,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 #include "config.h"
 #endif
 
+#include "os_support.h"
 #include "kiss_fftr.h"
 #include "_kiss_fft_guts.h"
 
@@ -84,7 +85,7 @@ void kiss_fftr(kiss_fftr_cfg st,const kiss_fft_scalar *timedata,kiss_fft_cpx *fr
     kiss_fft_cpx fpnk,fpk,f1k,f2k,tw,tdc;
 
     if ( st->substate->inverse) {
-        speex_error("kiss fft usage error: improper alloc\n");
+        speex_fatal("kiss fft usage error: improper alloc\n");
     }
 
     ncfft = st->substate->nfft;
@@ -138,7 +139,7 @@ void kiss_fftri(kiss_fftr_cfg st,const kiss_fft_cpx *freqdata, kiss_fft_scalar *
     int k, ncfft;
 
     if (st->substate->inverse == 0) {
-        speex_error ("kiss fft usage error: improper alloc\n");
+        speex_fatal("kiss fft usage error: improper alloc\n");
     }
 
     ncfft = st->substate->nfft;
@@ -177,7 +178,7 @@ void kiss_fftr2(kiss_fftr_cfg st,const kiss_fft_scalar *timedata,kiss_fft_scalar
    spx_word32_t f1kr, f1ki, twr, twi;
 
    if ( st->substate->inverse) {
-      speex_error("kiss fft usage error: improper alloc\n");
+      speex_fatal("kiss fft usage error: improper alloc\n");
    }
 
    ncfft = st->substate->nfft;
@@ -263,7 +264,7 @@ void kiss_fftri2(kiss_fftr_cfg st,const kiss_fft_scalar *freqdata,kiss_fft_scala
    int k, ncfft;
 
    if (st->substate->inverse == 0) {
-      speex_error ("kiss fft usage error: improper alloc\n");
+      speex_fatal ("kiss fft usage error: improper alloc\n");
    }
 
    ncfft = st->substate->nfft;

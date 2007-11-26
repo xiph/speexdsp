@@ -69,11 +69,12 @@
 #include "config.h"
 #endif
 
-#include "misc.h"
+#include "arch.h"
 #include "speex/speex_echo.h"
 #include "fftwrap.h"
 #include "pseudofloat.h"
 #include "math_approx.h"
+#include "os_support.h"
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
@@ -87,9 +88,6 @@
 #define WEIGHT_SHIFT 0
 #endif
 
-/* If enabled, the transition between blocks is smooth, so there isn't any blocking
-aftifact when adapting. The cost is an extra FFT and a matrix-vector multiply */
-#define SMOOTH_BLOCKS
 /* If enabled, the AEC will use a foreground filter and a background filter to be more robust to double-talk
    and difficult signals in general. The cost is an extra FFT and a matrix-vector multiply */
 #define TWO_PATH
@@ -107,7 +105,7 @@ static const spx_float_t VAR_BACKTRACK = {16384, -12};
 
 #else
 
-static const spx_float_t MIN_LEAK = .0032f;
+static const spx_float_t MIN_LEAK = .005f;
 
 /* Constants for the two-path filter */
 static const spx_float_t VAR1_SMOOTH = .36f;
@@ -367,7 +365,7 @@ static inline void mdf_adjust_prop(const spx_word32_t *W, int N, int M, int P, s
    }
    for (i=0;i<M;i++)
    {
-      prop[i] += MULT16_16_Q15(QCONST16(.03f,15),max_sum);
+      prop[i] += MULT16_16_Q15(QCONST16(.1f,15),max_sum);
       prop_sum += EXTEND32(prop[i]);
    }
    for (i=0;i<M;i++)
@@ -386,7 +384,7 @@ static void dump_audio(const spx_int16_t *rec, const spx_int16_t *play, const sp
 {
    if (!(rFile && pFile && oFile))
    {
-      speex_error("Dump files not open");
+      speex_fatal("Dump files not open");
    }
    fwrite(rec, sizeof(spx_int16_t), len, rFile);
    fwrite(play, sizeof(spx_int16_t), len, pFile);
@@ -395,7 +393,7 @@ static void dump_audio(const spx_int16_t *rec, const spx_int16_t *play, const sp
 #endif
 
 /** Creates a new echo canceller state */
-SpeexEchoState *mc_echo_state_init(int frame_size, int filter_length, int nb_mic, int nb_speakers)
+SpeexEchoState *speex_echo_state_init(int frame_size, int filter_length, int nb_mic, int nb_speakers)
 {
    int i,N,M, C, K;
    SpeexEchoState *st = (SpeexEchoState *)speex_alloc(sizeof(SpeexEchoState));
@@ -406,10 +404,10 @@ SpeexEchoState *mc_echo_state_init(int frame_size, int filter_length, int nb_mic
    K=st->K;
 #ifdef DUMP_ECHO_CANCEL_DATA
    if (rFile || pFile || oFile)
-      speex_error("Opening dump files twice");
-   rFile = fopen("aec_rec.sw", "w");
-   pFile = fopen("aec_play.sw", "w");
-   oFile = fopen("aec_out.sw", "w");
+      speex_fatal("Opening dump files twice");
+   rFile = fopen("aec_rec.sw", "wb");
+   pFile = fopen("aec_play.sw", "wb");
+   oFile = fopen("aec_out.sw", "wb");
 #endif
    
    st->frame_size = frame_size;
@@ -486,7 +484,7 @@ SpeexEchoState *mc_echo_state_init(int frame_size, int filter_length, int nb_mic
       }
       for (i=M-1;i>=0;i--)
       {
-         st->prop[i] = DIV32(MULT16_16(QCONST16(.99f,15), st->prop[i]),sum);
+         st->prop[i] = DIV32(MULT16_16(QCONST16(.8f,15), st->prop[i]),sum);
       }
    }
    
@@ -577,7 +575,7 @@ void speex_echo_state_reset(SpeexEchoState *st)
 }
 
 /** Destroys an echo canceller state */
-void mc_echo_state_destroy(SpeexEchoState *st)
+void speex_echo_state_destroy(SpeexEchoState *st)
 {
    spx_fft_destroy(st->fft_table);
 
@@ -619,15 +617,14 @@ void mc_echo_state_destroy(SpeexEchoState *st)
 #endif
 }
 
-
-void mc_echo_capture2(SpeexEchoState *st, const spx_int16_t *rec, spx_int16_t *out)
+void speex_echo_capture(SpeexEchoState *st, const spx_int16_t *rec, spx_int16_t *out)
 {
    int i;
    /*speex_warning_int("capture with fill level ", st->play_buf_pos/st->frame_size);*/
    st->play_buf_started = 1;
    if (st->play_buf_pos>=st->frame_size)
    {
-      mc_echo_cancellation(st, rec, st->play_buf, out);
+      speex_echo_cancellation(st, rec, st->play_buf, out);
       st->play_buf_pos -= st->frame_size;
       for (i=0;i<st->play_buf_pos;i++)
          st->play_buf[i] = st->play_buf[i+st->frame_size];
@@ -643,7 +640,7 @@ void mc_echo_capture2(SpeexEchoState *st, const spx_int16_t *rec, spx_int16_t *o
    }
 }
 
-void mc_echo_playback(SpeexEchoState *st, const spx_int16_t *play)
+void speex_echo_playback(SpeexEchoState *st, const spx_int16_t *play)
 {
    /*speex_warning_int("playback with fill level ", st->play_buf_pos/st->frame_size);*/
    if (!st->play_buf_started)
@@ -669,14 +666,14 @@ void mc_echo_playback(SpeexEchoState *st, const spx_int16_t *play)
    }
 }
 
-/** Performs echo cancellation on a frame */
-void mc_echo_cancel(SpeexEchoState *st, const spx_int16_t *in, const spx_int16_t *far_end, spx_int16_t *out, spx_int32_t *Yout)
+/** Performs echo cancellation on a frame (deprecated, last arg now ignored) */
+void speex_echo_cancel(SpeexEchoState *st, const spx_int16_t *in, const spx_int16_t *far_end, spx_int16_t *out, spx_int32_t *Yout)
 {
-   mc_echo_cancellation(st, in, far_end, out);
+   speex_echo_cancellation(st, in, far_end, out);
 }
 
-/** Performs echo cancellation on a frame (deprecated, last arg now ignored) */
-void mc_echo_cancellation(SpeexEchoState *st, const spx_int16_t *in, const spx_int16_t *far_end, spx_int16_t *out)
+/** Performs echo cancellation on a frame */
+void speex_echo_cancellation(SpeexEchoState *st, const spx_int16_t *in, const spx_int16_t *far_end, spx_int16_t *out)
 {
    int i,j, chan, speak;
    int N,M, C, K;
@@ -1120,7 +1117,7 @@ void mc_echo_cancellation(SpeexEchoState *st, const spx_int16_t *in, const spx_i
 #endif
 
    /* We consider that the filter has had minimal adaptation if the following is true*/
-   if (!st->adapted && st->sum_adapt > QCONST32(M,15) && MULT16_32_Q15(st->leak_estimate,Syy) > MULT16_32_Q15(QCONST16(.03f,15),Syy))
+   if (!st->adapted && st->sum_adapt > SHL32(EXTEND32(M),15) && MULT16_32_Q15(st->leak_estimate,Syy) > MULT16_32_Q15(QCONST16(.03f,15),Syy))
    {
       st->adapted = 1;
    }
@@ -1219,7 +1216,7 @@ void speex_echo_get_residual(SpeexEchoState *st, spx_word32_t *residual_echo, in
    
 }
 
-int mc_echo_ctl(SpeexEchoState *st, int request, void *ptr)
+int speex_echo_ctl(SpeexEchoState *st, int request, void *ptr)
 {
    switch(request)
    {

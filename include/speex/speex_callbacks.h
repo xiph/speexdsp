@@ -119,7 +119,7 @@ int speex_std_low_mode_request_handler(SpeexBits *bits, void *state, void *data)
 /** Standard handler for VBR request (Set VBR, no questions asked) */
 int speex_std_vbr_request_handler(SpeexBits *bits, void *state, void *data);
 
-/** Standard handler for enhancer request (Turn ehnancer on/off, no questions asked) */
+/** Standard handler for enhancer request (Turn enhancer on/off, no questions asked) */
 int speex_std_enh_request_handler(SpeexBits *bits, void *state, void *data);
 
 /** Standard handler for VBR quality request (Set VBR quality, no questions asked) */

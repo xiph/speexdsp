@@ -3,27 +3,28 @@ EXPORTS
 
 
 ;
-;	speex_echo.h
+;	speex.h
 ;
-speex_echo_state_init
-speex_echo_state_destroy
-speex_echo_cancel
-speex_echo_state_reset
-
-;
-;	speex_preprocess.h
-;
-speex_preprocess_state_init
-speex_preprocess_state_destroy
-speex_preprocess
-speex_preprocess_estimate_update
-speex_preprocess_ctl
+speex_encoder_init
+speex_encoder_destroy
+speex_encode
+speex_encode_int
+speex_encoder_ctl
+speex_decoder_init
+speex_decoder_destroy
+speex_decode
+speex_decode_int
+speex_decoder_ctl
+speex_mode_query
+speex_lib_ctl
+speex_lib_get_mode
 
 ;
 ;	speex_bits.h
 ;
 speex_bits_init
 speex_bits_init_buffer
+speex_bits_set_bit_buffer
 speex_bits_destroy
 speex_bits_reset
 speex_bits_rewind
@@ -62,47 +63,13 @@ speex_header_to_packet
 speex_packet_to_header
 
 ;
-;	speex_jitter.h
-;
-speex_jitter_init
-speex_jitter_destroy
-speex_jitter_put
-speex_jitter_get
-speex_jitter_get_pointer_timestamp
-
-;
-;	speex_noglobals.h
-;
-;speex_mode_new
-;speex_mode_destroy
-
-
-;
 ;	speex_stereo.h
 ;
+speex_stereo_state_init
+speex_stereo_state_reset
+speex_stereo_state_destroy
 speex_encode_stereo
 speex_encode_stereo_int
 speex_decode_stereo
 speex_decode_stereo_int
 speex_std_stereo_request_handler
-
-;
-;	speex.h
-;
-speex_encoder_init
-speex_encoder_destroy
-speex_encode
-speex_encode_int
-speex_encoder_ctl
-speex_decoder_init
-speex_decoder_destroy
-speex_decode
-speex_decode_int
-speex_decoder_ctl
-speex_mode_query
-speex_lib_ctl
-speex_lib_get_mode
-
-
-
-

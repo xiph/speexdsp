@@ -1,48 +1,38 @@
-For 1.2beta2:
-*Use full complex values for fft results?
-*get rid of crap that shouldn't be exposed in speex.h
-*Reduce wideband RAM requirements
-*Make foreground filter 16 bits in AEC.
-*Enable resampler in build
-*Add dumping of data for debug purposes.
-*remove wideband pseudo-stack
-*pitch prediction saturation to prevent NaN-based DoS attacks.
-*Fix jitter buffer
-
-speex_decoder_ctl() call to detect silence
-Complete resampler API (error codes)
-Fix resampler corner case
-Use lower sinc oversampling when down-sampling
-**Fix register issue on Blackfin
-Merge TriMedia stuff
-Make it possible to decode a "raw" packet with SpeexBits
+For 1.2beta3:
 Control delay in new AEC API.
+Implement speex_header_free()
+better error reporting
+get rid of floats in initialisation (make the lag window a const array)
+split encoder and decoder?
+improve float<->int conversion
+NaN checks?
 
-Later:
+
+Eventually:
+Fix last frame of speexenc
+Merge TriMedia stuff
+packet dump
 Do VAD properly
 Warning/error handling
 --enable-{aec,preprocessor,jitter,resampler}
 
-
 Optimisations
 - Add restrict in a few places?
-- enable 4x4 version of pitch_xcorr()?
+- enable 4x4 version of pitch_xcorr() at least on some archs?
 
 Would be nice:
-Implement wideband split as IIR instead of QMF.
+Implement wideband split as IIR instead of QMF?
 
 Allocator override (speex_lib_ctl?)
-Better error handling
 Fixed-point:
-  - Wideband
+  - VBR
+  - encoder init (lag_window, lsp)
   - Jitter buffer
+  - AGC
 Denoiser:
   - Better noise adaptation
 AGC:
   - Use median filtering instead of "non-linear mean"?
-
-Features
--Improve error handling (with perror-like call?)
 
 Standards
 -Complete Speex RTP profile

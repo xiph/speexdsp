@@ -37,17 +37,23 @@
       - Low memory requirement
       - Good *perceptual* quality (and not best SNR)
 
-   The code is working, but it's in a very early stage, so it may have
-   artifacts, noise or subliminal messages from satan. Also, the API 
-   isn't stable and I can actually promise that I *will* change the API
-   some time in the future.
+   Warning: This resampler is relatively new. Although I think I got rid of 
+   all the major bugs and I don't expect the API to change anymore, there
+   may be something I've missed. So use with caution.
 
-TODO list:
-      - Variable calculation resolution depending on quality setting
-         - Single vs double in float mode
-         - 16-bit vs 32-bit (sinc only) in fixed-point mode
-      - Make sure the filter update works even when changing params 
-             after only a few samples procesed
+   This algorithm is based on this original resampling algorithm:
+   Smith, Julius O. Digital Audio Resampling Home Page
+   Center for Computer Research in Music and Acoustics (CCRMA), 
+   Stanford University, 2007.
+   Web published at http://www-ccrma.stanford.edu/~jos/resample/.
+
+   There is one main difference, though. This resampler uses cubic 
+   interpolation instead of linear interpolation in the above paper. This
+   makes the table much smaller and makes it possible to compute that table
+   on a per-stream basis. In turn, being able to tweak the table for each 
+   stream makes it possible to both reduce complexity on simple ratios 
+   (e.g. 2/3), and get rid of the rounding operations in the inner loop. 
+   The latter both reduces CPU time and makes the algorithm more SIMD-friendly.
 */
 
 #ifdef HAVE_CONFIG_H
@@ -64,7 +70,8 @@ static void speex_free (void *ptr) {free(ptr);}
 #else /* OUTSIDE_SPEEX */
                
 #include "speex/speex_resampler.h"
-#include "misc.h"
+#include "arch.h"
+#include "os_support.h"
 #endif /* OUTSIDE_SPEEX */
 
 #include <math.h>
@@ -84,6 +91,7 @@ static void speex_free (void *ptr) {free(ptr);}
 #define OVERSAMPLE 8
 
 #define IMAX(a,b) ((a) > (b) ? (a) : (b))
+#define IMIN(a,b) ((a) < (b) ? (a) : (b))
 
 #ifndef NULL
 #define NULL 0
@@ -576,10 +584,10 @@ static void update_filter(SpeexResamplerState *st)
       }
       for (i=0;i<st->den_rate;i++)
       {
-         spx_uint32_t j;
+         spx_int32_t j;
          for (j=0;j<st->filt_len;j++)
          {
-            st->sinc_table[i*st->filt_len+j] = sinc(st->cutoff,((j-st->filt_len/2+1)-((float)i)/st->den_rate), st->filt_len, quality_map[st->quality].window_func);
+            st->sinc_table[i*st->filt_len+j] = sinc(st->cutoff,((j-(spx_int32_t)st->filt_len/2+1)-((float)i)/st->den_rate), st->filt_len, quality_map[st->quality].window_func);
          }
       }
 #ifdef FIXED_POINT
@@ -615,6 +623,10 @@ static void update_filter(SpeexResamplerState *st)
    st->int_advance = st->num_rate/st->den_rate;
    st->frac_advance = st->num_rate%st->den_rate;
 
+   
+   /* Here's the place where we update the filter memory to take into account
+      the change in filter length. It's probably the messiest part of the code
+      due to handling of lots of corner cases. */
    if (!st->mem)
    {
       spx_uint32_t i;
@@ -633,7 +645,7 @@ static void update_filter(SpeexResamplerState *st)
       /*speex_warning("reinit filter");*/
    } else if (st->filt_len > old_length)
    {
-      spx_uint32_t i;
+      spx_int32_t i;
       /* Increase the filter length */
       /*speex_warning("increase filter size");*/
       int old_alloc_size = st->mem_alloc_size;
@@ -642,32 +654,55 @@ static void update_filter(SpeexResamplerState *st)
          st->mem = (spx_word16_t*)speex_realloc(st->mem, st->nb_channels*(st->filt_len-1) * sizeof(spx_word16_t));
          st->mem_alloc_size = st->filt_len-1;
       }
-      for (i=0;i<st->nb_channels;i++)
+      for (i=st->nb_channels-1;i>=0;i--)
       {
-         spx_uint32_t j;
-         /* Copy data going backward */
-         for (j=0;j<old_length-1;j++)
-            st->mem[i*st->mem_alloc_size+(st->filt_len-2-j)] = st->mem[i*old_alloc_size+(old_length-2-j)];
-         /* Then put zeros for lack of anything better */
-         for (;j<st->filt_len-1;j++)
-            st->mem[i*st->mem_alloc_size+(st->filt_len-2-j)] = 0;
-         /* Adjust last_sample */
-         st->last_sample[i] += (st->filt_len - old_length)/2;
+         spx_int32_t j;
+         spx_uint32_t olen = old_length;
+         /*if (st->magic_samples[i])*/
+         {
+            /* Try and remove the magic samples as if nothing had happened */
+            
+            /* FIXME: This is wrong but for now we need it to avoid going over the array bounds */
+            olen = old_length + 2*st->magic_samples[i];
+            for (j=old_length-2+st->magic_samples[i];j>=0;j--)
+               st->mem[i*st->mem_alloc_size+j+st->magic_samples[i]] = st->mem[i*old_alloc_size+j];
+            for (j=0;j<st->magic_samples[i];j++)
+               st->mem[i*st->mem_alloc_size+j] = 0;
+            st->magic_samples[i] = 0;
+         }
+         if (st->filt_len > olen)
+         {
+            /* If the new filter length is still bigger than the "augmented" length */
+            /* Copy data going backward */
+            for (j=0;j<olen-1;j++)
+               st->mem[i*st->mem_alloc_size+(st->filt_len-2-j)] = st->mem[i*st->mem_alloc_size+(olen-2-j)];
+            /* Then put zeros for lack of anything better */
+            for (;j<st->filt_len-1;j++)
+               st->mem[i*st->mem_alloc_size+(st->filt_len-2-j)] = 0;
+            /* Adjust last_sample */
+            st->last_sample[i] += (st->filt_len - olen)/2;
+         } else {
+            /* Put back some of the magic! */
+            st->magic_samples[i] = (olen - st->filt_len)/2;
+            for (j=0;j<st->filt_len-1+st->magic_samples[i];j++)
+               st->mem[i*st->mem_alloc_size+j] = st->mem[i*st->mem_alloc_size+j+st->magic_samples[i]];
+         }
       }
    } else if (st->filt_len < old_length)
    {
       spx_uint32_t i;
-      /* Reduce filter length, this a bit tricky */
-      /*speex_warning("decrease filter size (unimplemented)");*/
-      /* Adjust last_sample (which will likely end up negative) */
-      /*st->last_sample += (st->filt_len - old_length)/2;*/
+      /* Reduce filter length, this a bit tricky. We need to store some of the memory as "magic"
+         samples so they can be used directly as input the next time(s) */
       for (i=0;i<st->nb_channels;i++)
       {
          spx_uint32_t j;
+         spx_uint32_t old_magic = st->magic_samples[i];
          st->magic_samples[i] = (old_length - st->filt_len)/2;
+         /* We must copy some of the memory that's no longer used */
          /* Copy data going backward */
-         for (j=0;j<st->filt_len-1+st->magic_samples[i];j++)
+         for (j=0;j<st->filt_len-1+st->magic_samples[i]+old_magic;j++)
             st->mem[i*st->mem_alloc_size+j] = st->mem[i*st->mem_alloc_size+j+st->magic_samples[i]];
+         st->magic_samples[i] += old_magic;
       }
    }
 
@@ -756,15 +791,19 @@ static int speex_resampler_process_native(SpeexResamplerState *st, spx_uint32_t 
    /* Handle the case where we have samples left from a reduction in filter length */
    if (st->magic_samples[channel_index])
    {
+      int istride_save;
       spx_uint32_t tmp_in_len;
       spx_uint32_t tmp_magic;
+      
+      istride_save = st->in_stride;
       tmp_in_len = st->magic_samples[channel_index];
       tmp_out_len = *out_len;
-      /* FIXME: Need to handle the case where the out array is too small */
       /* magic_samples needs to be set to zero to avoid infinite recursion */
       tmp_magic = st->magic_samples[channel_index];
       st->magic_samples[channel_index] = 0;
+      st->in_stride = 1;
       speex_resampler_process_native(st, channel_index, mem+N-1, &tmp_in_len, out, &tmp_out_len);
+      st->in_stride = istride_save;
       /*speex_warning_int("extra samples:", tmp_out_len);*/
       /* If we couldn't process all "magic" input samples, save the rest for next time */
       if (tmp_in_len < tmp_magic)
@@ -774,7 +813,8 @@ static int speex_resampler_process_native(SpeexResamplerState *st, spx_uint32_t 
          for (i=0;i<st->magic_samples[channel_index];i++)
             mem[N-1+i]=mem[N-1+i+tmp_in_len];
       }
-      out += tmp_out_len;
+      out += tmp_out_len*st->out_stride;
+      *out_len -= tmp_out_len;
    }
    
    /* Call the right resampler through the function ptr */
@@ -919,11 +959,13 @@ int speex_resampler_process_interleaved_float(SpeexResamplerState *st, const flo
 {
    spx_uint32_t i;
    int istride_save, ostride_save;
+   spx_uint32_t bak_len = *out_len;
    istride_save = st->in_stride;
    ostride_save = st->out_stride;
    st->in_stride = st->out_stride = st->nb_channels;
    for (i=0;i<st->nb_channels;i++)
    {
+      *out_len = bak_len;
       speex_resampler_process_float(st, i, in+i, in_len, out+i, out_len);
    }
    st->in_stride = istride_save;
@@ -931,15 +973,18 @@ int speex_resampler_process_interleaved_float(SpeexResamplerState *st, const flo
    return RESAMPLER_ERR_SUCCESS;
 }
 
+               
 int speex_resampler_process_interleaved_int(SpeexResamplerState *st, const spx_int16_t *in, spx_uint32_t *in_len, spx_int16_t *out, spx_uint32_t *out_len)
 {
    spx_uint32_t i;
    int istride_save, ostride_save;
+   spx_uint32_t bak_len = *out_len;
    istride_save = st->in_stride;
    ostride_save = st->out_stride;
    st->in_stride = st->out_stride = st->nb_channels;
    for (i=0;i<st->nb_channels;i++)
    {
+      *out_len = bak_len;
       speex_resampler_process_int(st, i, in+i, in_len, out+i, out_len);
    }
    st->in_stride = istride_save;
@@ -960,16 +1005,19 @@ void speex_resampler_get_rate(SpeexResamplerState *st, spx_uint32_t *in_rate, sp
 
 int speex_resampler_set_rate_frac(SpeexResamplerState *st, spx_uint32_t ratio_num, spx_uint32_t ratio_den, spx_uint32_t in_rate, spx_uint32_t out_rate)
 {
-   int fact;
+   spx_uint32_t fact;
+   spx_uint32_t old_den;
+   spx_uint32_t i;
    if (st->in_rate == in_rate && st->out_rate == out_rate && st->num_rate == ratio_num && st->den_rate == ratio_den)
       return RESAMPLER_ERR_SUCCESS;
    
+   old_den = st->den_rate;
    st->in_rate = in_rate;
    st->out_rate = out_rate;
    st->num_rate = ratio_num;
    st->den_rate = ratio_den;
    /* FIXME: This is terribly inefficient, but who cares (at least for now)? */
-   for (fact=2;fact<=sqrt(IMAX(in_rate, out_rate));fact++)
+   for (fact=2;fact<=IMIN(st->num_rate, st->den_rate);fact++)
    {
       while ((st->num_rate % fact == 0) && (st->den_rate % fact == 0))
       {
@@ -978,6 +1026,17 @@ int speex_resampler_set_rate_frac(SpeexResamplerState *st, spx_uint32_t ratio_nu
       }
    }
       
+   if (old_den > 0)
+   {
+      for (i=0;i<st->nb_channels;i++)
+      {
+         st->samp_frac_num[i]=st->samp_frac_num[i]*st->den_rate/old_den;
+         /* Safety net */
+         if (st->samp_frac_num[i] >= st->den_rate)
+            st->samp_frac_num[i] = st->den_rate-1;
+      }
+   }
+   
    if (st->initialised)
       update_filter(st);
    return RESAMPLER_ERR_SUCCESS;

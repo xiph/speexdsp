@@ -34,7 +34,7 @@
 #ifndef FILTERBANK_H
 #define FILTERBANK_H
 
-#include "misc.h"
+#include "arch.h"
 
 typedef struct {
    int *bank_left;

@@ -1486,10 +1486,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\libspeex\medfilter.c"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\libspeex\misc.c"
 				>
 			</File>

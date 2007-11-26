@@ -37,7 +37,8 @@
 #endif
 
 #include <speex/speex_callbacks.h>
-#include "misc.h"
+#include "arch.h"
+#include "os_support.h"
 
 int speex_inband_handler(SpeexBits *bits, SpeexCallback *callback_list, void *state)
 {
@@ -95,6 +96,7 @@ int speex_std_high_mode_request_handler(SpeexBits *bits, void *state, void *data
    return 0;
 }
 
+#ifndef DISABLE_VBR
 int speex_std_vbr_request_handler(SpeexBits *bits, void *state, void *data)
 {
    spx_int32_t vbr;
@@ -102,6 +104,7 @@ int speex_std_vbr_request_handler(SpeexBits *bits, void *state, void *data)
    speex_encoder_ctl(data, SPEEX_SET_VBR, &vbr);
    return 0;
 }
+#endif /* #ifndef DISABLE_VBR */
 
 int speex_std_enh_request_handler(SpeexBits *bits, void *state, void *data)
 {
@@ -111,6 +114,7 @@ int speex_std_enh_request_handler(SpeexBits *bits, void *state, void *data)
    return 0;
 }
 
+#ifndef DISABLE_VBR
 int speex_std_vbr_quality_request_handler(SpeexBits *bits, void *state, void *data)
 {
    float qual;
@@ -118,7 +122,7 @@ int speex_std_vbr_quality_request_handler(SpeexBits *bits, void *state, void *da
    speex_encoder_ctl(data, SPEEX_SET_VBR_QUALITY, &qual);
    return 0;
 }
-
+#endif /* #ifndef DISABLE_VBR */
 
 int speex_std_char_handler(SpeexBits *bits, void *state, void *data)
 {
