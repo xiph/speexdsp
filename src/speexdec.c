@@ -36,6 +36,8 @@
 #include <stdio.h>
 #if !defined WIN32 && !defined _WIN32
 #include <unistd.h>
+#endif
+#ifdef HAVE_GETOPT_H
 #include <getopt.h>
 #endif
 #ifndef HAVE_GETOPT_LONG
@@ -104,7 +106,7 @@ static void print_comments(char *comments, int length)
    end = c+length;
    len=readint(c, 0);
    c+=4;
-   if (c+len>end)
+   if (len < 0 || c+len>end)
    {
       fprintf (stderr, "Invalid/corrupted comments\n");
       return;
@@ -128,7 +130,7 @@ static void print_comments(char *comments, int length)
       }
       len=readint(c, 0);
       c+=4;
-      if (c+len>end)
+      if (len < 0 || c+len>end)
       {
          fprintf (stderr, "Invalid/corrupted comments\n");
          return;
@@ -229,6 +231,8 @@ FILE *out_file_open(char *outFile, int rate, int *channels)
       {
 #if defined WIN32 || defined _WIN32
          _setmode(_fileno(stdout), _O_BINARY);
+#elif defined OS2
+         _fsetmode(stdout,"b");
 #endif
          fout=stdout;
       }
@@ -359,13 +363,6 @@ static void *process_header(ogg_packet *op, spx_int32_t enh_enabled, spx_int32_t
    speex_decoder_ctl(st, SPEEX_GET_FRAME_SIZE, frame_size);
    *granule_frame_size = *frame_size;
 
-   if (!(*channels==1))
-   {
-      callback.callback_id = SPEEX_INBAND_STEREO;
-      callback.func = speex_std_stereo_request_handler;
-      callback.data = stereo;
-      speex_decoder_ctl(st, SPEEX_SET_HANDLER, &callback);
-   }
    if (!*rate)
       *rate = header->rate;
    /* Adjust rate if --force-* options are used */
@@ -390,6 +387,15 @@ static void *process_header(ogg_packet *op, spx_int32_t enh_enabled, spx_int32_t
 
    if (*channels==-1)
       *channels = header->nb_channels;
+
+   if (!(*channels==1))
+   {
+      *channels = 2;
+      callback.callback_id = SPEEX_INBAND_STEREO;
+      callback.func = speex_std_stereo_request_handler;
+      callback.data = stereo;
+      speex_decoder_ctl(st, SPEEX_SET_HANDLER, &callback);
+   }
    
    if (!quiet)
    {
@@ -636,7 +642,7 @@ int main(int argc, char **argv)
          packet_no=0;
          while (!eos && ogg_stream_packetout(&os, &op) == 1)
          {
-	    if (!memcmp(op.packet, "Speex", 5)) {
+	    if (op.bytes>=5 && !memcmp(op.packet, "Speex", 5)) {
 	       speex_serialno = os.serialno;
 	    }
 	    if (speex_serialno == -1 || os.serialno != speex_serialno)

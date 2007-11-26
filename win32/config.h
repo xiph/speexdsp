@@ -12,3 +12,6 @@
 #ifndef FIXED_POINT
 #  define FLOATING_POINT
 #endif
+
+/* We don't support visibility on Win32 */
+#define EXPORT

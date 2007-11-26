@@ -48,7 +48,7 @@ struct SpeexBuffer_ {
    int   available;
 };
 
-SpeexBuffer *speex_buffer_init(int size)
+EXPORT SpeexBuffer *speex_buffer_init(int size)
 {
    SpeexBuffer *st = speex_alloc(sizeof(SpeexBuffer));
    st->data = speex_alloc(size);
@@ -59,13 +59,13 @@ SpeexBuffer *speex_buffer_init(int size)
    return st;
 }
 
-void speex_buffer_destroy(SpeexBuffer *st)
+EXPORT void speex_buffer_destroy(SpeexBuffer *st)
 {
    speex_free(st->data);
    speex_free(st);
 }
 
-int speex_buffer_write(SpeexBuffer *st, void *_data, int len)
+EXPORT int speex_buffer_write(SpeexBuffer *st, void *_data, int len)
 {
    int end;
    int end1;
@@ -79,11 +79,11 @@ int speex_buffer_write(SpeexBuffer *st, void *_data, int len)
    end1 = end;
    if (end1 > st->size)
       end1 = st->size;
-   speex_move(st->data + st->write_ptr, data, end1 - st->write_ptr);
+   SPEEX_COPY(st->data + st->write_ptr, data, end1 - st->write_ptr);
    if (end > st->size)
    {
       end -= st->size;
-      speex_move(st->data, data+end1 - st->write_ptr, end);
+      SPEEX_COPY(st->data, data+end1 - st->write_ptr, end);
    }
    st->available += len;
    if (st->available > st->size)
@@ -97,10 +97,10 @@ int speex_buffer_write(SpeexBuffer *st, void *_data, int len)
    return len;
 }
 
-int speex_buffer_writezeros(SpeexBuffer *st, int len)
+EXPORT int speex_buffer_writezeros(SpeexBuffer *st, int len)
 {
    /* This is almost the same as for speex_buffer_write() but using 
-   speex_memset() instead of speex_move(). Update accordingly. */
+   SPEEX_MEMSET() instead of SPEEX_COPY(). Update accordingly. */
    int end;
    int end1;
    if (len > st->size)
@@ -111,11 +111,11 @@ int speex_buffer_writezeros(SpeexBuffer *st, int len)
    end1 = end;
    if (end1 > st->size)
       end1 = st->size;
-   speex_memset(st->data + st->write_ptr, 0, end1 - st->write_ptr);
+   SPEEX_MEMSET(st->data + st->write_ptr, 0, end1 - st->write_ptr);
    if (end > st->size)
    {
       end -= st->size;
-      speex_memset(st->data, 0, end);
+      SPEEX_MEMSET(st->data, 0, end);
    }
    st->available += len;
    if (st->available > st->size)
@@ -129,25 +129,25 @@ int speex_buffer_writezeros(SpeexBuffer *st, int len)
    return len;
 }
 
-int speex_buffer_read(SpeexBuffer *st, void *_data, int len)
+EXPORT int speex_buffer_read(SpeexBuffer *st, void *_data, int len)
 {
    int end, end1;
    char *data = _data;
    if (len > st->available)
    {
-      speex_memset(data+st->available, 0, st->size-st->available);
+      SPEEX_MEMSET(data+st->available, 0, st->size-st->available);
       len = st->available;
    }
    end = st->read_ptr + len;
    end1 = end;
    if (end1 > st->size)
       end1 = st->size;
-   speex_move(data, st->data + st->read_ptr, end1 - st->read_ptr);
+   SPEEX_COPY(data, st->data + st->read_ptr, end1 - st->read_ptr);
 
    if (end > st->size)
    {
       end -= st->size;
-      speex_move(data+end1 - st->read_ptr, st->data, end);
+      SPEEX_COPY(data+end1 - st->read_ptr, st->data, end);
    }
    st->available -= len;
    st->read_ptr += len;
@@ -156,12 +156,12 @@ int speex_buffer_read(SpeexBuffer *st, void *_data, int len)
    return len;
 }
 
-int speex_buffer_get_available(SpeexBuffer *st)
+EXPORT int speex_buffer_get_available(SpeexBuffer *st)
 {
    return st->available;
 }
 
-int speex_buffer_resize(SpeexBuffer *st, int len)
+EXPORT int speex_buffer_resize(SpeexBuffer *st, int len)
 {
    int old_len = st->size;
    if (len > old_len)

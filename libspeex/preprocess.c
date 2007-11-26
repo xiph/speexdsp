@@ -199,6 +199,8 @@ struct SpeexPreprocessState_ {
    int    echo_suppress_active;
    SpeexEchoState *echo_state;
    
+   spx_word16_t	speech_prob;  /**< Probability last frame was speech */
+
    /* DSP-related arrays */
    spx_word16_t *frame;      /**< Processing frame (2*ps_size) */
    spx_word16_t *ft;         /**< Processing frame in freq domain (2*ps_size) */
@@ -234,7 +236,6 @@ struct SpeexPreprocessState_ {
    float *loudness_weight;   /**< Perceptual loudness curve */
    float  loudness;          /**< Loudness estimate */
    float  agc_gain;          /**< Current AGC gain */
-   int    nb_loudness_adapt; /**< Number of frames used for loudness adaptation so far */
    float  max_gain;          /**< Maximum gain allowed */
    float  max_increase_step; /**< Maximum increase in gain from one frame to another */
    float  max_decrease_step; /**< Maximum decrease in gain from one frame to another */
@@ -391,7 +392,7 @@ static void compute_gain_floor(int noise_suppress, int effective_echo_suppress, 
 }
 
 #endif
-SpeexPreprocessState *speex_preprocess_state_init(int frame_size, int sampling_rate)
+EXPORT SpeexPreprocessState *speex_preprocess_state_init(int frame_size, int sampling_rate)
 {
    int i;
    int N, N3, N4, M;
@@ -514,7 +515,6 @@ SpeexPreprocessState *speex_preprocess_state_init(int frame_size, int sampling_r
    /*st->loudness = pow(AMP_SCALE*st->agc_level,LOUDNESS_EXP);*/
    st->loudness = 1e-15;
    st->agc_gain = 1;
-   st->nb_loudness_adapt = 0;
    st->max_gain = 30;
    st->max_increase_step = exp(0.11513f * 12.*st->frame_size / st->sampling_rate);
    st->max_decrease_step = exp(-0.11513f * 40.*st->frame_size / st->sampling_rate);
@@ -530,7 +530,7 @@ SpeexPreprocessState *speex_preprocess_state_init(int frame_size, int sampling_r
    return st;
 }
 
-void speex_preprocess_state_destroy(SpeexPreprocessState *st)
+EXPORT void speex_preprocess_state_destroy(SpeexPreprocessState *st)
 {
    speex_free(st->frame);
    speex_free(st->ft);
@@ -583,7 +583,6 @@ static void speex_compute_agc(SpeexPreprocessState *st, spx_word16_t Pframe, spx
    loudness*2 > pow(st->loudness, 1.0/LOUDNESS_EXP))*/
    if (Pframe>.3f)
    {
-      st->nb_loudness_adapt++;
       /*rate=2.0f*Pframe*Pframe/(1+st->nb_loudness_adapt);*/
       rate = .03*Pframe*Pframe;
       st->loudness = (1-rate)*st->loudness + (rate)*pow(AMP_SCALE*loudness, LOUDNESS_EXP);
@@ -719,12 +718,12 @@ static void update_noise_prob(SpeexPreprocessState *st)
 
 void speex_echo_get_residual(SpeexEchoState *st, spx_word32_t *Yout, int len);
 
-int speex_preprocess(SpeexPreprocessState *st, spx_int16_t *x, spx_int32_t *echo)
+EXPORT int speex_preprocess(SpeexPreprocessState *st, spx_int16_t *x, spx_int32_t *echo)
 {
    return speex_preprocess_run(st, x);
 }
 
-int speex_preprocess_run(SpeexPreprocessState *st, spx_int16_t *x)
+EXPORT int speex_preprocess_run(SpeexPreprocessState *st, spx_int16_t *x)
 {
    int i;
    int M;
@@ -994,9 +993,10 @@ int speex_preprocess_run(SpeexPreprocessState *st, spx_int16_t *x)
       st->outbuf[i] = st->frame[st->frame_size+i];
 
    /* FIXME: This VAD is a kludge */
+   st->speech_prob = Pframe;
    if (st->vad_enabled)
    {
-      if (Pframe > st->speech_prob_start || (st->was_speech && Pframe > st->speech_prob_continue))
+      if (st->speech_prob > st->speech_prob_start || (st->was_speech && st->speech_prob > st->speech_prob_continue))
       {
          st->was_speech=1;
          return 1;
@@ -1010,7 +1010,7 @@ int speex_preprocess_run(SpeexPreprocessState *st, spx_int16_t *x)
    }
 }
 
-void speex_preprocess_estimate_update(SpeexPreprocessState *st, spx_int16_t *x)
+EXPORT void speex_preprocess_estimate_update(SpeexPreprocessState *st, spx_int16_t *x)
 {
    int i;
    int N = st->ps_size;
@@ -1045,7 +1045,7 @@ void speex_preprocess_estimate_update(SpeexPreprocessState *st, spx_int16_t *x)
 }
 
 
-int speex_preprocess_ctl(SpeexPreprocessState *state, int request, void *ptr)
+EXPORT int speex_preprocess_ctl(SpeexPreprocessState *state, int request, void *ptr)
 {
    int i;
    SpeexPreprocessState *st;
@@ -1065,17 +1065,18 @@ int speex_preprocess_ctl(SpeexPreprocessState *state, int request, void *ptr)
    case SPEEX_PREPROCESS_GET_AGC:
       (*(spx_int32_t*)ptr) = st->agc_enabled;
       break;
-
+#ifndef DISABLE_FLOAT_API
    case SPEEX_PREPROCESS_SET_AGC_LEVEL:
-      st->agc_level = (*(spx_int32_t*)ptr);
+      st->agc_level = (*(float*)ptr);
       if (st->agc_level<1)
          st->agc_level=1;
       if (st->agc_level>32768)
          st->agc_level=32768;
       break;
    case SPEEX_PREPROCESS_GET_AGC_LEVEL:
-      (*(spx_int32_t*)ptr) = st->agc_level;
+      (*(float*)ptr) = st->agc_level;
       break;
+#endif /* #ifndef DISABLE_FLOAT_API */
    case SPEEX_PREPROCESS_SET_AGC_INCREMENT:
       st->max_increase_step = exp(0.11513f * (*(spx_int32_t*)ptr)*st->frame_size / st->sampling_rate);
       break;
@@ -1174,11 +1175,45 @@ int speex_preprocess_ctl(SpeexPreprocessState *state, int request, void *ptr)
    case SPEEX_PREPROCESS_GET_AGC_LOUDNESS:
       (*(spx_int32_t*)ptr) = pow(st->loudness, 1.0/LOUDNESS_EXP);
       break;
+   case SPEEX_PREPROCESS_GET_AGC_GAIN:
+      (*(spx_int32_t*)ptr) = floor(.5+8.6858*log(st->agc_gain));
+      break;
 #endif
-
+   case SPEEX_PREPROCESS_GET_PSD_SIZE:
+   case SPEEX_PREPROCESS_GET_NOISE_PSD_SIZE:
+      (*(spx_int32_t*)ptr) = st->ps_size;
+      break;
+   case SPEEX_PREPROCESS_GET_PSD:
+      for(i=0;i<st->ps_size;i++)
+      	((spx_int32_t *)ptr)[i] = (spx_int32_t) st->ps[i];
+      break;
+   case SPEEX_PREPROCESS_GET_NOISE_PSD:
+      for(i=0;i<st->ps_size;i++)
+      	((spx_int32_t *)ptr)[i] = (spx_int32_t) PSHR32(st->noise[i], NOISE_SHIFT);
+      break;
+   case SPEEX_PREPROCESS_GET_PROB:
+      (*(spx_int32_t*)ptr) = MULT16_16_Q15(st->speech_prob, 100);
+      break;
+#ifndef DISABLE_FLOAT_API
+   case SPEEX_PREPROCESS_SET_AGC_TARGET:
+      st->agc_level = (*(spx_int32_t*)ptr);
+      if (st->agc_level<1)
+         st->agc_level=1;
+      if (st->agc_level>32768)
+         st->agc_level=32768;
+      break;
+   case SPEEX_PREPROCESS_GET_AGC_TARGET:
+      (*(spx_int32_t*)ptr) = st->agc_level;
+      break;
+#endif /* #ifndef DISABLE_FLOAT_API */
    default:
       speex_warning_int("Unknown speex_preprocess_ctl request: ", request);
       return -1;
    }
    return 0;
 }
+
+#ifdef FIXED_DEBUG
+long long spx_mips=0;
+#endif
+

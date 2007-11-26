@@ -7,10 +7,10 @@ AM_CONFIG_HEADER([config.h])
 SPEEX_MAJOR_VERSION=1
 SPEEX_MINOR_VERSION=1
 SPEEX_MICRO_VERSION=15
-SPEEX_EXTRA_VERSION=-git
+SPEEX_EXTRA_VERSION=.2
 #SPEEX_VERSION=
 #SPEEX_VERSION=$SPEEX_MAJOR_VERSION.$SPEEX_MINOR_VERSION.$SPEEX_MICRO_VERSION$SPEEX_EXTRA_VERSION
-SPEEX_VERSION="1.2beta3"
+SPEEX_VERSION="1.2beta3.2"
 
 SPEEX_LT_CURRENT=5
 SPEEX_LT_REVISION=0
@@ -30,6 +30,7 @@ AM_INIT_AUTOMAKE($PACKAGE, $VERSION, no-define)
 AM_MAINTAINER_MODE
 
 AC_CANONICAL_HOST
+AC_LIBTOOL_WIN32_DLL
 AM_PROG_LIBTOOL
 
 AC_C_BIGENDIAN
@@ -50,7 +51,7 @@ has_var_arrays=no
 )
 AC_MSG_RESULT($has_var_arrays)
 
-AC_CHECK_HEADERS(alloca.h)
+AC_CHECK_HEADERS([alloca.h getopt.h])
 AC_MSG_CHECKING(for alloca)
 AC_TRY_COMPILE( [
 #ifdef HAVE_ALLOCA_H
@@ -70,6 +71,44 @@ fi
 has_alloca=no
 )
 AC_MSG_RESULT($has_alloca)
+
+AC_MSG_CHECKING(for SSE in current arch/CFLAGS)
+AC_LINK_IFELSE([
+AC_LANG_PROGRAM([[
+#include <xmmintrin.h>
+__m128 testfunc(float *a, float *b) {
+  return _mm_add_ps(_mm_loadu_ps(a), _mm_loadu_ps(b));
+}
+]])],
+[
+has_sse=yes
+],
+[
+has_sse=no
+]
+)
+AC_MSG_RESULT($has_sse)  
+
+SAVE_CFLAGS="$CFLAGS"
+CFLAGS="$CFLAGS -fvisibility=hidden"
+AC_MSG_CHECKING(for ELF visibility)
+AC_COMPILE_IFELSE([
+AC_LANG_PROGRAM([[
+#pragma GCC visibility push(hidden)
+__attribute__((visibility("default")))
+int var=10;
+]])],
+[
+has_visibility=yes
+AC_DEFINE([EXPORT], [__attribute__((visibility("default")))], [Symbol visibility prefix])
+],
+[
+has_visibility=no
+AC_DEFINE([EXPORT], [], [Symbol visibility prefix])
+CFLAGS="$SAVE_CFLAGS"
+]
+)
+AC_MSG_RESULT($has_visibility)
 
 
 AC_CHECK_HEADERS(sys/soundcard.h sys/audioio.h)
@@ -101,11 +140,18 @@ AC_ARG_ENABLE(valgrind, [  --enable-valgrind       Enable valgrind extra checks]
   AC_DEFINE([ENABLE_VALGRIND], , [Enable valgrind extra checks])
 fi])
 
-AC_ARG_ENABLE(sse, [  --enable-sse            Enable SSE support], [if test "$enableval" = yes; then
-AC_DEFINE([_USE_SSE], , [Enable SSE support])
+AC_ARG_ENABLE(sse, [  --enable-sse            Enable SSE support], [
+if test "x$enableval" != xno; then
+has_sse=yes
 CFLAGS="$CFLAGS -O3 -msse"
+else
+has_sse=no
 fi
 ])
+
+if test "$has_sse" = yes; then
+  AC_DEFINE([_USE_SSE], , [Enable SSE support])
+fi
 
 AC_ARG_ENABLE(fixed-point, [  --enable-fixed-point    Compile as fixed-point],
 [if test "$enableval" = yes; then
@@ -199,6 +245,14 @@ AC_OUTPUT([Makefile libspeex/Makefile src/Makefile doc/Makefile Speex.spec
            win32/VS2005/libspeex/Makefile
            win32/VS2005/speexdec/Makefile
            win32/VS2005/speexenc/Makefile
+           win32/VS2005/libspeexdsp/Makefile
+           win32/VS2005/tests/Makefile
+           win32/VS2008/libspeexdsp/Makefile
+           win32/VS2008/Makefile
+           win32/VS2008/speexdec/Makefile
+           win32/VS2008/tests/Makefile
+           win32/VS2008/libspeex/Makefile
+           win32/VS2008/speexenc/Makefile
            include/speex/speex_config_types.h ti/Makefile 
 	   ti/speex_C54_test/Makefile ti/speex_C55_test/Makefile
 	   ti/speex_C64_test/Makefile ])

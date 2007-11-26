@@ -1,4 +1,4 @@
-#LyX 1.5.0 created this file. For more info see http://www.lyx.org/
+#LyX 1.5.1 created this file. For more info see http://www.lyx.org/
 \lyxformat 276
 \begin_document
 \begin_header
@@ -47,7 +47,7 @@
 \begin_layout Title
 The Speex Codec Manual
 \newline
-Version 1.2 Beta 3
+Version 1.2
 \end_layout
 
 \begin_layout Author
@@ -74,7 +74,7 @@ copyright
 
 \end_inset
 
- 2002-2007 Jean-Marc Valin/Xiph.org Foundation
+ 2002-2008 Jean-Marc Valin/Xiph.org Foundation
 \end_layout
 
 \begin_layout Standard
@@ -200,7 +200,7 @@ Email the author privately at jean-marc.valin@usherbrooke.ca
 \series bold
 only
 \series default
- for private/delicate topics you do not wish to discuss publically.
+ for private/delicate topics you do not wish to discuss publicly.
 \end_layout
 
 \begin_layout Standard
@@ -367,7 +367,7 @@ The sampling rate expressed in Hertz (Hz) is the number of samples taken
  the sampling theorem.
  Speex is mainly designed for three different sampling rates: 8 kHz, 16
  kHz, and 32 kHz.
- These are respectively refered to as narrowband
+ These are respectively referred to as narrowband
 \begin_inset LatexCommand index
 name "narrowband"
 
@@ -449,9 +449,9 @@ name "quality"
 \end_layout
 
 \begin_layout Standard
-Speex is a lossy codec, which means that it achives compression at the expense
- of fidelity of the input speech signal.
- Unlike some other speech codecs, it is possible to control the tradeoff
+Speex is a lossy codec, which means that it achieves compression at the
+ expense of fidelity of the input speech signal.
+ Unlike some other speech codecs, it is possible to control the trade-off
  made between quality and bit-rate.
  The Speex encoding process is controlled most of the time by a quality
  parameter that ranges from 0 to 10.
@@ -526,7 +526,7 @@ difficulty
  In the example of Speex, sounds like vowels and high-energy transients
  require a higher bit-rate to achieve good quality, while fricatives (e.g.
  s,f sounds) can be coded adequately with less bits.
- For this reason, VBR can achive lower bit-rate for the same quality, or
+ For this reason, VBR can achieve lower bit-rate for the same quality, or
  a better quality for a certain bit-rate.
  Despite its advantages, VBR has two main drawbacks: first, by only specifying
  quality, there's no guaranty about the final average bit-rate.
@@ -915,6 +915,101 @@ In some cases, it may be useful to convert audio from one sampling rate
 plexity tradeoff.
 \end_layout
 
+\begin_layout Section
+Integration
+\end_layout
+
+\begin_layout Standard
+Knowing 
+\emph on
+how
+\emph default
+ to use eacho of the components is not that useful unless we know 
+\emph on
+where
+\emph default
+ to use them.
+ Figure 
+\begin_inset LatexCommand ref
+reference "fig:Integration-VoIP"
+
+\end_inset
+
+ shows where each of the components would be used in a typical VoIP client.
+ Components in dotted lines are optional, though they may be very useful
+ in some circumstances.
+ There are several important things to note from there.
+ The AEC must be placed as close as possible to the playback and capture.
+ Only the resampling may be closer.
+ Also, it is very important to use the same clock for both mic capture and
+ speaker/headphones playback.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Standard
+\begin_inset ERT
+status collapsed
+
+\begin_layout Standard
+
+
+\backslash
+begin{center}
+\end_layout
+
+\end_inset
+
+
+\begin_inset Graphics
+	filename components.eps
+	width 80text%
+
+\end_inset
+
+
+\begin_inset ERT
+status collapsed
+
+\begin_layout Standard
+
+
+\backslash
+end{center}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Caption
+
+\begin_layout Standard
+Integration of all the components in a VoIP client.
+\begin_inset LatexCommand label
+name "fig:Integration-VoIP"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
 \begin_layout Standard
 
 \newpage
@@ -922,7 +1017,7 @@ plexity tradeoff.
 \end_layout
 
 \begin_layout Chapter
-Compiling
+Compiling and Porting
 \end_layout
 
 \begin_layout Standard
@@ -1006,22 +1101,12 @@ name "fixed-point"
 \end_layout
 
 \begin_layout Description
---enable-epic-48k Enable a special (and non-compatible) 4.8 kbps narrowband
- mode (broken in 1.1.x and 1.2beta)
-\end_layout
-
-\begin_layout Description
 --enable-ti-c55x Enable support for the TI C5x family
 \end_layout
 
 \begin_layout Description
 --enable-blackfin-asm Enable assembly specific to the Blackfin DSP architecture
  (gcc only)
-\end_layout
-
-\begin_layout Description
---enable-vorbis-psycho Make the encoder use the Vorbis psycho-acoustic model.
- This is very experimental and may be removed in the future.
 \end_layout
 
 \begin_layout Section
@@ -1034,11 +1119,11 @@ Speex is known to compile and work on a large number of architectures, both
  In general, any architecture that can natively compute the multiplication
  of two signed 16-bit numbers (32-bit result) and runs at a sufficient clock
  rate (architecture-dependent) is capable of running Speex.
- Architectures that are 
+ Architectures on which Speex is 
 \series bold
 known
 \series default
- to be supported (it probably works on many others) are:
+ to work (it probably works on many others) are:
 \end_layout
 
 \begin_layout Itemize
@@ -1059,6 +1144,10 @@ ARM
 
 \begin_layout Itemize
 Blackfin
+\end_layout
+
+\begin_layout Itemize
+Coldfire (68k family)
 \end_layout
 
 \begin_layout Itemize
@@ -1136,7 +1225,13 @@ generally
 \series default
  faster, but not always.
  To compile Speex as fixed-point, you need to pass --fixed-point to the
- configure script or define the FIXED_POINT maccro for the compiler.
+ configure script or define the FIXED_POINT macro for the compiler.
+ As of 1.2beta3, it is now possible to disable the floating-point compatibility
+ API, which means that your code can link without a float emulation library.
+ To do that configure with --disable-float-api or define the DISABLE_FLOAT_API
+ macro.
+ Until the VBR feature is ported to fixed-point, you will also need to configure
+ with --disable-vbr or define DISABLE_VBR.
 \end_layout
 
 \begin_layout Standard
@@ -1198,6 +1293,21 @@ status collapsed
 
 \begin_layout Standard
 
+vq_nbest()
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
 pitch_xcorr()
 \end_layout
 
@@ -1219,6 +1329,47 @@ interp_pitch()
 \end_inset
 
 
+\end_layout
+
+\begin_layout Standard
+The filtering functions 
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+filter_mem16()
+\end_layout
+
+\end_inset
+
+ and 
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+iir_mem16()
+\end_layout
+
+\end_inset
+
+ are implemented in the direct form II transposed (DF2T).
+ However, for architectures based on multiply-accumulate (MAC), DF2T requires
+ frequent reload of the accumulator, which can make the code very slow.
+ For these architectures (e.g.
+ Blackfin and Coldfire), a better approach is to implement those functions
+ as direct form I (DF1), which is easier to express in terms of MAC.
+ When doing that however, 
+\series bold
+it is important to make sure that the DF1 implementation still behaves like
+ the original DF2T behaviour when it comes to memory values
+\series default
+.
+ This is necessary because the filter is time-varying and must compute exactly
+ the same value (not counting machine rounding) on any encoder or decoder.
 \end_layout
 
 \begin_layout Subsection
@@ -1250,7 +1401,7 @@ Support for stereo (removing stereo.c)
 \end_layout
 
 \begin_layout Itemize
-VBR support (vbr.c and a few lines in nb_celp.c)
+VBR support (--disable-vbr or DISABLE_VBR)
 \end_layout
 
 \begin_layout Itemize
@@ -1304,7 +1455,7 @@ In this case, one must be careful with threads
 .
  In addition to that, by redefining the NB_ENC_STACK and NB_DEC_STACK (or
  similar for wideband), it is possible to only allocate memory for a scenario
- that is known in advange.
+ that is known in advance.
  In this case, it is important to measure the amount of memory required
  for the specific sampling rate, bit-rate and complexity level being used.
 \end_layout
@@ -2226,7 +2377,7 @@ _ctl()
 \series bold
 not type safe
 \series default
-, and shoud thus be used with care.
+, and should thus be used with care.
  The type 
 \begin_inset listings
 inline true
@@ -2277,7 +2428,7 @@ spx_int32_t
 
 \end_inset
 
-)
+, default is on)
 \end_layout
 
 \begin_layout Description
@@ -2334,7 +2485,7 @@ spx_int32_t
 
 \end_inset
 
- from 0 to 10)
+ from 0 to 10, default is 8)
 \end_layout
 
 \begin_layout Description
@@ -2414,7 +2565,7 @@ spx_int32_t
 
 \end_inset
 
-)
+, default is off)
 \end_layout
 
 \begin_layout Description
@@ -2448,7 +2599,7 @@ SPEEX_SET_VBR_QUALITY
 \begin_inset Formula $\dagger$
 \end_inset
 
- Set the encoder VBR speech quality (float 0 to 10)
+ Set the encoder VBR speech quality (float 0.0 to 10.0, default is 8.0)
 \end_layout
 
 \begin_layout Description
@@ -2476,7 +2627,7 @@ spx_int32_t
 
 \end_inset
 
- from 1 to 10)
+ from 1 to 10, default is 2)
 \end_layout
 
 \begin_layout Description
@@ -2496,7 +2647,7 @@ spx_int32_t
 
 \end_inset
 
- from 1 to 10)
+ from 1 to 10, default is 2)
 \end_layout
 
 \begin_layout Description
@@ -2504,8 +2655,7 @@ SPEEX_SET_BITRATE
 \begin_inset Formula $\dagger$
 \end_inset
 
- Set the bit-rate to use to the closest value not exceeding the parameter
- (
+ Set the bit-rate to use the closest value not exceeding the parameter (
 \begin_inset listings
 inline true
 status collapsed
@@ -2596,7 +2746,7 @@ spx_int32_t
 
 \end_inset
 
-)
+, default is off)
 \end_layout
 
 \begin_layout Description
@@ -2642,7 +2792,7 @@ spx_int32_t
 
 \end_inset
 
-)
+, default is off)
 \end_layout
 
 \begin_layout Description
@@ -2805,11 +2955,11 @@ spx_int32_t
 
 \end_inset
 
-)
+, default is on)
 \end_layout
 
 \begin_layout Description
-SPEEX_TET_HIGHPASS Get the current high-pass filter status (
+SPEEX_GET_HIGHPASS Get the current high-pass filter status (
 \begin_inset listings
 inline true
 status collapsed
@@ -3065,7 +3215,7 @@ Asks (if 1) the encoder to be less
 \begin_inset Quotes eld
 \end_inset
 
-agressive
+aggressive
 \begin_inset Quotes erd
 \end_inset
 
@@ -3214,7 +3364,7 @@ Asks encoder to switch to quality N for VBR
 \begin_inset Text
 
 \begin_layout Standard
-Request acknowloedge (0=no, 1=all, 2=only for in-band data)
+Request acknowledge (0=no, 1=all, 2=only for in-band data)
 \end_layout
 
 \end_inset
@@ -3887,19 +4037,19 @@ spx_int32_t
 \end_layout
 
 \begin_layout Description
-SPEEX_PREPROCESS_SET_DEREVERB_LEVEL
+SPEEX_PREPROCESS_SET_DEREVERB_LEVEL Not working yet, do not use
 \end_layout
 
 \begin_layout Description
-SPEEX_PREPROCESS_GET_DEREVERB_LEVEL
+SPEEX_PREPROCESS_GET_DEREVERB_LEVEL Not working yet, do not use
 \end_layout
 
 \begin_layout Description
-SPEEX_PREPROCESS_SET_DEREVERB_DECAY
+SPEEX_PREPROCESS_SET_DEREVERB_DECAY Not working yet, do not use
 \end_layout
 
 \begin_layout Description
-SPEEX_PREPROCESS_GET_DEREVERB_DECAY
+SPEEX_PREPROCESS_GET_DEREVERB_DECAY Not working yet, do not use
 \end_layout
 
 \begin_layout Description
@@ -4022,11 +4172,11 @@ spx_int32_t
 
 \begin_layout Description
 SPEEX_PREPROCESS_SET_ECHO_STATE Set the associated echo canceller for residual
- echo suppression (NULL for no residual echo suppression)
+ echo suppression (pointer or NULL for no residual echo suppression)
 \end_layout
 
 \begin_layout Description
-SPEEX_PREPROCESS_GET_ECHO_STATE Get the associated echo canceller
+SPEEX_PREPROCESS_GET_ECHO_STATE Get the associated echo canceller (pointer)
 \end_layout
 
 \begin_layout Section
@@ -4249,7 +4399,7 @@ select()
 \emph default
  system call), it can be difficult to keep track of what input_frame comes
  with what echo_frame.
- Instead, the playback comtext/thread can simply call:
+ Instead, the playback context/thread can simply call:
 \end_layout
 
 \begin_layout Standard
@@ -4507,7 +4657,7 @@ status open
 
 \begin_layout Standard
 
-JitterBuffer *state = jitter_buffer_init(tick);
+JitterBuffer *state = jitter_buffer_init(step);
 \end_layout
 
 \end_inset
@@ -4523,15 +4673,20 @@ status collapsed
 
 \begin_layout Standard
 
-tick
+step
 \end_layout
 
 \end_inset
 
- argument is the time resolution (in timestamp units) used for the jitter
- buffer, and is generally the period at which the data is played out of
- the jitter buffer.
- 
+ argument is the default time step (in timestamp units) used for adjusting
+ the delay and doing concealment.
+ A value of 1 is always correct, but higher values may be more convenient
+ sometimes.
+ For example, if you are only able to do concealment on 20ms frames, there
+ is no point in the jitter buffer asking you to do it on one sample.
+ Another example is that for video, it makes no sense to adjust the delay
+ by less than a full frame.
+ The value provided can always be changed at a later time.
 \end_layout
 
 \begin_layout Standard
@@ -4589,6 +4744,15 @@ typedef struct {
 \end_layout
 
 \begin_layout Standard
+As an example, for audio the timestamp field would be what is obtained from
+ the RTP timestamp field and the span would be the number of samples that
+ are encoded in the packet.
+ For Speex narrowband, span would be 160 if only one frame is included in
+ the packet.
+ 
+\end_layout
+
+\begin_layout Standard
 When a packet arrives, it need to be inserter into the jitter buffer by:
 \begin_inset listings
 inline false
@@ -4601,7 +4765,7 @@ JitterBufferPacket packet;
 
 \begin_layout Standard
 
-/* Fill in the packet fields */
+/* Fill in each field in the packet struct */
 \end_layout
 
 \begin_layout Standard
@@ -4628,7 +4792,7 @@ int start_offset;
 
 \begin_layout Standard
 
-err = jitter_buffer_get(state, &packet, &start_offset);
+err = jitter_buffer_get(state, &packet, desired_span, &start_offset);
 \end_layout
 
 \end_inset
@@ -4652,7 +4816,7 @@ jitter_buffer_put()
  and 
 \begin_inset listings
 inline true
-status open
+status collapsed
 
 \begin_layout Standard
 
@@ -4688,20 +4852,65 @@ jitter_buffer_tick(state);
 \end_layout
 
 \begin_layout Standard
-This needs to be done every time 
+This needs to be done periodically in the playing thread.
+ This will be the last jitter buffer call before going to sleep (until more
+ data is played back).
+ In some cases, it may be preferable to use 
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Standard
+
+jitter_buffer_remaining_span(state, remaining);
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The second argument is used to specify that we are still holding data that
+ has not been written to the playback device.
+ For instance, if 256 samples were needed by the soundcard (specified by
+ 
 \begin_inset listings
 inline true
 status collapsed
 
 \begin_layout Standard
 
-tick
+desired_span
 \end_layout
 
 \end_inset
 
- units have elapsed.
- 
+), but 
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+jitter_buffer_get()
+\end_layout
+
+\end_inset
+
+ returned 320 samples, we would have 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Standard
+
+remaining=64
+\end_layout
+
+\end_inset
+
+.
 \end_layout
 
 \begin_layout Section
@@ -4817,7 +5026,34 @@ out_length
 
 \begin_layout Standard
 It is also possible to process multiple channels at once.
- 
+ To do that, you can use speex_resampler_process_interleaved_int() or speex_resa
+mpler_process_interleaved_float().
+ The arguments are the same except that there is no channelID argument.
+ Note that the 
+\series bold
+length parameters are per-channel
+\series default
+.
+ So if you have 1024 samples for each of 4 channels, you pass 1024 and not
+ 4096.
+\end_layout
+
+\begin_layout Standard
+The resampler allows changing the quality and input/output sampling frequencies
+ on the fly without glitches or anything.
+ This can be done with calls such as speex_resampler_set_quality() and speex_res
+ampler_set_rate().
+ When resampling a file, it is often desirable to have the output file perfectly
+ synchronised with the input.
+ To do that, you need to call speex_resampler_skip_zeros() 
+\series bold
+before
+\series default
+ you start processing any samples.
+ For real-time applications (e.g.
+ VoIP), it is not recommended to do that as the first process frame will
+ be shorted to compensate the the delay (the skipped zeros).
+ To destroy a resampler state, just call speex_resampler_destroy().
 \end_layout
 
 \begin_layout Section
@@ -4825,7 +5061,14 @@ Ring Buffer
 \end_layout
 
 \begin_layout Standard
-Put some stuff there...
+In some cases, it is necessary to interface components that use different
+ block sizes.
+ For example, it is possible that the soundcard does not support reading/writing
+ in blocks of 20\InsetSpace ~
+ms or sometimes, complicated resampling ratios mean that
+ the blocks don't always have the same time.
+ In thoses cases, it is often necessary to buffer a bit of audio using a
+ ring buffer.
 \end_layout
 
 \begin_layout Standard
@@ -6383,7 +6626,7 @@ name "line spectral pair"
 \begin_layout Standard
 To make Speex more robust to packet loss, no prediction is applied on the
  LSP coefficients prior to quantization.
- The LSPs are encoded using vector quantizatin (VQ) with 30 bits for higher
+ The LSPs are encoded using vector quantization (VQ) with 30 bits for higher
  quality modes and 18 bits for lower quality.
 \end_layout
 
@@ -7969,7 +8212,7 @@ reference "cap:quality_vs_bps"
 \end_inset
 
  presents my own subjective opinion on it.
- It sould be noted that different people will perceive the quality differently
+ It should be noted that different people will perceive the quality differently
  and that the person that designed the codec often has a bias (one way or
  another) when it comes to subjective evaluation.
  Last thing, it should be noted that for most codecs (including Speex) encoding

@@ -83,7 +83,7 @@ typedef struct SpeexHeader {
 } SpeexHeader;
 */
 
-void speex_init_header(SpeexHeader *header, int rate, int nb_channels, const SpeexMode *m)
+EXPORT void speex_init_header(SpeexHeader *header, int rate, int nb_channels, const SpeexMode *m)
 {
    int i;
    const char *h="Speex   ";
@@ -118,12 +118,12 @@ void speex_init_header(SpeexHeader *header, int rate, int nb_channels, const Spe
    header->reserved2 = 0;
 }
 
-char *speex_header_to_packet(SpeexHeader *header, int *size)
+EXPORT char *speex_header_to_packet(SpeexHeader *header, int *size)
 {
    SpeexHeader *le_header;
    le_header = (SpeexHeader*)speex_alloc(sizeof(SpeexHeader));
    
-   speex_move(le_header, header, sizeof(SpeexHeader));
+   SPEEX_COPY(le_header, header, 1);
    
    /*Make sure everything is now little-endian*/
    ENDIAN_SWITCH(le_header->speex_version_id);
@@ -142,7 +142,7 @@ char *speex_header_to_packet(SpeexHeader *header, int *size)
    return (char *)le_header;
 }
 
-SpeexHeader *speex_packet_to_header(char *packet, int size)
+EXPORT SpeexHeader *speex_packet_to_header(char *packet, int size)
 {
    int i;
    SpeexHeader *le_header;
@@ -163,7 +163,7 @@ SpeexHeader *speex_packet_to_header(char *packet, int size)
    
    le_header = (SpeexHeader*)speex_alloc(sizeof(SpeexHeader));
    
-   speex_move(le_header, packet, sizeof(SpeexHeader));
+   SPEEX_COPY(le_header, (SpeexHeader*)packet, 1);
    
    /*Make sure everything is converted correctly from little-endian*/
    ENDIAN_SWITCH(le_header->speex_version_id);
@@ -178,6 +178,23 @@ SpeexHeader *speex_packet_to_header(char *packet, int size)
    ENDIAN_SWITCH(le_header->frames_per_packet);
    ENDIAN_SWITCH(le_header->extra_headers);
 
+   if (le_header->mode >= SPEEX_NB_MODES || le_header->mode < 0)
+   {
+      speex_notify("Invalid mode specified in Speex header");
+      speex_free (le_header);
+      return NULL;
+   }
+
+   if (le_header->nb_channels>2)
+      le_header->nb_channels = 2;
+   if (le_header->nb_channels<1)
+      le_header->nb_channels = 1;
+
    return le_header;
 
+}
+
+EXPORT void speex_header_free(void *ptr)
+{
+   speex_free(ptr);
 }

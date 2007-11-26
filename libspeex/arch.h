@@ -125,8 +125,6 @@ typedef spx_word32_t spx_sig_t;
 #include "fixed_arm5e.h"
 #elif defined (ARM4_ASM)
 #include "fixed_arm4.h"
-#elif defined (ARM5E_ASM)
-#include "fixed_arm5e.h"
 #elif defined (BFIN_ASM)
 #include "fixed_bfin.h"
 #endif
@@ -234,7 +232,7 @@ typedef float spx_word32_t;
 
 
 #ifdef FIXED_DEBUG
-long long spx_mips=0;
+extern long long spx_mips;
 #endif
 
 

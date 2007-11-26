@@ -63,16 +63,15 @@ struct _JitterBufferPacket {
    spx_uint32_t timestamp;  /**< Timestamp for the packet */
    spx_uint32_t span;       /**< Time covered by the packet (same units as timestamp) */
    spx_uint16_t sequence;   /**< RTP Sequence number if available (0 otherwise) */
-   spx_uint16_t flags;      /**< Info about the returned packet */
    spx_uint32_t user_data;  /**< Put whatever data you like here (it's ignored by the jitter buffer) */
 };
 
 /** Packet has been retrieved */
 #define JITTER_BUFFER_OK 0
-/** Packet is missing */
+/** Packet is lost or is late */
 #define JITTER_BUFFER_MISSING 1
-/** Packet is incomplete (does not cover the entire tick */
-#define JITTER_BUFFER_INCOMPLETE 2
+/** A "fake" packet is meant to be inserted here to increase buffering */
+#define JITTER_BUFFER_INSERTION 2
 /** There was an error in the jitter buffer */
 #define JITTER_BUFFER_INTERNAL_ERROR -1
 /** Invalid argument */
@@ -117,10 +116,12 @@ struct _JitterBufferPacket {
 
 /** Initialises jitter buffer 
  * 
- * @param tick Number of samples per "tick", i.e. the time period of the elements that will be retrieved
+ * @param step_size Starting value for the size of concleanment packets and delay 
+       adjustment steps. Can be changed at any time using JITTER_BUFFER_SET_DELAY_STEP
+       and JITTER_BUFFER_GET_CONCEALMENT_SIZE.
  * @return Newly created jitter buffer state
  */
-JitterBuffer *jitter_buffer_init(void);
+JitterBuffer *jitter_buffer_init(int step_size);
 
 /** Restores jitter buffer to its original state 
  * 

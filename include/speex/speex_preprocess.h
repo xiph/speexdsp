@@ -110,9 +110,9 @@ int speex_preprocess_ctl(SpeexPreprocessState *st, int request, void *ptr);
 /** Get preprocessor Voice Activity Detection state */
 #define SPEEX_PREPROCESS_GET_VAD 5
 
-/** Set preprocessor Automatic Gain Control level */
+/** Set preprocessor Automatic Gain Control level (float) */
 #define SPEEX_PREPROCESS_SET_AGC_LEVEL 6
-/** Get preprocessor Automatic Gain Control level */
+/** Get preprocessor Automatic Gain Control level (float) */
 #define SPEEX_PREPROCESS_GET_AGC_LEVEL 7
 
 /** Set preprocessor dereverb state */
@@ -181,6 +181,35 @@ int speex_preprocess_ctl(SpeexPreprocessState *st, int request, void *ptr);
 /*  Can't set loudness */
 /** Get loudness */
 #define SPEEX_PREPROCESS_GET_AGC_LOUDNESS 33
+
+/*  Can't set gain */
+/** Get current gain (int32 percent) */
+#define SPEEX_PREPROCESS_GET_AGC_GAIN 35
+
+/*  Can't set spectrum size */
+/** Get spectrum size for power spectrum (int32) */
+#define SPEEX_PREPROCESS_GET_PSD_SIZE 37
+
+/*  Can't set power spectrum */
+/** Get power spectrum (int32[] of squared values) */
+#define SPEEX_PREPROCESS_GET_PSD 39
+
+/*  Can't set noise size */
+/** Get spectrum size for noise estimate (int32)  */
+#define SPEEX_PREPROCESS_GET_NOISE_PSD_SIZE 41
+
+/*  Can't set noise estimate */
+/** Get noise estimate (int32[] of squared values) */
+#define SPEEX_PREPROCESS_GET_NOISE_PSD 43
+
+/* Can't set speech probability */
+/** Get speech probability in last frame (int32).  */
+#define SPEEX_PREPROCESS_GET_PROB 45
+
+/** Set preprocessor Automatic Gain Control level (int32) */
+#define SPEEX_PREPROCESS_SET_AGC_TARGET 46
+/** Get preprocessor Automatic Gain Control level (int32) */
+#define SPEEX_PREPROCESS_GET_AGC_TARGET 47
 
 #ifdef __cplusplus
 }

@@ -148,8 +148,7 @@ int   update_target
    ALLOC(e, nsf, spx_sig_t);
    
    /* FIXME: Do we still need to copy the target? */
-   for (i=0;i<nsf;i++)
-      t[i]=target[i];
+   SPEEX_COPY(t, target, nsf);
 
    compute_weighted_codebook(shape_cb, r, resp, resp2, E, shape_cb_size, subvect_size, stack);
 
@@ -343,11 +342,10 @@ int   update_target
       oind[i]=itmp+(2*i+1)*nb_subvect;
    }
    
-   for (i=0;i<nsf;i++)
-      t[i]=target[i];
+   SPEEX_COPY(t, target, nsf);
 
    for (j=0;j<N;j++)
-      speex_move(&ot[j][0], t, nsf*sizeof(spx_word16_t));
+      SPEEX_COPY(&ot[j][0], t, nsf);
 
    /* Pre-compute codewords response and energy */
    compute_weighted_codebook(shape_cb, r, resp, resp2, E, shape_cb_size, subvect_size, stack);
@@ -594,8 +592,7 @@ int   update_target
 
    for (i=0;i<nsf;i++)
       exc[i]+=SHL32(EXTEND32(tmp[i]),8);
-   for (i=0;i<nsf;i++)
-      target[i]=0;
+   SPEEX_MEMSET(target, 0, nsf);
 }
 
 

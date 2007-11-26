@@ -88,6 +88,12 @@
 #define WEIGHT_SHIFT 0
 #endif
 
+#ifdef FIXED_POINT
+#define WORD2INT(x) ((x) < -32767 ? -32768 : ((x) > 32766 ? 32767 : (x)))  
+#else
+#define WORD2INT(x) ((x) < -32767.5f ? -32768 : ((x) > 32766.5f ? 32767 : floor(.5+(x))))  
+#endif
+
 /* If enabled, the AEC will use a foreground filter and a background filter to be more robust to double-talk
    and difficult signals in general. The cost is an extra FFT and a matrix-vector multiply */
 #define TWO_PATH
@@ -393,7 +399,7 @@ static void dump_audio(const spx_int16_t *rec, const spx_int16_t *play, const sp
 #endif
 
 /** Creates a new echo canceller state */
-SpeexEchoState *speex_echo_state_init(int frame_size, int filter_length, int nb_mic, int nb_speakers)
+EXPORT SpeexEchoState *speex_echo_state_init(int frame_size, int filter_length, int nb_mic, int nb_speakers)
 {
    int i,N,M, C, K;
    SpeexEchoState *st = (SpeexEchoState *)speex_alloc(sizeof(SpeexEchoState));
@@ -516,7 +522,7 @@ SpeexEchoState *speex_echo_state_init(int frame_size, int filter_length, int nb_
 }
 
 /** Resets echo canceller state */
-void speex_echo_state_reset(SpeexEchoState *st)
+EXPORT void speex_echo_state_reset(SpeexEchoState *st)
 {
    int i, M, N, C, K;
    st->cancel_count=0;
@@ -575,7 +581,7 @@ void speex_echo_state_reset(SpeexEchoState *st)
 }
 
 /** Destroys an echo canceller state */
-void speex_echo_state_destroy(SpeexEchoState *st)
+EXPORT void speex_echo_state_destroy(SpeexEchoState *st)
 {
    spx_fft_destroy(st->fft_table);
 
@@ -617,7 +623,7 @@ void speex_echo_state_destroy(SpeexEchoState *st)
 #endif
 }
 
-void speex_echo_capture(SpeexEchoState *st, const spx_int16_t *rec, spx_int16_t *out)
+EXPORT void speex_echo_capture(SpeexEchoState *st, const spx_int16_t *rec, spx_int16_t *out)
 {
    int i;
    /*speex_warning_int("capture with fill level ", st->play_buf_pos/st->frame_size);*/
@@ -640,7 +646,7 @@ void speex_echo_capture(SpeexEchoState *st, const spx_int16_t *rec, spx_int16_t 
    }
 }
 
-void speex_echo_playback(SpeexEchoState *st, const spx_int16_t *play)
+EXPORT void speex_echo_playback(SpeexEchoState *st, const spx_int16_t *play)
 {
    /*speex_warning_int("playback with fill level ", st->play_buf_pos/st->frame_size);*/
    if (!st->play_buf_started)
@@ -667,13 +673,13 @@ void speex_echo_playback(SpeexEchoState *st, const spx_int16_t *play)
 }
 
 /** Performs echo cancellation on a frame (deprecated, last arg now ignored) */
-void speex_echo_cancel(SpeexEchoState *st, const spx_int16_t *in, const spx_int16_t *far_end, spx_int16_t *out, spx_int32_t *Yout)
+EXPORT void speex_echo_cancel(SpeexEchoState *st, const spx_int16_t *in, const spx_int16_t *far_end, spx_int16_t *out, spx_int32_t *Yout)
 {
    speex_echo_cancellation(st, in, far_end, out);
 }
 
 /** Performs echo cancellation on a frame */
-void speex_echo_cancellation(SpeexEchoState *st, const spx_int16_t *in, const spx_int16_t *far_end, spx_int16_t *out)
+EXPORT void speex_echo_cancellation(SpeexEchoState *st, const spx_int16_t *in, const spx_int16_t *far_end, spx_int16_t *out)
 {
    int i,j, chan, speak;
    int N,M, C, K;
@@ -958,20 +964,14 @@ void speex_echo_cancellation(SpeexEchoState *st, const spx_int16_t *in, const sp
 #else
          tmp_out = SUB32(EXTEND32(st->input[chan*st->frame_size+i]), EXTEND32(st->y[chan*N+i+st->frame_size]));
 #endif
-         /* Saturation */
-         if (tmp_out>32767)
-            tmp_out = 32767;
-         else if (tmp_out<-32768)
-            tmp_out = -32768;
          tmp_out = ADD32(tmp_out, EXTEND32(MULT16_16_P15(st->preemph, st->memE[chan])));
       /* This is an arbitrary test for saturation in the microphone signal */
          if (in[i*C+chan] <= -32000 || in[i*C+chan] >= 32000)
          {
-            tmp_out = 0;
          if (st->saturated == 0)
             st->saturated = 1;
          }
-         out[i*C+chan] = (spx_int16_t)tmp_out;
+         out[i*C+chan] = WORD2INT(tmp_out);
          st->memE[chan] = tmp_out;
       }
 
@@ -1216,7 +1216,7 @@ void speex_echo_get_residual(SpeexEchoState *st, spx_word32_t *residual_echo, in
    
 }
 
-int speex_echo_ctl(SpeexEchoState *st, int request, void *ptr)
+EXPORT int speex_echo_ctl(SpeexEchoState *st, int request, void *ptr)
 {
    switch(request)
    {
@@ -1243,6 +1243,29 @@ int speex_echo_ctl(SpeexEchoState *st, int request, void *ptr)
          break;
       case SPEEX_ECHO_GET_SAMPLING_RATE:
          (*(int*)ptr) = st->sampling_rate;
+         break;
+      case SPEEX_ECHO_GET_IMPULSE_RESPONSE_SIZE:
+         /*FIXME: Implement this for multiple channels */
+         *((spx_int32_t *)ptr) = st->M * st->frame_size;
+         break;
+      case SPEEX_ECHO_GET_IMPULSE_RESPONSE:
+      {
+         int M = st->M, N = st->window_size, n = st->frame_size, i, j;
+         spx_int32_t *filt = (spx_int32_t *) ptr;
+         for(j=0;j<M;j++)
+         {
+            /*FIXME: Implement this for multiple channels */
+#ifdef FIXED_POINT
+            for (i=0;i<N;i++)
+               st->wtmp2[i] = EXTRACT16(PSHR32(st->W[j*N+i],16+NORMALIZE_SCALEDOWN));
+            spx_ifft(st->fft_table, st->wtmp2, st->wtmp);
+#else
+            spx_ifft(st->fft_table, &st->W[j*N], st->wtmp);
+#endif
+            for(i=0;i<n;i++)
+               filt[j*n+i] = PSHR32(MULT16_16(32767,st->wtmp[i]), WEIGHT_SHIFT-NORMALIZE_SCALEDOWN);
+         }
+      }
          break;
       default:
          speex_warning_int("Unknown speex_echo_ctl request: ", request);

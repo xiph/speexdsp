@@ -48,22 +48,22 @@
 
 
 
-void *speex_encoder_init(const SpeexMode *mode)
+EXPORT void *speex_encoder_init(const SpeexMode *mode)
 {
    return mode->enc_init(mode);
 }
 
-void *speex_decoder_init(const SpeexMode *mode)
+EXPORT void *speex_decoder_init(const SpeexMode *mode)
 {
    return mode->dec_init(mode);
 }
 
-void speex_encoder_destroy(void *state)
+EXPORT void speex_encoder_destroy(void *state)
 {
    (*((SpeexMode**)state))->enc_destroy(state);
 }
 
-void speex_decoder_destroy(void *state)
+EXPORT void speex_decoder_destroy(void *state)
 {
    (*((SpeexMode**)state))->dec_destroy(state);
 }
@@ -85,7 +85,7 @@ int speex_decode_native(void *state, SpeexBits *bits, spx_word16_t *out)
 #ifdef FIXED_POINT
 
 #ifndef DISABLE_FLOAT_API
-int speex_encode(void *state, float *in, SpeexBits *bits)
+EXPORT int speex_encode(void *state, float *in, SpeexBits *bits)
 {
    int i;
    spx_int32_t N;
@@ -104,7 +104,7 @@ int speex_encode(void *state, float *in, SpeexBits *bits)
 }
 #endif /* #ifndef DISABLE_FLOAT_API */
 
-int speex_encode_int(void *state, spx_int16_t *in, SpeexBits *bits)
+EXPORT int speex_encode_int(void *state, spx_int16_t *in, SpeexBits *bits)
 {
    SpeexMode *mode;
    mode = *(SpeexMode**)state;
@@ -112,7 +112,7 @@ int speex_encode_int(void *state, spx_int16_t *in, SpeexBits *bits)
 }
 
 #ifndef DISABLE_FLOAT_API
-int speex_decode(void *state, SpeexBits *bits, float *out)
+EXPORT int speex_decode(void *state, SpeexBits *bits, float *out)
 {
    int i, ret;
    spx_int32_t N;
@@ -125,7 +125,7 @@ int speex_decode(void *state, SpeexBits *bits, float *out)
 }
 #endif /* #ifndef DISABLE_FLOAT_API */
 
-int speex_decode_int(void *state, SpeexBits *bits, spx_int16_t *out)
+EXPORT int speex_decode_int(void *state, SpeexBits *bits, spx_int16_t *out)
 {
    SpeexMode *mode = *(SpeexMode**)state;
    return (mode)->dec(state, bits, out);
@@ -133,12 +133,12 @@ int speex_decode_int(void *state, SpeexBits *bits, spx_int16_t *out)
 
 #else
 
-int speex_encode(void *state, float *in, SpeexBits *bits)
+EXPORT int speex_encode(void *state, float *in, SpeexBits *bits)
 {
    return (*((SpeexMode**)state))->enc(state, in, bits);
 }
 
-int speex_encode_int(void *state, spx_int16_t *in, SpeexBits *bits)
+EXPORT int speex_encode_int(void *state, spx_int16_t *in, SpeexBits *bits)
 {
    int i;
    spx_int32_t N;
@@ -149,12 +149,12 @@ int speex_encode_int(void *state, spx_int16_t *in, SpeexBits *bits)
    return (*((SpeexMode**)state))->enc(state, float_in, bits);
 }
 
-int speex_decode(void *state, SpeexBits *bits, float *out)
+EXPORT int speex_decode(void *state, SpeexBits *bits, float *out)
 {
    return (*((SpeexMode**)state))->dec(state, bits, out);
 }
 
-int speex_decode_int(void *state, SpeexBits *bits, spx_int16_t *out)
+EXPORT int speex_decode_int(void *state, SpeexBits *bits, spx_int16_t *out)
 {
    int i;
    spx_int32_t N;
@@ -177,12 +177,12 @@ int speex_decode_int(void *state, SpeexBits *bits, spx_int16_t *out)
 
 
 
-int speex_encoder_ctl(void *state, int request, void *ptr)
+EXPORT int speex_encoder_ctl(void *state, int request, void *ptr)
 {
    return (*((SpeexMode**)state))->enc_ctl(state, request, ptr);
 }
 
-int speex_decoder_ctl(void *state, int request, void *ptr)
+EXPORT int speex_decoder_ctl(void *state, int request, void *ptr)
 {
    return (*((SpeexMode**)state))->dec_ctl(state, request, ptr);
 }
@@ -215,7 +215,7 @@ int nb_mode_query(const void *mode, int request, void *ptr)
 
 
 
-int speex_lib_ctl(int request, void *ptr)
+EXPORT int speex_lib_ctl(int request, void *ptr)
 {
    switch (request)
    {

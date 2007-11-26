@@ -354,10 +354,8 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
    speex_encode_native(st->st_low, low, bits);
 
    high = high - (st->windowSize-st->frame_size);
-   for (i=0;i<st->windowSize-st->frame_size;i++)
-      high[i] = st->high[i];
-   for (i=0;i<st->windowSize-st->frame_size;i++)
-      st->high[i] = high[i+st->frame_size];
+   SPEEX_COPY(high, st->high, st->windowSize-st->frame_size);
+   SPEEX_COPY(st->high, &high[st->frame_size], st->windowSize-st->frame_size);
    
 
    ALLOC(low_pi_gain, st->nbSubframes, spx_word32_t);
@@ -690,8 +688,7 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
          signal_div(target, target, scale, st->subframeSize);
 
          /* Reset excitation */
-         for (i=0;i<st->subframeSize;i++)
-            innov[i]=0;
+         SPEEX_MEMSET(innov, 0, st->subframeSize);
 
          /*print_vec(target, st->subframeSize, "\ntarget");*/
          SUBMODE(innovation_quant)(target, st->interp_qlpc, bw_lpc1, bw_lpc2, 
@@ -705,8 +702,7 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
             char *tmp_stack=stack;
             VARDECL(spx_sig_t *innov2);
             ALLOC(innov2, st->subframeSize, spx_sig_t);
-            for (i=0;i<st->subframeSize;i++)
-               innov2[i]=0;
+            SPEEX_MEMSET(innov2, 0, st->subframeSize);
             for (i=0;i<st->subframeSize;i++)
                target[i]=MULT16_16_P13(QCONST16(2.5f,13), target[i]);
 
@@ -997,8 +993,7 @@ int sb_decode(void *state, SpeexBits *bits, void *vout)
       if (st->innov_save)
       {
          innov_save = st->innov_save+2*offset;
-         for (i=0;i<2*st->subframeSize;i++)
-            innov_save[i]=0;
+         SPEEX_MEMSET(innov_save, 0, 2*st->subframeSize);
       }
       
       /* LSP interpolation */
@@ -1027,8 +1022,7 @@ int sb_decode(void *state, SpeexBits *bits, void *vout)
          filter_ratio=(rl+.01)/(rh+.01);
 #endif
       
-      for (i=0;i<st->subframeSize;i++)
-         exc[i]=0;
+      SPEEX_MEMSET(exc, 0, st->subframeSize);
       if (!SUBMODE(innovation_unquant))
       {
          spx_word32_t g;
@@ -1066,8 +1060,7 @@ int sb_decode(void *state, SpeexBits *bits, void *vout)
             char *tmp_stack=stack;
             VARDECL(spx_sig_t *innov2);
             ALLOC(innov2, st->subframeSize, spx_sig_t);
-            for (i=0;i<st->subframeSize;i++)
-               innov2[i]=0;
+            SPEEX_MEMSET(innov2, 0, st->subframeSize);
             SUBMODE(innovation_unquant)(innov2, SUBMODE(innovation_params), st->subframeSize, 
                                         bits, stack, &st->seed);
             signal_mul(innov2, innov2, MULT16_32_P15(QCONST16(0.4f,15),scale), st->subframeSize);
@@ -1084,9 +1077,7 @@ int sb_decode(void *state, SpeexBits *bits, void *vout)
             innov_save[2*i]=EXTRACT16(PSHR32(exc[i],SIG_SHIFT));
       }
       
-      for (i=0;i<st->subframeSize;i++)
-         sp[i]=st->excBuf[i];
-      iir_mem16(sp, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, 
+      iir_mem16(st->excBuf, st->interp_qlpc, sp, st->subframeSize, st->lpcSize, 
                st->mem_sp, stack);
       for (i=0;i<st->subframeSize;i++)
          st->excBuf[i]=EXTRACT16(PSHR32(exc[i],SIG_SHIFT));
