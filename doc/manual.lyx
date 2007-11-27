@@ -922,7 +922,7 @@ plexity tradeoff.
 \end_layout
 
 \begin_layout Chapter
-Compiling
+Compiling and Porting
 \end_layout
 
 \begin_layout Standard
@@ -1034,11 +1034,11 @@ Speex is known to compile and work on a large number of architectures, both
  In general, any architecture that can natively compute the multiplication
  of two signed 16-bit numbers (32-bit result) and runs at a sufficient clock
  rate (architecture-dependent) is capable of running Speex.
- Architectures that are 
+ Architectures on which Speex is 
 \series bold
 known
 \series default
- to be supported (it probably works on many others) are:
+ to work (it probably works on many others) are:
 \end_layout
 
 \begin_layout Itemize
@@ -1059,6 +1059,10 @@ ARM
 
 \begin_layout Itemize
 Blackfin
+\end_layout
+
+\begin_layout Itemize
+Coldfire (68k family)
 \end_layout
 
 \begin_layout Itemize
@@ -1204,6 +1208,21 @@ status collapsed
 
 \begin_layout Standard
 
+vq_nbest()
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
 pitch_xcorr()
 \end_layout
 
@@ -1225,6 +1244,48 @@ interp_pitch()
 \end_inset
 
 
+\end_layout
+
+\begin_layout Standard
+The filtering functions 
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+filter_mem16()
+\end_layout
+
+\end_inset
+
+ and 
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+iir_mem16()
+\end_layout
+
+\end_inset
+
+ are implemented in the direct form II transposed (DF2T).
+ However, for architectures based on multiply-accumulate (MAC), DF2T requires
+ frequent reload of the accumulator, which can make the code very slow.
+ For these architectures (e.g.
+ Blackfin and Coldfire), a better approach is to implement those functions
+ as direct form I (DF1), which is easier to express in terms of MAC.
+ When doing that however, 
+\series bold
+it is important to make sure that the DF1 implementation still behaves like
+ the original DF2T behaviour when it comes to filter values
+\series default
+.
+ This is necessary because the filter is time-varrying and must compute
+ exactly the same value (not counting machine rounding) on any encoder or
+ decoder.
 \end_layout
 
 \begin_layout Subsection
@@ -2283,7 +2344,7 @@ spx_int32_t
 
 \end_inset
 
-)
+, default is on)
 \end_layout
 
 \begin_layout Description
@@ -2340,7 +2401,7 @@ spx_int32_t
 
 \end_inset
 
- from 0 to 10)
+ from 0 to 10, default is 8)
 \end_layout
 
 \begin_layout Description
@@ -2420,7 +2481,7 @@ spx_int32_t
 
 \end_inset
 
-)
+, default is off)
 \end_layout
 
 \begin_layout Description
@@ -2454,7 +2515,7 @@ SPEEX_SET_VBR_QUALITY
 \begin_inset Formula $\dagger$
 \end_inset
 
- Set the encoder VBR speech quality (float 0 to 10)
+ Set the encoder VBR speech quality (float 0.0 to 10.0, default is 8.0)
 \end_layout
 
 \begin_layout Description
@@ -2482,7 +2543,7 @@ spx_int32_t
 
 \end_inset
 
- from 1 to 10)
+ from 1 to 10, default is 2)
 \end_layout
 
 \begin_layout Description
@@ -2502,7 +2563,7 @@ spx_int32_t
 
 \end_inset
 
- from 1 to 10)
+ from 1 to 10, default is 2)
 \end_layout
 
 \begin_layout Description
@@ -2510,8 +2571,7 @@ SPEEX_SET_BITRATE
 \begin_inset Formula $\dagger$
 \end_inset
 
- Set the bit-rate to use to the closest value not exceeding the parameter
- (
+ Set the bit-rate to use the closest value not exceeding the parameter (
 \begin_inset listings
 inline true
 status collapsed
@@ -2602,7 +2662,7 @@ spx_int32_t
 
 \end_inset
 
-)
+, default is off)
 \end_layout
 
 \begin_layout Description
@@ -2648,7 +2708,7 @@ spx_int32_t
 
 \end_inset
 
-)
+, default is off)
 \end_layout
 
 \begin_layout Description
@@ -2811,11 +2871,11 @@ spx_int32_t
 
 \end_inset
 
-)
+, default is on)
 \end_layout
 
 \begin_layout Description
-SPEEX_TET_HIGHPASS Get the current high-pass filter status (
+SPEEX_GET_HIGHPASS Get the current high-pass filter status (
 \begin_inset listings
 inline true
 status collapsed
@@ -3893,19 +3953,19 @@ spx_int32_t
 \end_layout
 
 \begin_layout Description
-SPEEX_PREPROCESS_SET_DEREVERB_LEVEL
+SPEEX_PREPROCESS_SET_DEREVERB_LEVEL Not working yet, do not use
 \end_layout
 
 \begin_layout Description
-SPEEX_PREPROCESS_GET_DEREVERB_LEVEL
+SPEEX_PREPROCESS_GET_DEREVERB_LEVEL Not working yet, do not use
 \end_layout
 
 \begin_layout Description
-SPEEX_PREPROCESS_SET_DEREVERB_DECAY
+SPEEX_PREPROCESS_SET_DEREVERB_DECAY Not working yet, do not use
 \end_layout
 
 \begin_layout Description
-SPEEX_PREPROCESS_GET_DEREVERB_DECAY
+SPEEX_PREPROCESS_GET_DEREVERB_DECAY Not working yet, do not use
 \end_layout
 
 \begin_layout Description
@@ -4028,11 +4088,11 @@ spx_int32_t
 
 \begin_layout Description
 SPEEX_PREPROCESS_SET_ECHO_STATE Set the associated echo canceller for residual
- echo suppression (NULL for no residual echo suppression)
+ echo suppression (pointer or NULL for no residual echo suppression)
 \end_layout
 
 \begin_layout Description
-SPEEX_PREPROCESS_GET_ECHO_STATE Get the associated echo canceller
+SPEEX_PREPROCESS_GET_ECHO_STATE Get the associated echo canceller (pointer)
 \end_layout
 
 \begin_layout Section
@@ -4600,6 +4660,15 @@ typedef struct {
 \end_layout
 
 \begin_layout Standard
+As an example, for audio the timestamp field would be what is obtained from
+ the RTP timestamp field and the span would be the number of samples that
+ are encoded in the packet.
+ For Speex narrowband, span would be 160 if only one frame is included in
+ the packet.
+ 
+\end_layout
+
+\begin_layout Standard
 When a packet arrives, it need to be inserter into the jitter buffer by:
 \begin_inset listings
 inline false
@@ -4612,7 +4681,7 @@ JitterBufferPacket packet;
 
 \begin_layout Standard
 
-/* Fill in the packet fields */
+/* Fill in each field in the packet struct */
 \end_layout
 
 \begin_layout Standard
@@ -4663,7 +4732,7 @@ jitter_buffer_put()
  and 
 \begin_inset listings
 inline true
-status open
+status collapsed
 
 \begin_layout Standard
 
@@ -4715,6 +4784,49 @@ jitter_buffer_remaining_span(state, remaining);
 \end_inset
 
 
+\end_layout
+
+\begin_layout Standard
+The second argument is used to specify that we are still holding data that
+ has not been written to the playback device.
+ For instance, if 256 samples were needed by the soundcard (specified by
+ 
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+desired_span
+\end_layout
+
+\end_inset
+
+), but 
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+jitter_buffer_get()
+\end_layout
+
+\end_inset
+
+ returned 320 samples, we would have 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Standard
+
+remaining=64
+\end_layout
+
+\end_inset
+
+.
 \end_layout
 
 \begin_layout Section
@@ -4831,6 +4943,10 @@ out_length
 \begin_layout Standard
 It is also possible to process multiple channels at once.
  
+\end_layout
+
+\begin_layout Standard
+To be continued...
 \end_layout
 
 \begin_layout Section
