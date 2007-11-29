@@ -1506,6 +1506,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\libspeex\modes_wb.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\libspeex\nb_celp.c"
 				>
 			</File>
