@@ -3,6 +3,7 @@
 # Disable automatic dependency tracking if using other tools than gcc and gmake
 #AUTOMAKE_OPTIONS = no-dependencies
 
-SUBDIRS = libspeex libspeexdsp speexenc speexdec tests
+EXTRA_DIST = testdenoise.vcproj testecho.vcproj testenc.vcproj testenc_uwb.vcproj \
+             testenc_wb.vcproj testresample.vcproj
 
-EXTRA_DIST = libspeex.sln
+
