@@ -1,10 +1,10 @@
-<?xml version="1.0" encoding="Windows-1252"?>
+<?xml version="1.0" encoding="windows-1251"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8.00"
-	Name="libspeex"
-	ProjectGUID="{E972C52F-9E85-4D65-B19C-031E511E9DB4}"
-	RootNamespace="libspeex"
+	Name="libspeexdsp"
+	ProjectGUID="{E42FDC95-7243-4219-9EA4-ACCE4AB97197}"
+	RootNamespace="libspeexdsp"
 	Keyword="Win32Proj"
 	>
 	<Platforms>
@@ -66,7 +66,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="..\..\..\lib\libspeex.lib"
+				OutputFile="../../../lib/libspeexdsp.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -138,7 +138,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="..\..\..\lib\libspeex.lib"
+				OutputFile="../../../lib/libspeexdsp.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -211,7 +211,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="..\..\..\lib\libspeex.lib"
+				OutputFile="../../../lib/libspeexdsp.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -284,7 +284,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="..\..\..\lib\libspeex.lib"
+				OutputFile="../../../lib/libspeexdsp.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -357,12 +357,12 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile="..\..\..\bin\libspeex.dll"
-				ModuleDefinitionFile="..\..\libspeex.def"
+				OutputFile="..\..\..\bin\libspeexdsp.dll"
+				ModuleDefinitionFile="..\..\libspeexdsp.def"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
 				OptimizeForWindows98="1"
-				ImportLibrary="..\..\..\lib\libspeex.lib"
+				ImportLibrary="..\..\..\lib\libspeexdsp.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -437,7 +437,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="..\..\..\lib\libspeex.lib"
+				OutputFile="../../../lib/libspeexdsp.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -509,7 +509,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="..\..\..\lib\libspeex.lib"
+				OutputFile="../../../lib/libspeexdsp.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -575,7 +575,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="..\..\..\lib\libspeex.lib"
+				OutputFile="../../../lib/libspeexdsp.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -647,7 +647,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="..\..\..\lib\libspeex.lib"
+				OutputFile="../../../lib/libspeexdsp.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -721,12 +721,12 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile="..\..\..\bin\libspeex.dll"
-				ModuleDefinitionFile="..\..\libspeex.def"
+				OutputFile="..\..\..\bin\libspeexdsp.dll"
+				ModuleDefinitionFile="..\..\libspeexdsp.def"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
 				OptimizeForWindows98="1"
-				ImportLibrary="..\..\..\lib\libspeex.lib"
+				ImportLibrary="..\..\..\lib\libspeexdsp.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -800,7 +800,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="$(OutDir)/libspeex.lib"
+				OutputFile="$(OutDir)/libspeexdsp.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -881,7 +881,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="$(OutDir)/libspeex.lib"
+				OutputFile="$(OutDir)/libspeexdsp.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -962,7 +962,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="$(OutDir)/libspeex.lib"
+				OutputFile="$(OutDir)/libspeexdsp.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -1043,7 +1043,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="$(OutDir)/libspeex.lib"
+				OutputFile="$(OutDir)/libspeexdsp.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -1124,7 +1124,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				ModuleDefinitionFile="libspeex.def"
+				ModuleDefinitionFile="libspeexdsp.def"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
 				OptimizeForWindows98="1"
@@ -1201,7 +1201,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="$(OutDir)/libspeex.lib"
+				OutputFile="$(OutDir)/libspeexdsp.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -1282,7 +1282,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="$(OutDir)/libspeex.lib"
+				OutputFile="$(OutDir)/libspeexdsp.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -1356,7 +1356,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="$(OutDir)/libspeex.lib"
+				OutputFile="$(OutDir)/libspeexdsp.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -1437,7 +1437,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="$(OutDir)/libspeex.lib"
+				OutputFile="$(OutDir)/libspeexdsp.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -1469,127 +1469,47 @@
 	<Files>
 		<Filter
 			Name="Source Files"
-			Filter="cpp;c;cxx;odl;idl;hpj;bat;asm;asmx"
+			Filter="cpp;c;cc;cxx;odl;idl;hpj;bat;asm;asmx"
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath="..\..\..\libspeex\bits.c"
+				RelativePath="..\..\..\libspeex\buffer.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\libspeex\cb_search.c"
+				RelativePath="..\..\..\libspeex\fftwrap.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\libspeex\exc_10_16_table.c"
+				RelativePath="..\..\..\libspeex\filterbank.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\libspeex\exc_10_32_table.c"
+				RelativePath="..\..\..\libspeex\jitter.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\libspeex\exc_20_32_table.c"
+				RelativePath="..\..\..\libspeex\kiss_fft.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\libspeex\exc_5_256_table.c"
+				RelativePath="..\..\..\libspeex\kiss_fftr.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\libspeex\exc_5_64_table.c"
+				RelativePath="..\..\..\libspeex\mdf.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\libspeex\exc_8_128_table.c"
+				RelativePath="..\..\..\libspeex\preprocess.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\libspeex\filters.c"
+				RelativePath="..\..\..\libspeex\resample.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\libspeex\gain_table.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\libspeex\gain_table_lbr.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\libspeex\hexc_10_32_table.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\libspeex\hexc_table.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\libspeex\high_lsp_tables.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\libspeex\lpc.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\libspeex\lsp.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\libspeex\lsp_tables_nb.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\libspeex\ltp.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\libspeex\modes.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\libspeex\modes_wb.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\libspeex\nb_celp.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\libspeex\quant_lsp.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\libspeex\sb_celp.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\libspeex\speex.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\libspeex\speex_callbacks.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\libspeex\speex_header.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\libspeex\stereo.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\libspeex\vbr.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\libspeex\vq.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\libspeex\window.c"
+				RelativePath="..\..\..\libspeex\smallft.c"
 				>
 			</File>
 		</Filter>
@@ -1599,23 +1519,19 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
+				RelativePath="..\..\..\libspeex\_kiss_fft_guts.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\libspeex\arch.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\libspeex\cb_search.h"
+				RelativePath="..\..\..\libspeex\fftwrap.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\libspeex\cb_search_sse.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\libspeex\filters.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\libspeex\filters_sse.h"
+				RelativePath="..\..\..\libspeex\filterbank.h"
 				>
 			</File>
 			<File
@@ -1627,19 +1543,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\libspeex\lpc.h"
+				RelativePath="..\..\..\libspeex\kiss_fft.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\libspeex\lsp.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\libspeex\ltp.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\libspeex\ltp_sse.h"
+				RelativePath="..\..\..\libspeex\kiss_fftr.h"
 				>
 			</File>
 			<File
@@ -1647,45 +1555,21 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\libspeex\modes.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\libspeex\nb_celp.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\libspeex\os_support.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\libspeex\quant_lsp.h"
+				RelativePath="..\..\..\libspeex\pseudofloat.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\libspeex\sb_celp.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\libspeex\stack_alloc.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\libspeex\vbr.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\libspeex\vq.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\libspeex\vq_sse.h"
+				RelativePath="..\..\..\libspeex\smallft.h"
 				>
 			</File>
 		</Filter>
 		<Filter
 			Name="Resource Files"
-			Filter="rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx"
+			Filter="rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav"
 			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
 			>
 		</Filter>
@@ -1702,15 +1586,23 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\include\speex\speex_callbacks.h"
+				RelativePath="..\..\..\include\speex\speex_buffer.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\include\speex\speex_header.h"
+				RelativePath="..\..\..\include\speex\speex_echo.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\include\speex\speex_stereo.h"
+				RelativePath="..\..\..\include\speex\speex_jitter.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\include\speex\speex_preprocess.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\include\speex\speex_resampler.h"
 				>
 			</File>
 			<File
@@ -1723,7 +1615,7 @@
 			>
 		</File>
 		<File
-			RelativePath="..\..\libspeex.def"
+			RelativePath="..\..\libspeexdsp.def"
 			>
 		</File>
 	</Files>

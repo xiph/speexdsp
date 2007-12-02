@@ -123,7 +123,7 @@
 				PreprocessorDefinitions="_USE_SSE;WIN32;NDEBUG;_WINDOWS;_USRDLL;HAVE_CONFIG_H"
 				StringPooling="TRUE"
 				ExceptionHandling="FALSE"
-				RuntimeLibrary="2"
+				RuntimeLibrary="0"
 				BufferSecurityCheck="FALSE"
 				EnableEnhancedInstructionSet="1"
 				UsePrecompiledHeader="0"
