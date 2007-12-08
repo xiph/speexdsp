@@ -1,6 +1,6 @@
-/* Copyright (C) 2005 Psi Systems, Inc.
+/* Copyright (C) 2007 Psi Systems, Inc.
    Author:  Jean-Marc Valin 
-   File: user_misc.h
+   File: os_support_custom.h
    Memory Allocation overrides to allow user control rather than C alloc/free.
 
    Redistribution and use in source and binary forms, with or without
@@ -51,9 +51,10 @@ extern char *spxGlobalScratchPtr, *spxGlobalScratchEnd;
 
 /* Make sure that all structures are aligned to largest type */
 #define BLOCK_MASK      (sizeof(long double)-1)
+extern inline void speex_warning(const char *str);
 
 #define OVERRIDE_SPEEX_ALLOC
-void *speex_alloc (int size)
+static inline void *speex_alloc (int size)
 {
     void *ptr;
     
@@ -77,7 +78,7 @@ void *speex_alloc (int size)
 }
 
 #define OVERRIDE_SPEEX_ALLOC_SCRATCH
-void *speex_alloc_scratch (int size)
+static inline void *speex_alloc_scratch (int size)
 {
     void *ptr;
 
@@ -101,7 +102,7 @@ void *speex_alloc_scratch (int size)
 }
 
 #define OVERRIDE_SPEEX_REALLOC
-void *speex_realloc (void *ptr, int size)
+static inline void *speex_realloc (void *ptr, int size)
 {
 #ifdef VERBOSE_ALLOC
    speex_warning("realloc attempted, not allowed");
@@ -110,14 +111,14 @@ void *speex_realloc (void *ptr, int size)
 }
 
 #define OVERRIDE_SPEEX_FREE
-void speex_free (void *ptr)
+static inline void speex_free (void *ptr)
 {
 #ifdef VERBOSE_ALLOC
    speex_warning("at speex_free");
 #endif
 }
 #define OVERRIDE_SPEEX_FREE_SCRATCH
-void speex_free_scratch (void *ptr)
+static inline void speex_free_scratch (void *ptr)
 {
 #ifdef VERBOSE_ALLOC
    speex_warning("at speex_free_scratch");
