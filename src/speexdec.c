@@ -231,6 +231,8 @@ FILE *out_file_open(char *outFile, int rate, int *channels)
       {
 #if defined WIN32 || defined _WIN32
          _setmode(_fileno(stdout), _O_BINARY);
+#elif defined OS2
+         _fsetmode(stdout,"b");
 #endif
          fout=stdout;
       }

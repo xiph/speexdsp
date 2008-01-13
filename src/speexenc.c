@@ -514,6 +514,8 @@ int main(int argc, char **argv)
    {
 #if defined WIN32 || defined _WIN32
          _setmode(_fileno(stdin), _O_BINARY);
+#elif defined OS2
+         _fsetmode(stdin,"b");
 #endif
       fin=stdin;
    }
