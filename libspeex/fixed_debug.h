@@ -161,7 +161,7 @@ static inline int SHL32(long long a, int shift)
 }
 
 #define PSHR16(a,shift) (SHR16(ADD16((a),((1<<((shift))>>1))),shift))
-#define PSHR32(a,shift) (SHR32(ADD32((a),((1<<((shift))>>1))),shift))
+#define PSHR32(a,shift) (SHR32(ADD32((a),((EXTEND32(1)<<((shift))>>1))),shift))
 #define VSHR32(a, shift) (((shift)>0) ? SHR32(a, shift) : SHL32(a, -(shift)))
 
 #define SATURATE16(x,a) (((x)>(a) ? (a) : (x)<-(a) ? -(a) : (x)))
