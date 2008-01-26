@@ -1,14 +1,13 @@
-For 1.2beta3:
-- Control delay in new AEC API.
-- NaN checks?
-- Better error reporting
-
 For 1.2:
 Major points:
 - Make documentation match the actual code (especially jitter buffer, AEC and preprocessor)
 - Get AGC to work in fixed-point even if not totally converted
 - Stabilise all APIs (need feedback)
 - Short-term estimate in jitter buffer
+- Control delay in new AEC API.
+- NaN checks?
+- Better error reporting
+- Make kiss-fft 32-bit safe
 
 Minor issues:
 - Fix last frame of speexenc
