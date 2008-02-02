@@ -279,7 +279,7 @@ static inline int _MULT16_32_QX(int a, long long b, int Q, char *file, int line)
    {
       fprintf (stderr, "MULT16_32_Q%d: inputs are not short+int: %d %d in %s: line %d\n", Q, (int)a, (int)b, file, line);
    }
-   if (ABS32(b)>=(1<<(15+Q)))
+   if (ABS32(b)>=(EXTEND32(1)<<(15+Q)))
       fprintf (stderr, "MULT16_32_Q%d: second operand too large: %d %d in %s: line %d\n", Q, (int)a, (int)b, file, line);      
    res = (((long long)a)*(long long)b) >> Q;
    if (!VERIFY_INT(res))
@@ -295,9 +295,9 @@ static inline int MULT16_32_PX(int a, long long b, int Q)
    {
       fprintf (stderr, "MULT16_32_P%d: inputs are not short+int: %d %d\n", Q, (int)a, (int)b);
    }
-   if (ABS32(b)>=(1<<(15+Q)))
+   if (ABS32(b)>=(EXTEND32(1)<<(15+Q)))
       fprintf (stderr, "MULT16_32_Q%d: second operand too large: %d %d\n", Q, (int)a, (int)b);      
-   res = ((((long long)a)*(long long)b) + ((1<<Q)>>1))>> Q;
+   res = ((((long long)a)*(long long)b) + ((EXTEND32(1)<<Q)>>1))>> Q;
    if (!VERIFY_INT(res))
       fprintf (stderr, "MULT16_32_P%d: output is not int: %d*%d=%d\n", Q, (int)a, (int)b,(int)res);
    spx_mips+=5;
