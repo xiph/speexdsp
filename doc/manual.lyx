@@ -200,7 +200,7 @@ Email the author privately at jean-marc.valin@usherbrooke.ca
 \series bold
 only
 \series default
- for private/delicate topics you do not wish to discuss publically.
+ for private/delicate topics you do not wish to discuss publicly.
 \end_layout
 
 \begin_layout Standard
@@ -367,7 +367,7 @@ The sampling rate expressed in Hertz (Hz) is the number of samples taken
  the sampling theorem.
  Speex is mainly designed for three different sampling rates: 8 kHz, 16
  kHz, and 32 kHz.
- These are respectively refered to as narrowband
+ These are respectively referred to as narrowband
 \begin_inset LatexCommand index
 name "narrowband"
 
@@ -449,9 +449,9 @@ name "quality"
 \end_layout
 
 \begin_layout Standard
-Speex is a lossy codec, which means that it achives compression at the expense
- of fidelity of the input speech signal.
- Unlike some other speech codecs, it is possible to control the tradeoff
+Speex is a lossy codec, which means that it achieves compression at the
+ expense of fidelity of the input speech signal.
+ Unlike some other speech codecs, it is possible to control the trade-off
  made between quality and bit-rate.
  The Speex encoding process is controlled most of the time by a quality
  parameter that ranges from 0 to 10.
@@ -526,7 +526,7 @@ difficulty
  In the example of Speex, sounds like vowels and high-energy transients
  require a higher bit-rate to achieve good quality, while fricatives (e.g.
  s,f sounds) can be coded adequately with less bits.
- For this reason, VBR can achive lower bit-rate for the same quality, or
+ For this reason, VBR can achieve lower bit-rate for the same quality, or
  a better quality for a certain bit-rate.
  Despite its advantages, VBR has two main drawbacks: first, by only specifying
  quality, there's no guaranty about the final average bit-rate.
@@ -1283,9 +1283,8 @@ it is important to make sure that the DF1 implementation still behaves like
  the original DF2T behaviour when it comes to filter values
 \series default
 .
- This is necessary because the filter is time-varrying and must compute
- exactly the same value (not counting machine rounding) on any encoder or
- decoder.
+ This is necessary because the filter is time-varying and must compute exactly
+ the same value (not counting machine rounding) on any encoder or decoder.
 \end_layout
 
 \begin_layout Subsection
@@ -1371,7 +1370,7 @@ In this case, one must be careful with threads
 .
  In addition to that, by redefining the NB_ENC_STACK and NB_DEC_STACK (or
  similar for wideband), it is possible to only allocate memory for a scenario
- that is known in advange.
+ that is known in advance.
  In this case, it is important to measure the amount of memory required
  for the specific sampling rate, bit-rate and complexity level being used.
 \end_layout
@@ -2293,7 +2292,7 @@ _ctl()
 \series bold
 not type safe
 \series default
-, and shoud thus be used with care.
+, and should thus be used with care.
  The type 
 \begin_inset listings
 inline true
@@ -3131,7 +3130,7 @@ Asks (if 1) the encoder to be less
 \begin_inset Quotes eld
 \end_inset
 
-agressive
+aggressive
 \begin_inset Quotes erd
 \end_inset
 
@@ -3280,7 +3279,7 @@ Asks encoder to switch to quality N for VBR
 \begin_inset Text
 
 \begin_layout Standard
-Request acknowloedge (0=no, 1=all, 2=only for in-band data)
+Request acknowledge (0=no, 1=all, 2=only for in-band data)
 \end_layout
 
 \end_inset
@@ -4315,7 +4314,7 @@ select()
 \emph default
  system call), it can be difficult to keep track of what input_frame comes
  with what echo_frame.
- Instead, the playback comtext/thread can simply call:
+ Instead, the playback context/thread can simply call:
 \end_layout
 
 \begin_layout Standard
@@ -6512,7 +6511,7 @@ name "line spectral pair"
 \begin_layout Standard
 To make Speex more robust to packet loss, no prediction is applied on the
  LSP coefficients prior to quantization.
- The LSPs are encoded using vector quantizatin (VQ) with 30 bits for higher
+ The LSPs are encoded using vector quantization (VQ) with 30 bits for higher
  quality modes and 18 bits for lower quality.
 \end_layout
 
@@ -8098,7 +8097,7 @@ reference "cap:quality_vs_bps"
 \end_inset
 
  presents my own subjective opinion on it.
- It sould be noted that different people will perceive the quality differently
+ It should be noted that different people will perceive the quality differently
  and that the person that designed the codec often has a bias (one way or
  another) when it comes to subjective evaluation.
  Last thing, it should be noted that for most codecs (including Speex) encoding
