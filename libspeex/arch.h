@@ -232,7 +232,7 @@ typedef float spx_word32_t;
 
 
 #ifdef FIXED_DEBUG
-long long spx_mips=0;
+extern long long spx_mips;
 #endif
 
 

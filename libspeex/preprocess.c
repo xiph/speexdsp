@@ -1183,3 +1183,8 @@ int speex_preprocess_ctl(SpeexPreprocessState *state, int request, void *ptr)
    }
    return 0;
 }
+
+#ifdef FIXED_DEBUG
+long long spx_mips=0;
+#endif
+
