@@ -1179,7 +1179,18 @@ int speex_preprocess_ctl(SpeexPreprocessState *state, int request, void *ptr)
       (*(spx_int32_t*)ptr) = (spx_int32_t) (st->agc_gain * 100.f);
       break;
 #endif
-
+   case SPEEX_PREPROCESS_GET_PSD_SIZE:
+   case SPEEX_PREPROCESS_GET_NOISE_PSD_SIZE:
+      (*(spx_int32_t*)ptr) = st->ps_size;
+      break;
+   case SPEEX_PREPROCESS_GET_PSD:
+      for(i=0;i<st->ps_size;i++)
+      	((spx_int32_t *)ptr)[i] = (spx_int32_t) st->ps[i];
+      break;
+   case SPEEX_PREPROCESS_GET_NOISE_PSD:
+      for(i=0;i<st->ps_size;i++)
+      	((spx_int32_t *)ptr)[i] = (spx_int32_t) PSHR32(st->noise[i], NOISE_SHIFT);
+      break;
    default:
       speex_warning_int("Unknown speex_preprocess_ctl request: ", request);
       return -1;

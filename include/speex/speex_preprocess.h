@@ -186,6 +186,22 @@ int speex_preprocess_ctl(SpeexPreprocessState *st, int request, void *ptr);
 /** Get current gain (int32 percent) */
 #define SPEEX_PREPROCESS_GET_AGC_GAIN 35
 
+/*  Can't set spectrum size */
+/** Get spectrum size for power spectrum (int32) */
+#define SPEEX_PREPROCESS_GET_PSD_SIZE 37
+
+/*  Can't set power spectrum */
+/** Get power spectrum (int32[] of squared values) */
+#define SPEEX_PREPROCESS_GET_PSD 39
+
+/*  Can't set noise size */
+/** Get spectrum size for noise estimate (int32)  */
+#define SPEEX_PREPROCESS_GET_NOISE_PSD_SIZE 41
+
+/*  Can't set noise estimate */
+/** Get noise estimate (int32[] of squared values) */
+#define SPEEX_PREPROCESS_GET_NOISE_PSD 43
+
 #ifdef __cplusplus
 }
 #endif
