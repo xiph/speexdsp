@@ -83,7 +83,7 @@ TODO:
 struct TimingBuffer {
    int filled;                         /**< Number of entries occupied in "timing" and "counts"*/
    int curr_count;                     /**< Number of packet timings we got (including those we discarded) */
-   spx_int16_t timing[MAX_TIMINGS];    /**< Sorted list of all timings ("latest" packets first) */
+   spx_int32_t timing[MAX_TIMINGS];    /**< Sorted list of all timings ("latest" packets first) */
    spx_int16_t counts[MAX_TIMINGS];    /**< Order the packets were put in (will be used for short-term estimate) */
 };
 
