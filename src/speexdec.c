@@ -365,6 +365,7 @@ static void *process_header(ogg_packet *op, spx_int32_t enh_enabled, spx_int32_t
 
    if (!(*channels==1))
    {
+      channels = 2;
       callback.callback_id = SPEEX_INBAND_STEREO;
       callback.func = speex_std_stereo_request_handler;
       callback.data = stereo;

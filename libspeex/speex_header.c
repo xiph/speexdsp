@@ -178,6 +178,11 @@ SpeexHeader *speex_packet_to_header(char *packet, int size)
    ENDIAN_SWITCH(le_header->frames_per_packet);
    ENDIAN_SWITCH(le_header->extra_headers);
 
+   if (le_header->nb_channels>2)
+      le_header->nb_channels = 2;
+   if (le_header->nb_channels<1)
+      le_header->nb_channels = 1;
+
    return le_header;
 
 }
