@@ -51,6 +51,14 @@ extern "C" {
 /** Get sampling rate */
 #define SPEEX_ECHO_GET_SAMPLING_RATE 25
 
+/* Can't set window sizes */
+/** Get size of impulse response (int32) */
+#define SPEEX_ECHO_GET_IMPULSE_RESPONSE_SIZE 27
+
+/* Can't set window content */
+/** Get impulse response (int32[]) */
+#define SPEEX_ECHO_GET_IMPULSE_RESPONSE 29
+
 /** Internal echo canceller state. Should never be accessed directly. */
 struct SpeexEchoState_;
 

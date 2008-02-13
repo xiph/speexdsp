@@ -1169,6 +1169,27 @@ int speex_echo_ctl(SpeexEchoState *st, int request, void *ptr)
       case SPEEX_ECHO_GET_SAMPLING_RATE:
          (*(int*)ptr) = st->sampling_rate;
          break;
+      case SPEEX_ECHO_GET_IMPULSE_RESPONSE_SIZE:
+         *((spx_int32_t *)ptr) = st->M * st->frame_size;
+         break;
+      case SPEEX_ECHO_GET_IMPULSE_RESPONSE:
+      {
+         int M = st->M, N = st->window_size, n = st->frame_size, i, j;
+         spx_int32_t *filt = (spx_int32_t *) ptr;
+         for(j=0;j<M;j++)
+         {
+#ifdef FIXED_POINT
+            for (i=0;i<N;i++)
+               st->wtmp2[i] = EXTRACT16(PSHR32(st->W[j*N+i],16));
+            spx_ifft(st->fft_table, st->wtmp2, st->wtmp);
+#else
+            spx_ifft(st->fft_table, &st->W[j*N], st->wtmp);
+#endif
+            for(i=0;i<n;i++)
+               filt[j*n+i] = PSHR32(MULT16_16(32767,st->wtmp[i]), WEIGHT_SHIFT);
+         }
+      }
+         break;
       default:
          speex_warning_int("Unknown speex_echo_ctl request: ", request);
          return -1;
