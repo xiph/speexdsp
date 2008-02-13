@@ -202,6 +202,10 @@ int speex_preprocess_ctl(SpeexPreprocessState *st, int request, void *ptr);
 /** Get noise estimate (int32[] of squared values) */
 #define SPEEX_PREPROCESS_GET_NOISE_PSD 43
 
+/* Can't set speech probability */
+/** Get speech probability in last frame (int32).  */
+#define SPEEX_PREPROCESS_GET_PROB 45
+
 #ifdef __cplusplus
 }
 #endif

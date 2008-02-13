@@ -199,6 +199,8 @@ struct SpeexPreprocessState_ {
    int    echo_suppress_active;
    SpeexEchoState *echo_state;
    
+   spx_word16_t	speech_prob;  /**< Probability last frame was speech */
+
    /* DSP-related arrays */
    spx_word16_t *frame;      /**< Processing frame (2*ps_size) */
    spx_word16_t *ft;         /**< Processing frame in freq domain (2*ps_size) */
@@ -994,9 +996,10 @@ int speex_preprocess_run(SpeexPreprocessState *st, spx_int16_t *x)
       st->outbuf[i] = st->frame[st->frame_size+i];
 
    /* FIXME: This VAD is a kludge */
+   st->speech_prob = Pframe;
    if (st->vad_enabled)
    {
-      if (Pframe > st->speech_prob_start || (st->was_speech && Pframe > st->speech_prob_continue))
+      if (st->speech_prob > st->speech_prob_start || (st->was_speech && st->speech_prob > st->speech_prob_continue))
       {
          st->was_speech=1;
          return 1;
@@ -1190,6 +1193,9 @@ int speex_preprocess_ctl(SpeexPreprocessState *state, int request, void *ptr)
    case SPEEX_PREPROCESS_GET_NOISE_PSD:
       for(i=0;i<st->ps_size;i++)
       	((spx_int32_t *)ptr)[i] = (spx_int32_t) PSHR32(st->noise[i], NOISE_SHIFT);
+      break;
+   case SPEEX_PREPROCESS_GET_PROB:
+      (*(spx_int32_t*)ptr) = MULT16_16_Q15(st->speech_prob, 100);
       break;
    default:
       speex_warning_int("Unknown speex_preprocess_ctl request: ", request);
