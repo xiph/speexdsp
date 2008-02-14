@@ -639,9 +639,9 @@ int main(int argc, char **argv)
          last_granule = page_granule;
          /*Extract all available packets*/
          packet_no=0;
-         while (!eos && ogg_stream_packetout(&os, &op) == 1 && op.bytes>=5)
+         while (!eos && ogg_stream_packetout(&os, &op) == 1)
          {
-	    if (!memcmp(op.packet, "Speex", 5)) {
+	    if (op.bytes>=5 && !memcmp(op.packet, "Speex", 5)) {
 	       speex_serialno = os.serialno;
 	    }
 	    if (speex_serialno == -1 || os.serialno != speex_serialno)
