@@ -106,7 +106,7 @@ static void print_comments(char *comments, int length)
    end = c+length;
    len=readint(c, 0);
    c+=4;
-   if (c+len>end)
+   if (len < 0 || c+len>end)
    {
       fprintf (stderr, "Invalid/corrupted comments\n");
       return;
@@ -130,7 +130,7 @@ static void print_comments(char *comments, int length)
       }
       len=readint(c, 0);
       c+=4;
-      if (c+len>end)
+      if (len < 0 || c+len>end)
       {
          fprintf (stderr, "Invalid/corrupted comments\n");
          return;
@@ -365,7 +365,7 @@ static void *process_header(ogg_packet *op, spx_int32_t enh_enabled, spx_int32_t
 
    if (!(*channels==1))
    {
-      channels = 2;
+      *channels = 2;
       callback.callback_id = SPEEX_INBAND_STEREO;
       callback.func = speex_std_stereo_request_handler;
       callback.data = stereo;
