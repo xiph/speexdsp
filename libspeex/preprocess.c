@@ -236,7 +236,6 @@ struct SpeexPreprocessState_ {
    float *loudness_weight;   /**< Perceptual loudness curve */
    float  loudness;          /**< Loudness estimate */
    float  agc_gain;          /**< Current AGC gain */
-   int    nb_loudness_adapt; /**< Number of frames used for loudness adaptation so far */
    float  max_gain;          /**< Maximum gain allowed */
    float  max_increase_step; /**< Maximum increase in gain from one frame to another */
    float  max_decrease_step; /**< Maximum decrease in gain from one frame to another */
@@ -516,7 +515,6 @@ SpeexPreprocessState *speex_preprocess_state_init(int frame_size, int sampling_r
    /*st->loudness = pow(AMP_SCALE*st->agc_level,LOUDNESS_EXP);*/
    st->loudness = 1e-15;
    st->agc_gain = 1;
-   st->nb_loudness_adapt = 0;
    st->max_gain = 30;
    st->max_increase_step = exp(0.11513f * 12.*st->frame_size / st->sampling_rate);
    st->max_decrease_step = exp(-0.11513f * 40.*st->frame_size / st->sampling_rate);
@@ -585,7 +583,6 @@ static void speex_compute_agc(SpeexPreprocessState *st, spx_word16_t Pframe, spx
    loudness*2 > pow(st->loudness, 1.0/LOUDNESS_EXP))*/
    if (Pframe>.3f)
    {
-      st->nb_loudness_adapt++;
       /*rate=2.0f*Pframe*Pframe/(1+st->nb_loudness_adapt);*/
       rate = .03*Pframe*Pframe;
       st->loudness = (1-rate)*st->loudness + (rate)*pow(AMP_SCALE*loudness, LOUDNESS_EXP);
