@@ -20,8 +20,8 @@ int main()
    speex_preprocess_ctl(st, SPEEX_PREPROCESS_SET_DENOISE, &i);
    i=0;
    speex_preprocess_ctl(st, SPEEX_PREPROCESS_SET_AGC, &i);
-   f=8000;
-   speex_preprocess_ctl(st, SPEEX_PREPROCESS_SET_AGC_LEVEL, &f);
+   i=8000;
+   speex_preprocess_ctl(st, SPEEX_PREPROCESS_SET_AGC_LEVEL, &i);
    i=0;
    speex_preprocess_ctl(st, SPEEX_PREPROCESS_SET_DEREVERB, &i);
    f=.0;

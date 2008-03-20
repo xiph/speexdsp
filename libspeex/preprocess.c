@@ -1067,14 +1067,14 @@ int speex_preprocess_ctl(SpeexPreprocessState *state, int request, void *ptr)
       break;
 #ifndef DISABLE_FLOAT_API
    case SPEEX_PREPROCESS_SET_AGC_LEVEL:
-      st->agc_level = (*(float*)ptr);
+      st->agc_level = (*(spx_int32_t*)ptr);
       if (st->agc_level<1)
          st->agc_level=1;
       if (st->agc_level>32768)
          st->agc_level=32768;
       break;
    case SPEEX_PREPROCESS_GET_AGC_LEVEL:
-      (*(float*)ptr) = st->agc_level;
+      (*(spx_int32_t*)ptr) = st->agc_level;
       break;
 #endif /* #ifndef DISABLE_FLOAT_API */
    case SPEEX_PREPROCESS_SET_AGC_INCREMENT:
@@ -1176,7 +1176,7 @@ int speex_preprocess_ctl(SpeexPreprocessState *state, int request, void *ptr)
       (*(spx_int32_t*)ptr) = pow(st->loudness, 1.0/LOUDNESS_EXP);
       break;
    case SPEEX_PREPROCESS_GET_AGC_GAIN:
-      (*(spx_int32_t*)ptr) = (spx_int32_t) (st->agc_gain * 100.f);
+      (*(spx_int32_t*)ptr) = floor(.5+8.6858*log(st->agc_gain));
       break;
 #endif
    case SPEEX_PREPROCESS_GET_PSD_SIZE:
