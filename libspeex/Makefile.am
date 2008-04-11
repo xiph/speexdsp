@@ -32,7 +32,7 @@ noinst_HEADERS = 	arch.h 	cb_search_arm4.h 	cb_search_bfin.h 	cb_search_sse.h \
 libspeex_la_LDFLAGS = -no-undefined -version-info @SPEEX_LT_CURRENT@:@SPEEX_LT_REVISION@:@SPEEX_LT_AGE@
 libspeexdsp_la_LDFLAGS = -no-undefined -version-info @SPEEX_LT_CURRENT@:@SPEEX_LT_REVISION@:@SPEEX_LT_AGE@
 
-noinst_PROGRAMS = testenc testenc_wb testenc_uwb testdenoise testecho
+noinst_PROGRAMS = testenc testenc_wb testenc_uwb testdenoise testecho testjitter
 testenc_SOURCES = testenc.c
 testenc_LDADD = libspeex.la
 testenc_wb_SOURCES = testenc_wb.c
@@ -43,3 +43,5 @@ testdenoise_SOURCES = testdenoise.c
 testdenoise_LDADD = libspeexdsp.la
 testecho_SOURCES = testecho.c
 testecho_LDADD = libspeexdsp.la
+testjitter_SOURCES = testjitter.c
+testjitter_LDADD = libspeexdsp.la

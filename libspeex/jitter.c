@@ -398,6 +398,13 @@ void jitter_buffer_put(JitterBuffer *jitter, const JitterBufferPacket *packet)
    } else {
       late = 0;
    }
+
+   /* For some reason, the consumer has failed the last 20 fetches. Make sure this packet is
+    * used to resync. */
+   if (jitter->lost_count>20)
+   {
+      jitter_buffer_reset(jitter);
+   }
    
    /* Only insert the packet if it's not hopelessly late (i.e. totally useless) */
    if (jitter->reset_state || GE32(packet->timestamp+packet->span+jitter->delay_step, jitter->pointer_timestamp))
@@ -428,10 +435,6 @@ void jitter_buffer_put(JitterBuffer *jitter, const JitterBufferPacket *packet)
          else
             speex_free(jitter->packets[i].data);
          jitter->packets[i].data=NULL;
-         if (jitter->lost_count>20)
-         {
-            jitter_buffer_reset(jitter);
-         }
          /*fprintf (stderr, "Buffer is full, discarding earliest frame %d (currently at %d)\n", timestamp, jitter->pointer_timestamp);*/      
       }
    
