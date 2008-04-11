@@ -1067,14 +1067,14 @@ int speex_preprocess_ctl(SpeexPreprocessState *state, int request, void *ptr)
       break;
 #ifndef DISABLE_FLOAT_API
    case SPEEX_PREPROCESS_SET_AGC_LEVEL:
-      st->agc_level = (*(spx_int32_t*)ptr);
+      st->agc_level = (*(float*)ptr);
       if (st->agc_level<1)
          st->agc_level=1;
       if (st->agc_level>32768)
          st->agc_level=32768;
       break;
    case SPEEX_PREPROCESS_GET_AGC_LEVEL:
-      (*(spx_int32_t*)ptr) = st->agc_level;
+      (*(float*)ptr) = st->agc_level;
       break;
 #endif /* #ifndef DISABLE_FLOAT_API */
    case SPEEX_PREPROCESS_SET_AGC_INCREMENT:
@@ -1194,6 +1194,18 @@ int speex_preprocess_ctl(SpeexPreprocessState *state, int request, void *ptr)
    case SPEEX_PREPROCESS_GET_PROB:
       (*(spx_int32_t*)ptr) = MULT16_16_Q15(st->speech_prob, 100);
       break;
+#ifndef DISABLE_FLOAT_API
+   case SPEEX_PREPROCESS_SET_AGC_TARGET:
+      st->agc_level = (*(spx_int32_t*)ptr);
+      if (st->agc_level<1)
+         st->agc_level=1;
+      if (st->agc_level>32768)
+         st->agc_level=32768;
+      break;
+   case SPEEX_PREPROCESS_GET_AGC_TARGET:
+      (*(spx_int32_t*)ptr) = st->agc_level;
+      break;
+#endif /* #ifndef DISABLE_FLOAT_API */
    default:
       speex_warning_int("Unknown speex_preprocess_ctl request: ", request);
       return -1;

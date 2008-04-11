@@ -110,9 +110,9 @@ int speex_preprocess_ctl(SpeexPreprocessState *st, int request, void *ptr);
 /** Get preprocessor Voice Activity Detection state */
 #define SPEEX_PREPROCESS_GET_VAD 5
 
-/** Set preprocessor Automatic Gain Control level */
+/** Set preprocessor Automatic Gain Control level (float) */
 #define SPEEX_PREPROCESS_SET_AGC_LEVEL 6
-/** Get preprocessor Automatic Gain Control level */
+/** Get preprocessor Automatic Gain Control level (float) */
 #define SPEEX_PREPROCESS_GET_AGC_LEVEL 7
 
 /** Set preprocessor dereverb state */
@@ -205,6 +205,11 @@ int speex_preprocess_ctl(SpeexPreprocessState *st, int request, void *ptr);
 /* Can't set speech probability */
 /** Get speech probability in last frame (int32).  */
 #define SPEEX_PREPROCESS_GET_PROB 45
+
+/** Set preprocessor Automatic Gain Control level (int32) */
+#define SPEEX_PREPROCESS_SET_AGC_TARGET 46
+/** Get preprocessor Automatic Gain Control level (int32) */
+#define SPEEX_PREPROCESS_GET_AGC_TARGET 47
 
 #ifdef __cplusplus
 }
