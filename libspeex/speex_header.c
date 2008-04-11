@@ -178,6 +178,13 @@ SpeexHeader *speex_packet_to_header(char *packet, int size)
    ENDIAN_SWITCH(le_header->frames_per_packet);
    ENDIAN_SWITCH(le_header->extra_headers);
 
+   if (le_header->mode >= SPEEX_NB_MODES || le_header->mode < 0)
+   {
+      speex_notify("Invalid mode specified in Speex header");
+      speex_free (le_header);
+      return NULL;
+   }
+
    if (le_header->nb_channels>2)
       le_header->nb_channels = 2;
    if (le_header->nb_channels<1)
