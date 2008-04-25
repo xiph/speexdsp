@@ -363,14 +363,6 @@ static void *process_header(ogg_packet *op, spx_int32_t enh_enabled, spx_int32_t
    speex_decoder_ctl(st, SPEEX_GET_FRAME_SIZE, frame_size);
    *granule_frame_size = *frame_size;
 
-   if (!(*channels==1))
-   {
-      *channels = 2;
-      callback.callback_id = SPEEX_INBAND_STEREO;
-      callback.func = speex_std_stereo_request_handler;
-      callback.data = stereo;
-      speex_decoder_ctl(st, SPEEX_SET_HANDLER, &callback);
-   }
    if (!*rate)
       *rate = header->rate;
    /* Adjust rate if --force-* options are used */
@@ -395,6 +387,15 @@ static void *process_header(ogg_packet *op, spx_int32_t enh_enabled, spx_int32_t
 
    if (*channels==-1)
       *channels = header->nb_channels;
+
+   if (!(*channels==1))
+   {
+      *channels = 2;
+      callback.callback_id = SPEEX_INBAND_STEREO;
+      callback.func = speex_std_stereo_request_handler;
+      callback.data = stereo;
+      speex_decoder_ctl(st, SPEEX_SET_HANDLER, &callback);
+   }
    
    if (!quiet)
    {
