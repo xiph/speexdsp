@@ -392,7 +392,7 @@ static void compute_gain_floor(int noise_suppress, int effective_echo_suppress, 
 }
 
 #endif
-SpeexPreprocessState *speex_preprocess_state_init(int frame_size, int sampling_rate)
+EXPORT SpeexPreprocessState *speex_preprocess_state_init(int frame_size, int sampling_rate)
 {
    int i;
    int N, N3, N4, M;
@@ -530,7 +530,7 @@ SpeexPreprocessState *speex_preprocess_state_init(int frame_size, int sampling_r
    return st;
 }
 
-void speex_preprocess_state_destroy(SpeexPreprocessState *st)
+EXPORT void speex_preprocess_state_destroy(SpeexPreprocessState *st)
 {
    speex_free(st->frame);
    speex_free(st->ft);
@@ -718,12 +718,12 @@ static void update_noise_prob(SpeexPreprocessState *st)
 
 void speex_echo_get_residual(SpeexEchoState *st, spx_word32_t *Yout, int len);
 
-int speex_preprocess(SpeexPreprocessState *st, spx_int16_t *x, spx_int32_t *echo)
+EXPORT int speex_preprocess(SpeexPreprocessState *st, spx_int16_t *x, spx_int32_t *echo)
 {
    return speex_preprocess_run(st, x);
 }
 
-int speex_preprocess_run(SpeexPreprocessState *st, spx_int16_t *x)
+EXPORT int speex_preprocess_run(SpeexPreprocessState *st, spx_int16_t *x)
 {
    int i;
    int M;
@@ -1010,7 +1010,7 @@ int speex_preprocess_run(SpeexPreprocessState *st, spx_int16_t *x)
    }
 }
 
-void speex_preprocess_estimate_update(SpeexPreprocessState *st, spx_int16_t *x)
+EXPORT void speex_preprocess_estimate_update(SpeexPreprocessState *st, spx_int16_t *x)
 {
    int i;
    int N = st->ps_size;
@@ -1045,7 +1045,7 @@ void speex_preprocess_estimate_update(SpeexPreprocessState *st, spx_int16_t *x)
 }
 
 
-int speex_preprocess_ctl(SpeexPreprocessState *state, int request, void *ptr)
+EXPORT int speex_preprocess_ctl(SpeexPreprocessState *state, int request, void *ptr)
 {
    int i;
    SpeexPreprocessState *st;

@@ -72,6 +72,27 @@ has_alloca=no
 )
 AC_MSG_RESULT($has_alloca)
 
+SAVE_CFLAGS="$CFLAGS"
+CFLAGS="$CFLAGS -fvisibility=hidden"
+AC_MSG_CHECKING(for ELF visibility)
+AC_COMPILE_IFELSE([
+AC_LANG_PROGRAM([[
+#pragma GCC visibility push(hidden)
+__attribute__((visibility("default")))
+int var=10;
+]])],
+[
+has_visibility=yes
+AC_DEFINE([EXPORT], [__attribute__((visibility("default")))], [Symbol visibility prefix])
+],
+[
+has_visibility=no
+AC_DEFINE([EXPORT], [], [Symbol visibility prefix])
+CFLAGS="$SAVE_CFLAGS"
+]
+)
+AC_MSG_RESULT($has_visibility)
+
 
 AC_CHECK_HEADERS(sys/soundcard.h sys/audioio.h)
 

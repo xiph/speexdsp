@@ -378,7 +378,7 @@ static void dump_audio(const spx_int16_t *rec, const spx_int16_t *play, const sp
 #endif
 
 /** Creates a new echo canceller state */
-SpeexEchoState *speex_echo_state_init(int frame_size, int filter_length)
+EXPORT SpeexEchoState *speex_echo_state_init(int frame_size, int filter_length)
 {
    int i,N,M;
    SpeexEchoState *st = (SpeexEchoState *)speex_alloc(sizeof(SpeexEchoState));
@@ -495,7 +495,7 @@ SpeexEchoState *speex_echo_state_init(int frame_size, int filter_length)
 }
 
 /** Resets echo canceller state */
-void speex_echo_state_reset(SpeexEchoState *st)
+EXPORT void speex_echo_state_reset(SpeexEchoState *st)
 {
    int i, M, N;
    st->cancel_count=0;
@@ -545,7 +545,7 @@ void speex_echo_state_reset(SpeexEchoState *st)
 }
 
 /** Destroys an echo canceller state */
-void speex_echo_state_destroy(SpeexEchoState *st)
+EXPORT void speex_echo_state_destroy(SpeexEchoState *st)
 {
    spx_fft_destroy(st->fft_table);
 
@@ -587,7 +587,7 @@ void speex_echo_state_destroy(SpeexEchoState *st)
 #endif
 }
 
-void speex_echo_capture(SpeexEchoState *st, const spx_int16_t *rec, spx_int16_t *out)
+EXPORT void speex_echo_capture(SpeexEchoState *st, const spx_int16_t *rec, spx_int16_t *out)
 {
    int i;
    /*speex_warning_int("capture with fill level ", st->play_buf_pos/st->frame_size);*/
@@ -610,7 +610,7 @@ void speex_echo_capture(SpeexEchoState *st, const spx_int16_t *rec, spx_int16_t 
    }
 }
 
-void speex_echo_playback(SpeexEchoState *st, const spx_int16_t *play)
+EXPORT void speex_echo_playback(SpeexEchoState *st, const spx_int16_t *play)
 {
    /*speex_warning_int("playback with fill level ", st->play_buf_pos/st->frame_size);*/
    if (!st->play_buf_started)
@@ -637,13 +637,13 @@ void speex_echo_playback(SpeexEchoState *st, const spx_int16_t *play)
 }
 
 /** Performs echo cancellation on a frame (deprecated, last arg now ignored) */
-void speex_echo_cancel(SpeexEchoState *st, const spx_int16_t *in, const spx_int16_t *far_end, spx_int16_t *out, spx_int32_t *Yout)
+EXPORT void speex_echo_cancel(SpeexEchoState *st, const spx_int16_t *in, const spx_int16_t *far_end, spx_int16_t *out, spx_int32_t *Yout)
 {
    speex_echo_cancellation(st, in, far_end, out);
 }
 
 /** Performs echo cancellation on a frame */
-void speex_echo_cancellation(SpeexEchoState *st, const spx_int16_t *in, const spx_int16_t *far_end, spx_int16_t *out)
+EXPORT void speex_echo_cancellation(SpeexEchoState *st, const spx_int16_t *in, const spx_int16_t *far_end, spx_int16_t *out)
 {
    int i,j;
    int N,M;
@@ -1141,7 +1141,7 @@ void speex_echo_get_residual(SpeexEchoState *st, spx_word32_t *residual_echo, in
    
 }
 
-int speex_echo_ctl(SpeexEchoState *st, int request, void *ptr)
+EXPORT int speex_echo_ctl(SpeexEchoState *st, int request, void *ptr)
 {
    switch(request)
    {

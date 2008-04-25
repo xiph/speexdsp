@@ -48,7 +48,7 @@ struct SpeexBuffer_ {
    int   available;
 };
 
-SpeexBuffer *speex_buffer_init(int size)
+EXPORT SpeexBuffer *speex_buffer_init(int size)
 {
    SpeexBuffer *st = speex_alloc(sizeof(SpeexBuffer));
    st->data = speex_alloc(size);
@@ -59,13 +59,13 @@ SpeexBuffer *speex_buffer_init(int size)
    return st;
 }
 
-void speex_buffer_destroy(SpeexBuffer *st)
+EXPORT void speex_buffer_destroy(SpeexBuffer *st)
 {
    speex_free(st->data);
    speex_free(st);
 }
 
-int speex_buffer_write(SpeexBuffer *st, void *_data, int len)
+EXPORT int speex_buffer_write(SpeexBuffer *st, void *_data, int len)
 {
    int end;
    int end1;
@@ -97,7 +97,7 @@ int speex_buffer_write(SpeexBuffer *st, void *_data, int len)
    return len;
 }
 
-int speex_buffer_writezeros(SpeexBuffer *st, int len)
+EXPORT int speex_buffer_writezeros(SpeexBuffer *st, int len)
 {
    /* This is almost the same as for speex_buffer_write() but using 
    SPEEX_MEMSET() instead of SPEEX_COPY(). Update accordingly. */
@@ -129,7 +129,7 @@ int speex_buffer_writezeros(SpeexBuffer *st, int len)
    return len;
 }
 
-int speex_buffer_read(SpeexBuffer *st, void *_data, int len)
+EXPORT int speex_buffer_read(SpeexBuffer *st, void *_data, int len)
 {
    int end, end1;
    char *data = _data;
@@ -156,12 +156,12 @@ int speex_buffer_read(SpeexBuffer *st, void *_data, int len)
    return len;
 }
 
-int speex_buffer_get_available(SpeexBuffer *st)
+EXPORT int speex_buffer_get_available(SpeexBuffer *st)
 {
    return st->available;
 }
 
-int speex_buffer_resize(SpeexBuffer *st, int len)
+EXPORT int speex_buffer_resize(SpeexBuffer *st, int len)
 {
    int old_len = st->size;
    if (len > old_len)

@@ -83,7 +83,7 @@ typedef struct SpeexHeader {
 } SpeexHeader;
 */
 
-void speex_init_header(SpeexHeader *header, int rate, int nb_channels, const SpeexMode *m)
+EXPORT void speex_init_header(SpeexHeader *header, int rate, int nb_channels, const SpeexMode *m)
 {
    int i;
    const char *h="Speex   ";
@@ -118,7 +118,7 @@ void speex_init_header(SpeexHeader *header, int rate, int nb_channels, const Spe
    header->reserved2 = 0;
 }
 
-char *speex_header_to_packet(SpeexHeader *header, int *size)
+EXPORT char *speex_header_to_packet(SpeexHeader *header, int *size)
 {
    SpeexHeader *le_header;
    le_header = (SpeexHeader*)speex_alloc(sizeof(SpeexHeader));
@@ -142,7 +142,7 @@ char *speex_header_to_packet(SpeexHeader *header, int *size)
    return (char *)le_header;
 }
 
-SpeexHeader *speex_packet_to_header(char *packet, int size)
+EXPORT SpeexHeader *speex_packet_to_header(char *packet, int size)
 {
    int i;
    SpeexHeader *le_header;
@@ -194,7 +194,7 @@ SpeexHeader *speex_packet_to_header(char *packet, int size)
 
 }
 
-void speex_header_free(void *ptr)
+EXPORT void speex_header_free(void *ptr)
 {
    speex_free(ptr);
 }

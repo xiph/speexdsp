@@ -72,14 +72,14 @@ static const spx_word16_t balance_bounds[31] = {18, 23, 30, 38, 49, 63,  81, 104
 #define COMPATIBILITY_HACK(s) 
 #endif
 
-SpeexStereoState *speex_stereo_state_init()
+EXPORT SpeexStereoState *speex_stereo_state_init()
 {
    SpeexStereoState *stereo = speex_alloc(sizeof(SpeexStereoState));
    speex_stereo_state_reset(stereo);
    return stereo;
 }
 
-void speex_stereo_state_reset(SpeexStereoState *_stereo)
+EXPORT void speex_stereo_state_reset(SpeexStereoState *_stereo)
 {
    RealSpeexStereoState *stereo = (RealSpeexStereoState*)_stereo;
 #ifdef FIXED_POINT
@@ -99,13 +99,13 @@ void speex_stereo_state_reset(SpeexStereoState *_stereo)
 #endif   
 }
 
-void speex_stereo_state_destroy(SpeexStereoState *stereo)
+EXPORT void speex_stereo_state_destroy(SpeexStereoState *stereo)
 {
    speex_free(stereo);
 }
 
 #ifndef DISABLE_FLOAT_API
-void speex_encode_stereo(float *data, int frame_size, SpeexBits *bits)
+EXPORT void speex_encode_stereo(float *data, int frame_size, SpeexBits *bits)
 {
    int i, tmp;
    float e_left=0, e_right=0, e_tot=0;
@@ -143,7 +143,7 @@ void speex_encode_stereo(float *data, int frame_size, SpeexBits *bits)
 }
 #endif /* #ifndef DISABLE_FLOAT_API */
 
-void speex_encode_stereo_int(spx_int16_t *data, int frame_size, SpeexBits *bits)
+EXPORT void speex_encode_stereo_int(spx_int16_t *data, int frame_size, SpeexBits *bits)
 {
    int i, tmp;
    spx_word32_t e_left=0, e_right=0, e_tot=0;
@@ -218,7 +218,7 @@ void speex_encode_stereo_int(spx_int16_t *data, int frame_size, SpeexBits *bits)
 }
 
 #ifndef DISABLE_FLOAT_API
-void speex_decode_stereo(float *data, int frame_size, SpeexStereoState *_stereo)
+EXPORT void speex_decode_stereo(float *data, int frame_size, SpeexStereoState *_stereo)
 {
    int i;
    spx_word32_t balance;
@@ -245,7 +245,7 @@ void speex_decode_stereo(float *data, int frame_size, SpeexStereoState *_stereo)
 }
 #endif /* #ifndef DISABLE_FLOAT_API */
 
-void speex_decode_stereo_int(spx_int16_t *data, int frame_size, SpeexStereoState *_stereo)
+EXPORT void speex_decode_stereo_int(spx_int16_t *data, int frame_size, SpeexStereoState *_stereo)
 {
    int i;
    spx_word32_t balance;
@@ -271,7 +271,7 @@ void speex_decode_stereo_int(spx_int16_t *data, int frame_size, SpeexStereoState
    }
 }
 
-int speex_std_stereo_request_handler(SpeexBits *bits, void *state, void *data)
+EXPORT int speex_std_stereo_request_handler(SpeexBits *bits, void *state, void *data)
 {
    RealSpeexStereoState *stereo;
    spx_word16_t sign=1, dexp;

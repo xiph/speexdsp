@@ -52,7 +52,7 @@
 #define NULL 0
 #endif
 
-const SpeexMode * const speex_mode_list[SPEEX_NB_MODES] = {&speex_nb_mode, &speex_wb_mode, &speex_uwb_mode};
+EXPORT const SpeexMode * const speex_mode_list[SPEEX_NB_MODES] = {&speex_nb_mode, &speex_wb_mode, &speex_uwb_mode};
 
 extern const signed char hexc_table[];
 extern const signed char hexc_10_32_table[];
@@ -200,7 +200,7 @@ static const SpeexSBMode sb_wb_mode = {
 };
 
 
-const SpeexMode speex_wb_mode = {
+EXPORT const SpeexMode speex_wb_mode = {
    &sb_wb_mode,
    wb_mode_query,
    "wideband (sub-band CELP)",
@@ -270,7 +270,7 @@ int wb_mode_query(const void *mode, int request, void *ptr)
 }
 
 
-const SpeexMode speex_uwb_mode = {
+EXPORT const SpeexMode speex_uwb_mode = {
    &sb_uwb_mode,
    wb_mode_query,
    "ultra-wideband (sub-band CELP)",
@@ -289,7 +289,7 @@ const SpeexMode speex_uwb_mode = {
 /* We have defined speex_lib_get_mode() as a macro in speex.h */
 #undef speex_lib_get_mode
 
-const SpeexMode * speex_lib_get_mode (int mode)
+EXPORT const SpeexMode * speex_lib_get_mode (int mode)
 {
    if (mode < 0 || mode >= SPEEX_NB_MODES) return NULL;
 
