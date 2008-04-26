@@ -72,6 +72,23 @@ has_alloca=no
 )
 AC_MSG_RESULT($has_alloca)
 
+AC_MSG_CHECKING(for SSE in current arch/CFLAGS)
+AC_LINK_IFELSE([
+AC_LANG_PROGRAM([[
+#include <xmmintrin.h>
+__m128 testfunc(float *a, float *b) {
+  return _mm_add_ps(_mm_loadu_ps(a), _mm_loadu_ps(b));
+}
+]])],
+[
+has_sse=yes
+],
+[
+has_sse=no
+]
+)
+AC_MSG_RESULT($has_sse)  
+
 SAVE_CFLAGS="$CFLAGS"
 CFLAGS="$CFLAGS -fvisibility=hidden"
 AC_MSG_CHECKING(for ELF visibility)
@@ -123,11 +140,18 @@ AC_ARG_ENABLE(valgrind, [  --enable-valgrind       Enable valgrind extra checks]
   AC_DEFINE([ENABLE_VALGRIND], , [Enable valgrind extra checks])
 fi])
 
-AC_ARG_ENABLE(sse, [  --enable-sse            Enable SSE support], [if test "$enableval" = yes; then
-AC_DEFINE([_USE_SSE], , [Enable SSE support])
+AC_ARG_ENABLE(sse, [  --enable-sse            Enable SSE support], [
+if test "x$enableval" != xno; then
+has_sse=yes
 CFLAGS="$CFLAGS -O3 -msse"
+else
+has_sse=no
 fi
 ])
+
+if test "$has_sse" = yes; then
+  AC_DEFINE([_USE_SSE], , [Enable SSE support])
+fi
 
 AC_ARG_ENABLE(fixed-point, [  --enable-fixed-point    Compile as fixed-point],
 [if test "$enableval" = yes; then
