@@ -88,6 +88,12 @@
 #define WEIGHT_SHIFT 0
 #endif
 
+#ifdef FIXED_POINT
+#define WORD2INT(x) ((x) < -32767 ? -32768 : ((x) > 32766 ? 32767 : (x)))  
+#else
+#define WORD2INT(x) ((x) < -32767.5f ? -32768 : ((x) > 32766.5f ? 32767 : floor(.5+(x))))  
+#endif
+
 /* If enabled, the AEC will use a foreground filter and a background filter to be more robust to double-talk
    and difficult signals in general. The cost is an extra FFT and a matrix-vector multiply */
 #define TWO_PATH
@@ -877,11 +883,6 @@ EXPORT void speex_echo_cancellation(SpeexEchoState *st, const spx_int16_t *in, c
 #else
       tmp_out = SUB32(EXTEND32(st->input[i]), EXTEND32(st->y[i+st->frame_size]));
 #endif
-      /* Saturation */
-      if (tmp_out>32767)
-         tmp_out = 32767;
-      else if (tmp_out<-32768)
-         tmp_out = -32768;
       tmp_out = ADD32(tmp_out, EXTEND32(MULT16_16_P15(st->preemph, st->memE)));
       /* This is an arbitrary test for saturation in the microphone signal */
       if (in[i] <= -32000 || in[i] >= 32000)
@@ -890,7 +891,7 @@ EXPORT void speex_echo_cancellation(SpeexEchoState *st, const spx_int16_t *in, c
          if (st->saturated == 0)
             st->saturated = 1;
       }
-      out[i] = (spx_int16_t)tmp_out;
+      out[i] = WORD2INT(tmp_out);
       st->memE = tmp_out;
    }
    
