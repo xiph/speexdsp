@@ -887,7 +887,6 @@ EXPORT void speex_echo_cancellation(SpeexEchoState *st, const spx_int16_t *in, c
       /* This is an arbitrary test for saturation in the microphone signal */
       if (in[i] <= -32000 || in[i] >= 32000)
       {
-         tmp_out = 0;
          if (st->saturated == 0)
             st->saturated = 1;
       }
