@@ -1365,7 +1365,7 @@ iir_mem16()
  When doing that however, 
 \series bold
 it is important to make sure that the DF1 implementation still behaves like
- the original DF2T behaviour when it comes to filter values
+ the original DF2T behaviour when it comes to memory values
 \series default
 .
  This is necessary because the filter is time-varying and must compute exactly
