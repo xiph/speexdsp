@@ -47,7 +47,7 @@
 \begin_layout Title
 The Speex Codec Manual
 \newline
-Version 1.2 Beta 3
+Version 1.2
 \end_layout
 
 \begin_layout Author
@@ -74,7 +74,7 @@ copyright
 
 \end_inset
 
- 2002-2007 Jean-Marc Valin/Xiph.org Foundation
+ 2002-2008 Jean-Marc Valin/Xiph.org Foundation
 \end_layout
 
 \begin_layout Standard
@@ -915,6 +915,101 @@ In some cases, it may be useful to convert audio from one sampling rate
 plexity tradeoff.
 \end_layout
 
+\begin_layout Section
+Integration
+\end_layout
+
+\begin_layout Standard
+Knowing 
+\emph on
+how
+\emph default
+ to use eacho of the components is not that useful unless we know 
+\emph on
+where
+\emph default
+ to use them.
+ Figure 
+\begin_inset LatexCommand ref
+reference "fig:Integration-VoIP"
+
+\end_inset
+
+ shows where each of the components would be used in a typical VoIP client.
+ Components in dotted lines are optional, though they may be very useful
+ in some circumstances.
+ There are several important things to note from there.
+ The AEC must be placed as close as possible to the playback and capture.
+ Only the resampling may be closer.
+ Also, it is very important to use the same clock for both mic capture and
+ speaker/headphones playback.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Standard
+\begin_inset ERT
+status collapsed
+
+\begin_layout Standard
+
+
+\backslash
+begin{center}
+\end_layout
+
+\end_inset
+
+
+\begin_inset Graphics
+	filename components.eps
+	width 80text%
+
+\end_inset
+
+
+\begin_inset ERT
+status collapsed
+
+\begin_layout Standard
+
+
+\backslash
+end{center}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Caption
+
+\begin_layout Standard
+Integration of all the components in a VoIP client.
+\begin_inset LatexCommand label
+name "fig:Integration-VoIP"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
 \begin_layout Standard
 
 \newpage
@@ -1006,22 +1101,12 @@ name "fixed-point"
 \end_layout
 
 \begin_layout Description
---enable-epic-48k Enable a special (and non-compatible) 4.8 kbps narrowband
- mode (broken in 1.1.x and 1.2beta)
-\end_layout
-
-\begin_layout Description
 --enable-ti-c55x Enable support for the TI C5x family
 \end_layout
 
 \begin_layout Description
 --enable-blackfin-asm Enable assembly specific to the Blackfin DSP architecture
  (gcc only)
-\end_layout
-
-\begin_layout Description
---enable-vorbis-psycho Make the encoder use the Vorbis psycho-acoustic model.
- This is very experimental and may be removed in the future.
 \end_layout
 
 \begin_layout Section
@@ -4941,11 +5026,34 @@ out_length
 
 \begin_layout Standard
 It is also possible to process multiple channels at once.
- 
+ To do that, you can use speex_resampler_process_interleaved_int() or speex_resa
+mpler_process_interleaved_float().
+ The arguments are the same except that there is no channelID argument.
+ Note that the 
+\series bold
+length parameters are per-channel
+\series default
+.
+ So if you have 1024 samples for each of 4 channels, you pass 1024 and not
+ 4096.
 \end_layout
 
 \begin_layout Standard
-To be continued...
+The resampler allows changing the quality and input/output sampling frequencies
+ on the fly without glitches or anything.
+ This can be done with calls such as speex_resampler_set_quality() and speex_res
+ampler_set_rate().
+ When resampling a file, it is often desirable to have the output file perfectly
+ synchronised with the input.
+ To do that, you need to call speex_resampler_skip_zeros() 
+\series bold
+before
+\series default
+ you start processing any samples.
+ For real-time applications (e.g.
+ VoIP), it is not recommended to do that as the first process frame will
+ be shorted to compensate the the delay (the skipped zeros).
+ To destroy a resampler state, just call speex_resampler_destroy().
 \end_layout
 
 \begin_layout Section
@@ -4953,7 +5061,14 @@ Ring Buffer
 \end_layout
 
 \begin_layout Standard
-Put some stuff there...
+In some cases, it is necessary to interface components that use different
+ block sizes.
+ For example, it is possible that the soundcard does not support reading/writing
+ in blocks of 20\InsetSpace ~
+ms or sometimes, complicated resampling ratios mean that
+ the blocks don't always have the same time.
+ In thoses cases, it is often necessary to buffer a bit of audio using a
+ ring buffer.
 \end_layout
 
 \begin_layout Standard
