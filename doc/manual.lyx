@@ -5040,10 +5040,16 @@ length parameters are per-channel
 
 \begin_layout Standard
 The resampler allows changing the quality and input/output sampling frequencies
- on the fly without glitches or anything.
+ on the fly without glitches.
  This can be done with calls such as speex_resampler_set_quality() and speex_res
 ampler_set_rate().
- When resampling a file, it is often desirable to have the output file perfectly
+ The only side effect is that a new filter will have to be recomputed, consuming
+ many CPU cycles.
+ 
+\end_layout
+
+\begin_layout Standard
+When resampling a file, it is often desirable to have the output file perfectly
  synchronised with the input.
  To do that, you need to call speex_resampler_skip_zeros() 
 \series bold
@@ -5052,7 +5058,7 @@ before
  you start processing any samples.
  For real-time applications (e.g.
  VoIP), it is not recommended to do that as the first process frame will
- be shorted to compensate the the delay (the skipped zeros).
+ be shorter to compensate for the delay (the skipped zeros).
  To destroy a resampler state, just call speex_resampler_destroy().
 \end_layout
 
