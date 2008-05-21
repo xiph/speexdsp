@@ -4556,7 +4556,11 @@ sees
 \end_layout
 
 \begin_layout Itemize
-When it comes to echo tail length (filter length), longer is *not* better.
+When it comes to echo tail length (filter length), longer is 
+\series bold
+not
+\series default
+ better.
  Actually, the longer the tail length, the longer it takes for the filter
  to adapt.
  Of course, a tail length that is too short will not cancel enough echo,
@@ -4964,10 +4968,56 @@ resampler = speex_resampler_init(nb_channels, input_rate, output_rate, quality,
 \end_layout
 
 \begin_layout Standard
-where nb_channels is the number of channels that will be used (either interleave
-d or non-interleaved), input_rate is the sampling rate of the input stream,
- output_rate is the sampling rate of the output stream and quality is the
- requested quality setting (0 to 10).
+where 
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+nb_channels
+\end_layout
+
+\end_inset
+
+ is the number of channels that will be used (either interleaved or non-interlea
+ved), 
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+input_rate
+\end_layout
+
+\end_inset
+
+ is the sampling rate of the input stream, 
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+output_rate
+\end_layout
+
+\end_inset
+
+ is the sampling rate of the output stream and 
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+quality
+\end_layout
+
+\end_inset
+
+ is the requested quality setting (0 to 10).
  The quality parameter is useful for controlling the quality/complexity/latency
  tradeoff.
  Using a higher quality setting means less noise/aliasing, a higher complexity
@@ -4995,7 +5045,19 @@ err = speex_resampler_process_int(resampler, channelID, in, &in_length,
 
 \end_inset
 
-where channelID is the ID of the channel to be processed.
+where 
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+channelID
+\end_layout
+
+\end_inset
+
+ is the ID of the channel to be processed.
  For a mono stream, use 0.
  The 
 \emph on
@@ -5003,32 +5065,90 @@ in
 \emph default
  pointer points to the first sample of the input buffer for the selected
  channel and 
-\emph on
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
 out
-\emph default
+\end_layout
+
+\end_inset
+
  points to the first sample of the output.
  The size of the input and output buffers are specified by 
-\emph on
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
 in_length
-\emph default
+\end_layout
+
+\end_inset
+
  and 
-\emph on
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
 out_length
-\emph default
+\end_layout
+
+\end_inset
+
  respectively.
  Upon completion, these values are replaced by the number of samples read
  and written by the resampler.
  Unless an error occurs, either all input samples will be read or all output
  samples will be written to (or both).
- For floating-point samples, the function speex_resampler_process_float()
+ For floating-point samples, the function 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Standard
+
+speex_resampler_process_float()
+\end_layout
+
+\end_inset
+
  behaves similarly.
 \end_layout
 
 \begin_layout Standard
 It is also possible to process multiple channels at once.
- To do that, you can use speex_resampler_process_interleaved_int() or speex_resa
-mpler_process_interleaved_float().
- The arguments are the same except that there is no channelID argument.
+ To do that, you can use speex_resampler_process_interleaved_int() or 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Standard
+
+speex_resampler_process_interleaved_float()
+\end_layout
+
+\end_inset
+
+.
+ The arguments are the same except that there is no 
+\begin_inset listings
+inline true
+status collapsed
+
+\begin_layout Standard
+
+channelID
+\end_layout
+
+\end_inset
+
+ argument.
  Note that the 
 \series bold
 length parameters are per-channel
@@ -5041,8 +5161,31 @@ length parameters are per-channel
 \begin_layout Standard
 The resampler allows changing the quality and input/output sampling frequencies
  on the fly without glitches.
- This can be done with calls such as speex_resampler_set_quality() and speex_res
-ampler_set_rate().
+ This can be done with calls such as 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Standard
+
+speex_resampler_set_quality()
+\end_layout
+
+\end_inset
+
+ and 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Standard
+
+speex_resampler_set_rate()
+\end_layout
+
+\end_inset
+
+.
  The only side effect is that a new filter will have to be recomputed, consuming
  many CPU cycles.
  
@@ -5051,7 +5194,19 @@ ampler_set_rate().
 \begin_layout Standard
 When resampling a file, it is often desirable to have the output file perfectly
  synchronised with the input.
- To do that, you need to call speex_resampler_skip_zeros() 
+ To do that, you need to call 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Standard
+
+speex_resampler_skip_zeros()
+\end_layout
+
+\end_inset
+
+ 
 \series bold
 before
 \series default
@@ -5059,7 +5214,19 @@ before
  For real-time applications (e.g.
  VoIP), it is not recommended to do that as the first process frame will
  be shorter to compensate for the delay (the skipped zeros).
- To destroy a resampler state, just call speex_resampler_destroy().
+ To destroy a resampler state, just call 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Standard
+
+speex_resampler_destroy()
+\end_layout
+
+\end_inset
+
+.
 \end_layout
 
 \begin_layout Section
