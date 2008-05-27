@@ -4,7 +4,7 @@
 
 EXTRA_DIST=echo_diagnostic.m
 
-INCLUDES = -I$(top_srcdir)/include -I$(top_builddir)/include -I$(top_builddir) @OGG_CFLAGS@
+INCLUDES = -I$(top_srcdir)/include -I$(top_builddir)/include -I$(top_builddir) @OGG_CFLAGS@ @FFTW3_CFLAGS@
 
 lib_LTLIBRARIES = libspeex.la libspeexdsp.la
 
@@ -36,12 +36,12 @@ noinst_PROGRAMS = testenc testenc_wb testenc_uwb testdenoise testecho testjitter
 testenc_SOURCES = testenc.c
 testenc_LDADD = libspeex.la
 testenc_wb_SOURCES = testenc_wb.c
-testenc_wb_LDADD = libspeex.la
+testenc_wb_LDADD = libspeex.la 
 testenc_uwb_SOURCES = testenc_uwb.c
 testenc_uwb_LDADD = libspeex.la
 testdenoise_SOURCES = testdenoise.c
-testdenoise_LDADD = libspeexdsp.la
+testdenoise_LDADD = libspeexdsp.la @FFTW3_LIBS@
 testecho_SOURCES = testecho.c
-testecho_LDADD = libspeexdsp.la
+testecho_LDADD = libspeexdsp.la @FFTW3_LIBS@
 testjitter_SOURCES = testjitter.c
-testjitter_LDADD = libspeexdsp.la
+testjitter_LDADD = libspeexdsp.la @FFTW3_LIBS@

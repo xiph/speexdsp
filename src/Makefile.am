@@ -18,8 +18,8 @@ bin_PROGRAMS = speexenc speexdec
 
 speexenc_SOURCES = speexenc.c wav_io.c skeleton.c
 speexenc_LDADD = $(top_builddir)/libspeex/libspeex.la $(top_builddir)/libspeex/libspeexdsp.la \
-	$(OGG_LIBS)
+	$(OGG_LIBS)  @FFTW3_LIBS@	
 
 speexdec_SOURCES = speexdec.c wav_io.c
 speexdec_LDADD = $(top_builddir)/libspeex/libspeex.la \
-	$(OGG_LIBS)
+	$(OGG_LIBS)  @FFTW3_LIBS@
