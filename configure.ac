@@ -110,10 +110,13 @@ CFLAGS="$SAVE_CFLAGS"
 )
 AC_MSG_RESULT($has_visibility)
 
-AC_ARG_WITH([gpl-fftw3], [AS_HELP_STRING([--with-gpl-fftw3],[enable experimental support for FFTW3 library for FFT])],[],[with_fftw3=no])
+AC_ARG_WITH([gpl-fftw3], [AS_HELP_STRING([--with-gpl-fftw3@<:@=PATH@:>@],[enable experimental support for FFTW3 library for FFT. @<:@default=no@:>@])],[],[with_gpl_fftw3=no])
 
-AS_IF([test "x$with_fftw3" != "xno"],
-  [PKG_CHECK_MODULES(FFTW3, fftw3f, [
+AS_IF([test "x$with_gpl_fftw3" != "xno"],
+  [if test "x$with_gpl_fftw3" != "xyes"; then
+     export PKG_CONFIG_PATH=$with_gpl_fftw3:$with_gpl_fftw3/lib/pkgconfig:$PKG_CONFIG_PATH
+   fi
+   PKG_CHECK_MODULES(FFTW3, fftw3f, [
    AC_DEFINE([USE_GPL_FFTW3], [], [Use FFTW3 for FFT])
    AC_SUBST([FFTW3_PKGCONFIG], [fftw3f])
   ]])

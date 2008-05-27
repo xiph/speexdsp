@@ -201,6 +201,7 @@ void spx_ifft(void *table, spx_word16_t *in, spx_word16_t *out)
   iptr[1] = 0.0f;
   for(i=1;i<N;++i)
     iptr[i+1] = in[i];
+  iptr[N+1] = 0.0f;
 
   fftwf_execute(t->ifft);
   
