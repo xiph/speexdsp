@@ -121,7 +121,28 @@ AS_IF([test "x$with_gpl_fftw3" != "xno"],
    AC_SUBST([FFTW3_PKGCONFIG], [fftw3f])
   ]])
 )
-   
+
+AC_ARG_WITH([intel-mkl], [AS_HELP_STRING([--with-intel-mkl],[enable experimental support for Intel Math Kernel Library for FFT])],[],[with_intel_mkl=no])
+AS_IF([test "x$with_intel_mkl" != "xno"],[
+ AC_MSG_CHECKING(for valid MKL)
+ AC_LINK_IFELSE([
+ AC_LANG_PROGRAM([[
+#include <mkl.h>
+void func() {
+  DFTI_DESCRIPTOR_HANDLE h;
+  MKL_LONG result=DftiCreateDescriptor(&h, DFTI_SINGLE, DFTI_REAL, 0);
+}
+ ]])],
+  [
+   AC_DEFINE([USE_INTEL_MKL], [], [Use Intel Math Kernel Library for FFT])
+   AC_MSG_RESULT(yes)
+  ],
+  [
+   AC_MSG_FAILURE([Failed to compile MKL test program. Make sure you set CFLAGS to include the include directory and set LDFLAGS to include the library directory and all necesarry libraries.])
+  ]
+ )
+])
+
 AC_CHECK_HEADERS(sys/soundcard.h sys/audioio.h)
 
 XIPH_PATH_OGG([src="src"], [src=""])

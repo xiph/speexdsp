@@ -40,7 +40,9 @@
 #define USE_KISS_FFT
 #else
 #ifndef USE_GPL_FFTW3
+#ifndef USE_INTEL_MKL
 #define USE_SMALLFT
+#endif
 #endif
 #endif
 
@@ -133,6 +135,45 @@ void spx_ifft(void *table, float *in, float *out)
          out[i] = in[i];
    }
    spx_drft_backward((struct drft_lookup *)table, out);
+}
+
+#elif defined(USE_INTEL_MKL)
+#include <mkl.h>
+
+struct mkl_config {
+  DFTI_DESCRIPTOR_HANDLE desc;
+  int N;
+};
+
+void *spx_fft_init(int size)
+{
+  struct mkl_config *table = (struct mkl_config *) speex_alloc(sizeof(struct mkl_config));
+  table->N = size;
+  DftiCreateDescriptor(&table->desc, DFTI_SINGLE, DFTI_REAL, 1, size);
+  DftiSetValue(table->desc, DFTI_PACKED_FORMAT, DFTI_PACK_FORMAT);
+  DftiSetValue(table->desc, DFTI_PLACEMENT, DFTI_NOT_INPLACE);
+  DftiSetValue(table->desc, DFTI_FORWARD_SCALE, 1.0f / size);
+  DftiCommitDescriptor(table->desc);
+  return table;
+}
+
+void spx_fft_destroy(void *table)
+{
+  struct mkl_config *t = (struct mkl_config *) table;
+  DftiFreeDescriptor(t->desc);
+  speex_free(table);
+}
+
+void spx_fft(void *table, spx_word16_t *in, spx_word16_t *out)
+{
+  struct mkl_config *t = (struct mkl_config *) table;
+  DftiComputeForward(t->desc, in, out);
+}
+
+void spx_ifft(void *table, spx_word16_t *in, spx_word16_t *out)
+{
+  struct mkl_config *t = (struct mkl_config *) table;
+  DftiComputeBackward(t->desc, in, out);
 }
 
 #elif defined(USE_GPL_FFTW3)
