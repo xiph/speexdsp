@@ -110,39 +110,6 @@ CFLAGS="$SAVE_CFLAGS"
 )
 AC_MSG_RESULT($has_visibility)
 
-AC_ARG_WITH([gpl-fftw3], [AS_HELP_STRING([--with-gpl-fftw3@<:@=PATH@:>@],[enable experimental support for FFTW3 library for FFT. @<:@default=no@:>@])],[],[with_gpl_fftw3=no])
-
-AS_IF([test "x$with_gpl_fftw3" != "xno"],
-  [if test "x$with_gpl_fftw3" != "xyes"; then
-     export PKG_CONFIG_PATH=$with_gpl_fftw3:$with_gpl_fftw3/lib/pkgconfig:$PKG_CONFIG_PATH
-   fi
-   PKG_CHECK_MODULES(FFTW3, fftw3f, [
-   AC_DEFINE([USE_GPL_FFTW3], [], [Use FFTW3 for FFT])
-   AC_SUBST([FFTW3_PKGCONFIG], [fftw3f])
-  ]])
-)
-
-AC_ARG_WITH([intel-mkl], [AS_HELP_STRING([--with-intel-mkl],[enable experimental support for Intel Math Kernel Library for FFT])],[],[with_intel_mkl=no])
-AS_IF([test "x$with_intel_mkl" != "xno"],[
- AC_MSG_CHECKING(for valid MKL)
- AC_LINK_IFELSE([
- AC_LANG_PROGRAM([[
-#include <mkl.h>
-void func() {
-  DFTI_DESCRIPTOR_HANDLE h;
-  MKL_LONG result=DftiCreateDescriptor(&h, DFTI_SINGLE, DFTI_REAL, 0);
-}
- ]])],
-  [
-   AC_DEFINE([USE_INTEL_MKL], [], [Use Intel Math Kernel Library for FFT])
-   AC_MSG_RESULT(yes)
-  ],
-  [
-   AC_MSG_FAILURE([Failed to compile MKL test program. Make sure you set CFLAGS to include the include directory and set LDFLAGS to include the library directory and all necesarry libraries.])
-  ]
- )
-])
-
 AC_CHECK_HEADERS(sys/soundcard.h sys/audioio.h)
 
 XIPH_PATH_OGG([src="src"], [src=""])
@@ -181,17 +148,22 @@ has_sse=no
 fi
 ])
 
-if test "$has_sse" = yes; then
-  AC_DEFINE([_USE_SSE], , [Enable SSE support])
-fi
+
+FFT=smallft
 
 AC_ARG_ENABLE(fixed-point, [  --enable-fixed-point    Compile as fixed-point],
 [if test "$enableval" = yes; then
+  FFT=kiss
+  has_sse=no
   AC_DEFINE([FIXED_POINT], , [Compile as fixed-point])
 else
   AC_DEFINE([FLOATING_POINT], , [Compile as floating-point])
 fi],
 AC_DEFINE([FLOATING_POINT], , [Compile as floating-point]))
+
+if test "$has_sse" = yes; then
+  AC_DEFINE([_USE_SSE], , [Enable SSE support])
+fi
 
 AC_ARG_ENABLE(float-api, [  --disable-float-api     Disable the floating-point API],
 [if test "$enableval" = no; then
@@ -229,6 +201,44 @@ AC_ARG_ENABLE(ti-c55x, [  --enable-ti-c55x        Enable support for TI C55X DSP
   has_char16=yes;
   AC_DEFINE([TI_C55X], , [Enable support for TI C55X DSP])
 fi])
+
+AC_ARG_WITH([fft], [AS_HELP_STRING([--with-fft=choice],[use an alternate FFT implementation. The available choices are
+kiss (default fixed point), smallft (default floating point), gpl-fftw3 and proprietary-intel-mkl])],
+[FFT=$withval]
+)
+
+FFT_PKGCONFIG=
+AS_CASE([$FFT],
+ [kiss], [
+  AC_DEFINE([USE_KISS_FFT], [], [Use KISS Fast Fourier Transform])
+ ],
+ [smallft], [
+  AC_DEFINE([USE_SMALLFT], [], [Use FFT from OggVorbis])
+ ],
+ [gpl-fftw3], [
+  AC_DEFINE([USE_GPL_FFTW3], [], [Use FFTW3 for FFT])
+  PKG_CHECK_MODULES(FFT, fftw3f)
+ ],
+ [proprietary-intel-mkl], [
+  AC_DEFINE([USE_INTEL_MKL], [], [Use Intel Math Kernel Library for FFT])
+  AC_MSG_CHECKING(for valid MKL)
+  AC_LINK_IFELSE([
+   AC_LANG_PROGRAM([[
+#include <mkl.h>
+void func() {
+  DFTI_DESCRIPTOR_HANDLE h;
+  MKL_LONG result=DftiCreateDescriptor(&h, DFTI_SINGLE, DFTI_REAL, 0);
+}]])],
+   [AC_MSG_RESULT(yes)],
+   [AC_MSG_FAILURE([Failed to compile MKL test program. Make sure you set CFLAGS to include the include directory and set LDFLAGS to include the library directory and all necesarry libraries.])]
+  )
+ ],
+ [AC_MSG_FAILURE([Unknown FFT $FFT specified for --with-fft])]
+)
+AM_CONDITIONAL(BUILD_KISS_FFT, [test "$FFT" = "kiss"])
+AM_CONDITIONAL(BUILD_SMALLFT, [test "$FFT" = "smallft"])
+AC_SUBST(FFT_PKGCONFIG)
+
 
 AC_CHECK_SIZEOF(short)
 AC_CHECK_SIZEOF(int)

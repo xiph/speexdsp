@@ -11,6 +11,9 @@
 /* Default to floating point */
 #ifndef FIXED_POINT
 #  define FLOATING_POINT
+#  define USE_SMALLFT
+#else
+#  define USE_KISS_FFT
 #endif
 
 /* We don't support visibility on Win32 */

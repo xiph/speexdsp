@@ -36,17 +36,6 @@
 #include "config.h"
 #endif
 
-#ifdef FIXED_POINT
-#define USE_KISS_FFT
-#else
-#ifndef USE_GPL_FFTW3
-#ifndef USE_INTEL_MKL
-#define USE_SMALLFT
-#endif
-#endif
-#endif
-
-
 #include "arch.h"
 #include "os_support.h"
 
