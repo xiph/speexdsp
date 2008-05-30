@@ -399,7 +399,12 @@ static void dump_audio(const spx_int16_t *rec, const spx_int16_t *play, const sp
 #endif
 
 /** Creates a new echo canceller state */
-EXPORT SpeexEchoState *speex_echo_state_init(int frame_size, int filter_length, int nb_mic, int nb_speakers)
+EXPORT SpeexEchoState *speex_echo_state_init(int frame_size, int filter_length)
+{
+   return speex_echo_state_init_mc(frame_size, filter_length, 1, 1);
+}
+
+EXPORT SpeexEchoState *speex_echo_state_init_mc(int frame_size, int filter_length, int nb_mic, int nb_speakers)
 {
    int i,N,M, C, K;
    SpeexEchoState *st = (SpeexEchoState *)speex_alloc(sizeof(SpeexEchoState));

@@ -31,7 +31,7 @@ int main(int argc, char **argv)
    ref_fd  = fopen(argv[1],  "rb");
    e_fd    = fopen(argv[3], "wb");
 
-   st = speex_echo_state_init(NN, TAIL, 1, 1);
+   st = speex_echo_state_init(NN, TAIL);
    den = speex_preprocess_state_init(NN, sampleRate);
    speex_echo_ctl(st, SPEEX_ECHO_SET_SAMPLING_RATE, &sampleRate);
    speex_preprocess_ctl(den, SPEEX_PREPROCESS_SET_ECHO_STATE, st);
