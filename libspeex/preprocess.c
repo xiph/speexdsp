@@ -704,7 +704,7 @@ static void update_noise_prob(SpeexPreprocessState *st)
    }
    for (i=0;i<N;i++)
    {
-      if (MULT16_32_Q15(QCONST16(.4f,15),st->S[i]) > ADD32(st->Smin[i],EXTEND32(20)))
+      if (MULT16_32_Q15(QCONST16(.4f,15),st->S[i]) > st->Smin[i])
          st->update_prob[i] = 1;
       else
          st->update_prob[i] = 0;
