@@ -75,9 +75,9 @@ TODO:
 
 #define ROUND_DOWN(x, step) ((x)<0 ? ((x)-(step)+1)/(step)*(step) : (x)/(step)*(step)) 
 
-#define MAX_TIMINGS 20
+#define MAX_TIMINGS 40
 #define MAX_BUFFERS 3
-#define TOP_DELAY 20
+#define TOP_DELAY 40
 
 /** Buffer that keeps the time of arrival of the latest packets */
 struct TimingBuffer {
@@ -250,7 +250,7 @@ static spx_int16_t compute_opt_delay(JitterBuffer *jitter)
       if (latest >= 0 && !penalty_taken)
       {
          penalty_taken = 1;
-         late+=2;
+         late+=4;
       }
    }
    
