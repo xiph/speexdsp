@@ -131,6 +131,36 @@ void speex_echo_state_reset(SpeexEchoState *st);
  */
 int speex_echo_ctl(SpeexEchoState *st, int request, void *ptr);
 
+
+
+struct DecorrState_;
+
+typedef struct DecorrState_ DecorrState;
+
+
+/** Create a state for the channel decorrelation algorithm
+    This is useful for multi-channel echo cancellation only 
+ * @param rate Sampling rate
+ * @param channels Number of channels (it's a bit pointless if you don't have at least 2)
+ * @param frame_size Size of the frame to process at ones (counting samples *per* channel)
+*/
+DecorrState *speex_decorrelate_new(int rate, int channels, int frame_size);
+
+/** Remove correlation between the channels by modifying the phase and possibly
+    adding noise in a way that is not (or little) perceptible.
+ * @param st Decorrelator state
+ * @param in Input audio in interleaved format
+ * @param out Result of the decorrelation (out *may* alias in)
+ * @param strength How much alteration of the audio to apply from 0 to 100.
+*/
+void speex_decorrelate(DecorrState *st, const spx_int16_t *in, spx_int16_t *out, int strength);
+
+/** Destroy a Decorrelation state 
+ * @param st State to destroy
+*/
+void speex_decorrelate_destroy(DecorrState *st);
+
+
 #ifdef __cplusplus
 }
 #endif

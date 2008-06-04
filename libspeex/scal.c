@@ -44,6 +44,7 @@ The algorithm implemented here is described in:
 #include "config.h"
 #endif
 
+#include "speex/speex_echo.h"
 #include "vorbis_psy.h"
 #include "arch.h"
 #include "os_support.h"
@@ -75,9 +76,9 @@ struct DecorrState_ {
    float *alpha;
 };
 
-typedef struct DecorrState_ DecorrState;
 
-DecorrState *speex_decorrelate_new(int rate, int channels, int frame_size)
+
+EXPORT DecorrState *speex_decorrelate_new(int rate, int channels, int frame_size)
 {
    int i, ch;
    DecorrState *st = speex_alloc(sizeof(DecorrState));
@@ -133,7 +134,7 @@ static unsigned int irand(int *seed)
 }
 
 
-void speex_decorrelate(DecorrState *st, const spx_int16_t *in, spx_int16_t *out, int strength)
+EXPORT void speex_decorrelate(DecorrState *st, const spx_int16_t *in, spx_int16_t *out, int strength)
 {
    int ch;
    float amount;
@@ -270,7 +271,7 @@ void speex_decorrelate(DecorrState *st, const spx_int16_t *in, spx_int16_t *out,
    }
 }
 
-void speex_decorrelate_destroy(DecorrState *st)
+EXPORT void speex_decorrelate_destroy(DecorrState *st)
 {
 #ifdef VORBIS_PSYCHO
    vorbis_psy_destroy(st->psy);
