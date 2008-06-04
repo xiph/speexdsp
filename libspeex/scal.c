@@ -65,6 +65,7 @@ struct DecorrState_ {
 #endif
    float *vorbis_win;
    int    seed;
+   float *y;
    
    /* Per-channel stuff */
    float *buff;
@@ -89,6 +90,8 @@ DecorrState *speex_decorrelate_new(int rate, int channels, int frame_size)
    st->wola_mem = speex_alloc(frame_size*sizeof(float));
    st->curve = speex_alloc(frame_size*sizeof(float));
 #endif
+   st->y = speex_alloc(frame_size*sizeof(float));
+
    st->buff = speex_alloc(channels*2*frame_size*sizeof(float));
    st->ringID = speex_alloc(channels*sizeof(int));
    st->order = speex_alloc(channels*sizeof(int));
@@ -147,7 +150,6 @@ void speex_decorrelate(DecorrState *st, const spx_int16_t *in, spx_int16_t *out,
       int N=2*st->frame_size;
       float beta, beta2;
       float *x;
-      float y[st->frame_size];
       float max_alpha = 0;
       
       float *buff;
@@ -179,12 +181,12 @@ void speex_decorrelate(DecorrState *st, const spx_int16_t *in, spx_int16_t *out,
       beta2 = beta;
       for (i=0;i<st->frame_size;i++)
       {
-         y[i] = alpha*(x[i-ALLPASS_ORDER+order]-beta*x[i-ALLPASS_ORDER+order-1])*st->vorbis_win[st->frame_size+i+order] 
+         st->y[i] = alpha*(x[i-ALLPASS_ORDER+order]-beta*x[i-ALLPASS_ORDER+order-1])*st->vorbis_win[st->frame_size+i+order] 
                + x[i-ALLPASS_ORDER]*st->vorbis_win[st->frame_size+i] 
                - alpha*(ring[ringID]
                - beta*ring[ringID+1>=order?0:ringID+1]);
-         ring[ringID++]=y[i];
-         y[i] *= st->vorbis_win[st->frame_size+i];
+         ring[ringID++]=st->y[i];
+         st->y[i] *= st->vorbis_win[st->frame_size+i];
          if (ringID>=order)
             ringID=0;
       }
@@ -216,7 +218,7 @@ void speex_decorrelate(DecorrState *st, const spx_int16_t *in, spx_int16_t *out,
          tmp *= st->vorbis_win[i];
          if (ringID>=order)
             ringID=0;
-         y[i] += tmp;
+         st->y[i] += tmp;
       }
    
 #ifdef VORBIS_PSYCHO
@@ -249,10 +251,10 @@ void speex_decorrelate(DecorrState *st, const spx_int16_t *in, spx_int16_t *out,
       for (i=0;i<st->frame_size;i++)
       {
 #ifdef VORBIS_PSYCHO
-         float tmp = y[i] + frame[i] + st->wola_mem[i];
+         float tmp = st->y[i] + frame[i] + st->wola_mem[i];
          st->wola_mem[i] = frame[i+st->frame_size];
 #else
-         float tmp = y[i];
+         float tmp = st->y[i];
 #endif
          if (tmp>32767)
             tmp = 32767;
@@ -276,5 +278,11 @@ void speex_decorrelate_destroy(DecorrState *st)
    speex_free(st->curve);
 #endif
    speex_free(st->buff);
+   speex_free(st->ring);
+   speex_free(st->ringID);
+   speex_free(st->alpha);
+   speex_free(st->vorbis_win);
+   speex_free(st->order);
+   speex_free(st->y);
    speex_free(st);
 }
