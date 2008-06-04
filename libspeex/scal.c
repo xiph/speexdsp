@@ -132,106 +132,131 @@ void speex_decorrelate(DecorrState *st, const short *in, short *out, float amoun
    float y[st->frame_size];
    float max_alpha = 0;
    
-   for (i=0;i<st->frame_size;i++)
-      st->buff[i] = st->buff[i+st->frame_size];
-   for (i=0;i<st->frame_size;i++)
-      st->buff[i+st->frame_size] = in[i];
-   if (amount < 0)
    {
-      amount = -amount;
-      var_order = 0;
-   }
+      float *buff;
+      float *ring;
+      int ringID;
+      int order;
+      float alpha;
 
-   x = st->buff+st->frame_size;
-   beta = 1.-.3*amount*amount;
-   if (amount>1)
-      beta = 1-sqrt(.4*amount);
-   else
-      beta = 1-0.63246*amount;
-   if (beta<0)
-      beta = 0;
+      buff = st->buff;
+      ring = st->ring;
+      ringID = st->ringID;
+      order = st->order;
+      alpha = st->alpha;
+      
+      for (i=0;i<st->frame_size;i++)
+         buff[i] = buff[i+st->frame_size];
+      for (i=0;i<st->frame_size;i++)
+         buff[i+st->frame_size] = in[i];
+      if (amount < 0)
+      {
+         amount = -amount;
+         var_order = 0;
+      }
+
+      x = buff+st->frame_size;
+      beta = 1.-.3*amount*amount;
+      if (amount>1)
+         beta = 1-sqrt(.4*amount);
+      else
+         beta = 1-0.63246*amount;
+      if (beta<0)
+         beta = 0;
    
-   beta2 = beta;
-   if (!var_order)
-      beta=0;
-   for (i=0;i<st->frame_size;i++)
-   {
-      y[i] = st->vorbis_win[st->frame_size+i] * 
-            (st->alpha*(x[i-ALLPASS_ORDER+st->order]-beta*x[i-ALLPASS_ORDER+st->order-1])*st->vorbis_win[st->frame_size+i+st->order] + x[i-ALLPASS_ORDER]*st->vorbis_win[st->frame_size+i] - st->alpha*(st->ring[st->ringID]-beta*st->ring[st->ringID+1>=st->order?0:st->ringID+1]));
-      st->ring[st->ringID++]=y[i];
-      if (st->ringID>=st->order)
-         st->ringID=0;
-   }
-   st->order = st->order+(irand(&st->seed)%3)-1;
-   if (st->order < 5)
-      st->order = 5;
-   if (st->order > 10)
-      st->order = 10;
-   st->order = 5+(irand(&st->seed)%6);
-   if (!var_order)
-      st->order = 7;
-   max_alpha = pow(.96+.04*(amount-1),st->order);
-   if (max_alpha > .98/(1.+beta2))
-      max_alpha = .98/(1.+beta2);
+      beta2 = beta;
+      if (!var_order)
+         beta=0;
+      for (i=0;i<st->frame_size;i++)
+      {
+         y[i] = alpha*(x[i-ALLPASS_ORDER+order]-beta*x[i-ALLPASS_ORDER+order-1])*st->vorbis_win[st->frame_size+i+order] 
+               + x[i-ALLPASS_ORDER]*st->vorbis_win[st->frame_size+i] 
+               - alpha*(ring[ringID]
+               - beta*ring[ringID+1>=order?0:ringID+1]);
+         ring[ringID++]=y[i];
+         y[i] *= st->vorbis_win[st->frame_size+i];
+         if (ringID>=order)
+            ringID=0;
+      }
+      order = order+(irand(&st->seed)%3)-1;
+      if (order < 5)
+         order = 5;
+      if (order > 10)
+         order = 10;
+      order = 5+(irand(&st->seed)%6);
+      if (!var_order)
+         order = 7;
+      max_alpha = pow(.96+.04*(amount-1),order);
+      if (max_alpha > .98/(1.+beta2))
+         max_alpha = .98/(1.+beta2);
    
-   st->alpha = st->alpha + .5*uni_rand(&st->seed);
-   if (st->alpha > max_alpha)
-      st->alpha = max_alpha;
-   if (st->alpha < -max_alpha)
-      st->alpha = -max_alpha;
-   for (i=0;i<ALLPASS_ORDER;i++)
-      st->ring[i] = 0;
-   st->ringID = 0;
-   for (i=0;i<st->frame_size;i++)
-   {
-      float tmp = st->vorbis_win[i] * 
-            (st->alpha*(x[i-ALLPASS_ORDER+st->order]-beta*x[i-ALLPASS_ORDER+st->order-1])*st->vorbis_win[i+st->order] + x[i-ALLPASS_ORDER]*st->vorbis_win[i] - st->alpha*(st->ring[st->ringID]-beta*st->ring[st->ringID+1>=st->order?0:st->ringID+1]));
-      st->ring[st->ringID++]=tmp;
-      if (st->ringID>=st->order)
-         st->ringID=0;
-      y[i] += tmp;
-   }
+      alpha = alpha + .5*uni_rand(&st->seed);
+      if (alpha > max_alpha)
+         alpha = max_alpha;
+      if (alpha < -max_alpha)
+         alpha = -max_alpha;
+      for (i=0;i<ALLPASS_ORDER;i++)
+         ring[i] = 0;
+      ringID = 0;
+      for (i=0;i<st->frame_size;i++)
+      {
+         float tmp =  alpha*(x[i-ALLPASS_ORDER+order]-beta*x[i-ALLPASS_ORDER+order-1])*st->vorbis_win[i+order] 
+               + x[i-ALLPASS_ORDER]*st->vorbis_win[i] 
+               - alpha*(ring[ringID]
+               - beta*ring[ringID+1>=order?0:ringID+1]);
+         ring[ringID++]=tmp;
+         tmp *= st->vorbis_win[i];
+         if (ringID>=order)
+            ringID=0;
+         y[i] += tmp;
+      }
    
 #ifdef VORBIS_PSYCHO
-   float frame[N];
-   float scale = 1./N;
-   for (i=0;i<2*st->frame_size;i++)
-      frame[i] = st->buff[i];
+      float frame[N];
+      float scale = 1./N;
+      for (i=0;i<2*st->frame_size;i++)
+         frame[i] = buff[i];
    //float coef = .5*0.78130;
-   float coef = M_PI*0.075063 * 0.93763 * amount * .8 * 0.707;
-   compute_curve(st->psy, st->buff, st->curve);
-   for (i=1;i<st->frame_size;i++)
-   {
-      float x1,x2;
-      float gain;
-      do {
-         x1 = uni_rand(&st->seed);
-         x2 = uni_rand(&st->seed);
-      } while (x1*x1+x2*x2 > 1.);
-      gain = coef*sqrt(.1+st->curve[i]);
-      frame[2*i-1] = gain*x1;
-      frame[2*i] = gain*x2;
-   }
-   frame[0] = coef*uni_rand(&st->seed)*sqrt(.1+st->curve[0]);
-   frame[2*st->frame_size-1] = coef*uni_rand(&st->seed)*sqrt(.1+st->curve[st->frame_size-1]);
-   spx_drft_backward(&st->lookup,frame);
-   for (i=0;i<2*st->frame_size;i++)
-      frame[i] *= st->vorbis_win[i];
+      float coef = M_PI*0.075063 * 0.93763 * amount * .8 * 0.707;
+      compute_curve(st->psy, buff, st->curve);
+      for (i=1;i<st->frame_size;i++)
+      {
+         float x1,x2;
+         float gain;
+         do {
+            x1 = uni_rand(&st->seed);
+            x2 = uni_rand(&st->seed);
+         } while (x1*x1+x2*x2 > 1.);
+         gain = coef*sqrt(.1+st->curve[i]);
+         frame[2*i-1] = gain*x1;
+         frame[2*i] = gain*x2;
+      }
+      frame[0] = coef*uni_rand(&st->seed)*sqrt(.1+st->curve[0]);
+      frame[2*st->frame_size-1] = coef*uni_rand(&st->seed)*sqrt(.1+st->curve[st->frame_size-1]);
+      spx_drft_backward(&st->lookup,frame);
+      for (i=0;i<2*st->frame_size;i++)
+         frame[i] *= st->vorbis_win[i];
 #endif
    
-   for (i=0;i<st->frame_size;i++)
-   {
+      for (i=0;i<st->frame_size;i++)
+      {
 #ifdef VORBIS_PSYCHO
-      float tmp = y[i] + frame[i] + st->wola_mem[i];
-      st->wola_mem[i] = frame[i+st->frame_size];
+         float tmp = y[i] + frame[i] + st->wola_mem[i];
+         st->wola_mem[i] = frame[i+st->frame_size];
 #else
-      float tmp = y[i];
+         float tmp = y[i];
 #endif
-      if (tmp>32767)
-         tmp = 32767;
-      if (tmp < -32767)
-         tmp = -32767;
-      out[i] = tmp;
+         if (tmp>32767)
+            tmp = 32767;
+         if (tmp < -32767)
+            tmp = -32767;
+         out[i] = tmp;
+      }
+      
+      st->ringID = ringID;
+      st->order = order;
+      st->alpha = alpha;
+
    }
 }
 
