@@ -63,21 +63,22 @@ struct DecorrState_ {
    float *wola_mem;
    float *curve;
 #endif
-   float *buff;
    float *vorbis_win;
    int    seed;
    
-   float ring[ALLPASS_ORDER];
-   int ringID;
-   int order;
-   float alpha;
+   /* Per-channel stuff */
+   float *buff;
+   float (*ring)[ALLPASS_ORDER];
+   int *ringID;
+   int *order;
+   float *alpha;
 };
 
 typedef struct DecorrState_ DecorrState;
 
 DecorrState *speex_decorrelate_new(int rate, int channels, int frame_size)
 {
-   int i;
+   int i, ch;
    DecorrState *st = speex_alloc(sizeof(DecorrState));
    st->rate = rate;
    st->channels = channels;
@@ -88,23 +89,30 @@ DecorrState *speex_decorrelate_new(int rate, int channels, int frame_size)
    st->wola_mem = speex_alloc(frame_size*sizeof(float));
    st->curve = speex_alloc(frame_size*sizeof(float));
 #endif
-   st->buff = speex_alloc(2*frame_size*sizeof(float));
+   st->buff = speex_alloc(channels*2*frame_size*sizeof(float));
+   st->ringID = speex_alloc(channels*sizeof(int));
+   st->order = speex_alloc(channels*sizeof(int));
+   st->alpha = speex_alloc(channels*sizeof(float));
+   st->ring = speex_alloc(channels*ALLPASS_ORDER*sizeof(float));
+   
    /*FIXME: The +20 is there only as a kludge for ALL_PASS_OLA*/
    st->vorbis_win = speex_alloc((2*frame_size+20)*sizeof(float));
    for (i=0;i<2*frame_size;i++)
       st->vorbis_win[i] = sin(.5*M_PI* sin(M_PI*i/(2*frame_size))*sin(M_PI*i/(2*frame_size)) );
    st->seed = rand();
    
-   for (i=0;i<ALLPASS_ORDER;i++)
-      st->ring[i] = 0;
-   st->ringID = 0;
-   st->alpha = 0;
-   st->order = 10;
-   
+   for (ch=0;ch<channels;ch++)
+   {
+      for (i=0;i<ALLPASS_ORDER;i++)
+         st->ring[ch][i] = 0;
+      st->ringID[ch] = 0;
+      st->alpha[ch] = 0;
+      st->order[ch] = 10;
+   }
    return st;
 }
 
-float uni_rand(int *seed)
+static float uni_rand(int *seed)
 {
    const unsigned int jflone = 0x3f800000;
    const unsigned int jflmsk = 0x007fffff;
@@ -115,45 +123,49 @@ float uni_rand(int *seed)
    return 2*ran.f;
 }
 
-unsigned int irand(int *seed)
+static unsigned int irand(int *seed)
 {
    *seed = 1664525 * *seed + 1013904223;
    return ((unsigned int)*seed)>>16;
 }
 
 
-void speex_decorrelate(DecorrState *st, const short *in, short *out, float amount)
+void speex_decorrelate(DecorrState *st, const spx_int16_t *in, spx_int16_t *out, int strength)
 {
-   int i;
-   int N=2*st->frame_size;
-   int var_order = 1;
-   float beta, beta2;
-   float *x;
-   float y[st->frame_size];
-   float max_alpha = 0;
+   int ch;
+   float amount;
    
+   if (strength<0)
+      strength = 0;
+   if (strength>100)
+      strength = 100;
+   
+   amount = .01*strength;
+   for (ch=0;ch<st->channels;ch++)
    {
+      int i;
+      int N=2*st->frame_size;
+      float beta, beta2;
+      float *x;
+      float y[st->frame_size];
+      float max_alpha = 0;
+      
       float *buff;
       float *ring;
       int ringID;
       int order;
       float alpha;
 
-      buff = st->buff;
-      ring = st->ring;
-      ringID = st->ringID;
-      order = st->order;
-      alpha = st->alpha;
+      buff = st->buff+ch*2*st->frame_size;
+      ring = st->ring[ch];
+      ringID = st->ringID[ch];
+      order = st->order[ch];
+      alpha = st->alpha[ch];
       
       for (i=0;i<st->frame_size;i++)
          buff[i] = buff[i+st->frame_size];
       for (i=0;i<st->frame_size;i++)
-         buff[i+st->frame_size] = in[i];
-      if (amount < 0)
-      {
-         amount = -amount;
-         var_order = 0;
-      }
+         buff[i+st->frame_size] = in[i*st->channels+ch];
 
       x = buff+st->frame_size;
       beta = 1.-.3*amount*amount;
@@ -165,8 +177,6 @@ void speex_decorrelate(DecorrState *st, const short *in, short *out, float amoun
          beta = 0;
    
       beta2 = beta;
-      if (!var_order)
-         beta=0;
       for (i=0;i<st->frame_size;i++)
       {
          y[i] = alpha*(x[i-ALLPASS_ORDER+order]-beta*x[i-ALLPASS_ORDER+order-1])*st->vorbis_win[st->frame_size+i+order] 
@@ -183,14 +193,12 @@ void speex_decorrelate(DecorrState *st, const short *in, short *out, float amoun
          order = 5;
       if (order > 10)
          order = 10;
-      order = 5+(irand(&st->seed)%6);
-      if (!var_order)
-         order = 7;
+      /*order = 5+(irand(&st->seed)%6);*/
       max_alpha = pow(.96+.04*(amount-1),order);
       if (max_alpha > .98/(1.+beta2))
          max_alpha = .98/(1.+beta2);
    
-      alpha = alpha + .5*uni_rand(&st->seed);
+      alpha = alpha + .4*uni_rand(&st->seed);
       if (alpha > max_alpha)
          alpha = max_alpha;
       if (alpha < -max_alpha)
@@ -250,12 +258,12 @@ void speex_decorrelate(DecorrState *st, const short *in, short *out, float amoun
             tmp = 32767;
          if (tmp < -32767)
             tmp = -32767;
-         out[i] = tmp;
+         out[i*st->channels+ch] = tmp;
       }
       
-      st->ringID = ringID;
-      st->order = order;
-      st->alpha = alpha;
+      st->ringID[ch] = ringID;
+      st->order[ch] = order;
+      st->alpha[ch] = alpha;
 
    }
 }
