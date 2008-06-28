@@ -7,6 +7,10 @@
 #include <speex/speex_jitter.h>
 #include <speex/speex.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /** @defgroup SpeexJitter SpeexJitter: Adaptive jitter buffer specifically for Speex
  *  This is the jitter buffer that reorders UDP/RTP packets and adjusts the buffer size
  * to maintain good quality and low latency. This is a simplified version that works only
