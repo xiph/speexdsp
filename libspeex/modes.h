@@ -36,8 +36,8 @@
 #ifndef MODES_H
 #define MODES_H
 
-#include <speex/speex.h>
-#include <speex/speex_bits.h>
+#include "../include/speex/speex.h"
+#include "../include/speex/speex_bits.h"
 #include "arch.h"
 
 #define NB_SUBMODES 16

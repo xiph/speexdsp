@@ -7,8 +7,8 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include "speex/speex_echo.h"
-#include "speex/speex_preprocess.h"
+#include "../include/speex/speex_echo.h"
+#include "../include/speex/speex_preprocess.h"
 
 
 #define NN 128

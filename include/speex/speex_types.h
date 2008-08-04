@@ -119,7 +119,11 @@
 
 #else
 
+# ifdef _BUILD_SPEEX
+#  include "include/speex/speex_config_types.h"
+#else
 #  include <speex/speex_config_types.h>
+#endif
 
 #endif
 

@@ -33,7 +33,7 @@
 #define WAV_IO_H
 
 #include <stdio.h>
-#include "speex/speex_types.h"
+#include "../include/speex/speex_types.h"
 
 #if !defined(__LITTLE_ENDIAN__) && ( defined(WORDS_BIGENDIAN) || defined(__BIG_ENDIAN__) )
 #define le_short(s) ((short) ((unsigned short) (s) << 8) | ((unsigned short) (s) >> 8))

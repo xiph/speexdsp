@@ -39,7 +39,11 @@
  *  @{
  */
 
-#include "speex.h"
+#ifdef _BUILD_SPEEX
+# include "speex.h"
+#else
+# include <speex/speex.h>
+#endif
 
 #ifdef __cplusplus
 extern "C" {

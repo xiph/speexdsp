@@ -35,7 +35,7 @@
 #ifndef CB_SEARCH_H
 #define CB_SEARCH_H
 
-#include <speex/speex_bits.h>
+#include "../include/speex/speex_bits.h"
 #include "arch.h"
 
 /** Split codebook parameters. */

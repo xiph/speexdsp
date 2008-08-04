@@ -37,7 +37,11 @@
  *  This is the acoustic echo canceller module.
  *  @{
  */
-#include "speex/speex_types.h"
+#ifdef _BUILD_SPEEX
+# include "speex_types.h"
+#else
+# include <speex/speex_types.h>
+#endif
 
 #ifdef __cplusplus
 extern "C" {

@@ -47,12 +47,12 @@
 #include <string.h>
 #include <time.h>
 
-#include <speex/speex.h>
+#include "../include/speex/speex.h"
 #include <ogg/ogg.h>
 #include "wav_io.h"
-#include <speex/speex_header.h>
-#include <speex/speex_stereo.h>
-#include <speex/speex_preprocess.h>
+#include "../include/speex/speex_header.h"
+#include "../include/speex/speex_stereo.h"
+#include "../include/speex/speex_preprocess.h"
 
 #if defined WIN32 || defined _WIN32
 /* We need the following two to set stdout to binary */

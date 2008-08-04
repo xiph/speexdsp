@@ -32,7 +32,7 @@
    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <speex/speex_bits.h>
+#include "../include/speex/speex_bits.h"
 #include "arch.h"
 
 /** LTP parameters. */

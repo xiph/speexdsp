@@ -36,7 +36,7 @@
 #include "config.h"
 #endif
 
-#include <speex/speex_callbacks.h>
+#include "../include/speex/speex_callbacks.h"
 #include "arch.h"
 #include "os_support.h"
 

@@ -33,8 +33,8 @@
 #include "config.h"
 #endif
 
-#include <speex/speex_stereo.h>
-#include <speex/speex_callbacks.h>
+#include "../include/speex/speex_stereo.h"
+#include "../include/speex/speex_callbacks.h"
 #include "math_approx.h"
 #include "vq.h"
 #include <math.h>

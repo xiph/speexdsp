@@ -35,7 +35,7 @@
 #endif
 
 #include <stdio.h>
-#include "speex/speex_resampler.h"
+#include "../include/speex/speex_resampler.h"
 #include <math.h>
 #include <stdlib.h>
 

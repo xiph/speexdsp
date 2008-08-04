@@ -37,7 +37,7 @@
 #define SB_CELP_H
 
 #include "modes.h"
-#include <speex/speex_bits.h>
+#include "../include/speex/speex_bits.h"
 #include "nb_celp.h"
 
 /**Structure representing the full state of the sub-band encoder*/

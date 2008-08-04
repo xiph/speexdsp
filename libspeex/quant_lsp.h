@@ -35,7 +35,7 @@
 #ifndef QUANT_LSP_H
 #define QUANT_LSP_H
 
-#include <speex/speex_bits.h>
+#include "../include/speex/speex_bits.h"
 #include "arch.h"
 
 #define MAX_LSP_SIZE 20
