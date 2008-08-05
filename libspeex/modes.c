@@ -318,15 +318,15 @@ static const SpeexSubmode nb_submode7 = {
 
 /* Default mode for narrowband */
 static const SpeexNBMode nb_mode = {
-   160,    /*frameSize*/
-   40,     /*subframeSize*/
-   10,     /*lpcSize*/
-   17,     /*pitchStart*/
-   144,    /*pitchEnd*/
+   NB_FRAME_SIZE,    /*frameSize*/
+   NB_SUBFRAME_SIZE, /*subframeSize*/
+   NB_ORDER,         /*lpcSize*/
+   NB_PITCH_START,               /*pitchStart*/
+   NB_PITCH_END,              /*pitchEnd*/
 #ifdef FIXED_POINT
-   29491, 19661, /* gamma1, gamma2 */
+   29491, 19661,     /* gamma1, gamma2 */
 #else
-   0.9, 0.6, /* gamma1, gamma2 */
+   0.9, 0.6,         /* gamma1, gamma2 */
 #endif
    QCONST16(.0002,15), /*lpc_floor*/
    {NULL, &nb_submode1, &nb_submode2, &nb_submode3, &nb_submode4, &nb_submode5, &nb_submode6, &nb_submode7,

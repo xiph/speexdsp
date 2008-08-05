@@ -132,7 +132,7 @@ void *nb_encoder_init(const SpeexMode *m)
    st->frameSize = mode->frameSize;
    st->nbSubframes=mode->frameSize/mode->subframeSize;
    st->subframeSize=mode->subframeSize;
-   st->windowSize = st->frameSize+st->subframeSize;
+   st->windowSize = NB_WINDOW_SIZE;
    st->lpcSize = mode->lpcSize;
    st->gamma1=mode->gamma1;
    st->gamma2=mode->gamma2;
@@ -155,39 +155,19 @@ void *nb_encoder_init(const SpeexMode *m)
 
    st->cumul_gain = 1024;
 
-   /* Allocating input buffer */
-   st->winBuf = (spx_word16_t*)speex_alloc((st->windowSize-st->frameSize)*sizeof(spx_word16_t));
-   /* Allocating excitation buffer */
-   st->excBuf = (spx_word16_t*)speex_alloc((mode->frameSize+mode->pitchEnd+2)*sizeof(spx_word16_t));
-   st->exc = st->excBuf + mode->pitchEnd + 2;
-   st->swBuf = (spx_word16_t*)speex_alloc((mode->frameSize+mode->pitchEnd+2)*sizeof(spx_word16_t));
-   st->sw = st->swBuf + mode->pitchEnd + 2;
-
    st->window= lpc_window;
    
    /* Create the window for autocorrelation (lag-windowing) */
    st->lagWindow = lag_window;
 
-   st->old_lsp = (spx_lsp_t*)speex_alloc((st->lpcSize)*sizeof(spx_lsp_t));
-   st->old_qlsp = (spx_lsp_t*)speex_alloc((st->lpcSize)*sizeof(spx_lsp_t));
    st->first = 1;
    for (i=0;i<st->lpcSize;i++)
       st->old_lsp[i]= DIV32(MULT16_16(QCONST16(3.1415927f, LSP_SHIFT), i+1), st->lpcSize+1);
 
-   st->mem_sp = (spx_mem_t*)speex_alloc((st->lpcSize)*sizeof(spx_mem_t));
-   st->mem_sw = (spx_mem_t*)speex_alloc((st->lpcSize)*sizeof(spx_mem_t));
-   st->mem_sw_whole = (spx_mem_t*)speex_alloc((st->lpcSize)*sizeof(spx_mem_t));
-   st->mem_exc = (spx_mem_t*)speex_alloc((st->lpcSize)*sizeof(spx_mem_t));
-   st->mem_exc2 = (spx_mem_t*)speex_alloc((st->lpcSize)*sizeof(spx_mem_t));
-
-   st->pi_gain = (spx_word32_t*)speex_alloc((st->nbSubframes)*sizeof(spx_word32_t));
    st->innov_rms_save = NULL;
    
-   st->pitch = (int*)speex_alloc((st->nbSubframes)*sizeof(int));
-
 #ifndef DISABLE_VBR
-   st->vbr = (VBRState*)speex_alloc(sizeof(VBRState));
-   vbr_init(st->vbr);
+   vbr_init(&st->vbr);
    st->vbr_quality = 8;
    st->vbr_enabled = 0;
    st->vbr_max = 0;
@@ -219,23 +199,8 @@ void nb_encoder_destroy(void *state)
    speex_free_scratch(st->stack);
 #endif
 
-   speex_free (st->winBuf);
-   speex_free (st->excBuf);
-   speex_free (st->old_qlsp);
-   speex_free (st->swBuf);
-
-   speex_free (st->old_lsp);
-   speex_free (st->mem_sp);
-   speex_free (st->mem_sw);
-   speex_free (st->mem_sw_whole);
-   speex_free (st->mem_exc);
-   speex_free (st->mem_exc2);
-   speex_free (st->pi_gain);
-   speex_free (st->pitch);
-
 #ifndef DISABLE_VBR
-   vbr_destroy(st->vbr);
-   speex_free (st->vbr);
+   vbr_destroy(&st->vbr);
 #endif /* #ifndef DISABLE_VBR */
 
 #ifdef VORBIS_PSYCHO
@@ -291,6 +256,8 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
    ALLOC(interp_lpc, st->lpcSize, spx_coef_t);
    ALLOC(interp_qlpc, st->lpcSize, spx_coef_t);
 
+   st->exc = st->excBuf + st->max_pitch + 2;
+   st->sw = st->swBuf + st->max_pitch + 2;
    /* Move signals 1 frame towards the past */
    SPEEX_MOVE(st->excBuf, st->excBuf+st->frameSize, st->max_pitch+2);
    SPEEX_MOVE(st->swBuf, st->swBuf+st->frameSize, st->max_pitch+2);
@@ -421,7 +388,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
 
    /*VBR stuff*/
 #ifndef DISABLE_VBR
-   if (st->vbr && (st->vbr_enabled||st->vad_enabled))
+   if (st->vbr_enabled||st->vad_enabled)
    {
       float lsp_dist=0;
       for (i=0;i<st->lpcSize;i++)
@@ -447,7 +414,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
             st->vbr_quality=0;
       }
 
-      st->relative_quality = vbr_analysis(st->vbr, in, st->frameSize, ol_pitch, GAIN_SCALING_1*ol_pitch_coef);
+      st->relative_quality = vbr_analysis(&st->vbr, in, st->frameSize, ol_pitch, GAIN_SCALING_1*ol_pitch_coef);
       /*if (delta_qual<0)*/
       /*  delta_qual*=.1*(3+st->vbr_quality);*/
       if (st->vbr_enabled) 
@@ -956,14 +923,8 @@ void *nb_decoder_init(const SpeexMode *m)
 
    st->lpc_enh_enabled=1;
 
-   st->excBuf = (spx_word16_t*)speex_alloc((st->frameSize + 2*st->max_pitch + st->subframeSize + 12)*sizeof(spx_word16_t));
-   st->exc = st->excBuf + 2*st->max_pitch + st->subframeSize + 6;
    SPEEX_MEMSET(st->excBuf, 0, st->frameSize + st->max_pitch);
 
-   st->interp_qlpc = (spx_coef_t*)speex_alloc(st->lpcSize*sizeof(spx_coef_t));
-   st->old_qlsp = (spx_lsp_t*)speex_alloc(st->lpcSize*sizeof(spx_lsp_t));
-   st->mem_sp = (spx_mem_t*)speex_alloc(st->lpcSize*sizeof(spx_mem_t));
-   st->pi_gain = (spx_word32_t*)speex_alloc((st->nbSubframes)*sizeof(spx_word32_t));
    st->last_pitch = 40;
    st->count_lost=0;
    st->pitch_gain_buf[0] = st->pitch_gain_buf[1] = st->pitch_gain_buf[2] = 0;
@@ -999,12 +960,6 @@ void nb_decoder_destroy(void *state)
    speex_free_scratch(st->stack);
 #endif
 
-   speex_free (st->excBuf);
-   speex_free (st->interp_qlpc);
-   speex_free (st->old_qlsp);
-   speex_free (st->mem_sp);
-   speex_free (st->pi_gain);
-
    speex_free(state);
 }
 
@@ -1026,7 +981,9 @@ static void nb_decode_lost(DecState *st, spx_word16_t *out, char *stack)
    spx_word16_t gain_med;
    spx_word16_t innov_gain;
    spx_word16_t noise_gain;
-   
+
+   st->exc = st->excBuf + 2*st->max_pitch + st->subframeSize + 6;
+
    if (st->count_lost<10)
       fact = attenuation[st->count_lost];
    else
@@ -1105,6 +1062,8 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
 
    st=(DecState*)state;
    stack=st->stack;
+
+   st->exc = st->excBuf + 2*st->max_pitch + st->subframeSize + 6;
 
    /* Check if we're in DTX mode*/
    if (!bits && st->dtx_enabled)
