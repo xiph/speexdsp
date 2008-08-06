@@ -866,25 +866,20 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
 #else
       /* Compute bandwidth-expanded (unquantized) LPCs for perceptual weighting */
       bw_lpc(st->gamma1, interp_lpc, bw_lpc1, st->lpcSize);
-      if (st->gamma2>=0)
-         bw_lpc(st->gamma2, interp_lpc, bw_lpc2, st->lpcSize);
-      else
-      {
-         for (i=0;i<st->lpcSize;i++)
-            bw_lpc2[i]=0;
-      }
+      bw_lpc(st->gamma2, interp_lpc, bw_lpc2, st->lpcSize);
       /*print_vec(st->bw_lpc1, 10, "bw_lpc");*/
 #endif
 
       /*FIXME: This will break if we change the window size */
       speex_assert(st->windowSize-st->frameSize == st->subframeSize);
-      if (sub==0)
       {
+         spx_word16_t *buf;
+         if (sub==0)
+            buf = st->winBuf;
+         else
+            buf = &in[((sub-1)*st->subframeSize)];
          for (i=0;i<st->subframeSize;i++)
-            real_exc[i] = sw[i] = st->winBuf[i];
-      } else {
-         for (i=0;i<st->subframeSize;i++)
-            real_exc[i] = sw[i] = in[i+((sub-1)*st->subframeSize)];
+            real_exc[i] = sw[i] = buf[i];
       }
       fir_mem16(real_exc, interp_qlpc, real_exc, st->subframeSize, st->lpcSize, st->mem_exc2, stack);
       
@@ -999,7 +994,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
          } else {
             qe = scal_quant(fine_gain, exc_gain_quant_scal1_bound, 2);
             speex_bits_pack(bits, qe, 1);
-            ener=MULT16_32_Q14(exc_gain_quant_scal1[qe],ol_gain);               
+            ener=MULT16_32_Q14(exc_gain_quant_scal1[qe],ol_gain);
          }
       } else {
          ener=ol_gain;
