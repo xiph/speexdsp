@@ -53,6 +53,8 @@
 #include "config.h"
 #endif
 
+#ifndef DISABLE_ENCODER
+
 #include "lpc.h"
 
 #ifdef BFIN_ASM
@@ -199,3 +201,4 @@ int          n
 #endif
 
 
+#endif /* DISABLE_ENCODER */

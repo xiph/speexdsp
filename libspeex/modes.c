@@ -50,6 +50,33 @@
 #define NULL 0
 #endif
 
+#ifdef DISABLE_ENCODER
+#define nb_encoder_init NULL
+#define nb_encoder_destroy NULL
+#define nb_encode NULL
+#define nb_encoder_ctl NULL
+
+#define split_cb_search_shape_sign NULL
+#define noise_codebook_quant NULL
+#define pitch_search_3tap NULL
+#define forced_pitch_quant NULL
+#define lsp_quant_nb NULL
+#define lsp_quant_lbr NULL
+#endif /* DISABLE_ENCODER */
+
+#ifdef DISABLE_DECODER
+#define nb_decoder_init NULL
+#define nb_decoder_destroy NULL
+#define nb_decode NULL
+#define nb_decoder_ctl NULL
+
+#define noise_codebook_unquant NULL
+#define split_cb_shape_sign_unquant NULL
+#define lsp_unquant_nb NULL
+#define lsp_unquant_lbr NULL
+#define pitch_unquant_3tap NULL
+#define forced_pitch_unquant NULL
+#endif /* DISABLE_DECODER */
 
 /* Extern declarations for all codebooks we use here */
 extern const signed char gain_cdbk_nb[];
@@ -343,14 +370,14 @@ EXPORT const SpeexMode speex_nb_mode = {
    "narrowband",
    0,
    4,
-   &nb_encoder_init,
-   &nb_encoder_destroy,
-   &nb_encode,
-   &nb_decoder_init,
-   &nb_decoder_destroy,
-   &nb_decode,
-   &nb_encoder_ctl,
-   &nb_decoder_ctl,
+   nb_encoder_init,
+   nb_encoder_destroy,
+   nb_encode,
+   nb_decoder_init,
+   nb_decoder_destroy,
+   nb_decode,
+   nb_encoder_ctl,
+   nb_decoder_ctl,
 };
 
 

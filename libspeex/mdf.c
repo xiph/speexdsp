@@ -42,7 +42,7 @@
    
    Valin, J.-M., On Adjusting the Learning Rate in Frequency Domain Echo 
    Cancellation With Double-Talk. IEEE Transactions on Audio,
-   Speech and Language Processing, V<ol. 15, No. 3, pp. 1030-1034, 2007.
+   Speech and Language Processing, Vol. 15, No. 3, pp. 1030-1034, 2007.
    http://people.xiph.org/~jm/papers/valin_taslp2006.pdf
    
    There is no explicit double-talk detection, but a continuous variation

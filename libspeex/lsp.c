@@ -122,6 +122,7 @@ Heavily modified by Jean-Marc Valin (c) 2002-2006 (fixed-point,
 
 #endif
 
+#ifndef DISABLE_ENCODER
 
 /*---------------------------------------------------------------------------*\
 
@@ -387,6 +388,7 @@ int lpc_to_lsp (spx_coef_t *a,int lpcrdr,spx_lsp_t *freq,int nb,spx_word16_t del
     return(roots);
 }
 
+#endif /* DISABLE_ENCODER */
 /*---------------------------------------------------------------------------*\
 
 	FUNCTION....: lsp_to_lpc()

@@ -104,6 +104,7 @@ EXPORT void speex_stereo_state_destroy(SpeexStereoState *stereo)
    speex_free(stereo);
 }
 
+#ifndef DISABLE_ENCODER
 #ifndef DISABLE_FLOAT_API
 EXPORT void speex_encode_stereo(float *data, int frame_size, SpeexBits *bits)
 {
@@ -216,6 +217,12 @@ EXPORT void speex_encode_stereo_int(spx_int16_t *data, int frame_size, SpeexBits
    /*fprintf (stderr, "%d %d %d %d\n", largest, smallest, balance_id, e_ratio);*/
    speex_bits_pack(bits, tmp, 2);
 }
+#else /* DISABLE_ENCODER */
+EXPORT void speex_encode_stereo_int(spx_int16_t *data, int frame_size, SpeexBits *bits)
+{
+}
+#endif /* DISABLE_ENCODER */
+
 
 #ifndef DISABLE_FLOAT_API
 EXPORT void speex_decode_stereo(float *data, int frame_size, SpeexStereoState *_stereo)
