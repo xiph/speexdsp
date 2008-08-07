@@ -158,9 +158,11 @@ int   update_target
    {
       spx_word16_t *x=t+subvect_size*i;
       /*Find new n-best based on previous n-best j*/
+#ifndef DISABLE_WIDEBAND
       if (have_sign)
          vq_nbest_sign(x, resp2, subvect_size, shape_cb_size, E, 1, &best_index, &best_dist, stack);
       else
+#endif /* DISABLE_WIDEBAND */
          vq_nbest(x, resp2, subvect_size, shape_cb_size, E, 1, &best_index, &best_dist, stack);
       
       speex_bits_pack(bits,best_index,params->shape_bits+have_sign);
@@ -379,9 +381,11 @@ int   update_target
          tener *= .5;
 #endif
          /*Find new n-best based on previous n-best j*/
+#ifndef DISABLE_WIDEBAND
          if (have_sign)
             vq_nbest_sign(x, resp2, subvect_size, shape_cb_size, E, N, best_index, best_dist, stack);
          else
+#endif /* DISABLE_WIDEBAND */
             vq_nbest(x, resp2, subvect_size, shape_cb_size, E, N, best_index, best_dist, stack);
 
          /*For all new n-bests*/

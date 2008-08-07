@@ -32,6 +32,9 @@
    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#ifndef LTP_H
+#define LTP_H
+
 #include "../include/speex/speex_bits.h"
 #include "arch.h"
 
@@ -139,3 +142,5 @@ int subframe_offset,
 spx_word16_t last_pitch_gain,
 int cdbk_offset
 );
+
+#endif /* LTP_H */
