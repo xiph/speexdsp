@@ -529,7 +529,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
 
          SPEEX_COPY(st->sw, st->winBuf, diff);
          SPEEX_COPY(st->sw+diff, in, NB_FRAME_SIZE-diff);
-         filter_mem16(st->sw, bw_lpc1, bw_lpc2, st->sw, NB_FRAME_SIZE, NB_ORDER, st->mem_sw_whole, stack);
+         filter10(st->sw, bw_lpc1, bw_lpc2, st->sw, NB_FRAME_SIZE, st->mem_sw_whole, stack);
 
          open_loop_nbest_pitch(st->sw, NB_PITCH_START, NB_PITCH_END, NB_FRAME_SIZE, 
                                nol_pitch, nol_pitch_coef, 6, stack);
@@ -891,19 +891,19 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
       iir_mem16(ringing, interp_qlpc, ringing, response_bound, NB_ORDER, mem, stack);
       for (i=0;i<NB_ORDER;i++)
          mem[i]=SHL32(st->mem_sw[i],1);
-      filter_mem16(ringing, st->bw_lpc1, st->bw_lpc2, ringing, response_bound, NB_ORDER, mem, stack);
+      filter10(ringing, st->bw_lpc1, st->bw_lpc2, ringing, response_bound, mem, stack);
       SPEEX_MEMSET(&ringing[response_bound], 0, NB_SUBFRAME_SIZE-response_bound);
 #else
       iir_mem16(ringing, interp_qlpc, ringing, NB_SUBFRAME_SIZE, NB_ORDER, mem, stack);
       for (i=0;i<NB_ORDER;i++)
          mem[i]=SHL32(st->mem_sw[i],1);
-      filter_mem16(ringing, bw_lpc1, bw_lpc2, ringing, NB_SUBFRAME_SIZE, NB_ORDER, mem, stack);
+      filter10(ringing, bw_lpc1, bw_lpc2, ringing, NB_SUBFRAME_SIZE, mem, stack);
 #endif
       
       /* Compute weighted signal */
       for (i=0;i<NB_ORDER;i++)
          mem[i]=st->mem_sw[i];
-      filter_mem16(sw, bw_lpc1, bw_lpc2, sw, NB_SUBFRAME_SIZE, NB_ORDER, mem, stack);
+      filter10(sw, bw_lpc1, bw_lpc2, sw, NB_SUBFRAME_SIZE, mem, stack);
       
       if (st->complexity==0)
          for (i=0;i<NB_ORDER;i++)
@@ -1041,7 +1041,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
 
       /* Compute weighted signal again, from synthesized speech (not sure it's the right thing) */
       if (st->complexity!=0)
-         filter_mem16(sw, bw_lpc1, bw_lpc2, sw, NB_SUBFRAME_SIZE, NB_ORDER, st->mem_sw, stack);
+         filter10(sw, bw_lpc1, bw_lpc2, sw, NB_SUBFRAME_SIZE, st->mem_sw, stack);
       
    }
 

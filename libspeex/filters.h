@@ -87,4 +87,8 @@ spx_word16_t  comb_gain,    /*gain of comb filter*/
 char *stack
 );
 
+
+#define filter10(x, num, den, y, N, mem, stack) filter_mem16(x, num, den, y, N, 10, mem, stack)
+
+
 #endif

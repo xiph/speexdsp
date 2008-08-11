@@ -421,7 +421,7 @@ int scaledown
       iir_mem16(e, ak, e, nsf, p, mm, stack);
       for (j=0;j<p;j++)
          mm[j] = 0;
-      filter_mem16(e, awk1, awk2, e, nsf, p, mm, stack);
+      filter10(e, awk1, awk2, e, nsf, mm, stack);
       for (j=0;j<nsf;j++)
          x[2][j] = e[j];
    }
