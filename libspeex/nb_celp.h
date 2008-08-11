@@ -60,13 +60,6 @@
 typedef struct EncState {
    const SpeexMode *mode;        /**< Mode corresponding to the state */
    int    first;                 /**< Is this the first frame? */
-   int    frameSize;             /**< Size of frames */
-   int    subframeSize;          /**< Size of sub-frames */
-   int    nbSubframes;           /**< Number of sub-frames */
-   int    windowSize;            /**< Analysis (LPC) window length */
-   int    lpcSize;               /**< LPC order */
-   int    min_pitch;             /**< Minimum pitch value allowed */
-   int    max_pitch;             /**< Maximum pitch value allowed */
 
    spx_word32_t cumul_gain;      /**< Product of previously used pitch gains (Q10) */
    int    bounded_pitch;         /**< Next frame should not rely on previous frames for pitch */
@@ -134,12 +127,6 @@ typedef struct DecState {
    const SpeexMode *mode;       /**< Mode corresponding to the state */
    int    first;                /**< Is this the first frame? */
    int    count_lost;           /**< Was the last frame lost? */
-   int    frameSize;            /**< Size of frames */
-   int    subframeSize;         /**< Size of sub-frames */
-   int    nbSubframes;          /**< Number of sub-frames */
-   int    lpcSize;              /**< LPC order */
-   int    min_pitch;            /**< Minimum pitch value allowed */
-   int    max_pitch;            /**< Maximum pitch value allowed */
    spx_int32_t sampling_rate;
 
    spx_word16_t  last_ol_gain;  /**< Open-loop gain for previous frame */
