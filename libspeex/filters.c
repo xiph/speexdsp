@@ -320,7 +320,9 @@ spx_word16_t compute_rms16(const spx_word16_t *x, int len)
 }
 #endif
 
-
+#ifdef MERGE_FILTERS
+const spx_word16_t zeros[10] = {0,0,0,0,0,0,0,0,0,0};
+#endif  /* MERGE_FILTERS */
 
 #if !defined(OVERRIDE_FILTER_MEM16) && !defined(DISABLE_ENCODER)
 void filter_mem16(const spx_word16_t *x, const spx_coef_t *num, const spx_coef_t *den, spx_word16_t *y, int N, int ord, spx_mem_t *mem, char *stack)
