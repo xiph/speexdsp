@@ -211,7 +211,7 @@ static float cheb_poly_eva(spx_word32_t *coef, spx_word16_t x, int m, char *stac
 \*---------------------------------------------------------------------------*/
 
 #ifdef FIXED_POINT
-#define SIGN_CHANGE(a,b) (((a)&0x70000000)^((b)&0x70000000)||(b==0))
+#define SIGN_CHANGE(a,b) ((((a)^(b))&0x80000000)||(b==0))
 #else
 #define SIGN_CHANGE(a,b) (((a)*(b))<0.0)
 #endif
@@ -325,7 +325,7 @@ int lpc_to_lsp (spx_coef_t *a,int lpcrdr,spx_lsp_t *freq,int nb,spx_word16_t del
 
 	psuml = cheb_poly_eva(pt,xl,m,stack);	/* evals poly. at xl 	*/
 	flag = 1;
-	while(flag && (xr >= -FREQ_SCALE)){
+	while(xr >= -FREQ_SCALE){
            spx_word16_t dd;
            /* Modified by JMV to provide smaller steps around x=+-1 */
 #ifdef FIXED_POINT
@@ -377,7 +377,7 @@ int lpc_to_lsp (spx_coef_t *a,int lpcrdr,spx_lsp_t *freq,int nb,spx_word16_t del
 	       /* once zero is found, reset initial interval to xr 	*/
 	       freq[j] = X2ANGLE(xm);
 	       xl = xm;
-	       flag = 0;       		/* reset flag for next search 	*/
+	       break;       		/* reset flag for next search 	*/
 	    }
 	    else{
 		psuml=temp_psumr;
