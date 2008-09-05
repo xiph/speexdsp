@@ -419,7 +419,6 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
    int ol_pitch;
    spx_word16_t ol_pitch_coef;
    spx_word32_t ol_gain;
-   VARDECL(spx_word16_t *ringing);
    VARDECL(spx_word16_t *target);
    VARDECL(spx_sig_t *innov);
    VARDECL(spx_word32_t *exc32);
@@ -435,7 +434,6 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
    VARDECL(spx_coef_t *interp_qlpc);
    char *stack;
    VARDECL(spx_word16_t *syn_resp);
-   VARDECL(spx_word16_t *real_exc);
    
    spx_word32_t ener=0;
    spx_word16_t fine_gain;
@@ -803,9 +801,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
    ALLOC(target, NB_SUBFRAME_SIZE, spx_word16_t);
    ALLOC(innov, NB_SUBFRAME_SIZE, spx_sig_t);
    ALLOC(exc32, NB_SUBFRAME_SIZE, spx_word32_t);
-   ALLOC(ringing, NB_SUBFRAME_SIZE, spx_word16_t);
    ALLOC(syn_resp, NB_SUBFRAME_SIZE, spx_word16_t);
-   ALLOC(real_exc, NB_SUBFRAME_SIZE, spx_word16_t);
    ALLOC(mem, NB_ORDER, spx_mem_t);
 
    /* Loop on sub-frames */
@@ -813,7 +809,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
    {
       int   offset;
       spx_word16_t *sw;
-      spx_word16_t *exc;
+      spx_word16_t *exc, *inBuf;
       int pitch;
       int response_bound = NB_SUBFRAME_SIZE;
 
@@ -865,16 +861,12 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
 
       /*FIXME: This will break if we change the window size */
       speex_assert(NB_WINDOW_SIZE-NB_FRAME_SIZE == NB_SUBFRAME_SIZE);
-      {
-         spx_word16_t *buf;
-         if (sub==0)
-            buf = st->winBuf;
-         else
-            buf = &in[((sub-1)*NB_SUBFRAME_SIZE)];
-         for (i=0;i<NB_SUBFRAME_SIZE;i++)
-            real_exc[i] = sw[i] = buf[i];
-      }
-      fir_mem16(real_exc, interp_qlpc, real_exc, NB_SUBFRAME_SIZE, NB_ORDER, st->mem_exc2, stack);
+      if (sub==0)
+         inBuf = st->winBuf;
+      else
+         inBuf = &in[((sub-1)*NB_SUBFRAME_SIZE)];
+      for (i=0;i<NB_SUBFRAME_SIZE;i++)
+         sw[i] = inBuf[i];
       
       if (st->complexity==0)
          response_bound >>= 1;
@@ -886,18 +878,18 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
       for (i=0;i<NB_ORDER;i++)
          mem[i]=SHL32(st->mem_sp[i],1);
       for (i=0;i<NB_SUBFRAME_SIZE;i++)
-         ringing[i] = VERY_SMALL;
+         exc[i] = VERY_SMALL;
 #ifdef SHORTCUTS2
-      iir_mem16(ringing, interp_qlpc, ringing, response_bound, NB_ORDER, mem, stack);
+      iir_mem16(exc, interp_qlpc, exc, response_bound, NB_ORDER, mem, stack);
       for (i=0;i<NB_ORDER;i++)
          mem[i]=SHL32(st->mem_sw[i],1);
-      filter10(ringing, st->bw_lpc1, st->bw_lpc2, ringing, response_bound, mem, stack);
-      SPEEX_MEMSET(&ringing[response_bound], 0, NB_SUBFRAME_SIZE-response_bound);
+      filter10(exc, st->bw_lpc1, st->bw_lpc2, exc, response_bound, mem, stack);
+      SPEEX_MEMSET(&exc[response_bound], 0, NB_SUBFRAME_SIZE-response_bound);
 #else
-      iir_mem16(ringing, interp_qlpc, ringing, NB_SUBFRAME_SIZE, NB_ORDER, mem, stack);
+      iir_mem16(exc, interp_qlpc, exc, NB_SUBFRAME_SIZE, NB_ORDER, mem, stack);
       for (i=0;i<NB_ORDER;i++)
          mem[i]=SHL32(st->mem_sw[i],1);
-      filter10(ringing, bw_lpc1, bw_lpc2, ringing, NB_SUBFRAME_SIZE, mem, stack);
+      filter10(exc, bw_lpc1, bw_lpc2, exc, NB_SUBFRAME_SIZE, mem, stack);
 #endif
       
       /* Compute weighted signal */
@@ -911,11 +903,11 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
       
       /* Compute target signal (saturation prevents overflows on clipped input speech) */
       for (i=0;i<NB_SUBFRAME_SIZE;i++)
-         target[i]=EXTRACT16(SATURATE(SUB32(sw[i],PSHR32(ringing[i],1)),32767));
+         target[i]=EXTRACT16(SATURATE(SUB32(sw[i],PSHR32(exc[i],1)),32767));
 
-      /* Reset excitation */
-      SPEEX_MEMSET(exc, 0, NB_SUBFRAME_SIZE);
-
+      for (i=0;i<NB_SUBFRAME_SIZE;i++)
+         exc[i] = inBuf[i];
+      fir_mem16(exc, interp_qlpc, exc, NB_SUBFRAME_SIZE, NB_ORDER, st->mem_exc2, stack);
       /* If we have a long-term predictor (otherwise, something's wrong) */
       speex_assert (SUBMODE(ltp_quant));
       {
@@ -957,11 +949,11 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
       /* Quantization of innovation */
       SPEEX_MEMSET(innov, 0, NB_SUBFRAME_SIZE);
       
-      /* FIXME: Make sure this is save from overflows (so far so good) */
+      /* FIXME: Make sure this is safe from overflows (so far so good) */
       for (i=0;i<NB_SUBFRAME_SIZE;i++)
-         real_exc[i] = EXTRACT16(SUB32(EXTEND32(real_exc[i]), PSHR32(exc32[i],SIG_SHIFT-1)));
+         exc[i] = EXTRACT16(SUB32(EXTEND32(exc[i]), PSHR32(exc32[i],SIG_SHIFT-1)));
       
-      ener = SHL32(EXTEND32(compute_rms16(real_exc, NB_SUBFRAME_SIZE)),SIG_SHIFT);
+      ener = SHL32(EXTEND32(compute_rms16(exc, NB_SUBFRAME_SIZE)),SIG_SHIFT);
       
       /*FIXME: Should use DIV32_16 and make sure result fits in 16 bits */
 #ifdef FIXED_POINT
@@ -1009,9 +1001,6 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
          /* De-normalize innovation and update excitation */
          signal_mul(innov, innov, ener, NB_SUBFRAME_SIZE);
          
-         for (i=0;i<NB_SUBFRAME_SIZE;i++)
-            exc[i] = EXTRACT16(SATURATE32(PSHR32(ADD32(SHL32(exc32[i],1),innov[i]),SIG_SHIFT),32767));
-
          /* In some (rare) modes, we do a second search (more bits) to reduce noise even more */
          if (SUBMODE(double_codebook)) {
             char *tmp_stack=stack;
@@ -1030,10 +1019,8 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
          }
          for (i=0;i<NB_SUBFRAME_SIZE;i++)
             exc[i] = EXTRACT16(SATURATE32(PSHR32(ADD32(SHL32(exc32[i],1),innov[i]),SIG_SHIFT),32767));
-#ifndef DISABLE_WIDEBAND
          if (st->innov_rms_save)
             st->innov_rms_save[sub] = compute_rms(innov, NB_SUBFRAME_SIZE);
-#endif
       }
 
       /* Final signal synthesis from excitation */
