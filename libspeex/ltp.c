@@ -394,18 +394,22 @@ int scaledown
       new_target[j] = target[j];
 
    {
+      int bound;
       VARDECL(spx_mem_t *mm);
       int pp=pitch-1;
       ALLOC(mm, p, spx_mem_t);
-      for (j=0;j<nsf;j++)
-      {
-         if (j-pp<0)
-            e[j]=exc2[j-pp];
-         else if (j-pp-pitch<0)
-            e[j]=exc2[j-pp-pitch];
-         else
-            e[j]=0;
-      }
+      bound = nsf;
+      if (nsf-pp>0)
+         bound = pp;
+      for (j=0;j<bound;j++)
+         e[j]=exc2[j-pp];
+      bound = nsf;
+      if (nsf-pp-pitch>0)
+         bound = pp+pitch;
+      for (;j<bound;j++)
+         e[j]=exc2[j-pp-pitch];
+      for (;j<nsf;j++)
+         e[j]=0;
 #ifdef FIXED_POINT
       /* Scale target and excitation down if needed (avoiding overflow) */
       if (scaledown)
@@ -596,7 +600,7 @@ spx_word32_t *cumul_gain
          break;
       }
    }
-   for (i=-end;i<nsf;i++)
+   for (i=-end;i<0;i++)
    {
       if (ABS16(exc2[i])>16383)
       {
