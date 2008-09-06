@@ -591,13 +591,17 @@ void lsp_to_lpc(spx_lsp_t *freq,spx_coef_t *ak,int lpcrdr, char *stack)
 
 #ifdef FIXED_POINT
 
-/*Makes sure the LSPs are stable*/
-void lsp_enforce_margin(spx_lsp_t *lsp, int len, spx_word16_t margin)
+
+void lsp_interpolate(spx_lsp_t *old_lsp, spx_lsp_t *new_lsp, spx_lsp_t *lsp, int len, int subframe, int nb_subframes, spx_word16_t margin)
 {
    int i;
    spx_word16_t m = margin;
    spx_word16_t m2 = 25736-margin;
-  
+   spx_word16_t tmp = DIV32_16(SHL32(EXTEND32(1 + subframe),14),nb_subframes);
+   spx_word16_t tmp2 = 16384-tmp;
+   for (i=0;i<len;i++)
+      lsp[i] = MULT16_16_P14(tmp2,old_lsp[i]) + MULT16_16_P14(tmp,new_lsp[i]);
+   /* Enforce margin to sure the LSPs are stable*/
    if (lsp[0]<m)
       lsp[0]=m;
    if (lsp[len-1]>m2)
@@ -612,24 +616,16 @@ void lsp_enforce_margin(spx_lsp_t *lsp, int len, spx_word16_t margin)
    }
 }
 
-
-void lsp_interpolate(spx_lsp_t *old_lsp, spx_lsp_t *new_lsp, spx_lsp_t *interp_lsp, int len, int subframe, int nb_subframes)
-{
-   int i;
-   spx_word16_t tmp = DIV32_16(SHL32(EXTEND32(1 + subframe),14),nb_subframes);
-   spx_word16_t tmp2 = 16384-tmp;
-   for (i=0;i<len;i++)
-   {
-      interp_lsp[i] = MULT16_16_P14(tmp2,old_lsp[i]) + MULT16_16_P14(tmp,new_lsp[i]);
-   }
-}
-
 #else
 
-/*Makes sure the LSPs are stable*/
-void lsp_enforce_margin(spx_lsp_t *lsp, int len, spx_word16_t margin)
+
+void lsp_interpolate(spx_lsp_t *old_lsp, spx_lsp_t *new_lsp, spx_lsp_t *lsp, int len, int subframe, int nb_subframes, spx_word16_t margin)
 {
    int i;
+   float tmp = (1.0f + subframe)/nb_subframes;
+   for (i=0;i<len;i++)
+      lsp[i] = (1-tmp)*old_lsp[i] + tmp*new_lsp[i];
+   /* Enforce margin to sure the LSPs are stable*/
    if (lsp[0]<LSP_SCALING*margin)
       lsp[0]=LSP_SCALING*margin;
    if (lsp[len-1]>LSP_SCALING*(M_PI-margin))
@@ -641,17 +637,6 @@ void lsp_enforce_margin(spx_lsp_t *lsp, int len, spx_word16_t margin)
 
       if (lsp[i]>lsp[i+1]-LSP_SCALING*margin)
          lsp[i]= .5f* (lsp[i] + lsp[i+1]-LSP_SCALING*margin);
-   }
-}
-
-
-void lsp_interpolate(spx_lsp_t *old_lsp, spx_lsp_t *new_lsp, spx_lsp_t *interp_lsp, int len, int subframe, int nb_subframes)
-{
-   int i;
-   float tmp = (1.0f + subframe)/nb_subframes;
-   for (i=0;i<len;i++)
-   {
-      interp_lsp[i] = (1-tmp)*old_lsp[i] + tmp*new_lsp[i];
    }
 }
 

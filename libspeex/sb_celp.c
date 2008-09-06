@@ -783,11 +783,8 @@ int sb_encode(void *state, void *vin, SpeexBits *bits)
       ALLOC(sw, st->subframeSize, spx_word16_t);
       
       /* LSP interpolation (quantized and unquantized) */
-      lsp_interpolate(st->old_lsp, lsp, interp_lsp, st->lpcSize, sub, st->nbSubframes);
-      lsp_interpolate(st->old_qlsp, qlsp, interp_qlsp, st->lpcSize, sub, st->nbSubframes);
-
-      lsp_enforce_margin(interp_lsp, st->lpcSize, LSP_MARGIN);
-      lsp_enforce_margin(interp_qlsp, st->lpcSize, LSP_MARGIN);
+      lsp_interpolate(st->old_lsp, lsp, interp_lsp, st->lpcSize, sub, st->nbSubframes, LSP_MARGIN);
+      lsp_interpolate(st->old_qlsp, qlsp, interp_qlsp, st->lpcSize, sub, st->nbSubframes, LSP_MARGIN);
 
       lsp_to_lpc(interp_lsp, interp_lpc, st->lpcSize,stack);
       lsp_to_lpc(interp_qlsp, st->interp_qlpc, st->lpcSize, stack);
@@ -1347,9 +1344,7 @@ int sb_decode(void *state, SpeexBits *bits, void *vout)
       }
       
       /* LSP interpolation */
-      lsp_interpolate(st->old_qlsp, qlsp, interp_qlsp, st->lpcSize, sub, st->nbSubframes);
-
-      lsp_enforce_margin(interp_qlsp, st->lpcSize, LSP_MARGIN);
+      lsp_interpolate(st->old_qlsp, qlsp, interp_qlsp, st->lpcSize, sub, st->nbSubframes, LSP_MARGIN);
 
       /* LSP to LPC */
       lsp_to_lpc(interp_qlsp, ak, st->lpcSize, stack);

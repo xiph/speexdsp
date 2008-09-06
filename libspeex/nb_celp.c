@@ -504,9 +504,7 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
          for (i=0;i<NB_ORDER;i++)
             interp_lsp[i] = lsp[i];
       else
-         lsp_interpolate(st->old_lsp, lsp, interp_lsp, NB_ORDER, NB_NB_SUBFRAMES, NB_NB_SUBFRAMES<<1);
-
-      lsp_enforce_margin(interp_lsp, NB_ORDER, LSP_MARGIN);
+         lsp_interpolate(st->old_lsp, lsp, interp_lsp, NB_ORDER, NB_NB_SUBFRAMES, NB_NB_SUBFRAMES<<1, LSP_MARGIN);
 
       /* Compute interpolated LPCs (unquantized) for whole frame*/
       lsp_to_lpc(interp_lsp, interp_lpc, NB_ORDER,stack);
@@ -558,9 +556,10 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
       }
       
       /*Compute "real" excitation*/
-      SPEEX_COPY(st->exc, st->winBuf, diff);
-      SPEEX_COPY(st->exc+diff, in, NB_FRAME_SIZE-diff);
-      fir_mem16(st->exc, interp_lpc, st->exc, NB_FRAME_SIZE, NB_ORDER, st->mem_exc, stack);
+      /*SPEEX_COPY(st->exc, st->winBuf, diff);
+      SPEEX_COPY(st->exc+diff, in, NB_FRAME_SIZE-diff);*/
+      fir_mem16(st->winBuf, interp_lpc, st->exc, diff, NB_ORDER, st->mem_exc, stack);
+      fir_mem16(in, interp_lpc, st->exc+diff, NB_FRAME_SIZE-diff, NB_ORDER, st->mem_exc, stack);
 
       /* Compute open-loop excitation gain */
       {
@@ -821,12 +820,8 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
       sw=st->sw+offset;
       
       /* LSP interpolation (quantized and unquantized) */
-      lsp_interpolate(st->old_lsp, lsp, interp_lsp, NB_ORDER, sub, NB_NB_SUBFRAMES);
-      lsp_interpolate(st->old_qlsp, qlsp, interp_qlsp, NB_ORDER, sub, NB_NB_SUBFRAMES);
-
-      /* Make sure the filters are stable */
-      lsp_enforce_margin(interp_lsp, NB_ORDER, LSP_MARGIN);
-      lsp_enforce_margin(interp_qlsp, NB_ORDER, LSP_MARGIN);
+      lsp_interpolate(st->old_lsp, lsp, interp_lsp, NB_ORDER, sub, NB_NB_SUBFRAMES, LSP_MARGIN);
+      lsp_interpolate(st->old_qlsp, qlsp, interp_qlsp, NB_ORDER, sub, NB_NB_SUBFRAMES, LSP_MARGIN);
 
       /* Compute interpolated LPCs (quantized and unquantized) */
       lsp_to_lpc(interp_lsp, interp_lpc, NB_ORDER,stack);
@@ -1773,10 +1768,7 @@ int nb_decode(void *state, SpeexBits *bits, void *vout)
       exc=st->exc+offset;
 
       /* LSP interpolation (quantized and unquantized) */
-      lsp_interpolate(st->old_qlsp, qlsp, interp_qlsp, NB_ORDER, sub, NB_NB_SUBFRAMES);
-
-      /* Make sure the LSP's are stable */
-      lsp_enforce_margin(interp_qlsp, NB_ORDER, LSP_MARGIN);
+      lsp_interpolate(st->old_qlsp, qlsp, interp_qlsp, NB_ORDER, sub, NB_NB_SUBFRAMES, LSP_MARGIN);
 
       /* Compute interpolated LPCs (unquantized) */
       lsp_to_lpc(interp_qlsp, ak, NB_ORDER, stack);
