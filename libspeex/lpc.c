@@ -82,13 +82,6 @@ int          p
    spx_word16_t r;
    spx_word16_t error = ac[0];
 
-   if (ac[0] == 0)
-   {
-      for (i = 0; i < p; i++)
-         lpc[i] = 0;
-      return 0;
-   }
-
    for (i = 0; i < p; i++) {
 
       /* Sum up this iteration's reflection coefficient */

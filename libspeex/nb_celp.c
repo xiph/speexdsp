@@ -468,16 +468,17 @@ int nb_encode(void *state, void *vin, SpeexBits *bits)
       ALLOC(autocorr, NB_ORDER+1, spx_word16_t);
       /* Window for analysis */
       for (i=0;i<NB_WINDOW_SIZE-NB_FRAME_SIZE;i++)
-         w_sig[i] = EXTRACT16(SHR32(MULT16_16(st->winBuf[i],st->window[i]),SIG_SHIFT));
+         w_sig[i] = MULT16_16_Q15(st->winBuf[i],st->window[i]);
       for (;i<NB_WINDOW_SIZE;i++)
-         w_sig[i] = EXTRACT16(SHR32(MULT16_16(in[i-NB_WINDOW_SIZE+NB_FRAME_SIZE],st->window[i]),SIG_SHIFT));
+         w_sig[i] = MULT16_16_Q15(in[i-NB_WINDOW_SIZE+NB_FRAME_SIZE],st->window[i]);
       /* Compute auto-correlation */
       _spx_autocorr(w_sig, autocorr, NB_ORDER+1, NB_WINDOW_SIZE);
       autocorr[0] = ADD16(autocorr[0],MULT16_16_Q15(autocorr[0],st->lpc_floor)); /* Noise floor in auto-correlation domain */
 
       /* Lag windowing: equivalent to filtering in the power-spectrum domain */
       for (i=0;i<NB_ORDER+1;i++)
-         autocorr[i] = MULT16_16_Q14(autocorr[i],st->lagWindow[i]);
+         autocorr[i] = MULT16_16_Q15(autocorr[i],st->lagWindow[i]);
+      autocorr[0] = ADD16(autocorr[0],1);
 
       /* Levinson-Durbin */
       _spx_lpc(lpc, autocorr, NB_ORDER);
