@@ -102,14 +102,15 @@ int          p
 #endif
       /*  Update LPC coefficients and total error */
       lpc[i] = r;
-      for (j = 0; j < i>>1; j++) 
+      for (j = 0; j < (i+1)>>1; j++) 
       {
-         spx_word16_t tmp  = lpc[j];
-         lpc[j]     = MAC16_16_P13(lpc[j],r,lpc[i-1-j]);
-         lpc[i-1-j] = MAC16_16_P13(lpc[i-1-j],r,tmp);
+         spx_word16_t tmp1, tmp2;
+         /* It could be that j == i-1-j, in which case, we're updating the same value twice, which is OK */
+         tmp1 = lpc[j];
+         tmp2 = lpc[i-1-j];
+         lpc[j]     = MAC16_16_P13(tmp1,r,tmp2);
+         lpc[i-1-j] = MAC16_16_P13(tmp2,r,tmp1);
       }
-      if (i & 1) 
-         lpc[j] = MAC16_16_P13(lpc[j],lpc[j],r);
 
       error = SUB16(error,MULT16_16_Q13(r,MULT16_16_Q13(error,r)));
    }
