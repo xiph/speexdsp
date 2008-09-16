@@ -42,6 +42,7 @@ void speex_jitter_get(SpeexJitter *jitter, spx_int16_t *out, int *current_timest
    char data[2048];
    JitterBufferPacket packet;
    packet.data = data;
+   packet.len = 2048;
    
    if (jitter->valid_bits)
    {
