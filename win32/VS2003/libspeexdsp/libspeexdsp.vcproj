@@ -253,6 +253,9 @@
 				RelativePath="..\..\..\libspeex\resample.c">
 			</File>
 			<File
+				RelativePath="..\..\..\libspeex\scal.c">
+			</File>
+			<File
 				RelativePath="..\..\..\libspeex\smallft.c">
 			</File>
 		</Filter>

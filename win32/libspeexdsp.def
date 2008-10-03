@@ -17,6 +17,7 @@ speex_buffer_resize
 ;	speex_echo.h
 ;
 speex_echo_state_init
+speex_echo_state_init_mc
 speex_echo_state_destroy
 speex_echo_cancellation
 speex_echo_cancel
@@ -24,6 +25,9 @@ speex_echo_capture
 speex_echo_playback
 speex_echo_state_reset
 speex_echo_ctl
+speex_decorrelate_new
+speex_decorrelate
+speex_decorrelate_destroy
 
 ;
 ;	speex_jitter.h

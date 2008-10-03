@@ -1509,6 +1509,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\libspeex\scal.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\libspeex\smallft.c"
 				>
 			</File>

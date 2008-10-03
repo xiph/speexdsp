@@ -125,6 +125,10 @@ SOURCE=..\..\libspeex\resample.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\libspeex\scal.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\libspeex\smallft.c
 # End Source File
 # End Group
