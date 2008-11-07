@@ -77,7 +77,7 @@ void speex_bits_reset(SpeexBits *bits);
 void speex_bits_rewind(SpeexBits *bits);
 
 /** Initializes the bit-stream from the data in an area of memory */
-void speex_bits_read_from(SpeexBits *bits, char *bytes, int len);
+void speex_bits_read_from(SpeexBits *bits, const char *bytes, int len);
 
 /** Append bytes to the bit-stream
  * 
@@ -85,7 +85,7 @@ void speex_bits_read_from(SpeexBits *bits, char *bytes, int len);
  * @param bytes pointer to the bytes what will be appended
  * @param len Number of bytes of append
  */
-void speex_bits_read_whole_bytes(SpeexBits *bits, char *bytes, int len);
+void speex_bits_read_whole_bytes(SpeexBits *bits, const char *bytes, int len);
 
 /** Write the content of a bit-stream to an area of memory
  * 
