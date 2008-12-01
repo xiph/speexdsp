@@ -8359,7 +8359,35 @@ Adaptive codebook
 \end_layout
 
 \begin_layout Standard
-Decode period (constant, offset, per sub-frame)
+For rates of 8 kbit/s and above, the pitch period is encoded for each subframe.
+ The real period is 
+\begin_inset Formula $T=p_{i}+17$
+\end_inset
+
+ where 
+\begin_inset Formula $p_{i}$
+\end_inset
+
+ is a value encoded with 7 bits and 17 corresponds to the minimum pitch.
+ The maximum period is 144.
+ At 5.95 kbit/s (mode 2), the pitch period is similarly encoded, but only
+ once for the frame.
+ Each sub-frame then has a 2-bit offset that is added to the pitch value
+ of the frame.
+ In that case, the pitch for each sub-frame is equal to 
+\begin_inset Formula $T-1+offset$
+\end_inset
+
+.
+ For rates below 5.95 kbit/s, only the per-frame pitch is used and the pitch
+ is constant for all sub-frames.
+\end_layout
+
+\begin_layout Standard
+Speex uses a 3-tap predictor for rates of 5.95 kbit/s and above.
+ The three gain values are obtained from a 5-bit or a 7-bit codebook, depending
+ on the mode.
+  
 \end_layout
 
 \begin_layout Subsection
