@@ -4350,7 +4350,7 @@ spx_int32_t
 \end_layout
 
 \begin_layout Description
-SPEEX_PREPROCESS_GET_ECHO_SUPPRESS Set maximum attenuation of the residual
+SPEEX_PREPROCESS_GET_ECHO_SUPPRESS Get maximum attenuation of the residual
  echo in dB (negative 
 \begin_inset listings
 inline true
@@ -4384,7 +4384,7 @@ spx_int32_t
 \end_layout
 
 \begin_layout Description
-SPEEX_PREPROCESS_GET_ECHO_SUPPRESS_ACTIVE Set maximum attenuation of the
+SPEEX_PREPROCESS_GET_ECHO_SUPPRESS_ACTIVE Get maximum attenuation of the
  echo in dB when near end is active (negative 
 \begin_inset listings
 inline true
@@ -6461,7 +6461,7 @@ name "fig:The-CELP-model"
 \end_layout
 
 \begin_layout Section
-Linear Prediction (LPC)
+Linear Prediction Coefficients (LPC)
 \begin_inset Index
 status collapsed
 
@@ -8528,7 +8528,7 @@ reference "cap:Frame-open-loop-analysis"
 Linear prediction analysis is performed once per frame using an asymmetric
  Hamming window centered on the fourth sub-frame.
  Because linear prediction coefficients (LPC) are not robust to quantization,
- they are first are converted to line spectral pairs (LSP)
+ they are first converted to line spectral pairs (LSP)
 \begin_inset Index
 status collapsed
 
