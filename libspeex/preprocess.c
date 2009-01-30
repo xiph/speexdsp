@@ -68,10 +68,6 @@
 #include "math_approx.h"
 #include "os_support.h"
 
-#ifndef M_PI
-#define M_PI 3.14159263
-#endif
-
 #define LOUDNESS_EXP 5.f
 #define AMP_SCALE .001f
 #define AMP_SCALE_1 1000.f

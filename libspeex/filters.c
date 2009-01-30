@@ -601,7 +601,7 @@ const float shift_filt[3][7] = {{-0.011915f, 0.046995f, -0.152373f, 0.614108f, 0
 #endif
 #endif
 
-int interp_pitch(
+static int interp_pitch(
 spx_word16_t *exc,          /*decoded excitation*/
 spx_word16_t *interp,          /*decoded excitation*/
 int pitch,               /*pitch period*/
