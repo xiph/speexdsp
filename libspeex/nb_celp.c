@@ -72,11 +72,11 @@
 
 
 #ifdef FIXED_POINT
-const spx_word32_t ol_gain_table[32]={18900, 25150, 33468, 44536, 59265, 78865, 104946, 139653, 185838, 247297, 329081, 437913, 582736, 775454, 1031906, 1373169, 1827293, 2431601, 3235761, 4305867, 5729870, 7624808, 10146425, 13501971, 17967238, 23909222, 31816294, 42338330, 56340132, 74972501, 99766822, 132760927};
-const spx_word16_t exc_gain_quant_scal3_bound[7]={1841, 3883, 6051, 8062, 10444, 13580, 18560};
-const spx_word16_t exc_gain_quant_scal3[8]={1002, 2680, 5086, 7016, 9108, 11781, 15380, 21740};
-const spx_word16_t exc_gain_quant_scal1_bound[1]={14385};
-const spx_word16_t exc_gain_quant_scal1[2]={11546, 17224};
+static const spx_word32_t ol_gain_table[32]={18900, 25150, 33468, 44536, 59265, 78865, 104946, 139653, 185838, 247297, 329081, 437913, 582736, 775454, 1031906, 1373169, 1827293, 2431601, 3235761, 4305867, 5729870, 7624808, 10146425, 13501971, 17967238, 23909222, 31816294, 42338330, 56340132, 74972501, 99766822, 132760927};
+static const spx_word16_t exc_gain_quant_scal3_bound[7]={1841, 3883, 6051, 8062, 10444, 13580, 18560};
+static const spx_word16_t exc_gain_quant_scal3[8]={1002, 2680, 5086, 7016, 9108, 11781, 15380, 21740};
+static const spx_word16_t exc_gain_quant_scal1_bound[1]={14385};
+static const spx_word16_t exc_gain_quant_scal1[2]={11546, 17224};
 
 #define LSP_MARGIN 16
 #define LSP_DELTA1 6553
@@ -84,10 +84,10 @@ const spx_word16_t exc_gain_quant_scal1[2]={11546, 17224};
 
 #else
 
-const float exc_gain_quant_scal3_bound[7]={0.112338f, 0.236980f, 0.369316f, 0.492054f, 0.637471f, 0.828874f, 1.132784f};
-const float exc_gain_quant_scal3[8]={0.061130f, 0.163546f, 0.310413f, 0.428220f, 0.555887f, 0.719055f, 0.938694f, 1.326874f};
-const float exc_gain_quant_scal1_bound[1]={0.87798f};
-const float exc_gain_quant_scal1[2]={0.70469f, 1.05127f};
+static const float exc_gain_quant_scal3_bound[7]={0.112338f, 0.236980f, 0.369316f, 0.492054f, 0.637471f, 0.828874f, 1.132784f};
+static const float exc_gain_quant_scal3[8]={0.061130f, 0.163546f, 0.310413f, 0.428220f, 0.555887f, 0.719055f, 0.938694f, 1.326874f};
+static const float exc_gain_quant_scal1_bound[1]={0.87798f};
+static const float exc_gain_quant_scal1[2]={0.70469f, 1.05127f};
 
 #define LSP_MARGIN .002f
 #define LSP_DELTA1 .2f
