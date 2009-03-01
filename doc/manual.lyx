@@ -1,13 +1,14 @@
-#LyX 1.6.0rc2 created this file. For more info see http://www.lyx.org/
-\lyxformat 340
+#LyX 1.6.1 created this file. For more info see http://www.lyx.org/
+\lyxformat 345
 \begin_document
 \begin_header
 \textclass scrbook
+\use_default_options true
 \language english
 \inputencoding auto
-\font_roman times
-\font_sans helvet
-\font_typewriter courier
+\font_roman default
+\font_sans default
+\font_typewriter default
 \font_default_family default
 \font_sc false
 \font_osf false
@@ -21,7 +22,7 @@
 \papersize letterpaper
 \use_geometry true
 \use_amsmath 2
-\use_esint 0
+\use_esint 2
 \cite_engine basic
 \use_bibtopic false
 \paperorientation portrait
@@ -37,7 +38,6 @@
 \papercolumns 1
 \papersides 1
 \paperpagestyle headings
-\listings_params "basicstyle={\ttfamily},breaklines=true,language=C,xleftmargin=0mm"
 \tracking_changes false
 \output_changes false
 \author "" 
@@ -8417,6 +8417,427 @@ Perceptual enhancement
 \begin_layout Standard
 Optional, implementation-defined.
  
+\end_layout
+
+\begin_layout Subsection
+Bit-stream definition
+\end_layout
+
+\begin_layout Standard
+This section defines the bit-stream that is transmitted on the wire.
+ One speex packet consist of 1 frame header and 4 sub-frames:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Tabular
+<lyxtabular version="3" rows="1" columns="5">
+<features>
+<column alignment="center" valignment="top" width="0">
+<column alignment="center" valignment="top" width="0">
+<column alignment="center" valignment="top" width="0">
+<column alignment="center" valignment="top" width="0">
+<column alignment="center" valignment="top" width="0">
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Frame Header
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Subframe 1
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Subframe2
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Subframe 3
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Subframe 4
+\end_layout
+
+\end_inset
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The frame header is variable length, depending on decoding mode and submode.
+ The narrowband frame header is defined as follows:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Tabular
+<lyxtabular version="3" rows="1" columns="6">
+<features>
+<column alignment="center" valignment="top" width="0">
+<column alignment="center" valignment="top" width="0">
+<column alignment="center" valignment="top" width="0">
+<column alignment="center" valignment="top" width="0">
+<column alignment="center" valignment="top" width="0">
+<column alignment="center" valignment="top" width="0">
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+wb bit
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+modeid
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+LSP
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+OL-pitch
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+OL-pitchgain
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+OL ExcGain
+\end_layout
+
+\end_inset
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+wb-bit: Wideband bit (1 bit) 0=narrowband, 1=wideband
+\end_layout
+
+\begin_layout Standard
+modeid: Mode identifier (4 bits)
+\end_layout
+
+\begin_layout Standard
+LSP: Line Spectral Pairs (0, 18 or 30 bits)
+\end_layout
+
+\begin_layout Standard
+OL-pitch: Open Loop Pitch (0 or 7 bits)
+\end_layout
+
+\begin_layout Standard
+OL-pitchgain: Open Loop Pitch Gain (0 or 4 bits)
+\end_layout
+
+\begin_layout Standard
+OL-ExcGain: Open Loop Excitation Gain (0 or 5 bits)
+\end_layout
+
+\begin_layout Standard
+...
+\end_layout
+
+\begin_layout Standard
+Each subframe is defined as follows:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Tabular
+<lyxtabular version="3" rows="1" columns="4">
+<features>
+<column alignment="center" valignment="top" width="0">
+<column alignment="center" valignment="top" width="0">
+<column alignment="center" valignment="top" width="0">
+<column alignment="center" valignment="top" width="0">
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+FinePitch
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+PitchGain
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+InnovationGain
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Innovation VQ
+\end_layout
+
+\end_inset
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+FinePitch: (0 or 7 bits)
+\end_layout
+
+\begin_layout Standard
+PitchGain: (0, 5, or 7 bits)
+\end_layout
+
+\begin_layout Standard
+Innovation Gain: (0, 1, 3 bits)
+\end_layout
+
+\begin_layout Standard
+Innovation VQ: (0-96 bits)
+\end_layout
+
+\begin_layout Standard
+...
+\end_layout
+
+\begin_layout Subsection
+Sample decoder
+\end_layout
+
+\begin_layout Standard
+This section contains some sample source code, showing how a basic Speex
+ decoder can be implemented.
+ The sample decoder is narrowband submode 3 only, and with no advanced features
+ like enhancement, vbr etc.
+\end_layout
+
+\begin_layout Standard
+...
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "nb_celp.c"
+lstparams "caption={Sample Decoder}"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+Lookup tables
+\end_layout
+
+\begin_layout Standard
+The Speex decoder includes a set of lookup tables and codebooks, which are
+ used to convert between values of different domains.
+ This includes:
+\end_layout
+
+\begin_layout Standard
+- Excitation 10x16 (3200 bps)
+\end_layout
+
+\begin_layout Standard
+- Excitation 10x32 (4000 bps)
+\end_layout
+
+\begin_layout Standard
+- Excitation 20x32 (2000 bps)
+\end_layout
+
+\begin_layout Standard
+- Excitation 5x256 (12800 bps)
+\end_layout
+
+\begin_layout Standard
+- Excitation 5x64 (9600 bps)
+\end_layout
+
+\begin_layout Standard
+- Excitation 8x128 (7000 bps)
+\end_layout
+
+\begin_layout Standard
+- Codebook for 3-tap pitch prediction gain (Normal and Low Bitrate)
+\end_layout
+
+\begin_layout Standard
+- Codebook for LSPs in narrowband CELP mode
+\end_layout
+
+\begin_layout Standard
+...
+\end_layout
+
+\begin_layout Standard
+The exact lookup tables are included here for reference.
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "../libspeex/exc_5_64_table.c"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "../libspeex/exc_5_256_table.c"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "../libspeex/exc_8_128_table.c"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "../libspeex/exc_10_16_table.c"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "../libspeex/exc_10_32_table.c"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "../libspeex/exc_20_32_table.c"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "../libspeex/gain_table.c"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "../libspeex/gain_table_lbr.c"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "../libspeex/lsp_tables_nb.c"
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Section
