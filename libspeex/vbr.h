@@ -47,7 +47,6 @@ extern const float vbr_uhb_thresh[2][11];
 
 /** VBR state. */
 typedef struct VBRState {
-   float energy_alpha;
    float average_energy;
    float last_energy;
    float last_log_energy[VBR_MEMORY_SIZE];
