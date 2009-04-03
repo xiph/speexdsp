@@ -296,7 +296,7 @@ static const SpeexSubmode nb_submode5 = {
    split_cb_search_shape_sign,
    split_cb_shape_sign_unquant,
    &split_cb_nb,
-   QCONST16(.3,15),
+   QCONST16(.25,15),
    300
 };
 
@@ -317,7 +317,7 @@ static const SpeexSubmode nb_submode6 = {
    split_cb_search_shape_sign,
    split_cb_shape_sign_unquant,
    &split_cb_sb,
-   QCONST16(.2,15),
+   QCONST16(.15,15),
    364
 };
 
@@ -338,7 +338,7 @@ static const SpeexSubmode nb_submode7 = {
    split_cb_search_shape_sign,
    split_cb_shape_sign_unquant,
    &split_cb_nb,
-   QCONST16(.1,15),
+   QCONST16(.05,15),
    492
 };
 
@@ -350,11 +350,8 @@ static const SpeexNBMode nb_mode = {
    NB_ORDER,         /*lpcSize*/
    NB_PITCH_START,               /*pitchStart*/
    NB_PITCH_END,              /*pitchEnd*/
-#ifdef FIXED_POINT
-   29491, 19661,     /* gamma1, gamma2 */
-#else
-   0.9, 0.6,         /* gamma1, gamma2 */
-#endif
+   QCONST16(0.92,15),  /* gamma1 */
+   QCONST16(0.6,15),   /* gamma2 */
    QCONST16(.0002,15), /*lpc_floor*/
    {NULL, &nb_submode1, &nb_submode2, &nb_submode3, &nb_submode4, &nb_submode5, &nb_submode6, &nb_submode7,
    &nb_submode8, NULL, NULL, NULL, NULL, NULL, NULL, NULL},
