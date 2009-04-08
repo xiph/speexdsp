@@ -162,14 +162,17 @@ EXPORT int speex_decode_int(void *state, SpeexBits *bits, spx_int16_t *out)
    int ret;
    speex_decoder_ctl(state, SPEEX_GET_FRAME_SIZE, &N);
    ret = (*((SpeexMode**)state))->dec(state, bits, float_out);
-   for (i=0;i<N;i++)
+   if (ret == 0)
    {
-      if (float_out[i]>32767.f)
-         out[i] = 32767;
-      else if (float_out[i]<-32768.f)
-         out[i] = -32768;
-      else
-         out[i] = (spx_int16_t)floor(.5+float_out[i]);
+      for (i=0;i<N;i++)
+      {
+         if (float_out[i]>32767.f)
+            out[i] = 32767;
+         else if (float_out[i]<-32768.f)
+            out[i] = -32768;
+         else
+            out[i] = (spx_int16_t)floor(.5+float_out[i]);
+      }
    }
    return ret;
 }
