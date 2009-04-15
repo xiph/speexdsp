@@ -227,6 +227,7 @@ void usage()
    printf (" --nframes n        Number of frames per Ogg packet (1-10), default 1\n"); 
    printf (" --denoise          Denoise the input before encoding\n"); 
    printf (" --agc              Apply adaptive gain control (AGC) before encoding\n"); 
+   printf (" --no-highpass      Disable the encoder's built-in high-pass filter\n");
    printf (" --skeleton         Outputs ogg skeleton metadata (may cause incompatibilities)\n");
    printf (" --comment          Add the given string as an extra comment. This may be\n");
    printf ("                     used multiple times\n");
@@ -235,6 +236,7 @@ void usage()
    printf (" -h, --help         This help\n"); 
    printf (" -v, --version      Version information\n"); 
    printf (" -V                 Verbose mode (show bit-rate)\n"); 
+   printf (" --print-rate       Print the bitrate for each frame to standard output\n");
    printf ("Raw input options:\n");
    printf (" --rate n           Sampling rate for raw input\n"); 
    printf (" --stereo           Consider raw input as stereo\n"); 
@@ -288,6 +290,7 @@ int main(int argc, char **argv)
       {"comp", required_argument, NULL, 0},
       {"denoise", no_argument, NULL, 0},
       {"agc", no_argument, NULL, 0},
+      {"no-highpass", no_argument, NULL, 0},
       {"skeleton",no_argument,NULL, 0},
       {"help", no_argument, NULL, 0},
       {"quiet", no_argument, NULL, 0},
@@ -302,6 +305,7 @@ int main(int argc, char **argv)
       {"comment", required_argument, NULL, 0},
       {"author", required_argument, NULL, 0},
       {"title", required_argument, NULL, 0},
+      {"print-rate", no_argument, NULL, 0},
       {0, 0, 0, 0}
    };
    int print_bitrate=0;
@@ -334,6 +338,8 @@ int main(int argc, char **argv)
    spx_int32_t tmp;
    SpeexPreprocessState *preprocess = NULL;
    int denoise_enabled=0, agc_enabled=0;
+   int highpass_enabled=1;
+   int output_rate=0;
    spx_int32_t lookahead = 0;
 
    speex_lib_ctl(SPEEX_LIB_GET_VERSION_STRING, (void*)&speex_version);
@@ -409,6 +415,9 @@ int main(int argc, char **argv)
          } else if (strcmp(long_options[option_index].name,"agc")==0)
          {
             agc_enabled=1;
+         } else if (strcmp(long_options[option_index].name,"no-highpass")==0)
+         {
+            highpass_enabled=0;
          } else if (strcmp(long_options[option_index].name,"skeleton")==0)
          {
             with_skeleton=1;
@@ -427,6 +436,9 @@ int main(int argc, char **argv)
          {
             version_short();
             exit(0);
+         } else if (strcmp(long_options[option_index].name,"print-rate")==0)
+         {
+			 output_rate=1;
          } else if (strcmp(long_options[option_index].name,"le")==0)
          {
             lsb=1;
@@ -531,7 +543,11 @@ int main(int argc, char **argv)
    }
 
    {
-      fread(first_bytes, 1, 12, fin);
+      if (fread(first_bytes, 1, 12, fin) != 12)
+	  {
+		  perror("short file");
+		  exit(1);
+	  }
       if (strncmp(first_bytes,"RIFF",4)==0 && strncmp(first_bytes,"RIFF",4)==0)
       {
          if (read_wav_header(fin, &rate, &chan, &fmt, &size)==-1)
@@ -696,6 +712,8 @@ int main(int argc, char **argv)
       speex_encoder_ctl(st, SPEEX_SET_ABR, &abr_enabled);
    }
 
+   speex_encoder_ctl(st, SPEEX_SET_HIGHPASS, &highpass_enabled);
+
    speex_encoder_ctl(st, SPEEX_GET_LOOKAHEAD, &lookahead);
    
    if (denoise_enabled || agc_enabled)
@@ -827,6 +845,8 @@ int main(int argc, char **argv)
                fprintf (stderr, "Bitrate is use: %d bps  (average %d bps)   ", tmp, (int)(cumul_bits/enc_frames));
             else
                fprintf (stderr, "Bitrate is use: %d bps     ", tmp);
+			if (output_rate)
+				printf ("%d\n", tmp);
          }
          
       }
