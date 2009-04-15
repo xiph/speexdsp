@@ -5,6 +5,12 @@
 # Disable automatic dependency tracking if using other tools than gcc and gmake
 #AUTOMAKE_OPTIONS = no-dependencies
 
+if BUILD_VORBIS_PSY
+  VPSY_LIB=$(top_builddir)/libspeex/libspeexdsp.la
+else
+  VPSY_LIB=
+endif
+
 INCLUDES = -I$(top_builddir) @OGG_CFLAGS@
 
 man_MANS = speexenc.1 speexdec.1
@@ -21,5 +27,5 @@ speexenc_LDADD = $(top_builddir)/libspeex/libspeex.la $(top_builddir)/libspeex/l
 	$(OGG_LIBS)  @FFT_LIBS@	
 
 speexdec_SOURCES = speexdec.c wav_io.c
-speexdec_LDADD = $(top_builddir)/libspeex/libspeex.la \
+speexdec_LDADD = $(top_builddir)/libspeex/libspeex.la $(VPSY_LIB) \
 	$(OGG_LIBS)  @FFT_LIBS@

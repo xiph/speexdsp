@@ -202,6 +202,12 @@ AC_ARG_ENABLE(ti-c55x, [  --enable-ti-c55x        Enable support for TI C55X DSP
   AC_DEFINE([TI_C55X], , [Enable support for TI C55X DSP])
 fi])
 
+AC_ARG_ENABLE(vorbis-psy, [  --enable-psy    Enable the Vorbis psy model],
+[if test "$enableval" = yes; then
+  vorbis_psy=yes;
+  AC_DEFINE([VORBIS_PSYCHO], , [Enable support for the Vorbis psy model])
+fi])
+
 AC_ARG_WITH([fft], [AS_HELP_STRING([--with-fft=choice],[use an alternate FFT implementation. The available choices are
 kiss (default fixed point), smallft (default floating point), gpl-fftw3 and proprietary-intel-mkl])],
 [FFT=$withval]
@@ -239,6 +245,7 @@ AM_CONDITIONAL(BUILD_KISS_FFT, [test "$FFT" = "kiss"])
 AM_CONDITIONAL(BUILD_SMALLFT, [test "$FFT" = "smallft"])
 AC_SUBST(FFT_PKGCONFIG)
 
+AM_CONDITIONAL(BUILD_VORBIS_PSY, [test "x$vorbis_psy" = "xyes"])
 
 AC_CHECK_SIZEOF(short)
 AC_CHECK_SIZEOF(int)

@@ -39,6 +39,7 @@
 #include "smallft.h"
 #include "lpc.h"
 #include "vorbis_psy.h"
+#include "os_support.h"
 
 #include <stdlib.h>
 #include <math.h>
