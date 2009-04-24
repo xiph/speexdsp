@@ -33,6 +33,8 @@
    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include "bfin.h"
+
 #define OVERRIDE_INNER_PROD
 spx_word32_t inner_prod(const spx_word16_t *x, const spx_word16_t *y, int len)
 {
@@ -57,7 +59,7 @@ spx_word32_t inner_prod(const spx_word16_t *x, const spx_word16_t *y, int len)
       "%0 = R0;\n\t"
    : "=m" (sum)
    : "m" (x), "m" (y), "d" (len-1)
-   : "P0", "P1", "P2", "R0", "R1", "A0", "I0", "I1", "L0", "L1", "R3"
+   : "P0", "P1", "P2", "R0", "R1", "A0", "I0", "I1", "L0", "L1", "R3", "ASTAT" BFIN_HWLOOP0_REGS
    );
    return sum;
 }
@@ -104,7 +106,8 @@ void pitch_xcorr(const spx_word16_t *_x, const spx_word16_t *_y, spx_word32_t *c
       "LOOP_END pitch%=;\n\t"
       "L0 = 0;\n\t"
    : : "m" (_x), "m" (_y), "m" (corr), "m" (len), "m" (nb_pitch)
-   : "A0", "A1", "P0", "P1", "P2", "P3", "P4", "R0", "R1", "R2", "R3", "I0", "I1", "L0", "L1", "B0", "B1", "memory"
+   : "A0", "A1", "P0", "P1", "P2", "P3", "P4", "R0", "R1", "R2", "R3", "I0", "I1", "L0", "L1", "B0", "B1", "memory",
+     "ASTAT" BFIN_HWLOOP0_REGS BFIN_HWLOOP1_REGS
    );
 }
 
@@ -147,7 +150,7 @@ static inline spx_word32_t compute_pitch_error(spx_word16_t *C, spx_word16_t *g,
          "%0 = A0;\n\t"
    : "=&D" (sum), "=a" (C)
    : "d" (g[0]), "d" (g[1]), "d" (g[2]), "d" (pitch_control), "1" (C)
-   : "R0", "R1", "R2", "A0"
+   : "R0", "R1", "R2", "A0", "ASTAT"
          );
    return sum;
 }
@@ -201,10 +204,7 @@ void open_loop_nbest_pitch(spx_word16_t *sw, int start, int end, int len, int *p
 "eu2:      [P0++] = R2;\n\t"
        : : "d" (energy), "d" (&sw[-start-1]), "d" (&sw[-start+len-1]),
            "a" (end-start)  
-       : "P0", "I1", "I2", "R0", "R1", "R2", "R3"
-#if (__GNUC__ == 4)
-         , "LC1"
-#endif
+       : "P0", "I1", "I2", "R0", "R1", "R2", "R3", "ASTAT" BFIN_HWLOOP1_REGS
        );
 
    pitch_xcorr(sw, sw-end, corr, len, end-start+1, stack);
@@ -245,10 +245,8 @@ void open_loop_nbest_pitch(spx_word16_t *sw, int start, int end, int len, int *p
 "        %0 = P0;\n\t"
        : "=&d" (pitch[0])
        : "a" (corr16), "a" (ener16), "a" (end+1-start), "d" (start) 
-       : "P0", "P1", "I0", "I1", "R0", "R1", "R2", "R3", "R4", "R5"
-#if (__GNUC__ == 4)
-         , "LC1"
-#endif
+       : "P0", "P1", "I0", "I1", "R0", "R1", "R2", "R3", "R4", "R5",
+         "ASTAT", "CC" BFIN_HWLOOP1_REGS
        );
 
       }
@@ -407,10 +405,7 @@ static int pitch_gain_search_3tap_vq(
        : "a" (gain_cdbk), "a" (C16), "a" (gain_cdbk_size), "a" (max_gain),
          "b" (-VERY_LARGE32)
        : "R0", "R1", "R2", "R3", "R4", "P0", 
-         "P1", "I1", "L1", "A0", "B0"
-#if (__GNUC__ == 4)
-         , "LC1"
-#endif
+         "P1", "I1", "L1", "A0", "B0", "CC", "ASTAT" BFIN_HWLOOP1_REGS
        );
 
   return best_cdbk;

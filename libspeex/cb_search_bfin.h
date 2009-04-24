@@ -33,6 +33,8 @@
    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include "bfin.h"
+
 #define OVERRIDE_COMPUTE_WEIGHTED_CODEBOOK 
 void compute_weighted_codebook(const signed char *shape_cb, const spx_word16_t *r, spx_word16_t *resp, spx_word16_t *resp2, spx_word32_t *E, int shape_cb_size, int subvect_size, char *stack)
 {
@@ -73,10 +75,7 @@ void compute_weighted_codebook(const signed char *shape_cb, const spx_word16_t *
          :
       : "m" (subvect_size), "m" (shape_cb), "m" (r), "m" (resp), "m" (E)
       : "A0", "P0", "P1", "P2", "P3", "P4", "R0", "R1", "R2", "I0", "I1", "L0", 
-        "L1", "A0", "A1", "memory"
-#if !(__GNUC__ == 3)
-         , "LC0", "LC1" /* gcc 3.4 doesn't know about LC registers */
-#endif
+        "L1", "A0", "A1", "memory", "ASTAT" BFIN_HWLOOP0_REGS BFIN_HWLOOP1_REGS
       );
       shape_cb += subvect_size;
       resp += subvect_size;
@@ -107,6 +106,6 @@ static inline void target_update(spx_word16_t *t, spx_word16_t g, spx_word16_t *
          "LOOP_END tupdate%=;\n\t"
    :
    : "a" (t), "a" (r), "d" (g), "a" (len)
-   : "R0", "R1", "R2", "A1", "I0", "I1", "L0", "L1"
+   : "R0", "R1", "R2", "A1", "I0", "I1", "L0", "L1", "ASTAT" BFIN_HWLOOP0_REGS
          );
 }

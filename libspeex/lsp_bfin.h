@@ -79,7 +79,7 @@ static inline spx_word32_t cheb_poly_eva(
       "%0 = R3;\n\t"
       : "=&d" (sum)
       : "a" (x), "a" (&coef[m]), "a" (m-1)
-      : "R0", "R1", "R3", "R2", "R4", "R5", "P0", "P1"
+      : "R0", "R1", "R3", "R2", "R4", "R5", "P0", "P1", "ASTAT" BFIN_HWLOOP0_REGS
       );
     return sum;
 }

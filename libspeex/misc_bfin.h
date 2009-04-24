@@ -33,6 +33,8 @@
    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include "bfin.h"
+
 #define OVERRIDE_SPEEX_MOVE
 void *speex_move (void *dest, void *src, int n)
 {
@@ -48,7 +50,7 @@ void *speex_move (void *dest, void *src, int n)
          "[%1++] = R0;\n\t"
    : "=a" (src), "=a" (dest)
    : "a" ((n>>2)-1), "0" (src), "1" (dest)
-   : "R0", "I0", "L0", "memory"
+   : "R0", "I0", "L0", "memory" BFIN_HWLOOP0_REGS
          );
    return dest;
 }

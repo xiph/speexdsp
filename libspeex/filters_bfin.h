@@ -32,6 +32,8 @@
    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include "bfin.h"
+
 #define OVERRIDE_NORMALIZE16
 int normalize16(const spx_sig_t *x, spx_word16_t *y, spx_sig_t max_scale, int len)
 {
@@ -50,7 +52,7 @@ int normalize16(const spx_sig_t *x, spx_word16_t *y, spx_sig_t max_scale, int le
    "LOOP_END norm_max%=;\n\t"
    : "=&d" (max_val)
    : "a" (x), "a" (len)
-   : "R1", "R2"
+   : "R1", "R2", "ASTAT" BFIN_HWLOOP0_REGS
    );
 
    sig_shift=0;
@@ -74,7 +76,7 @@ int normalize16(const spx_sig_t *x, spx_word16_t *y, spx_sig_t max_scale, int le
    "R1 = ASHIFT R0 by %2.L;\n\t"
    "W[P1++] = R1;\n\t"
    : : "a" (x), "a" (y), "d" (-sig_shift), "a" (len-1)
-   : "I0", "L0", "P1", "R0", "R1", "memory"
+   : "I0", "L0", "P1", "R0", "R1", "memory", "ASTAT" BFIN_HWLOOP0_REGS
    );
    return sig_shift;
 }
@@ -219,7 +221,8 @@ void filter_mem16(const spx_word16_t *_x, const spx_coef_t *num, const spx_coef_
    "LOOP_END mem_update%=;\n\t"
    "L0 = 0;\n\t"
    : : "m" (xy), "m" (_x), "m" (_y), "m" (numden), "m" (N), "m" (ord), "m" (mem)
-   : "A0", "A1", "R0", "R1", "R2", "R3", "R4", "R5", "P0", "P1", "P2", "P3", "P4", "B0", "I0", "I2", "L0", "L2", "M0", "memory"
+   : "A0", "A1", "R0", "R1", "R2", "R3", "R4", "R5", "P0", "P1", "P2", "P3", "P4", "B0", "I0", "I2", "L0", "L2", "M0", "memory",
+     "ASTAT" BFIN_HWLOOP0_REGS BFIN_HWLOOP1_REGS
    );
 
 }
@@ -345,7 +348,8 @@ void iir_mem16(const spx_word16_t *_x, const spx_coef_t *den, spx_word16_t *_y, 
    "LOOP_END mem_update%=;\n\t"
    "L1 = 0;\n\t"
    : : "m" (yy), "m" (_x), "m" (_y), "m" (den), "m" (N), "m" (ord), "m" (mem)
-   : "A0", "A1", "R0", "R1", "R2", "R3", "R4", "R5", "P0", "P1", "P2", "P3", "P4", "B1", "I1", "I3", "L1", "L3", "memory"
+   : "A0", "A1", "R0", "R1", "R2", "R3", "R4", "R5", "P0", "P1", "P2", "P3", "P4", "B1", "I1", "I3", "L1", "L3", "memory",
+     "ASTAT" BFIN_HWLOOP0_REGS BFIN_HWLOOP1_REGS
    );
 
 }
@@ -426,7 +430,8 @@ void compute_impulse_response(const spx_coef_t *ak, const spx_coef_t *awk1, cons
          "LOOP_END samples%=;\n\t"
    : "=a" (ytmp2), "=a" (y)
    : "a" (awk2), "a" (ak), "d" (ord), "m" (N), "0" (ytmp2), "1" (y)
-   : "A0", "A1", "R0", "R1", "R2", "R3", "I0", "I1", "I2", "I3", "L0", "L1", "L2", "L3", "A0", "A1"
+   : "A0", "A1", "R0", "R1", "R2", "R3", "I0", "I1", "I2", "I3", "L0", "L1", "L2", "L3",
+     "ASTAT" BFIN_HWLOOP0_REGS BFIN_HWLOOP1_REGS
    );
 }
 
