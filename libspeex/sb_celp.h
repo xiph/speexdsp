@@ -57,7 +57,7 @@ typedef struct SBEncState {
 
    char  *stack;                  /**< Temporary allocation stack */
    spx_word16_t *high;               /**< High-band signal (buffer) */
-   spx_word16_t *h0_mem, *h1_mem;
+   spx_word16_t *h0_mem;
 
    const spx_word16_t *window;    /**< LPC analysis window */
    const spx_word16_t *lagWindow;       /**< Auto-correlation window */

@@ -190,7 +190,6 @@ void *sb_encoder_init(const SpeexMode *m)
    st->high=(spx_word16_t*)speex_alloc((st->windowSize-st->frame_size)*sizeof(spx_word16_t));
 
    st->h0_mem=(spx_word16_t*)speex_alloc((QMF_ORDER)*sizeof(spx_word16_t));
-   st->h1_mem=(spx_word16_t*)speex_alloc((QMF_ORDER)*sizeof(spx_word16_t));
 
    st->window= lpc_window;
 
@@ -241,7 +240,6 @@ void sb_encoder_destroy(void *state)
    speex_free(st->high);
 
    speex_free(st->h0_mem);
-   speex_free(st->h1_mem);
 
    speex_free(st->old_lsp);
    speex_free(st->old_qlsp);
@@ -418,7 +416,7 @@ int sb_encoder_ctl(void *state, int request, void *ptr)
          for (i=0;i<st->lpcSize;i++)
             st->mem_sw[i]=st->mem_sp[i]=st->mem_sp2[i]=0;
          for (i=0;i<QMF_ORDER;i++)
-            st->h0_mem[i]=st->h1_mem[i]=0;
+            st->h0_mem[i]=0;
       }
       break;
    case SPEEX_SET_SUBMODE_ENCODING:
