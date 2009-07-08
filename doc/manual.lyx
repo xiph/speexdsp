@@ -732,8 +732,10 @@ look-ahead
 \end_inset
 
  required to process each frame.
- In narrowband operation (8 kHz), the delay is 30 ms, while for wideband
- (16 kHz), the delay is 34 ms.
+ In narrowband operation (8 kHz), the look-ahead is 10 ms, in wideband operation
+ (16 kHz), the look-ahead is 13.9 ms and in ultra-wideband operation (32
+ kHz) look-ahead is 15.9 ms, resulting in the algorithic delays of 30 ms,
+ 33.9 ms and 35.9 ms accordingly.
  These values don't account for the CPU time it takes to encode or decode
  the frames.
 \end_layout
@@ -947,6 +949,9 @@ reference "fig:Acoustic-echo-model"
 remote
 \series default
  end.
+ For those who care a lot about mouth-to-ear delays it should be noted that
+ unlike Speex codec, resampler and preprocessor, this Acoustic Echo Canceller
+ does not introduce any latency.
 \end_layout
 
 \begin_layout Standard
@@ -1029,6 +1034,9 @@ In some cases, it may be useful to convert audio from one sampling rate
  This resampler can be used to convert between any two arbitrary rates (the
  ratio must only be a rational number) and there is control over the quality/com
 plexity tradeoff.
+ Keep in mind, that resampler introduce some delay in audio stream, which
+ size depends on resampler quality setting.
+ Refer to resampler API documentation to know how to get exact delay values.
 \end_layout
 
 \begin_layout Section
@@ -3113,6 +3121,12 @@ spx_int32_t
 \end_inset
 
  in percent)
+\end_layout
+
+\begin_layout Description
+SPEEX_GET_LOOKAHEAD Returns the lookahead used by Speex separately for an
+ encoder and a decoder.
+ Sum encoder and decoder lookahead values to get the total codec lookahead.
 \end_layout
 
 \begin_layout Description
@@ -5458,7 +5472,39 @@ before
  For real-time applications (e.g.
  VoIP), it is not recommended to do that as the first process frame will
  be shorter to compensate for the delay (the skipped zeros).
- To destroy a resampler state, just call 
+ Instead, in real-time applications you may want to know how many delay
+ is introduced by the resampler.
+ This can be done at run-time with 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+speex_resampler_get_input_latency()
+\end_layout
+
+\end_inset
+
+ and 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+speex_resampler_get_output_latency()
+\end_layout
+
+\end_inset
+
+ functions.
+ First function returns delay measured in samples at input samplerate, while
+ second returns delay measured in samples at output samplerate.
+\end_layout
+
+\begin_layout Standard
+To destroy a resampler state, just call 
 \begin_inset listings
 inline true
 status open
