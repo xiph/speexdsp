@@ -34,6 +34,7 @@
 #define FIXED_POINT
 #define FRAME_SIZE 160
 #define DISABLE_WIDEBAND
+#define EXPORT
 
 /* Disable DC block if doing SNR testing */
 #define DISABLE_HIGHPASS 
