@@ -142,7 +142,8 @@ extern "C" {
 #define SPEEX_GET_SUBMODE_ENCODING 37
 
 /*#define SPEEX_SET_LOOKAHEAD 38*/
-/** Returns the lookahead used by Speex */
+/** Returns the lookahead used by Speex separately for an encoder and a decoder.
+ *  Sum encoder and decoder lookahead values to get the total codec lookahead. */
 #define SPEEX_GET_LOOKAHEAD 39
 
 /** Sets tuning for packet-loss concealment (expected loss rate) */
