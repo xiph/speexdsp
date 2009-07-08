@@ -165,6 +165,57 @@ void spx_ifft(void *table, spx_word16_t *in, spx_word16_t *out)
   DftiComputeBackward(t->desc, in, out);
 }
 
+#elif defined(USE_INTEL_IPP)
+
+#include <ipps.h>
+
+struct ipp_fft_config
+{
+  IppsDFTSpec_R_32f *dftSpec;
+  Ipp8u *buffer;
+};
+
+void *spx_fft_init(int size)
+{
+  int bufferSize = 0;
+  int hint;
+  struct ipp_fft_config *table;
+
+  table = (struct ipp_fft_config *)speex_alloc(sizeof(struct ipp_fft_config));
+
+  /* there appears to be no performance difference between ippAlgHintFast and
+     ippAlgHintAccurate when using the with the floating point version
+     of the fft. */
+  hint = ippAlgHintAccurate;
+
+  ippsDFTInitAlloc_R_32f(&table->dftSpec, size, IPP_FFT_DIV_FWD_BY_N, hint);
+
+  ippsDFTGetBufSize_R_32f(table->dftSpec, &bufferSize);
+  table->buffer = ippsMalloc_8u(bufferSize);
+
+  return table;
+}
+
+void spx_fft_destroy(void *table)
+{
+  struct ipp_fft_config *t = (struct ipp_fft_config *)table;
+  ippsFree(t->buffer);
+  ippsDFTFree_R_32f(t->dftSpec);
+  speex_free(t);
+}
+
+void spx_fft(void *table, spx_word16_t *in, spx_word16_t *out)
+{
+  struct ipp_fft_config *t = (struct ipp_fft_config *)table;
+  ippsDFTFwd_RToPack_32f(in, out, t->dftSpec, t->buffer);
+}
+
+void spx_ifft(void *table, spx_word16_t *in, spx_word16_t *out)
+{
+  struct ipp_fft_config *t = (struct ipp_fft_config *)table;
+  ippsDFTInv_PackToR_32f(in, out, t->dftSpec, t->buffer);
+}
+
 #elif defined(USE_GPL_FFTW3)
 
 #include <fftw3.h>
