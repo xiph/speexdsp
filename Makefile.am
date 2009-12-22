@@ -4,18 +4,15 @@
 # gcc and gmake, add the option 'no-dependencies'
 AUTOMAKE_OPTIONS = 1.8
 
-m4datadir = $(datadir)/aclocal
-m4data_DATA = speex.m4
-
 pkgconfigdir = $(libdir)/pkgconfig
-pkgconfig_DATA = speex.pc speexdsp.pc
+pkgconfig_DATA = speexdsp.pc
 
-EXTRA_DIST = Speex.spec Speex.spec.in Speex.kdevelop speex.m4 speex.pc.in README.blackfin README.symbian README.TI-DSP
+EXTRA_DIST = SpeexDSP.spec SpeexDSP.spec.in SpeexDSP.kdevelop speexdsp.pc.in README.blackfin README.symbian README.TI-DSP
 
 #Fools KDevelop into including all files
-SUBDIRS = libspeex include @src@ doc win32 symbian ti
+SUBDIRS = libspeexdsp include doc win32 symbian ti
 
-DIST_SUBDIRS = libspeex include src doc win32 symbian ti
+DIST_SUBDIRS = libspeexdsp include doc win32 symbian ti
 
 rpm: dist
 	rpmbuild -ta ${PACKAGE}-${VERSION}.tar.gz

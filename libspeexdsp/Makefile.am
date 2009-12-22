@@ -1,28 +1,13 @@
 # Disable automatic dependency tracking if using other tools than gcc and gmake
 #AUTOMAKE_OPTIONS = no-dependencies
 
-if BUILD_VORBIS_PSY
-  VPSY_LIB=libspeexdsp.la
-  VPSY_SOURCE=vorbis_psy.c
-else
-  VPSY_LIB=
-  VPSY_SOURCE=
-endif
-
 EXTRA_DIST=echo_diagnostic.m
 
-INCLUDES = -I$(top_builddir)/include -I$(top_builddir) @OGG_CFLAGS@ @FFT_CFLAGS@
+INCLUDES = -I$(top_builddir)/include -I$(top_builddir) @FFT_CFLAGS@
 
-lib_LTLIBRARIES = libspeex.la libspeexdsp.la
+lib_LTLIBRARIES = libspeexdsp.la
 
 # Sources for compilation in the library
-libspeex_la_SOURCES = 	$(VPSY_SOURCE) cb_search.c 	exc_10_32_table.c 	exc_8_128_table.c \
-		filters.c 	gain_table.c 	hexc_table.c 	high_lsp_tables.c 	lsp.c \
-		ltp.c 	speex.c 	stereo.c 	vbr.c 	vq.c bits.c exc_10_16_table.c \
-	exc_20_32_table.c exc_5_256_table.c exc_5_64_table.c gain_table_lbr.c hexc_10_32_table.c \
-	lpc.c lsp_tables_nb.c modes.c modes_wb.c nb_celp.c quant_lsp.c sb_celp.c \
-	speex_callbacks.c speex_header.c window.c
-
 if BUILD_KISS_FFT
   FFTSRC=kiss_fft.c _kiss_fft_guts.h kiss_fft.h kiss_fftr.c kiss_fftr.h 
 else
@@ -43,17 +28,9 @@ noinst_HEADERS = 	arch.h 	bfin.h cb_search_arm4.h 	cb_search_bfin.h 	cb_search_s
 	filterbank.h fixed_generic.h lsp.h lsp_bfin.h ltp_bfin.h modes.h os_support.h \
 	pseudofloat.h quant_lsp_bfin.h smallft.h vorbis_psy.h resample_sse.h
 
-
-libspeex_la_LDFLAGS = -no-undefined -version-info @SPEEX_LT_CURRENT@:@SPEEX_LT_REVISION@:@SPEEX_LT_AGE@
 libspeexdsp_la_LDFLAGS = -no-undefined -version-info @SPEEX_LT_CURRENT@:@SPEEX_LT_REVISION@:@SPEEX_LT_AGE@
 
-noinst_PROGRAMS = testenc testenc_wb testenc_uwb testdenoise testecho testjitter
-testenc_SOURCES = testenc.c
-testenc_LDADD = libspeex.la $(VPSY_LIB)
-testenc_wb_SOURCES = testenc_wb.c
-testenc_wb_LDADD = libspeex.la  $(VPSY_LIB)
-testenc_uwb_SOURCES = testenc_uwb.c
-testenc_uwb_LDADD = libspeex.la $(VPSY_LIB)
+noinst_PROGRAMS = testdenoise testecho testjitter
 testdenoise_SOURCES = testdenoise.c
 testdenoise_LDADD = libspeexdsp.la @FFT_LIBS@
 testecho_SOURCES = testecho.c

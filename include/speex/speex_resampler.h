@@ -85,9 +85,9 @@
 #else /* OUTSIDE_SPEEX */
 
 #ifdef _BUILD_SPEEX
-# include "speex_types.h"
+# include "speexdsp_types.h"
 #else
-# include <speex/speex_types.h>
+# include <speex/speexdsp_types.h>
 #endif
 
 #endif /* OUTSIDE_SPEEX */

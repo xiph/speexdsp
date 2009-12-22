@@ -1,6 +1,6 @@
 dnl Process this file with autoconf to produce a configure script. -*-m4-*-
 
-AC_INIT(libspeex/speex.c)
+AC_INIT(libspeexdsp/preprocess.c)
 
 AM_CONFIG_HEADER([config.h])
 
@@ -22,7 +22,7 @@ AC_SUBST(SPEEX_LT_AGE)
 
 # For automake.
 VERSION=$SPEEX_VERSION
-PACKAGE=speex
+PACKAGE=speexdsp
 
 AC_SUBST(SPEEX_VERSION)
 
@@ -112,7 +112,6 @@ AC_MSG_RESULT($has_visibility)
 
 AC_CHECK_HEADERS(sys/soundcard.h sys/audioio.h)
 
-XIPH_PATH_OGG([src="src"], [src=""])
 AC_SUBST(src)
 
 AC_CHECK_LIB(m, sin)
@@ -204,12 +203,6 @@ AC_ARG_ENABLE(ti-c55x, [  --enable-ti-c55x        Enable support for TI C55X DSP
   AC_DEFINE([TI_C55X], , [Enable support for TI C55X DSP])
 fi])
 
-AC_ARG_ENABLE(vorbis-psy, [  --enable-psy    Enable the Vorbis psy model],
-[if test "$enableval" = yes; then
-  vorbis_psy=yes;
-  AC_DEFINE([VORBIS_PSYCHO], , [Enable support for the Vorbis psy model])
-fi])
-
 AC_ARG_WITH([fft], [AS_HELP_STRING([--with-fft=choice],[use an alternate FFT implementation. The available choices are
 kiss (default fixed point), smallft (default floating point), gpl-fftw3 and proprietary-intel-mkl])],
 [FFT=$withval]
@@ -247,8 +240,6 @@ AM_CONDITIONAL(BUILD_KISS_FFT, [test "$FFT" = "kiss"])
 AM_CONDITIONAL(BUILD_SMALLFT, [test "$FFT" = "smallft"])
 AC_SUBST(FFT_PKGCONFIG)
 
-AM_CONDITIONAL(BUILD_VORBIS_PSY, [test "x$vorbis_psy" = "xyes"])
-
 AC_CHECK_SIZEOF(short)
 AC_CHECK_SIZEOF(int)
 AC_CHECK_SIZEOF(long)
@@ -284,36 +275,24 @@ AC_SUBST(SIZE32)
 
 AC_DEFINE([_BUILD_SPEEX], [], [Defined only when Speex itself is build built])
 
-AC_OUTPUT([Makefile libspeex/Makefile src/Makefile doc/Makefile Speex.spec
-           include/Makefile include/speex/Makefile speex.pc speexdsp.pc
-           win32/Makefile win32/libspeex/Makefile win32/speexenc/Makefile
-           win32/speexdec/Makefile symbian/Makefile 
+AC_OUTPUT([Makefile libspeexdsp/Makefile doc/Makefile SpeexDSP.spec
+           include/Makefile include/speex/Makefile speexdsp.pc
+           win32/Makefile win32/libspeexdsp/Makefile
+           symbian/Makefile 
+
            win32/VS2003/Makefile
-           win32/VS2003/tests/Makefile
-           win32/VS2003/libspeex/Makefile
            win32/VS2003/libspeexdsp/Makefile
-           win32/VS2003/speexdec/Makefile
-           win32/VS2003/speexenc/Makefile
+           win32/VS2003/tests/Makefile
+
            win32/VS2005/Makefile
-           win32/VS2005/libspeex/Makefile
-           win32/VS2005/speexdec/Makefile
-           win32/VS2005/speexenc/Makefile
            win32/VS2005/libspeexdsp/Makefile
            win32/VS2005/tests/Makefile
-           win32/VS2008/libspeexdsp/Makefile
+
            win32/VS2008/Makefile
-           win32/VS2008/speexdec/Makefile
+           win32/VS2008/libspeexdsp/Makefile
            win32/VS2008/tests/Makefile
-           win32/VS2008/libspeex/Makefile
-           win32/VS2008/speexenc/Makefile
-           include/speex/speex_config_types.h ti/Makefile 
+           include/speex/speexdsp_config_types.h ti/Makefile 
 	   ti/speex_C54_test/Makefile ti/speex_C55_test/Makefile
 	   ti/speex_C64_test/Makefile ])
-
-if test "x$src" = "x"; then 
-echo "**IMPORTANT**"
-echo "You don't seem to have the development package for libogg (libogg-devel) installed. Only the Speex library (libspeex) will be built (no encoder/decoder executable)"
-echo "You can download libogg from http://downloads.xiph.org/releases/ogg/"
-fi
 
 echo "Type \"make; make install\" to compile and install Speex";

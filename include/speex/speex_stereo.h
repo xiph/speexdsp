@@ -40,10 +40,10 @@
  */
 
 #ifdef _BUILD_SPEEX
-# include "speex_types.h"
+# include "speexdsp_types.h"
 # include "speex_bits.h"
 #else
-# include <speex/speex_types.h>
+# include <speex/speexdsp_types.h>
 # include <speex/speex_bits.h>
 #endif
 

@@ -56,8 +56,6 @@ make DESTDIR=$RPM_BUILD_ROOT install
 %defattr(644,root,root,755)
 %doc COPYING AUTHORS ChangeLog NEWS README
 %doc doc/manual.pdf
-/usr/share/man/man1/speexenc.1*
-/usr/share/man/man1/speexdec.1*
 %attr(755,root,root) %{_bindir}/speex*
 %attr(755,root,root) %{_libdir}/libspeex*.so*
 
@@ -65,7 +63,5 @@ make DESTDIR=$RPM_BUILD_ROOT install
 %defattr(644,root,root,755)
 %attr(755,root,root) %{_libdir}/libspeex*.la
 %{_includedir}/speex/speex*.h
-/usr/share/aclocal/speex.m4
-%{_libdir}/pkgconfig/speex.pc
 %{_libdir}/pkgconfig/speexdsp.pc
 %{_libdir}/libspeex*.a
