@@ -116,17 +116,6 @@ AC_SUBST(src)
 
 AC_CHECK_LIB(m, sin)
 
-# Check for getopt_long; if not found, use included source.
-AC_CHECK_FUNCS([getopt_long],,
-[# FreeBSD has a gnugetopt library.
-  AC_CHECK_LIB([gnugetopt],[getopt_long],
-[AC_DEFINE([HAVE_GETOPT_LONG])],
-[# Use the GNU replacement.
-AC_LIBOBJ(getopt)
-AC_LIBOBJ(getopt1)])])
-
-AC_CHECK_LIB(winmm, main)
-
 AC_DEFINE_UNQUOTED(SPEEX_VERSION, "${SPEEX_VERSION}", [Complete version string])
 AC_DEFINE_UNQUOTED(SPEEX_MAJOR_VERSION, ${SPEEX_MAJOR_VERSION}, [Version major])
 AC_DEFINE_UNQUOTED(SPEEX_MINOR_VERSION, ${SPEEX_MINOR_VERSION}, [Version minor])
