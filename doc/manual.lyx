@@ -8735,17 +8735,6 @@ This section contains some sample source code, showing how a basic Speex
 ...
 \end_layout
 
-\begin_layout Standard
-\begin_inset CommandInset include
-LatexCommand lstinputlisting
-filename "nb_celp.c"
-lstparams "caption={Sample Decoder}"
-
-\end_inset
-
-
-\end_layout
-
 \begin_layout Subsection
 Lookup tables
 \end_layout
@@ -8794,96 +8783,6 @@ The Speex decoder includes a set of lookup tables and codebooks, which are
 
 \begin_layout Standard
 The exact lookup tables are included here for reference.
-\end_layout
-
-\begin_layout Standard
-\begin_inset CommandInset include
-LatexCommand lstinputlisting
-filename "../libspeex/exc_5_64_table.c"
-
-\end_inset
-
-
-\end_layout
-
-\begin_layout Standard
-\begin_inset CommandInset include
-LatexCommand lstinputlisting
-filename "../libspeex/exc_5_256_table.c"
-
-\end_inset
-
-
-\end_layout
-
-\begin_layout Standard
-\begin_inset CommandInset include
-LatexCommand lstinputlisting
-filename "../libspeex/exc_8_128_table.c"
-
-\end_inset
-
-
-\end_layout
-
-\begin_layout Standard
-\begin_inset CommandInset include
-LatexCommand lstinputlisting
-filename "../libspeex/exc_10_16_table.c"
-
-\end_inset
-
-
-\end_layout
-
-\begin_layout Standard
-\begin_inset CommandInset include
-LatexCommand lstinputlisting
-filename "../libspeex/exc_10_32_table.c"
-
-\end_inset
-
-
-\end_layout
-
-\begin_layout Standard
-\begin_inset CommandInset include
-LatexCommand lstinputlisting
-filename "../libspeex/exc_20_32_table.c"
-
-\end_inset
-
-
-\end_layout
-
-\begin_layout Standard
-\begin_inset CommandInset include
-LatexCommand lstinputlisting
-filename "../libspeex/gain_table.c"
-
-\end_inset
-
-
-\end_layout
-
-\begin_layout Standard
-\begin_inset CommandInset include
-LatexCommand lstinputlisting
-filename "../libspeex/gain_table_lbr.c"
-
-\end_inset
-
-
-\end_layout
-
-\begin_layout Standard
-\begin_inset CommandInset include
-LatexCommand lstinputlisting
-filename "../libspeex/lsp_tables_nb.c"
-
-\end_inset
-
-
 \end_layout
 
 \begin_layout Section
