@@ -81,6 +81,23 @@ has_sse=no
 )
 AC_MSG_RESULT($has_sse)  
 
+AC_MSG_CHECKING(for NEON in current arch/CFLAGS)
+AC_LINK_IFELSE([
+AC_LANG_PROGRAM([[
+#include <arm_neon.h>
+int32x4_t testfunc(int16_t *a, int16_t *b) {
+      return vmull_s16(vld1_s16(a), vld1_s16(b));
+}
+]])],
+[
+has_neon=yes
+],
+[
+has_neon=no
+]
+)
+AC_MSG_RESULT($has_neon)
+
 SAVE_CFLAGS="$CFLAGS"
 CFLAGS="$CFLAGS -fvisibility=hidden"
 AC_MSG_CHECKING(for ELF visibility)
@@ -123,6 +140,15 @@ has_sse=no
 fi
 ])
 
+AC_ARG_ENABLE(neon, [  --enable-neon           Enable NEON support], [
+if test "x$enableval" != xno; then
+has_neon=yes
+CFLAGS="$CFLAGS -O3 -march=armv7-a -mfpu=neon"
+else
+has_neon=no
+fi
+])
+
 
 FFT=smallft
 
@@ -138,6 +164,10 @@ AC_DEFINE([FLOATING_POINT], , [Compile as floating-point]))
 
 if test "$has_sse" = yes; then
   AC_DEFINE([_USE_SSE], , [Enable SSE support])
+fi
+
+if test "$has_neon" = yes; then
+  AC_DEFINE([_USE_NEON], , [Enable NEON support])
 fi
 
 AC_ARG_ENABLE(float-api, [  --disable-float-api     Disable the floating-point API],
