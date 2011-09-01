@@ -168,6 +168,11 @@ AC_ARG_ENABLE(fixed-point-debug, [  --enable-fixed-point-debug  Debug fixed-poin
   AC_DEFINE([FIXED_DEBUG], , [Debug fixed-point implementation])
 fi])
 
+AC_ARG_ENABLE(resample-full-sinc-table, [  --enable-resample-full-sinc-table Resample full SINC table (no interpolation)],
+[if test "$enableval" = yes; then
+  AC_DEFINE([RESAMPLE_FULL_SINC_TABLE], , [Resample with full SINC table (no interpolation)])
+fi])
+
 AC_ARG_ENABLE(ti-c55x, [  --enable-ti-c55x        Enable support for TI C55X DSP],
 [if test "$enableval" = yes; then
   has_char16=yes;
