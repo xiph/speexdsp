@@ -585,7 +585,7 @@ static void update_filter(SpeexResamplerState *st)
    }
    
    /* Choose the resampling type that requires the least amount of memory */
-   if (st->den_rate <= st->oversample)
+   if (st->filt_len*st->den_rate <= st->filt_len*st->oversample+8)
    {
       spx_uint32_t i;
       if (!st->sinc_table)
