@@ -762,9 +762,9 @@ EXPORT SpeexResamplerState *speex_resampler_init_frac(spx_uint32_t nb_channels, 
 #endif
    
    /* Per channel data */
-   st->last_sample = (spx_int32_t*)speex_alloc(nb_channels*sizeof(int));
-   st->magic_samples = (spx_uint32_t*)speex_alloc(nb_channels*sizeof(int));
-   st->samp_frac_num = (spx_uint32_t*)speex_alloc(nb_channels*sizeof(int));
+   st->last_sample = (spx_int32_t*)speex_alloc(nb_channels*sizeof(spx_int32_t));
+   st->magic_samples = (spx_uint32_t*)speex_alloc(nb_channels*sizeof(spx_uint32_t));
+   st->samp_frac_num = (spx_uint32_t*)speex_alloc(nb_channels*sizeof(spx_uint32_t));
    for (i=0;i<nb_channels;i++)
    {
       st->last_sample[i] = 0;
