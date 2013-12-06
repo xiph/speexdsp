@@ -4142,7 +4142,7 @@ As with the codec, the preprocessor also has options that can be controlled
 \end_layout
 
 \begin_layout Description
-SPEEX_PREPROCESS_SET_DENOISE Turns denoising on(1) or off(2) (
+SPEEX_PREPROCESS_SET_DENOISE Turns denoising on(1) or off(0) (
 \begin_inset listings
 inline true
 status collapsed
@@ -4174,7 +4174,7 @@ spx_int32_t
 \end_layout
 
 \begin_layout Description
-SPEEX_PREPROCESS_SET_AGC Turns automatic gain control (AGC) on(1) or off(2)
+SPEEX_PREPROCESS_SET_AGC Turns automatic gain control (AGC) on(1) or off(0)
  (
 \begin_inset listings
 inline true
@@ -4207,7 +4207,7 @@ spx_int32_t
 \end_layout
 
 \begin_layout Description
-SPEEX_PREPROCESS_SET_VAD Turns voice activity detector (VAD) on(1) or off(2)
+SPEEX_PREPROCESS_SET_VAD Turns voice activity detector (VAD) on(1) or off(0)
  (
 \begin_inset listings
 inline true
@@ -4248,7 +4248,7 @@ SPEEX_PREPROCESS_GET_AGC_LEVEL
 \end_layout
 
 \begin_layout Description
-SPEEX_PREPROCESS_SET_DEREVERB Turns reverberation removal on(1) or off(2)
+SPEEX_PREPROCESS_SET_DEREVERB Turns reverberation removal on(1) or off(0)
  (
 \begin_inset listings
 inline true
