@@ -262,8 +262,6 @@ fi
 AC_SUBST(SIZE16)
 AC_SUBST(SIZE32)
 
-AC_DEFINE([_BUILD_SPEEX], [], [Defined only when Speex itself is build built])
-
 AC_OUTPUT([Makefile libspeexdsp/Makefile doc/Makefile SpeexDSP.spec
            include/Makefile include/speex/Makefile speexdsp.pc
            win32/Makefile win32/libspeexdsp/Makefile

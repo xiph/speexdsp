@@ -119,11 +119,7 @@
 
 #else
 
-# ifdef _BUILD_SPEEX
-#  include "include/speex/speexdsp_config_types.h"
-#else
-#  include <speex/speexdsp_config_types.h>
-#endif
+#include "speexdsp_config_types.h"
 
 #endif
 

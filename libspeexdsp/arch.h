@@ -75,7 +75,7 @@
 #endif
 
 #ifndef OUTSIDE_SPEEX
-#include "../include/speex/speex_types.h"
+#include "speex/speexdsp_types.h"
 #endif
 
 #define ABS(x) ((x) < 0 ? (-(x)) : (x))      /**< Absolute integer value. */

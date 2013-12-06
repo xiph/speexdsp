@@ -34,8 +34,8 @@
 #include "config.h"
 #endif
 
+#include "speex/speex_resampler.h"
 #include <stdio.h>
-#include "../include/speex/speex_resampler.h"
 #include <math.h>
 #include <stdlib.h>
 

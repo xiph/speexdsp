@@ -60,8 +60,8 @@
 #endif
 
 #include <math.h>
-#include "../include/speex/speex_preprocess.h"
-#include "../include/speex/speex_echo.h"
+#include "speex/speex_preprocess.h"
+#include "speex/speex_echo.h"
 #include "arch.h"
 #include "fftwrap.h"
 #include "filterbank.h"

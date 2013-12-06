@@ -2,7 +2,7 @@
 #include "config.h"
 #endif
 
-#include "../include/speex/speex_jitter.h"
+#include "speex/speex_jitter.h"
 #include <stdio.h>
 
 union jbpdata {

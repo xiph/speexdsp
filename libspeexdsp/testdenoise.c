@@ -2,7 +2,7 @@
 #include "config.h"
 #endif
 
-#include "../include/speex/speex_preprocess.h"
+#include "speex/speex_preprocess.h"
 #include <stdio.h>
 
 #define NN 160
