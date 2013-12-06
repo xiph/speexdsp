@@ -567,8 +567,8 @@ static void update_filter(SpeexResamplerState *st)
       st->cutoff = quality_map[st->quality].downsample_bandwidth * st->den_rate / st->num_rate;
       /* FIXME: divide the numerator and denominator by a certain amount if they're too large */
       st->filt_len = st->filt_len*st->num_rate / st->den_rate;
-      /* Round down to make sure we have a multiple of 4 */
-      st->filt_len &= (~0x3);
+      /* Round up to make sure we have a multiple of 8 for SSE */
+      st->filt_len = ((st->filt_len-1)&(~0x7))+8;
       if (2*st->den_rate < st->num_rate)
          st->oversample >>= 1;
       if (4*st->den_rate < st->num_rate)
