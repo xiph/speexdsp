@@ -7,7 +7,7 @@ includedir=@includedir@
 
 Name: speexdsp
 Description: Speexdsp is a speech processing library that goes along with the Speex codec
-Version: @SPEEX_VERSION@
+Version: @PACKAGE_VERSION@
 Requires: @FFT_PKGCONFIG@
 Conflicts:
 Libs: -L${libdir} -lspeexdsp

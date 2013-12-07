@@ -3,7 +3,7 @@
 
 EXTRA_DIST=echo_diagnostic.m
 
-INCLUDES = -I$(top_srcdir)/include -I$(top_builddir)/include/speex -I$(top_builddir) @FFT_CFLAGS@
+AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_builddir)/include/speex -I$(top_builddir) @FFT_CFLAGS@
 
 lib_LTLIBRARIES = libspeexdsp.la
 
@@ -28,7 +28,7 @@ noinst_HEADERS = 	arch.h 	bfin.h \
 	filterbank.h fixed_generic.h os_support.h \
 	pseudofloat.h smallft.h vorbis_psy.h resample_sse.h
 
-libspeexdsp_la_LDFLAGS = -no-undefined -version-info @SPEEX_LT_CURRENT@:@SPEEX_LT_REVISION@:@SPEEX_LT_AGE@
+libspeexdsp_la_LDFLAGS = -no-undefined -version-info @SPEEXDSP_LT_CURRENT@:@SPEEXDSP_LT_REVISION@:@SPEEXDSP_LT_AGE@
 
 noinst_PROGRAMS = testdenoise testecho testjitter
 testdenoise_SOURCES = testdenoise.c

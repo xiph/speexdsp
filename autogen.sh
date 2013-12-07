@@ -7,5 +7,8 @@ test -n "$srcdir" && cd "$srcdir"
 
 echo "Updating build configuration files, please wait...."
 
+mkdir -p m4
+
+ACLOCAL_FLAGS="-I m4"
 autoreconf -if
 

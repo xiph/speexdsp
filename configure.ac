@@ -1,33 +1,25 @@
 dnl Process this file with autoconf to produce a configure script. -*-m4-*-
 
-AC_INIT(libspeexdsp/preprocess.c)
+AC_INIT([speexdsp],[1.2rc1],[speex-dev@xiph.org])
 
-AM_CONFIG_HEADER([config.h])
+AC_CONFIG_SRCDIR([libspeexdsp/preprocess.c])
+AC_CONFIG_MACRO_DIR([m4])
 
-SPEEX_MAJOR_VERSION=1
-SPEEX_MINOR_VERSION=1
-SPEEX_MICRO_VERSION=16
-SPEEX_EXTRA_VERSION=
-#SPEEX_VERSION=
-#SPEEX_VERSION=$SPEEX_MAJOR_VERSION.$SPEEX_MINOR_VERSION.$SPEEX_MICRO_VERSION$SPEEX_EXTRA_VERSION
-SPEEX_VERSION="1.2rc1"
+dnl enable silent rules on automake 1.11 and later
+m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 
-SPEEX_LT_CURRENT=6
-SPEEX_LT_REVISION=0
-SPEEX_LT_AGE=5
 
-AC_SUBST(SPEEX_LT_CURRENT)
-AC_SUBST(SPEEX_LT_REVISION)
-AC_SUBST(SPEEX_LT_AGE)
+SPEEXDSP_LT_CURRENT=6
+SPEEXDSP_LT_REVISION=0
+SPEEXDSP_LT_AGE=5
 
-# For automake.
-VERSION=$SPEEX_VERSION
-PACKAGE=speexdsp
 
-AC_SUBST(SPEEX_VERSION)
+AC_SUBST(SPEEXDSP_LT_CURRENT)
+AC_SUBST(SPEEXDSP_LT_REVISION)
+AC_SUBST(SPEEXDSP_LT_AGE)
 
-AM_INIT_AUTOMAKE($PACKAGE, $VERSION, no-define)
-AM_MAINTAINER_MODE
+AM_INIT_AUTOMAKE([foreign no-define])
+AM_MAINTAINER_MODE([enable])
 
 AC_CANONICAL_HOST
 AC_LIBTOOL_WIN32_DLL
@@ -116,11 +108,6 @@ AC_SUBST(src)
 
 AC_CHECK_LIB(m, sin)
 
-AC_DEFINE_UNQUOTED(SPEEX_VERSION, "${SPEEX_VERSION}", [Complete version string])
-AC_DEFINE_UNQUOTED(SPEEX_MAJOR_VERSION, ${SPEEX_MAJOR_VERSION}, [Version major])
-AC_DEFINE_UNQUOTED(SPEEX_MINOR_VERSION, ${SPEEX_MINOR_VERSION}, [Version minor])
-AC_DEFINE_UNQUOTED(SPEEX_MICRO_VERSION, ${SPEEX_MICRO_VERSION}, [Version micro])
-AC_DEFINE_UNQUOTED(SPEEX_EXTRA_VERSION, "${SPEEX_EXTRA_VERSION}", [Version extra])
 
 AC_ARG_ENABLE(valgrind, [  --enable-valgrind       Enable valgrind extra checks],
 [if test "$enableval" = yes; then
@@ -262,7 +249,8 @@ fi
 AC_SUBST(SIZE16)
 AC_SUBST(SIZE32)
 
-AC_OUTPUT([Makefile libspeexdsp/Makefile doc/Makefile SpeexDSP.spec
+AC_CONFIG_FILES([
+           Makefile libspeexdsp/Makefile doc/Makefile SpeexDSP.spec
            include/Makefile include/speex/Makefile speexdsp.pc
            win32/Makefile win32/libspeexdsp/Makefile
            symbian/Makefile 
@@ -281,5 +269,9 @@ AC_OUTPUT([Makefile libspeexdsp/Makefile doc/Makefile SpeexDSP.spec
            include/speex/speexdsp_config_types.h ti/Makefile 
 	   ti/speex_C54_test/Makefile ti/speex_C55_test/Makefile
 	   ti/speex_C64_test/Makefile ])
+
+AC_CONFIG_HEADERS([config.h])
+
+AC_OUTPUT
 
 echo "Type \"make; make install\" to compile and install Speex";
