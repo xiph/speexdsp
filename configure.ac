@@ -145,11 +145,6 @@ AC_ARG_ENABLE(float-api, [  --disable-float-api     Disable the floating-point A
   AC_DEFINE([DISABLE_FLOAT_API], , [Disable all parts of the API that are using floats])
 fi])
 
-AC_ARG_ENABLE(vbr, [  --disable-vbr           Disable VBR and VAD from the codec],
-[if test "$enableval" = no; then
-  AC_DEFINE([DISABLE_VBR], , [Disable VBR and VAD from the codec])
-fi])
-
 AC_ARG_ENABLE(arm4-asm, [  --enable-arm4-asm       Make use of ARM4 assembly optimizations],
 [if test "$enableval" = yes; then
   AC_DEFINE([ARM4_ASM], , [Make use of ARM4 assembly optimizations])
