@@ -29,6 +29,7 @@ noinst_HEADERS = 	arch.h 	bfin.h \
 	pseudofloat.h smallft.h vorbis_psy.h resample_sse.h
 
 libspeexdsp_la_LDFLAGS = -no-undefined -version-info @SPEEXDSP_LT_CURRENT@:@SPEEXDSP_LT_REVISION@:@SPEEXDSP_LT_AGE@
+libspeexdsp_la_LIBADD = $(LIBM)
 
 noinst_PROGRAMS = testdenoise testecho testjitter
 testdenoise_SOURCES = testdenoise.c

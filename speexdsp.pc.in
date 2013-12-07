@@ -11,5 +11,5 @@ Version: @PACKAGE_VERSION@
 Requires: @FFT_PKGCONFIG@
 Conflicts:
 Libs: -L${libdir} -lspeexdsp
-Libs.private: -lm
+Libs.private: @LIBM@
 Cflags: -I${includedir}

@@ -106,7 +106,7 @@ AC_CHECK_HEADERS(sys/soundcard.h sys/audioio.h)
 
 AC_SUBST(src)
 
-AC_CHECK_LIB(m, sin)
+LT_LIB_M
 
 
 AC_ARG_ENABLE(valgrind, [  --enable-valgrind       Enable valgrind extra checks],
