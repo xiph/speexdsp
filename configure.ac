@@ -211,38 +211,63 @@ AM_CONDITIONAL(BUILD_KISS_FFT, [test "$FFT" = "kiss"])
 AM_CONDITIONAL(BUILD_SMALLFT, [test "$FFT" = "smallft"])
 AC_SUBST(FFT_PKGCONFIG)
 
-AC_CHECK_SIZEOF(short)
-AC_CHECK_SIZEOF(int)
-AC_CHECK_SIZEOF(long)
 
-if test x$has_char16 = "xyes" ; then
-        case 1 in
-                $ac_cv_sizeof_short) SIZE16="short";;
-                $ac_cv_sizeof_int) SIZE16="int";;
-        esac
-else
-        case 2 in
-                $ac_cv_sizeof_short) SIZE16="short";;
-                $ac_cv_sizeof_int) SIZE16="int";;
-        esac
-fi
+AC_CHECK_SIZEOF([int16_t])
+AC_CHECK_SIZEOF([uint16_t])
+AC_CHECK_SIZEOF([u_int16_t])
+AC_CHECK_SIZEOF([int32_t])
+AC_CHECK_SIZEOF([uint32_t])
+AC_CHECK_SIZEOF([u_int32_t])
+AC_CHECK_SIZEOF([short])
+AC_CHECK_SIZEOF([int])
+AC_CHECK_SIZEOF([long])
 
-if test x$has_char16 = "xyes" ; then
-        case 2 in
-                $ac_cv_sizeof_int) SIZE32="int";;
-                $ac_cv_sizeof_long) SIZE32="long";;
-                $ac_cv_sizeof_short) SIZE32="short";;
-        esac
-else
-        case 4 in
-                $ac_cv_sizeof_int) SIZE32="int";;
-                $ac_cv_sizeof_long) SIZE32="long";;
-                $ac_cv_sizeof_short) SIZE32="short";;
-        esac
-fi
+AS_IF([test "$has_char16" = "yes"],
+  [
+   SIZEOF16=1
+   SIZEOF32=2
+  ],[
+   SIZEOF16=2
+   SIZEOF32=4
+  ])
 
-AC_SUBST(SIZE16)
-AC_SUBST(SIZE32)
+case $SIZEOF16 in
+    $ac_cv_sizeof_int16_t) SIZE16="int16_t";;
+    $ac_cv_sizeof_short) SIZE16="short";;
+    $ac_cv_sizeof_int) SIZE16="int";;
+esac
+
+case $SIZEOF16 in
+    $ac_cv_sizeof_uint16_t) USIZE16="uint16_t";;
+    $ac_cv_sizeof_u_int16_t) USIZE16="u_int16_t";;
+    $ac_cv_sizeof_short) USIZE16="unsigned short";;
+    $ac_cv_sizeof_int) USIZE16="unsigned int";;
+esac
+
+case $SIZEOF32 in
+    $ac_cv_sizeof_int32_t) SIZE32="int32_t";;
+    $ac_cv_sizeof_int) SIZE32="int";;
+    $ac_cv_sizeof_long) SIZE32="long";;
+    $ac_cv_sizeof_short) SIZE32="short";;
+esac
+
+case $SIZEOF32 in
+    $ac_cv_sizeof_uint32_t) USIZE32="uint32_t";;
+    $ac_cv_sizeof_u_int32_t) USIZE32="u_int32_t";;
+    $ac_cv_sizeof_short) USIZE32="unsigned short";;
+    $ac_cv_sizeof_int) USIZE32="unsigned int";;
+    $ac_cv_sizeof_long) USIZE32="unsigned long";;
+esac
+
+AS_IF([test -z "$SIZE16"],[AC_MSG_ERROR([No 16 bit type found on this platform!])])
+AS_IF([test -z "$SIZE32"],[AC_MSG_ERROR([No 32 bit type found on this platform!])])
+AS_IF([test -z "$USIZE16"],[AC_MSG_ERROR([No unsigned 16 bit type found on this platform!])])
+AS_IF([test -z "$USIZE32"],[AC_MSG_ERROR([No unsigned 32 bit type found on this platform!])])
+
+AC_SUBST([SIZE16])
+AC_SUBST([USIZE16])
+AC_SUBST([SIZE32])
+AC_SUBST([USIZE32])
 
 AC_CONFIG_FILES([
            Makefile libspeexdsp/Makefile doc/Makefile SpeexDSP.spec
