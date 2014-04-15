@@ -755,11 +755,7 @@ EXPORT SpeexResamplerState *speex_resampler_init_frac(spx_uint32_t nb_channels, 
    st->in_stride = 1;
    st->out_stride = 1;
    
-#ifdef FIXED_POINT
    st->buffer_size = 160;
-#else
-   st->buffer_size = 160;
-#endif
    
    /* Per channel data */
    st->last_sample = (spx_int32_t*)speex_alloc(nb_channels*sizeof(spx_int32_t));
