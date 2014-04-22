@@ -175,7 +175,7 @@ EXPORT void speex_decorrelate(SpeexDecorrState *st, const spx_int16_t *in, spx_i
          buff[i+st->frame_size] = in[i*st->channels+ch];
 
       x = buff+st->frame_size;
-      beta = 1.-.3*amount*amount;
+
       if (amount>1)
          beta = 1-sqrt(.4*amount);
       else
