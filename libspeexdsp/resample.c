@@ -1112,6 +1112,12 @@ EXPORT int speex_resampler_skip_zeros(SpeexResamplerState *st)
 EXPORT int speex_resampler_reset_mem(SpeexResamplerState *st)
 {
    spx_uint32_t i;
+   for (i=0;i<st->nb_channels;i++)
+   {
+      st->last_sample[i] = 0;
+      st->magic_samples[i] = 0;
+      st->samp_frac_num[i] = 0;
+   }
    for (i=0;i<st->nb_channels*(st->filt_len-1);i++)
       st->mem[i] = 0;
    return RESAMPLER_ERR_SUCCESS;
