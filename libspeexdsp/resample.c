@@ -341,27 +341,27 @@ static int resampler_basic_direct_single(SpeexResamplerState *st, spx_uint32_t c
 
    while (!(last_sample >= (spx_int32_t)*in_len || out_sample >= (spx_int32_t)*out_len))
    {
-      const spx_word16_t *sinc = & sinc_table[samp_frac_num*N];
+      const spx_word16_t *sinct = & sinc_table[samp_frac_num*N];
       const spx_word16_t *iptr = & in[last_sample];
 
 #ifndef OVERRIDE_INNER_PRODUCT_SINGLE
       sum = 0;
-      for(j=0;j<N;j++) sum += MULT16_16(sinc[j], iptr[j]);
+      for(j=0;j<N;j++) sum += MULT16_16(sinct[j], iptr[j]);
 
 /*    This code is slower on most DSPs which have only 2 accumulators.
       Plus this this forces truncation to 32 bits and you lose the HW guard bits.
       I think we can trust the compiler and let it vectorize and/or unroll itself.
       spx_word32_t accum[4] = {0,0,0,0};
       for(j=0;j<N;j+=4) {
-        accum[0] += MULT16_16(sinc[j], iptr[j]);
-        accum[1] += MULT16_16(sinc[j+1], iptr[j+1]);
-        accum[2] += MULT16_16(sinc[j+2], iptr[j+2]);
-        accum[3] += MULT16_16(sinc[j+3], iptr[j+3]);
+        accum[0] += MULT16_16(sinct[j], iptr[j]);
+        accum[1] += MULT16_16(sinct[j+1], iptr[j+1]);
+        accum[2] += MULT16_16(sinct[j+2], iptr[j+2]);
+        accum[3] += MULT16_16(sinct[j+3], iptr[j+3]);
       }
       sum = accum[0] + accum[1] + accum[2] + accum[3];
 */
 #else
-      sum = inner_product_single(sinc, iptr, N);
+      sum = inner_product_single(sinct, iptr, N);
 #endif
 
       out[out_stride * out_sample++] = SATURATE32(PSHR32(sum, 15), 32767);
@@ -398,21 +398,21 @@ static int resampler_basic_direct_double(SpeexResamplerState *st, spx_uint32_t c
 
    while (!(last_sample >= (spx_int32_t)*in_len || out_sample >= (spx_int32_t)*out_len))
    {
-      const spx_word16_t *sinc = & sinc_table[samp_frac_num*N];
+      const spx_word16_t *sinct = & sinc_table[samp_frac_num*N];
       const spx_word16_t *iptr = & in[last_sample];
 
 #ifndef OVERRIDE_INNER_PRODUCT_DOUBLE
       double accum[4] = {0,0,0,0};
 
       for(j=0;j<N;j+=4) {
-        accum[0] += sinc[j]*iptr[j];
-        accum[1] += sinc[j+1]*iptr[j+1];
-        accum[2] += sinc[j+2]*iptr[j+2];
-        accum[3] += sinc[j+3]*iptr[j+3];
+        accum[0] += sinct[j]*iptr[j];
+        accum[1] += sinct[j+1]*iptr[j+1];
+        accum[2] += sinct[j+2]*iptr[j+2];
+        accum[3] += sinct[j+3]*iptr[j+3];
       }
       sum = accum[0] + accum[1] + accum[2] + accum[3];
 #else
-      sum = inner_product_double(sinc, iptr, N);
+      sum = inner_product_double(sinct, iptr, N);
 #endif
 
       out[out_stride * out_sample++] = PSHR32(sum, 15);
