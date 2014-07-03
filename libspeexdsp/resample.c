@@ -563,6 +563,7 @@ static void update_filter(SpeexResamplerState *st)
 {
    spx_uint32_t old_length = st->filt_len;
    spx_uint32_t old_alloc_size = st->mem_alloc_size;
+   spx_uint32_t min_alloc_size;
 
    st->oversample = quality_map[st->quality].oversample;
    st->filt_len = quality_map[st->quality].base_length;
@@ -646,10 +647,11 @@ static void update_filter(SpeexResamplerState *st)
    /* Here's the place where we update the filter memory to take into account
       the change in filter length. It's probably the messiest part of the code
       due to handling of lots of corner cases. */
-   if ((st->filt_len-1 + st->buffer_size) > st->mem_alloc_size)
+   min_alloc_size = st->filt_len-1 + st->buffer_size;
+   if (min_alloc_size > st->mem_alloc_size)
    {
-      st->mem_alloc_size = st->filt_len-1 + st->buffer_size;
-      st->mem = (spx_word16_t*)speex_realloc(st->mem, st->nb_channels*st->mem_alloc_size * sizeof(spx_word16_t));
+      st->mem = (spx_word16_t*)speex_realloc(st->mem, st->nb_channels*min_alloc_size * sizeof(spx_word16_t));
+      st->mem_alloc_size = min_alloc_size;
    }
    if (!st->started)
    {
