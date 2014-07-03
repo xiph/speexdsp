@@ -656,18 +656,18 @@ static void update_filter(SpeexResamplerState *st)
       /*speex_warning("reinit filter");*/
    } else if (st->filt_len > old_length)
    {
-      spx_int32_t i;
+      spx_uint32_t i;
       /* Increase the filter length */
       /*speex_warning("increase filter size");*/
-      int old_alloc_size = st->mem_alloc_size;
+      spx_uint32_t old_alloc_size = st->mem_alloc_size;
       if ((st->filt_len-1 + st->buffer_size) > st->mem_alloc_size)
       {
          st->mem_alloc_size = st->filt_len-1 + st->buffer_size;
          st->mem = (spx_word16_t*)speex_realloc(st->mem, st->nb_channels*st->mem_alloc_size * sizeof(spx_word16_t));
       }
-      for (i=st->nb_channels-1;i>=0;i--)
+      for (i=st->nb_channels;i--;)
       {
-         spx_int32_t j;
+         spx_uint32_t j;
          spx_uint32_t olen = old_length;
          /*if (st->magic_samples[i])*/
          {
@@ -675,7 +675,7 @@ static void update_filter(SpeexResamplerState *st)
             
             /* FIXME: This is wrong but for now we need it to avoid going over the array bounds */
             olen = old_length + 2*st->magic_samples[i];
-            for (j=old_length-2+st->magic_samples[i];j>=0;j--)
+            for (j=old_length-1+st->magic_samples[i];j--;)
                st->mem[i*st->mem_alloc_size+j+st->magic_samples[i]] = st->mem[i*old_alloc_size+j];
             for (j=0;j<st->magic_samples[i];j++)
                st->mem[i*st->mem_alloc_size+j] = 0;
