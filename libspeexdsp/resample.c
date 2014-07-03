@@ -598,9 +598,7 @@ static void update_filter(SpeexResamplerState *st)
 #endif
    {
       spx_uint32_t i;
-      if (!st->sinc_table)
-         st->sinc_table = (spx_word16_t *)speex_alloc(st->filt_len*st->den_rate*sizeof(spx_word16_t));
-      else if (st->sinc_table_length < st->filt_len*st->den_rate)
+      if (st->sinc_table_length < st->filt_len*st->den_rate)
       {
          st->sinc_table = (spx_word16_t *)speex_realloc(st->sinc_table,st->filt_len*st->den_rate*sizeof(spx_word16_t));
          st->sinc_table_length = st->filt_len*st->den_rate;
@@ -624,9 +622,7 @@ static void update_filter(SpeexResamplerState *st)
       /*fprintf (stderr, "resampler uses direct sinc table and normalised cutoff %f\n", cutoff);*/
    } else {
       spx_int32_t i;
-      if (!st->sinc_table)
-         st->sinc_table = (spx_word16_t *)speex_alloc((st->filt_len*st->oversample+8)*sizeof(spx_word16_t));
-      else if (st->sinc_table_length < st->filt_len*st->oversample+8)
+      if (st->sinc_table_length < st->filt_len*st->oversample+8)
       {
          st->sinc_table = (spx_word16_t *)speex_realloc(st->sinc_table,(st->filt_len*st->oversample+8)*sizeof(spx_word16_t));
          st->sinc_table_length = st->filt_len*st->oversample+8;
@@ -650,15 +646,7 @@ static void update_filter(SpeexResamplerState *st)
    /* Here's the place where we update the filter memory to take into account
       the change in filter length. It's probably the messiest part of the code
       due to handling of lots of corner cases. */
-   if (!st->mem)
-   {
-      spx_uint32_t i;
-      st->mem_alloc_size = st->filt_len-1 + st->buffer_size;
-      st->mem = (spx_word16_t*)speex_alloc(st->nb_channels*st->mem_alloc_size * sizeof(spx_word16_t));
-      for (i=0;i<st->nb_channels*st->mem_alloc_size;i++)
-         st->mem[i] = 0;
-      /*speex_warning("init filter");*/
-   } else if (!st->started)
+   if (!st->started)
    {
       spx_uint32_t i;
       st->mem_alloc_size = st->filt_len-1 + st->buffer_size;
