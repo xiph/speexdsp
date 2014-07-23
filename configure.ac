@@ -224,7 +224,7 @@ AS_CASE([$FFT],
  ],
  [gpl-fftw3], [
   AC_DEFINE([USE_GPL_FFTW3], [], [Use FFTW3 for FFT])
-  PKG_CHECK_MODULES(FFT, fftw3f)
+  PKG_CHECK_MODULES([FFT], [fftw3f])
  ],
  [proprietary-intel-mkl], [
   AC_DEFINE([USE_INTEL_MKL], [], [Use Intel Math Kernel Library for FFT])
