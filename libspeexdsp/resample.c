@@ -144,7 +144,7 @@ struct SpeexResamplerState_ {
    int    out_stride;
 } ;
 
-static double kaiser12_table[68] = {
+static const double kaiser12_table[68] = {
    0.99859849, 1.00000000, 0.99859849, 0.99440475, 0.98745105, 0.97779076,
    0.96549770, 0.95066529, 0.93340547, 0.91384741, 0.89213598, 0.86843014,
    0.84290116, 0.81573067, 0.78710866, 0.75723148, 0.72629970, 0.69451601,
@@ -158,7 +158,7 @@ static double kaiser12_table[68] = {
    0.00105297, 0.00069463, 0.00043489, 0.00025272, 0.00013031, 0.0000527734,
    0.00001000, 0.00000000};
 /*
-static double kaiser12_table[36] = {
+static const double kaiser12_table[36] = {
    0.99440475, 1.00000000, 0.99440475, 0.97779076, 0.95066529, 0.91384741,
    0.86843014, 0.81573067, 0.75723148, 0.69451601, 0.62920216, 0.56287762,
    0.49704014, 0.43304576, 0.37206735, 0.31506490, 0.26276832, 0.21567274,
@@ -166,7 +166,7 @@ static double kaiser12_table[36] = {
    0.03111947, 0.02127838, 0.01402878, 0.00886058, 0.00531256, 0.00298291,
    0.00153438, 0.00069463, 0.00025272, 0.0000527734, 0.00000500, 0.00000000};
 */
-static double kaiser10_table[36] = {
+static const double kaiser10_table[36] = {
    0.99537781, 1.00000000, 0.99537781, 0.98162644, 0.95908712, 0.92831446,
    0.89005583, 0.84522401, 0.79486424, 0.74011713, 0.68217934, 0.62226347,
    0.56155915, 0.50119680, 0.44221549, 0.38553619, 0.33194107, 0.28205962,
@@ -174,7 +174,7 @@ static double kaiser10_table[36] = {
    0.05731132, 0.04193980, 0.02979584, 0.02044510, 0.01345224, 0.00839739,
    0.00488951, 0.00257636, 0.00115101, 0.00035515, 0.00000000, 0.00000000};
 
-static double kaiser8_table[36] = {
+static const double kaiser8_table[36] = {
    0.99635258, 1.00000000, 0.99635258, 0.98548012, 0.96759014, 0.94302200,
    0.91223751, 0.87580811, 0.83439927, 0.78875245, 0.73966538, 0.68797126,
    0.63451750, 0.58014482, 0.52566725, 0.47185369, 0.41941150, 0.36897272,
@@ -182,7 +182,7 @@ static double kaiser8_table[36] = {
    0.10562887, 0.08273982, 0.06335451, 0.04724088, 0.03412321, 0.02369490,
    0.01563093, 0.00959968, 0.00527363, 0.00233883, 0.00050000, 0.00000000};
    
-static double kaiser6_table[36] = {
+static const double kaiser6_table[36] = {
    0.99733006, 1.00000000, 0.99733006, 0.98935595, 0.97618418, 0.95799003,
    0.93501423, 0.90755855, 0.87598009, 0.84068475, 0.80211977, 0.76076565,
    0.71712752, 0.67172623, 0.62508937, 0.57774224, 0.53019925, 0.48295561,
@@ -191,19 +191,19 @@ static double kaiser6_table[36] = {
    0.05031820, 0.03607231, 0.02432151, 0.01487334, 0.00752000, 0.00000000};
 
 struct FuncDef {
-   double *table;
+   const double *table;
    int oversample;
 };
       
-static struct FuncDef _KAISER12 = {kaiser12_table, 64};
+static const struct FuncDef _KAISER12 = {kaiser12_table, 64};
 #define KAISER12 (&_KAISER12)
 /*static struct FuncDef _KAISER12 = {kaiser12_table, 32};
 #define KAISER12 (&_KAISER12)*/
-static struct FuncDef _KAISER10 = {kaiser10_table, 32};
+static const struct FuncDef _KAISER10 = {kaiser10_table, 32};
 #define KAISER10 (&_KAISER10)
-static struct FuncDef _KAISER8 = {kaiser8_table, 32};
+static const struct FuncDef _KAISER8 = {kaiser8_table, 32};
 #define KAISER8 (&_KAISER8)
-static struct FuncDef _KAISER6 = {kaiser6_table, 32};
+static const struct FuncDef _KAISER6 = {kaiser6_table, 32};
 #define KAISER6 (&_KAISER6)
 
 struct QualityMapping {
@@ -211,7 +211,7 @@ struct QualityMapping {
    int oversample;
    float downsample_bandwidth;
    float upsample_bandwidth;
-   struct FuncDef *window_func;
+   const struct FuncDef *window_func;
 };
 
 
@@ -238,7 +238,7 @@ static const struct QualityMapping quality_map[11] = {
    {256, 32, 0.975f, 0.975f, KAISER12}, /* Q10 */ /* 96.6% cutoff (~100 dB stop) 10 */
 };
 /*8,24,40,56,80,104,128,160,200,256,320*/
-static double compute_func(float x, struct FuncDef *func)
+static double compute_func(float x, const struct FuncDef *func)
 {
    float y, frac;
    double interp[4];
@@ -273,7 +273,7 @@ int main(int argc, char **argv)
 
 #ifdef FIXED_POINT
 /* The slow way of computing a sinc for the table. Should improve that some day */
-static spx_word16_t sinc(float cutoff, float x, int N, struct FuncDef *window_func)
+static spx_word16_t sinc(float cutoff, float x, int N, const struct FuncDef *window_func)
 {
    /*fprintf (stderr, "%f ", x);*/
    float xx = x * cutoff;
@@ -286,7 +286,7 @@ static spx_word16_t sinc(float cutoff, float x, int N, struct FuncDef *window_fu
 }
 #else
 /* The slow way of computing a sinc for the table. Should improve that some day */
-static spx_word16_t sinc(float cutoff, float x, int N, struct FuncDef *window_func)
+static spx_word16_t sinc(float cutoff, float x, int N, const struct FuncDef *window_func)
 {
    /*fprintf (stderr, "%f ", x);*/
    float xx = x * cutoff;
