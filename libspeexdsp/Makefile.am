@@ -39,4 +39,4 @@ testecho_LDADD = libspeexdsp.la @FFT_LIBS@
 testjitter_SOURCES = testjitter.c
 testjitter_LDADD = libspeexdsp.la @FFT_LIBS@
 testresample_SOURCES = testresample.c
-testresample_LDADD = libspeexdsp.la @FFT_LIBS@
+testresample_LDADD = libspeexdsp.la @FFT_LIBS@ @LIBM@
