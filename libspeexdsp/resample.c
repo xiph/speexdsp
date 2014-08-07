@@ -563,6 +563,8 @@ static void update_filter(SpeexResamplerState *st)
 {
    spx_uint32_t old_length = st->filt_len;
    spx_uint32_t old_alloc_size = st->mem_alloc_size;
+   int use_direct;
+   spx_uint32_t min_sinc_table_length;
    spx_uint32_t min_alloc_size;
 
    st->oversample = quality_map[st->quality].oversample;
@@ -593,17 +595,24 @@ static void update_filter(SpeexResamplerState *st)
    
    /* Choose the resampling type that requires the least amount of memory */
 #ifdef RESAMPLE_FULL_SINC_TABLE
-   if (1)
+   use_direct = 1;
 #else
-   if (st->filt_len*st->den_rate <= st->filt_len*st->oversample+8)
+   use_direct = st->filt_len*st->den_rate <= st->filt_len*st->oversample+8;
 #endif
+   if (use_direct)
+   {
+      min_sinc_table_length = st->filt_len*st->den_rate;
+   } else {
+      min_sinc_table_length = st->filt_len*st->oversample+8;
+   }
+   if (st->sinc_table_length < min_sinc_table_length)
+   {
+      st->sinc_table = (spx_word16_t *)speex_realloc(st->sinc_table,min_sinc_table_length*sizeof(spx_word16_t));
+      st->sinc_table_length = min_sinc_table_length;
+   }
+   if (use_direct)
    {
       spx_uint32_t i;
-      if (st->sinc_table_length < st->filt_len*st->den_rate)
-      {
-         st->sinc_table = (spx_word16_t *)speex_realloc(st->sinc_table,st->filt_len*st->den_rate*sizeof(spx_word16_t));
-         st->sinc_table_length = st->filt_len*st->den_rate;
-      }
       for (i=0;i<st->den_rate;i++)
       {
          spx_int32_t j;
@@ -623,11 +632,6 @@ static void update_filter(SpeexResamplerState *st)
       /*fprintf (stderr, "resampler uses direct sinc table and normalised cutoff %f\n", cutoff);*/
    } else {
       spx_int32_t i;
-      if (st->sinc_table_length < st->filt_len*st->oversample+8)
-      {
-         st->sinc_table = (spx_word16_t *)speex_realloc(st->sinc_table,(st->filt_len*st->oversample+8)*sizeof(spx_word16_t));
-         st->sinc_table_length = st->filt_len*st->oversample+8;
-      }
       for (i=-4;i<(spx_int32_t)(st->oversample*st->filt_len+4);i++)
          st->sinc_table[i+4] = sinc(st->cutoff,(i/(float)st->oversample - st->filt_len/2), st->filt_len, quality_map[st->quality].window_func);
 #ifdef FIXED_POINT
