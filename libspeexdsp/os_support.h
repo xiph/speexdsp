@@ -101,7 +101,7 @@ static inline void speex_free_scratch (void *ptr)
 #define SPEEX_MOVE(dst, src, n) (memmove((dst), (src), (n)*sizeof(*(dst)) + 0*((dst)-(src)) ))
 #endif
 
-/** Set n bytes of memory to value of c, starting at address s */
+/** Set n bytes of memory to value of c, starting at address dst */
 #ifndef OVERRIDE_SPEEX_MEMSET
 #define SPEEX_MEMSET(dst, c, n) (memset((dst), (c), (n)*sizeof(*(dst))))
 #endif
