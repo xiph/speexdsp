@@ -79,7 +79,24 @@ has_sse=yes
 has_sse=no
 ]
 )
-AC_MSG_RESULT($has_sse)  
+AC_MSG_RESULT($has_sse)
+
+AC_MSG_CHECKING(for SSE2 in current arch/CFLAGS)
+AC_LINK_IFELSE([
+AC_LANG_PROGRAM([[
+#include <emmintrin.h>
+__m128d testfunc(double *a, double *b) {
+  return _mm_add_pd(_mm_loadu_pd(a), _mm_loadu_pd(b));
+}
+]])],
+[
+has_sse2=yes
+],
+[
+has_sse2=no
+]
+)
+AC_MSG_RESULT($has_sse2)
 
 AC_MSG_CHECKING(for NEON in current arch/CFLAGS)
 AC_LINK_IFELSE([
@@ -134,9 +151,11 @@ fi])
 AC_ARG_ENABLE(sse, [  --enable-sse            Enable SSE support], [
 if test "x$enableval" != xno; then
 has_sse=yes
-CFLAGS="$CFLAGS -O3 -msse"
+has_sse2=yes
+CFLAGS="$CFLAGS -O3 -msse -msse2"
 else
 has_sse=no
+has_sse2=no
 fi
 ])
 
@@ -168,6 +187,10 @@ fi
 
 if test "$has_neon" = yes; then
   AC_DEFINE([_USE_NEON], , [Enable NEON support])
+fi
+
+if test "$has_sse2" = yes; then
+  AC_DEFINE([_USE_SSE2], , [Enable SSE2 support])
 fi
 
 AC_ARG_ENABLE(float-api, [  --disable-float-api     Disable the floating-point API],
