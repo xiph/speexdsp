@@ -198,6 +198,13 @@ AC_ARG_ENABLE(float-api, [  --disable-float-api     Disable the floating-point A
   AC_DEFINE([DISABLE_FLOAT_API], , [Disable all parts of the API that are using floats])
 fi])
 
+AC_ARG_ENABLE(examples, [  --disable-examples      Do not build example programs, only the library])
+if test "$enableval" != no; then
+  AM_CONDITIONAL([BUILD_EXAMPLES], true),
+else
+  AM_CONDITIONAL([BUILD_EXAMPLES], false)
+fi
+
 AC_ARG_ENABLE(arm4-asm, [  --enable-arm4-asm       Make use of ARM4 assembly optimizations],
 [if test "$enableval" = yes; then
   AC_DEFINE([ARM4_ASM], , [Make use of ARM4 assembly optimizations])

@@ -31,6 +31,7 @@ noinst_HEADERS = 	arch.h 	bfin.h \
 libspeexdsp_la_LDFLAGS = -no-undefined -version-info @SPEEXDSP_LT_CURRENT@:@SPEEXDSP_LT_REVISION@:@SPEEXDSP_LT_AGE@
 libspeexdsp_la_LIBADD = $(LIBM)
 
+if BUILD_EXAMPLES
 noinst_PROGRAMS = testdenoise testecho testjitter testresample
 testdenoise_SOURCES = testdenoise.c
 testdenoise_LDADD = libspeexdsp.la @FFT_LIBS@
@@ -40,3 +41,4 @@ testjitter_SOURCES = testjitter.c
 testjitter_LDADD = libspeexdsp.la @FFT_LIBS@
 testresample_SOURCES = testresample.c
 testresample_LDADD = libspeexdsp.la @FFT_LIBS@ @LIBM@
+endif
