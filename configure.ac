@@ -200,7 +200,7 @@ fi])
 
 AC_ARG_ENABLE(examples, [  --disable-examples      Do not build example programs, only the library])
 if test "$enableval" != no; then
-  AM_CONDITIONAL([BUILD_EXAMPLES], true),
+  AM_CONDITIONAL([BUILD_EXAMPLES], true)
 else
   AM_CONDITIONAL([BUILD_EXAMPLES], false)
 fi
