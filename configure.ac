@@ -1,6 +1,6 @@
 dnl Process this file with autoconf to produce a configure script. -*-m4-*-
 
-AC_INIT([speexdsp],[1.2rc1],[speex-dev@xiph.org])
+AC_INIT([speexdsp],[1.2rc2],[speex-dev@xiph.org])
 
 AC_CONFIG_SRCDIR([libspeexdsp/preprocess.c])
 AC_CONFIG_MACRO_DIR([m4])
