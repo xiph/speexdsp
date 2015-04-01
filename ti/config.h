@@ -6,18 +6,18 @@
    Redistribution and use in source and binary forms, with or without
    modification, are permitted provided that the following conditions
    are met:
-   
+
    - Redistributions of source code must retain the above copyright
    notice, this list of conditions and the following disclaimer.
-   
+
    - Redistributions in binary form must reproduce the above copyright
    notice, this list of conditions and the following disclaimer in the
    documentation and/or other materials provided with the distribution.
-   
+
    - Neither the name of the Xiph.org Foundation nor the names of its
    contributors may be used to endorse or promote products derived from
    this software without specific prior written permission.
-   
+
    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
    ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -37,7 +37,7 @@
 #define EXPORT
 
 /* Disable DC block if doing SNR testing */
-#define DISABLE_HIGHPASS 
+#define DISABLE_HIGHPASS
 
 /* Allow for 2 20ms narrowband blocks per frame, plus a couple of bytes */
 #define MAX_CHARS_PER_FRAME (42/BYTES_PER_CHAR)
@@ -55,7 +55,7 @@
 //#undef MANUAL_ALLOC
 //#undef OS_SUPPORT_CUSTOM
 
-#if defined (CONFIG_TI_C54X) || defined (CONFIG_TI_C55X) 
+#if defined (CONFIG_TI_C54X) || defined (CONFIG_TI_C55X)
 //#define PRECISION16
 
 // These values determined by analysis for 8kbps narrowband

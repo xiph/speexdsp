@@ -52,9 +52,9 @@ int main(int argc, char **argv)
       fwrite(&nbBytes, sizeof(int), 1, stdout);
       /*Write the compressed data*/
       fwrite(cbits, 1, nbBytes, stdout);
-      
+
    }
-   
+
    /*Destroy the encoder state*/
    speex_encoder_destroy(state);
    /*Destroy the bit-packing struct*/

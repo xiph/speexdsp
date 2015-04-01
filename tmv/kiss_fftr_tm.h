@@ -8,18 +8,18 @@
    Redistribution and use in source and binary forms, with or without
    modification, are permitted provided that the following conditions
    are met:
-   
+
    - Redistributions of source code must retain the above copyright
    notice, this list of conditions and the following disclaimer.
-   
+
    - Redistributions in binary form must reproduce the above copyright
    notice, this list of conditions and the following disclaimer in the
    documentation and/or other materials provided with the distribution.
-   
+
    - Neither the name of the Xiph.org Foundation nor the names of its
    contributors may be used to endorse or promote products derived from
    this software without specific prior written permission.
-   
+
    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
    ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -46,7 +46,7 @@
 		c1 = -asri(16,(c));															\
 		c0 = sex16((c));															\
 		(res) = pack16lsb(sround(c1 * (32767/(frac))), sround(c0 * (32767/(frac))));\
-	}	
+	}
 
 
 #define OVERRIDE_KISS_FFTR
@@ -78,8 +78,8 @@ void kiss_fftr(kiss_fftr_cfg st,const kiss_fft_scalar * restrict timedata, kiss_
 		freqdata[ncfft].i = freqdata[0].i = 0;
 	 }
 
-	 for ( k=1 ; k <= ncfft2 ; ++k ) 
-	 {	
+	 for ( k=1 ; k <= ncfft2 ; ++k )
+	 {
 		register int fpk, fpnk, i, tw, f1k, f2k;
 		register int fq1, fq2;
 
@@ -91,7 +91,7 @@ void kiss_fftr(kiss_fftr_cfg st,const kiss_fft_scalar * restrict timedata, kiss_
 
 		TM_DIV(fpk, fpk, 2);
 		TM_NDIV(fpnk,fpnk,2);
- 
+
         TM_ADD( f1k, fpk , fpnk );
         TM_SUB( f2k, fpk , fpnk );
 		TM_MUL( tw , f2k, tw );
@@ -134,7 +134,7 @@ void kiss_fftri(kiss_fftr_cfg st,const kiss_fft_cpx * restrict freqdata,kiss_fft
 		st->tmpbuf[0].i = fqr - fqnr;
 	}
 
-    for ( k=1 ; k <= ncfft2 ; ++k ) 
+    for ( k=1 ; k <= ncfft2 ; ++k )
 	{
 		register int fk, fnkc, i, tw, fek, fok, tmp;
 		register int tbk, tbn;
@@ -144,7 +144,7 @@ void kiss_fftri(kiss_fftr_cfg st,const kiss_fft_cpx * restrict freqdata,kiss_fft
 		fk = ld32x(freqdata,k);
 		tw = ld32x(twiddles,k);
 		fnkc = pack16lsb(-freqdata[i].i, freqdata[i].r);
-	
+
         TM_ADD (fek, fk, fnkc);
         TM_SUB (tmp, fk, fnkc);
         TM_MUL (fok, tmp, tw );
@@ -176,14 +176,14 @@ void kiss_fftr(kiss_fftr_cfg st,const kiss_fft_scalar * restrict timedata,kiss_f
 
 	tdcr = tmpbuf[0].r;
     tdci = tmpbuf[0].i;
-    
+
 	freqdata[0].r = tdcr + tdci;
     freqdata[ncfft].r = tdcr - tdci;
     freqdata[ncfft].i = freqdata[0].i = 0;
 
-    for ( k=1;k <= ncfft/2 ; ++k ) 
+    for ( k=1;k <= ncfft/2 ; ++k )
 	{
-        fpk    = tmpbuf[k]; 
+        fpk    = tmpbuf[k];
         fpnk.r = tmpbuf[ncfft-k].r;
         fpnk.i = -tmpbuf[ncfft-k].i;
 
@@ -203,16 +203,16 @@ void kiss_fftri(kiss_fftr_cfg st,const kiss_fft_cpx * restrict freqdata,kiss_fft
 {
     register int k, ncfft;
 	register kiss_fft_cpx * restrict tmpbuf, * restrict tw;
-	
-		
+
+
     ncfft = st->substate->nfft;
 	tmpbuf= st->tmpbuf;
 	tw	  = st->super_twiddles;
-		
+
     tmpbuf[0].r = freqdata[0].r + freqdata[ncfft].r;
     tmpbuf[0].i = freqdata[0].r - freqdata[ncfft].r;
 
-    for (k = 1; k <= ncfft / 2; ++k) 
+    for (k = 1; k <= ncfft / 2; ++k)
 	{
         register kiss_fft_cpx fk, fnkc, fek, fok, tmp;
         fk = freqdata[k];

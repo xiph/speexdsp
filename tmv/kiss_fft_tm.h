@@ -8,18 +8,18 @@
    Redistribution and use in source and binary forms, with or without
    modification, are permitted provided that the following conditions
    are met:
-   
+
    - Redistributions of source code must retain the above copyright
    notice, this list of conditions and the following disclaimer.
-   
+
    - Redistributions in binary form must reproduce the above copyright
    notice, this list of conditions and the following disclaimer in the
    documentation and/or other materials provided with the distribution.
-   
+
    - Neither the name of the Xiph.org Foundation nor the names of its
    contributors may be used to endorse or promote products derived from
    this software without specific prior written permission.
-   
+
    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
    ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -53,17 +53,17 @@ static void kf_bfly2(
     register int * restrict tw1 = (int*)st->twiddles;
     register int i, j;
 	register int _inv = !st->inverse;
-    
+
 	Fout2 = (int*)Fout + m;
-	
+
 	for ( i=0,j=0 ; i<m ; ++i,j+=4,tw1+=fstride )
 	{	register int tw_10, ff_10, f2_10;
 
 		ff_10	= ld32x(Fout, i);
 		f2_10	= ld32x(Fout2, i);
 		tw_10	= ld32(tw1);
-		
-		if ( _inv ) 
+
+		if ( _inv )
 		{	TM_SHR(f2_10, f2_10, 1);
 			TM_SHR(ff_10, ff_10, 1);
 		}
@@ -111,11 +111,11 @@ static void kf_bfly4(
 		sc0   = ld32x(Fout1,i);
 		sc3   = ld32(tw1);
 		sc1   = ld32x(Fout2, i);
-		sc4   = ld32(tw2);			
+		sc4   = ld32(tw2);
 		sc2   = ld32x(Fout3, i);
 		sc5   = ld32(tw3);
 		ff0   = ld32x(Fout,i);
-		
+
 		if ( _inv )
 		{
 			TM_ADD(sc0, sc0, 0x00020002);
@@ -137,12 +137,12 @@ static void kf_bfly4(
 		TM_SUB(sc4, sc0, sc2);
 		TM_SUB(sc1, ff0, sc3);
 		TM_ADD(ff0, ff0, sc3);
-		
+
 		st32d(j, Fout2, sc1);
 		st32d(j, Fout,  ff0);
 
 		sc5 = funshift2(sc5, sc5);
-		
+
 		if ( _inv )
 		{	TM_ADD(ff0, sc5, sc4);
 			TM_SUB(sc1, sc5, sc4);
@@ -193,7 +193,7 @@ static void kf_bfly3(
 		sc3 = ld32(tw1);
 		sc4 = ld32(tw2);
 		ff0 = ld32x(Fout,i);
-		
+
 		if ( _inv )
 		{
 			TM_DIV(sc1, sc1, 3);
@@ -233,7 +233,7 @@ static void kf_bfly5(
         const kiss_fft_cfg	st,
         int m
         )
-{   
+{
     register int * restrict tw1;
 	register int * restrict tw2;
 	register int * restrict tw3;
@@ -309,7 +309,7 @@ static void kf_bfly5(
 		sc78_lsb = pack16lsb(sc7,sc8);
 		sc90_msb = pack16msb(sc10,sc9);
 		sc90_lsb = pack16lsb(sc10,sc9);
-		
+
 		sc5 = pack16lsb( sround(ifir16(sc78_msb,yab_lsb)), sround(ifir16(sc78_lsb,yab_lsb)));
 		sc6 = pack16lsb(-sround(ifir16(sc90_lsb,yab_msb)), sround(ifir16(sc90_msb,yab_msb)));
 
@@ -348,41 +348,41 @@ static void kf_bfly_generic(
 
     CHECKBUF(scratchbuf,nscratchbuf,p);
 
-    for ( i=0; i<m; ++i ) 
+    for ( i=0; i<m; ++i )
 	{	register int sc10;
 
-        for ( j=0,k=i ; j<p ; ++j,k+=m ) 
+        for ( j=0,k=i ; j<p ; ++j,k+=m )
 		{	register int f10;
 
 			f10 = ld32x(Fout,k);
 
-			if ( _inv ) 
+			if ( _inv )
 			{	TM_DIV(f10, f10, p);
 			}
 
 			st32d(j<<2, scratchbuf, f10);
         }
 
-        for ( j=0,k=i,sc10=ld32(scratchbuf) ; j<p ; ++j,k+=m ) 
+        for ( j=0,k=i,sc10=ld32(scratchbuf) ; j<p ; ++j,k+=m )
 		{
             register int twidx = 0;
 			register int f10;
 
-            for ( l=1,f10 = sc10 ; l<p ; ++l ) 
+            for ( l=1,f10 = sc10 ; l<p ; ++l )
 			{	register int tw, sc;
 
                 twidx += fstride * k;
-				if ( twidx>=Norig ) 
+				if ( twidx>=Norig )
 				{	twidx -= Norig;
 				}
-				
+
 				sc = ld32x(scratchbuf,l);
 				tw = ld32x(twiddles,twidx);
-                
+
 				TM_MUL(sc, sc, tw);
 				TM_ADD(f10, f10, sc);
 			}
-			st32d(k<<2, Fout, f10); 
+			st32d(k<<2, Fout, f10);
 		}
 	}
 }
@@ -405,17 +405,17 @@ static void kf_bfly2(
     do
 	{
 		register kiss_fft_cpx _fout2, _fout, t;
-		
+
 		_fout2 = *Fout2;
 		_fout  = *Fout;
-		
+
         C_MUL	(	  t,  _fout2,   *tw1);
         C_SUB	(_fout2,   _fout,	   t);
         C_ADD	(_fout,    _fout,	   t);
-		
+
 		*Fout2 = _fout2;
 		*Fout  = _fout;
-		
+
 		tw1	+= fstride;
         ++Fout2;
         ++Fout;
@@ -432,22 +432,22 @@ static void kf_bfly4(
         )
 {
     register kiss_fft_cpx * restrict tw1,* restrict tw2,* restrict tw3;
-	register kiss_fft_cpx * restrict Fout1, * restrict Fout2, * restrict Fout3; 
+	register kiss_fft_cpx * restrict Fout1, * restrict Fout2, * restrict Fout3;
 	register int _inv = !st->inverse;
-	
+
     tw3 = tw2 = tw1 = st->twiddles;
-	
+
 	Fout1 = Fout + m;
 	Fout2 = Fout + (m << 1);
 	Fout3 = Fout + (m * 3);
 
 	do {
-	   
+
 		register kiss_fft_cpx _fout;
 		register kiss_fft_cpx sc0, sc1, sc2, sc3, sc4, sc5;
-		
+
 		_fout = *Fout;
-		
+
 		C_MUL(   sc0,*Fout1, *tw1);
 		C_MUL(   sc1,*Fout2, *tw2);
 		C_MUL(   sc2,*Fout3, *tw3);
@@ -458,10 +458,10 @@ static void kf_bfly4(
 		C_SUB(*Fout2, _fout,  sc3);
 		C_ADD( *Fout, _fout,  sc3);
 
-		tw1 += fstride;		
+		tw1 += fstride;
 		tw2 += (fstride << 1);
 		tw3 += (fstride *  3);
-		
+
 		if ( _inv )
 		{
 			Fout1->r = sc5.r + sc4.i;
@@ -475,10 +475,10 @@ static void kf_bfly4(
 			Fout3->r = sc5.r + sc4.i;
 			Fout3->i = sc5.i - sc4.r;
 		}
-		  
-		  
+
+
         ++Fout; ++Fout1; ++Fout2; ++Fout3;
-		
+
     } while(--m);
 }
 
@@ -493,40 +493,40 @@ static void kf_bfly3(
 	register kiss_fft_cpx * restrict Fout1, * restrict Fout2;
 	register kiss_fft_cpx * restrict tw1,* restrict tw2;
 	register float epi;
-	
+
     tw1 = tw2 = st->twiddles;
     epi = st->twiddles[fstride*m].i;
 	Fout1 = Fout + m;
 	Fout2 = Fout + (m << 1);
 
     do {
-        
+
 		register kiss_fft_cpx _fout;
 		register kiss_fft_cpx sc0, sc1, sc2, sc3;
-		
+
 		_fout = *Fout;
-		
+
         C_MUL(   sc1, *Fout1,  *tw1);
         C_MUL(   sc2, *Fout2,  *tw2);
         C_ADD(	 sc3,    sc1,   sc2);
         C_SUB(   sc0,    sc1,   sc2);
         tw1 += fstride;
         tw2 += (fstride << 1);
-		
+
         sc1.r = _fout.r - HALF_OF(sc3.r);
         sc1.i = _fout.i - HALF_OF(sc3.i);
-		
+
         C_MULBYSCALAR(sc0,  epi);
         C_ADD(*Fout, _fout, sc3);
-		
+
         Fout2->r = sc1.r + sc0.i;
         Fout2->i = sc1.i - sc0.r;
-		
+
         Fout1->r = sc1.i - sc0.i;
         Fout1->i = sc1.r + sc0.r;
-		
+
         ++Fout; ++Fout1; ++Fout2;
-		
+
 	} while(--m);
 }
 
@@ -553,42 +553,42 @@ static void kf_bfly5(
 	yai = tw[fstride*m].i;
     ybr = tw[fstride*2*m].r;
 	ybi = tw[fstride*2*m].i;
-   
+
 	for ( u=0; u<m; ++u )
 	{
 		register kiss_fft_cpx sc0, sc1, sc2, sc3, sc4, sc5, sc6, sc7, sc8, sc9, sc10, sc11, sc12;
-		
+
 		sc0 = *Fout;
-		
+
         C_MUL(   sc1,*Fout1,   tw[u*fstride]);
         C_MUL(   sc2,*Fout2, tw[2*u*fstride]);
         C_MUL(   sc3,*Fout3, tw[3*u*fstride]);
         C_MUL(   sc4,*Fout4, tw[4*u*fstride]);
-		
+
         C_ADD(   sc7,   sc1,   sc4);
         C_SUB(  sc10,   sc1,   sc4);
         C_ADD(   sc8,   sc2,   sc3);
         C_SUB(   sc9,   sc2,   sc3);
-		
+
         Fout->r = sc0.r + sc7.r + sc8.r;
         Fout->i = sc0.i + sc7.i + sc8.i;
-		
+
         sc5.r = sc0.r + S_MUL(sc7.r,yar) + S_MUL(sc8.r,ybr);
         sc5.i = sc0.i + S_MUL(sc7.i,yar) + S_MUL(sc8.i,ybr);
-		
+
         sc6.r =  S_MUL(sc10.i,yai) + S_MUL(sc9.i,ybi);
         sc6.i = -S_MUL(sc10.r,yai) - S_MUL(sc9.r,ybi);
-		
+
         C_SUB(*Fout1,sc5,sc6);
         C_ADD(*Fout4,sc5,sc6);
-		
+
         sc11.r = sc0.r + S_MUL(sc7.r,ybr) + S_MUL(sc8.r,yar);
         sc11.i = sc0.i + S_MUL(sc7.i,ybr) + S_MUL(sc8.i,yar);
         sc12.r = - S_MUL(sc10.i,ybi) + S_MUL(sc9.i,yai);
         sc12.i = S_MUL(sc10.r,ybi) - S_MUL(sc9.r,yai);
         C_ADD(*Fout2,sc11,sc12);
         C_SUB(*Fout3,sc11,sc12);
-		
+
         ++Fout1; ++Fout2; ++Fout3; ++Fout4;
 	}
 }

@@ -1,23 +1,23 @@
 /* Copyright (C) 2007 Psi Systems, Inc.
-   Author:  Jean-Marc Valin 
+   Author:  Jean-Marc Valin
    File: os_support_custom.h
    Memory Allocation overrides to allow user control rather than C alloc/free.
 
    Redistribution and use in source and binary forms, with or without
    modification, are permitted provided that the following conditions
    are met:
-   
+
    - Redistributions of source code must retain the above copyright
    notice, this list of conditions and the following disclaimer.
-   
+
    - Redistributions in binary form must reproduce the above copyright
    notice, this list of conditions and the following disclaimer in the
    documentation and/or other materials provided with the distribution.
-   
+
    - Neither the name of the Xiph.org Foundation nor the names of its
    contributors may be used to endorse or promote products derived from
    this software without specific prior written permission.
-   
+
    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
    ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -33,20 +33,20 @@
 
 #ifdef MANUAL_ALLOC
 
-/* To avoid changing the Speex call model, this file relies on four static variables 
-   The user main creates two linear buffers, and initializes spxGlobalHeap/ScratchPtr 
-   to point to the start of the two buffers, and initializes spxGlobalHeap/ScratchEnd 
+/* To avoid changing the Speex call model, this file relies on four static variables
+   The user main creates two linear buffers, and initializes spxGlobalHeap/ScratchPtr
+   to point to the start of the two buffers, and initializes spxGlobalHeap/ScratchEnd
    to point to the first address following the last byte of the two buffers.
-   
-   This mechanism allows, for example, data caching for multichannel applications, 
-   where the Speex state is swapped from a large slow memory to a small fast memory 
+
+   This mechanism allows, for example, data caching for multichannel applications,
+   where the Speex state is swapped from a large slow memory to a small fast memory
    each time the codec runs.
-   
+
    Persistent data is allocated in spxGlobalHeap (instead of calloc), while scratch
    data is allocated in spxGlobalScratch.
 */
 
-extern char *spxGlobalHeapPtr, *spxGlobalHeapEnd; 
+extern char *spxGlobalHeapPtr, *spxGlobalHeapEnd;
 extern char *spxGlobalScratchPtr, *spxGlobalScratchEnd;
 
 /* Make sure that all structures are aligned to largest type */
@@ -57,19 +57,19 @@ extern inline void speex_warning(const char *str);
 static inline void *speex_alloc (int size)
 {
     void *ptr;
-    
+
     ptr = (void *) (((int)spxGlobalHeapPtr + BLOCK_MASK) & ~BLOCK_MASK);  //Start on 8 boundary
 
     spxGlobalHeapPtr = (char *)((int)ptr + size);	// Update pointer to next free location
 
-    if (spxGlobalHeapPtr > spxGlobalHeapEnd ) 
+    if (spxGlobalHeapPtr > spxGlobalHeapEnd )
     {
 #ifdef VERBOSE_ALLOC
 	    fprintf (stderr, "insufficient space for persistent alloc request %d bytes\n", size);
 #endif
        return 0;
     }
-   
+
 #ifdef VERBOSE_ALLOC
     fprintf (stderr, "Persist Allocated %d chars at %x, %d remaining\n", size, ptr, ((int)spxGlobalHeapEnd - (int)spxGlobalHeapPtr));
 #endif
@@ -86,14 +86,14 @@ static inline void *speex_alloc_scratch (int size)
 
     spxGlobalScratchPtr = (char *)((int)ptr + size);	// Update pointer to next free location
 
-    if (spxGlobalScratchPtr > spxGlobalScratchEnd ) 
+    if (spxGlobalScratchPtr > spxGlobalScratchEnd )
     {
 #ifdef VERBOSE_ALLOC
 	    fprintf (stderr, "insufficient space for scratch alloc request %d bytes\n", size);
 #endif
        return 0;
     }
-   
+
 #ifdef VERBOSE_ALLOC
     fprintf (stderr, "Scratch Allocated %d chars at %x, %d remaining\n", size, ptr, ((int)spxGlobalScratchEnd - (int)spxGlobalScratchPtr));
 #endif

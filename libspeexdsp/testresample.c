@@ -1,5 +1,5 @@
 /* Copyright (C) 2007 Jean-Marc Valin
-      
+
    File: testresample.c
    Testing the resampling code
 
@@ -51,7 +51,7 @@ int main()
    SpeexResamplerState *st = speex_resampler_init(1, 8000, 12000, 10, NULL);
    speex_resampler_set_rate(st, 96000, 44100);
    speex_resampler_skip_zeros(st);
-   
+
    in = malloc(NN*sizeof(short));
    out = malloc(2*NN*sizeof(short));
    fin = malloc(NN*sizeof(float));

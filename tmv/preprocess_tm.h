@@ -8,18 +8,18 @@
    Redistribution and use in source and binary forms, with or without
    modification, are permitted provided that the following conditions
    are met:
-   
+
    - Redistributions of source code must retain the above copyright
    notice, this list of conditions and the following disclaimer.
-   
+
    - Redistributions in binary form must reproduce the above copyright
    notice, this list of conditions and the following disclaimer in the
    documentation and/or other materials provided with the distribution.
-   
+
    - Neither the name of the Xiph.org Foundation nor the names of its
    contributors may be used to endorse or promote products derived from
    this software without specific prior written permission.
-   
+
    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
    ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -62,7 +62,7 @@ static void preprocess_analysis(SpeexPreprocessState * restrict st, spx_int16_t 
 	N3 >>= 1;
 	framesize >>= 1;
 	max_val = 0;
-	
+
 	for ( i=0,j=0 ; i<N3 ; i+=2,j+=8 )
 	{	register int r1, r2;
 
@@ -82,7 +82,7 @@ static void preprocess_analysis(SpeexPreprocessState * restrict st, spx_int16_t 
 		st32d(j,  ptr, r1);
 		st32d(j+4,ptr, r2);
 	}
-   
+
 	for ( i=0,j=0,ptr=(int*)(x+N4) ; i<N3 ; i+=2,j+=8 )
 	{	register int r1, r2;
 
@@ -115,7 +115,7 @@ static void preprocess_analysis(SpeexPreprocessState * restrict st, spx_int16_t 
 #pragma TCS_unrollexact=0
 #pragma TCS_unroll=0
 #endif
-   
+
 	max_val = 14 - spx_ilog2(max_val);
 	st->frame_shift = max_val;
 
@@ -139,15 +139,15 @@ static void preprocess_analysis(SpeexPreprocessState * restrict st, spx_int16_t 
 #endif
 	}
 
-	spx_fft(st->fft_lookup, st->frame, st->ft);     
+	spx_fft(st->fft_lookup, st->frame, st->ft);
 	power_spectrum(st->ft, ps, N << 1);
-   
+
 #if (TM_UNROLL && TM_UNROLL_PREPROCESSANALYSIS)
 #pragma TCS_unroll=4
 #pragma TCS_unrollexact=1
 #endif
 	for ( i=0,ptr=(int*)st->ps,max_val<<=1,j=((1<<((max_val))>>1)) ;i<N ; ++i )
-	{	
+	{
 		ps[i] = (ps[i] + j) >> max_val;
 	}
 #if (TM_UNROLL && TM_UNROLL_PREPROCESSANALYSIS)
@@ -171,7 +171,7 @@ static void update_noise_prob(SpeexPreprocessState * restrict st)
 	register int * restrict Smin = (int*)st->Smin;
 	register int * restrict Stmp = (int*)st->Stmp;
 	register int * restrict S = (int*)st->S;
-	
+
 	UPDATENOISEPROB_START();
 
 	{
@@ -180,7 +180,7 @@ static void update_noise_prob(SpeexPreprocessState * restrict st)
 		register int q8, q05, q2, q1;
 		register int *ps = (int*)st->ps;
 		register int si_lsb, si_msb, sii_lsb, sii_msb;
-	
+
 		q8	= QCONST16(.8f,15);
 		q05 = QCONST16(.05f,15);
 		q2	= QCONST16(.2f,15);
@@ -196,7 +196,7 @@ static void update_noise_prob(SpeexPreprocessState * restrict st)
 		ips_lsb	 &= 0x00007fff;
 		psi_lsb	 &= 0x00007fff;
 		si_lsb	 &= 0x00007fff;
-		
+
 		S[0] = _MULT16_32_Q15(q8,si_msb,si_lsb) +  _MULT16_32_Q15(q2,ips_msb,ips_lsb);
 
 		for ( i=1 ; i<N-1 ; i+=2 )
@@ -209,11 +209,11 @@ static void update_noise_prob(SpeexPreprocessState * restrict st)
 			si_lsb	 &= 0x00007fff;
 			psii_lsb &= 0x00007fff;
 
-			S[i]= _MULT16_32_Q15(q8,si_msb,si_lsb) + 
-				  _MULT16_32_Q15(q05,ips_msb,ips_lsb) + 
-				  _MULT16_32_Q15(q1,psi_msb,psi_lsb) + 
+			S[i]= _MULT16_32_Q15(q8,si_msb,si_lsb) +
+				  _MULT16_32_Q15(q05,ips_msb,ips_lsb) +
+				  _MULT16_32_Q15(q1,psi_msb,psi_lsb) +
 				  _MULT16_32_Q15(q05,psii_msb,psii_lsb);
-			
+
 			psiii_lsb = ps[i+2];
 			sii_lsb	 = S[i+1];
 
@@ -222,9 +222,9 @@ static void update_noise_prob(SpeexPreprocessState * restrict st)
 			sii_lsb	 &= 0x00007fff;
 			psiii_lsb&= 0x00007fff;
 
-			S[i+1]= _MULT16_32_Q15(q8,sii_msb,sii_lsb) + 
-					_MULT16_32_Q15(q05,psi_msb,psi_lsb) + 
-					_MULT16_32_Q15(q1,psii_msb,psii_lsb) + 
+			S[i+1]= _MULT16_32_Q15(q8,sii_msb,sii_lsb) +
+					_MULT16_32_Q15(q05,psi_msb,psi_lsb) +
+					_MULT16_32_Q15(q1,psii_msb,psii_lsb) +
 					_MULT16_32_Q15(q05,psiii_msb,psiii_lsb);
 
 			ips_lsb = psii_lsb;
@@ -232,12 +232,12 @@ static void update_noise_prob(SpeexPreprocessState * restrict st)
 			psi_lsb = psiii_lsb;
 			psi_msb = psiii_msb;
 		}
-   
+
 		S[N-1] = MULT16_32_Q15(q8,S[N-1]) + MULT16_32_Q15(q2,ps[N-1]);
 	}
 
 	nb_adapt = st->nb_adapt;
-   
+
 	if ( nb_adapt==1 )
 	{	for ( i=0 ; i<N ; ++i )
 			Smin[i] = Stmp[i] = 0;
@@ -261,7 +261,7 @@ static void update_noise_prob(SpeexPreprocessState * restrict st)
 
 			si		= S[i];
 			stmpi	= Stmp[i];
-				
+
 			Smin[i] = imin(stmpi,si);
 			Stmp[i] = si;
 		}
@@ -269,7 +269,7 @@ static void update_noise_prob(SpeexPreprocessState * restrict st)
 #pragma TCS_unrollexact=0
 #pragma TCS_unroll=0
 #endif
-	} else 
+	} else
 	{
 
 #if (TM_UNROLL && TM_UNROLL_UPDATENOISEPROB)
@@ -284,7 +284,7 @@ static void update_noise_prob(SpeexPreprocessState * restrict st)
 			smini	= Smin[i];
 
 			Smin[i] = imin(smini,si);
-			Stmp[i] = imin(stmpi,si);      
+			Stmp[i] = imin(stmpi,si);
 		}
 #if (TM_UNROLL && TM_UNROLL_UPDATENOISEPROB)
 #pragma TCS_unrollexact=0
@@ -388,7 +388,7 @@ static void preprocess_analysis(SpeexPreprocessState * restrict st, spx_int16_t 
 #pragma TCS_unroll=0
 #endif
 
-	spx_fft(st->fft_lookup, frame, st->ft);         
+	spx_fft(st->fft_lookup, frame, st->ft);
 	power_spectrum(st->ft, ps, N << 1);
 	filterbank_compute_bank32(st->bank, ps, ps+N);
 
@@ -399,7 +399,7 @@ static void preprocess_analysis(SpeexPreprocessState * restrict st, spx_int16_t 
 #define OVERRIDE_UPDATE_NOISE_PROB
 static void update_noise_prob(SpeexPreprocessState * restrict st)
 {
-   
+
 	register float * restrict S = st->S;
    	register float * restrict ps = st->ps;
 	register int N = st->ps_size;
@@ -426,7 +426,7 @@ static void update_noise_prob(SpeexPreprocessState * restrict st)
 			psii	= ps[i+1];
 			psiii	= ps[i+2];
 			S[i]	= .8f * S[i]	+ .05f * ips + .1f * psi  + .05f * psii;
-			S[i+1]	= .8f * S[i+1]	+ .05f * psi + .1f * psii + .05f * psiii; 
+			S[i+1]	= .8f * S[i+1]	+ .05f * psi + .1f * psii + .05f * psiii;
 			ips		= psii;
 			psi		= psiii;
 		}
@@ -435,9 +435,9 @@ static void update_noise_prob(SpeexPreprocessState * restrict st)
 	}
 
 	nb_adapt = st->nb_adapt;
-   
+
    	if ( nb_adapt==1 )
-	{	
+	{
 		for (i=0;i<N;i++)
 			Smin[i] = st->Stmp[i] = 0;
 	}
@@ -446,7 +446,7 @@ static void update_noise_prob(SpeexPreprocessState * restrict st)
 				mux(nb_adapt < 1000,	50,
 				mux(nb_adapt < 10000,	150, 300)));
 
-   
+
 	if ( st->min_count > min_range )
 	{
 		st->min_count = 0;
@@ -469,7 +469,7 @@ static void update_noise_prob(SpeexPreprocessState * restrict st)
 #pragma TCS_unroll=0
 #endif
 
-	} else 
+	} else
 	{
 		register float * restrict Smin = st->Smin;
 
@@ -484,9 +484,9 @@ static void update_noise_prob(SpeexPreprocessState * restrict st)
 			stmpi	= Stmp[i];
 			si		= S[i];
 			smini	= Smin[i];
-			
+
 			Smin[i] = fmin(smini,si);
-			Stmp[i] = fmin(stmpi,si);      
+			Stmp[i] = fmin(stmpi,si);
 		}
 #if (TM_UNROLL && TM_UNROLL_UPDATENOISEPROB)
 #pragma TCS_unrollexact=0
@@ -508,7 +508,7 @@ static void update_noise_prob(SpeexPreprocessState * restrict st)
 			si		= S[i];
 			smini	= Smin[i];
 			update_prob[i] = mux( (.4 * si) > (smini + 20.f), 1, 0);
-			
+
 		}
 #if (TM_UNROLL && TM_UNROLL_UPDATENOISEPROB)
 #pragma TCS_unrollexact=0
@@ -522,11 +522,11 @@ static void update_noise_prob(SpeexPreprocessState * restrict st)
 
 #define OVERRIDE_COMPUTE_GAIN_FLOOR
 static void compute_gain_floor(
-	int noise_suppress, 
-	int effective_echo_suppress, 
-	float * restrict noise, 
-	float * restrict echo, 
-	float * gain_floor, 
+	int noise_suppress,
+	int effective_echo_suppress,
+	float * restrict noise,
+	float * restrict echo,
+	float * gain_floor,
 	int len
 )
 {
@@ -592,7 +592,7 @@ void preprocess_residue_echo(
 #ifndef FIXED_POINT
 		r = r_echo[0];
 		if (!(r >=0 && r < N*1e9f) )
-		{	
+		{
 			memset(r_echo, 0, N * sizeof(spx_word32_t));
 		}
 #endif
@@ -610,8 +610,8 @@ void preprocess_residue_echo(
 #pragma TCS_unroll=0
 #endif
 		filterbank_compute_bank32(st->bank, e_noise, e_noise+N);
-   
-	} else 
+
+	} else
 	{	memset(st->echo_noise, 0, (NM) * sizeof(spx_word32_t));
 	}
 }
@@ -639,7 +639,7 @@ void preprocess_update_noise(
 		register spx_word32_t psi = ps[i];
 
 		if ( !up[i] || psi < PSHR32(ni, NOISE_SHIFT) )
-		{	noise[i] =	MAX32(EXTEND32(0),MULT16_32_Q15(beta_1,ni) + 
+		{	noise[i] =	MAX32(EXTEND32(0),MULT16_32_Q15(beta_1,ni) +
 						MULT16_32_Q15(beta,SHL32(psi,NOISE_SHIFT)));
 		}
 	}
@@ -677,7 +677,7 @@ void preprocess_compute_SNR(
 		register spx_word16_t priori;
 
 		tot_noise = ADD32(ADD32(ADD32(EXTEND32(1), PSHR32(noise[i],NOISE_SHIFT)), echo[i]) , reverb[i]);
-      
+
 		posti = SUB16(DIV32_16_Q8(ps[i],tot_noise), QCONST16(1.f,SNR_SHIFT));
 		posti = MIN16(posti, QCONST16(100.f,SNR_SHIFT));
 		post[i] = posti;
@@ -685,7 +685,7 @@ void preprocess_compute_SNR(
 		opsi = old_ps[i];
 
 		gamma = QCONST16(.1f,15)+MULT16_16_Q15(QCONST16(.89f,15),SQR16_Q15(DIV32_16_Q15(opsi,ADD32(opsi,tot_noise))));
-      
+
 		priori = EXTRACT16(PSHR32(ADD32(MULT16_16(gamma,MAX16(0,posti)), MULT16_16(Q15_ONE-gamma,DIV32_16_Q8(opsi,tot_noise))), 15));
 		prior[i]=MIN16(priori, QCONST16(100.f,SNR_SHIFT));
 	}
@@ -711,7 +711,7 @@ spx_word32_t preprocess_smooth_SNR(
 	iprior = prior[0];
 	priori = prior[1];
 	zeta[0] = PSHR32(ADD32(MULT16_16(QCONST16(.7f,15),zeta[0]), MULT16_16(QCONST16(.3f,15),iprior)),15);
-   
+
 #if (TM_UNROLL && TM_UNROLL_SPEEXPREPROCESSRUN)
 #pragma TCS_unroll=2
 #pragma TCS_unrollexact=1
@@ -733,13 +733,13 @@ spx_word32_t preprocess_smooth_SNR(
 
 	for (i=_N; i<NM ; i++)
 	{	register spx_word16_t zetai = zeta[i];
-		
+
 		priori = prior[i];
 		zeta[i] = PSHR32(ADD32(MULT16_16(QCONST16(.7f,15),zetai), MULT16_16(QCONST16(.3f,15),priori)),15);
 	}
 
 	Zframe = 0;
-   
+
 #if (TM_UNROLL && TM_UNROLL_SPEEXPREPROCESSRUN)
 #pragma TCS_unroll=4
 #pragma TCS_unrollexact=1
@@ -770,7 +770,7 @@ void preprocess_compute_emgain(
 	register spx_word16_t * restrict gain2 = st->gain2;
 	register int i;
 	register int N=st->ps_size;
-	
+
 	for ( i=N ; i<NM ; ++i )
 	{
 		register spx_word32_t theta;
@@ -783,7 +783,7 @@ void preprocess_compute_emgain(
 		register spx_word16_t tmp;
 #endif
 		register spx_word16_t priori = prior[i];
-		
+
 		prior_ratio = PDIV32_16(SHL32(EXTEND32(priori), 15), ADD16(priori, SHL32(1,SNR_SHIFT)));
 		theta = MULT16_32_P15(prior_ratio, QCONST32(1.f,EXPIN_SHIFT)+SHL32(EXTEND32(post[i]),EXPIN_SHIFT-SNR_SHIFT));
 
@@ -811,7 +811,7 @@ void preprocess_compute_emgain(
 
 void preprocess_compute_linear_gain(
 	SpeexPreprocessState * restrict st,
-	spx_word32_t * restrict ps,	
+	spx_word32_t * restrict ps,
 	int N
 )
 {
@@ -828,7 +828,7 @@ void preprocess_compute_linear_gain(
 #if (TM_UNROLL && TM_UNROLL_SPEEXPREPROCESSRUN)
 #pragma TCS_unroll=4
 #pragma TCS_unrollexact=1
-#endif   
+#endif
 	for (i=0;i<N;i++)
     {
          register spx_word32_t MM;
@@ -845,16 +845,16 @@ void preprocess_compute_linear_gain(
 
 		 g = EXTRACT16(MIN32(Q15_ONE, MULT16_32_Q15(prior_ratio, MM)));
 		 p = gain2[i];
-         
+
 		 g = VMUX( MULT16_16_Q15(QCONST16(.333f,15),g) > gain[i], MULT16_16(3,gain[i]), g);
 
-         old_ps[i]= MULT16_32_P15(QCONST16(.2f,15),old_ps[i]) + 
+         old_ps[i]= MULT16_32_P15(QCONST16(.2f,15),old_ps[i]) +
 					MULT16_32_P15(MULT16_16_P15(QCONST16(.8f,15),SQR16_Q15(g)),ps[i]);
-         
+
 		 g = VMUX( g < gfi, gfi, g );
          gain[i] = g;
 
-         tmp =	MULT16_16_P15(p,spx_sqrt(SHL32(EXTEND32(g),15))) + 
+         tmp =	MULT16_16_P15(p,spx_sqrt(SHL32(EXTEND32(g),15))) +
 				MULT16_16_P15(SUB16(Q15_ONE,p),spx_sqrt(SHL32(EXTEND32(gfi),15)));
 
          gain2[i]=SQR16_Q15(tmp);
@@ -888,11 +888,11 @@ void preprocess_compute_bark_gain(
 		register spx_word16_t gaini;
 		register spx_word16_t gfi = gain_floor[i];
 
-		gaini = MAX16(gain[i], gfi); 
+		gaini = MAX16(gain[i], gfi);
 
 		gain[i] = gaini;
 
-		tmp =	MULT16_16_P15(p,spx_sqrt(SHL32(EXTEND32(gaini),15))) + 
+		tmp =	MULT16_16_P15(p,spx_sqrt(SHL32(EXTEND32(gaini),15))) +
 			MULT16_16_P15(SUB16(Q15_ONE,p),spx_sqrt(SHL32(EXTEND32(gfi),15)));
 
 		gain2[i]=SQR16_Q15(tmp);
@@ -940,10 +940,10 @@ void preprocess_scale(
 #if (TM_UNROLL && TM_UNROLL_SPEEXPREPROCESSRUN)
 #pragma TCS_unroll=4
 #pragma TCS_unrollexact=1
-#endif    
+#endif
 	for ( i=0 ; i<N2 ;i++)
 	{	register spx_word16_t framei = frame[i];
-		
+
 		frame[i] = PSHR16(framei,shift);
 	}
 #if (TM_UNROLL && TM_UNROLL_SPEEXPREPROCESSRUN)
@@ -956,9 +956,9 @@ void preprocess_scale(
 
 void preprocess_apply_agc(
 	SpeexPreprocessState * restrict st,
-	int N				  
+	int N
 )
-{				  
+{
 	register spx_word16_t max_sample=0;
 	register spx_word16_t * restrict frame = st->frame;
 	register int i;
@@ -967,7 +967,7 @@ void preprocess_apply_agc(
 #if (TM_UNROLL && TM_UNROLL_SPEEXPREPROCESSRUN)
 #pragma TCS_unroll=4
 #pragma TCS_unrollexact=1
-#endif    
+#endif
 	for (i=0;i<N2;i++)
 	{	register spx_word16_t framei = VABS(frame[i]);
 
@@ -976,7 +976,7 @@ void preprocess_apply_agc(
 #if (TM_UNROLL && TM_UNROLL_SPEEXPREPROCESSRUN)
 #pragma TCS_unrollexact=0
 #pragma TCS_unroll=0
-#endif    
+#endif
 
 	if ( max_sample > 28000.f )
 	{
@@ -985,14 +985,14 @@ void preprocess_apply_agc(
 #if (TM_UNROLL && TM_UNROLL_SPEEXPREPROCESSRUN)
 #pragma TCS_unroll=4
 #pragma TCS_unrollexact=1
-#endif  
+#endif
 		for ( i=0 ; i< N2 ; i++ )
 		{	frame[i] *= damp;
 		}
 #if (TM_UNROLL && TM_UNROLL_SPEEXPREPROCESSRUN)
 #pragma TCS_unrollexact=0
 #pragma TCS_unroll=0
-#endif  
+#endif
 	}
 }
 #endif
@@ -1001,7 +1001,7 @@ void preprocess_apply_agc(
 void preprocess_update(
 	SpeexPreprocessState * restrict st,
 	spx_int16_t * restrict x,
-	int N	
+	int N
 )
 {
 	register spx_word16_t * restrict frame = st->frame;
@@ -1016,7 +1016,7 @@ void preprocess_update(
 #if (TM_UNROLL && TM_UNROLL_SPEEXPREPROCESSRUN)
 #pragma TCS_unroll=4
 #pragma TCS_unrollexact=1
-#endif  
+#endif
 	for ( i=0 ; i<N2 ; i++)
 	{	register spx_word16_t fi = frame[i];
 		register spx_word16_t wi = window[i];
@@ -1029,12 +1029,12 @@ void preprocess_update(
 #if (TM_UNROLL && TM_UNROLL_SPEEXPREPROCESSRUN)
 #pragma TCS_unrollexact=0
 #pragma TCS_unroll=0
-#endif 
+#endif
 
 	for ( i=0;i<N4;i++)
 	{	x[N3+i] = frame[N3+i];
 	}
-	
+
 	memcpy(outbuf, frame+framesize, (N3) * sizeof(spx_word16_t));
 }
 
@@ -1063,22 +1063,22 @@ int speex_preprocess_run(SpeexPreprocessState * restrict st, spx_int16_t * restr
 
 	preprocess_compute_SNR(st, ps, NM);
 	Zframe = preprocess_smooth_SNR(st, N, NM);
-	
+
 
 	{
 	register spx_word16_t effective_echo_suppress;
-	
+
 	Pframe = QCONST16(.1f,15)+MULT16_16_Q15(QCONST16(.899f,15),qcurve(DIV32_16(Zframe,M)));
-	effective_echo_suppress =	EXTRACT16(PSHR32(ADD32(MULT16_16(SUB16(Q15_ONE,Pframe), st->echo_suppress), 
+	effective_echo_suppress =	EXTRACT16(PSHR32(ADD32(MULT16_16(SUB16(Q15_ONE,Pframe), st->echo_suppress),
 								MULT16_16(Pframe, st->echo_suppress_active)),15));
 	compute_gain_floor(st->noise_suppress, effective_echo_suppress, st->noise+N, st->echo_noise+N, st->gain_floor+N, M);
-    
+
 	}
 
 	preprocess_compute_emgain(st, ps, Pframe, NM);
 	preprocess_compute_linear_gain(st, ps, N);
 
-   
+
 	if (!st->denoise_enabled)
 	{
 	   register spx_word16_t * restrict gain2 = st->gain2;
@@ -1086,7 +1086,7 @@ int speex_preprocess_run(SpeexPreprocessState * restrict st, spx_int16_t * restr
 #if (TM_UNROLL && TM_UNROLL_SPEEXPREPROCESSRUN)
 #pragma TCS_unroll=4
 #pragma TCS_unrollexact=1
-#endif  
+#endif
 		for ( i=0 ; i<NM ; i++ )
 		{   gain2[i] = Q15_ONE;
 		}
@@ -1095,7 +1095,7 @@ int speex_preprocess_run(SpeexPreprocessState * restrict st, spx_int16_t * restr
 #pragma TCS_unroll=0
 #endif
 	}
-     
+
 	preprocess_apply_gain(st, N);
 
 #ifndef FIXED_POINT
@@ -1124,12 +1124,12 @@ int speex_preprocess_run(SpeexPreprocessState * restrict st, spx_int16_t * restr
 		if (Pframe > st->speech_prob_start || (st->was_speech && Pframe > st->speech_prob_continue))
 		{	st->was_speech=1;
 			return 1;
-	  
+
 		} else
 		{	st->was_speech=0;
 			return 0;
 		}
-	} else 
+	} else
 	{	return 1;
 	}
 }

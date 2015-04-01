@@ -13,7 +13,7 @@ union jbpdata {
 void synthIn(JitterBufferPacket *in, int idx, int span) {
   union jbpdata d;
   d.idx = idx;
-  
+
   in->data = d.data;
   in->len = sizeof(d);
   in->timestamp = idx * 10;
@@ -28,13 +28,13 @@ void jitterFill(JitterBuffer *jb) {
    int i;
 
    out.data = buffer;
-   
+
    jitter_buffer_reset(jb);
 
    for(i=0;i<100;++i) {
      synthIn(&in, i, 1);
      jitter_buffer_put(jb, &in);
-     
+
      out.len = 65536;
      if (jitter_buffer_get(jb, &out, 10, NULL) != JITTER_BUFFER_OK) {
        printf("Fill test failed iteration %d\n", i);
@@ -51,11 +51,11 @@ int main()
    char buffer[65536];
    JitterBufferPacket in, out;
    int i;
-   
+
    JitterBuffer *jb = jitter_buffer_init(10);
-   
+
    out.data = buffer;
-   
+
    /* Frozen sender case */
    jitterFill(jb);
    for(i=0;i<100;++i) {

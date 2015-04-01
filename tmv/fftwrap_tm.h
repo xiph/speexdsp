@@ -8,18 +8,18 @@
    Redistribution and use in source and binary forms, with or without
    modification, are permitted provided that the following conditions
    are met:
-   
+
    - Redistributions of source code must retain the above copyright
    notice, this list of conditions and the following disclaimer.
-   
+
    - Redistributions in binary form must reproduce the above copyright
    notice, this list of conditions and the following disclaimer in the
    documentation and/or other materials provided with the distribution.
-   
+
    - Neither the name of the Xiph.org Foundation nor the names of its
    contributors may be used to endorse or promote products derived from
    this software without specific prior written permission.
-   
+
    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
    ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -59,12 +59,12 @@ static int maximize_range(Int16 *in, Int16 *out, int bound, int len)
 		x32 = ld32x(in,i+1);
 		x54 = ld32x(in,i+2);
 		x76 = ld32x(in,i+3);
-		
+
 		x10 = dspidualabs(x10);
 		x32 = dspidualabs(x32);
 		x54 = dspidualabs(x54);
 		x76 = dspidualabs(x76);
-		
+
 		x10 = imax(sex16(x10), asri(16,x10));
 		x32 = imax(sex16(x32), asri(16,x32));
 		x54 = imax(sex16(x54), asri(16,x54));
@@ -101,7 +101,7 @@ static int maximize_range(Int16 *in, Int16 *out, int bound, int len)
 			st32d(j+4,out,x32);
 			st32d(j+8,out,x54);
 			st32d(j+12,out,x76);
-		}   
+		}
 	}
 
 	MAXIMIZERANGE_STOP();
@@ -157,7 +157,7 @@ static void renorm_range(Int16 *in, Int16 *out, int shift, int len)
 
 #endif
 
-#ifdef USE_COMPACT_KISS_FFT 
+#ifdef USE_COMPACT_KISS_FFT
 #ifdef FIXED_POINT
 
 #define OVERRIDE_POWER_SPECTRUM
@@ -175,9 +175,9 @@ void power_spectrum(const spx_word16_t *X, spx_word32_t *ps, int N)
 	x76 = 0;
 	ps[0] = MULT16_16(X[0],X[0]);
 	N >>= 1;
-   
+
 	for( i=1 ; i<N ; i+=4 )
-	{	
+	{
 		x10 = ld32x(x, i);
 		x32 = ld32x(x, i+1);
 		x54 = ld32x(x, i+2);
@@ -202,7 +202,7 @@ void power_spectrum(const float * restrict X, float * restrict ps, int N)
 {
 	register int i, j;
 	register float xx;
-   
+
 	POWERSPECTRUM_START();
 
 	xx = X[0];
@@ -216,7 +216,7 @@ void power_spectrum(const float * restrict X, float * restrict ps, int N)
 
 		xi = X[i];
 		xii = X[i+1];
-      
+
 		ps[j] =  MULT16_16(xi,xi) + MULT16_16(xii,xii);
    }
 #pragma TCS_unrollexact=0

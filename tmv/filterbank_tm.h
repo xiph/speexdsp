@@ -8,18 +8,18 @@
    Redistribution and use in source and binary forms, with or without
    modification, are permitted provided that the following conditions
    are met:
-   
+
    - Redistributions of source code must retain the above copyright
    notice, this list of conditions and the following disclaimer.
-   
+
    - Redistributions in binary form must reproduce the above copyright
    notice, this list of conditions and the following disclaimer in the
    documentation and/or other materials provided with the distribution.
-   
+
    - Neither the name of the Xiph.org Foundation nor the names of its
    contributors may be used to endorse or promote products derived from
    this software without specific prior written permission.
-   
+
    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
    ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -42,7 +42,7 @@ void filterbank_compute_bank32(FilterBank * restrict bank, spx_word32_t * restri
 {
 	register int i, j, k, banks, len, zero, s;
 	register int * restrict left;
-	register int * restrict right; 
+	register int * restrict right;
 	register int * restrict bleft;
 	register int * restrict bright;
 
@@ -82,14 +82,14 @@ void filterbank_compute_bank32(FilterBank * restrict bank, spx_word32_t * restri
 #pragma TCS_unrollexact=1
 #endif
    for ( i=0,j=1,k=0 ; i<len ; i+=2,j+=2,++k )
-   {	register int ps1, ps0, _mel, ps0_msb, ps0_lsb, ps1_msb, ps1_lsb; 
+   {	register int ps1, ps0, _mel, ps0_msb, ps0_lsb, ps1_msb, ps1_lsb;
 		register int left10, right10, left1, left0, right1, right0;
 		register int il1, ir1, il0, ir0;
 
 		ps0		= ld32x(ps,i);
 		il0		= ld32x(bleft,i);
 		_mel	= ld32x(mel,il0);
-		left10	= ld32x(left,k);		
+		left10	= ld32x(left,k);
 		ir0		= ld32x(bright,i);
 		right10	= ld32x(right,k);
 
@@ -133,7 +133,7 @@ void filterbank_compute_psd16(FilterBank * restrict bank, spx_word16_t * restric
 {
 	register int i, j, k, len, s;
 	register int * restrict left;
-	register int * restrict right; 
+	register int * restrict right;
 	register int * restrict bleft;
 	register int * restrict bright;
 
@@ -169,28 +169,28 @@ void filterbank_compute_psd16(FilterBank * restrict bank, spx_word16_t * restric
 
 		il0		= ld32x(bleft, i);
 		ir0		= ld32x(bright,i);
-		mell0	= mel[il0]; 
+		mell0	= mel[il0];
 		melr0	= mel[ir0];
 		left10	= ld32x(left,  k);
 		right10 = ld32x(right, k);
 		mel0	= pack16lsb(mell0, melr0);
 		lr0		= pack16lsb(left10, right10);
-		
+
 		acc0	+= ifir16(mel0, lr0);
 		acc0	>>= 15;
-		
+
 		il1		= ld32x(bleft, i+1);
 		ir1		= ld32x(bright,i+1);
 		mell1	= mel[il1];
 		melr1	= mel[ir1];
 		mel1	= pack16lsb(mell1, melr1);
 		lr1		= pack16msb(left10, right10);
-			
+
 		acc1	+= ifir16(mel1, lr1);
 		acc1	>>= 15;
 
 		ps10	= pack16lsb(acc1, acc0);
-		
+
 		st32d(j, ps, ps10);
 	}
 #if (TM_UNROLL && TM_UNROLL_FILTERBANKCOMPUTEPSD16)
@@ -233,7 +233,7 @@ void filterbank_compute_bank32(FilterBank * restrict bank, float * restrict ps, 
       id1 = bleft[i];
       id2 = bright[i];
       psi = ps[i];
-	  
+
 	  mel[id1] += left[i] * psi;
       mel[id2] += right[i] * psi;
    }
@@ -274,7 +274,7 @@ void filterbank_compute_psd16(FilterBank * restrict bank, float * restrict mel, 
 
 		acc = mel[id1] * left[i];
 		acc += mel[id2] * right[i];
-		
+
 		ps[i] = acc;
 	}
 #if (TM_UNROLL && TM_UNROLL_FILTERBANKCOMPUTEPSD16)
