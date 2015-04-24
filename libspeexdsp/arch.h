@@ -101,6 +101,8 @@ typedef spx_word32_t spx_sig_t;
 #define SIG_SHIFT    14
 #define GAIN_SHIFT   6
 
+#define WORD2INT(x) ((x) < -32767 ? -32768 : ((x) > 32766 ? 32767 : (x)))
+
 #define VERY_SMALL 0
 #define VERY_LARGE32 ((spx_word32_t)2147483647)
 #define VERY_LARGE16 ((spx_word16_t)32767)
@@ -203,6 +205,7 @@ typedef float spx_word32_t;
 #define DIV32(a,b)     (((spx_word32_t)(a))/(spx_word32_t)(b))
 #define PDIV32(a,b)     (((spx_word32_t)(a))/(spx_word32_t)(b))
 
+#define WORD2INT(x) ((x) < -32767.5f ? -32768 : ((x) > 32766.5f ? 32767 : floor(.5+(x))))
 
 #endif
 

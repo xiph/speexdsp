@@ -980,7 +980,7 @@ EXPORT int speex_preprocess_run(SpeexPreprocessState *st, spx_int16_t *x)
 
    /* Perform overlap and add */
    for (i=0;i<N3;i++)
-      x[i] = st->outbuf[i] + st->frame[i];
+      x[i] = WORD2INT(ADD32(EXTEND32(st->outbuf[i]), EXTEND32(st->frame[i])));
    for (i=0;i<N4;i++)
       x[N3+i] = st->frame[N3+i];
 

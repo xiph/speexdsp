@@ -83,12 +83,6 @@ static void speex_free (void *ptr) {free(ptr);}
 #define M_PI 3.14159265358979323846
 #endif
 
-#ifdef FIXED_POINT
-#define WORD2INT(x) ((x) < -32767 ? -32768 : ((x) > 32766 ? 32767 : (x)))
-#else
-#define WORD2INT(x) ((x) < -32767.5f ? -32768 : ((x) > 32766.5f ? 32767 : floor(.5+(x))))
-#endif
-
 #define IMAX(a,b) ((a) > (b) ? (a) : (b))
 #define IMIN(a,b) ((a) < (b) ? (a) : (b))
 
