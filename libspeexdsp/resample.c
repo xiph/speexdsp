@@ -1080,6 +1080,36 @@ static inline spx_uint32_t _gcd(spx_uint32_t a, spx_uint32_t b)
    return a;
 }
 
+static spx_uint32_t _muldiv(spx_uint32_t a, spx_uint32_t b, spx_uint32_t c)
+{
+   spx_uint32_t q = 0, r = 0;
+   spx_uint32_t qn = b / c;
+   spx_uint32_t rn = b % c;
+
+   while(a)
+   {
+      if (a & 1)
+      {
+         q += qn;
+         r += rn;
+         if (r >= c)
+         {
+             q++;
+             r -= c;
+         }
+      }
+      a  >>= 1;
+      qn <<= 1;
+      rn <<= 1;
+      if (rn >= c)
+      {
+         qn++;
+         rn -= c;
+      }
+   }
+   return q;
+}
+
 EXPORT int speex_resampler_set_rate_frac(SpeexResamplerState *st, spx_uint32_t ratio_num, spx_uint32_t ratio_den, spx_uint32_t in_rate, spx_uint32_t out_rate)
 {
    spx_uint32_t fact;
@@ -1103,7 +1133,7 @@ EXPORT int speex_resampler_set_rate_frac(SpeexResamplerState *st, spx_uint32_t r
    {
       for (i=0;i<st->nb_channels;i++)
       {
-         st->samp_frac_num[i]=st->samp_frac_num[i]*st->den_rate/old_den;
+         st->samp_frac_num[i]= _muldiv(st->samp_frac_num[i],st->den_rate,old_den);
          /* Safety net */
          if (st->samp_frac_num[i] >= st->den_rate)
             st->samp_frac_num[i] = st->den_rate-1;
