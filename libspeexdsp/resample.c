@@ -90,6 +90,10 @@ static void speex_free (void *ptr) {free(ptr);}
 #define NULL 0
 #endif
 
+#ifndef UINT32_MAX
+#define UINT32_MAX 4294967296U
+#endif
+
 #ifdef _USE_SSE
 #include "resample_sse.h"
 #endif
@@ -585,6 +589,20 @@ static int resampler_basic_zero(SpeexResamplerState *st, spx_uint32_t channel_in
    return out_sample;
 }
 
+static int mult_div_safe(spx_uint32_t value, spx_uint32_t mul, spx_uint32_t div)
+{
+  spx_uint32_t major = value / div;
+  spx_uint32_t remainder = value % div;
+  return remainder <= UINT32_MAX / mul && major <= UINT32_MAX / mul;
+}
+
+static int safer_mult_div(spx_uint32_t value, spx_uint32_t mul, spx_uint32_t div)
+{
+  spx_uint32_t major = value / div;
+  spx_uint32_t remainder = value % div;
+  return remainder * mul / div + major * mul;
+}
+
 static int update_filter(SpeexResamplerState *st)
 {
    spx_uint32_t old_length = st->filt_len;
@@ -602,8 +620,9 @@ static int update_filter(SpeexResamplerState *st)
    {
       /* down-sampling */
       st->cutoff = quality_map[st->quality].downsample_bandwidth * st->den_rate / st->num_rate;
-      /* FIXME: divide the numerator and denominator by a certain amount if they're too large */
-      st->filt_len = st->filt_len*st->num_rate / st->den_rate;
+      if (!mult_div_safe(st->filt_len, st->num_rate, st->den_rate))
+         goto fail;
+      st->filt_len = safer_mult_div(st->filt_len, st->num_rate, st->den_rate);
       /* Round up to make sure we have a multiple of 8 for SSE */
       st->filt_len = ((st->filt_len-1)&(~0x7))+8;
       if (2*st->den_rate < st->num_rate)
@@ -792,6 +811,12 @@ EXPORT SpeexResamplerState *speex_resampler_init_frac(spx_uint32_t nb_channels, 
       return NULL;
    }
    st = (SpeexResamplerState *)speex_alloc(sizeof(SpeexResamplerState));
+   if (!st)
+   {
+      if (err)
+         *err = RESAMPLER_ERR_ALLOC_FAILED;
+      return NULL;
+   }
    st->initialised = 0;
    st->started = 0;
    st->in_rate = 0;
@@ -813,9 +838,12 @@ EXPORT SpeexResamplerState *speex_resampler_init_frac(spx_uint32_t nb_channels, 
    st->buffer_size = 160;
 
    /* Per channel data */
-   st->last_sample = (spx_int32_t*)speex_alloc(nb_channels*sizeof(spx_int32_t));
-   st->magic_samples = (spx_uint32_t*)speex_alloc(nb_channels*sizeof(spx_uint32_t));
-   st->samp_frac_num = (spx_uint32_t*)speex_alloc(nb_channels*sizeof(spx_uint32_t));
+   if (!(st->last_sample = (spx_int32_t*)speex_alloc(nb_channels*sizeof(spx_int32_t))))
+      goto fail;
+   if (!(st->magic_samples = (spx_uint32_t*)speex_alloc(nb_channels*sizeof(spx_uint32_t))))
+      goto fail;
+   if (!(st->samp_frac_num = (spx_uint32_t*)speex_alloc(nb_channels*sizeof(spx_uint32_t))))
+      goto fail;
    for (i=0;i<nb_channels;i++)
    {
       st->last_sample[i] = 0;
@@ -838,6 +866,12 @@ EXPORT SpeexResamplerState *speex_resampler_init_frac(spx_uint32_t nb_channels, 
       *err = filter_err;
 
    return st;
+
+fail:
+   if (err)
+      *err = RESAMPLER_ERR_ALLOC_FAILED;
+   speex_resampler_destroy(st);
+   return NULL;
 }
 
 EXPORT void speex_resampler_destroy(SpeexResamplerState *st)
