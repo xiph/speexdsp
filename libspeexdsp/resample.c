@@ -90,6 +90,10 @@ static void speex_free (void *ptr) {free(ptr);}
 #define NULL 0
 #endif
 
+#ifndef UINT32_MAX
+#define UINT32_MAX 4294967296U
+#endif
+
 #ifdef _USE_SSE
 #include "resample_sse.h"
 #endif
@@ -585,6 +589,20 @@ static int resampler_basic_zero(SpeexResamplerState *st, spx_uint32_t channel_in
    return out_sample;
 }
 
+static int mult_div_safe(spx_uint32_t value, spx_uint32_t mul, spx_uint32_t div)
+{
+  spx_uint32_t major = value / div;
+  spx_uint32_t remainder = value % div;
+  return remainder <= UINT32_MAX / mul && major <= UINT32_MAX / mul;
+}
+
+static int safer_mult_div(spx_uint32_t value, spx_uint32_t mul, spx_uint32_t div)
+{
+  spx_uint32_t major = value / div;
+  spx_uint32_t remainder = value % div;
+  return remainder * mul / div + major * mul;
+}
+
 static int update_filter(SpeexResamplerState *st)
 {
    spx_uint32_t old_length = st->filt_len;
@@ -602,8 +620,9 @@ static int update_filter(SpeexResamplerState *st)
    {
       /* down-sampling */
       st->cutoff = quality_map[st->quality].downsample_bandwidth * st->den_rate / st->num_rate;
-      /* FIXME: divide the numerator and denominator by a certain amount if they're too large */
-      st->filt_len = st->filt_len*st->num_rate / st->den_rate;
+      if (!mult_div_safe(st->filt_len, st->num_rate, st->den_rate))
+         goto fail;
+      st->filt_len = safer_mult_div(st->filt_len, st->num_rate, st->den_rate);
       /* Round up to make sure we have a multiple of 8 for SSE */
       st->filt_len = ((st->filt_len-1)&(~0x7))+8;
       if (2*st->den_rate < st->num_rate)
