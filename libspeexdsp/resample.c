@@ -842,12 +842,6 @@ EXPORT SpeexResamplerState *speex_resampler_init_frac(spx_uint32_t nb_channels, 
       goto fail;
    if (!(st->samp_frac_num = (spx_uint32_t*)speex_alloc(nb_channels*sizeof(spx_uint32_t))))
       goto fail;
-   for (i=0;i<nb_channels;i++)
-   {
-      st->last_sample[i] = 0;
-      st->magic_samples[i] = 0;
-      st->samp_frac_num[i] = 0;
-   }
 
    speex_resampler_set_quality(st, quality);
    speex_resampler_set_rate_frac(st, ratio_num, ratio_den, in_rate, out_rate);
