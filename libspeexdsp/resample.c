@@ -63,6 +63,7 @@
 
 #ifdef OUTSIDE_SPEEX
 #include <stdlib.h>
+#define speex_assert(cond)
 static void *speex_alloc (int size) {return calloc(size,1);}
 static void *speex_realloc (void *ptr, int size) {return realloc(ptr, size);}
 static void speex_free (void *ptr) {free(ptr);}
