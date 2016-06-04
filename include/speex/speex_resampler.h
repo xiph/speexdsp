@@ -82,6 +82,8 @@
 #define spx_uint16_t unsigned short
 #define spx_uint32_t unsigned int
 
+#define speex_assert(cond)
+
 #else /* OUTSIDE_SPEEX */
 
 #include "speexdsp_types.h"
