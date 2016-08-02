@@ -46,7 +46,7 @@
    Smith, Julius O. Digital Audio Resampling Home Page
    Center for Computer Research in Music and Acoustics (CCRMA),
    Stanford University, 2007.
-   Web published at http://www-ccrma.stanford.edu/~jos/resample/.
+   Web published at http://ccrma.stanford.edu/~jos/resample/.
 
    There is one main difference, though. This resampler uses cubic
    interpolation instead of linear interpolation in the above paper. This
