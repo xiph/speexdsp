@@ -1,0 +1,19 @@
+language: c
+
+env:
+  - CONFIG=""
+  - CONFIG="--enable-fixed-point"
+  - CONFIG="--enable-fixed-point --disable-float-api"
+
+os:
+  - linux
+  - osx
+
+compiler:
+  - gcc
+  - clang
+
+script:
+  - ./autogen.sh
+  - ./configure $CONFIG
+  - make distcheck
