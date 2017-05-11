@@ -21,6 +21,7 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{03207781-0D1C-4DB3-A71D-45C608F28DBD}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
+    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_Static_SSE|Win32'" Label="Configuration">
@@ -70,8 +71,8 @@
     <_ProjectFileVersion>14.0.25431.1</_ProjectFileVersion>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <OutDir>Debug\</OutDir>
     <IntDir>Debug\</IntDir>
+    <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>$(Configuration)\</OutDir>
@@ -98,9 +99,7 @@
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <CompileAs>CompileAsC</CompileAs>
     </ClCompile>
-    <Lib>
-      <OutputFile>../../../lib/libspeexdsp.lib</OutputFile>
-    </Lib>
+    <Lib />
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -120,9 +119,7 @@
       <CompileAs>CompileAsC</CompileAs>
       <DisableSpecificWarnings>4244;4305;4311;4100;4127;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
-    <Lib>
-      <OutputFile>../../../lib/libspeexdsp.lib</OutputFile>
-    </Lib>
+    <Lib />
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_Dynamic_SSE|Win32'">
     <ClCompile>
@@ -179,40 +176,46 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\libspeex\buffer.c" />
-    <ClCompile Include="..\..\..\libspeex\fftwrap.c" />
-    <ClCompile Include="..\..\..\libspeex\filterbank.c" />
-    <ClCompile Include="..\..\..\libspeex\jitter.c" />
-    <ClCompile Include="..\..\..\libspeex\kiss_fft.c" />
-    <ClCompile Include="..\..\..\libspeex\kiss_fftr.c" />
-    <ClCompile Include="..\..\..\libspeex\mdf.c" />
-    <ClCompile Include="..\..\..\libspeex\preprocess.c" />
-    <ClCompile Include="..\..\..\libspeex\resample.c" />
-    <ClCompile Include="..\..\..\libspeex\scal.c" />
-    <ClCompile Include="..\..\..\libspeex\smallft.c" />
+    <ClCompile Include="..\..\..\libspeexdsp\buffer.c" />
+    <ClCompile Include="..\..\..\libspeexdsp\fftwrap.c" />
+    <ClCompile Include="..\..\..\libspeexdsp\filterbank.c" />
+    <ClCompile Include="..\..\..\libspeexdsp\jitter.c" />
+    <ClCompile Include="..\..\..\libspeexdsp\kiss_fft.c" />
+    <ClCompile Include="..\..\..\libspeexdsp\kiss_fftr.c" />
+    <ClCompile Include="..\..\..\libspeexdsp\mdf.c" />
+    <ClCompile Include="..\..\..\libspeexdsp\preprocess.c" />
+    <ClCompile Include="..\..\..\libspeexdsp\resample.c" />
+    <ClCompile Include="..\..\..\libspeexdsp\scal.c" />
+    <ClCompile Include="..\..\..\libspeexdsp\smallft.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\include\speex\speex.h" />
-    <ClInclude Include="..\..\..\include\speex\speex_bits.h" />
+    <ClInclude Include="..\..\..\include\speex\speexdsp_types.h" />
     <ClInclude Include="..\..\..\include\speex\speex_buffer.h" />
     <ClInclude Include="..\..\..\include\speex\speex_echo.h" />
     <ClInclude Include="..\..\..\include\speex\speex_jitter.h" />
     <ClInclude Include="..\..\..\include\speex\speex_preprocess.h" />
     <ClInclude Include="..\..\..\include\speex\speex_resampler.h" />
-    <ClInclude Include="..\..\..\include\speex\speex_types.h" />
-    <ClInclude Include="..\..\..\libspeex\arch.h" />
-    <ClInclude Include="..\..\..\libspeex\fftwrap.h" />
-    <ClInclude Include="..\..\..\libspeex\filterbank.h" />
-    <ClInclude Include="..\..\..\libspeex\fixed_debug.h" />
-    <ClInclude Include="..\..\..\libspeex\fixed_generic.h" />
-    <ClInclude Include="..\..\..\libspeex\kiss_fft.h" />
-    <ClInclude Include="..\..\..\libspeex\kiss_fftr.h" />
-    <ClInclude Include="..\..\..\libspeex\math_approx.h" />
-    <ClInclude Include="..\..\..\libspeex\os_support.h" />
-    <ClInclude Include="..\..\..\libspeex\pseudofloat.h" />
-    <ClInclude Include="..\..\..\libspeex\smallft.h" />
-    <ClInclude Include="..\..\..\libspeex\_kiss_fft_guts.h" />
-    <ClInclude Include="..\..\config.h" />
+    <ClInclude Include="..\..\..\libspeexdsp\arch.h" />
+    <ClInclude Include="..\..\..\libspeexdsp\bfin.h" />
+    <ClInclude Include="..\..\..\libspeexdsp\fftwrap.h" />
+    <ClInclude Include="..\..\..\libspeexdsp\filterbank.h" />
+    <ClInclude Include="..\..\..\libspeexdsp\fixed_arm4.h" />
+    <ClInclude Include="..\..\..\libspeexdsp\fixed_arm5e.h" />
+    <ClInclude Include="..\..\..\libspeexdsp\fixed_bfin.h" />
+    <ClInclude Include="..\..\..\libspeexdsp\fixed_debug.h" />
+    <ClInclude Include="..\..\..\libspeexdsp\fixed_generic.h" />
+    <ClInclude Include="..\..\..\libspeexdsp\kiss_fft.h" />
+    <ClInclude Include="..\..\..\libspeexdsp\kiss_fftr.h" />
+    <ClInclude Include="..\..\..\libspeexdsp\math_approx.h" />
+    <ClInclude Include="..\..\..\libspeexdsp\misc_bfin.h" />
+    <ClInclude Include="..\..\..\libspeexdsp\os_support.h" />
+    <ClInclude Include="..\..\..\libspeexdsp\pseudofloat.h" />
+    <ClInclude Include="..\..\..\libspeexdsp\resample_neon.h" />
+    <ClInclude Include="..\..\..\libspeexdsp\resample_sse.h" />
+    <ClInclude Include="..\..\..\libspeexdsp\smallft.h" />
+    <ClInclude Include="..\..\..\libspeexdsp\stack_alloc.h" />
+    <ClInclude Include="..\..\..\libspeexdsp\vorbis_psy.h" />
+    <ClInclude Include="..\..\..\libspeexdsp\_kiss_fft_guts.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\libspeexdsp.def" />

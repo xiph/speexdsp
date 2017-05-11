@@ -34,3 +34,8 @@ libtool
 speexdsp.pc
 stamp-*
 patches
+m4
+win32/VS20*/Win32
+Win32/VS20*/tests/Debug
+win32/VS20*/libspeexdsp/Debug
+
