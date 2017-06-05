@@ -44,18 +44,17 @@
 int main()
 {
    spx_uint32_t i;
-   short *in;
-   short *out;
-   float *fin, *fout;
-   int count = 0;
+
    SpeexResamplerState *st = speex_resampler_init(1, 8000, 12000, 10, NULL);
    speex_resampler_set_rate(st, 96000, 44100);
    speex_resampler_skip_zeros(st);
 
-   in = malloc(NN*sizeof(short));
-   out = malloc(2*NN*sizeof(short));
-   fin = malloc(NN*sizeof(float));
-   fout = malloc(2*NN*sizeof(float));
+   float *in = malloc(NN*sizeof(short));
+   float *out = malloc(2*NN*sizeof(short));
+   float *fin = malloc(NN*sizeof(float));
+   float *fout = malloc(2*NN*sizeof(float));
+   int count = 0;
+
    while (1)
    {
       spx_uint32_t in_len;
@@ -63,19 +62,26 @@ int main()
       fread(in, sizeof(short), NN, stdin);
       if (feof(stdin))
          break;
+
       for (i=0;i<NN;i++)
          fin[i]=in[i];
+
       in_len = NN;
       out_len = 2*NN;
+
       /*if (count==2)
          speex_resampler_set_quality(st, 10);*/
+
       speex_resampler_process_float(st, 0, fin, &in_len, fout, &out_len);
+
       for (i=0;i<out_len;i++)
          out[i]=floor(.5+fout[i]);
+
       /*speex_warning_int("writing", out_len);*/
       fwrite(out, sizeof(short), out_len, stdout);
       count++;
    }
+
    speex_resampler_destroy(st);
    free(in);
    free(out);

@@ -1033,6 +1033,7 @@ EXPORT void speex_echo_cancellation(SpeexEchoState *st, const spx_int16_t *in, c
       /* Everything's fine */
       st->screwed_up=0;
    }
+
    if (st->screwed_up>=50)
    {
       speex_warning("The echo canceller started acting funny and got slapped (reset). It swears it will behave now.");
@@ -1243,11 +1244,11 @@ EXPORT int speex_echo_ctl(SpeexEchoState *st, int request, void *ptr)
          st->beta_max = (.5f*st->frame_size)/st->sampling_rate;
 #endif
          if (st->sampling_rate<12000)
-            st->notch_radius = QCONST16(.9, 15);
+            st->notch_radius = QCONST16(0.9, 15);
          else if (st->sampling_rate<24000)
-            st->notch_radius = QCONST16(.982, 15);
+            st->notch_radius = QCONST16(0.982, 15);
          else
-            st->notch_radius = QCONST16(.992, 15);
+            st->notch_radius = QCONST16(0.992, 15);
          break;
       case SPEEX_ECHO_GET_SAMPLING_RATE:
          (*(int*)ptr) = st->sampling_rate;

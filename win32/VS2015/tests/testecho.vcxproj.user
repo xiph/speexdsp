@@ -3,6 +3,6 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
     <LocalDebuggerWorkingDirectory>$(SolutionDir)\..\..\testfile</LocalDebuggerWorkingDirectory>
-    <LocalDebuggerCommandArguments>micin.pcm speaker.pcm out.pcm</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>micin.pcm speaker.pcm out3.pcm</LocalDebuggerCommandArguments>
   </PropertyGroup>
 </Project>

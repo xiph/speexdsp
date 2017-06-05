@@ -11,13 +11,13 @@
 #include <fcntl.h>
 
 
-#define NN 128
-#define TAIL 1024
+#define NN (128*6)
+#define TAIL (1024*4)
 
 int main(int argc, char **argv)
 {
    short echo_buf[NN], ref_buf[NN], e_buf[NN];
-   const int sampleRate = 8000;
+   const int sampleRate = 8000*6;
 
    if (argc != 4)
    {
