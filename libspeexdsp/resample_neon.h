@@ -38,6 +38,10 @@
 
 #include <arm_neon.h>
 
+#if defined(CHECK_ASM)
+#include "checkasm.h"
+#endif
+
 #ifdef FIXED_POINT
 #ifdef __thumb2__
 static inline int32_t saturate_32bit_to_16bit(int32_t a) {
@@ -67,6 +71,9 @@ static inline int32_t saturate_32bit_to_16bit(int32_t a) {
 /* Only works when len % 4 == 0 */
 static inline int32_t inner_product_single(const int16_t *a, const int16_t *b, unsigned int len)
 {
+#if defined(CHECK_ASM)
+    int32_t expected;
+#endif
     int32_t ret;
     uint32_t remainder = len % 16;
     len = len - remainder;
@@ -119,6 +126,10 @@ static inline int32_t inner_product_single(const int16_t *a, const int16_t *b, u
 		    "d16", "d17", "d18", "d19",
 		    "d20", "d21", "d22", "d23");
 
+#if defined(CHECK_ASM)
+    expected = 0;
+    RESAMPLE_CHECK_INNER_PRODUCT(a, b, len, ret, expected, "%d", 0);
+#endif
     return ret;
 }
 #elif defined(FLOATING_POINT)
@@ -142,6 +153,9 @@ static inline int32_t saturate_float_to_16bit(float a) {
 static inline float inner_product_single(const float *a, const float *b, unsigned int len)
 {
     float ret;
+#if defined(CHECK_ASM)
+    float expected;
+#endif
     uint32_t remainder = len % 16;
     len = len - remainder;
 
@@ -196,6 +210,10 @@ static inline float inner_product_single(const float *a, const float *b, unsigne
 		  :
 		  : "cc", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8",
                     "q9", "q10", "q11");
+#if defined(CHECK_ASM)
+   expected = 0.f;
+   RESAMPLE_CHECK_INNER_PRODUCT(a, b, len, ret, expected, "%f", 0.1f);
+#endif
     return ret;
 }
 #endif

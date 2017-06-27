@@ -36,11 +36,18 @@
 
 #include <xmmintrin.h>
 
+#if defined(CHECK_ASM)
+#include "checkasm.h"
+#endif
+
 #define OVERRIDE_INNER_PRODUCT_SINGLE
 static inline float inner_product_single(const float *a, const float *b, unsigned int len)
 {
    int i;
    float ret;
+#if defined(CHECK_ASM)
+   float expected;
+#endif
    __m128 sum = _mm_setzero_ps();
    for (i=0;i<len;i+=8)
    {
@@ -50,6 +57,10 @@ static inline float inner_product_single(const float *a, const float *b, unsigne
    sum = _mm_add_ps(sum, _mm_movehl_ps(sum, sum));
    sum = _mm_add_ss(sum, _mm_shuffle_ps(sum, sum, 0x55));
    _mm_store_ss(&ret, sum);
+#if defined(CHECK_ASM)
+   expected = 0.f;
+   RESAMPLE_CHECK_INNER_PRODUCT(a, b, len, ret, expected, "%f", 1e-15f);
+#endif
    return ret;
 }
 
@@ -79,6 +90,9 @@ static inline double inner_product_double(const float *a, const float *b, unsign
 {
    int i;
    double ret;
+#if defined(CHECK_ASM)
+   double expected;
+#endif
    __m128d sum = _mm_setzero_pd();
    __m128 t;
    for (i=0;i<len;i+=8)
@@ -93,6 +107,10 @@ static inline double inner_product_double(const float *a, const float *b, unsign
    }
    sum = _mm_add_sd(sum, _mm_unpackhi_pd(sum, sum));
    _mm_store_sd(&ret, sum);
+#if defined(CHECK_ASM)
+   expected = 0.0;
+   RESAMPLE_CHECK_INNER_PRODUCT(a, b, len, ret, expected, "%lf", 1e-15);
+#endif
    return ret;
 }
 
