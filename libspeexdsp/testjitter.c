@@ -39,7 +39,7 @@ void jitterFill(JitterBuffer *jb) {
      if (jitter_buffer_get(jb, &out, 10, NULL) != JITTER_BUFFER_OK) {
        printf("Fill test failed iteration %d\n", i);
      }
-     if (out.timestamp != i * 10) {
+     if (out.timestamp != (unsigned int)i * 10) {
        printf("Fill test expected %d got %d\n", i*10, out.timestamp);
      }
      jitter_buffer_tick(jb);
