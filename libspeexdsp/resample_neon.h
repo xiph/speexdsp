@@ -212,7 +212,7 @@ static inline float inner_product_single(const float *a, const float *b, unsigne
                     "q9", "q10", "q11");
 #if defined(CHECK_ASM)
    expected = 0.f;
-   RESAMPLE_CHECK_INNER_PRODUCT(a, b, len, ret, expected, "%f", 0.1f);
+   RESAMPLE_CHECK_INNER_PRODUCT(a, b, len, ret, expected, "%f", 1e-4f);
 #endif
     return ret;
 }

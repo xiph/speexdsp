@@ -59,7 +59,7 @@ static inline float inner_product_single(const float *a, const float *b, unsigne
    _mm_store_ss(&ret, sum);
 #if defined(CHECK_ASM)
    expected = 0.f;
-   RESAMPLE_CHECK_INNER_PRODUCT(a, b, len, ret, expected, "%f", 1e-15f);
+   RESAMPLE_CHECK_INNER_PRODUCT(a, b, len, ret, expected, "%.15f", 1e-7);
 #endif
    return ret;
 }
@@ -109,7 +109,7 @@ static inline double inner_product_double(const float *a, const float *b, unsign
    _mm_store_sd(&ret, sum);
 #if defined(CHECK_ASM)
    expected = 0.0;
-   RESAMPLE_CHECK_INNER_PRODUCT(a, b, len, ret, expected, "%lf", 1e-15);
+   RESAMPLE_CHECK_INNER_PRODUCT(a, b, len, ret, expected, "%lf", 1e-7);
 #endif
    return ret;
 }

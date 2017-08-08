@@ -35,18 +35,22 @@
 #ifndef RESAMPLE_CHECKASM_H
 #define RESAMPLE_CHECKASM_H
 
+#include <math.h>
 #include <stdio.h>
 #include "os_support.h"
 
-#define RESAMPLE_CHECK_INNER_PRODUCT(a, b, len, ret, expected, fmt, epsilon) \
+#define RESAMPLE_CHECK_INNER_PRODUCT(a, b, len, actual, expected, fmt, epsilon) \
    do {                                                \
      int k;                                            \
+     double sum_magnitudes = 0.0;                      \
      for (k = 0; k < len; k++) {                       \
+       sum_magnitudes += a[k]*a[k] + b[k]*b[k];        \
        expected += a[k]*b[k];                          \
      }                                                 \
-     if (expected - ret > epsilon || ret - expected > epsilon) { \
-       fprintf(stderr, "ASM mismatch: got:"fmt", expected:"fmt"\n", ret, expected); \
-       speex_assert(expected == ret);                  \
+     double normalized_error = fabs(expected - actual)/sum_magnitudes; \
+     if (normalized_error > epsilon) {                 \
+       fprintf(stderr, "ASM mismatch: Error:"fmt" exceeds:"fmt"\n", normalized_error, epsilon); \
+       speex_assert(0);                                \
      }                                                 \
    } while(0)
 
