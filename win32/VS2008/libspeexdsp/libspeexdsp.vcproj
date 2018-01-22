@@ -320,47 +320,47 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath="..\..\..\libspeex\buffer.c"
+				RelativePath="..\..\..\libspeexdsp\buffer.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\libspeex\fftwrap.c"
+				RelativePath="..\..\..\libspeexdsp\fftwrap.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\libspeex\filterbank.c"
+				RelativePath="..\..\..\libspeexdsp\filterbank.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\libspeex\jitter.c"
+				RelativePath="..\..\..\libspeexdsp\jitter.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\libspeex\kiss_fft.c"
+				RelativePath="..\..\..\libspeexdsp\kiss_fft.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\libspeex\kiss_fftr.c"
+				RelativePath="..\..\..\libspeexdsp\kiss_fftr.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\libspeex\mdf.c"
+				RelativePath="..\..\..\libspeexdsp\mdf.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\libspeex\preprocess.c"
+				RelativePath="..\..\..\libspeexdsp\preprocess.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\libspeex\resample.c"
+				RelativePath="..\..\..\libspeexdsp\resample.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\libspeex\scal.c"
+				RelativePath="..\..\..\libspeexdsp\scal.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\libspeex\smallft.c"
+				RelativePath="..\..\..\libspeexdsp\smallft.c"
 				>
 			</File>
 		</Filter>
@@ -370,51 +370,51 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
-				RelativePath="..\..\..\libspeex\_kiss_fft_guts.h"
+				RelativePath="..\..\..\libspeexdsp\_kiss_fft_guts.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\libspeex\arch.h"
+				RelativePath="..\..\..\libspeexdsp\arch.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\libspeex\fftwrap.h"
+				RelativePath="..\..\..\libspeexdsp\fftwrap.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\libspeex\filterbank.h"
+				RelativePath="..\..\..\libspeexdsp\filterbank.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\libspeex\fixed_debug.h"
+				RelativePath="..\..\..\libspeexdsp\fixed_debug.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\libspeex\fixed_generic.h"
+				RelativePath="..\..\..\libspeexdsp\fixed_generic.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\libspeex\kiss_fft.h"
+				RelativePath="..\..\..\libspeexdsp\kiss_fft.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\libspeex\kiss_fftr.h"
+				RelativePath="..\..\..\libspeexdsp\kiss_fftr.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\libspeex\math_approx.h"
+				RelativePath="..\..\..\libspeexdsp\math_approx.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\libspeex\os_support.h"
+				RelativePath="..\..\..\libspeexdsp\os_support.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\libspeex\pseudofloat.h"
+				RelativePath="..\..\..\libspeexdsp\pseudofloat.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\libspeex\smallft.h"
+				RelativePath="..\..\..\libspeexdsp\smallft.h"
 				>
 			</File>
 		</Filter>
