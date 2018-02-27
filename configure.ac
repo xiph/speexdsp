@@ -162,7 +162,9 @@ fi
 AC_ARG_ENABLE(neon, [  --enable-neon           Enable NEON support], [
 if test "x$enableval" != xno; then
 has_neon=yes
-CFLAGS="$CFLAGS -O3 -march=armv7-a -mfpu=neon"
+AS_CASE(["$host"],
+  [arm*], [CFLAGS="$CFLAGS -O3 -march=armv7-a -mfpu=neon"]
+)
 else
 has_neon=no
 fi
