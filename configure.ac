@@ -346,7 +346,7 @@ AC_CONFIG_FILES([
            Makefile libspeexdsp/Makefile doc/Makefile SpeexDSP.spec
            include/Makefile include/speex/Makefile speexdsp.pc
            win32/Makefile win32/libspeexdsp/Makefile
-           symbian/Makefile 
+           symbian/Makefile
 
            win32/VS2003/Makefile
            win32/VS2003/libspeexdsp/Makefile
@@ -359,7 +359,7 @@ AC_CONFIG_FILES([
            win32/VS2008/Makefile
            win32/VS2008/libspeexdsp/Makefile
            win32/VS2008/tests/Makefile
-           include/speex/speexdsp_config_types.h ti/Makefile 
+           include/speex/speexdsp_config_types.h ti/Makefile
 	   ti/speex_C54_test/Makefile ti/speex_C55_test/Makefile
 	   ti/speex_C64_test/Makefile ])
 
