@@ -184,15 +184,15 @@ fi],
 AC_DEFINE([FLOATING_POINT], , [Compile as floating-point]))
 
 if test "$has_sse" = yes; then
-  AC_DEFINE([_USE_SSE], , [Enable SSE support])
+  AC_DEFINE([USE_SSE], , [Enable SSE support])
 fi
 
 if test "$has_neon" = yes; then
-  AC_DEFINE([_USE_NEON], , [Enable NEON support])
+  AC_DEFINE([USE_NEON], , [Enable NEON support])
 fi
 
 if test "$has_sse2" = yes; then
-  AC_DEFINE([_USE_SSE2], , [Enable SSE2 support])
+  AC_DEFINE([USE_SSE2], , [Enable SSE2 support])
 fi
 
 AC_ARG_ENABLE(float-api, [  --disable-float-api     Disable the floating-point API],

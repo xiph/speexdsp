@@ -41,7 +41,7 @@
 #ifdef FLOATING_POINT
 #error You cannot compile as floating point and fixed point at the same time
 #endif
-#ifdef _USE_SSE
+#ifdef USE_SSE
 #error SSE is only for floating-point
 #endif
 #if ((defined (ARM4_ASM)||defined (ARM4_ASM)) && defined(BFIN_ASM)) || (defined (ARM4_ASM)&&defined(ARM5E_ASM))

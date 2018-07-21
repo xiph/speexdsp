@@ -696,7 +696,7 @@
 				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="1"
 				AdditionalIncludeDirectories="..\..\..\include;..\.."
-				PreprocessorDefinitions="_USE_SSE;WIN32;NDEBUG;_LIB;HAVE_CONFIG_H"
+				PreprocessorDefinitions="USE_SSE;WIN32;NDEBUG;_LIB;HAVE_CONFIG_H"
 				StringPooling="true"
 				ExceptionHandling="0"
 				RuntimeLibrary="0"
