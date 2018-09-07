@@ -1,0 +1,19 @@
+image: Visual Studio 2008
+configuration:
+- Debug
+- Release
+
+platform:
+- Win32
+- x64
+
+build:
+  project: win32\VS2008\libspeexdsp.sln
+  parallel: true
+  verbosity: minimal
+
+after_build:
+- cmd: 7z a speexdsp.zip win32\VS2008\%PLATFORM%\%CONFIGURATION%\libspeexdsp.lib include\speex\*.h
+
+artifacts:
+- path: speexdsp.zip
