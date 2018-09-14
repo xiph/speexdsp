@@ -93,7 +93,7 @@ static void speex_free(void *ptr) {free(ptr);}
 #endif
 
 #ifndef UINT32_MAX
-#define UINT32_MAX 4294967296U
+#define UINT32_MAX 4294967295U
 #endif
 
 #ifdef USE_SSE
