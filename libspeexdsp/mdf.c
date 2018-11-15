@@ -431,7 +431,7 @@ EXPORT SpeexEchoState *speex_echo_state_init_mc(int frame_size, int filter_lengt
    st->beta_max = DIV32_16(SHL32(EXTEND32(st->frame_size), 14), st->sampling_rate);
 #else
    st->beta0 = (2.0f*st->frame_size)/st->sampling_rate;
-   st->beta_max = (.5f*st->frame_size)/st->sampling_rate;
+   st->beta_max = (0.5f*st->frame_size)/st->sampling_rate;
 #endif
    st->leak_estimate = 0;
 
@@ -470,12 +470,15 @@ EXPORT SpeexEchoState *speex_echo_state_init_mc(int frame_size, int filter_lengt
    }
 #else
    for (i=0;i<N;i++)
-      st->window[i] = .5-.5*cos(2*M_PI*i/N);
+      st->window[i] = 0.5-0.5*cos(2*M_PI*i/N);
 #endif
+
    for (i=0;i<=st->frame_size;i++)
       st->power_1[i] = FLOAT_ONE;
+
    for (i=0;i<N*M*K*C;i++)
       st->W[i] = 0;
+
    {
       spx_word32_t sum = 0;
       /* Ratio of ~10 between adaptation rate of first and last block */
@@ -496,13 +499,14 @@ EXPORT SpeexEchoState *speex_echo_state_init_mc(int frame_size, int filter_lengt
    st->memX = (spx_word16_t*)speex_alloc(K*sizeof(spx_word16_t));
    st->memD = (spx_word16_t*)speex_alloc(C*sizeof(spx_word16_t));
    st->memE = (spx_word16_t*)speex_alloc(C*sizeof(spx_word16_t));
-   st->preemph = QCONST16(.9,15);
+   st->preemph = QCONST16(0.9,15);
+
    if (st->sampling_rate<12000)
-      st->notch_radius = QCONST16(.9, 15);
+      st->notch_radius = QCONST16(0.9, 15);
    else if (st->sampling_rate<24000)
-      st->notch_radius = QCONST16(.982, 15);
+      st->notch_radius = QCONST16(0.982, 15);
    else
-      st->notch_radius = QCONST16(.992, 15);
+      st->notch_radius = QCONST16(0.992, 15);
 
    st->notch_mem = (spx_mem_t*)speex_alloc(2*C*sizeof(spx_mem_t));
    st->adapted = 0;
@@ -1029,6 +1033,7 @@ EXPORT void speex_echo_cancellation(SpeexEchoState *st, const spx_int16_t *in, c
       /* Everything's fine */
       st->screwed_up=0;
    }
+
    if (st->screwed_up>=50)
    {
       speex_warning("The echo canceller started acting funny and got slapped (reset). It swears it will behave now.");
@@ -1239,11 +1244,11 @@ EXPORT int speex_echo_ctl(SpeexEchoState *st, int request, void *ptr)
          st->beta_max = (.5f*st->frame_size)/st->sampling_rate;
 #endif
          if (st->sampling_rate<12000)
-            st->notch_radius = QCONST16(.9, 15);
+            st->notch_radius = QCONST16(0.9, 15);
          else if (st->sampling_rate<24000)
-            st->notch_radius = QCONST16(.982, 15);
+            st->notch_radius = QCONST16(0.982, 15);
          else
-            st->notch_radius = QCONST16(.992, 15);
+            st->notch_radius = QCONST16(0.992, 15);
          break;
       case SPEEX_ECHO_GET_SAMPLING_RATE:
          (*(int*)ptr) = st->sampling_rate;
