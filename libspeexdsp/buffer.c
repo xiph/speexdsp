@@ -135,7 +135,7 @@ EXPORT int speex_buffer_read(SpeexBuffer *st, void *_data, int len)
    char *data = _data;
    if (len > st->available)
    {
-      SPEEX_MEMSET(data+st->available, 0, st->size-st->available);
+      SPEEX_MEMSET(data+st->available, 0, len - st->available);
       len = st->available;
    }
    end = st->read_ptr + len;
