@@ -34,3 +34,4 @@ libtool
 speexdsp.pc
 stamp-*
 patches
+/m4
