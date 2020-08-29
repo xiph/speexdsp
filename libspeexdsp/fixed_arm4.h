@@ -35,19 +35,6 @@
 #ifndef FIXED_ARM4_H
 #define FIXED_ARM4_H
 
-#undef MULT16_32_Q14
-static inline spx_word32_t MULT16_32_Q14(spx_word16_t x, spx_word32_t y) {
-  int res;
-  int dummy;
-  asm (
-        "smull  %0,%1,%2,%3 \n\t"
-        "mov %0, %0, lsr #14 \n\t"
-        "add %0, %0, %1, lsl #18 \n\t"
-   : "=&r"(res), "=&r" (dummy)
-   : "r"(y),"r"((int)x));
-  return(res);
-}
-
 #undef MULT16_32_Q15
 static inline spx_word32_t MULT16_32_Q15(spx_word16_t x, spx_word32_t y) {
   int res;
