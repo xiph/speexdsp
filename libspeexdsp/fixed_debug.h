@@ -250,6 +250,21 @@ static inline short MULT16_16_16(int a, int b)
    return res;
 }
 
+/* result fits in 32 bits */
+static inline int MULT16_32_32(int a, long long b)
+{
+   long long res;
+   if (!VERIFY_SHORT(a) || !VERIFY_INT(b))
+   {
+      fprintf (stderr, "MULT16_32_32: inputs are not short+int: %d %d\n", a, (int)b);
+   }
+   res = a*b;
+   if (!VERIFY_INT(res))
+      fprintf (stderr, "MULT16_32_32: output is not int: %d\n", (int)res);
+   spx_mips++;
+   return res;
+}
+
 #define MULT16_16(a, b) _MULT16_16(a, b, __FILE__, __LINE__)
 static inline int _MULT16_16(int a, int b, char *file, int line)
 {
