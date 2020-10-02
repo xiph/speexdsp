@@ -1,0 +1,39 @@
+default:
+  tags:
+    - docker
+  # Image from https://hub.docker.com/_/gcc/ based on Debian
+  image: gcc:9
+
+.autoconf:
+  stage: build
+  before_script:
+    - apt-get update &&
+      apt-get install -y libfftw3-dev
+  script:
+    - ./autogen.sh
+    - ./configure ${CONFIG_FLAGS}
+    - make
+    - make check
+
+autoconf:
+  extends: .autoconf
+  script:
+    - ./autogen.sh
+    - ./configure ${CONFIG_FLAGS}
+    - make
+    - make distcheck
+
+fixed-point:
+  extends: .autoconf
+  variables:
+    CONFIG_FLAGS: --enable-fixed-point
+
+no-float:
+  extends: .autoconf
+  variables:
+    CONFIG_FLAGS: --enable-fixed-point --disable-float-api
+
+no-examples:
+  extends: .autoconf
+  variables:
+    CONFIG_FLAGS: --disable-examples
