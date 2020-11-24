@@ -43,27 +43,6 @@ has_var_arrays=no
 )
 AC_MSG_RESULT($has_var_arrays)
 
-AC_CHECK_HEADERS([alloca.h getopt.h])
-AC_MSG_CHECKING(for alloca)
-AC_TRY_COMPILE( [
-#ifdef HAVE_ALLOCA_H
-# include <alloca.h>
-#endif
-#include <stdlib.h>
-], [
-int foo=10;
-int *array = alloca(foo);
-],
-[
-has_alloca=yes;
-if test x$has_var_arrays = "xno" ; then
-AC_DEFINE([USE_ALLOCA], [], [Make use of alloca])
-fi
-],
-has_alloca=no
-)
-AC_MSG_RESULT($has_alloca)
-
 AC_MSG_CHECKING(for SSE in current arch/CFLAGS)
 AC_LINK_IFELSE([
 AC_LANG_PROGRAM([[
@@ -142,11 +121,6 @@ AC_SUBST(src)
 
 LT_LIB_M
 
-
-AC_ARG_ENABLE(valgrind, [  --enable-valgrind       Enable valgrind extra checks],
-[if test "$enableval" = yes; then
-  AC_DEFINE([ENABLE_VALGRIND], , [Enable valgrind extra checks])
-fi])
 
 AC_ARG_ENABLE(sse, [  --enable-sse            Enable SSE support], [
 if test "x$enableval" != xno; then

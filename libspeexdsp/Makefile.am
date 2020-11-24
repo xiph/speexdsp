@@ -24,7 +24,7 @@ noinst_HEADERS = 	arch.h 	bfin.h \
 		fixed_arm4.h \
 		fixed_arm5e.h 	fixed_bfin.h 	fixed_debug.h 	\
 		math_approx.h 		misc_bfin.h 	\
-		stack_alloc.h 	fftwrap.h \
+		fftwrap.h \
 	filterbank.h fixed_generic.h os_support.h \
 	pseudofloat.h smallft.h vorbis_psy.h resample_sse.h resample_neon.h
 
