@@ -603,8 +603,8 @@ EXPORT int jitter_buffer_get(JitterBuffer *jitter, JitterBufferPacket *packet, s
             packet->data[j] = jitter->packets[i].data[j];
          /* Remove packet */
          speex_free(jitter->packets[i].data);
+         jitter->packets[i].data = NULL;
       }
-      jitter->packets[i].data = NULL;
       /* Set timestamp and span (if requested) */
       offset = (spx_int32_t)jitter->packets[i].timestamp-(spx_int32_t)jitter->pointer_timestamp;
       if (start_offset != NULL)
@@ -693,8 +693,8 @@ EXPORT int jitter_buffer_get_another(JitterBuffer *jitter, JitterBufferPacket *p
             packet->data[j] = jitter->packets[i].data[j];
          /* Remove packet */
          speex_free(jitter->packets[i].data);
+         jitter->packets[i].data = NULL;
       }
-      jitter->packets[i].data = NULL;
       packet->timestamp = jitter->packets[i].timestamp;
       packet->span = jitter->packets[i].span;
       packet->sequence = jitter->packets[i].sequence;
