@@ -68,7 +68,7 @@ int main()
 
       fprintf (stderr, "%d %d %d %d -> ", rate, off, in_len, out_len);
 
-      speex_resampler_process_float(st, 0, fin + off, &in_len, fout, &out_len);
+      speex_resampler_process_interleaved_float(st, fin + off, &in_len, fout, &out_len);
 
       fprintf (stderr, "%d %d\n", in_len, out_len);
       off += in_len;
