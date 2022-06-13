@@ -1,6 +1,6 @@
 dnl Process this file with autoconf to produce a configure script. -*-m4-*-
 
-AC_INIT([speexdsp],[1.2.0],[speex-dev@xiph.org])
+AC_INIT([speexdsp],[1.2.1],[speex-dev@xiph.org])
 
 AC_CONFIG_SRCDIR([libspeexdsp/preprocess.c])
 AC_CONFIG_MACRO_DIR([m4])
@@ -10,7 +10,7 @@ m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 
 
 SPEEXDSP_LT_CURRENT=6
-SPEEXDSP_LT_REVISION=1
+SPEEXDSP_LT_REVISION=2
 SPEEXDSP_LT_AGE=5
 
 
