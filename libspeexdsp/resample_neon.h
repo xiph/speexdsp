@@ -36,6 +36,8 @@
    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include <stdint.h>
+
 #ifdef FIXED_POINT
 #if defined(__aarch64__)
 static inline int32_t saturate_32bit_to_16bit(int32_t a) {
