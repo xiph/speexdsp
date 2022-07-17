@@ -1,4 +1,4 @@
-LIBRARY libspeexdsp
+LIBRARY libspeexdsp.dll
 EXPORTS
 
 
