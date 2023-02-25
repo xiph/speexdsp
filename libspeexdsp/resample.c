@@ -734,15 +734,16 @@ static int update_filter(SpeexResamplerState *st)
          spx_uint32_t j;
          spx_uint32_t olen = old_length;
          spx_uint32_t start = i*st->mem_alloc_size;
+         spx_uint32_t magic_samples = st->magic_samples[i];
          /*if (st->magic_samples[i])*/
          {
             /* Try and remove the magic samples as if nothing had happened */
 
             /* FIXME: This is wrong but for now we need it to avoid going over the array bounds */
-            olen = old_length + 2*st->magic_samples[i];
-            for (j=old_length-1+st->magic_samples[i];j--;)
-               st->mem[start+j+st->magic_samples[i]] = st->mem[i*old_alloc_size+j];
-            for (j=0;j<st->magic_samples[i];j++)
+            olen = old_length + 2*magic_samples;
+            for (j=old_length-1+magic_samples;j--;)
+               st->mem[start+j+magic_samples] = st->mem[i*old_alloc_size+j];
+            for (j=0;j<magic_samples;j++)
                st->mem[start+j] = 0;
             st->magic_samples[i] = 0;
          }
@@ -759,9 +760,10 @@ static int update_filter(SpeexResamplerState *st)
             st->last_sample[i] += (st->filt_len - olen)/2;
          } else {
             /* Put back some of the magic! */
-            st->magic_samples[i] = (olen - st->filt_len)/2;
-            for (j=0;j<st->filt_len-1+st->magic_samples[i];j++)
-               st->mem[start+j] = st->mem[start+j+st->magic_samples[i]];
+            magic_samples = (olen - st->filt_len)/2;
+            for (j=0;j<st->filt_len-1+magic_samples;j++)
+               st->mem[start+j] = st->mem[start+j+magic_samples];
+            st->magic_samples[i] = magic_samples;
          }
       }
    } else if (st->filt_len < old_length)
