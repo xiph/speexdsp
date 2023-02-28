@@ -241,7 +241,7 @@ void func() {
   MKL_LONG result=DftiCreateDescriptor(&h, DFTI_SINGLE, DFTI_REAL, 0);
 }]])],
    [AC_MSG_RESULT(yes)],
-   [AC_MSG_FAILURE([Failed to compile MKL test program. Make sure you set CFLAGS to include the include directory and set LDFLAGS to include the library directory and all necesarry libraries.])]
+   [AC_MSG_FAILURE([Failed to compile MKL test program. Make sure you set CFLAGS to include the include directory and set LDFLAGS to include the library directory and all necessary libraries.])]
   )
  ],
  [AC_MSG_FAILURE([Unknown FFT $FFT specified for --with-fft])]
