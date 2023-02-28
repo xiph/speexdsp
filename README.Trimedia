@@ -46,7 +46,7 @@
 (5) kiss_fft.c
 (6) kiss_fftr.c
 
--- created a new USE_COMPACT_KISS_FFT for fftwrap.c and shifted defination 
+-- created a new USE_COMPACT_KISS_FFT for fftwrap.c and shifted definition
 -- to config file so that user configure the usage of fft on config.h
 -- TOEXPLORE:is it possible to share table between mdf/preprocess?
 -- Introducing this macro made the following changes in C code 
