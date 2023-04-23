@@ -42,7 +42,7 @@ static inline float inner_product_single(const float *a, const float *b, unsigne
    int i;
    float ret;
    __m128 sum = _mm_setzero_ps();
-   for (i=0;i<len;i+=8)
+   for (i=0;i<(int)len;i+=8)
    {
       sum = _mm_add_ps(sum, _mm_mul_ps(_mm_loadu_ps(a+i), _mm_loadu_ps(b+i)));
       sum = _mm_add_ps(sum, _mm_mul_ps(_mm_loadu_ps(a+i+4), _mm_loadu_ps(b+i+4)));
@@ -59,7 +59,7 @@ static inline float interpolate_product_single(const float *a, const float *b, u
   float ret;
   __m128 sum = _mm_setzero_ps();
   __m128 f = _mm_loadu_ps(frac);
-  for(i=0;i<len;i+=2)
+  for(i=0;i<(int)len;i+=2)
   {
     sum = _mm_add_ps(sum, _mm_mul_ps(_mm_load1_ps(a+i), _mm_loadu_ps(b+i*oversample)));
     sum = _mm_add_ps(sum, _mm_mul_ps(_mm_load1_ps(a+i+1), _mm_loadu_ps(b+(i+1)*oversample)));
@@ -81,7 +81,7 @@ static inline double inner_product_double(const float *a, const float *b, unsign
    double ret;
    __m128d sum = _mm_setzero_pd();
    __m128 t;
-   for (i=0;i<len;i+=8)
+   for (i=0;i<(int)len;i+=8)
    {
       t = _mm_mul_ps(_mm_loadu_ps(a+i), _mm_loadu_ps(b+i));
       sum = _mm_add_pd(sum, _mm_cvtps_pd(t));
@@ -107,7 +107,7 @@ static inline double interpolate_product_double(const float *a, const float *b, 
   __m128d f1 = _mm_cvtps_pd(f);
   __m128d f2 = _mm_cvtps_pd(_mm_movehl_ps(f,f));
   __m128 t;
-  for(i=0;i<len;i+=2)
+  for(i=0;i<(int)len;i+=2)
   {
     t = _mm_mul_ps(_mm_load1_ps(a+i), _mm_loadu_ps(b+i*oversample));
     sum1 = _mm_add_pd(sum1, _mm_cvtps_pd(t));
