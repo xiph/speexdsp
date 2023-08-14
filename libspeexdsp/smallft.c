@@ -1253,9 +1253,7 @@ void spx_drft_clear(struct drft_lookup *l)
 {
   if(l)
   {
-    if(l->trigcache)
-      speex_free(l->trigcache);
-    if(l->splitcache)
-      speex_free(l->splitcache);
+    speex_free(l->trigcache);
+    speex_free(l->splitcache);
   }
 }
