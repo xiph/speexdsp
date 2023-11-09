@@ -339,4 +339,4 @@ AC_CONFIG_HEADERS([config.h])
 
 AC_OUTPUT
 
-echo "Type \"make; make install\" to compile and install Speex";
+echo "Type \"make; make install\" to compile and install SpeexDSP";
