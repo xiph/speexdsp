@@ -64,6 +64,16 @@ typedef struct SpeexPreprocessState_ SpeexPreprocessState;
 */
 SpeexPreprocessState *speex_preprocess_state_init(int frame_size, int sampling_rate);
 
+/** Creates a new multichannel preprocessing state.
+ * @param frame_size Number of samples to process at one time (should correspond to 10-20 ms). Must be
+ * the same value as that used for the echo canceller for residual echo cancellation to work.
+ * @param sampling_rate Sampling rate used for the input.
+ * @param nbre_channels Number of channel to be processed (it shall not be greater than the number of 
+ * channels used for echo canceller).
+ * @return Newly created preprocessor state
+*/
+SpeexPreprocessState *speex_preprocess_state_init_mc(int frame_size, int sampling_rate, int nbre_channels);
+
 /** Destroys a preprocessor state
  * @param st Preprocessor state to destroy
 */
