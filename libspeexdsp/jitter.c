@@ -442,7 +442,7 @@ EXPORT void jitter_buffer_put(JitterBuffer *jitter, const JitterBufferPacket *pa
          jitter->packets[i].data = packet->data;
       } else {
          jitter->packets[i].data=(char*)speex_alloc(packet->len);
-         for (j=0;j<packet->len;j++)
+         for (j=0;j<(int)packet->len;j++)
             jitter->packets[i].data[j]=packet->data[j];
       }
       jitter->packets[i].timestamp=packet->timestamp;
@@ -689,7 +689,7 @@ EXPORT int jitter_buffer_get_another(JitterBuffer *jitter, JitterBufferPacket *p
       {
          packet->data = jitter->packets[i].data;
       } else {
-         for (j=0;j<packet->len;j++)
+         for (j=0;j<(int)packet->len;j++)
             packet->data[j] = jitter->packets[i].data[j];
          /* Remove packet */
          speex_free(jitter->packets[i].data);
