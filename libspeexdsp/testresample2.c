@@ -43,20 +43,29 @@
 #define INBLOCK 1024
 #define RATE 48000
 
-int main()
+int main(int argc, char **argv)
 {
-   spx_uint32_t i;
-   float *fin, *fout;
-   int rate = 1000, off = 0, avail = INBLOCK;
-   SpeexResamplerState *st = speex_resampler_init(1, RATE, RATE, 4, NULL);
+   spx_uint32_t i, j;
+   float *fin, *fout, val;
+   int rate = 1000, off = 0, avail = INBLOCK, channels = 1;
+
+   if (argc > 1) {
+      channels = atoi(argv[1]);
+   }
+
+   SpeexResamplerState *st = speex_resampler_init(channels, RATE, RATE, 4, NULL);
    speex_resampler_set_rate(st, RATE, rate);
    speex_resampler_skip_zeros(st);
 
-   fin = malloc(INBLOCK*2*sizeof(float));
-   for (i=0; i<INBLOCK*2;i++)
-     fin[i] = sinf ((float)i/PERIOD * 2 * M_PI) * 0.9;
+   fin = malloc(INBLOCK*2*sizeof(float)*channels);
+   for (i=0; i<INBLOCK*2*channels;i++) {
+      val = sinf ((float)i/PERIOD * 2 * M_PI) * 0.9;
+      for (j=0; j<channels; j++) {
+         fin[i*channels+j] = val;
+      }
+   }
 
-   fout = malloc(INBLOCK*4*sizeof(float));
+   fout = malloc(INBLOCK*4*sizeof(float)*channels);
 
    while (1)
    {
@@ -68,7 +77,7 @@ int main()
 
       fprintf (stderr, "%d %d %d %d -> ", rate, off, in_len, out_len);
 
-      speex_resampler_process_float(st, 0, fin + off, &in_len, fout, &out_len);
+      speex_resampler_process_interleaved_float(st, fin + off * channels, &in_len, fout, &out_len);
 
       fprintf (stderr, "%d %d\n", in_len, out_len);
       off += in_len;
@@ -77,7 +86,7 @@ int main()
       if (off >= INBLOCK)
         off -= INBLOCK;
 
-      fwrite(fout, sizeof(float), out_len, stdout);
+      fwrite(fout, sizeof(float), out_len * channels, stdout);
 
       rate += 100;
       if (rate > 128000)
