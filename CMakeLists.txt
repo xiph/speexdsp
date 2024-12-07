@@ -15,6 +15,12 @@ else()
     add_compile_definitions(FLOATING_POINT=1)
 endif()
 
+# 'M_PI': undeclared identifier
+if(WIN32)
+    add_compile_definitions(_USE_MATH_DEFINES=1)
+endif()
+
+
 add_compile_definitions(EXPORT= USE_KISS_FFT=1)
 
 # Include directories
