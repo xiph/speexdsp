@@ -11,10 +11,10 @@ John Francis Edwards
 Segher Boessenkool
    Misc. optimizations (for QMF in particular)
 
-Atsuhiko Yamanaka <ymnk@jcraft.com>:
+Atsuhiko Yamanaka <ymnk@jcraft.com>
    Patch to speexenc.c to add Vorbis comment format
 
-Radim Kolar <hsn@cybermail.net>:
+Radim Kolar <hsn@cybermail.net>
    Patch to speexenc.c for supporting more input formats
 
 Tristan Matthews <tmatth@videolan.org>
