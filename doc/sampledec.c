@@ -58,7 +58,7 @@ int main(int argc, char **argv)
 
    /*Destroy the decoder state*/
    speex_decoder_destroy(state);
-   /*Destroy the bit-stream truct*/
+   /*Destroy the bit-stream struct*/
    speex_bits_destroy(&bits);
    fclose(fout);
    return 0;

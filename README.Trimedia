@@ -66,7 +66,7 @@ amount of memory for mdf, therefore did not made the changes for that)
 			((frac1 * a) >> X) + ((frac2 * a) >> X)
 		will cause some different between optimized and unoptimized code.
 		tried decoding/encoding optimized code on some audio files retains 
-		the clearity of the word
+		the clarity of the word
 		
 	- wideband/ultrawideband is not heavily tested yet
 		
