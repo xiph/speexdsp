@@ -39,6 +39,10 @@
 #include <math.h>
 #include <stdlib.h>
 
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
 #define PERIOD 32
 #define INBLOCK 1024
 #define RATE 48000
