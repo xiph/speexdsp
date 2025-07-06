@@ -119,7 +119,7 @@ static const spx_float_t VAR_BACKTRACK = 4.f;
 
 #define PLAYBACK_DELAY 2
 
-void speex_echo_get_residual(SpeexEchoState *st, spx_word32_t *Yout, int len);
+void speex_echo_get_residual(SpeexEchoState *st, spx_word32_t *Yout,  int frame_size, int nbre_channels);
 
 
 /** Speex echo cancellation state. */
@@ -1170,38 +1170,44 @@ EXPORT void speex_echo_cancellation(SpeexEchoState *st, const spx_int16_t *in, c
       st->sum_adapt = ADD32(st->sum_adapt,adapt_rate);
    }
 
-   /* FIXME: MC conversion required */
+   for (chan=0; chan<C;chan++) {
       for (i=0;i<st->frame_size;i++)
-         st->last_y[i] = st->last_y[st->frame_size+i];
-   if (st->adapted)
-   {
-      /* If the filter is adapted, take the filtered echo */
-      for (i=0;i<st->frame_size;i++)
-         st->last_y[st->frame_size+i] = in[i]-out[i];
-   } else {
+         st->last_y[chan*N+i] = st->last_y[chan*N+st->frame_size+i];
+      if (st->adapted)
+      {
+         /* If the filter is adapted, take the filtered echo */
+         for (i=0;i<st->frame_size;i++)
+            st->last_y[chan*N+st->frame_size+i] = in[C*i+chan]-out[C*i+chan];
+      } else {
       /* If filter isn't adapted yet, all we can do is take the far end signal directly */
       /* moved earlier: for (i=0;i<N;i++)
       st->last_y[i] = st->x[i];*/
+      }
    }
-
 }
 
 /* Compute spectrum of estimated echo for use in an echo post-filter */
-void speex_echo_get_residual(SpeexEchoState *st, spx_word32_t *residual_echo, int len)
+void speex_echo_get_residual(SpeexEchoState *st, spx_word32_t *residual_echo,  int frame_size, int nbre_channels)
 {
-   int i;
+   int i, channel;
    spx_word16_t leak2;
    int N;
-
+   
+   if ((nbre_channels > st->C) || (frame_size != st->frame_size))
+      return ;
+   
    N = st->window_size;
 
    /* Apply hanning window (should pre-compute it)*/
-   for (i=0;i<N;i++)
-      st->y[i] = MULT16_16_Q15(st->window[i],st->last_y[i]);
-
-   /* Compute power spectrum of the echo */
-   spx_fft(st->fft_table, st->y, st->Y);
-   power_spectrum(st->Y, residual_echo, N);
+   for (channel=0; channel<nbre_channels; channel++)
+   {
+      for (i=0;i<N;i++)
+         st->y[channel*N+i] = MULT16_16_Q15(st->window[i],st->last_y[channel*N+i]);
+      
+      /* Compute power spectrum of the echo */
+      spx_fft(st->fft_table, st->y+channel*N, st->Y+channel*N);
+      power_spectrum(st->Y+channel*N, residual_echo+(channel*st->frame_size), N);
+   }
 
 #ifdef FIXED_POINT
    if (st->leak_estimate > 16383)
@@ -1215,9 +1221,9 @@ void speex_echo_get_residual(SpeexEchoState *st, spx_word32_t *residual_echo, in
       leak2 = 2*st->leak_estimate;
 #endif
    /* Estimate residual echo */
-   for (i=0;i<=st->frame_size;i++)
-      residual_echo[i] = (spx_int32_t)MULT16_32_Q15(leak2,residual_echo[i]);
-
+   for (channel=0; channel<nbre_channels; channel++)
+      for (i=0;i<st->frame_size;i++)
+         residual_echo[channel*st->frame_size+i] = (spx_int32_t)MULT16_32_Q15(leak2,residual_echo[channel*st->frame_size+i]);
 }
 
 EXPORT int speex_echo_ctl(SpeexEchoState *st, int request, void *ptr)
