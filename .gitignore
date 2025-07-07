@@ -25,7 +25,6 @@ SpeexDSP.spec
 config.h
 config.log
 config.status
-include/speex/speexdsp_config_types.h
 *.sw[lmnop]
 testdenoise
 testecho
@@ -35,3 +34,4 @@ speexdsp.pc
 stamp-*
 patches
 /m4
+build/
