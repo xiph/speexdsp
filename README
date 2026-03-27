@@ -1,3 +1,65 @@
-See INSTALL file for instructions on how to install SpeexDSP.
+SpeexDSP is a patent-free, Open Source/Free Software DSP library derived
+from the Speex codec.  It provides the following features:
 
-SpeexDSP is a patent-free, Open Source/Free Software DSP library.
+  - Resampler
+  - Echo canceller
+  - Noise suppressor / preprocessor
+  - Automatic gain control (AGC)
+  - Voice activity detection (VAD)
+  - Jitter buffer
+
+== Building with Autotools ==
+
+See the INSTALL file for generic autoconf/automake instructions.
+
+    ./autogen.sh
+    ./configure
+    make
+    make install
+
+Selected ./configure options:
+
+    --enable-fixed-point      Use fixed-point arithmetic (default: float)
+    --disable-float-api       Disable the floating-point API
+    --disable-examples        Do not build example programs
+
+== Building with CMake ==
+
+A CMake build is available as an alternative to the autotools build.
+A build directory separate from the source tree is recommended.
+
+    cmake -S . -B build
+    cmake --build build
+    cmake --install build
+
+CMake options (pass with -D<OPTION>=<VALUE>):
+
+    BUILD_SHARED_LIBS=ON|OFF    Build shared instead of static library
+                                (default: OFF)
+    USE_FIXED_POINT=ON|OFF      Use fixed-point arithmetic
+                                (default: OFF, i.e. floating-point)
+    CMAKE_BUILD_TYPE=...        Release, Debug, RelWithDebInfo, etc.
+    CMAKE_INSTALL_PREFIX=...    Installation prefix (default: /usr/local)
+
+Examples:
+
+    # Shared library, release build
+    cmake -S . -B build -DBUILD_SHARED_LIBS=ON -DCMAKE_BUILD_TYPE=Release
+    cmake --build build
+    cmake --install build
+
+    # Fixed-point, install to /usr
+    cmake -S . -B build -DUSE_FIXED_POINT=ON -DCMAKE_INSTALL_PREFIX=/usr
+    cmake --build build
+    cmake --install build
+
+== Using speexdsp in a CMake project ==
+
+After installation the library can be found via find_package:
+
+    find_package(speexdsp REQUIRED)
+    target_link_libraries(my_target PRIVATE speexdsp::speexdsp)
+
+pkg-config is also supported:
+
+    pkg-config --cflags --libs speexdsp
