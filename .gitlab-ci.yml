@@ -37,3 +37,25 @@ no-examples:
   extends: .autoconf
   variables:
     CONFIG_FLAGS: --disable-examples
+
+.cmake:
+  stage: build
+  before_script:
+    - apt-get update &&
+      apt-get install -y cmake
+  script:
+    - cmake -S . -B build ${CMAKE_FLAGS}
+    - cmake --build build
+
+cmake:
+  extends: .cmake
+
+cmake-fixed-point:
+  extends: .cmake
+  variables:
+    CMAKE_FLAGS: -DUSE_FIXED_POINT=ON
+
+cmake-shared:
+  extends: .cmake
+  variables:
+    CMAKE_FLAGS: -DBUILD_SHARED_LIBS=ON
