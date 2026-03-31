@@ -4,6 +4,25 @@ default:
   # Image from https://hub.docker.com/_/gcc/ based on Debian
   image: gcc:9
 
+# Make sure commits are GPG signed
+ci-fairy:
+  stage: test
+  script:
+    - apt update
+    - apt install -y python3-pip git
+    - PIP_BREAK_SYSTEM_PACKAGES=1 pip3 install git+https://gitlab.freedesktop.org/freedesktop/ci-templates@7811ba9814a3bad379377241c6c6b62d78b20eac
+    - echo Checking commits $CI_FAIRY_BASE_COMMIT..HEAD
+    - ci-fairy check-commits --gpg-signed-commit $CI_FAIRY_BASE_COMMIT..HEAD
+  tags:
+    - 'docker'
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      variables:
+        CI_FAIRY_BASE_COMMIT: $CI_MERGE_REQUEST_DIFF_BASE_SHA
+    - if: $CI_PIPELINE_SOURCE != "merge_request_event"
+      variables:
+        CI_FAIRY_BASE_COMMIT: 'HEAD^1'
+
 .autoconf:
   stage: build
   before_script:
