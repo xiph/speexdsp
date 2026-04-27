@@ -108,6 +108,12 @@ list(REMOVE_ITEM SPEEXDSP_SOURCES
 
 add_library(speexdsp ${SPEEXDSP_SOURCES})
 
+# Windows shared build support
+if(WIN32 AND BUILD_SHARED_LIBS)
+    target_sources(speexdsp PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/win32/libspeexdsp.def)
+    set_target_properties(speexdsp PROPERTIES RUNTIME_OUTPUT_NAME "libspeexdsp")
+endif()
+
 # Link math library if available
 find_library(MATH_LIBRARY m)
 if(MATH_LIBRARY)
