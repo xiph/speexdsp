@@ -8,6 +8,7 @@ from the Speex codec.  It provides the following features:
   - Voice activity detection (VAD)
   - Jitter buffer
 
+
 == Building with Autotools ==
 
 See the INSTALL file for generic autoconf/automake instructions.
@@ -22,6 +23,7 @@ Selected ./configure options:
     --enable-fixed-point      Use fixed-point arithmetic (default: float)
     --disable-float-api       Disable the floating-point API
     --disable-examples        Do not build example programs
+
 
 == Building with CMake ==
 
@@ -63,3 +65,14 @@ After installation the library can be found via find_package:
 pkg-config is also supported:
 
     pkg-config --cflags --libs speexdsp
+
+
+== Building with Meson ==
+
+Requires Meson (0.59 or higher), and Ninja.
+
+    mkdir build && cd build
+    meson setup ..
+    ninja
+
+Refer to ./meson_options.txt for options.

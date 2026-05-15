@@ -78,3 +78,48 @@ cmake-shared:
   extends: .cmake
   variables:
     CMAKE_FLAGS: -DBUILD_SHARED_LIBS=ON
+
+.meson:
+  stage: build
+  image: 'debian:bookworm'
+  before_script:
+    - apt-get update &&
+      apt-get install -y ninja-build meson
+  script:
+    - meson setup builddir ${MESON_FLAGS}
+    - ninja -C builddir
+    - ninja -C builddir test
+    - ninja -C builddir install
+
+meson fixed-point:
+  extends: .meson
+  variables:
+    MESON_FLAGS: -Dfixed-point=enabled
+
+meson fixed-point-debug:
+  extends: .meson
+  variables:
+    MESON_FLAGS: -Dfixed-point=enabled -Dfixed-point-debug=enabled
+
+meson no-float:
+  extends: .meson
+  variables:
+    MESON_FLAGS: -Dfloat-api=disabled
+
+meson fftw3:
+  extends: .meson
+  before_script:
+    - apt-get update &&
+      apt-get install -y ninja-build meson pkg-config libfftw3-dev
+  variables:
+    MESON_FLAGS: -Dfft=gpl-fftw3
+
+meson no-simd:
+  extends: .meson
+  variables:
+    MESON_FLAGS: -Dsse=disabled -Dsse2=disabled -Dneon=disabled
+
+meson no-examples:
+  extends: .meson
+  variables:
+    MESON_FLAGS: -Dexamples=disabled

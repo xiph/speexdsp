@@ -1,0 +1,36 @@
+option('fft', type: 'combo', choices: ['auto', 'kiss', 'smallft', 'gpl-fftw3', 'proprietary-intel-mkl'], value: 'auto',
+       description: 'Use an alternate FFT implementation (auto = kiss for fixed point and smallft for floating point')
+
+option('examples', type: 'feature', value: 'enabled',
+       description: 'Build test/example programs')
+
+option('fixed-point', type: 'feature', value: 'disabled',
+       description: 'Use fixed-point arithmetic instead of floating-point')
+
+option('fixed-point-debug', type: 'feature', value: 'disabled',
+       description: 'Debug fixed-point arithmetic implementation')
+
+option('float-api', type: 'feature', value: 'enabled',
+       description: 'Enable or disable all parts of the API that are using floats')
+
+# Assembly + DSP options
+option('arm4-asm', type: 'feature', value: 'disabled',
+       description: 'Make use of ARM4 assembly optimizations')
+
+option('arm5e-asm', type: 'feature', value: 'disabled',
+       description: 'Make use of ARM5E assembly optimizations')
+
+option('blackfin-asm', type: 'feature', value: 'disabled',
+       description: 'Make use of Blackfin assembly optimizations')
+
+option('sse', type: 'feature', value: 'auto',
+       description: 'Enable or disable SSE support')
+
+option('sse2', type: 'feature', value: 'auto',
+       description: 'Enable or disable SSE2 support')
+
+option('neon', type: 'feature', value: 'auto',
+       description: 'Enable or disable NEON support')
+
+#option('ti-c55x', type: 'feature', value: 'disabled',
+#       description: 'Enable support for TI C55X DSP')
