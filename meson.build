@@ -31,6 +31,13 @@ speexdsp_incs = include_directories('include', 'include/speex')
 
 cdata = configuration_data()
 
+add_project_arguments(
+  '-Wno-unused-but-set-variable',
+  '-Wno-unused-variable',
+  '-Wno-pointer-sign',
+  language : 'c'  # build warning suppression
+)
+
 add_project_arguments('-DHAVE_CONFIG_H=1', language: 'c')
 
 if host_machine.endian() == 'big'
