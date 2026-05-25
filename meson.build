@@ -191,13 +191,15 @@ if not has_sse and get_option('sse').enabled()
   error('No SSE support, but SSE support required via options')
 endif
 
-cdata.set('_USE_SSE', has_sse)
+cdata.set('USE_SSE', has_sse)
 
 if not has_sse2 and get_option('sse2').enabled()
   error('No SSE2 support, but SSE2 support required via options')
 endif
 
-cdata.set('_USE_SSE2', has_sse2)
+cdata.set('USE_SSE2', has_sse2)
+
+cdata.set('USE_NEON', has_neon)
 
 opt_arm4_asm = get_option('arm4-asm').enabled()
 opt_arm5e_asm = get_option('arm5e-asm').enabled()
