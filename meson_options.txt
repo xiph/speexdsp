@@ -1,3 +1,7 @@
+option('tests', type: 'feature', value: 'enabled',
+       description: 'Build test programs and benchmarks')
+
+
 option('fft', type: 'combo', choices: ['auto', 'kiss', 'smallft', 'gpl-fftw3', 'proprietary-intel-mkl'], value: 'auto',
        description: 'Use an alternate FFT implementation (auto = kiss for fixed point and smallft for floating point')
 
