@@ -36,16 +36,7 @@ int main(int argc, const char *argv[])
         .set_cpu_flags  = set_cpu_flags,
     };
 
-    cfg.cpu = 0;
-#if defined(USE_SSE)
-    cfg.cpu = SPEEXDSP_CPU_FLAG_SSE;
-#endif
-#if defined(USE_SSE2)
-    cfg.cpu = SPEEXDSP_CPU_FLAG_SSE2;
-#endif
-#if defined(USE_NEON)
-    cfg.cpu = SPEEXDSP_CPU_FLAG_NEON;
-#endif
-    
+    cfg.cpu = detect_cpu_flags();
+
     return checkasm_main(&cfg, argc, argv);
 }

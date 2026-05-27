@@ -6,9 +6,6 @@
 #include <checkasm/test.h>
 #include <checkasm/utils.h>
 
-/* Random number generation */
-#define rnd checkasm_rand
-
 /* CPU Flags */
 #define SPEEXDSP_CPU_FLAG_SSE   (1 << 0)
 #define SPEEXDSP_CPU_FLAG_SSE2  (1 << 1)
@@ -16,6 +13,9 @@
 
 /* Runtime CPU flags */
 extern CheckasmCpu active_flags;
+
+/* Runtime CPU feature detection */
+CheckasmCpu detect_cpu_flags(void);
 
 /* Declarations of test functions */
 void checkasm_check_resampler(void);
