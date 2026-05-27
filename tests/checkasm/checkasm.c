@@ -3,7 +3,7 @@
 #include "config.h"
 
 static const CheckasmTest tests[] = {
-    // { "test_routine", checkasm_check_test_routine },
+    { "resample", checkasm_check_resampler },
     { 0 }
 };
 
@@ -36,5 +36,16 @@ int main(int argc, const char *argv[])
         .set_cpu_flags  = set_cpu_flags,
     };
 
+    cfg.cpu = 0;
+#if defined(USE_SSE)
+    cfg.cpu = SPEEXDSP_CPU_FLAG_SSE;
+#endif
+#if defined(USE_SSE2)
+    cfg.cpu = SPEEXDSP_CPU_FLAG_SSE2;
+#endif
+#if defined(USE_NEON)
+    cfg.cpu = SPEEXDSP_CPU_FLAG_NEON;
+#endif
+    
     return checkasm_main(&cfg, argc, argv);
 }
