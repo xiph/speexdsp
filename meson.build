@@ -129,11 +129,14 @@ if host_cpu_family in ['arm', 'aarch64'] and get_option('neon').allowed()
                       return 0;
                     }
                  '''
-  neon_args = cc.get_argument_syntax() == 'msvc' ? [] : ['-mfpu=neon']
+  neon_args = []
+  if host_cpu_family == 'arm'
+    neon_args = cc.get_argument_syntax() == 'msvc' ? [] : ['-mfpu=neon']
+  endif
   if cc.links(intrin_check, name: 'Compiler supports NEON intrinsics', args: neon_args)
     has_neon = true
-    if host_cpu_family == 'arm'
-      add_project_arguments('-mfpu=neon', language: 'c')
+    if host_cpu_family == 'arm' and neon_args.length() > 0
+      add_project_arguments(neon_args, language: 'c')
     endif
   endif
 endif

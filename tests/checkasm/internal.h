@@ -4,6 +4,7 @@
 #include "config.h"
 #include <checkasm/checkasm.h>
 #include <checkasm/test.h>
+#include <checkasm/utils.h>
 
 /* Random number generation */
 #define rnd checkasm_rand
@@ -17,6 +18,6 @@
 extern CheckasmCpu active_flags;
 
 /* Declarations of test functions */
-void checkasm_check_test_routine(void);
+void checkasm_check_resampler(void);
 
 #endif /* SPEEXDSP_TESTS_CHECKASM_INTERNAL_H */

@@ -4,7 +4,9 @@ endif
 
 checkasm_sources = files(
     'checkasm/checkasm.c',
-    # 'checkasm/test_routine.c',
+    'checkasm/resample.c',
+    'checkasm/resample_c_wrap.c',
+    'checkasm/resample_neon_wrap.c',
 )
 
 checkasm = executable('checkasm',
