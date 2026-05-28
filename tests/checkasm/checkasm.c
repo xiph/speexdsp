@@ -3,7 +3,7 @@
 #include "config.h"
 
 static const CheckasmTest tests[] = {
-    { "resample", checkasm_check_resampler },
+    { "resample", checkasm_check_resample },
     { 0 }
 };
 
