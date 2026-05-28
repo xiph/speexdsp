@@ -1,3 +1,11 @@
+/* Always compiled. Provides the *_c reference implementations against which
+ * the SIMD wrappers are checked. We include only resample.h here -- crucially
+ * NOT resample_sse.h or resample_neon.h -- so OVERRIDE_INNER_PRODUCT_SINGLE
+ * (and friends) stay undefined and the generic C fallbacks at resample.h:43
+ * and below are what end up compiled into this TU. The SIMD wrappers live in
+ * their own TUs (wrap_sse.c, wrap_sse2.c, wrap_neon.c), each pulling in the
+ * matching resample_*.h, so the four variants coexist in the same binary
+ * without symbol collision (each routine is static inline, file-scoped). */
 #include "wrap.h"
 #include "../../../libspeexdsp/resample.h"
 

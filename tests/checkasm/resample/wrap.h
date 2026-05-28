@@ -1,6 +1,9 @@
 #ifndef SPEEXDSP_TESTS_CHECKASM_RESAMPLE_WRAP_H
 #define SPEEXDSP_TESTS_CHECKASM_RESAMPLE_WRAP_H
 
+#include <stdio.h>
+#include <math.h>
+#include <inttypes.h>
 #include "config.h"
 #include "arch.h"
 
@@ -106,8 +109,99 @@ double interpolate_product_double_neon(const spx_word16_t *a,
 #endif
 #endif
 
-/* Per-routine test entry points. Each is always defined; the body is empty
- * when no SIMD implementation exists for the current (mode, arch) build. */
+/* ------------- Test-input buffer fillers -------------
+ * Single-buffer form because some tests (interpolate_product_*) have
+ * differently-sized a and b. */
+#include <checkasm/utils.h>
+
+#ifdef FIXED_POINT
+/* Random bytes are always valid int16, but a dot product of int16^2 over
+ * hundreds of terms overflows int32. Shift right by 6 to cap |a*b| at 2^18,
+ * keeping comfortable int32 headroom. The bound also makes the two NEON
+ * variants bit-identical to C: aarch64 (saddlv -> sqxtn -> sqrshrn #15) and
+ * aarch32 (vaddl.s32 + vadd.s64 -> vqmovn.s64 -> vqrshrn.s32 #15) perform
+ * the same width/saturation sequence on inputs in this range. */
+static inline void resample_fill_word16(spx_word16_t *buf, unsigned n)
+{
+    checkasm_init(buf, n * sizeof *buf);
+    for (unsigned i = 0; i < n; i++)
+        buf[i] >>= 6;
+}
+#endif
+
+/* checkasm_init fills raw bytes; reinterpreted as float that yields the full
+ * IEEE-754 exponent range plus NaN/Inf, so a long dot product is almost
+ * certainly NaN/Inf and the comparison trivially "passes" (NaN > x is false).
+ * Use checkasm's float-aware uniform helper and shift to symmetric [-1, 1). */
+static inline void resample_fill_float(float *buf, unsigned n)
+{
+    checkasm_randomize_rangef(buf, (int) n, 2.0f);
+    for (unsigned i = 0; i < n; i++)
+        buf[i] -= 1.0f;
+}
+
+/* ------------- Result tolerance checks -------------
+ * Per-precision relative tolerances shared by all resample tests. Each helper
+ * returns 1 if the SIMD result agrees with the C reference within tolerance,
+ * 0 otherwise (with a diagnostic emitted to stderr). Caller invokes
+ * checkasm_fail() on a 0 return.
+ *
+ * Tolerances:
+ *   float:  1e-4 relative -- generous over the random-data error bound
+ *           (sqrt(N)*eps_float ~ 4e-6 for N=1024); the worst-case bound
+ *           (N*eps_float ~ 1.2e-4 for N=1024) is borderline but only matters
+ *           for adversarial inputs.
+ *   double: 1e-9 relative -- ~10^5 x headroom over the worst-case bound.
+ *   word16: 1 LSB absolute -- C uses SATURATE32PSHR (clamps to +/-32767),
+ *           NEON uses sqrshrn/vqrshrn (reaches -32768). At most one LSB
+ *           divergence at the negative endpoint. */
+#define RESAMPLE_FLOAT_REL_TOL  1e-4f
+#define RESAMPLE_DOUBLE_REL_TOL 1e-9
+#define RESAMPLE_WORD16_LSB_TOL 1
+
+static inline int is_resample_result_within_tolerance_float(float ref, float res, unsigned len)
+{
+    float diff = fabsf(ref - res);
+    float rel  = diff / fabsf(ref);
+    if (rel > RESAMPLE_FLOAT_REL_TOL) {
+        fprintf(stderr,
+            "FAILED: len=%u ref=%g res=%g diff=%g rel=%.2e (tol %g)\n",
+            len, ref, res, diff, rel, (double)RESAMPLE_FLOAT_REL_TOL);
+        return 0;
+    }
+    return 1;
+}
+
+static inline int is_resample_result_within_tolerance_double(double ref, double res, unsigned len)
+{
+    double diff = fabs(ref - res);
+    double rel  = diff / fabs(ref);
+    if (rel > RESAMPLE_DOUBLE_REL_TOL) {
+        fprintf(stderr,
+            "FAILED: len=%u ref=%g res=%g diff=%g rel=%.2e (tol %g)\n",
+            len, ref, res, diff, rel, RESAMPLE_DOUBLE_REL_TOL);
+        return 0;
+    }
+    return 1;
+}
+
+#ifdef FIXED_POINT
+static inline int is_resample_result_within_tolerance_word16(int32_t ref, int32_t res, unsigned len)
+{
+    int32_t diff = ref > res ? ref - res : res - ref;
+    if (diff > RESAMPLE_WORD16_LSB_TOL) {
+        fprintf(stderr,
+            "FAILED: len=%u ref=%" PRId32 " res=%" PRId32 " diff=%" PRId32 " (tol %d)\n",
+            len, ref, res, diff, RESAMPLE_WORD16_LSB_TOL);
+        return 0;
+    }
+    return 1;
+}
+#endif
+
+/* Per-routine test entry points. Each is always defined; the body returns
+ * early when no SIMD implementation exists for the current (mode, arch)
+ * build, so calling them is always safe. */
 void test_inner_product_single(void);
 void test_inner_product_double(void);
 void test_interpolate_product_single(void);

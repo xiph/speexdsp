@@ -21,8 +21,8 @@ void test_inner_product_double(void)
     enum { BUF_SIZE = 1024 };
     CHECKASM_ALIGN(in_t a[BUF_SIZE]);
     CHECKASM_ALIGN(in_t b[BUF_SIZE]);
-    INITIALIZE_BUF(a);
-    INITIALIZE_BUF(b);
+    resample_fill_float(a, BUF_SIZE);
+    resample_fill_float(b, BUF_SIZE);
 
     const unsigned len = 256;
 
@@ -36,14 +36,8 @@ void test_inner_product_double(void)
                                 "inner_product_double_len%u", len)) {
             out_t ref = checkasm_call_ref(a, b, len);
             out_t res = checkasm_call_new(a, b, len);
-            /* Double precision is more forgiving than float; widen tolerance
-             * a bit because the C reference's 4-way parallel sum and SSE2's
-             * SIMD reduction visit the products in different orders. */
-            if (fabs(ref - res) > 1e-9 * fabs(ref)) {
-                fprintf(stderr, "FAILED: len=%u ref=%g res=%g\n",
-                    len, ref, res);
+            if (!is_resample_result_within_tolerance_double(ref, res, len))
                 checkasm_fail();
-            }
             checkasm_bench_new(a, b, len);
         }
     }
@@ -55,11 +49,8 @@ void test_inner_product_double(void)
                                 "inner_product_double_len%u", len)) {
             out_t ref = checkasm_call_ref(a, b, len);
             out_t res = checkasm_call_new(a, b, len);
-            if (fabs(ref - res) > 1e-9 * fabs(ref)) {
-                fprintf(stderr, "FAILED: len=%u ref=%g res=%g\n",
-                    len, ref, res);
+            if (!is_resample_result_within_tolerance_double(ref, res, len))
                 checkasm_fail();
-            }
             checkasm_bench_new(a, b, len);
         }
     }
