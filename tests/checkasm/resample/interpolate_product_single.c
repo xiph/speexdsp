@@ -33,14 +33,12 @@ void test_interpolate_product_single(void)
     };
     CHECKASM_ALIGN(in_t a[BUF_A_SIZE]);
     CHECKASM_ALIGN(in_t b[BUF_B_SIZE]);
-    INITIALIZE_BUF(a);
-    INITIALIZE_BUF(b);
-
 #ifdef FIXED_POINT
-    /* Bound magnitude so the C int32 accumulator can't overflow when summed
-     * across LEN * 4 = 1024 terms of |a*b| <= 2^30. */
-    for (unsigned i = 0; i < BUF_A_SIZE; i++) a[i] >>= 6;
-    for (unsigned i = 0; i < BUF_B_SIZE; i++) b[i] >>= 6;
+    resample_fill_word16(a, BUF_A_SIZE);
+    resample_fill_word16(b, BUF_B_SIZE);
+#else
+    resample_fill_float(a, BUF_A_SIZE);
+    resample_fill_float(b, BUF_B_SIZE);
 #endif
 
     /* Cubic coefficients matching cubic_coef(0.5, interp) — see resample.c. */
@@ -60,11 +58,8 @@ void test_interpolate_product_single(void)
                                 "interpolate_product_single_len%u", LEN)) {
             out_t ref = checkasm_call_ref(a, b, LEN, (spx_uint32_t)OVERSAMPLE, interp);
             out_t res = checkasm_call_new(a, b, LEN, (spx_uint32_t)OVERSAMPLE, interp);
-            if (fabsf((float)(ref - res)) > 1e-4f * fabsf((float)ref)) {
-                fprintf(stderr, "FAILED: len=%u ref=%f res=%f\n",
-                    LEN, (float)ref, (float)res);
+            if (!is_resample_result_within_tolerance_float(ref, res, LEN))
                 checkasm_fail();
-            }
             checkasm_bench_new(a, b, LEN, (spx_uint32_t)OVERSAMPLE, interp);
         }
     }
@@ -77,19 +72,11 @@ void test_interpolate_product_single(void)
             out_t ref = checkasm_call_ref(a, b, LEN, (spx_uint32_t)OVERSAMPLE, interp);
             out_t res = checkasm_call_new(a, b, LEN, (spx_uint32_t)OVERSAMPLE, interp);
 #ifdef FIXED_POINT
-            int32_t diff = ref > res ? ref - res : res - ref;
-            if (diff > 1) {
-                fprintf(stderr,
-                    "FAILED: len=%u ref=%" PRId32 " res=%" PRId32 " diff=%" PRId32 "\n",
-                    LEN, ref, res, diff);
+            if (!is_resample_result_within_tolerance_word16(ref, res, LEN))
                 checkasm_fail();
-            }
 #else
-            if (fabsf((float)(ref - res)) > 1e-4f * fabsf((float)ref)) {
-                fprintf(stderr, "FAILED: len=%u ref=%f res=%f\n",
-                    LEN, (float)ref, (float)res);
+            if (!is_resample_result_within_tolerance_float(ref, res, LEN))
                 checkasm_fail();
-            }
 #endif
             checkasm_bench_new(a, b, LEN, (spx_uint32_t)OVERSAMPLE, interp);
         }

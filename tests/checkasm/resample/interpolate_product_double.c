@@ -27,8 +27,8 @@ void test_interpolate_product_double(void)
     };
     CHECKASM_ALIGN(in_t a[BUF_A_SIZE]);
     CHECKASM_ALIGN(in_t b[BUF_B_SIZE]);
-    INITIALIZE_BUF(a);
-    INITIALIZE_BUF(b);
+    resample_fill_float(a, BUF_A_SIZE);
+    resample_fill_float(b, BUF_B_SIZE);
 
     const in_t interp[4] = { -0.0625f, 0.5625f, 0.5625f, -0.0625f };
 
@@ -42,11 +42,8 @@ void test_interpolate_product_double(void)
                                 "interpolate_product_double_len%u", LEN)) {
             out_t ref = checkasm_call_ref(a, b, LEN, (spx_uint32_t)OVERSAMPLE, interp);
             out_t res = checkasm_call_new(a, b, LEN, (spx_uint32_t)OVERSAMPLE, interp);
-            if (fabs(ref - res) > 1e-9 * fabs(ref)) {
-                fprintf(stderr, "FAILED: len=%u ref=%g res=%g\n",
-                    LEN, ref, res);
+            if (!is_resample_result_within_tolerance_double(ref, res, LEN))
                 checkasm_fail();
-            }
             checkasm_bench_new(a, b, LEN, (spx_uint32_t)OVERSAMPLE, interp);
         }
     }
@@ -58,11 +55,8 @@ void test_interpolate_product_double(void)
                                 "interpolate_product_double_len%u", LEN)) {
             out_t ref = checkasm_call_ref(a, b, LEN, (spx_uint32_t)OVERSAMPLE, interp);
             out_t res = checkasm_call_new(a, b, LEN, (spx_uint32_t)OVERSAMPLE, interp);
-            if (fabs(ref - res) > 1e-9 * fabs(ref)) {
-                fprintf(stderr, "FAILED: len=%u ref=%g res=%g\n",
-                    LEN, ref, res);
+            if (!is_resample_result_within_tolerance_double(ref, res, LEN))
                 checkasm_fail();
-            }
             checkasm_bench_new(a, b, LEN, (spx_uint32_t)OVERSAMPLE, interp);
         }
     }

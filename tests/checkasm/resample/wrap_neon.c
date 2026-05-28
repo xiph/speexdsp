@@ -1,6 +1,12 @@
 #include "wrap.h"
 #include "../../../libspeexdsp/resample_neon.h"
 
+#ifdef USE_NEON
+#  if !defined(__aarch64__) && !defined(__ARM_NEON)
+#    error "wrap_neon.c built without aarch64 / ARM NEON ISA; check toolchain flags"
+#  endif
+#endif
+
 #ifdef HAVE_NEON_INNER_PRODUCT_SINGLE
 spx_word32_t inner_product_single_neon(const spx_word16_t *a,
                                        const spx_word16_t *b,
