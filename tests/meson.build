@@ -5,12 +5,22 @@ endif
 checkasm_sources = files(
     'checkasm/checkasm.c',
     'checkasm/cpu.c',
-    'checkasm/resample.c',
-    'checkasm/resample_c_wrap.c',
+    'checkasm/resample/resample.c',
+    'checkasm/resample/inner_product_single.c',
+    'checkasm/resample/inner_product_double.c',
+    'checkasm/resample/interpolate_product_single.c',
+    'checkasm/resample/interpolate_product_double.c',
+    'checkasm/resample/wrap_c.c',
 )
 
 if has_neon
-    checkasm_sources += files('checkasm/resample_neon_wrap.c')
+    checkasm_sources += files('checkasm/resample/wrap_neon.c')
+endif
+if has_sse and not get_option('fixed-point').enabled()
+    checkasm_sources += files('checkasm/resample/wrap_sse.c')
+endif
+if has_sse2 and not get_option('fixed-point').enabled()
+    checkasm_sources += files('checkasm/resample/wrap_sse2.c')
 endif
 
 checkasm = executable('checkasm',
