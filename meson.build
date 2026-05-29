@@ -31,6 +31,13 @@ speexdsp_incs = include_directories('include', 'include/speex')
 
 cdata = configuration_data()
 
+add_project_arguments(
+  '-Wno-unused-but-set-variable',
+  '-Wno-unused-variable',
+  '-Wno-pointer-sign',
+  language : 'c'  # build warning suppression
+)
+
 add_project_arguments('-DHAVE_CONFIG_H=1', language: 'c')
 
 if host_machine.endian() == 'big'
@@ -122,11 +129,14 @@ if host_cpu_family in ['arm', 'aarch64'] and get_option('neon').allowed()
                       return 0;
                     }
                  '''
-  neon_args = cc.get_argument_syntax() == 'msvc' ? [] : ['-mfpu=neon']
+  neon_args = []
+  if host_cpu_family == 'arm'
+    neon_args = cc.get_argument_syntax() == 'msvc' ? [] : ['-mfpu=neon']
+  endif
   if cc.links(intrin_check, name: 'Compiler supports NEON intrinsics', args: neon_args)
     has_neon = true
-    if host_cpu_family == 'arm'
-      add_project_arguments('-mfpu=neon', language: 'c')
+    if host_cpu_family == 'arm' and neon_args.length() > 0
+      add_project_arguments(neon_args, language: 'c')
     endif
   endif
 endif
@@ -184,13 +194,15 @@ if not has_sse and get_option('sse').enabled()
   error('No SSE support, but SSE support required via options')
 endif
 
-cdata.set('_USE_SSE', has_sse)
+cdata.set('USE_SSE', has_sse)
 
 if not has_sse2 and get_option('sse2').enabled()
   error('No SSE2 support, but SSE2 support required via options')
 endif
 
-cdata.set('_USE_SSE2', has_sse2)
+cdata.set('USE_SSE2', has_sse2)
+
+cdata.set('USE_NEON', has_neon)
 
 opt_arm4_asm = get_option('arm4-asm').enabled()
 opt_arm5e_asm = get_option('arm5e-asm').enabled()
