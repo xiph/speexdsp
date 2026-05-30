@@ -104,8 +104,6 @@ static void speex_free(void *ptr) {free(ptr);}
 #include "resample_neon.h"
 #endif
 
-#include "resample.h"
-
 /* Number of elements to allocate on the stack */
 #ifdef VAR_ARRAYS
 #define FIXED_STACK_ALLOC 8192
@@ -348,7 +346,27 @@ static int resampler_basic_direct_single(SpeexResamplerState *st, spx_uint32_t c
       const spx_word16_t *sinct = & sinc_table[samp_frac_num*N];
       const spx_word16_t *iptr = & in[last_sample];
 
+#ifndef OVERRIDE_INNER_PRODUCT_SINGLE
+      int j;
+      sum = 0;
+      for(j=0;j<N;j++) sum += MULT16_16(sinct[j], iptr[j]);
+
+/*    This code is slower on most DSPs which have only 2 accumulators.
+      Plus this this forces truncation to 32 bits and you lose the HW guard bits.
+      I think we can trust the compiler and let it vectorize and/or unroll itself.
+      spx_word32_t accum[4] = {0,0,0,0};
+      for(j=0;j<N;j+=4) {
+        accum[0] += MULT16_16(sinct[j], iptr[j]);
+        accum[1] += MULT16_16(sinct[j+1], iptr[j+1]);
+        accum[2] += MULT16_16(sinct[j+2], iptr[j+2]);
+        accum[3] += MULT16_16(sinct[j+3], iptr[j+3]);
+      }
+      sum = accum[0] + accum[1] + accum[2] + accum[3];
+*/
+      sum = SATURATE32PSHR(sum, 15, 32767);
+#else
       sum = inner_product_single(sinct, iptr, N);
+#endif
 
       out[out_stride * out_sample++] = sum;
       last_sample += int_advance;
@@ -386,7 +404,20 @@ static int resampler_basic_direct_double(SpeexResamplerState *st, spx_uint32_t c
       const spx_word16_t *sinct = & sinc_table[samp_frac_num*N];
       const spx_word16_t *iptr = & in[last_sample];
 
+#ifndef OVERRIDE_INNER_PRODUCT_DOUBLE
+      int j;
+      double accum[4] = {0,0,0,0};
+
+      for(j=0;j<N;j+=4) {
+        accum[0] += sinct[j]*iptr[j];
+        accum[1] += sinct[j+1]*iptr[j+1];
+        accum[2] += sinct[j+2]*iptr[j+2];
+        accum[3] += sinct[j+3]*iptr[j+3];
+      }
+      sum = accum[0] + accum[1] + accum[2] + accum[3];
+#else
       sum = inner_product_double(sinct, iptr, N);
+#endif
 
       out[out_stride * out_sample++] = PSHR32(sum, 15);
       last_sample += int_advance;
@@ -428,8 +459,26 @@ static int resampler_basic_interpolate_single(SpeexResamplerState *st, spx_uint3
 #endif
       spx_word16_t interp[4];
 
+
+#ifndef OVERRIDE_INTERPOLATE_PRODUCT_SINGLE
+      int j;
+      spx_word32_t accum[4] = {0,0,0,0};
+
+      for(j=0;j<N;j++) {
+        const spx_word16_t curr_in=iptr[j];
+        accum[0] += MULT16_16(curr_in,st->sinc_table[4+(j+1)*st->oversample-offset-2]);
+        accum[1] += MULT16_16(curr_in,st->sinc_table[4+(j+1)*st->oversample-offset-1]);
+        accum[2] += MULT16_16(curr_in,st->sinc_table[4+(j+1)*st->oversample-offset]);
+        accum[3] += MULT16_16(curr_in,st->sinc_table[4+(j+1)*st->oversample-offset+1]);
+      }
+
+      cubic_coef(frac, interp);
+      sum = MULT16_32_Q15(interp[0],accum[0]) + MULT16_32_Q15(interp[1],accum[1]) + MULT16_32_Q15(interp[2],accum[2]) + MULT16_32_Q15(interp[3],accum[3]);
+      sum = SATURATE32PSHR(sum, 15, 32767);
+#else
       cubic_coef(frac, interp);
       sum = interpolate_product_single(iptr, st->sinc_table + st->oversample + 4 - offset - 2, N, st->oversample, interp);
+#endif
 
       out[out_stride * out_sample++] = sum;
       last_sample += int_advance;
@@ -473,8 +522,25 @@ static int resampler_basic_interpolate_double(SpeexResamplerState *st, spx_uint3
 #endif
       spx_word16_t interp[4];
 
+
+#ifndef OVERRIDE_INTERPOLATE_PRODUCT_DOUBLE
+      int j;
+      double accum[4] = {0,0,0,0};
+
+      for(j=0;j<N;j++) {
+        const double curr_in=iptr[j];
+        accum[0] += MULT16_16(curr_in,st->sinc_table[4+(j+1)*st->oversample-offset-2]);
+        accum[1] += MULT16_16(curr_in,st->sinc_table[4+(j+1)*st->oversample-offset-1]);
+        accum[2] += MULT16_16(curr_in,st->sinc_table[4+(j+1)*st->oversample-offset]);
+        accum[3] += MULT16_16(curr_in,st->sinc_table[4+(j+1)*st->oversample-offset+1]);
+      }
+
+      cubic_coef(frac, interp);
+      sum = MULT16_32_Q15(interp[0],accum[0]) + MULT16_32_Q15(interp[1],accum[1]) + MULT16_32_Q15(interp[2],accum[2]) + MULT16_32_Q15(interp[3],accum[3]);
+#else
       cubic_coef(frac, interp);
       sum = interpolate_product_double(iptr, st->sinc_table + st->oversample + 4 - offset - 2, N, st->oversample, interp);
+#endif
 
       out[out_stride * out_sample++] = PSHR32(sum,15);
       last_sample += int_advance;
