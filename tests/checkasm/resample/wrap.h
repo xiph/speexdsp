@@ -161,12 +161,25 @@ static inline void resample_fill_float(float *buf, unsigned n)
  * Tolerances (now applied to diff/S):
  *   float:  1e-4 -- generous over N*eps_float (~1.5e-5 at N=256).
  *   double: 1e-9 -- ~10^4 x headroom over N*eps_double (~2.8e-14 at N=256).
+ *           Used where BOTH sides multiply in the same precision (e.g.
+ *           inner_product_double: the C ref at resample.h:72 and the SSE2 path
+ *           both form float products, so they agree to ~double eps).
+ *   double-floatmul: 1e-6 -- for double-accumulating routines whose SIMD path
+ *           multiplies in *single* precision while the C reference multiplies
+ *           in double. interpolate_product_double is the case: the SSE2 loop
+ *           (resample_sse.h:112) uses _mm_mul_ps (float products widened to
+ *           double), but the C ref (resample.h:109-110) promotes to double
+ *           before multiplying. The products therefore differ by up to
+ *           ~0.5*eps_float each, so |res-ref| <~ 0.5*eps_float*S (~3e-8); 1e-6
+ *           gives ~30x headroom while still catching real divergences (which
+ *           perturb diff/S by >> eps_float).
  *   word16: 1 LSB absolute -- C uses SATURATE32PSHR (clamps to +/-32767),
  *           NEON uses sqrshrn/vqrshrn (reaches -32768). At most one LSB
  *           divergence at the negative endpoint. */
-#define RESAMPLE_FLOAT_REL_TOL  1e-4f
-#define RESAMPLE_DOUBLE_REL_TOL 1e-9
-#define RESAMPLE_WORD16_LSB_TOL 1
+#define RESAMPLE_FLOAT_REL_TOL           1e-4f
+#define RESAMPLE_DOUBLE_REL_TOL          1e-9
+#define RESAMPLE_DOUBLE_FLOATMUL_REL_TOL 1e-6
+#define RESAMPLE_WORD16_LSB_TOL          1
 
 /* Accumulation scale S = sum_j |a_j * b_j| for a length-len dot product, used
  * as the denominator in the float/double tolerance checks. Accumulated in
@@ -212,17 +225,31 @@ static inline int is_resample_result_within_tolerance_float(float ref, float res
     return 1;
 }
 
-static inline int is_resample_result_within_tolerance_double(double ref, double res, double scale, unsigned len)
+static inline int resample_double_within_tol(double ref, double res, double scale,
+                                             double tol, unsigned len)
 {
     double diff = fabs(ref - res);
     double rel  = scale > 0.0 ? diff / scale : diff;
-    if (rel > RESAMPLE_DOUBLE_REL_TOL) {
+    if (rel > tol) {
         fprintf(stderr,
             "FAILED: len=%u ref=%g res=%g diff=%g scale=%g rel=%.2e (tol %g)\n",
-            len, ref, res, diff, scale, rel, RESAMPLE_DOUBLE_REL_TOL);
+            len, ref, res, diff, scale, rel, tol);
         return 0;
     }
     return 1;
+}
+
+/* Both sides multiply in the same precision -> compare at ~double eps. */
+static inline int is_resample_result_within_tolerance_double(double ref, double res, double scale, unsigned len)
+{
+    return resample_double_within_tol(ref, res, scale, RESAMPLE_DOUBLE_REL_TOL, len);
+}
+
+/* SIMD path multiplies in single precision while the C ref multiplies in
+ * double (see interpolate_product_double) -> compare at float-product eps. */
+static inline int is_resample_result_within_tolerance_double_floatmul(double ref, double res, double scale, unsigned len)
+{
+    return resample_double_within_tol(ref, res, scale, RESAMPLE_DOUBLE_FLOATMUL_REL_TOL, len);
 }
 
 #ifdef FIXED_POINT
