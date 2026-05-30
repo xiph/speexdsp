@@ -57,7 +57,8 @@ void test_inner_product_single(void)
                 if (!is_resample_result_within_tolerance_word16(ref, res, len))
                     checkasm_fail();
 #else
-                if (!is_resample_result_within_tolerance_float(ref, res, len))
+                double scale = resample_abs_dot_scale(a, b, len);
+                if (!is_resample_result_within_tolerance_float(ref, res, scale, len))
                     checkasm_fail();
 #endif
                 checkasm_bench_new(a, b, len);
@@ -71,7 +72,8 @@ void test_inner_product_single(void)
                                     "inner_product_single_len%u", len)) {
                 out_t ref = checkasm_call_ref(a, b, len);
                 out_t res = checkasm_call_new(a, b, len);
-                if (!is_resample_result_within_tolerance_float(ref, res, len))
+                double scale = resample_abs_dot_scale(a, b, len);
+                if (!is_resample_result_within_tolerance_float(ref, res, scale, len))
                     checkasm_fail();
                 checkasm_bench_new(a, b, len);
             }

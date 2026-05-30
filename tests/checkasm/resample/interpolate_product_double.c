@@ -42,7 +42,8 @@ void test_interpolate_product_double(void)
                                 "interpolate_product_double_len%u", LEN)) {
             out_t ref = checkasm_call_ref(a, b, LEN, (spx_uint32_t)OVERSAMPLE, interp);
             out_t res = checkasm_call_new(a, b, LEN, (spx_uint32_t)OVERSAMPLE, interp);
-            if (!is_resample_result_within_tolerance_double(ref, res, LEN))
+            double scale = resample_abs_interp_scale(a, b, LEN, OVERSAMPLE, interp);
+            if (!is_resample_result_within_tolerance_double(ref, res, scale, LEN))
                 checkasm_fail();
             checkasm_bench_new(a, b, LEN, (spx_uint32_t)OVERSAMPLE, interp);
         }
@@ -55,7 +56,8 @@ void test_interpolate_product_double(void)
                                 "interpolate_product_double_len%u", LEN)) {
             out_t ref = checkasm_call_ref(a, b, LEN, (spx_uint32_t)OVERSAMPLE, interp);
             out_t res = checkasm_call_new(a, b, LEN, (spx_uint32_t)OVERSAMPLE, interp);
-            if (!is_resample_result_within_tolerance_double(ref, res, LEN))
+            double scale = resample_abs_interp_scale(a, b, LEN, OVERSAMPLE, interp);
+            if (!is_resample_result_within_tolerance_double(ref, res, scale, LEN))
                 checkasm_fail();
             checkasm_bench_new(a, b, LEN, (spx_uint32_t)OVERSAMPLE, interp);
         }
