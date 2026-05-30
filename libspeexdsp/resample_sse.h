@@ -79,18 +79,21 @@ static inline double inner_product_double(const float *a, const float *b, unsign
 {
    int i;
    double ret;
-   __m128d sum = _mm_setzero_pd();
+   __m128d sum1 = _mm_setzero_pd();
+   __m128d sum2 = _mm_setzero_pd();
+   __m128d sum;
    __m128 t;
    for (i=0;i<len;i+=8)
    {
       t = _mm_mul_ps(_mm_loadu_ps(a+i), _mm_loadu_ps(b+i));
-      sum = _mm_add_pd(sum, _mm_cvtps_pd(t));
-      sum = _mm_add_pd(sum, _mm_cvtps_pd(_mm_movehl_ps(t, t)));
+      sum1 = _mm_add_pd(sum1, _mm_cvtps_pd(t));
+      sum2 = _mm_add_pd(sum2, _mm_cvtps_pd(_mm_movehl_ps(t, t)));
 
       t = _mm_mul_ps(_mm_loadu_ps(a+i+4), _mm_loadu_ps(b+i+4));
-      sum = _mm_add_pd(sum, _mm_cvtps_pd(t));
-      sum = _mm_add_pd(sum, _mm_cvtps_pd(_mm_movehl_ps(t, t)));
+      sum1 = _mm_add_pd(sum1, _mm_cvtps_pd(t));
+      sum2 = _mm_add_pd(sum2, _mm_cvtps_pd(_mm_movehl_ps(t, t)));
    }
+   sum = _mm_add_pd(sum1, sum2);
    sum = _mm_add_sd(sum, _mm_unpackhi_pd(sum, sum));
    _mm_store_sd(&ret, sum);
    return ret;
