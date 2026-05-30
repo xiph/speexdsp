@@ -36,7 +36,8 @@ void test_inner_product_double(void)
                                 "inner_product_double_len%u", len)) {
             out_t ref = checkasm_call_ref(a, b, len);
             out_t res = checkasm_call_new(a, b, len);
-            if (!is_resample_result_within_tolerance_double(ref, res, len))
+            double scale = resample_abs_dot_scale(a, b, len);
+            if (!is_resample_result_within_tolerance_double(ref, res, scale, len))
                 checkasm_fail();
             checkasm_bench_new(a, b, len);
         }
@@ -49,7 +50,8 @@ void test_inner_product_double(void)
                                 "inner_product_double_len%u", len)) {
             out_t ref = checkasm_call_ref(a, b, len);
             out_t res = checkasm_call_new(a, b, len);
-            if (!is_resample_result_within_tolerance_double(ref, res, len))
+            double scale = resample_abs_dot_scale(a, b, len);
+            if (!is_resample_result_within_tolerance_double(ref, res, scale, len))
                 checkasm_fail();
             checkasm_bench_new(a, b, len);
         }
