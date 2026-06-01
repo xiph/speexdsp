@@ -216,9 +216,11 @@ cdata.set('BFIN_ASM', opt_blackfin_asm)
 
 opt_disable_float_api = get_option('float-api').disabled()
 opt_fixed_point_debug = get_option('fixed-point-debug').enabled()
+opt_resample_full_sinc_table = get_option('resample-full-sinc-table').enabled()
 
 cdata.set('DISABLE_FLOAT_API', opt_disable_float_api)
 cdata.set('FIXED_POINT_DEBUG', opt_fixed_point_debug)
+cdata.set('RESAMPLE_FULL_SINC_TABLE', opt_resample_full_sinc_table)
 
 # config.h
 configure_file(output: 'config.h', configuration: cdata)
