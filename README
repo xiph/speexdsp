@@ -76,7 +76,7 @@ Requires Meson (0.59 or higher), and Ninja.
 
 Refer to ./meson_options.txt for options.
 
-== Running CheckASM (SIMD tests/benchmarks) ==
+== Running checkasm (SIMD tests/benchmarks) ==
 
     rm -rf build
     meson setup build -Dbuildtype=release -Dc_args="-O3" -Dtests=enabled

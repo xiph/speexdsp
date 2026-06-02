@@ -16,8 +16,8 @@
 | Function | Data Type | Architecture | Status |
 |----------|-----------|--------------|--------|
 | `inner_product_single` | Float | SSE¹ | ✓ Optimized |
-| `interpolate_product_single` | Float | SSE¹ | ✓ Optimized |
 | `inner_product_double` | Float | SSE2² | ✓ Optimized |
+| `interpolate_product_single` | Float | SSE¹ | ✓ Optimized |
 | `interpolate_product_double` | Float | SSE2² | ✓ Optimized |
 
 ¹ The `SSE` handles both `SSE` and `SSE2`<BR>
@@ -26,13 +26,13 @@
 ## Do Not Optimize
 
 - `FIXED_POINT` `SSE` not needed
-- `FIXED_POINT` `NEON` `_double` not needed
+- `FIXED_POINT` `_double` not needed
 
 | Function | Data Type | Architecture | Status |
 |----------|-----------|--------------|--------|
 | `inner_product_single` | Fixed | SSE | Do not optimize |
-| `inner_product_double` | Fixed | NEON | Do not optimize |
 | `inner_product_double` | Fixed | SSE | Do not optimize |
+| `inner_product_double` | Fixed | NEON | Do not optimize |
 | `interpolate_product_single` | Fixed | SSE | Do not optimize |
-| `interpolate_product_double` | Fixed | NEON | Do not optimize |
 | `interpolate_product_double` | Fixed | SSE | Do not optimize |
+| `interpolate_product_double` | Fixed | NEON | Do not optimize |
