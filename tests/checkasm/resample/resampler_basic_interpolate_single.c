@@ -7,6 +7,8 @@
  * only; NEON has no override yet). Driven with a 44100->48000 (den_rate=160),
  * quality-5 state so update_filter selects the interpolated, single variant. */
 
+#define FUNC_NAME "resampler_interpolate_product_single"
+
 enum { OUT_LEN = 256, IN_LEN = 1024, IN_BUF = 1024 };
 
 void test_resampler_basic_interpolate_single(void)
@@ -30,13 +32,13 @@ void test_resampler_basic_interpolate_single(void)
 
     spx_uint32_t inl, outl;
 
-    if (checkasm_check_func(resampler_basic_interpolate_single_c, "resampler_basic_interpolate_single")) {
+    if (checkasm_check_func(resampler_basic_interpolate_single_c, FUNC_NAME)) {
         inl = IN_LEN; outl = OUT_LEN;
         checkasm_bench_new(st, 0, in, &inl, out_new, &outl);
     }
 
     if (active_flags & SPEEXDSP_CPU_FLAG_SSE) {
-        if (checkasm_check_func(resampler_basic_interpolate_single_sse, "resampler_basic_interpolate_single")) {
+        if (checkasm_check_func(resampler_basic_interpolate_single_sse, FUNC_NAME)) {
             inl = IN_LEN; outl = OUT_LEN;
             int rc = checkasm_call_ref(st, 0, in, &inl, out_ref, &outl);
             inl = IN_LEN; outl = OUT_LEN;
@@ -49,6 +51,6 @@ void test_resampler_basic_interpolate_single(void)
     }
 
     resample_destroy_state(st);
-    checkasm_report("resampler_basic_interpolate_single");
+    checkasm_report(FUNC_NAME);
 #endif /* SSE && !FIXED_POINT */
 }

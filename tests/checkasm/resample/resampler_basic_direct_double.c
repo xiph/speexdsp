@@ -8,6 +8,8 @@
  * the double-precision variant). Both the C reference and the SSE2 path form
  * single-precision products, so they agree to ~double eps. */
 
+#define FUNC_NAME "resampler_inner_product_double"
+
 enum { OUT_LEN = 256, IN_LEN = 1024, IN_BUF = 1024 };
 
 void test_resampler_basic_direct_double(void)
@@ -31,13 +33,13 @@ void test_resampler_basic_direct_double(void)
 
     spx_uint32_t inl, outl;
 
-    if (checkasm_check_func(resampler_basic_direct_double_c, "resampler_basic_direct_double")) {
+    if (checkasm_check_func(resampler_basic_direct_double_c, FUNC_NAME)) {
         inl = IN_LEN; outl = OUT_LEN;
         checkasm_bench_new(st, 0, in, &inl, out_new, &outl);
     }
 
     if (active_flags & SPEEXDSP_CPU_FLAG_SSE2) {
-        if (checkasm_check_func(resampler_basic_direct_double_sse2, "resampler_basic_direct_double")) {
+        if (checkasm_check_func(resampler_basic_direct_double_sse2, FUNC_NAME)) {
             inl = IN_LEN; outl = OUT_LEN;
             int rc = checkasm_call_ref(st, 0, in, &inl, out_ref, &outl);
             inl = IN_LEN; outl = OUT_LEN;
@@ -50,6 +52,6 @@ void test_resampler_basic_direct_double(void)
     }
 
     resample_destroy_state(st);
-    checkasm_report("resampler_basic_direct_double");
+    checkasm_report(FUNC_NAME);
 #endif /* SSE2 && !FIXED_POINT */
 }

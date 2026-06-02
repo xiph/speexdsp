@@ -7,6 +7,8 @@
  * NEON (both modes). Driven with a 24000->48000 (den_rate=2), quality-5 state so
  * update_filter selects the direct, single-precision variant. */
 
+#define FUNC_NAME "resampler_inner_product_single"
+
 enum { OUT_LEN = 256, IN_LEN = 1024, IN_BUF = 1024 };
 
 void test_resampler_basic_direct_single(void)
@@ -31,14 +33,14 @@ void test_resampler_basic_direct_single(void)
     spx_uint32_t inl, outl;
 
     /* C baseline (also the reference the SIMD variants are paired against). */
-    if (checkasm_check_func(resampler_basic_direct_single_c, "resampler_basic_direct_single")) {
+    if (checkasm_check_func(resampler_basic_direct_single_c, FUNC_NAME)) {
         inl = IN_LEN; outl = OUT_LEN;
         checkasm_bench_new(st, 0, in, &inl, out_new, &outl);
     }
 
 #if defined(USE_SSE) && !defined(FIXED_POINT)
     if (active_flags & SPEEXDSP_CPU_FLAG_SSE) {
-        if (checkasm_check_func(resampler_basic_direct_single_sse, "resampler_basic_direct_single")) {
+        if (checkasm_check_func(resampler_basic_direct_single_sse, FUNC_NAME)) {
             inl = IN_LEN; outl = OUT_LEN;
             int rc = checkasm_call_ref(st, 0, in, &inl, out_ref, &outl);
             inl = IN_LEN; outl = OUT_LEN;
@@ -53,7 +55,7 @@ void test_resampler_basic_direct_single(void)
 
 #ifdef HAVE_NEON_DIRECT_SINGLE
     if (active_flags & SPEEXDSP_CPU_FLAG_NEON) {
-        if (checkasm_check_func(resampler_basic_direct_single_neon, "resampler_basic_direct_single")) {
+        if (checkasm_check_func(resampler_basic_direct_single_neon, FUNC_NAME)) {
             inl = IN_LEN; outl = OUT_LEN;
             int rc = checkasm_call_ref(st, 0, in, &inl, out_ref, &outl);
             inl = IN_LEN; outl = OUT_LEN;
@@ -71,6 +73,6 @@ void test_resampler_basic_direct_single(void)
 #endif
 
     resample_destroy_state(st);
-    checkasm_report("resampler_basic_direct_single");
+    checkasm_report(FUNC_NAME);
 #endif /* any SIMD available */
 }
