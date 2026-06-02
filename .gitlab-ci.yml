@@ -123,3 +123,15 @@ meson no-examples:
   extends: .meson
   variables:
     MESON_FLAGS: -Dexamples=disabled
+
+meson tests-checkasm:
+  extends: .meson
+  before_script:
+    - apt-get update &&
+      apt-get install -y ninja-build meson git nasm
+  variables:
+    MESON_FLAGS: -Dbuildtype=release -Dc_args="-O3" -Dtests=enabled
+  script:
+    - meson setup builddir ${MESON_FLAGS}
+    - ninja -C builddir
+    - ./builddir/tests/checkasm --bench
