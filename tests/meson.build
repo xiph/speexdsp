@@ -25,10 +25,11 @@ endif
 
 checkasm = executable('checkasm',
     checkasm_sources,
+    speexdsp_config_types_h,
     include_directories: [
         include_directories('../libspeexdsp'),
-        include_directories('../include'),
-        include_directories('..'),
+        config_inc,
+        speexdsp_incs,
     ],
     dependencies: [
         checkasm_dep,
