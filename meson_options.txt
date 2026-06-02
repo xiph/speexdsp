@@ -1,5 +1,5 @@
 # Build outputs
-option('tests', type: 'feature', value: 'disabled',
+option('tests', type: 'feature', value: 'enabled',
        description: 'Build test/benchmark programs')
 
 option('examples', type: 'feature', value: 'enabled',
