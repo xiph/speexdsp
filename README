@@ -70,11 +70,18 @@ pkg-config is also supported:
 
 Requires Meson (0.59 or higher), and Ninja.
 
-    mkdir build && cd build
-    meson setup ..
-    ninja
+    rm -rf build
+    meson setup build
+    ninja -C build
 
 Refer to ./meson_options.txt for options.
+
+== Running CheckASM (SIMD tests/benchmarks) ==
+
+    rm -rf build
+    meson setup build -Dbuildtype=release -Dc_args="-O3" -Dtests=enabled
+    ninja -C build
+    ./build/tests/checkasm --bench --duration=30000 --repeat=5
 
 == Development ==
 
