@@ -84,11 +84,11 @@ cmake-shared:
   image: 'debian:bookworm'
   before_script:
     - apt-get update &&
-      apt-get install -y ninja-build meson
+      apt-get install -y ninja-build meson git nasm
   script:
     - meson setup builddir ${MESON_FLAGS}
     - ninja -C builddir
-    - ninja -C builddir test
+    - meson test -C builddir --print-errorlogs
     - ninja -C builddir install
 
 meson fixed-point:
@@ -110,7 +110,7 @@ meson fftw3:
   extends: .meson
   before_script:
     - apt-get update &&
-      apt-get install -y ninja-build meson pkg-config libfftw3-dev
+      apt-get install -y ninja-build meson pkg-config libfftw3-dev git nasm
   variables:
     MESON_FLAGS: -Dfft=gpl-fftw3
 
@@ -126,12 +126,10 @@ meson no-examples:
 
 meson tests-checkasm:
   extends: .meson
-  before_script:
-    - apt-get update &&
-      apt-get install -y ninja-build meson git nasm
   variables:
     MESON_FLAGS: -Dbuildtype=release -Dc_args="-O3" -Dtests=enabled
   script:
     - meson setup builddir ${MESON_FLAGS}
     - ninja -C builddir
+    - meson test -C builddir --print-errorlogs
     - ./builddir/tests/checkasm --bench

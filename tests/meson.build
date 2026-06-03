@@ -35,3 +35,10 @@ checkasm = executable('checkasm',
         checkasm_dep,
     ],
 )
+
+# SIMD Correctness gate: meson test -C build
+test('checkasm', checkasm, timeout: 300)
+
+# SIMD Benchmark: meson test --benchmark -C build
+benchmark('checkasm', checkasm, timeout: 0, verbose: true, 
+    args: ['--bench', '--duration=30000', '--repeat=5'])
