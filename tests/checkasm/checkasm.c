@@ -3,7 +3,9 @@
 #include "config.h"
 
 static const CheckasmTest tests[] = {
-    { "resample", checkasm_check_resample },
+    /* unit micro-benchmarks of the SIMD kernels */
+    { "resample_kernels", checkasm_check_resample_kernels },
+
     { 0 }
 };
 

@@ -18,6 +18,6 @@ extern CheckasmCpu active_flags;
 CheckasmCpu detect_cpu_flags(void);
 
 /* Declarations of test functions */
-void checkasm_check_resample(void);
+void checkasm_check_resample_kernels(void);
 
 #endif /* SPEEXDSP_TESTS_CHECKASM_INTERNAL_H */

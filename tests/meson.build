@@ -5,7 +5,7 @@ endif
 checkasm_sources = files(
     'checkasm/checkasm.c',
     'checkasm/cpu.c',
-    'checkasm/resample/resample.c',
+    'checkasm/resample/resample_kernels.c',
     'checkasm/resample/resampler_basic_direct_single.c',
     'checkasm/resample/resampler_basic_direct_double.c',
     'checkasm/resample/resampler_basic_interpolate_single.c',
