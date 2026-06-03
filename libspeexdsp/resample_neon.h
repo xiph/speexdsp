@@ -353,4 +353,115 @@ static inline float inner_product_single(const float *a, const float *b, unsigne
     return ret;
 }
 #endif  // defined(__aarch64__)
+
+#define OVERRIDE_INTERPOLATE_PRODUCT_SINGLE
+/* Only works when len is even (>= 0). Four accumulators (one per input sample
+ * lane mod 4) keep the fmla chains independent so the FP MAC latency overlaps;
+ * consecutive sinc rows are %[stride] = oversample*4 bytes apart, and each input
+ * sample a[i] is broadcast across the 4 cubic taps it weights. */
+#if defined(__aarch64__)
+static inline float interpolate_product_single(const float *a, const float *b, unsigned int len, const spx_uint32_t oversample, float *frac) {
+    float ret;
+    uint64_t stride = ((uint64_t)oversample) << 2;
+    uint32_t remainder = len & 2u;	/* len is even, so 0 or 2 left after groups of 4 */
+    len = len - remainder;
+
+    asm volatile ("	 movi v0.4s, #0\n"
+		  "	 movi v1.4s, #0\n"
+		  "	 movi v2.4s, #0\n"
+		  "	 movi v3.4s, #0\n"
+		  "	 cbz %w[len], 2f\n"
+		  "1:"
+		  "	 ld1 {v16.4s}, [%[b]], %[stride]\n"
+		  "	 ld1r {v20.4s}, [%[a]], #4\n"
+		  "	 ld1 {v17.4s}, [%[b]], %[stride]\n"
+		  "	 ld1r {v21.4s}, [%[a]], #4\n"
+		  "	 ld1 {v18.4s}, [%[b]], %[stride]\n"
+		  "	 ld1r {v22.4s}, [%[a]], #4\n"
+		  "	 ld1 {v19.4s}, [%[b]], %[stride]\n"
+		  "	 ld1r {v23.4s}, [%[a]], #4\n"
+		  "	 subs %w[len], %w[len], #4\n"
+		  "	 fmla v0.4s, v16.4s, v20.4s\n"
+		  "	 fmla v1.4s, v17.4s, v21.4s\n"
+		  "	 fmla v2.4s, v18.4s, v22.4s\n"
+		  "	 fmla v3.4s, v19.4s, v23.4s\n"
+		  "	 b.ne 1b\n"
+		  "2:"
+		  "	 cbz %w[remainder], 3f\n"
+		  "	 ld1 {v16.4s}, [%[b]], %[stride]\n"
+		  "	 ld1r {v20.4s}, [%[a]], #4\n"
+		  "	 ld1 {v17.4s}, [%[b]], %[stride]\n"
+		  "	 ld1r {v21.4s}, [%[a]], #4\n"
+		  "	 fmla v0.4s, v16.4s, v20.4s\n"
+		  "	 fmla v1.4s, v17.4s, v21.4s\n"
+		  "3:"
+		  "	 fadd v0.4s, v0.4s, v1.4s\n"
+		  "	 fadd v2.4s, v2.4s, v3.4s\n"
+		  "	 ld1 {v4.4s}, [%[frac]]\n"
+		  "	 fadd v0.4s, v0.4s, v2.4s\n"
+		  "	 fmul v0.4s, v0.4s, v4.4s\n"
+		  "	 faddp v0.4s, v0.4s, v0.4s\n"
+		  "	 faddp %[ret].4s, v0.4s, v0.4s\n"
+		  : [ret] "=w" (ret), [a] "+r" (a), [b] "+r" (b),
+		    [len] "+r" (len), [remainder] "+r" (remainder)
+		  : [stride] "r" (stride), [frac] "r" (frac)
+		  : "cc", "memory", "v0", "v1", "v2", "v3", "v4",
+		    "v16", "v17", "v18", "v19", "v20", "v21", "v22", "v23");
+    return ret;
+}
+#else
+static inline float interpolate_product_single(const float *a, const float *b, unsigned int len, const spx_uint32_t oversample, float *frac) {
+    float ret;
+    uint32_t stride = oversample << 2;
+    uint32_t remainder = len & 2u;	/* len is even, so 0 or 2 left after groups of 4 */
+    len = len - remainder;
+
+    asm volatile (".fpu neon\n"   /* enable NEON for this block (needed in Thumb) */
+		  "	 vmov.i32 q0, #0\n"
+		  "	 vmov.i32 q1, #0\n"
+		  "	 vmov.i32 q2, #0\n"
+		  "	 vmov.i32 q3, #0\n"
+		  "	 cmp %[len], #0\n"
+		  "	 beq 2f\n"
+		  "1:"
+		  "	 vld1.32 {q8}, [%[b]], %[stride]\n"
+		  "	 vld1.32 {d24[], d25[]}, [%[a]]!\n"
+		  "	 vld1.32 {q9}, [%[b]], %[stride]\n"
+		  "	 vld1.32 {d26[], d27[]}, [%[a]]!\n"
+		  "	 vld1.32 {q10}, [%[b]], %[stride]\n"
+		  "	 vld1.32 {d28[], d29[]}, [%[a]]!\n"
+		  "	 vld1.32 {q11}, [%[b]], %[stride]\n"
+		  "	 vld1.32 {d30[], d31[]}, [%[a]]!\n"
+		  "	 subs %[len], %[len], #4\n"
+		  "	 vmla.f32 q0, q8, q12\n"
+		  "	 vmla.f32 q1, q9, q13\n"
+		  "	 vmla.f32 q2, q10, q14\n"
+		  "	 vmla.f32 q3, q11, q15\n"
+		  "	 bne 1b\n"
+		  "2:"
+		  "	 cmp %[remainder], #0\n"
+		  "	 beq 3f\n"
+		  "	 vld1.32 {q8}, [%[b]], %[stride]\n"
+		  "	 vld1.32 {d24[], d25[]}, [%[a]]!\n"
+		  "	 vld1.32 {q9}, [%[b]], %[stride]\n"
+		  "	 vld1.32 {d26[], d27[]}, [%[a]]!\n"
+		  "	 vmla.f32 q0, q8, q12\n"
+		  "	 vmla.f32 q1, q9, q13\n"
+		  "3:"
+		  "	 vadd.f32 q0, q0, q1\n"
+		  "	 vadd.f32 q2, q2, q3\n"
+		  "	 vld1.32 {q4}, [%[frac]]\n"
+		  "	 vadd.f32 q0, q0, q2\n"
+		  "	 vmul.f32 q0, q0, q4\n"
+		  "	 vadd.f32 d0, d0, d1\n"
+		  "	 vpadd.f32 d0, d0, d0\n"
+		  "	 vmov.f32 %[ret], d0[0]\n"
+		  : [ret] "=r" (ret), [a] "+r" (a), [b] "+r" (b),
+		    [len] "+l" (len), [remainder] "+l" (remainder)
+		  : [stride] "r" (stride), [frac] "r" (frac)
+		  : "cc", "memory", "q0", "q1", "q2", "q3", "q4",
+		    "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15");
+    return ret;
+}
+#endif  // defined(__aarch64__)
 #endif

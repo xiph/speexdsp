@@ -22,12 +22,16 @@
  * exposing a uniquely named non-static wrapper. */
 
 /* ------------- Per-routine SIMD-availability gates -------------
- * Today resample_neon.h overrides only inner_product_single, so under NEON only
- * resampler_basic_direct_single differs from the C reference. Flip more of these
- * on when resample_neon.h grows OVERRIDE_INTERPOLATE_PRODUCT_SINGLE / *_DOUBLE. */
+ * resample_neon.h overrides inner_product_single (both modes) and, in floating
+ * point, interpolate_product_single. So under NEON resampler_basic_direct_single
+ * differs from the C reference in both modes, and resampler_basic_interpolate_single
+ * differs in floating point. Flip more of these on when resample_neon.h grows
+ * OVERRIDE_INTERPOLATE_PRODUCT_DOUBLE. */
 #ifdef USE_NEON
 #  define HAVE_NEON_DIRECT_SINGLE 1
-/* #  define HAVE_NEON_INTERPOLATE_SINGLE 1 */
+#  ifndef FIXED_POINT
+#    define HAVE_NEON_INTERPOLATE_SINGLE 1
+#  endif
 #endif
 
 /* RVV overrides both single kernels (both modes) and both double kernels (float only). */
@@ -98,6 +102,10 @@ int resampler_basic_interpolate_double_sse2(SpeexResamplerState *st, spx_uint32_
 #endif
 #ifdef HAVE_NEON_DIRECT_SINGLE
 int resampler_basic_direct_single_neon(SpeexResamplerState *st, spx_uint32_t channel_index,
+        const spx_word16_t *in, spx_uint32_t *in_len, spx_word16_t *out, spx_uint32_t *out_len);
+#endif
+#ifdef HAVE_NEON_INTERPOLATE_SINGLE
+int resampler_basic_interpolate_single_neon(SpeexResamplerState *st, spx_uint32_t channel_index,
         const spx_word16_t *in, spx_uint32_t *in_len, spx_word16_t *out, spx_uint32_t *out_len);
 #endif
 #ifdef USE_RVV

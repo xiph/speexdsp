@@ -26,9 +26,19 @@ int resampler_basic_direct_single_neon(SpeexResamplerState *st, spx_uint32_t cha
 }
 #endif
 
-/* When resample_neon.h grows OVERRIDE_INTERPOLATE_PRODUCT_SINGLE / *_DOUBLE,
- * flip the matching HAVE_NEON_* macro on in wrap.h and add the wrapper(s) here,
- * mirroring resampler_basic_direct_single_neon above. */
+#ifdef HAVE_NEON_INTERPOLATE_SINGLE
+int resampler_basic_interpolate_single_neon(SpeexResamplerState *st, spx_uint32_t channel_index,
+        const spx_word16_t *in, spx_uint32_t *in_len, spx_word16_t *out, spx_uint32_t *out_len)
+{
+    st->last_sample[channel_index]   = 0;
+    st->samp_frac_num[channel_index] = 0;
+    return resampler_basic_interpolate_single(st, channel_index, in, in_len, out, out_len);
+}
+#endif
+
+/* When resample_neon.h grows OVERRIDE_INTERPOLATE_PRODUCT_DOUBLE, flip the
+ * matching HAVE_NEON_* macro on in wrap.h and add the wrapper here, mirroring
+ * the wrappers above. */
 
 /* ------------- Integration: full-pipeline wrapper (NEON kernels) -------------
  * A NEON-built state: update_filter (in this TU) points resampler_ptr at the
