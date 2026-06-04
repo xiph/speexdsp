@@ -6,6 +6,9 @@ static const CheckasmTest tests[] = {
     /* unit micro-benchmarks of the SIMD kernels */
     { "resample_kernels", checkasm_check_resample_kernels },
 
+    /* full-pipeline integration benchmark across sample-rate conversions */
+    { "resample_process", checkasm_check_resample_process },
+
     { 0 }
 };
 

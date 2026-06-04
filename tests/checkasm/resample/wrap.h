@@ -87,6 +87,46 @@ int resampler_basic_direct_single_neon(SpeexResamplerState *st, spx_uint32_t cha
         const spx_word16_t *in, spx_uint32_t *in_len, spx_word16_t *out, spx_uint32_t *out_len);
 #endif
 
+/* ------------- Integration benchmark: full resampler pipeline -------------
+ * These drive the *public* speex_resampler_process_float / process_int end to
+ * end, so they measure a whole sample-rate conversion (sinc-table build happens
+ * at make-state time, outside the timed call). The kernel used inside the
+ * pipeline is fixed in the state by update_filter at init time, so each build
+ * needs its own state constructor: a C-built state runs the C kernels; a NEON-
+ * or SSE-built state runs that ISA's kernels. (The SSE translation unit keeps
+ * both USE_SSE and USE_SSE2, so its state runs SSE single-precision and SSE2
+ * double-precision kernels -- i.e. the full library pipeline.)
+ *
+ * The _int variants additionally exercise the int16 output path, i.e. the NEON
+ * WORD2INT override (saturate_float_to_16bit), which process_float and the
+ * kernel tests never touch.
+ *
+ * Lengths are passed BY VALUE (process_* overwrites its in_len/out_len, so a
+ * by-pointer signature would shrink the work on every benchmark iteration). Each
+ * wrapper zeroes the filter memory and resets the cursor first, so every call --
+ * the correctness pair and each benchmark iteration -- redoes identical,
+ * deterministic work. Returns the number of output samples produced. */
+#ifndef DISABLE_FLOAT_API
+int resample_process_c(SpeexResamplerState *st, const float *in,
+        spx_uint32_t in_len, float *out, spx_uint32_t out_len);
+int resample_process_int_c(SpeexResamplerState *st, const spx_int16_t *in,
+        spx_uint32_t in_len, spx_int16_t *out, spx_uint32_t out_len);
+#ifdef USE_NEON
+SpeexResamplerState *resample_make_state_neon(unsigned in_rate, unsigned out_rate, int quality);
+int resample_process_neon(SpeexResamplerState *st, const float *in,
+        spx_uint32_t in_len, float *out, spx_uint32_t out_len);
+int resample_process_int_neon(SpeexResamplerState *st, const spx_int16_t *in,
+        spx_uint32_t in_len, spx_int16_t *out, spx_uint32_t out_len);
+#endif
+#if defined(USE_SSE) && !defined(FIXED_POINT)
+SpeexResamplerState *resample_make_state_sse(unsigned in_rate, unsigned out_rate, int quality);
+int resample_process_sse(SpeexResamplerState *st, const float *in,
+        spx_uint32_t in_len, float *out, spx_uint32_t out_len);
+int resample_process_int_sse(SpeexResamplerState *st, const spx_int16_t *in,
+        spx_uint32_t in_len, spx_int16_t *out, spx_uint32_t out_len);
+#endif
+#endif /* !DISABLE_FLOAT_API */
+
 /* ------------- Test-input fill -------------
  * Reuses checkasm's randomizers. Inputs feed the real sinc-table dot product:
  * the table has ~unity gain (coefficients sum to ~1.0 / ~32768), so even
@@ -174,6 +214,67 @@ static inline int resample_buffer_within_tol(const spx_word16_t *ref,
     return 1;
 #endif
 }
+
+/* ------------- Integration output comparison -------------
+ * speex_resampler_process_float always writes plain float (even in FIXED_POINT,
+ * where it converts), so the integration test cannot reuse the spx_word16_t
+ * helper above. Compare relative to the buffer peak (L-infinity), like the
+ * float path of resample_buffer_within_tol. */
+#ifndef DISABLE_FLOAT_API
+#define RESAMPLE_PROCESS_REL_TOL 1e-3   /* full-pipeline C-vs-SIMD, peak-relative */
+
+static inline int resample_float_within_tol(const float *ref, const float *res,
+        unsigned n, double rel_tol)
+{
+    double peak = 0.0;
+    for (unsigned i = 0; i < n; i++) {
+        double v = fabs((double) ref[i]);
+        if (v > peak) peak = v;
+    }
+    for (unsigned i = 0; i < n; i++) {
+        double diff = fabs((double) ref[i] - (double) res[i]);
+        double rel  = peak > 0.0 ? diff / peak : diff;
+        if (rel > rel_tol) {
+            fprintf(stderr, "FAILED: out[%u] ref=%g res=%g diff=%g peak=%g "
+                    "rel=%.2e (tol %g)\n",
+                    i, (double) ref[i], (double) res[i], diff, peak, rel, rel_tol);
+            return 0;
+        }
+    }
+    return 1;
+}
+
+/* int16 output path (process_int). Random full-range int16 input naturally
+ * drives some samples into saturation, exercising WORD2INT. C and SIMD diverge
+ * by a few LSB at full scale (the float kernel differs by ~1e-4 rel, and NEON's
+ * fcvtas rounds to nearest vs the C clamp/truncate), so compare peak-relative,
+ * same tolerance as the float path. */
+static inline void resample_fill_int16(spx_int16_t *buf, unsigned n)
+{
+    checkasm_init(buf, (size_t) n * sizeof *buf);
+}
+
+static inline int resample_int16_within_tol(const spx_int16_t *ref,
+        const spx_int16_t *res, unsigned n, double rel_tol)
+{
+    double peak = 0.0;
+    for (unsigned i = 0; i < n; i++) {
+        double v = fabs((double) ref[i]);
+        if (v > peak) peak = v;
+    }
+    for (unsigned i = 0; i < n; i++) {
+        double diff = fabs((double) ref[i] - (double) res[i]);
+        double rel  = peak > 0.0 ? diff / peak : diff;
+        if (rel > rel_tol) {
+            fprintf(stderr, "FAILED: out[%u] ref=%d res=%d diff=%g peak=%g "
+                    "rel=%.2e (tol %g)\n",
+                    i, (int) ref[i], (int) res[i], diff, peak, rel, rel_tol);
+            return 0;
+        }
+    }
+    return 1;
+}
+#endif /* !DISABLE_FLOAT_API */
 
 /* ------------- Per-routine test entry points -------------
  * Each is always defined; the body returns early when no SIMD build of that

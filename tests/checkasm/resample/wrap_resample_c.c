@@ -85,3 +85,34 @@ int resampler_basic_interpolate_double_c(SpeexResamplerState *st, spx_uint32_t c
     return resampler_basic_interpolate_double(st, channel_index, in, in_len, out, out_len);
 }
 #endif
+
+/* ------------- Integration: full-pipeline wrapper (C kernels) -------------
+ * See wrap.h: lengths by value, zero filter memory + reset cursor so every call
+ * is identical and deterministic. */
+#ifndef DISABLE_FLOAT_API
+int resample_process_c(SpeexResamplerState *st, const float *in,
+        spx_uint32_t in_len, float *out, spx_uint32_t out_len)
+{
+    spx_uint32_t il = in_len, ol = out_len;
+    memset(st->mem, 0, (size_t) st->mem_alloc_size * st->nb_channels * sizeof(spx_word16_t));
+    st->last_sample[0]   = 0;
+    st->samp_frac_num[0] = 0;
+    st->magic_samples[0] = 0;
+    st->started          = 0;
+    speex_resampler_process_float(st, 0, in, &il, out, &ol);
+    return (int) ol;
+}
+
+int resample_process_int_c(SpeexResamplerState *st, const spx_int16_t *in,
+        spx_uint32_t in_len, spx_int16_t *out, spx_uint32_t out_len)
+{
+    spx_uint32_t il = in_len, ol = out_len;
+    memset(st->mem, 0, (size_t) st->mem_alloc_size * st->nb_channels * sizeof(spx_word16_t));
+    st->last_sample[0]   = 0;
+    st->samp_frac_num[0] = 0;
+    st->magic_samples[0] = 0;
+    st->started          = 0;
+    speex_resampler_process_int(st, 0, in, &il, out, &ol);
+    return (int) ol;
+}
+#endif

@@ -10,6 +10,7 @@ checkasm_sources = files(
     'checkasm/resample/resampler_basic_direct_double.c',
     'checkasm/resample/resampler_basic_interpolate_single.c',
     'checkasm/resample/resampler_basic_interpolate_double.c',
+    'checkasm/resample/resample_process.c',
     'checkasm/resample/wrap_resample_c.c',
 )
 
