@@ -68,20 +68,24 @@ pkg-config is also supported:
 
 == Building with Meson ==
 
-Requires Meson (0.59 or higher), and Ninja.
+Requires Meson (0.62 or higher), and Ninja.
 
     rm -rf build
-    meson setup build
+    meson setup build                   # see ./meson_options.txt for options
     ninja -C build
-
-Refer to ./meson_options.txt for options.
 
 == Running checkasm (SIMD tests/benchmarks) ==
 
     rm -rf build
-    meson setup build -Dbuildtype=release -Dc_args="-O3" -Dtests=enabled
+    meson setup build -Dbuildtype=release -Dc_args="-O3"
     ninja -C build
-    ./build/tests/checkasm --bench --duration=30000 --repeat=5
+    ./build/tests/checkasm --bench --duration=30000 --repeat=3
+
+    # or just check for correctness
+    ./build/tests/checkasm              # or:   meson test -C build
+
+    # or benchmark just the top-level resampler API:
+    ./build/tests/checkasm --bench --test=resample_process
 
 == Development ==
 
