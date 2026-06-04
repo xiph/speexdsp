@@ -36,3 +36,4 @@ stamp-*
 patches
 /m4
 build/
+subprojects/.wraplock
