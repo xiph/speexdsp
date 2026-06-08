@@ -34,6 +34,13 @@ SpeexResamplerState *resample_make_state_sse(unsigned in_rate, unsigned out_rate
     return speex_resampler_init(1, in_rate, out_rate, quality, &err);
 }
 
+SpeexResamplerState *resample_make_state_sse_ch(unsigned in_rate, unsigned out_rate,
+        int quality, unsigned channels)
+{
+    int err = RESAMPLER_ERR_SUCCESS;
+    return speex_resampler_init(channels, in_rate, out_rate, quality, &err);
+}
+
 int resample_process_sse(SpeexResamplerState *st, const float *in,
         spx_uint32_t in_len, float *out, spx_uint32_t out_len)
 {
@@ -57,6 +64,37 @@ int resample_process_int_sse(SpeexResamplerState *st, const spx_int16_t *in,
     st->magic_samples[0] = 0;
     st->started          = 0;
     speex_resampler_process_int(st, 0, in, &il, out, &ol);
+    return (int) ol;
+}
+
+/* Interleaved multi-channel paths (SSE/SSE2 kernels). See wrap_resample_c.c. */
+static void resample_reset_all_sse(SpeexResamplerState *st)
+{
+    spx_uint32_t c;
+    memset(st->mem, 0, (size_t) st->mem_alloc_size * st->nb_channels * sizeof(spx_word16_t));
+    for (c = 0; c < st->nb_channels; c++) {
+        st->last_sample[c]   = 0;
+        st->samp_frac_num[c] = 0;
+        st->magic_samples[c] = 0;
+    }
+    st->started = 0;
+}
+
+int resample_process_il_sse(SpeexResamplerState *st, const float *in,
+        spx_uint32_t in_len, float *out, spx_uint32_t out_len)
+{
+    spx_uint32_t il = in_len, ol = out_len;
+    resample_reset_all_sse(st);
+    speex_resampler_process_interleaved_float(st, in, &il, out, &ol);
+    return (int) ol;
+}
+
+int resample_process_int_il_sse(SpeexResamplerState *st, const spx_int16_t *in,
+        spx_uint32_t in_len, spx_int16_t *out, spx_uint32_t out_len)
+{
+    spx_uint32_t il = in_len, ol = out_len;
+    resample_reset_all_sse(st);
+    speex_resampler_process_interleaved_int(st, in, &il, out, &ol);
     return (int) ol;
 }
 #endif

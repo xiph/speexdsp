@@ -49,6 +49,9 @@ enum resample_kind {
  * API in scope, so it is the sole owner of state construction/inspection. The
  * harness treats SpeexResamplerState as opaque. */
 SpeexResamplerState *resample_make_state(unsigned in_rate, unsigned out_rate, int quality);
+/* Multi-channel state for the interleaved integration path (see below). */
+SpeexResamplerState *resample_make_state_ch(unsigned in_rate, unsigned out_rate,
+        int quality, unsigned channels);
 void resample_destroy_state(SpeexResamplerState *st);
 enum resample_kind resample_kind(const SpeexResamplerState *st);
 unsigned resample_filt_len(const SpeexResamplerState *st);
@@ -102,28 +105,50 @@ int resampler_basic_direct_single_neon(SpeexResamplerState *st, spx_uint32_t cha
  * WORD2INT override (saturate_float_to_16bit), which process_float and the
  * kernel tests never touch.
  *
+ * The _il variants drive the *interleaved* multi-channel API
+ * (speex_resampler_process_interleaved_*), exercising the per-channel loop and
+ * (for int) the deinterleave/reinterleave that the single-channel path skips.
+ * Their in_len/out_len are PER CHANNEL; the return is the per-channel output
+ * count. State for these comes from resample_make_state*_ch(.., channels).
+ *
  * Lengths are passed BY VALUE (process_* overwrites its in_len/out_len, so a
  * by-pointer signature would shrink the work on every benchmark iteration). Each
- * wrapper zeroes the filter memory and resets the cursor first, so every call --
- * the correctness pair and each benchmark iteration -- redoes identical,
- * deterministic work. Returns the number of output samples produced. */
+ * wrapper zeroes the filter memory and resets every channel's cursor first, so
+ * every call -- the correctness pair and each benchmark iteration -- redoes
+ * identical, deterministic work. Returns the number of output samples produced. */
 #ifndef DISABLE_FLOAT_API
 int resample_process_c(SpeexResamplerState *st, const float *in,
         spx_uint32_t in_len, float *out, spx_uint32_t out_len);
 int resample_process_int_c(SpeexResamplerState *st, const spx_int16_t *in,
         spx_uint32_t in_len, spx_int16_t *out, spx_uint32_t out_len);
+int resample_process_il_c(SpeexResamplerState *st, const float *in,
+        spx_uint32_t in_len, float *out, spx_uint32_t out_len);
+int resample_process_int_il_c(SpeexResamplerState *st, const spx_int16_t *in,
+        spx_uint32_t in_len, spx_int16_t *out, spx_uint32_t out_len);
 #ifdef USE_NEON
 SpeexResamplerState *resample_make_state_neon(unsigned in_rate, unsigned out_rate, int quality);
+SpeexResamplerState *resample_make_state_neon_ch(unsigned in_rate, unsigned out_rate,
+        int quality, unsigned channels);
 int resample_process_neon(SpeexResamplerState *st, const float *in,
         spx_uint32_t in_len, float *out, spx_uint32_t out_len);
 int resample_process_int_neon(SpeexResamplerState *st, const spx_int16_t *in,
         spx_uint32_t in_len, spx_int16_t *out, spx_uint32_t out_len);
+int resample_process_il_neon(SpeexResamplerState *st, const float *in,
+        spx_uint32_t in_len, float *out, spx_uint32_t out_len);
+int resample_process_int_il_neon(SpeexResamplerState *st, const spx_int16_t *in,
+        spx_uint32_t in_len, spx_int16_t *out, spx_uint32_t out_len);
 #endif
 #if defined(USE_SSE) && !defined(FIXED_POINT)
 SpeexResamplerState *resample_make_state_sse(unsigned in_rate, unsigned out_rate, int quality);
+SpeexResamplerState *resample_make_state_sse_ch(unsigned in_rate, unsigned out_rate,
+        int quality, unsigned channels);
 int resample_process_sse(SpeexResamplerState *st, const float *in,
         spx_uint32_t in_len, float *out, spx_uint32_t out_len);
 int resample_process_int_sse(SpeexResamplerState *st, const spx_int16_t *in,
+        spx_uint32_t in_len, spx_int16_t *out, spx_uint32_t out_len);
+int resample_process_il_sse(SpeexResamplerState *st, const float *in,
+        spx_uint32_t in_len, float *out, spx_uint32_t out_len);
+int resample_process_int_il_sse(SpeexResamplerState *st, const spx_int16_t *in,
         spx_uint32_t in_len, spx_int16_t *out, spx_uint32_t out_len);
 #endif
 #endif /* !DISABLE_FLOAT_API */
