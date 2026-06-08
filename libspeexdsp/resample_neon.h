@@ -63,7 +63,8 @@ static inline int32_t saturate_32bit_to_16bit(int32_t a) {
 #else
 static inline int32_t saturate_32bit_to_16bit(int32_t a) {
     int32_t ret;
-    asm ("vmov.s32 d0[0], %[a]\n"
+    asm (".fpu neon\n"            /* enable NEON for this block (needed in Thumb) */
+         "vmov.s32 d0[0], %[a]\n"
          "vqmovn.s32 d0, q0\n"
          "vmov.s16 %[ret], d0[0]\n"
          : [ret] "=r" (ret)
@@ -139,7 +140,8 @@ static inline int32_t inner_product_single(const int16_t *a, const int16_t *b, u
     uint32_t remainder = len % 16;
     len = len - remainder;
 
-    asm volatile ("	 cmp %[len], #0\n"
+    asm volatile (".fpu neon\n"   /* enable NEON for this block (needed in Thumb) */
+		  "	 cmp %[len], #0\n"
 		  "	 bne 1f\n"
 		  "	 vld1.16 {d16}, [%[b]]!\n"
 		  "	 vld1.16 {d20}, [%[a]]!\n"
@@ -206,7 +208,8 @@ static inline int32_t saturate_float_to_16bit(float a) {
 #else
 static inline int32_t saturate_float_to_16bit(float a) {
     int32_t ret;
-    asm ("vmov.f32 d0[0], %[a]\n"
+    asm (".fpu neon\n"            /* enable NEON for this block (needed in Thumb) */
+         "vmov.f32 d0[0], %[a]\n"
          "vcvt.s32.f32 d0, d0, #15\n"
          "vqrshrn.s32 d0, q0, #15\n"
          "vmov.s16 %[ret], d0[0]\n"
@@ -284,7 +287,8 @@ static inline float inner_product_single(const float *a, const float *b, unsigne
     uint32_t remainder = len % 16;
     len = len - remainder;
 
-    asm volatile ("	 cmp %[len], #0\n"
+    asm volatile (".fpu neon\n"   /* enable NEON for this block (needed in Thumb) */
+		  "	 cmp %[len], #0\n"
 		  "	 bne 1f\n"
 		  "	 vld1.32 {q4}, [%[b]]!\n"
 		  "	 vld1.32 {q8}, [%[a]]!\n"
