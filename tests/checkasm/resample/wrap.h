@@ -2,6 +2,7 @@
 #define SPEEXDSP_TESTS_CHECKASM_RESAMPLE_WRAP_H
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <math.h>
 #include <inttypes.h>
 #include "config.h"
@@ -245,30 +246,36 @@ static inline int resample_float_within_tol(const float *ref, const float *res,
 }
 
 /* int16 output path (process_int). Random full-range int16 input naturally
- * drives some samples into saturation, exercising WORD2INT. C and SIMD diverge
- * by a few LSB at full scale (the float kernel differs by ~1e-4 rel, and NEON's
- * fcvtas rounds to nearest vs the C clamp/truncate), so compare peak-relative,
- * same tolerance as the float path. */
+ * drives some samples into saturation, exercising WORD2INT. Two bounded effects
+ * make C and SIMD diverge: the float resampling kernel itself differs by
+ * ~1e-4 relative (different accumulation order), and the WORD2INT rounding
+ * differs (NEON's fcvtas rounds to nearest-ties-away vs the C floor(.5+x)) by at
+ * most 1 LSB. Both are small, so the int16 outputs differ by only a few LSB.
+ *
+ * We therefore gate on an absolute LSB bound rather than a peak-relative one: at
+ * full scale the old 1e-3 peak-relative tolerance worked out to ~33 LSB of
+ * slack -- loose enough to let a real WORD2INT/saturate regression through while
+ * still passing. Measured worst case is 1 LSB on x86 over 30 seeds x 11
+ * conversions (x86 shares the C WORD2INT, so only the kernel divergence shows);
+ * aarch64 adds at most ~1 LSB more from fcvtas ties-away vs the C floor(.5+x).
+ * RESAMPLE_PROCESS_INT_MAX_LSB sits just above that floor: tight enough to trip
+ * on a rounding/saturation regression, with a little headroom for the unmeasured
+ * NEON path. */
+#define RESAMPLE_PROCESS_INT_MAX_LSB 4   /* absolute int16 LSB, full-pipeline C-vs-SIMD */
+
 static inline void resample_fill_int16(spx_int16_t *buf, unsigned n)
 {
     checkasm_init(buf, (size_t) n * sizeof *buf);
 }
 
-static inline int resample_int16_within_tol(const spx_int16_t *ref,
-        const spx_int16_t *res, unsigned n, double rel_tol)
+static inline int resample_int16_within_lsb(const spx_int16_t *ref,
+        const spx_int16_t *res, unsigned n, int max_lsb)
 {
-    double peak = 0.0;
     for (unsigned i = 0; i < n; i++) {
-        double v = fabs((double) ref[i]);
-        if (v > peak) peak = v;
-    }
-    for (unsigned i = 0; i < n; i++) {
-        double diff = fabs((double) ref[i] - (double) res[i]);
-        double rel  = peak > 0.0 ? diff / peak : diff;
-        if (rel > rel_tol) {
-            fprintf(stderr, "FAILED: out[%u] ref=%d res=%d diff=%g peak=%g "
-                    "rel=%.2e (tol %g)\n",
-                    i, (int) ref[i], (int) res[i], diff, peak, rel, rel_tol);
+        int diff = abs((int) ref[i] - (int) res[i]);
+        if (diff > max_lsb) {
+            fprintf(stderr, "FAILED: out[%u] ref=%d res=%d diff=%d LSB (max %d)\n",
+                    i, (int) ref[i], (int) res[i], diff, max_lsb);
             return 0;
         }
     }
