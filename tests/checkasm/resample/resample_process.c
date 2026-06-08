@@ -122,7 +122,7 @@ void checkasm_check_resample_process(void)
                 int nc = resample_process_int_c(st_c, iin, IN_LEN, iout_ref, OUT_LEN);
                 int nn = resample_process_int_simd(st_s, iin, IN_LEN, iout_new, OUT_LEN);
                 if (nc != nn ||
-                    !resample_int16_within_tol(iout_ref, iout_new, (unsigned) nc, RESAMPLE_PROCESS_REL_TOL))
+                    !resample_int16_within_lsb(iout_ref, iout_new, (unsigned) nc, RESAMPLE_PROCESS_INT_MAX_LSB))
                     checkasm_fail();
                 checkasm_bench_new(st_s, iin, IN_LEN, iout_new, OUT_LEN);
             }
