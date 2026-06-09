@@ -75,35 +75,35 @@ add_compile_definitions(HAVE_CONFIG_H)
 # Generate config.h (replaces the autoconf-generated file)
 configure_file(
     "${CMAKE_CURRENT_SOURCE_DIR}/cmake/config.h.in"
-    "${CMAKE_BINARY_DIR}/config.h"
+    "${CMAKE_CURRENT_BINARY_DIR}/config.h"
     @ONLY
 )
 
 # Generate speexdsp_config_types.h
-file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/include/speex")
+file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/include/speex")
 configure_file(
     "${CMAKE_CURRENT_SOURCE_DIR}/cmake/speexdsp_config_types.h.in"
-    "${CMAKE_BINARY_DIR}/include/speex/speexdsp_config_types.h"
+    "${CMAKE_CURRENT_BINARY_DIR}/include/speex/speexdsp_config_types.h"
     @ONLY
 )
 
 # Include directories
 include_directories(
-    ${CMAKE_SOURCE_DIR}/include
-    ${CMAKE_SOURCE_DIR}/libspeexdsp
-    ${CMAKE_BINARY_DIR}
-    ${CMAKE_BINARY_DIR}/include
-    ${CMAKE_BINARY_DIR}/include/speex
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/libspeexdsp
+    ${CMAKE_CURRENT_BINARY_DIR}
+    ${CMAKE_CURRENT_BINARY_DIR}/include
+    ${CMAKE_CURRENT_BINARY_DIR}/include/speex
 )
 
 # Source files (exclude test programs)
 file(GLOB SPEEXDSP_SOURCES libspeexdsp/*.c)
 list(REMOVE_ITEM SPEEXDSP_SOURCES
-    ${CMAKE_SOURCE_DIR}/libspeexdsp/testdenoise.c
-    ${CMAKE_SOURCE_DIR}/libspeexdsp/testecho.c
-    ${CMAKE_SOURCE_DIR}/libspeexdsp/testjitter.c
-    ${CMAKE_SOURCE_DIR}/libspeexdsp/testresample.c
-    ${CMAKE_SOURCE_DIR}/libspeexdsp/testresample2.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/libspeexdsp/testdenoise.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/libspeexdsp/testecho.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/libspeexdsp/testjitter.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/libspeexdsp/testresample.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/libspeexdsp/testresample2.c
 )
 
 add_library(speexdsp ${SPEEXDSP_SOURCES})
@@ -121,8 +121,14 @@ if(MATH_LIBRARY)
 endif()
 
 target_include_directories(speexdsp PUBLIC
-    $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
-    $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>
+    # The generated speexdsp_config_types.h lives in the build-tree speex/
+    # subdir; speexdsp_types.h includes it with a same-dir quote include, so
+    # expose that dir for build-tree consumers (e.g. via add_subdirectory()).
+    # In the install tree both headers sit side by side, so only the install
+    # includedir is needed there.
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include/speex>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
 
@@ -134,17 +140,17 @@ install(TARGETS speexdsp
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
 )
 install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
-install(FILES "${CMAKE_BINARY_DIR}/include/speex/speexdsp_config_types.h"
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/include/speex/speexdsp_config_types.h"
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/speex
 )
 
 # Create and install pkg-config file
 configure_file(
     "${CMAKE_CURRENT_SOURCE_DIR}/cmake/speexdsp.pc.in"
-    "${CMAKE_BINARY_DIR}/speexdsp.pc"
+    "${CMAKE_CURRENT_BINARY_DIR}/speexdsp.pc"
     @ONLY
 )
-install(FILES "${CMAKE_BINARY_DIR}/speexdsp.pc"
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/speexdsp.pc"
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig
 )
 
@@ -153,12 +159,12 @@ include(CMakePackageConfigHelpers)
 
 configure_package_config_file(
     "${CMAKE_CURRENT_SOURCE_DIR}/cmake/speexdspConfig.cmake.in"
-    "${CMAKE_BINARY_DIR}/speexdspConfig.cmake"
+    "${CMAKE_CURRENT_BINARY_DIR}/speexdspConfig.cmake"
     INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/speexdsp
 )
 
 write_basic_package_version_file(
-    "${CMAKE_BINARY_DIR}/speexdspConfigVersion.cmake"
+    "${CMAKE_CURRENT_BINARY_DIR}/speexdspConfigVersion.cmake"
     VERSION ${PROJECT_VERSION}
     COMPATIBILITY SameMajorVersion
 )
@@ -170,7 +176,7 @@ install(EXPORT speexdspTargets
 )
 
 install(FILES
-    "${CMAKE_BINARY_DIR}/speexdspConfig.cmake"
-    "${CMAKE_BINARY_DIR}/speexdspConfigVersion.cmake"
+    "${CMAKE_CURRENT_BINARY_DIR}/speexdspConfig.cmake"
+    "${CMAKE_CURRENT_BINARY_DIR}/speexdspConfigVersion.cmake"
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/speexdsp
 )
