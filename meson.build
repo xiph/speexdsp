@@ -229,13 +229,15 @@ subdir('doc')
 subdir('include/speex')
 subdir('libspeexdsp')
 
-checkasm_dep = dependency('checkasm',
-    fallback: ['checkasm', 'checkasm_dep'],
-    required: false
-)
+if get_option('tests').enabled()
+    checkasm_dep = dependency('checkasm',
+        fallback: ['checkasm', 'checkasm_dep'],
+        required: false
+    )
 
-if checkasm_dep.found()
-    subdir('tests')
+    if checkasm_dep.found()
+        subdir('tests')
+    endif
 endif
 
 # summary
