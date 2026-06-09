@@ -38,6 +38,17 @@
 
 #include <stdint.h>
 
+/* GNU as needs to be told the 32-bit ARM inline asm uses NEON, otherwise it
+   rejects the instructions when NEON isn't the active FPU (the armhf default
+   in Thumb builds). Clang's integrated assembler doesn't understand the .fpu
+   directive and already has NEON enabled on its armv7 targets, so emit nothing
+   there. */
+#if defined(__clang__) || defined(__aarch64__)
+#define NEON_ENABLE_FPU ""
+#else
+#define NEON_ENABLE_FPU ".fpu neon\n"
+#endif
+
 #ifdef FIXED_POINT
 #if defined(__aarch64__)
 static inline int32_t saturate_32bit_to_16bit(int32_t a) {
@@ -63,7 +74,7 @@ static inline int32_t saturate_32bit_to_16bit(int32_t a) {
 #else
 static inline int32_t saturate_32bit_to_16bit(int32_t a) {
     int32_t ret;
-    asm (".fpu neon\n"            /* enable NEON for this block (needed in Thumb) */
+    asm (NEON_ENABLE_FPU
          "vmov.s32 d0[0], %[a]\n"
          "vqmovn.s32 d0, q0\n"
          "vmov.s16 %[ret], d0[0]\n"
@@ -140,7 +151,7 @@ static inline int32_t inner_product_single(const int16_t *a, const int16_t *b, u
     uint32_t remainder = len % 16;
     len = len - remainder;
 
-    asm volatile (".fpu neon\n"   /* enable NEON for this block (needed in Thumb) */
+    asm volatile (NEON_ENABLE_FPU
 		  "	 cmp %[len], #0\n"
 		  "	 bne 1f\n"
 		  "	 vld1.16 {d16}, [%[b]]!\n"
@@ -208,7 +219,7 @@ static inline int32_t saturate_float_to_16bit(float a) {
 #else
 static inline int32_t saturate_float_to_16bit(float a) {
     int32_t ret;
-    asm (".fpu neon\n"            /* enable NEON for this block (needed in Thumb) */
+    asm (NEON_ENABLE_FPU
          "vmov.f32 d0[0], %[a]\n"
          "vcvt.s32.f32 d0, d0, #15\n"
          "vqrshrn.s32 d0, q0, #15\n"
@@ -287,7 +298,7 @@ static inline float inner_product_single(const float *a, const float *b, unsigne
     uint32_t remainder = len % 16;
     len = len - remainder;
 
-    asm volatile (".fpu neon\n"   /* enable NEON for this block (needed in Thumb) */
+    asm volatile (NEON_ENABLE_FPU
 		  "	 cmp %[len], #0\n"
 		  "	 bne 1f\n"
 		  "	 vld1.32 {q4}, [%[b]]!\n"
