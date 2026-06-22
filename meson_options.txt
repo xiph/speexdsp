@@ -32,6 +32,9 @@ option('sse2', type: 'feature', value: 'auto',
 option('neon', type: 'feature', value: 'auto',
        description: 'Enable or disable NEON support')
 
+option('rvv', type: 'feature', value: 'auto',
+       description: 'Enable or disable RISC-V Vector extension (RVV 1.0) support')
+
 option('arm4-asm', type: 'feature', value: 'disabled',
        description: 'Make use of ARM4 assembly optimizations')
 

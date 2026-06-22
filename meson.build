@@ -141,6 +141,21 @@ if host_cpu_family in ['arm', 'aarch64'] and get_option('neon').allowed()
   endif
 endif
 
+# The .S enables RVV via ".option arch, +v" rather than a "-march" flag on the C
+# compiler; probe that the assembler accepts it. RVV 1.0 has no per-instruction
+# subsetting, so a single instruction suffices.
+has_rvv_asm = false
+if host_cpu_family.startswith('riscv') and get_option('rvv').allowed()
+  rvv_check = '''__asm__ (
+".option arch, +v\n"
+"vsetivli zero, 0, e8, m1, ta, ma"
+);
+'''
+  if cc.compiles(rvv_check, name: 'RVV (.option arch, +v)')
+    has_rvv_asm = true
+  endif
+endif
+
 
 if cc.get_id() != 'msvc' and cc.has_argument('-fvisibility=hidden')
   add_project_arguments('-fvisibility=hidden', language: 'c')
@@ -204,6 +219,13 @@ cdata.set('USE_SSE2', has_sse2)
 
 cdata.set('USE_NEON', has_neon)
 
+if not has_rvv_asm and get_option('rvv').enabled()
+  error('No RVV assembler support, but RVV support required via options')
+endif
+
+cdata.set('USE_RVV', has_rvv_asm)
+cdata.set('USE_RVV_ASM', has_rvv_asm)
+
 opt_arm4_asm = get_option('arm4-asm').enabled()
 opt_arm5e_asm = get_option('arm5e-asm').enabled()
 opt_blackfin_asm = get_option('blackfin-asm').enabled()
@@ -246,6 +268,7 @@ asms = {
   'has_sse': 'SSE',
   'has_sse2': 'SSE2',
   'has_neon': 'NEON',
+  'has_rvv_asm': 'RVV (runtime-dispatched)',
   'opt_arm4_asm': 'ARM4 assembly',
   'opt_arm5e_asm': 'ARMv5e assembly',
   'opt_blackfin_asm': 'Blackfin assembly',

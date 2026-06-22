@@ -18,6 +18,10 @@ elif fft_used == 'smallft'
   speexdsp_sources += files(['smallft.c'])
 endif
 
+if has_rvv_asm
+  speexdsp_sources += files(['resample_rvv_asm.S'])
+endif
+
 libm = cc.find_library('m', required: false)
 
 libspeexdsp = library('speexdsp', speexdsp_sources, speexdsp_config_types_h,
