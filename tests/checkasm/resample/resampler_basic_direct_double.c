@@ -3,9 +3,10 @@
 #include "wrap.h"
 
 /* resampler_basic_direct_double: direct sinc table, double-precision accumulator.
- * Inner kernel is inner_product_double -> SIMD via SSE2 (floating point only).
- * Selected for small-den_rate ratios at quality > 8. Both the C reference and
- * the SSE2 path form single-precision products, so they agree to ~double eps.
+ * Inner kernel is inner_product_double -> SIMD via SSE2 or RVV (floating point
+ * only). Selected for small-den_rate ratios at quality > 8. The C reference,
+ * the SSE2 path and the RVV path all form single-precision products before
+ * accumulating in double, so they agree to ~double eps.
  *
  * Parameterized over several quality-9/10 conversions with small reduced
  * den_rate (so update_filter picks the direct, double-precision variant) and a
@@ -18,7 +19,7 @@ enum { OUT_LEN = 256, IN_LEN = 2048, IN_BUF = 4096 };
 
 void test_resampler_basic_direct_double(void)
 {
-#if defined(USE_SSE2) && !defined(FIXED_POINT)
+#if (defined(USE_SSE2) || defined(HAVE_RVV_DIRECT_DOUBLE)) && !defined(FIXED_POINT)
     static const struct { unsigned in_rate, out_rate; int quality; } configs[] = {
         { 24000, 48000, 10 },   /* 1:2 up   */
         { 48000, 24000,  9 },   /* 2:1 down */
@@ -54,6 +55,7 @@ void test_resampler_basic_direct_double(void)
             checkasm_bench_new(st, 0, in, &inl, out_new, &outl);
         }
 
+#ifdef USE_SSE2
         if (active_flags & SPEEXDSP_CPU_FLAG_SSE2) {
             if (checkasm_check_func(resampler_basic_direct_double_sse2, FUNC_NAME "_%u_%u_q%d", ir, orr, q)) {
                 inl = IN_LEN; outl = OUT_LEN;
@@ -66,10 +68,26 @@ void test_resampler_basic_direct_double(void)
                 checkasm_bench_new(st, 0, in, &inl, out_new, &outl);
             }
         }
+#endif
+
+#ifdef HAVE_RVV_DIRECT_DOUBLE
+        if (active_flags & SPEEXDSP_CPU_FLAG_RVV) {
+            if (checkasm_check_func(resampler_basic_direct_double_rvv, FUNC_NAME "_%u_%u_q%d", ir, orr, q)) {
+                inl = IN_LEN; outl = OUT_LEN;
+                int rc = checkasm_call_ref(st, 0, in, &inl, out_ref, &outl);
+                inl = IN_LEN; outl = OUT_LEN;
+                int rn = checkasm_call_new(st, 0, in, &inl, out_new, &outl);
+                if (rc != rn || !resample_buffer_within_tol(out_ref, out_new, (unsigned) rc, RESAMPLE_DOUBLE_REL_TOL))
+                    checkasm_fail();
+                inl = IN_LEN; outl = OUT_LEN;
+                checkasm_bench_new(st, 0, in, &inl, out_new, &outl);
+            }
+        }
+#endif
 
         resample_destroy_state(st);
     }
 
     checkasm_report(FUNC_NAME);
-#endif /* SSE2 && !FIXED_POINT */
+#endif /* (SSE2 || RVV) && !FIXED_POINT */
 }

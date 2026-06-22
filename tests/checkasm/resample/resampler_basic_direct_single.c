@@ -3,8 +3,8 @@
 #include "wrap.h"
 
 /* resampler_basic_direct_single: direct sinc table, single-precision (spx_word32_t)
- * accumulator. Inner kernel is inner_product_single -> SIMD via SSE (float) or
- * NEON (both modes).
+ * accumulator. Inner kernel is inner_product_single -> SIMD via SSE (float),
+ * NEON (both modes) or RVV (both modes; bit-exact in fixed point).
  *
  * Parameterized over several (rate, quality) configs that all select the
  * direct-single kernel but produce different filter lengths, so the SIMD inner
@@ -30,7 +30,7 @@ static const struct { unsigned in_rate, out_rate; int quality; } configs[] = {
 
 void test_resampler_basic_direct_single(void)
 {
-#if (defined(USE_SSE) && !defined(FIXED_POINT)) || defined(HAVE_NEON_DIRECT_SINGLE)
+#if (defined(USE_SSE) && !defined(FIXED_POINT)) || defined(HAVE_NEON_DIRECT_SINGLE) || defined(HAVE_RVV_DIRECT_SINGLE)
     checkasm_declare(int, SpeexResamplerState *, spx_uint32_t, const spx_word16_t *,
                      spx_uint32_t *, spx_word16_t *, spx_uint32_t *);
 
@@ -84,6 +84,26 @@ void test_resampler_basic_direct_single(void)
                 int rn = checkasm_call_new(st, 0, in, &inl, out_new, &outl);
 #ifdef FIXED_POINT
                 if (rc != rn || !resample_buffer_within_tol(out_ref, out_new, (unsigned) rc, 0.0))
+#else
+                if (rc != rn || !resample_buffer_within_tol(out_ref, out_new, (unsigned) rc, RESAMPLE_FLOAT_REL_TOL))
+#endif
+                    checkasm_fail();
+                inl = IN_LEN; outl = OUT_LEN;
+                checkasm_bench_new(st, 0, in, &inl, out_new, &outl);
+            }
+        }
+#endif
+
+#ifdef HAVE_RVV_DIRECT_SINGLE
+        if (active_flags & SPEEXDSP_CPU_FLAG_RVV) {
+            if (checkasm_check_func(resampler_basic_direct_single_rvv, FUNC_NAME "_%u_%u_q%d", ir, orr, q)) {
+                inl = IN_LEN; outl = OUT_LEN;
+                int rc = checkasm_call_ref(st, 0, in, &inl, out_ref, &outl);
+                inl = IN_LEN; outl = OUT_LEN;
+                int rn = checkasm_call_new(st, 0, in, &inl, out_new, &outl);
+                /* fixed-point RVV is bit-exact vs C (see wrap.h) */
+#ifdef FIXED_POINT
+                if (rc != rn || !resample_buffer_bitexact(out_ref, out_new, (unsigned) rc))
 #else
                 if (rc != rn || !resample_buffer_within_tol(out_ref, out_new, (unsigned) rc, RESAMPLE_FLOAT_REL_TOL))
 #endif

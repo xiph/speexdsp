@@ -30,6 +30,16 @@
 /* #  define HAVE_NEON_INTERPOLATE_SINGLE 1 */
 #endif
 
+/* RVV overrides both single kernels (both modes) and both double kernels (float only). */
+#ifdef USE_RVV
+#  define HAVE_RVV_DIRECT_SINGLE 1
+#  define HAVE_RVV_INTERPOLATE_SINGLE 1
+#  ifndef FIXED_POINT
+#    define HAVE_RVV_DIRECT_DOUBLE 1
+#    define HAVE_RVV_INTERPOLATE_DOUBLE 1
+#  endif
+#endif
+
 /* ------------- Resampler "kind" = (method, precision) -------------
  * update_filter() picks one of the four functions based on the sample-rate
  * ratio (direct vs interpolate) and, in floating point, quality>8 (single vs
@@ -89,6 +99,18 @@ int resampler_basic_interpolate_double_sse2(SpeexResamplerState *st, spx_uint32_
 #ifdef HAVE_NEON_DIRECT_SINGLE
 int resampler_basic_direct_single_neon(SpeexResamplerState *st, spx_uint32_t channel_index,
         const spx_word16_t *in, spx_uint32_t *in_len, spx_word16_t *out, spx_uint32_t *out_len);
+#endif
+#ifdef USE_RVV
+int resampler_basic_direct_single_rvv(SpeexResamplerState *st, spx_uint32_t channel_index,
+        const spx_word16_t *in, spx_uint32_t *in_len, spx_word16_t *out, spx_uint32_t *out_len);
+int resampler_basic_interpolate_single_rvv(SpeexResamplerState *st, spx_uint32_t channel_index,
+        const spx_word16_t *in, spx_uint32_t *in_len, spx_word16_t *out, spx_uint32_t *out_len);
+#ifndef FIXED_POINT
+int resampler_basic_direct_double_rvv(SpeexResamplerState *st, spx_uint32_t channel_index,
+        const spx_word16_t *in, spx_uint32_t *in_len, spx_word16_t *out, spx_uint32_t *out_len);
+int resampler_basic_interpolate_double_rvv(SpeexResamplerState *st, spx_uint32_t channel_index,
+        const spx_word16_t *in, spx_uint32_t *in_len, spx_word16_t *out, spx_uint32_t *out_len);
+#endif
 #endif
 
 /* ------------- Integration benchmark: full resampler pipeline -------------
@@ -151,6 +173,19 @@ int resample_process_il_sse(SpeexResamplerState *st, const float *in,
 int resample_process_int_il_sse(SpeexResamplerState *st, const spx_int16_t *in,
         spx_uint32_t in_len, spx_int16_t *out, spx_uint32_t out_len);
 #endif
+#ifdef USE_RVV
+SpeexResamplerState *resample_make_state_rvv(unsigned in_rate, unsigned out_rate, int quality);
+SpeexResamplerState *resample_make_state_rvv_ch(unsigned in_rate, unsigned out_rate,
+        int quality, unsigned channels);
+int resample_process_rvv(SpeexResamplerState *st, const float *in,
+        spx_uint32_t in_len, float *out, spx_uint32_t out_len);
+int resample_process_int_rvv(SpeexResamplerState *st, const spx_int16_t *in,
+        spx_uint32_t in_len, spx_int16_t *out, spx_uint32_t out_len);
+int resample_process_il_rvv(SpeexResamplerState *st, const float *in,
+        spx_uint32_t in_len, float *out, spx_uint32_t out_len);
+int resample_process_int_il_rvv(SpeexResamplerState *st, const spx_int16_t *in,
+        spx_uint32_t in_len, spx_int16_t *out, spx_uint32_t out_len);
+#endif
 #endif /* !DISABLE_FLOAT_API */
 
 /* ------------- Test-input fill -------------
@@ -189,10 +224,23 @@ static inline void resample_fill_input(spx_word16_t *buf, unsigned n)
  *            error of a dot product).
  *  - word16 (FIXED_POINT): C uses SATURATE32PSHR (clamps to +/-32767) while NEON
  *            uses sqrshrn/vqrshrn (reaches -32768), so at most one LSB diverges
- *            per output sample -> absolute 1-LSB tolerance. */
+ *            per output sample -> absolute 1-LSB tolerance. The RVV kernels
+ *            instead keep C's wrapping int32 accumulate + scalar saturation,
+ *            which is bit-exact -> they use resample_buffer_bitexact below so
+ *            a tail-policy or combine regression can't hide in the LSB slack.
+ *
+ * Float tolerance pairings for the RVV kernels:
+ *  - direct double: multiplies in f32 (vfmul) like SSE2, so products round like
+ *    the C reference; only the f64 summation order differs (~1e-15), pairing
+ *    with the tight 1e-9 tolerance.
+ *  - direct single + interpolate single: vfmacc is a true FMA and lane-split
+ *    reduction reorders the sums; both sit far inside the 1e-4 tolerance.
+ *  - interpolate double: vfwmacc forms exact f64 products where the C reference
+ *    rounds to f32, so like SSE2 it pairs with RESAMPLE_DOUBLE_FLOATMUL_REL_TOL
+ *    (1e-6), not 1e-9. */
 #define RESAMPLE_FLOAT_REL_TOL           1e-4f
 #define RESAMPLE_DOUBLE_REL_TOL          1e-9   /* both sides multiply in float */
-#define RESAMPLE_DOUBLE_FLOATMUL_REL_TOL 1e-6   /* C multiplies in double, SIMD in float */
+#define RESAMPLE_DOUBLE_FLOATMUL_REL_TOL 1e-6   /* C rounds products to f32; RVV's vfwmacc forms exact f64 */
 #define RESAMPLE_WORD16_LSB_TOL          1
 
 #ifndef FIXED_POINT
@@ -240,6 +288,26 @@ static inline int resample_buffer_within_tol(const spx_word16_t *ref,
     return 1;
 #endif
 }
+
+#ifdef FIXED_POINT
+/* Exact-equality comparator for the RVV fixed-point branches: those kernels
+ * reproduce the C kernels bit for bit (exact widening products, wrapping int32
+ * accumulation -- associative under any lane split -- and the same scalar
+ * MULT16_32_Q15 / SATURATE32PSHR combine), so any difference is a real bug. */
+static inline int resample_buffer_bitexact(const spx_word16_t *ref,
+        const spx_word16_t *res, unsigned n)
+{
+    for (unsigned i = 0; i < n; i++) {
+        if (ref[i] != res[i]) {
+            fprintf(stderr, "FAILED: sample %u ref=%" PRId32 " res=%" PRId32
+                    " (bit-exact required)\n",
+                    i, (int32_t) ref[i], (int32_t) res[i]);
+            return 0;
+        }
+    }
+    return 1;
+}
+#endif
 
 /* ------------- Integration output comparison -------------
  * speex_resampler_process_float always writes plain float (even in FIXED_POINT,

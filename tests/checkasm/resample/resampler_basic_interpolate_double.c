@@ -3,10 +3,12 @@
 #include "wrap.h"
 
 /* resampler_basic_interpolate_double: interpolated sinc table, double-precision
- * accumulator. Inner kernel is interpolate_product_double -> SIMD via SSE2
- * (floating point only). The C reference promotes inputs to double before
- * multiplying while the SSE2 path multiplies in single precision, so the looser
- * float-product tolerance applies.
+ * accumulator. Inner kernel is interpolate_product_double -> SIMD via SSE2 or
+ * RVV (floating point only). The C reference looks like it multiplies in double
+ * but MULT16_16 rounds its products to spx_word32_t == float; SSE2 multiplies
+ * in single precision too (so it matches C and would pass the tight tolerance),
+ * while RVV's vfwmacc forms exact f64 products that diverge from C's f32 -- so
+ * this shared comparison uses the looser float-product tolerance.
  *
  * Parameterized over several coprime-ratio (large den_rate) conversions at
  * quality > 8, with a range of filter lengths. Each config asserts its kind and
@@ -18,7 +20,7 @@ enum { OUT_LEN = 256, IN_LEN = 2048, IN_BUF = 4096 };
 
 void test_resampler_basic_interpolate_double(void)
 {
-#if defined(USE_SSE2) && !defined(FIXED_POINT)
+#if (defined(USE_SSE2) || defined(HAVE_RVV_INTERPOLATE_DOUBLE)) && !defined(FIXED_POINT)
     static const struct { unsigned in_rate, out_rate; int quality; } configs[] = {
         { 44100, 48000, 10 },   /* 147:160 up   */
         { 48000, 44100,  9 },   /* 160:147 down */
@@ -54,6 +56,7 @@ void test_resampler_basic_interpolate_double(void)
             checkasm_bench_new(st, 0, in, &inl, out_new, &outl);
         }
 
+#ifdef USE_SSE2
         if (active_flags & SPEEXDSP_CPU_FLAG_SSE2) {
             if (checkasm_check_func(resampler_basic_interpolate_double_sse2, FUNC_NAME "_%u_%u_q%d", ir, orr, q)) {
                 inl = IN_LEN; outl = OUT_LEN;
@@ -66,10 +69,26 @@ void test_resampler_basic_interpolate_double(void)
                 checkasm_bench_new(st, 0, in, &inl, out_new, &outl);
             }
         }
+#endif
+
+#ifdef HAVE_RVV_INTERPOLATE_DOUBLE
+        if (active_flags & SPEEXDSP_CPU_FLAG_RVV) {
+            if (checkasm_check_func(resampler_basic_interpolate_double_rvv, FUNC_NAME "_%u_%u_q%d", ir, orr, q)) {
+                inl = IN_LEN; outl = OUT_LEN;
+                int rc = checkasm_call_ref(st, 0, in, &inl, out_ref, &outl);
+                inl = IN_LEN; outl = OUT_LEN;
+                int rn = checkasm_call_new(st, 0, in, &inl, out_new, &outl);
+                if (rc != rn || !resample_buffer_within_tol(out_ref, out_new, (unsigned) rc, RESAMPLE_DOUBLE_FLOATMUL_REL_TOL))
+                    checkasm_fail();
+                inl = IN_LEN; outl = OUT_LEN;
+                checkasm_bench_new(st, 0, in, &inl, out_new, &outl);
+            }
+        }
+#endif
 
         resample_destroy_state(st);
     }
 
     checkasm_report(FUNC_NAME);
-#endif /* SSE2 && !FIXED_POINT */
+#endif /* (SSE2 || RVV) && !FIXED_POINT */
 }

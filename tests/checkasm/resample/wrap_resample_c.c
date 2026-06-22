@@ -3,10 +3,16 @@
  * construction/inspection (it has both the four static function addresses and
  * the public init API in scope after #including resample.c).
  *
- * We #undef the native USE_SSE/USE_SSE2/USE_NEON before pulling in resample.c so
- * its #ifdef USE_SSE/USE_NEON skip the SIMD headers and the inner-product
- * kernels stay the generic C fallbacks. wrap_resample_impl.h then handles the
- * EXPORT/HAVE_CONFIG_H/rename mechanics and includes resample.c. */
+ * We #undef the native USE_SSE/USE_SSE2/USE_NEON/USE_RVV before pulling in
+ * resample.c so its #ifdef USE_SSE/USE_NEON/USE_RVV skip the SIMD headers and
+ * the inner-product kernels stay the generic C fallbacks. wrap_resample_impl.h
+ * then handles the EXPORT/HAVE_CONFIG_H/rename mechanics and includes
+ * resample.c.
+ *
+ * This TU is the scalar baseline every benchmark compares against, so
+ * auto-vectorization is disabled for it (checkasm_c_ref_args in
+ * tests/meson.build) -- otherwise a toolchain whose default -march carries V
+ * could vectorize the baseline and the benchmark would compare RVV against RVV. */
 #define CKA_PREFIX ckac_
 #include "wrap_resample_rename.h"
 #include "wrap.h"
@@ -14,6 +20,7 @@
 #undef USE_SSE
 #undef USE_SSE2
 #undef USE_NEON
+#undef USE_RVV
 
 #include "wrap_resample_impl.h"
 

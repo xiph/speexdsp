@@ -10,6 +10,7 @@
 #define SPEEXDSP_CPU_FLAG_SSE   (1 << 0)
 #define SPEEXDSP_CPU_FLAG_SSE2  (1 << 1)
 #define SPEEXDSP_CPU_FLAG_NEON  (1 << 2)
+#define SPEEXDSP_CPU_FLAG_RVV   (1 << 3)
 
 /* Runtime CPU flags */
 extern CheckasmCpu active_flags;

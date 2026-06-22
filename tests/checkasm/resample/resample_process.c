@@ -19,9 +19,11 @@
  * encodes in_rate/out_rate/quality), C and SIMD side by side.
  *
  * The SIMD pipeline is whichever the build targets: NEON on aarch64, SSE/SSE2 on
- * x86. NEON only overrides inner_product_single (+ WORD2INT), so it speeds up the
- * small-den_rate (direct-single) conversions and matches C on the rest; SSE/SSE2
- * override all four kernels. The C-vs-SIMD comparison passes either way. */
+ * x86, RVV on RISC-V. NEON only overrides inner_product_single (+ WORD2INT), so
+ * it speeds up the small-den_rate (direct-single) conversions and matches C on
+ * the rest; SSE/SSE2 and RVV override all four kernels in float mode (RVV in
+ * fixed point overrides only the two single kernels). The C-vs-SIMD comparison
+ * passes either way. */
 
 #ifndef DISABLE_FLOAT_API
 
@@ -57,9 +59,9 @@ static const struct { unsigned in_rate, out_rate; int quality; } conversions_mc[
     { 44100, 48000, 10 },   /* 147:160 up,  interpolate-double */
 };
 
-/* Select this architecture's SIMD build (NEON and SSE are mutually exclusive).
- * The SSE translation unit carries both USE_SSE and USE_SSE2 on x86-64, so its
- * state covers single- and double-precision conversions alike. */
+/* Select this architecture's SIMD build (NEON, RVV and SSE are mutually
+ * exclusive). The SSE translation unit carries both USE_SSE and USE_SSE2 on
+ * x86-64, so its state covers single- and double-precision conversions alike. */
 #if defined(USE_NEON)
 #  define SIMD_CPU_FLAG                 SPEEXDSP_CPU_FLAG_NEON
 #  define resample_make_state_simd      resample_make_state_neon
@@ -68,6 +70,14 @@ static const struct { unsigned in_rate, out_rate; int quality; } conversions_mc[
 #  define resample_process_int_simd     resample_process_int_neon
 #  define resample_process_il_simd      resample_process_il_neon
 #  define resample_process_int_il_simd  resample_process_int_il_neon
+#elif defined(USE_RVV)
+#  define SIMD_CPU_FLAG                 SPEEXDSP_CPU_FLAG_RVV
+#  define resample_make_state_simd      resample_make_state_rvv
+#  define resample_make_state_simd_ch   resample_make_state_rvv_ch
+#  define resample_process_simd         resample_process_rvv
+#  define resample_process_int_simd     resample_process_int_rvv
+#  define resample_process_il_simd      resample_process_il_rvv
+#  define resample_process_int_il_simd  resample_process_int_il_rvv
 #elif defined(USE_SSE) && !defined(FIXED_POINT)
 #  define SIMD_CPU_FLAG                 SPEEXDSP_CPU_FLAG_SSE
 #  define resample_make_state_simd      resample_make_state_sse

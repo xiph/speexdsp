@@ -23,6 +23,9 @@ static const CheckasmCpuInfo flags[] = {
 #if defined(USE_NEON)
     { "NEON", "neon", SPEEXDSP_CPU_FLAG_NEON },
 #endif
+#if defined(USE_RVV)
+    { "RVV",  "rvv",  SPEEXDSP_CPU_FLAG_RVV },
+#endif
     { 0 }
 };
 

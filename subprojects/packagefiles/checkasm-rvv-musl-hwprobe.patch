@@ -1,0 +1,12 @@
+diff --git a/src/riscv/cpu.c b/src/riscv/cpu.c
+index 9248bab..4f31210 100644
+--- a/src/riscv/cpu.c
++++ b/src/riscv/cpu.c
+@@ -44,6 +44,7 @@
+     #include <sys/hwprobe.h>
+   #elif HAVE_ASM_HWPROBE_H
+     #include <asm/hwprobe.h>
++    #include <asm/unistd.h>
+     #include <sys/syscall.h>
+     #include <unistd.h>
+ 

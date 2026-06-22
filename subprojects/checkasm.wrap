@@ -2,3 +2,11 @@
 url = https://code.videolan.org/videolan/checkasm.git
 revision = v1.2.0
 directory = checkasm
+# Two RISC-V build-portability fixes for cross-building checkasm: an rv32
+# LLVM-assembler immediate-range fix, and a musl-libc fix adding asm/unistd.h
+# for __NR_riscv_hwprobe (glibc pulls it in, musl does not; affects rv64 musl
+# too). Both are upstreaming candidates -- drop them and bump `revision` once
+# merged.
+# https://code.videolan.org/videolan/checkasm/-/merge_requests/179
+# https://code.videolan.org/videolan/checkasm/-/merge_requests/180
+diff_files = checkasm-rvv-llvm-imm.patch, checkasm-rvv-musl-hwprobe.patch
