@@ -1,7 +1,8 @@
 # Disable automatic dependency tracking if using other tools than gcc and gmake
 #AUTOMAKE_OPTIONS = no-dependencies
 
-EXTRA_DIST=echo_diagnostic.m
+# resample_rvv_asm.S ships in the tarball but is built only by the meson build.
+EXTRA_DIST=echo_diagnostic.m resample_rvv_asm.S
 
 AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_builddir)/include/speex -I$(top_builddir) @FFT_CFLAGS@
 
@@ -26,7 +27,7 @@ noinst_HEADERS = 	arch.h 	bfin.h \
 		math_approx.h 		misc_bfin.h 	\
 		fftwrap.h \
 	filterbank.h fixed_generic.h os_support.h \
-	pseudofloat.h smallft.h vorbis_psy.h resample_sse.h resample_neon.h
+	pseudofloat.h smallft.h vorbis_psy.h resample_sse.h resample_neon.h resample_rvv.h
 
 libspeexdsp_la_LDFLAGS = -no-undefined -version-info @SPEEXDSP_LT_CURRENT@:@SPEEXDSP_LT_REVISION@:@SPEEXDSP_LT_AGE@
 libspeexdsp_la_LIBADD = $(LIBM)
