@@ -1,5 +1,5 @@
 project('speexdsp', 'c', version: '1.2.1',
-  meson_version: '>= 0.59')
+  meson_version: '>= 0.63')
 
 libversion = '1.5.2'
 

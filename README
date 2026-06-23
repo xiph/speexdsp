@@ -68,7 +68,7 @@ pkg-config is also supported:
 
 == Building with Meson ==
 
-Requires Meson (0.62 or higher), and Ninja.
+Requires Meson (0.63 or higher), and Ninja.
 
     rm -rf build
     meson setup build                   # see ./meson_options.txt for options
