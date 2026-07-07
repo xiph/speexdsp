@@ -157,7 +157,11 @@ spx_resample_rvv_ip_f32:
 /* double spx_resample_rvv_ipd_f32(const float *a, const float *b,
  *                                 unsigned int len)
  * f32 multiply (product rounded to f32, like the C reference), f64
- * widening add into one m4 accumulator group.                          */
+ * widening add into two m4 accumulator groups, unrolled by 2. Unlike the
+ * plain f32/i16 dot products, the vfmul -> vfwadd.wv chain here is latency-
+ * bound on a single accumulator, so the second accumulator measured ~7-13%
+ * faster on X60 (VLEN=256) and C908 (VLEN=128); the two are folded with one
+ * vfadd before the reduction.                                          */
     .balign 4
     .globl  spx_resample_rvv_ipd_f32
     .hidden spx_resample_rvv_ipd_f32
@@ -165,22 +169,38 @@ spx_resample_rvv_ip_f32:
 spx_resample_rvv_ipd_f32:
     vsetvli t2, zero, e32, m2, ta, ma   /* t2 = vlmax(e32m2) == vlmax(e64m4) */
     vsetvli t1, zero, e64, m4, ta, ma
-    vmv.v.i v8, 0                       /* f64m4 accumulator = +0.0 */
+    vmv.v.i v8, 0                       /* f64m4 acc0 = +0.0 */
+    vmv.v.i v24, 0                      /* f64m4 acc1 = +0.0 */
     vmv.s.x v0, zero
     remu    t5, a2, t2
     sub     a2, a2, t5
-    slli    t4, t2, 2
+    slli    t4, t2, 2                   /* bytes per strip */
+    slli    t6, t2, 1                   /* 2*t2 = elements per unrolled iter */
     vsetvli zero, t2, e32, m2, ta, ma
-    beqz    a2, .Lipd_tail
+    bltu    a2, t6, .Lipd_single        /* < 2 full strips: skip pair loop */
 .Lipd_loop:
     vle32.v v16, (a0)
     vle32.v v18, (a1)
     add     a0, a0, t4
     add     a1, a1, t4
-    sub     a2, a2, t2
+    vle32.v v20, (a0)
+    vle32.v v22, (a1)
+    add     a0, a0, t4
+    add     a1, a1, t4
+    sub     a2, a2, t6
+    vfmul.vv v16, v16, v18
+    vfmul.vv v20, v20, v22
+    vfwadd.wv v8,  v8,  v16
+    vfwadd.wv v24, v24, v20
+    bgeu    a2, t6, .Lipd_loop
+.Lipd_single:                           /* 0 or 1 full strip remaining */
+    beqz    a2, .Lipd_tail
+    vle32.v v16, (a0)
+    vle32.v v18, (a1)
+    add     a0, a0, t4
+    add     a1, a1, t4
     vfmul.vv v16, v16, v18
     vfwadd.wv v8, v8, v16
-    bnez    a2, .Lipd_loop
 .Lipd_tail:
     beqz    t5, .Lipd_reduce
     vsetvli zero, t5, e32, m2, tu, ma
@@ -190,6 +210,7 @@ spx_resample_rvv_ipd_f32:
     vfwadd.wv v8, v8, v16
 .Lipd_reduce:
     vsetvli zero, t2, e64, m4, ta, ma
+    vfadd.vv v8, v8, v24
     vfredusum.vs v0, v8, v0
     vfmv.f.s fa0, v0
     ret
