@@ -25,6 +25,8 @@ void test_resampler_basic_direct_double(void)
         { 48000, 24000,  9 },   /* 2:1 down */
         {  8000, 16000, 10 },   /* 1:2 up   */
         { 48000, 32000, 10 },   /* 3:2 down */
+        { 54000, 48000,  9 },   /* 9:8 down, filt_len 216: odd strip count +
+                                   partial tail for the RVV kernel */
     };
 
     checkasm_declare(int, SpeexResamplerState *, spx_uint32_t, const spx_word16_t *,
