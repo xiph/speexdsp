@@ -19,6 +19,9 @@
 #cmakedefine FLOATING_POINT
 #cmakedefine FIXED_POINT
 
+/* RISC-V Vector (RVV) optimizations, dispatched at runtime */
+#cmakedefine USE_RVV
+
 /* FFT implementation */
 #define USE_KISS_FFT 1
 

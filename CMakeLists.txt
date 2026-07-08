@@ -41,6 +41,26 @@ endif()
 # Check endianness
 test_big_endian(WORDS_BIGENDIAN)
 
+# The RVV kernels in resample_rvv_asm.S enable the vector extension via
+# ".option arch, +v" rather than a global -march flag, and dispatch at runtime,
+# so all we need is an assembler that accepts it.
+option(ENABLE_RVV "Enable RISC-V Vector (RVV) optimizations if supported" ON)
+set(HAS_RVV_ASM FALSE)
+if(ENABLE_RVV AND CMAKE_SYSTEM_PROCESSOR MATCHES "^riscv")
+    include(CheckCSourceCompiles)
+    # check_c_source_compiles() turns a \n escape into a real newline in the
+    # generated source, so separate the asm statements with the GAS ";" line
+    # separator instead.
+    check_c_source_compiles([[
+__asm__ (".option arch, +v ; vsetivli zero, 0, e8, m1, ta, ma");
+int main(void) { return 0; }
+]] RVV_ASM_SUPPORTED)
+    if(RVV_ASM_SUPPORTED)
+        set(HAS_RVV_ASM TRUE)
+        set(USE_RVV 1)
+    endif()
+endif()
+
 # Check sizes of integer types
 check_type_size("short" SIZEOF_SHORT)
 check_type_size("int"   SIZEOF_INT)
@@ -107,6 +127,11 @@ list(REMOVE_ITEM SPEEXDSP_SOURCES
 )
 
 add_library(speexdsp ${SPEEXDSP_SOURCES})
+
+if(HAS_RVV_ASM)
+    enable_language(ASM)
+    target_sources(speexdsp PRIVATE libspeexdsp/resample_rvv_asm.S)
+endif()
 
 # Windows shared build support
 if(WIN32 AND BUILD_SHARED_LIBS)
