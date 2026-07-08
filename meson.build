@@ -224,7 +224,6 @@ if not has_rvv_asm and get_option('rvv').enabled()
 endif
 
 cdata.set('USE_RVV', has_rvv_asm)
-cdata.set('USE_RVV_ASM', has_rvv_asm)
 
 opt_arm4_asm = get_option('arm4-asm').enabled()
 opt_arm5e_asm = get_option('arm5e-asm').enabled()

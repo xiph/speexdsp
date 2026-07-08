@@ -47,8 +47,6 @@
  *
  * checkasm defines RESAMPLE_RVV_FORCE_ON to test the asm unconditionally. */
 
-#ifdef USE_RVV_ASM
-
 #if defined(FIXED_POINT) || defined(__riscv_float_abi_double)
 #  ifdef RESAMPLE_RVV_FORCE_ON
 #    define SPX_RVV_ON 1
@@ -198,5 +196,3 @@ static inline double interpolate_product_double(const float *a, const float *b, 
 }
 
 #endif /* FIXED_POINT / FLOATING_POINT+lp64d */
-
-#endif /* USE_RVV_ASM */
