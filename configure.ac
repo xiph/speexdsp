@@ -22,6 +22,7 @@ AM_INIT_AUTOMAKE([foreign no-define])
 AM_MAINTAINER_MODE([enable])
 
 AC_CANONICAL_HOST
+AM_PROG_AS
 LT_INIT
 
 AC_C_BIGENDIAN
@@ -91,6 +92,31 @@ has_neon=no
 )
 AC_MSG_RESULT($has_neon)
 
+dnl The RVV kernels in resample_rvv_asm.S enable the vector extension via
+dnl ".option arch, +v" rather than a global -march flag, so all we need is an
+dnl assembler that accepts it. RVV 1.0 has no per-instruction subsetting, so a
+dnl single instruction suffices for the probe.
+has_rvv_asm=no
+AS_CASE(["$host_cpu"],
+  [riscv*], [
+    AC_MSG_CHECKING([for RVV assembler support (.option arch, +v)])
+    AC_COMPILE_IFELSE([
+    AC_LANG_PROGRAM([[
+    __asm__ (
+    ".option arch, +v\n"
+    "vsetivli zero, 0, e8, m1, ta, ma"
+    );
+    ]])],
+    [
+    has_rvv_asm=yes
+    ],
+    [
+    has_rvv_asm=no
+    ]
+    )
+    AC_MSG_RESULT($has_rvv_asm)
+  ])
+
 SAVE_CFLAGS="$CFLAGS"
 CFLAGS="$CFLAGS -fvisibility=hidden"
 AC_MSG_CHECKING(for ELF visibility)
@@ -141,6 +167,15 @@ has_neon=no
 fi
 ])
 
+AC_ARG_ENABLE(rvv, [  --enable-rvv            Enable RISC-V Vector (RVV) support],
+[if test "x$enableval" != xno; then
+  if test "$has_rvv_asm" != yes; then
+    AC_MSG_ERROR([No RVV assembler support, but RVV support required via --enable-rvv])
+  fi
+else
+  has_rvv_asm=no
+fi])
+
 
 FFT=smallft
 
@@ -165,6 +200,12 @@ fi
 if test "$has_sse2" = yes; then
   AC_DEFINE([USE_SSE2], , [Enable SSE2 support])
 fi
+
+if test "$has_rvv_asm" = yes; then
+  AC_DEFINE([USE_RVV], , [Enable RVV support])
+  AC_DEFINE([USE_RVV_ASM], , [Enable RVV assembly optimizations])
+fi
+AM_CONDITIONAL([BUILD_RVV_ASM], [test "$has_rvv_asm" = yes])
 
 AC_ARG_ENABLE(float-api, [  --disable-float-api     Disable the floating-point API],
 [if test "$enableval" = no; then
