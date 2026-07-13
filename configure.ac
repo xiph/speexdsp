@@ -203,7 +203,6 @@ fi
 
 if test "$has_rvv_asm" = yes; then
   AC_DEFINE([USE_RVV], , [Enable RVV support])
-  AC_DEFINE([USE_RVV_ASM], , [Enable RVV assembly optimizations])
 fi
 AM_CONDITIONAL([BUILD_RVV_ASM], [test "$has_rvv_asm" = yes])
 
