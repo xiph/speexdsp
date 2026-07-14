@@ -230,14 +230,12 @@ static inline void resample_fill_input(spx_word16_t *buf, unsigned n)
  *            a tail-policy or combine regression can't hide in the LSB slack.
  *
  * Float tolerance pairings for the RVV kernels:
- *  - direct double: multiplies in f32 (vfmul) like SSE2, so products round like
- *    the C reference; only the f64 summation order differs (~1e-15), pairing
- *    with the tight 1e-9 tolerance.
  *  - direct single + interpolate single: vfmacc is a true FMA and lane-split
  *    reduction reorders the sums; both sit far inside the 1e-4 tolerance.
- *  - interpolate double: vfwmacc forms exact f64 products where the C reference
- *    rounds to f32, so like SSE2 it pairs with RESAMPLE_DOUBLE_FLOATMUL_REL_TOL
- *    (1e-6), not 1e-9. */
+ *  - direct double + interpolate double: vfwmacc forms exact f64 products where
+ *    the C reference rounds each product to f32, so both pair with
+ *    RESAMPLE_DOUBLE_FLOATMUL_REL_TOL (1e-6), not 1e-9. (SSE2 direct double
+ *    multiplies in f32 like the C reference and keeps the tight 1e-9.) */
 #define RESAMPLE_FLOAT_REL_TOL           1e-4f
 #define RESAMPLE_DOUBLE_REL_TOL          1e-9   /* both sides multiply in float */
 #define RESAMPLE_DOUBLE_FLOATMUL_REL_TOL 1e-6   /* C rounds products to f32; RVV's vfwmacc forms exact f64 */

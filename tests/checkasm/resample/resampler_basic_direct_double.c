@@ -4,9 +4,10 @@
 
 /* resampler_basic_direct_double: direct sinc table, double-precision accumulator.
  * Inner kernel is inner_product_double -> SIMD via SSE2 or RVV (floating point
- * only). Selected for small-den_rate ratios at quality > 8. The C reference,
- * the SSE2 path and the RVV path all form single-precision products before
- * accumulating in double, so they agree to ~double eps.
+ * only). Selected for small-den_rate ratios at quality > 8. The C reference
+ * and the SSE2 path form single-precision products before accumulating in
+ * double, so they agree to ~double eps. The RVV path (vfwmacc) forms exact
+ * f64 products, so it pairs with the looser FLOATMUL tolerance instead.
  *
  * Parameterized over several quality-9/10 conversions with small reduced
  * den_rate (so update_filter picks the direct, double-precision variant) and a
@@ -79,7 +80,7 @@ void test_resampler_basic_direct_double(void)
                 int rc = checkasm_call_ref(st, 0, in, &inl, out_ref, &outl);
                 inl = IN_LEN; outl = OUT_LEN;
                 int rn = checkasm_call_new(st, 0, in, &inl, out_new, &outl);
-                if (rc != rn || !resample_buffer_within_tol(out_ref, out_new, (unsigned) rc, RESAMPLE_DOUBLE_REL_TOL))
+                if (rc != rn || !resample_buffer_within_tol(out_ref, out_new, (unsigned) rc, RESAMPLE_DOUBLE_FLOATMUL_REL_TOL))
                     checkasm_fail();
                 inl = IN_LEN; outl = OUT_LEN;
                 checkasm_bench_new(st, 0, in, &inl, out_new, &outl);

@@ -156,12 +156,10 @@ spx_resample_rvv_ip_f32:
 /* ------------------------------------------------------------------ */
 /* double spx_resample_rvv_ipd_f32(const float *a, const float *b,
  *                                 unsigned int len)
- * f32 multiply (product rounded to f32, like the C reference), f64
- * widening add into two m4 accumulator groups, unrolled by 2. Unlike the
- * plain f32/i16 dot products, the vfmul -> vfwadd.wv chain here is latency-
- * bound on a single accumulator, so the second accumulator measured ~7-13%
- * faster on X60 (VLEN=256) and C908 (VLEN=128); the two are folded with one
- * vfadd before the reduction.                                          */
+ * f64-widening MAC (vfwmacc: exact f64 products, where the C reference
+ * rounds each product to f32 -- pairs with the FLOATMUL checkasm tolerance
+ * like interpd) into two m4 accumulator groups, unrolled by 2; the two are
+ * folded with one vfadd before the reduction.                          */
     .balign 4
     .globl  spx_resample_rvv_ipd_f32
     .hidden spx_resample_rvv_ipd_f32
@@ -188,10 +186,8 @@ spx_resample_rvv_ipd_f32:
     add     a0, a0, t4
     add     a1, a1, t4
     sub     a2, a2, t6
-    vfmul.vv v16, v16, v18
-    vfmul.vv v20, v20, v22
-    vfwadd.wv v8,  v8,  v16
-    vfwadd.wv v24, v24, v20
+    vfwmacc.vv v8,  v16, v18
+    vfwmacc.vv v24, v20, v22
     bgeu    a2, t6, .Lipd_loop
 .Lipd_single:                           /* 0 or 1 full strip remaining */
     beqz    a2, .Lipd_tail
@@ -199,15 +195,13 @@ spx_resample_rvv_ipd_f32:
     vle32.v v18, (a1)
     add     a0, a0, t4
     add     a1, a1, t4
-    vfmul.vv v16, v16, v18
-    vfwadd.wv v8, v8, v16
+    vfwmacc.vv v8, v16, v18
 .Lipd_tail:
     beqz    t5, .Lipd_reduce
     vsetvli zero, t5, e32, m2, tu, ma
     vle32.v v16, (a0)
     vle32.v v18, (a1)
-    vfmul.vv v16, v16, v18
-    vfwadd.wv v8, v8, v16
+    vfwmacc.vv v8, v16, v18
 .Lipd_reduce:
     vsetvli zero, t2, e64, m4, ta, ma
     vfadd.vv v8, v8, v24
