@@ -166,9 +166,8 @@ spx_resample_rvv_ip_f32:
     .type   spx_resample_rvv_ipd_f32, @function
 spx_resample_rvv_ipd_f32:
     vsetvli t2, zero, e32, m2, ta, ma   /* t2 = vlmax(e32m2) == vlmax(e64m4) */
-    vsetvli t1, zero, e64, m4, ta, ma
-    vmv.v.i v8, 0                       /* f64m4 acc0 = +0.0 */
-    vmv.v.i v24, 0                      /* f64m4 acc1 = +0.0 */
+    vsetvli t1, zero, e64, m8, ta, ma
+    vmv.v.i v8, 0                       /* zero v8..v15: both f64m4 accs */
     vmv.s.x v0, zero
     remu    t5, a2, t2
     sub     a2, a2, t5
@@ -187,7 +186,7 @@ spx_resample_rvv_ipd_f32:
     add     a1, a1, t4
     sub     a2, a2, t6
     vfwmacc.vv v8,  v16, v18
-    vfwmacc.vv v24, v20, v22
+    vfwmacc.vv v12, v20, v22
     bgeu    a2, t6, .Lipd_loop
 .Lipd_single:                           /* 0 or 1 full strip remaining */
     beqz    a2, .Lipd_tail
@@ -204,7 +203,7 @@ spx_resample_rvv_ipd_f32:
     vfwmacc.vv v8, v16, v18
 .Lipd_reduce:
     vsetvli zero, t2, e64, m4, ta, ma
-    vfadd.vv v8, v8, v24
+    vfadd.vv v8, v8, v12
     vfredusum.vs v0, v8, v0
     vfmv.f.s fa0, v0
     ret
