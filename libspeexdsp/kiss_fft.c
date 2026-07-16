@@ -22,9 +22,35 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 #include "arch.h"
 #include "os_support.h"
 
+#ifdef USE_RVV
+#include "kiss_fft_rvv.h"
+#endif
+
 /* The guts header contains all the multiplication and addition macros that are defined for
  fixed or floating point complex numbers.  It also declares the kf_ internal functions.
  */
+
+#ifdef KISS_FFT_RVV_RUNTIME
+#if defined(__linux__)
+#include <sys/auxv.h>
+#endif
+int spx_kf_rvv_enabled = 0;
+static void kiss_fft_detect_rvv(void)
+{
+   static int rvv_probed = 0;
+   if (rvv_probed)
+      return;
+#if defined(__linux__)
+   /* 'V' HWCAP bit, then reject draft RVV 0.7.1 hardware (which also sets it)
+      via the vtype/VILL probe, and require VLEN >= 128 (the kernels'
+      precondition; V mandates Zvl128b, but verify it directly). */
+   if (getauxval(AT_HWCAP) & (1UL << ('V' - 'A')))
+      spx_kf_rvv_enabled = spx_kf_rvv_compliant()
+                        && spx_kf_rvv_vlenb() >= 16;
+#endif
+   rvv_probed = 1;
+}
+#endif /* KISS_FFT_RVV_RUNTIME */
 
 static void kf_bfly2(
         kiss_fft_cpx * Fout,
@@ -38,6 +64,12 @@ static void kf_bfly2(
     kiss_fft_cpx * Fout2;
     kiss_fft_cpx * tw1;
     kiss_fft_cpx t;
+#ifdef SPX_KF_RVV_BFLY2
+    if (SPX_KF_RVV_ON) {
+       SPX_KF_RVV_BFLY2(Fout, st->twiddles, fstride, m, N, mm, st->inverse);
+       return;
+    }
+#endif
     if (!st->inverse) {
        int i,j;
        kiss_fft_cpx * Fout_beg = Fout;
@@ -98,6 +130,12 @@ static void kf_bfly4(
     const size_t m3=3*m;
     int i, j;
 
+#ifdef SPX_KF_RVV_BFLY4
+    if (SPX_KF_RVV_ON) {
+       SPX_KF_RVV_BFLY4(Fout, st->twiddles, fstride, m, N, mm, st->inverse);
+       return;
+    }
+#endif
     if (st->inverse)
     {
        kiss_fft_cpx * Fout_beg = Fout;
@@ -177,6 +215,14 @@ static void kf_bfly3(
      kiss_fft_cpx *tw1,*tw2;
      kiss_fft_cpx scratch[5];
      kiss_fft_cpx epi3;
+#ifdef SPX_KF_RVV_BFLY3
+     /* The RVV kernel vectorizes across j, so with m==1 it degenerates to
+        vl=1 and runs slower than the scalar loop. */
+     if (SPX_KF_RVV_ON && m > 1) {
+        SPX_KF_RVV_BFLY3(Fout, st->twiddles, fstride, m, st->inverse);
+        return;
+     }
+#endif
      epi3 = st->twiddles[fstride*m];
 
      tw1=tw2=st->twiddles;
@@ -215,18 +261,38 @@ static void kf_bfly5(
         kiss_fft_cpx * Fout,
         const size_t fstride,
         const kiss_fft_cfg st,
-        int m
+        int m,
+        int N,
+        int mm
         )
 {
     kiss_fft_cpx *Fout0,*Fout1,*Fout2,*Fout3,*Fout4;
-    int u;
+    int i, u;
     kiss_fft_cpx scratch[13];
     kiss_fft_cpx * twiddles = st->twiddles;
     kiss_fft_cpx *tw;
     kiss_fft_cpx ya,yb;
+    kiss_fft_cpx * Fout_beg = Fout;
+#ifdef SPX_KF_RVV_BFLY5
+    /* Across u the RVV kernel degenerates to vl=1 at m==1, so that case
+       needs the across-sub-FFT path, which only the batched (float) kernel
+       has; without it m==1 stays on the scalar loop. */
+    if (SPX_KF_RVV_ON && (m > 1 || (SPX_KF_RVV_BFLY5_BATCH && N > m))) {
+#if SPX_KF_RVV_BFLY5_BATCH
+       SPX_KF_RVV_BFLY5(Fout, st->twiddles, fstride, m, N, mm, st->inverse);
+#else
+       for (i=0;i<N;i++)
+          SPX_KF_RVV_BFLY5(Fout + i*mm, st->twiddles, fstride, m, st->inverse);
+#endif
+       return;
+    }
+#endif
     ya = twiddles[fstride*m];
     yb = twiddles[fstride*2*m];
 
+    for (i=0;i<N;i++)
+    {
+    Fout = Fout_beg + i*mm;
     Fout0=Fout;
     Fout1=Fout0+m;
     Fout2=Fout0+2*m;
@@ -271,6 +337,7 @@ static void kf_bfly5(
         C_SUB(*Fout3,scratch[11],scratch[12]);
 
         ++Fout0;++Fout1;++Fout2;++Fout3;++Fout4;
+    }
     }
 }
 
@@ -394,7 +461,7 @@ void kf_work(
         case 2: kf_bfly2(Fout,fstride,st,m); break;
         case 3: kf_bfly3(Fout,fstride,st,m); break;
         case 4: kf_bfly4(Fout,fstride,st,m); break;
-        case 5: kf_bfly5(Fout,fstride,st,m); break;
+        case 5: kf_bfly5(Fout,fstride,st,m,1,m*5); break;
         default: kf_bfly_generic(Fout,fstride,st,m,p); break;
     }
 #else
@@ -423,7 +490,7 @@ void kf_work(
           case 2: kf_bfly2(Fout,fstride,st,m, N, m2); break;
           case 3: for (i=0;i<N;i++){Fout=Fout_beg+i*m2; kf_bfly3(Fout,fstride,st,m);} break;
           case 4: kf_bfly4(Fout,fstride,st,m, N, m2); break;
-          case 5: for (i=0;i<N;i++){Fout=Fout_beg+i*m2; kf_bfly5(Fout,fstride,st,m);} break;
+          case 5: kf_bfly5(Fout,fstride,st,m, N, m2); break;
           default: for (i=0;i<N;i++){Fout=Fout_beg+i*m2; kf_bfly_generic(Fout,fstride,st,m,p);} break;
     }
 #endif
@@ -466,6 +533,10 @@ kiss_fft_cfg kiss_fft_alloc(int nfft,int inverse_fft,void * mem,size_t * lenmem 
     kiss_fft_cfg st=NULL;
     size_t memneeded = sizeof(struct kiss_fft_state)
         + sizeof(kiss_fft_cpx)*(nfft-1); /* twiddle factors*/
+
+#ifdef KISS_FFT_RVV_RUNTIME
+    kiss_fft_detect_rvv();
+#endif
 
     if ( lenmem==NULL ) {
         st = ( kiss_fft_cfg)KISS_FFT_MALLOC( memneeded );
