@@ -11,6 +11,8 @@ checkasm_sources = files(
     'checkasm/resample/resampler_basic_interpolate_single.c',
     'checkasm/resample/resampler_basic_interpolate_double.c',
     'checkasm/resample/resample_process.c',
+    'checkasm/fft/fft_bfly.c',
+    'checkasm/fft/fft_transform.c',
 )
 
 # The C-reference TU is the scalar baseline every benchmark compares against, so
@@ -61,11 +63,25 @@ checkasm_extra_libs = [
         c_args: checkasm_c_ref_args,
         dependencies: [checkasm_dep],
     ),
+    static_library('checkasm_fft_c',
+        files('checkasm/fft/wrap_fft_c.c'),
+        speexdsp_config_types_h,
+        include_directories: checkasm_incs,
+        c_args: checkasm_c_ref_args,
+        dependencies: [checkasm_dep],
+    ),
 ]
 if has_rvv_asm
     checkasm_extra_libs += static_library('checkasm_resample_rvv',
         files('checkasm/resample/wrap_resample_rvv.c',
               '../libspeexdsp/resample_rvv_asm.S'),
+        speexdsp_config_types_h,
+        include_directories: checkasm_incs,
+        dependencies: [checkasm_dep],
+    )
+    checkasm_extra_libs += static_library('checkasm_fft_rvv',
+        files('checkasm/fft/wrap_fft_rvv.c',
+              '../libspeexdsp/kiss_fft_rvv_asm.S'),
         speexdsp_config_types_h,
         include_directories: checkasm_incs,
         dependencies: [checkasm_dep],

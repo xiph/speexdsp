@@ -9,6 +9,12 @@ static const CheckasmTest tests[] = {
     /* full-pipeline integration benchmark across sample-rate conversions */
     { "resample_process", checkasm_check_resample_process },
 
+    /* per-stage micro-benchmarks of the KISS FFT butterflies */
+    { "fft_bfly", checkasm_check_fft_bfly },
+
+    /* whole-transform integration benchmark */
+    { "fft_transform", checkasm_check_fft_transform },
+
     { 0 }
 };
 
