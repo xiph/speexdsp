@@ -20,6 +20,9 @@ endif
 
 if has_rvv_asm
   speexdsp_sources += files(['resample_rvv_asm.S'])
+  if fft_used == 'kiss'
+    speexdsp_sources += files(['kiss_fft_rvv_asm.S'])
+  endif
 endif
 
 libm = cc.find_library('m', required: false)

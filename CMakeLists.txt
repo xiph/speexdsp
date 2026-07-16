@@ -131,6 +131,8 @@ add_library(speexdsp ${SPEEXDSP_SOURCES})
 if(HAS_RVV_ASM)
     enable_language(ASM)
     target_sources(speexdsp PRIVATE libspeexdsp/resample_rvv_asm.S)
+    # The CMake build always uses KISS FFT (see cmake/config.h.in)
+    target_sources(speexdsp PRIVATE libspeexdsp/kiss_fft_rvv_asm.S)
 endif()
 
 # Windows shared build support

@@ -9,7 +9,7 @@ lib_LTLIBRARIES = libspeexdsp.la
 
 # Sources for compilation in the library
 if BUILD_KISS_FFT
-  FFTSRC=kiss_fft.c _kiss_fft_guts.h kiss_fft.h kiss_fftr.c kiss_fftr.h 
+  FFTSRC=kiss_fft.c _kiss_fft_guts.h kiss_fft.h kiss_fftr.c kiss_fftr.h
 else
 if BUILD_SMALLFT
   FFTSRC=smallft.c
@@ -22,6 +22,9 @@ libspeexdsp_la_SOURCES = preprocess.c jitter.c mdf.c fftwrap.c filterbank.c resa
 
 if BUILD_RVV_ASM
 libspeexdsp_la_SOURCES += resample_rvv_asm.S
+if BUILD_KISS_FFT
+libspeexdsp_la_SOURCES += kiss_fft_rvv_asm.S
+endif
 endif
 
 noinst_HEADERS = 	arch.h 	bfin.h \
@@ -30,7 +33,8 @@ noinst_HEADERS = 	arch.h 	bfin.h \
 		math_approx.h 		misc_bfin.h 	\
 		fftwrap.h \
 	filterbank.h fixed_generic.h os_support.h \
-	pseudofloat.h smallft.h vorbis_psy.h resample_sse.h resample_neon.h resample_rvv.h
+	pseudofloat.h smallft.h vorbis_psy.h resample_sse.h resample_neon.h resample_rvv.h \
+	kiss_fft_rvv.h
 
 libspeexdsp_la_LDFLAGS = -no-undefined -version-info @SPEEXDSP_LT_CURRENT@:@SPEEXDSP_LT_REVISION@:@SPEEXDSP_LT_AGE@
 libspeexdsp_la_LIBADD = $(LIBM)
