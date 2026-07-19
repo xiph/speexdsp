@@ -40,9 +40,11 @@ libspeexdsp_la_LDFLAGS = -no-undefined -version-info @SPEEXDSP_LT_CURRENT@:@SPEE
 libspeexdsp_la_LIBADD = $(LIBM)
 
 if BUILD_EXAMPLES
-noinst_PROGRAMS = testdenoise testecho testjitter testresample testresample2
+noinst_PROGRAMS = testdenoise testecho testjitter testresample testresample2 bench_echo
 testdenoise_SOURCES = testdenoise.c
 testdenoise_LDADD = libspeexdsp.la @FFT_LIBS@
+bench_echo_SOURCES = bench_echo.c
+bench_echo_LDADD = libspeexdsp.la @FFT_LIBS@
 testecho_SOURCES = testecho.c
 testecho_LDADD = libspeexdsp.la @FFT_LIBS@
 testjitter_SOURCES = testjitter.c

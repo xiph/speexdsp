@@ -49,7 +49,7 @@ pkg.generate(libspeexdsp,
 
 # Test binaries
 if not get_option('examples').disabled()
-  foreach bin : ['testdenoise', 'testecho', 'testjitter', 'testresample', 'testresample2']
+  foreach bin : ['testdenoise', 'testecho', 'testjitter', 'testresample', 'testresample2', 'bench_echo']
     executable(bin, '@0@.c'.format(bin),
       include_directories: config_inc,
       dependencies: [speexdsp_dep, libm],

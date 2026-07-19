@@ -119,6 +119,7 @@ include_directories(
 # Source files (exclude test programs)
 file(GLOB SPEEXDSP_SOURCES libspeexdsp/*.c)
 list(REMOVE_ITEM SPEEXDSP_SOURCES
+    ${CMAKE_CURRENT_SOURCE_DIR}/libspeexdsp/bench_echo.c
     ${CMAKE_CURRENT_SOURCE_DIR}/libspeexdsp/testdenoise.c
     ${CMAKE_CURRENT_SOURCE_DIR}/libspeexdsp/testecho.c
     ${CMAKE_CURRENT_SOURCE_DIR}/libspeexdsp/testjitter.c
