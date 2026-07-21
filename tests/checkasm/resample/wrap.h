@@ -276,7 +276,8 @@ static inline int resample_buffer_within_tol(const spx_word16_t *ref,
     for (unsigned i = 0; i < n; i++) {
         double diff = fabs((double) ref[i] - (double) res[i]);
         double rel  = peak > 0.0 ? diff / peak : diff;
-        if (rel > rel_tol) {
+        /* NaN-safe: rel > rel_tol would be false for NaN and wrongly pass. */
+        if (!(rel <= rel_tol)) {
             fprintf(stderr, "FAILED: sample %u ref=%g res=%g diff=%g peak=%g "
                     "rel=%.2e (tol %g)\n",
                     i, (double) ref[i], (double) res[i], diff, peak, rel, rel_tol);
@@ -326,7 +327,8 @@ static inline int resample_float_within_tol(const float *ref, const float *res,
     for (unsigned i = 0; i < n; i++) {
         double diff = fabs((double) ref[i] - (double) res[i]);
         double rel  = peak > 0.0 ? diff / peak : diff;
-        if (rel > rel_tol) {
+        /* NaN-safe: rel > rel_tol would be false for NaN and wrongly pass. */
+        if (!(rel <= rel_tol)) {
             fprintf(stderr, "FAILED: out[%u] ref=%g res=%g diff=%g peak=%g "
                     "rel=%.2e (tol %g)\n",
                     i, (double) ref[i], (double) res[i], diff, peak, rel, rel_tol);
