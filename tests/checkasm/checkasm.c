@@ -18,6 +18,12 @@ static const CheckasmTest tests[] = {
     /* unit micro-benchmarks of the MDF echo canceller spectral kernels */
     { "mdf_kernels", checkasm_check_mdf_kernels },
 
+    /* per-stage micro-benchmarks of the smallft radix stages */
+    { "smallft_stage", checkasm_check_smallft_stage },
+
+    /* whole-transform integration benchmark */
+    { "smallft_transform", checkasm_check_smallft_transform },
+
     { 0 }
 };
 

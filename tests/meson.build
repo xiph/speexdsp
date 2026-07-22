@@ -14,6 +14,7 @@ checkasm_sources = files(
     'checkasm/fft/fft_bfly.c',
     'checkasm/fft/fft_transform.c',
     'checkasm/mdf/mdf_kernels.c',
+    'checkasm/smallft/smallft_drft.c',
 )
 
 # The C-reference TU is the scalar baseline every benchmark compares against, so
@@ -78,6 +79,13 @@ checkasm_extra_libs = [
         c_args: checkasm_c_ref_args,
         dependencies: [checkasm_dep],
     ),
+    static_library('checkasm_smallft_c',
+        files('checkasm/smallft/wrap_smallft_c.c'),
+        speexdsp_config_types_h,
+        include_directories: checkasm_incs,
+        c_args: checkasm_c_ref_args,
+        dependencies: [checkasm_dep],
+    ),
 ]
 if has_rvv_asm
     checkasm_extra_libs += static_library('checkasm_resample_rvv',
@@ -97,6 +105,13 @@ if has_rvv_asm
     checkasm_extra_libs += static_library('checkasm_mdf_rvv',
         files('checkasm/mdf/wrap_mdf_rvv.c',
               '../libspeexdsp/mdf_rvv_asm.S'),
+        speexdsp_config_types_h,
+        include_directories: checkasm_incs,
+        dependencies: [checkasm_dep],
+    )
+    checkasm_extra_libs += static_library('checkasm_smallft_rvv',
+        files('checkasm/smallft/wrap_smallft_rvv.c',
+              '../libspeexdsp/smallft_rvv_asm.S'),
         speexdsp_config_types_h,
         include_directories: checkasm_incs,
         dependencies: [checkasm_dep],
