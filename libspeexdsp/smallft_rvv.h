@@ -78,10 +78,13 @@ static void dradb2(int ido, int l1, float *cc, float *ch, float *wa1);
 static void dradb4(int ido, int l1, float *cc, float *ch, float *wa1,
                    float *wa2, float *wa3);
 
+/* Small twiddled shapes (4*ido*l1 < 256, i.e. n <= 128 transforms' interior
+ * stages) lose to call/strided overhead on real hardware; the ido==1 fast
+ * path always wins. */
 static inline void dradf4_rvv(int ido, int l1, float *cc, float *ch,
                               float *wa1, float *wa2, float *wa3)
 {
-   if (SPX_DRFT_RVV_ON)
+   if (SPX_DRFT_RVV_ON && (ido == 1 || 4*ido*l1 >= 256))
       spx_drft_rvv_radf4_f32(ido, l1, cc, ch, wa1, wa2, wa3);
    else
       dradf4(ido, l1, cc, ch, wa1, wa2, wa3);
@@ -90,7 +93,7 @@ static inline void dradf4_rvv(int ido, int l1, float *cc, float *ch,
 static inline void dradb4_rvv(int ido, int l1, float *cc, float *ch,
                               float *wa1, float *wa2, float *wa3)
 {
-   if (SPX_DRFT_RVV_ON)
+   if (SPX_DRFT_RVV_ON && (ido == 1 || 4*ido*l1 >= 256))
       spx_drft_rvv_radb4_f32(ido, l1, cc, ch, wa1, wa2, wa3);
    else
       dradb4(ido, l1, cc, ch, wa1, wa2, wa3);
@@ -101,7 +104,7 @@ static inline void dradb4_rvv(int ido, int l1, float *cc, float *ch,
 static inline void dradf2_rvv(int ido, int l1, float *cc, float *ch,
                               float *wa1)
 {
-   if (SPX_DRFT_RVV_ON && l1 == 1)
+   if (SPX_DRFT_RVV_ON && l1 == 1 && ido >= 32)
       spx_drft_rvv_radf2_f32(ido, cc, ch, wa1);
    else
       dradf2(ido, l1, cc, ch, wa1);
@@ -110,7 +113,7 @@ static inline void dradf2_rvv(int ido, int l1, float *cc, float *ch,
 static inline void dradb2_rvv(int ido, int l1, float *cc, float *ch,
                               float *wa1)
 {
-   if (SPX_DRFT_RVV_ON && l1 == 1)
+   if (SPX_DRFT_RVV_ON && l1 == 1 && ido >= 32)
       spx_drft_rvv_radb2_f32(ido, cc, ch, wa1);
    else
       dradb2(ido, l1, cc, ch, wa1);

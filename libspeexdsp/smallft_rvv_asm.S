@@ -265,14 +265,26 @@ spx_drft_rvv_radf4_f32:
     vfadd.vv v22, v6, v14
     add     a2, t3, s4
     vsseg2e32.v v20, (a2)
+    /* Descending streams: reverse the lanes and store unit-stride from
+     * the strip's lowest pair address (strided stores run element-at-a-
+     * time on the K1; vrgather + vsseg is much cheaper). */
+    vid.v   v28
+    addi    a3, s5, -1
+    vrsub.vx v28, v28, a3          /* lane reversal indices */
     vfsub.vv v20, v18, v10         /* outB = (tr3-ti4, tr4-ti3), desc */
     vfsub.vv v22, v6, v14
-    li      a3, -8
-    vssseg2e32.v v20, (t4), a3
+    vrgather.vv v24, v20, v28
+    vrgather.vv v26, v22, v28
+    slli    a3, s5, 3
+    addi    a3, a3, -8
+    sub     a2, t4, a3             /* lowest pair of the strip */
+    vsseg2e32.v v24, (a2)
     vfsub.vv v20, v16, v4          /* outD = (tr2-tr1, ti1-ti2), desc */
     vfsub.vv v22, v8, v12
-    add     a2, t4, s4
-    vssseg2e32.v v20, (a2), a3
+    vrgather.vv v24, v20, v28
+    vrgather.vv v26, v22, v28
+    add     a2, a2, s4
+    vsseg2e32.v v24, (a2)
     slli    a2, s5, 3
     add     t2, t2, a2
     add     t3, t3, a2
@@ -563,17 +575,30 @@ spx_drft_rvv_radb4_f32:
     mv      t6, t1
 .Lb4_i_strip:
     vsetvli s5, t6, e32, m2, ta, ma
+    /* Descending streams: load unit-stride from the strip's lowest pair
+     * address and reverse the lanes (strided loads run element-at-a-time
+     * on the K1). v28 = reversal indices, a3 = (vl-1)*8. */
+    vid.v   v28
+    addi    a3, s5, -1
+    vrsub.vx v28, v28, a3
+    slli    a3, s5, 3
+    addi    a3, a3, -8
     vlseg2e32.v v0, (t2)           /* Ar v0, Ai v2 */
-    li      a3, -8
     add     a2, t4, s4
-    vlsseg2e32.v v4, (a2), a3      /* Dr v4, Di v6 */
+    sub     a2, a2, a3
+    vlseg2e32.v v16, (a2)          /* D, ascending raw */
+    vrgather.vv v4, v16, v28       /* Dr */
+    vrgather.vv v6, v18, v28       /* Di */
     vfadd.vv v8, v2, v6            /* ti1 = Ai+Di */
     vfsub.vv v10, v2, v6           /* ti2 = Ai-Di */
     vfsub.vv v12, v0, v4           /* tr1 = Ar-Dr */
     vfadd.vv v14, v0, v4           /* tr2 = Ar+Dr */
     add     a2, t2, s4
     vlseg2e32.v v0, (a2)           /* Br v0, Bi v2 */
-    vlsseg2e32.v v4, (t4), a3      /* Cr v4, Ci v6 */
+    sub     a2, t4, a3
+    vlseg2e32.v v16, (a2)          /* C, ascending raw */
+    vrgather.vv v4, v16, v28       /* Cr */
+    vrgather.vv v6, v18, v28       /* Ci */
     vfsub.vv v16, v2, v6           /* ti3 = Bi-Ci */
     vfadd.vv v18, v2, v6           /* tr4 = Bi+Ci */
     vfsub.vv v20, v0, v4           /* ti4 = Br-Cr */
@@ -820,10 +845,17 @@ spx_drft_rvv_radf2_f32:
     vfadd.vv v16, v0, v12          /* asc = (Ar+tr2, Ai+ti2) */
     vfadd.vv v18, v2, v14
     vsseg2e32.v v16, (t5)
+    vid.v   v24
+    addi    a5, a4, -1
+    vrsub.vx v24, v24, a5          /* lane reversal indices */
     vfsub.vv v16, v0, v12          /* desc = (Ar-tr2, ti2-Ai) */
     vfsub.vv v18, v14, v2
-    li      a5, -8
-    vssseg2e32.v v16, (t6), a5
+    vrgather.vv v20, v16, v24
+    vrgather.vv v22, v18, v24
+    slli    a5, a4, 3
+    addi    a5, a5, -8
+    sub     a5, t6, a5             /* lowest pair of the strip */
+    vsseg2e32.v v20, (a5)
     slli    a5, a4, 3
     add     t2, t2, a5
     add     t3, t3, a5
@@ -901,8 +933,15 @@ spx_drft_rvv_radb2_f32:
 1:
     vsetvli a4, t1, e32, m2, ta, ma
     vlseg2e32.v v0, (t2)           /* Ar v0, Ai v2 */
-    li      a5, -8
-    vlsseg2e32.v v4, (t3), a5      /* Br v4, Bi v6 */
+    vid.v   v20
+    addi    a5, a4, -1
+    vrsub.vx v20, v20, a5          /* lane reversal indices */
+    slli    a5, a4, 3
+    addi    a5, a5, -8
+    sub     a5, t3, a5
+    vlseg2e32.v v16, (a5)          /* B, ascending raw */
+    vrgather.vv v4, v16, v20       /* Br */
+    vrgather.vv v6, v18, v20       /* Bi */
     vfadd.vv v8, v0, v4            /* out0 = (Ar+Br, Ai-Bi) */
     vfsub.vv v10, v2, v6
     vsseg2e32.v v8, (t5)

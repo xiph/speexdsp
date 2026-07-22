@@ -12,7 +12,7 @@
 
 enum { MAX_N = 2048, MAX_STAGES = 16 };
 
-static const int configs[] = { 12, 20, 64, 128, 256, 512, 1024, 2048 };
+static const int configs[] = { 12, 20, 64, 128, 256, 260, 512, 1024, 2048 };
 
 void checkasm_check_smallft_stage(void)
 {
