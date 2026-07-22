@@ -15,6 +15,9 @@ static const CheckasmTest tests[] = {
     /* whole-transform integration benchmark */
     { "fft_transform", checkasm_check_fft_transform },
 
+    /* unit micro-benchmarks of the MDF echo canceller spectral kernels */
+    { "mdf_kernels", checkasm_check_mdf_kernels },
+
     { 0 }
 };
 
