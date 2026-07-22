@@ -133,8 +133,12 @@ if(HAS_RVV_ASM)
     enable_language(ASM)
     target_sources(speexdsp PRIVATE libspeexdsp/resample_rvv_asm.S)
     target_sources(speexdsp PRIVATE libspeexdsp/mdf_rvv_asm.S)
-    # The CMake build always uses KISS FFT (see cmake/config.h.in)
+    # The CMake build always uses KISS FFT (see cmake/config.h.in), but the
+    # source glob compiles smallft.c anyway, and under USE_RVV its dispatch
+    # references the smallft kernels -- link them so shared builds carry no
+    # undefined symbols.
     target_sources(speexdsp PRIVATE libspeexdsp/kiss_fft_rvv_asm.S)
+    target_sources(speexdsp PRIVATE libspeexdsp/smallft_rvv_asm.S)
 endif()
 
 # Windows shared build support
