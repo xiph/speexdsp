@@ -37,6 +37,39 @@
 #include "arch.h"
 #include "os_support.h"
 
+#ifdef USE_RVV
+#include "smallft_rvv.h"
+#endif
+
+#ifndef SPX_DRADF2
+#define SPX_DRADF2 dradf2
+#define SPX_DRADF4 dradf4
+#define SPX_DRADB2 dradb2
+#define SPX_DRADB4 dradb4
+#endif
+
+#ifdef SMALLFT_RVV_RUNTIME
+#if defined(__linux__)
+#include <sys/auxv.h>
+#endif
+int spx_drft_rvv_enabled = 0;
+static void drft_detect_rvv(void)
+{
+  static int rvv_probed = 0;
+  if (rvv_probed)
+    return;
+#if defined(__linux__)
+  /* 'V' HWCAP bit, then reject draft RVV 0.7.1 hardware (which also sets
+     it) via the vtype/VILL probe, and require VLEN >= 128 (the kernels'
+     precondition; V mandates Zvl128b, but verify it directly). */
+  if (getauxval(AT_HWCAP) & (1UL << ('V' - 'A')))
+    spx_drft_rvv_enabled = spx_drft_rvv_compliant()
+                        && spx_drft_rvv_vlenb() >= 16;
+#endif
+  rvv_probed = 1;
+}
+#endif /* SMALLFT_RVV_RUNTIME */
+
 static void drfti1(int n, float *wa, int *ifac){
   static const int ntryh[4] = { 4,2,3,5 };
   static const float tpi = 6.28318530717958648f;
@@ -596,20 +629,20 @@ static void drftf1(int n,float *c,float *ch,float *wa,int *ifac){
     ix2=iw+ido;
     ix3=ix2+ido;
     if(na!=0)
-      dradf4(ido,l1,ch,c,wa+iw-1,wa+ix2-1,wa+ix3-1);
+      SPX_DRADF4(ido,l1,ch,c,wa+iw-1,wa+ix2-1,wa+ix3-1);
     else
-      dradf4(ido,l1,c,ch,wa+iw-1,wa+ix2-1,wa+ix3-1);
+      SPX_DRADF4(ido,l1,c,ch,wa+iw-1,wa+ix2-1,wa+ix3-1);
     goto L110;
 
  L102:
     if(ip!=2)goto L104;
     if(na!=0)goto L103;
 
-    dradf2(ido,l1,c,ch,wa+iw-1);
+    SPX_DRADF2(ido,l1,c,ch,wa+iw-1);
     goto L110;
 
   L103:
-    dradf2(ido,l1,ch,c,wa+iw-1);
+    SPX_DRADF2(ido,l1,ch,c,wa+iw-1);
     goto L110;
 
   L104:
@@ -1173,9 +1206,9 @@ static void drftb1(int n, float *c, float *ch, float *wa, int *ifac){
     ix3=ix2+ido;
 
     if(na!=0)
-      dradb4(ido,l1,ch,c,wa+iw-1,wa+ix2-1,wa+ix3-1);
+      SPX_DRADB4(ido,l1,ch,c,wa+iw-1,wa+ix2-1,wa+ix3-1);
     else
-      dradb4(ido,l1,c,ch,wa+iw-1,wa+ix2-1,wa+ix3-1);
+      SPX_DRADB4(ido,l1,c,ch,wa+iw-1,wa+ix2-1,wa+ix3-1);
     na=1-na;
     goto L115;
 
@@ -1183,9 +1216,9 @@ static void drftb1(int n, float *c, float *ch, float *wa, int *ifac){
     if(ip!=2)goto L106;
 
     if(na!=0)
-      dradb2(ido,l1,ch,c,wa+iw-1);
+      SPX_DRADB2(ido,l1,ch,c,wa+iw-1);
     else
-      dradb2(ido,l1,c,ch,wa+iw-1);
+      SPX_DRADB2(ido,l1,c,ch,wa+iw-1);
     na=1-na;
     goto L115;
 
@@ -1243,6 +1276,9 @@ void spx_drft_backward(struct drft_lookup *l,float *data){
 
 void spx_drft_init(struct drft_lookup *l,int n)
 {
+#ifdef SMALLFT_RVV_RUNTIME
+  drft_detect_rvv();
+#endif
   l->n=n;
   l->trigcache=(float*)speex_alloc(3*n*sizeof(*l->trigcache));
   l->splitcache=(int*)speex_alloc(32*sizeof(*l->splitcache));
