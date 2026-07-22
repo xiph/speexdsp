@@ -117,6 +117,32 @@ static const spx_float_t VAR_BACKTRACK = 4.f;
 #endif
 
 
+#ifdef USE_RVV
+#include "mdf_rvv.h"
+#endif
+
+#ifdef MDF_RVV_RUNTIME
+#if defined(__linux__)
+#include <sys/auxv.h>
+#endif
+int spx_mdf_rvv_enabled = 0;
+static void mdf_detect_rvv(void)
+{
+   static int rvv_probed = 0;
+   if (rvv_probed)
+      return;
+#if defined(__linux__)
+   /* 'V' HWCAP bit, then reject draft RVV 0.7.1 hardware (which also sets it)
+      via the vtype/VILL probe, and require VLEN >= 128 (the kernels'
+      precondition; V mandates Zvl128b, but verify it directly). */
+   if (getauxval(AT_HWCAP) & (1UL << ('V' - 'A')))
+      spx_mdf_rvv_enabled = spx_mdf_rvv_compliant()
+                         && spx_mdf_rvv_vlenb() >= 16;
+#endif
+   rvv_probed = 1;
+}
+#endif /* MDF_RVV_RUNTIME */
+
 #define PLAYBACK_DELAY 2
 
 void speex_echo_get_residual(SpeexEchoState *st, spx_word32_t *Yout, int len);
@@ -209,6 +235,7 @@ static inline void filter_dc_notch16(const spx_int16_t *in, spx_word16_t radius,
 }
 
 /* This inner product is slightly different from the codec version because of fixed-point */
+#ifndef OVERRIDE_MDF_INNER_PROD
 static inline spx_word32_t mdf_inner_prod(const spx_word16_t *x, const spx_word16_t *y, int len)
 {
    spx_word32_t sum=0;
@@ -223,8 +250,10 @@ static inline spx_word32_t mdf_inner_prod(const spx_word16_t *x, const spx_word1
    }
    return sum;
 }
+#endif
 
 /** Compute power spectrum of a half-complex (packed) vector */
+#ifndef OVERRIDE_MDF_POWER_SPECTRUM
 static inline void power_spectrum(const spx_word16_t *X, spx_word32_t *ps, int N)
 {
    int i, j;
@@ -235,8 +264,10 @@ static inline void power_spectrum(const spx_word16_t *X, spx_word32_t *ps, int N
    }
    ps[j]=MULT16_16(X[i],X[i]);
 }
+#endif
 
 /** Compute power spectrum of a half-complex (packed) vector and accumulate */
+#ifndef OVERRIDE_MDF_POWER_SPECTRUM_ACCUM
 static inline void power_spectrum_accum(const spx_word16_t *X, spx_word32_t *ps, int N)
 {
    int i, j;
@@ -247,9 +278,11 @@ static inline void power_spectrum_accum(const spx_word16_t *X, spx_word32_t *ps,
    }
    ps[j]+=MULT16_16(X[i],X[i]);
 }
+#endif
 
 /** Compute cross-power spectrum of a half-complex (packed) vectors and add to acc */
 #ifdef FIXED_POINT
+#ifndef OVERRIDE_MDF_SPECTRAL_MUL_ACCUM
 static inline void spectral_mul_accum(const spx_word16_t *X, const spx_word32_t *Y, spx_word16_t *acc, int N, int M)
 {
    int i,j;
@@ -277,6 +310,8 @@ static inline void spectral_mul_accum(const spx_word16_t *X, const spx_word32_t 
    }
    acc[N-1] = PSHR32(tmp1,WEIGHT_SHIFT);
 }
+#endif
+#ifndef OVERRIDE_MDF_SPECTRAL_MUL_ACCUM16
 static inline void spectral_mul_accum16(const spx_word16_t *X, const spx_word16_t *Y, spx_word16_t *acc, int N, int M)
 {
    int i,j;
@@ -304,8 +339,10 @@ static inline void spectral_mul_accum16(const spx_word16_t *X, const spx_word16_
    }
    acc[N-1] = PSHR32(tmp1,WEIGHT_SHIFT);
 }
+#endif
 
 #else
+#ifndef OVERRIDE_MDF_SPECTRAL_MUL_ACCUM
 static inline void spectral_mul_accum(const spx_word16_t *X, const spx_word32_t *Y, spx_word16_t *acc, int N, int M)
 {
    int i,j;
@@ -324,10 +361,12 @@ static inline void spectral_mul_accum(const spx_word16_t *X, const spx_word32_t 
       Y += N;
    }
 }
+#endif
 #define spectral_mul_accum16 spectral_mul_accum
 #endif
 
 /** Compute weighted cross-power spectrum of a half-complex (packed) vector with conjugate */
+#ifndef OVERRIDE_MDF_WEIGHTED_SPECTRAL_MUL_CONJ
 static inline void weighted_spectral_mul_conj(const spx_float_t *w, const spx_float_t p, const spx_word16_t *X, const spx_word16_t *Y, spx_word32_t *prod, int N)
 {
    int i, j;
@@ -343,7 +382,9 @@ static inline void weighted_spectral_mul_conj(const spx_float_t *w, const spx_fl
    W = FLOAT_AMULT(p, w[j]);
    prod[i] = FLOAT_MUL32(W,MULT16_16(X[i],Y[i]));
 }
+#endif
 
+#ifndef OVERRIDE_MDF_ADJUST_PROP
 static inline void mdf_adjust_prop(const spx_word32_t *W, int N, int M, int P, spx_word16_t *prop)
 {
    int i, j, p;
@@ -375,6 +416,7 @@ static inline void mdf_adjust_prop(const spx_word32_t *W, int N, int M, int P, s
    }
    /*printf ("\n");*/
 }
+#endif
 
 #ifdef DUMP_ECHO_CANCEL_DATA
 #include <stdio.h>
@@ -401,7 +443,13 @@ EXPORT SpeexEchoState *speex_echo_state_init(int frame_size, int filter_length)
 EXPORT SpeexEchoState *speex_echo_state_init_mc(int frame_size, int filter_length, int nb_mic, int nb_speakers)
 {
    int i,N,M, C, K;
-   SpeexEchoState *st = (SpeexEchoState *)speex_alloc(sizeof(SpeexEchoState));
+   SpeexEchoState *st;
+
+#ifdef MDF_RVV_RUNTIME
+   mdf_detect_rvv();
+#endif
+
+   st = (SpeexEchoState *)speex_alloc(sizeof(SpeexEchoState));
 
    st->K = nb_speakers;
    st->C = nb_mic;
