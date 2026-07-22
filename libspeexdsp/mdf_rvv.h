@@ -196,7 +196,8 @@ static inline void power_spectrum_accum(const spx_word16_t *X, spx_word32_t *ps,
 static inline spx_word32_t mdf_inner_prod(const spx_word16_t *x, const spx_word16_t *y, int len)
 {
    spx_word32_t sum=0;
-   if (SPX_MDF_RVV_ON)
+   /* below ~32 elements the vsetvli/reduction overhead beats the gain */
+   if (SPX_MDF_RVV_ON && len >= 32)
       return spx_mdf_rvv_inner_prod_i16(x, y, len, 6);
    len >>= 1;
    while(len--)
@@ -354,7 +355,8 @@ static inline void power_spectrum_accum(const spx_word16_t *X, spx_word32_t *ps,
 static inline spx_word32_t mdf_inner_prod(const spx_word16_t *x, const spx_word16_t *y, int len)
 {
    spx_word32_t sum=0;
-   if (SPX_MDF_RVV_ON)
+   /* below ~32 elements the vsetvli/reduction overhead beats the gain */
+   if (SPX_MDF_RVV_ON && len >= 32)
       return spx_mdf_rvv_inner_prod_f32(x, y, len & ~1); /* C drops an odd tail */
    len >>= 1;
    while(len--)
