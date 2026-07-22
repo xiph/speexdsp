@@ -21,7 +21,7 @@ endif
 libspeexdsp_la_SOURCES = preprocess.c jitter.c mdf.c fftwrap.c filterbank.c resample.c buffer.c scal.c $(FFTSRC)
 
 if BUILD_RVV_ASM
-libspeexdsp_la_SOURCES += resample_rvv_asm.S
+libspeexdsp_la_SOURCES += resample_rvv_asm.S mdf_rvv_asm.S
 if BUILD_KISS_FFT
 libspeexdsp_la_SOURCES += kiss_fft_rvv_asm.S
 endif
@@ -34,7 +34,7 @@ noinst_HEADERS = 	arch.h 	bfin.h \
 		fftwrap.h \
 	filterbank.h fixed_generic.h os_support.h \
 	pseudofloat.h smallft.h vorbis_psy.h resample_sse.h resample_neon.h resample_rvv.h \
-	kiss_fft_rvv.h
+	kiss_fft_rvv.h mdf_rvv.h
 
 libspeexdsp_la_LDFLAGS = -no-undefined -version-info @SPEEXDSP_LT_CURRENT@:@SPEEXDSP_LT_REVISION@:@SPEEXDSP_LT_AGE@
 libspeexdsp_la_LIBADD = $(LIBM)
