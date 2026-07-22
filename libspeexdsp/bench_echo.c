@@ -1,11 +1,12 @@
 /* bench_echo.c: end-to-end benchmark of the public echo-canceller API
- * (speex_echo_*), the main speexdsp consumer of kiss_fft.  Toggles the
- * runtime RVV FFT dispatch flag between timed passes so one binary
- * measures the whole-API impact of the RVV butterfly kernels.
+ * (speex_echo_*).  Toggles every runtime RVV dispatch flag the build
+ * carries (kiss_fft or smallft butterflies, and the mdf spectral
+ * kernels) between timed passes so one binary measures the whole-API
+ * impact of the RVV kernels.
  *
  * Needs an optimized build to be meaningful (e.g. meson --buildtype=release);
- * the FFT backend must be kiss for the RVV comparison (-Dfft=kiss on
- * floating-point builds).  Usage: bench_echo [frames_per_pass]
+ * float builds exercise smallft by default, -Dfft=kiss the kiss kernels.
+ * Usage: bench_echo [frames_per_pass]
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -13,18 +14,46 @@
 #include <time.h>
 #include <speex/speex_echo.h>
 
-/* Runtime kill-switch for the RVV FFT kernels; only present in builds with
- * runtime dispatch, and hidden in shared-library builds, hence weak so the
- * bench links everywhere.  When it doesn't resolve, the A/B comparison
- * degrades to a single absolute-timing pass. */
+/* Runtime kill-switches for the RVV kernels; each is only present in
+ * builds with runtime dispatch for that module (the FFT flag depends on
+ * the backend compiled in), and hidden in shared-library builds, hence
+ * weak so the bench links everywhere.  When none resolve, the A/B
+ * comparison degrades to a single absolute-timing pass. */
 #if defined(__GNUC__)
-extern int spx_kf_rvv_enabled __attribute__((weak));
-#define HAVE_RVV_TOGGLE (&spx_kf_rvv_enabled != NULL)
+extern int spx_kf_rvv_enabled __attribute__((weak));     /* kiss_fft */
+extern int spx_drft_rvv_enabled __attribute__((weak));   /* smallft */
+extern int spx_mdf_rvv_enabled __attribute__((weak));    /* mdf */
+#define N_RVV_FLAGS 3
+static int *const rvv_flags[N_RVV_FLAGS] =
+    { &spx_kf_rvv_enabled, &spx_drft_rvv_enabled, &spx_mdf_rvv_enabled };
+static const char *const rvv_flag_names[N_RVV_FLAGS] =
+    { "kiss_fft", "smallft", "mdf" };
+#define HAVE_RVV_TOGGLE \
+    (&spx_kf_rvv_enabled != NULL || &spx_drft_rvv_enabled != NULL || \
+     &spx_mdf_rvv_enabled != NULL)
 #else
-static int spx_kf_rvv_enabled_dummy;
-#define spx_kf_rvv_enabled spx_kf_rvv_enabled_dummy
+#define N_RVV_FLAGS 0
+static int *const rvv_flags[1] = { 0 };
+static const char *const rvv_flag_names[1] = { "" };
 #define HAVE_RVV_TOGGLE 0
 #endif
+
+static void rvv_set_all(int on)
+{
+   int i;
+   for (i = 0; i < N_RVV_FLAGS; i++)
+      if (rvv_flags[i])
+         *rvv_flags[i] = on;
+}
+
+static int rvv_any_enabled(void)
+{
+   int i, any = 0;
+   for (i = 0; i < N_RVV_FLAGS; i++)
+      if (rvv_flags[i] && *rvv_flags[i])
+         any = 1;
+   return any;
+}
 
 static double now_sec(void)
 {
@@ -103,13 +132,19 @@ int main(int argc, char **argv)
 
    int rvv_avail = 0;
    if (!HAVE_RVV_TOGGLE) {
-      printf("no runtime RVV FFT dispatch in this build; single pass only\n");
+      printf("no runtime RVV dispatch in this build; single pass only\n");
    } else {
-      /* the hwcap probe runs once, inside the first FFT alloc; trigger it
-       * now so later writes to the flag stick */
+      int i;
+      /* the hwcap probes run once, inside the first echo-state init;
+       * trigger them now so later writes to the flags stick */
       SpeexEchoState *probe = speex_echo_state_init(128, 1024);
       speex_echo_state_destroy(probe);
-      rvv_avail = spx_kf_rvv_enabled;
+      rvv_avail = rvv_any_enabled();
+      printf("RVV kernel sets in this build:");
+      for (i = 0; i < N_RVV_FLAGS; i++)
+         if (rvv_flags[i])
+            printf(" %s", rvv_flag_names[i]);
+      printf("\n");
       if (!rvv_avail)
          printf("note: RVV not usable on this machine; both passes are scalar\n");
    }
@@ -120,21 +155,21 @@ int main(int argc, char **argv)
       double best_on = 1e30, best_off = 1e30;
       for (int r = 0; r < reps; r++) {
          if (HAVE_RVV_TOGGLE) {
-            spx_kf_rvv_enabled = 0;
+            rvv_set_all(0);
             double t = run_pass(c, frames);
             if (t < best_off) best_off = t;
          }
          if (HAVE_RVV_TOGGLE)
-            spx_kf_rvv_enabled = rvv_avail;
+            rvv_set_all(rvv_avail);
          double t = run_pass(c, frames);
          if (t < best_on) best_on = t;
       }
       double frame_ms = 1000.0*c->frame/c->rate;
       printf("%s\n", c->label);
       if (HAVE_RVV_TOGGLE) {
-         printf("  scalar FFT: %8.1f us/frame  (%.1fx realtime)\n",
+         printf("  scalar: %8.1f us/frame  (%.1fx realtime)\n",
                 1e6*best_off, frame_ms/(1000.0*best_off));
-         printf("  RVV FFT:    %8.1f us/frame  (%.1fx realtime)\n",
+         printf("  RVV:    %8.1f us/frame  (%.1fx realtime)\n",
                 1e6*best_on, frame_ms/(1000.0*best_on));
          printf("  speedup: %.3fx  (%.1f%% of echo-cancel time saved)\n\n",
                 best_off/best_on, 100.0*(best_off-best_on)/best_off);
