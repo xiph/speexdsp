@@ -41,6 +41,51 @@
 #include "math_approx.h"
 #include "os_support.h"
 
+/* RVV picks its kernel at runtime; see filterbank_rvv.h. */
+#ifdef USE_RVV
+#include "filterbank_rvv.h"
+#endif
+
+#ifdef FBANK_RVV_RUNTIME
+#if defined(__linux__)
+#include <sys/auxv.h>
+#endif
+int spx_fbank_rvv_enabled = 0;
+static void fbank_detect_rvv(void)
+{
+   static int rvv_probed = 0;
+   if (rvv_probed)
+      return;
+#if defined(__linux__)
+   /* 'V' HWCAP bit, then reject draft RVV 0.7.1 hardware (which also sets it)
+      via the vtype/VILL probe, and require VLEN >= 128 (the kernels'
+      precondition; V mandates Zvl128b, but verify it directly). */
+   if (getauxval(AT_HWCAP) & (1UL << ('V' - 'A')))
+      spx_fbank_rvv_enabled = spx_fbank_rvv_compliant()
+                           && spx_fbank_rvv_vlenb() >= 16;
+#endif
+   rvv_probed = 1;
+}
+#endif /* FBANK_RVV_RUNTIME */
+
+/** psd16 inner loop: interpolate each bin from its two band energies */
+#ifndef OVERRIDE_FBANK_PSD16
+static inline void fbank_psd16(const int *bank_left, const int *bank_right,
+                               const spx_word16_t *filter_left,
+                               const spx_word16_t *filter_right,
+                               const spx_word16_t *mel, spx_word16_t *ps, int len)
+{
+   int i;
+   for (i=0;i<len;i++)
+   {
+      spx_word32_t tmp;
+      tmp = MULT16_16(mel[bank_left[i]],filter_left[i]);
+      tmp += MULT16_16(mel[bank_right[i]],filter_right[i]);
+      ps[i] = EXTRACT16(PSHR32(tmp,15));
+   }
+}
+#endif
+
 #ifdef FIXED_POINT
 
 #define toBARK(n)   (MULT16_16(26829,spx_atan(SHR32(MULT16_16(97,n),2))) + MULT16_16(4588,spx_atan(MULT16_32_Q15(20,MULT16_16(n,n)))) + MULT16_16(3355,n))
@@ -59,6 +104,9 @@ FilterBank *filterbank_new(int banks, spx_word32_t sampling, int len, int type)
    int i;
    int id1;
    int id2;
+#ifdef FBANK_RVV_RUNTIME
+   fbank_detect_rvv();
+#endif
    df = DIV32(SHL32(sampling,15),MULT16_16(2,len));
    max_mel = toBARK(EXTRACT16(sampling/2));
    mel_interval = PDIV32(max_mel,banks-1);
@@ -155,17 +203,8 @@ void filterbank_compute_bank32(FilterBank *bank, spx_word32_t *ps, spx_word32_t 
 
 void filterbank_compute_psd16(FilterBank *bank, spx_word16_t *mel, spx_word16_t *ps)
 {
-   int i;
-   for (i=0;i<bank->len;i++)
-   {
-      spx_word32_t tmp;
-      int id1, id2;
-      id1 = bank->bank_left[i];
-      id2 = bank->bank_right[i];
-      tmp = MULT16_16(mel[id1],bank->filter_left[i]);
-      tmp += MULT16_16(mel[id2],bank->filter_right[i]);
-      ps[i] = EXTRACT16(PSHR32(tmp,15));
-   }
+   fbank_psd16(bank->bank_left, bank->bank_right, bank->filter_left,
+               bank->filter_right, mel, ps, bank->len);
 }
 
 

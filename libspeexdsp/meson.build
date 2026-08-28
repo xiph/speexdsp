@@ -19,7 +19,8 @@ elif fft_used == 'smallft'
 endif
 
 if has_rvv_asm
-  speexdsp_sources += files(['resample_rvv_asm.S', 'mdf_rvv_asm.S', 'preprocess_rvv_asm.S'])
+  speexdsp_sources += files(['resample_rvv_asm.S', 'mdf_rvv_asm.S', 'preprocess_rvv_asm.S',
+                             'filterbank_rvv_asm.S'])
   if fft_used == 'kiss'
     speexdsp_sources += files(['kiss_fft_rvv_asm.S'])
   elif fft_used == 'smallft'
