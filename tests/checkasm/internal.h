@@ -28,5 +28,6 @@ void checkasm_check_preproc_kernels(void);
 void checkasm_check_smallft_stage(void);
 void checkasm_check_smallft_transform(void);
 void checkasm_check_fftwrap_scale(void);
+void checkasm_check_fbank_psd16(void);
 
 #endif /* SPEEXDSP_TESTS_CHECKASM_INTERNAL_H */

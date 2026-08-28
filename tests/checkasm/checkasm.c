@@ -30,6 +30,9 @@ static const CheckasmTest tests[] = {
     /* fftwrap's forward-FFT 1/n pre-scale loop */
     { "fftwrap_scale", checkasm_check_fftwrap_scale },
 
+    /* filterbank's psd-from-bands gather + weighted sum */
+    { "fbank_psd16", checkasm_check_fbank_psd16 },
+
     { 0 }
 };
 
