@@ -26,15 +26,17 @@ extern int spx_kf_rvv_enabled __attribute__((weak));      /* kiss_fft */
 extern int spx_drft_rvv_enabled __attribute__((weak));    /* smallft */
 extern int spx_mdf_rvv_enabled __attribute__((weak));     /* mdf */
 extern int spx_preproc_rvv_enabled __attribute__((weak)); /* preprocess */
-#define N_RVV_FLAGS 4
+extern int spx_fbank_rvv_enabled __attribute__((weak));   /* filterbank */
+#define N_RVV_FLAGS 5
 static int *const rvv_flags[N_RVV_FLAGS] =
     { &spx_kf_rvv_enabled, &spx_drft_rvv_enabled, &spx_mdf_rvv_enabled,
-      &spx_preproc_rvv_enabled };
+      &spx_preproc_rvv_enabled, &spx_fbank_rvv_enabled };
 static const char *const rvv_flag_names[N_RVV_FLAGS] =
-    { "kiss_fft", "smallft", "mdf", "preprocess" };
+    { "kiss_fft", "smallft", "mdf", "preprocess", "filterbank" };
 #define HAVE_RVV_TOGGLE \
     (&spx_kf_rvv_enabled != NULL || &spx_drft_rvv_enabled != NULL || \
-     &spx_mdf_rvv_enabled != NULL || &spx_preproc_rvv_enabled != NULL)
+     &spx_mdf_rvv_enabled != NULL || &spx_preproc_rvv_enabled != NULL || \
+     &spx_fbank_rvv_enabled != NULL)
 #else
 #define N_RVV_FLAGS 0
 static int *const rvv_flags[1] = { 0 };
