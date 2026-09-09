@@ -5,6 +5,10 @@ option('tests', type: 'feature', value: 'enabled',
 option('examples', type: 'feature', value: 'enabled',
        description: 'Build examples')
 
+option('checkasm-no-autovec', type: 'feature', value: 'disabled',
+       description: 'Force the checkasm C reference to compile without '
+                    + 'auto-vectorization, giving a scalar C baseline on every ISA')
+
 # Numeric mode
 option('fixed-point', type: 'feature', value: 'disabled',
        description: 'Use fixed-point arithmetic instead of floating-point')

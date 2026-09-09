@@ -20,17 +20,8 @@ checkasm_sources = files(
     'checkasm/filterbank/fbank_psd16.c',
 )
 
-# The C-reference TU is the scalar baseline every benchmark compares against, so
-# disable auto-vectorization for it. If the toolchain's default -march carries V
-# (vendor toolchains, -Dc_args=-march=rv64gcv, zig cross files with +v), the
-# autovectorizer would turn the baseline into vector code and the benchmark would
-# silently compare RVV against RVV. -mno-implicit-float additionally blocks the
-# vector code clang leaks via aggregate-zeroing lowering (it emits vse64.v for the
-# accum[4] zeroing even with the -fno-*vectorize flags set);
-# --param=riscv-autovec-preference=none is the gcc-side autovec switch, and
-# has_argument() drops whichever flag the compiler rejects.
 checkasm_c_ref_args = []
-if host_cpu_family.startswith('riscv')
+if get_option('checkasm-no-autovec').enabled()
     foreach arg : ['-fno-tree-vectorize', '-fno-tree-slp-vectorize',
                    '-fno-vectorize', '-fno-slp-vectorize',
                    '-mno-implicit-float',
@@ -58,7 +49,8 @@ checkasm_incs = [
 ]
 
 # Each wrapper #includes a renamed full copy of resample.c, so each needs its own
-# static_library: the C-ref lib carries the no-autovec c_args; the RVV lib is
+# static_library: the C-ref lib carries checkasm_c_ref_args (scalar-forcing flags
+# only under -Dcheckasm-no-autovec=enabled); the RVV lib is
 # base-ISA C and links resample_rvv_asm.S to supply the kernels.
 checkasm_extra_libs = [
     static_library('checkasm_resample_c',
