@@ -2,7 +2,7 @@ default:
   tags:
     - docker
   # Image from https://hub.docker.com/_/gcc/ based on Debian
-  image: gcc:9
+  image: gcc:15
 
 # Make sure commits are GPG signed
 ci-fairy:
