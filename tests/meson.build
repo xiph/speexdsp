@@ -48,10 +48,10 @@ checkasm_incs = [
     speexdsp_incs,
 ]
 
-# Each wrapper #includes a renamed full copy of resample.c, so each needs its own
-# static_library: the C-ref lib carries checkasm_c_ref_args (scalar-forcing flags
-# only under -Dcheckasm-no-autovec=enabled); the RVV lib is
-# base-ISA C and links resample_rvv_asm.S to supply the kernels.
+# Each wrapper #includes a renamed full copy of its module's .c file, so each
+# needs its own static_library: the C-ref libs carry checkasm_c_ref_args
+# (scalar-forcing flags only under -Dcheckasm-no-autovec=enabled); the RVV libs
+# are base-ISA C and link the module's *_rvv_asm.S to supply the kernels.
 checkasm_extra_libs = [
     static_library('checkasm_resample_c',
         files('checkasm/resample/wrap_resample_c.c'),

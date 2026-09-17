@@ -17,15 +17,13 @@
  * its inner-product kernel via #ifndef OVERRIDE_*. To get both a C and a SIMD
  * build of the same static function in one binary, resample.c is #included once
  * per kernel variant in its own translation unit (wrap_resample_c.c forces the
- * C kernels; wrap_resample_{sse,sse2,neon}.c keep the native SIMD kernels), each
- * exposing a uniquely named non-static wrapper. */
+ * C kernels; wrap_resample_{sse,sse2,neon,rvv}.c keep the native SIMD kernels),
+ * each exposing a uniquely named non-static wrapper. */
 
 /* ------------- Per-routine SIMD-availability gates -------------
  * resample_neon.h overrides inner_product_single (both modes) and, in floating
- * point, interpolate_product_single. So under NEON resampler_basic_direct_single
- * differs from the C reference in both modes, and resampler_basic_interpolate_single
- * differs in floating point. Flip more of these on when resample_neon.h grows
- * OVERRIDE_INTERPOLATE_PRODUCT_DOUBLE. */
+ * point, interpolate_product_single; flip more of these on when it grows the
+ * double-precision overrides. */
 #ifdef USE_NEON
 #  define HAVE_NEON_DIRECT_SINGLE 1
 #  ifndef FIXED_POINT

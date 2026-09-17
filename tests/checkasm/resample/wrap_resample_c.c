@@ -6,8 +6,7 @@
  * We #undef the native USE_SSE/USE_SSE2/USE_NEON/USE_RVV before pulling in
  * resample.c so its #ifdef USE_SSE/USE_NEON/USE_RVV skip the SIMD headers and
  * the inner-product kernels stay the generic C fallbacks. wrap_resample_impl.h
- * then handles the EXPORT/HAVE_CONFIG_H/rename mechanics and includes
- * resample.c.
+ * then handles the HAVE_CONFIG_H/rename mechanics and includes resample.c.
  *
  * This TU is the scalar baseline every benchmark compares against, so
  * auto-vectorization is disabled for it (checkasm_c_ref_args in

@@ -8,7 +8,7 @@
 | `inner_product_single` | Float | ✓ Optimized |
 | `inner_product_double` | Float | ✗ No optimization |
 | `interpolate_product_single` | Fixed | ✗ No optimization |
-| `interpolate_product_single` | Float | ✗ No optimization |
+| `interpolate_product_single` | Float | ✓ Optimized |
 | `interpolate_product_double` | Float | ✗ No optimization |
 
 ## SSE/SSE2
@@ -22,6 +22,17 @@
 
 ¹ The `SSE` handles both `SSE` and `SSE2`<BR>
 ² No `SSE` for `_double`
+
+## RVV (runtime-dispatched)
+
+| Function | Data Type | Status |
+|----------|-----------|--------|
+| `inner_product_single` | Fixed | ✓ Optimized (bit-exact) |
+| `inner_product_single` | Float | ✓ Optimized |
+| `inner_product_double` | Float | ✓ Optimized |
+| `interpolate_product_single` | Fixed | ✓ Optimized (bit-exact) |
+| `interpolate_product_single` | Float | ✓ Optimized |
+| `interpolate_product_double` | Float | ✓ Optimized |
 
 ## Do Not Optimize
 
@@ -58,7 +69,8 @@ remainder paths.
 The SSE/SSE2 kernels instead stride 8 (or 2 for the
 interpolating variants), and `filt_len` is always a multiple of 8, so they have
 no remainder path — on x86 the same configs just exercise a range of
-accumulation lengths.  
+accumulation lengths. The RVV kernels strip-mine with `vsetvl`, so the same
+configs exercise full strips plus partial tails at whatever VLEN the host has.  
 
 ### `resample_process` — full-pipeline integration benchmark
 
@@ -71,10 +83,11 @@ covers the NEON WORD2INT override (saturate_float_to_16bit, and
 saturate_32bit_to_16bit in fixed point), which the float path and the kernel 
 tests never reach. For each, the C and SIMD pipelines are timed side by side 
 and verified against each other end to end. The SIMD build is whichever the 
-platform targets: on aarch64 it is NEON (a speedup on the direct-single 
-conversions, matching C on the interpolating/double ones, which have no 
+platform targets: on aarch64 it is NEON (in float, a speedup on the single-precision 
+conversions, matching C on the double-precision ones, which have no 
 override yet); on x86 it is SSE/SSE2 (the SSE translation unit carries both, 
-so all four kernels are accelerated).
+so all four kernels are accelerated); on RISC-V it is RVV (all four kernels 
+in float, the two single-precision ones in fixed point).
 
 ## CI
 

@@ -1,9 +1,8 @@
 /* NEON build of the resampler functions. Compiled only when has_neon. Keeps the
- * native USE_NEON so resample.c pulls in resample_neon.h. Today that header only
- * overrides inner_product_single (OVERRIDE_INNER_PRODUCT_SINGLE), so only
- * resampler_basic_direct_single actually differs from the C reference under
- * NEON; the other three would be byte-identical to C and are not exposed.
- * See wrap_resample_impl.h for the EXPORT/HAVE_CONFIG_H/rename mechanics. */
+ * native USE_NEON so resample.c pulls in resample_neon.h. Only the kernels that
+ * header overrides (the HAVE_NEON_* gates in wrap.h) differ from the C
+ * reference and are exposed; the double-precision ones would be byte-identical
+ * to C. See wrap_resample_impl.h for the HAVE_CONFIG_H/rename mechanics. */
 #define CKA_PREFIX ckaneon_
 #include "wrap_resample_rename.h"
 #include "wrap.h"
@@ -36,14 +35,10 @@ int resampler_basic_interpolate_single_neon(SpeexResamplerState *st, spx_uint32_
 }
 #endif
 
-/* When resample_neon.h grows OVERRIDE_INTERPOLATE_PRODUCT_DOUBLE, flip the
- * matching HAVE_NEON_* macro on in wrap.h and add the wrapper here, mirroring
- * the wrappers above. */
-
 /* ------------- Integration: full-pipeline wrapper (NEON kernels) -------------
  * A NEON-built state: update_filter (in this TU) points resampler_ptr at the
  * NEON kernels, so the public process_float runs the NEON path. For conversions
- * whose kernel NEON does not override yet (interpolate / double), this is
+ * whose kernel NEON does not override (the double-precision ones), this is
  * byte-identical to the C build -- the comparison still passes and the benchmark
  * simply shows no speedup. See wrap.h for the by-value / zero-state contract. */
 #ifndef DISABLE_FLOAT_API

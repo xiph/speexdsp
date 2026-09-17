@@ -19,11 +19,10 @@
  * encodes in_rate/out_rate/quality), C and SIMD side by side.
  *
  * The SIMD pipeline is whichever the build targets: NEON on aarch64, SSE/SSE2 on
- * x86, RVV on RISC-V. NEON only overrides inner_product_single (+ WORD2INT), so
- * it speeds up the small-den_rate (direct-single) conversions and matches C on
- * the rest; SSE/SSE2 and RVV override all four kernels in float mode (RVV in
- * fixed point overrides only the two single kernels). The C-vs-SIMD comparison
- * passes either way. */
+ * x86, RVV on RISC-V. NEON overrides the two single-precision kernels (+
+ * WORD2INT) and matches C on the double-precision ones; SSE/SSE2 and RVV
+ * override all four kernels in float mode (RVV in fixed point overrides only
+ * the two single kernels, NEON only direct-single). The C-vs-SIMD comparison passes either way. */
 
 #ifndef DISABLE_FLOAT_API
 

@@ -1,7 +1,7 @@
 /* SSE build of the single-precision resampler functions. Compiled only when
  * has_sse && !fixed-point. Keeps the native USE_SSE so resample.c pulls in
  * resample_sse.h, overriding inner_product_single / interpolate_product_single.
- * See wrap_resample_impl.h for the EXPORT/HAVE_CONFIG_H/rename mechanics. */
+ * See wrap_resample_impl.h for the HAVE_CONFIG_H/rename mechanics. */
 #define CKA_PREFIX ckasse_
 #include "wrap_resample_rename.h"
 #include "wrap.h"
