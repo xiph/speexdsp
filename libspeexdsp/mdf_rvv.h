@@ -78,18 +78,12 @@ spx_int32_t spx_mdf_rvv_inner_prod_i16(const spx_int16_t *x, const spx_int16_t *
 spx_int32_t spx_mdf_rvv_prop_sumsq_i16(const spx_int32_t *W, int len, int shift);
 void spx_mdf_rvv_weight_update_i32(spx_int32_t *w, const spx_int32_t *phi, int N);
 
-#define OVERRIDE_MDF_WEIGHT_UPDATE
-static inline void mdf_weight_update(spx_word32_t *w, const spx_word32_t *phi, int N)
-{
-   int i;
-   if (SPX_MDF_RVV_ON && N >= 4)
-   {
-      spx_mdf_rvv_weight_update_i32(w, phi, N);
-      return;
-   }
-   for (i=0;i<N;i++)
-      w[i] += phi[i];
-}
+/* Kernels behind the build-independent wrappers below. */
+#define SPX_MDF_RVV_WEIGHT_UPDATE         spx_mdf_rvv_weight_update_i32
+#define SPX_MDF_RVV_RES_WINDOW            spx_mdf_rvv_res_window_i16
+#define SPX_MDF_RVV_RES_SCALE             spx_mdf_rvv_res_scale_i32
+#define SPX_MDF_RVV_POWER_SPECTRUM        spx_mdf_rvv_power_spectrum_i16
+#define SPX_MDF_RVV_POWER_SPECTRUM_ACCUM  spx_mdf_rvv_power_spectrum_accum_i16
 
 #define OVERRIDE_MDF_SPECTRAL_MUL_ACCUM
 static inline void spectral_mul_accum(const spx_word16_t *X, const spx_word32_t *Y, spx_word16_t *acc, int N, int M)
@@ -173,68 +167,6 @@ static inline void spectral_mul_accum16(const spx_word16_t *X, const spx_word16_
    acc[N-1] = PSHR32(tmp1,WEIGHT_SHIFT);
 }
 
-#define OVERRIDE_MDF_RESIDUAL_WINDOW
-static inline void mdf_residual_window(spx_word16_t *y, const spx_word16_t *window, const spx_word16_t *last_y, int N)
-{
-   int i;
-   if (SPX_MDF_RVV_ON && N >= 4)
-   {
-      spx_mdf_rvv_res_window_i16(y, window, last_y, N);
-      return;
-   }
-   for (i=0;i<N;i++)
-      y[i] = MULT16_16_Q15(window[i], last_y[i]);
-}
-
-#define OVERRIDE_MDF_RESIDUAL_SCALE
-static inline void mdf_residual_scale(spx_word32_t *residual_echo, spx_word16_t leak2, int len)
-{
-   int i;
-   if (SPX_MDF_RVV_ON && len >= 4)
-   {
-      spx_mdf_rvv_res_scale_i32(residual_echo, leak2, len);
-      return;
-   }
-   for (i=0;i<len;i++)
-      residual_echo[i] = (spx_int32_t)MULT16_32_Q15(leak2,residual_echo[i]);
-}
-
-#define OVERRIDE_MDF_POWER_SPECTRUM
-static inline void power_spectrum(const spx_word16_t *X, spx_word32_t *ps, int N)
-{
-   int i, j;
-   ps[0]=MULT16_16(X[0],X[0]);
-   if (SPX_MDF_RVV_ON && N > 2 && !(N & 1))
-   {
-      spx_mdf_rvv_power_spectrum_i16(X, ps, N);
-      ps[N>>1]=MULT16_16(X[N-1],X[N-1]);
-      return;
-   }
-   for (i=1,j=1;i<N-1;i+=2,j++)
-   {
-      ps[j] =  MULT16_16(X[i],X[i]) + MULT16_16(X[i+1],X[i+1]);
-   }
-   ps[j]=MULT16_16(X[i],X[i]);
-}
-
-#define OVERRIDE_MDF_POWER_SPECTRUM_ACCUM
-static inline void power_spectrum_accum(const spx_word16_t *X, spx_word32_t *ps, int N)
-{
-   int i, j;
-   ps[0]+=MULT16_16(X[0],X[0]);
-   if (SPX_MDF_RVV_ON && N > 2 && !(N & 1))
-   {
-      spx_mdf_rvv_power_spectrum_accum_i16(X, ps, N);
-      ps[N>>1]+=MULT16_16(X[N-1],X[N-1]);
-      return;
-   }
-   for (i=1,j=1;i<N-1;i+=2,j++)
-   {
-      ps[j] +=  MULT16_16(X[i],X[i]) + MULT16_16(X[i+1],X[i+1]);
-   }
-   ps[j]+=MULT16_16(X[i],X[i]);
-}
-
 #define OVERRIDE_MDF_INNER_PROD
 static inline spx_word32_t mdf_inner_prod(const spx_word16_t *x, const spx_word16_t *y, int len)
 {
@@ -307,18 +239,12 @@ void  spx_mdf_rvv_power_spectrum_accum_f32(const float *X, float *ps, int N);
 float spx_mdf_rvv_inner_prod_f32(const float *x, const float *y, int len);
 void  spx_mdf_rvv_weight_update_f32(float *w, const float *phi, int N);
 
-#define OVERRIDE_MDF_WEIGHT_UPDATE
-static inline void mdf_weight_update(spx_word32_t *w, const spx_word32_t *phi, int N)
-{
-   int i;
-   if (SPX_MDF_RVV_ON && N >= 4)
-   {
-      spx_mdf_rvv_weight_update_f32(w, phi, N);
-      return;
-   }
-   for (i=0;i<N;i++)
-      w[i] += phi[i];
-}
+/* Kernels behind the build-independent wrappers below. */
+#define SPX_MDF_RVV_WEIGHT_UPDATE         spx_mdf_rvv_weight_update_f32
+#define SPX_MDF_RVV_RES_WINDOW            spx_mdf_rvv_res_window_f32
+#define SPX_MDF_RVV_RES_SCALE             spx_mdf_rvv_res_scale_f32
+#define SPX_MDF_RVV_POWER_SPECTRUM        spx_mdf_rvv_power_spectrum_f32
+#define SPX_MDF_RVV_POWER_SPECTRUM_ACCUM  spx_mdf_rvv_power_spectrum_accum_f32
 
 /* Float only (no fixed-point twin): the fixed WORD2INT is a cheap branchy
  * clamp, but the float one calls floor() per sample. The de-emphasis
@@ -420,68 +346,6 @@ static inline void weighted_spectral_mul_conj(const spx_float_t *w, const spx_fl
    prod[i] = FLOAT_MUL32(W,MULT16_16(X[i],Y[i]));
 }
 
-#define OVERRIDE_MDF_RESIDUAL_WINDOW
-static inline void mdf_residual_window(spx_word16_t *y, const spx_word16_t *window, const spx_word16_t *last_y, int N)
-{
-   int i;
-   if (SPX_MDF_RVV_ON && N >= 4)
-   {
-      spx_mdf_rvv_res_window_f32(y, window, last_y, N);
-      return;
-   }
-   for (i=0;i<N;i++)
-      y[i] = MULT16_16_Q15(window[i], last_y[i]);
-}
-
-#define OVERRIDE_MDF_RESIDUAL_SCALE
-static inline void mdf_residual_scale(spx_word32_t *residual_echo, spx_word16_t leak2, int len)
-{
-   int i;
-   if (SPX_MDF_RVV_ON && len >= 4)
-   {
-      spx_mdf_rvv_res_scale_f32(residual_echo, leak2, len);
-      return;
-   }
-   for (i=0;i<len;i++)
-      residual_echo[i] = (spx_int32_t)MULT16_32_Q15(leak2,residual_echo[i]);
-}
-
-#define OVERRIDE_MDF_POWER_SPECTRUM
-static inline void power_spectrum(const spx_word16_t *X, spx_word32_t *ps, int N)
-{
-   int i, j;
-   ps[0]=MULT16_16(X[0],X[0]);
-   if (SPX_MDF_RVV_ON && N > 2 && !(N & 1))
-   {
-      spx_mdf_rvv_power_spectrum_f32(X, ps, N);
-      ps[N>>1]=MULT16_16(X[N-1],X[N-1]);
-      return;
-   }
-   for (i=1,j=1;i<N-1;i+=2,j++)
-   {
-      ps[j] =  MULT16_16(X[i],X[i]) + MULT16_16(X[i+1],X[i+1]);
-   }
-   ps[j]=MULT16_16(X[i],X[i]);
-}
-
-#define OVERRIDE_MDF_POWER_SPECTRUM_ACCUM
-static inline void power_spectrum_accum(const spx_word16_t *X, spx_word32_t *ps, int N)
-{
-   int i, j;
-   ps[0]+=MULT16_16(X[0],X[0]);
-   if (SPX_MDF_RVV_ON && N > 2 && !(N & 1))
-   {
-      spx_mdf_rvv_power_spectrum_accum_f32(X, ps, N);
-      ps[N>>1]+=MULT16_16(X[N-1],X[N-1]);
-      return;
-   }
-   for (i=1,j=1;i<N-1;i+=2,j++)
-   {
-      ps[j] +=  MULT16_16(X[i],X[i]) + MULT16_16(X[i+1],X[i+1]);
-   }
-   ps[j]+=MULT16_16(X[i],X[i]);
-}
-
 #define OVERRIDE_MDF_INNER_PROD
 static inline spx_word32_t mdf_inner_prod(const spx_word16_t *x, const spx_word16_t *y, int len)
 {
@@ -537,6 +401,84 @@ static inline void mdf_adjust_prop(const spx_word32_t *W, int N, int M, int P, s
 }
 
 #endif /* FIXED_POINT / float */
+
+/* Wrappers whose C side is the same in both builds: the kernels differ only
+ * in element type, selected through the SPX_MDF_RVV_* aliases above. */
+
+#define OVERRIDE_MDF_WEIGHT_UPDATE
+static inline void mdf_weight_update(spx_word32_t *w, const spx_word32_t *phi, int N)
+{
+   int i;
+   if (SPX_MDF_RVV_ON && N >= 4)
+   {
+      SPX_MDF_RVV_WEIGHT_UPDATE(w, phi, N);
+      return;
+   }
+   for (i=0;i<N;i++)
+      w[i] += phi[i];
+}
+
+#define OVERRIDE_MDF_RESIDUAL_WINDOW
+static inline void mdf_residual_window(spx_word16_t *y, const spx_word16_t *window, const spx_word16_t *last_y, int N)
+{
+   int i;
+   if (SPX_MDF_RVV_ON && N >= 4)
+   {
+      SPX_MDF_RVV_RES_WINDOW(y, window, last_y, N);
+      return;
+   }
+   for (i=0;i<N;i++)
+      y[i] = MULT16_16_Q15(window[i], last_y[i]);
+}
+
+#define OVERRIDE_MDF_RESIDUAL_SCALE
+static inline void mdf_residual_scale(spx_word32_t *residual_echo, spx_word16_t leak2, int len)
+{
+   int i;
+   if (SPX_MDF_RVV_ON && len >= 4)
+   {
+      SPX_MDF_RVV_RES_SCALE(residual_echo, leak2, len);
+      return;
+   }
+   for (i=0;i<len;i++)
+      residual_echo[i] = (spx_int32_t)MULT16_32_Q15(leak2,residual_echo[i]);
+}
+
+#define OVERRIDE_MDF_POWER_SPECTRUM
+static inline void power_spectrum(const spx_word16_t *X, spx_word32_t *ps, int N)
+{
+   int i, j;
+   ps[0]=MULT16_16(X[0],X[0]);
+   if (SPX_MDF_RVV_ON && N > 2 && !(N & 1))
+   {
+      SPX_MDF_RVV_POWER_SPECTRUM(X, ps, N);
+      ps[N>>1]=MULT16_16(X[N-1],X[N-1]);
+      return;
+   }
+   for (i=1,j=1;i<N-1;i+=2,j++)
+   {
+      ps[j] =  MULT16_16(X[i],X[i]) + MULT16_16(X[i+1],X[i+1]);
+   }
+   ps[j]=MULT16_16(X[i],X[i]);
+}
+
+#define OVERRIDE_MDF_POWER_SPECTRUM_ACCUM
+static inline void power_spectrum_accum(const spx_word16_t *X, spx_word32_t *ps, int N)
+{
+   int i, j;
+   ps[0]+=MULT16_16(X[0],X[0]);
+   if (SPX_MDF_RVV_ON && N > 2 && !(N & 1))
+   {
+      SPX_MDF_RVV_POWER_SPECTRUM_ACCUM(X, ps, N);
+      ps[N>>1]+=MULT16_16(X[N-1],X[N-1]);
+      return;
+   }
+   for (i=1,j=1;i<N-1;i+=2,j++)
+   {
+      ps[j] +=  MULT16_16(X[i],X[i]) + MULT16_16(X[i+1],X[i+1]);
+   }
+   ps[j]+=MULT16_16(X[i],X[i]);
+}
 
 #endif /* FIXED_POINT || __riscv_float_abi_double */
 
