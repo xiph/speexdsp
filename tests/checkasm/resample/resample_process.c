@@ -125,12 +125,6 @@ void checkasm_check_resample_process(void)
                  * even after being benchmarked above. */
                 int nc = resample_process_c(st_c, fin, IN_LEN, fout_ref, OUT_LEN);
                 int nn = resample_process_simd(st_s, fin, IN_LEN, fout_new, OUT_LEN);
-                /* Gate self-test: -DCHECKASM_FORCE_FAIL injects a deterministic
-                 * divergence so the acceptance run can prove the gate fails on a
-                 * mismatch. Inert otherwise. */
-#ifdef CHECKASM_FORCE_FAIL
-                if (nn > 0) fout_new[0] = fout_ref[0] + 1000.0f;
-#endif
                 if (nc != nn ||
                     !checkasm_f32_within_tol(fout_ref, fout_new, nc, RESAMPLE_PROCESS_REL_TOL))
                     checkasm_fail();
