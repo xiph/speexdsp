@@ -43,7 +43,7 @@ static void test_preproc_window(void)
                 memcpy(frame_new, frame_base, len * sizeof *frame_new);
                 checkasm_call_ref(frame_ref, window, len);
                 checkasm_call_new(frame_new, window, len);
-                if (!preproc_buf_within_tol(frame_ref, frame_new, len, PREPROC_ELTWISE_F32_REL_TOL))
+                if (!checkasm_f32_within_tol(frame_ref, frame_new, len, PREPROC_ELTWISE_F32_REL_TOL))
                     checkasm_fail();
                 checkasm_bench_new(frame_new, window, len);
             }
@@ -77,7 +77,7 @@ static void test_preproc_power_spectrum(void)
             if (checkasm_check_func(preproc_power_spectrum_rvv, "preproc_power_spectrum_%d", N)) {
                 checkasm_call_ref(ft, ps_ref, N);
                 checkasm_call_new(ft, ps_new, N);
-                if (!preproc_buf_within_tol(ps_ref, ps_new, N, PREPROC_ELTWISE_F32_REL_TOL))
+                if (!checkasm_f32_within_tol(ps_ref, ps_new, N, PREPROC_ELTWISE_F32_REL_TOL))
                     checkasm_fail();
                 checkasm_bench_new(ft, ps_new, N);
             }
@@ -113,7 +113,7 @@ static void test_preproc_smooth_spectrum(void)
                 memcpy(S_new, S_base, N * sizeof *S_new);
                 checkasm_call_ref(S_ref, ps, N);
                 checkasm_call_new(S_new, ps, N);
-                if (!preproc_buf_within_tol(S_ref, S_new, N, PREPROC_ELTWISE_F32_REL_TOL))
+                if (!checkasm_f32_within_tol(S_ref, S_new, N, PREPROC_ELTWISE_F32_REL_TOL))
                     checkasm_fail();
                 checkasm_bench_new(S_new, ps, N);
             }
@@ -162,8 +162,8 @@ static void test_preproc_min_track(void)
                     checkasm_call_ref(Smin_ref, Stmp_ref, S, N);
                     checkasm_call_new(Smin_new, Stmp_new, S, N);
                     /* pure min/copy: bit-exact, but reuse the tol helper */
-                    if (!preproc_buf_within_tol(Smin_ref, Smin_new, N, 0.0) ||
-                        !preproc_buf_within_tol(Stmp_ref, Stmp_new, N, 0.0))
+                    if (!checkasm_f32_within_tol(Smin_ref, Smin_new, N, 0.0) ||
+                        !checkasm_f32_within_tol(Stmp_ref, Stmp_new, N, 0.0))
                         checkasm_fail();
                     checkasm_bench_new(Smin_new, Stmp_new, S, N);
                 }
@@ -201,7 +201,7 @@ static void test_preproc_update_prob(void)
                 checkasm_call_new(S, Smin, up_new, N);
                 /* the threshold multiply rounds identically in both, so
                  * the flags must match exactly */
-                if (!preproc_buf_int_exact(up_ref, up_new, N))
+                if (!checkasm_i32_bitexact((const spx_int32_t *) up_ref, (const spx_int32_t *) up_new, N))
                     checkasm_fail();
                 checkasm_bench_new(S, Smin, up_new, N);
             }
@@ -240,7 +240,7 @@ static void test_preproc_noise_update(void)
                 memcpy(noise_new, noise_base, N * sizeof *noise_new);
                 checkasm_call_ref(up, ps, noise_ref, beta, N);
                 checkasm_call_new(up, ps, noise_new, beta, N);
-                if (!preproc_buf_within_tol(noise_ref, noise_new, N, PREPROC_SNR_F32_REL_TOL))
+                if (!checkasm_f32_within_tol(noise_ref, noise_new, N, PREPROC_SNR_F32_REL_TOL))
                     checkasm_fail();
                 checkasm_bench_new(up, ps, noise_new, beta, N);
             }
@@ -281,8 +281,8 @@ static void test_preproc_snr_update(void)
             if (checkasm_check_func(preproc_snr_update_rvv, "preproc_snr_update_%d", len)) {
                 checkasm_call_ref(ps, noise, echo, reverb, old_ps, post_ref, prior_ref, len);
                 checkasm_call_new(ps, noise, echo, reverb, old_ps, post_new, prior_new, len);
-                if (!preproc_buf_within_tol(post_ref, post_new, len, PREPROC_SNR_F32_REL_TOL) ||
-                    !preproc_buf_within_tol(prior_ref, prior_new, len, PREPROC_SNR_F32_REL_TOL))
+                if (!checkasm_f32_within_tol(post_ref, post_new, len, PREPROC_SNR_F32_REL_TOL) ||
+                    !checkasm_f32_within_tol(prior_ref, prior_new, len, PREPROC_SNR_F32_REL_TOL))
                     checkasm_fail();
                 checkasm_bench_new(ps, noise, echo, reverb, old_ps, post_new, prior_new, len);
             }
@@ -319,7 +319,7 @@ static void test_preproc_zeta_smooth(void)
                 memcpy(zeta_new, zeta_base, len * sizeof *zeta_new);
                 checkasm_call_ref(zeta_ref, prior, N, NBANDS);
                 checkasm_call_new(zeta_new, prior, N, NBANDS);
-                if (!preproc_buf_within_tol(zeta_ref, zeta_new, len, PREPROC_ELTWISE_F32_REL_TOL))
+                if (!checkasm_f32_within_tol(zeta_ref, zeta_new, len, PREPROC_ELTWISE_F32_REL_TOL))
                     checkasm_fail();
                 checkasm_bench_new(zeta_new, prior, N, NBANDS);
             }
@@ -387,9 +387,9 @@ static void test_preproc_em_gain(void)
                 memcpy(old_ps_new, old_ps_base, N * sizeof *old_ps_new);
                 checkasm_call_ref(prior, post, ps, gain_floor, gain_ref, gain2_ref, old_ps_ref, N);
                 checkasm_call_new(prior, post, ps, gain_floor, gain_new, gain2_new, old_ps_new, N);
-                if (!preproc_buf_within_tol(gain_ref, gain_new, N, PREPROC_EM_F32_REL_TOL) ||
-                    !preproc_buf_within_tol(gain2_ref, gain2_new, N, PREPROC_EM_F32_REL_TOL) ||
-                    !preproc_buf_within_tol(old_ps_ref, old_ps_new, N, PREPROC_EM_F32_REL_TOL))
+                if (!checkasm_f32_within_tol(gain_ref, gain_new, N, PREPROC_EM_F32_REL_TOL) ||
+                    !checkasm_f32_within_tol(gain2_ref, gain2_new, N, PREPROC_EM_F32_REL_TOL) ||
+                    !checkasm_f32_within_tol(old_ps_ref, old_ps_new, N, PREPROC_EM_F32_REL_TOL))
                     checkasm_fail();
                 checkasm_bench_new(prior, post, ps, gain_floor, gain_new, gain2_new, old_ps_new, N);
             }
@@ -425,7 +425,7 @@ static void test_preproc_apply_gain(void)
                 memcpy(ft_new, ft_base, 2 * N * sizeof *ft_new);
                 checkasm_call_ref(gain2, ft_ref, N);
                 checkasm_call_new(gain2, ft_new, N);
-                if (!preproc_buf_within_tol(ft_ref, ft_new, 2 * N, PREPROC_ELTWISE_F32_REL_TOL))
+                if (!checkasm_f32_within_tol(ft_ref, ft_new, 2 * N, PREPROC_ELTWISE_F32_REL_TOL))
                     checkasm_fail();
                 checkasm_bench_new(gain2, ft_new, N);
             }
@@ -482,7 +482,7 @@ static void test_preproc_overlap_output(void)
                                         len, ties ? "_ties" : "")) {
                     checkasm_call_ref(x_ref, outbuf, frame, len);
                     checkasm_call_new(x_new, outbuf, frame, len);
-                    if (!preproc_buf_i16_exact(x_ref, x_new, len))
+                    if (!checkasm_i16_bitexact(x_ref, x_new, len))
                         checkasm_fail();
                     checkasm_bench_new(x_new, outbuf, frame, len);
                 }

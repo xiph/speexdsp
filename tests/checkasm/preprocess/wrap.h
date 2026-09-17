@@ -1,11 +1,10 @@
 #ifndef SPEEXDSP_TESTS_CHECKASM_PREPROCESS_WRAP_H
 #define SPEEXDSP_TESTS_CHECKASM_PREPROCESS_WRAP_H
 
-#include <stdio.h>
 #include <string.h>
-#include <math.h>
 #include "config.h"
 #include "arch.h"
+#include "../compare.h"
 
 /* Tests for preprocess.c's per-bin kernels (windowing, power spectrum,
  * noise tracking, SNR update, Ephraim-Malah gain, gain application), C vs
@@ -70,17 +69,10 @@ void preproc_overlap_output_rvv(spx_int16_t *x, const float *outbuf,
 
 /* ------------- Test-input fill -------------
  * The kernels assume the value ranges the algorithm maintains (power
- * spectra are non-negative, SNRs are clamped to [?, 100], gains sit in
+ * spectra are non-negative, SNRs are clamped at 100, gains sit in
  * [0, 1]); raw random bits would push them into states preprocess.c can
  * never reach (NaNs, negative powers), so fill accordingly. */
-#include <checkasm/utils.h>
-
-static inline void preproc_fill_signal(float *buf, int n) /* [-1, 1) */
-{
-    checkasm_randomize_rangef(buf, n, 2.0f);
-    for (int i = 0; i < n; i++)
-        buf[i] -= 1.0f;
-}
+#define preproc_fill_signal checkasm_fill_symmetric_f32   /* [-1, 1) */
 
 static inline void preproc_fill_power(float *buf, int n) /* [0, 1e6) */
 {
@@ -108,59 +100,14 @@ static inline void preproc_fill_prob(int *buf, int n) /* 0/1 */
 
 /* ------------- Output comparison -------------
  * The RVV kernels use FMAs, a shared 1/x, and reordered sums, so compare
- * relative to the buffer peak. em_gain also crosses the .333*g > gain
- * branch, whose two sides differ by 1e-3 at the threshold (3*.333 = .999),
- * hence its looser bound. */
+ * with checkasm_f32_within_tol relative to the buffer peak. em_gain also
+ * crosses the .333*g > gain branch, whose two sides differ by 1e-3 at the
+ * threshold (3*.333 = .999), hence its looser bound. The int16 output of
+ * preproc_overlap_output and the update_prob flags are bit-exact
+ * (checkasm_i16_bitexact / checkasm_i32_bitexact). */
 #define PREPROC_ELTWISE_F32_REL_TOL 1e-6
 #define PREPROC_SNR_F32_REL_TOL     1e-5
 #define PREPROC_EM_F32_REL_TOL      2e-3
-
-static inline int preproc_buf_within_tol(const float *ref, const float *res, int n, double rel_tol)
-{
-    double peak = 0.0;
-    for (int i = 0; i < n; i++) {
-        double v = fabs((double) ref[i]);
-        if (v > peak) peak = v;
-    }
-    for (int i = 0; i < n; i++) {
-        double diff = fabs((double) ref[i] - (double) res[i]);
-        double rel  = peak > 0.0 ? diff / peak : diff;
-        /* NaN-safe: rel > rel_tol would be false for NaN and wrongly pass. */
-        if (!(rel <= rel_tol)) {
-            fprintf(stderr, "FAILED: [%d] ref=%g res=%g diff=%g peak=%g "
-                    "rel=%.2e (tol %g)\n",
-                    i, (double) ref[i], (double) res[i], diff, peak, rel, rel_tol);
-            return 0;
-        }
-    }
-    return 1;
-}
-
-/* The int16 output of preproc_overlap_output is bit-exact: the RVV
- * WORD2INT kernel replicates floor(.5+x) exactly. */
-static inline int preproc_buf_i16_exact(const spx_int16_t *ref, const spx_int16_t *res, int n)
-{
-    for (int i = 0; i < n; i++) {
-        if (ref[i] != res[i]) {
-            fprintf(stderr, "FAILED: [%d] ref=%d res=%d (bit-exact required)\n",
-                    i, (int) ref[i], (int) res[i]);
-            return 0;
-        }
-    }
-    return 1;
-}
-
-static inline int preproc_buf_int_exact(const int *ref, const int *res, int n)
-{
-    for (int i = 0; i < n; i++) {
-        if (ref[i] != res[i]) {
-            fprintf(stderr, "FAILED: [%d] ref=%d res=%d (exact match required)\n",
-                    i, ref[i], res[i]);
-            return 0;
-        }
-    }
-    return 1;
-}
 
 #endif /* !FIXED_POINT */
 

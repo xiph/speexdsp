@@ -96,7 +96,7 @@ void checkasm_check_resample_process(void)
     CHECKASM_ALIGN(spx_int16_t iin[IN_BUF]);
     CHECKASM_ALIGN(spx_int16_t iout_ref[OUT_BUF]);
     CHECKASM_ALIGN(spx_int16_t iout_new[OUT_BUF]);
-    resample_fill_float(fin, IN_BUF);
+    checkasm_fill_symmetric_f32(fin, IN_BUF);
     resample_fill_int16(iin, IN_BUF);
 
     for (size_t i = 0; i < sizeof(conversions) / sizeof(conversions[0]); i++) {
@@ -133,7 +133,7 @@ void checkasm_check_resample_process(void)
                 if (nn > 0) fout_new[0] = fout_ref[0] + 1000.0f;
 #endif
                 if (nc != nn ||
-                    !resample_float_within_tol(fout_ref, fout_new, (unsigned) nc, RESAMPLE_PROCESS_REL_TOL))
+                    !checkasm_f32_within_tol(fout_ref, fout_new, nc, RESAMPLE_PROCESS_REL_TOL))
                     checkasm_fail();
                 checkasm_bench_new(st_s, fin, IN_LEN, fout_new, OUT_LEN);
             }
@@ -195,7 +195,7 @@ void checkasm_check_resample_process(void)
                 int nc = resample_process_il_c(st_c, fin, IN_LEN, fout_ref, OUT_LEN);
                 int nn = resample_process_il_simd(st_s, fin, IN_LEN, fout_new, OUT_LEN);
                 if (nc != nn ||
-                    !resample_float_within_tol(fout_ref, fout_new, (unsigned) nc * MAX_CH, RESAMPLE_PROCESS_REL_TOL))
+                    !checkasm_f32_within_tol(fout_ref, fout_new, nc * MAX_CH, RESAMPLE_PROCESS_REL_TOL))
                     checkasm_fail();
                 checkasm_bench_new(st_s, fin, IN_LEN, fout_new, OUT_LEN);
             }

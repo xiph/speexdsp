@@ -52,7 +52,7 @@ void checkasm_check_smallft_stage(void)
                         memcpy(out_new, garbage, n * sizeof *out_new);
                         checkasm_call_ref(l, &st[s], backward, in, out_ref);
                         checkasm_call_new(l, &st[s], backward, in, out_new);
-                        if (!smallft_buf_within_tol(out_ref, out_new, n, DRFT_STAGE_REL_TOL))
+                        if (!checkasm_f32_within_tol(out_ref, out_new, n, DRFT_STAGE_REL_TOL))
                             checkasm_fail();
                         checkasm_bench_new(l, &st[s], backward, in, out_new);
                     }
@@ -103,7 +103,7 @@ void checkasm_check_smallft_transform(void)
                     memcpy(buf_new, in, n * sizeof *buf_new);
                     checkasm_call_ref(l, NULL, backward, buf_ref, NULL);
                     checkasm_call_new(l, NULL, backward, buf_new, NULL);
-                    if (!smallft_buf_within_tol(buf_ref, buf_new, n, DRFT_FFT_REL_TOL))
+                    if (!checkasm_f32_within_tol(buf_ref, buf_new, n, DRFT_FFT_REL_TOL))
                         checkasm_fail();
                     memcpy(buf_new, in, n * sizeof *buf_new);
                     checkasm_bench_new(l, NULL, backward, BENCH_RESTORED(buf_new), NULL);

@@ -429,7 +429,7 @@ static void test_mdf_deemph_output(void)
                                     len, stride, configs[c].ties ? "_ties" : "")) {
                 spx_word16_t mem_ref = checkasm_call_ref(out_ref, input, e, &preemph, &mem0, len, stride);
                 spx_word16_t mem_new = checkasm_call_new(out_new, input, e, &preemph, &mem0, len, stride);
-                if (!mdf_buf_i16_exact(out_ref, out_new, len * stride) ||
+                if (!checkasm_i16_bitexact(out_ref, out_new, len * stride) ||
                     !mdf_scalar_matches(mem_ref, mem_new, 0.0, 0.0))
                     checkasm_fail();
                 checkasm_bench_new(out_new, input, e, &preemph, &mem0, len, stride);

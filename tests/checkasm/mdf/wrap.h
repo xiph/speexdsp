@@ -1,12 +1,11 @@
 #ifndef SPEEXDSP_TESTS_CHECKASM_MDF_WRAP_H
 #define SPEEXDSP_TESTS_CHECKASM_MDF_WRAP_H
 
-#include <stdio.h>
 #include <string.h>
-#include <math.h>
 #include "config.h"
 #include "arch.h"
 #include "pseudofloat.h"
+#include "../compare.h"
 
 /* Tests for mdf.c's spectral kernels (spectral_mul_accum(16),
  * weighted_spectral_mul_conj, power_spectrum(_accum), mdf_inner_prod,
@@ -69,18 +68,13 @@ spx_word16_t mdf_deemph_output_rvv(spx_int16_t *out, const spx_word16_t *input,
 #endif
 
 /* ------------- Test-input fill ------------- */
-#include <checkasm/utils.h>
-
 static inline void mdf_fill_w16(spx_word16_t *buf, int n)
 {
 #ifdef FIXED_POINT
     /* Full-range random int16: bit-exactness needs no headroom. */
     checkasm_init(buf, (size_t) n * sizeof *buf);
 #else
-    /* Symmetric [-1, 1) floats (raw random bits would be NaN/Inf soup). */
-    checkasm_randomize_rangef(buf, n, 2.0f);
-    for (int i = 0; i < n; i++)
-        buf[i] -= 1.0f;
+    checkasm_fill_symmetric_f32(buf, n);
 #endif
 }
 
@@ -97,21 +91,8 @@ static inline void mdf_fill_w32(spx_word32_t *buf, int n)
  * Fixed point: the RVV kernels replicate the C arithmetic exactly (wrapping
  * adds commute), so any difference is a real bug -> bit-exact. Float: the
  * kernels use FMAs and reordered sums -> compare relative to the buffer
- * peak. */
-/* The int16 output of mdf_deemph_output is bit-exact in both builds (the
- * float WORD2INT kernel replicates floor(.5+x) exactly). */
-static inline int mdf_buf_i16_exact(const spx_int16_t *ref, const spx_int16_t *res, int n)
-{
-    for (int i = 0; i < n; i++) {
-        if (ref[i] != res[i]) {
-            fprintf(stderr, "FAILED: [%d] ref=%d res=%d (bit-exact required)\n",
-                    i, (int) ref[i], (int) res[i]);
-            return 0;
-        }
-    }
-    return 1;
-}
-
+ * peak. The int16 output of mdf_deemph_output is bit-exact in both builds
+ * (the float WORD2INT kernel replicates floor(.5+x) exactly). */
 #define MDF_SMUL_F32_REL_TOL  1e-5
 #define MDF_WSMUL_F32_REL_TOL 1e-5
 #define MDF_PS_F32_REL_TOL    1e-6
@@ -120,30 +101,8 @@ static inline int mdf_buf_i16_exact(const spx_int16_t *ref, const spx_int16_t *r
 #define MDF_ACC_F32_TOL       1e-6  /* of sum|terms|, not of the result */
 
 #ifdef FIXED_POINT
-#define mdf_buf16_matches(ref, res, n, tol) mdf_buf_bitexact_w16(ref, res, n)
-#define mdf_buf32_matches(ref, res, n, tol) mdf_buf_bitexact_w32(ref, res, n)
-static inline int mdf_buf_bitexact_w16(const spx_word16_t *ref, const spx_word16_t *res, int n)
-{
-    for (int i = 0; i < n; i++) {
-        if (ref[i] != res[i]) {
-            fprintf(stderr, "FAILED: [%d] ref=%d res=%d (bit-exact required)\n",
-                    i, (int) ref[i], (int) res[i]);
-            return 0;
-        }
-    }
-    return 1;
-}
-static inline int mdf_buf_bitexact_w32(const spx_word32_t *ref, const spx_word32_t *res, int n)
-{
-    for (int i = 0; i < n; i++) {
-        if (ref[i] != res[i]) {
-            fprintf(stderr, "FAILED: [%d] ref=%ld res=%ld (bit-exact required)\n",
-                    i, (long) ref[i], (long) res[i]);
-            return 0;
-        }
-    }
-    return 1;
-}
+#define mdf_buf16_matches(ref, res, n, tol) checkasm_i16_bitexact(ref, res, n)
+#define mdf_buf32_matches(ref, res, n, tol) checkasm_i32_bitexact(ref, res, n)
 static inline int mdf_scalar_matches(spx_word32_t ref, spx_word32_t res,
                                      double scale, double tol)
 {
@@ -157,28 +116,8 @@ static inline int mdf_scalar_matches(spx_word32_t ref, spx_word32_t res,
     return 1;
 }
 #else
-static inline int mdf_buf_within_tol(const float *ref, const float *res, int n, double rel_tol)
-{
-    double peak = 0.0;
-    for (int i = 0; i < n; i++) {
-        double v = fabs((double) ref[i]);
-        if (v > peak) peak = v;
-    }
-    for (int i = 0; i < n; i++) {
-        double diff = fabs((double) ref[i] - (double) res[i]);
-        double rel  = peak > 0.0 ? diff / peak : diff;
-        /* NaN-safe: rel > rel_tol would be false for NaN and wrongly pass. */
-        if (!(rel <= rel_tol)) {
-            fprintf(stderr, "FAILED: [%d] ref=%g res=%g diff=%g peak=%g "
-                    "rel=%.2e (tol %g)\n",
-                    i, (double) ref[i], (double) res[i], diff, peak, rel, rel_tol);
-            return 0;
-        }
-    }
-    return 1;
-}
-#define mdf_buf16_matches(ref, res, n, tol) mdf_buf_within_tol(ref, res, n, tol)
-#define mdf_buf32_matches(ref, res, n, tol) mdf_buf_within_tol(ref, res, n, tol)
+#define mdf_buf16_matches(ref, res, n, tol) checkasm_f32_within_tol(ref, res, n, tol)
+#define mdf_buf32_matches(ref, res, n, tol) checkasm_f32_within_tol(ref, res, n, tol)
 /* rel_tol of the result plus MDF_ACC_F32_TOL of `scale`, the magnitude it was
  * accumulated from (0 if the caller has none): a reduction whose terms cancel
  * leaves a result too small to judge reassociated rounding against. */

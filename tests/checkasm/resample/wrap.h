@@ -1,13 +1,12 @@
 #ifndef SPEEXDSP_TESTS_CHECKASM_RESAMPLE_WRAP_H
 #define SPEEXDSP_TESTS_CHECKASM_RESAMPLE_WRAP_H
 
-#include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
 #include <inttypes.h>
 #include "config.h"
 #include "arch.h"
 #include "speex/speex_resampler.h" /* opaque SpeexResamplerState type */
+#include "../compare.h"
 
 /* These tests exercise the four *full* resampler kernels in
  * libspeexdsp/resample.c -- resampler_basic_{direct,interpolate}_{single,double}
@@ -197,28 +196,15 @@ int resample_process_int_il_rvv(SpeexResamplerState *st, const spx_int16_t *in,
 #endif /* !DISABLE_FLOAT_API */
 
 /* ------------- Test-input fill -------------
- * Reuses checkasm's randomizers. Inputs feed the real sinc-table dot product:
- * the table has ~unity gain (coefficients sum to ~1.0 / ~32768), so even
- * full-range int16 input keeps the int32 accumulator well within range. */
-#include <checkasm/utils.h>
-
-/* checkasm_init fills raw bytes; reinterpreted as float that yields the full
- * IEEE-754 exponent range plus NaN/Inf, which would make a long dot product
- * almost certainly NaN/Inf. Use checkasm's float-aware uniform helper and shift
- * to symmetric [-1, 1). */
-static inline void resample_fill_float(float *buf, unsigned n)
-{
-    checkasm_randomize_rangef(buf, (int) n, 2.0f);
-    for (unsigned i = 0; i < n; i++)
-        buf[i] -= 1.0f;
-}
-
+ * Inputs feed the real sinc-table dot product: the table has ~unity gain
+ * (coefficients sum to ~1.0 / ~32768), so even full-range int16 input keeps
+ * the int32 accumulator well within range. */
 static inline void resample_fill_input(spx_word16_t *buf, unsigned n)
 {
 #ifdef FIXED_POINT
     checkasm_init(buf, n * sizeof *buf);
 #else
-    resample_fill_float(buf, n);
+    checkasm_fill_symmetric_f32(buf, (int) n);
 #endif
 }
 
@@ -226,10 +212,7 @@ static inline void resample_fill_input(spx_word16_t *buf, unsigned n)
  * All four functions write spx_word16_t out[] (float in floating point). The
  * C and SIMD builds differ only in the inner-product summation, so:
  *  - float:  the buffer agrees to a relative tolerance, normalized by the
- *            buffer's peak |ref| (L-infinity). Normalizing by the peak rather
- *            than per-sample |ref| avoids the cancellation flakiness that a
- *            near-zero output sample would otherwise cause (see Higham, backward
- *            error of a dot product).
+ *            buffer's peak |ref| (checkasm_f32_within_tol).
  *  - word16 (FIXED_POINT): C uses SATURATE32PSHR (clamps to +/-32767) while NEON
  *            uses sqrshrn/vqrshrn (reaches -32768), so at most one LSB diverges
  *            per output sample -> absolute 1-LSB tolerance. The RVV kernels
@@ -248,18 +231,6 @@ static inline void resample_fill_input(spx_word16_t *buf, unsigned n)
 #define RESAMPLE_DOUBLE_REL_TOL          1e-9   /* both sides multiply in float */
 #define RESAMPLE_DOUBLE_FLOATMUL_REL_TOL 1e-6   /* C rounds products to f32; RVV's vfwmacc forms exact f64 */
 #define RESAMPLE_WORD16_LSB_TOL          1
-
-#ifndef FIXED_POINT
-static inline double resample_peak(const spx_word16_t *a, unsigned n)
-{
-    double p = 0.0;
-    for (unsigned i = 0; i < n; i++) {
-        double v = fabs((double) a[i]);
-        if (v > p) p = v;
-    }
-    return p;
-}
-#endif
 
 /* Returns 1 if res agrees with ref over all n samples, else 0 (with a
  * diagnostic to stderr). rel_tol is ignored in FIXED_POINT. */
@@ -280,19 +251,7 @@ static inline int resample_buffer_within_tol(const spx_word16_t *ref,
     }
     return 1;
 #else
-    double peak = resample_peak(ref, n);
-    for (unsigned i = 0; i < n; i++) {
-        double diff = fabs((double) ref[i] - (double) res[i]);
-        double rel  = peak > 0.0 ? diff / peak : diff;
-        /* NaN-safe: rel > rel_tol would be false for NaN and wrongly pass. */
-        if (!(rel <= rel_tol)) {
-            fprintf(stderr, "FAILED: sample %u ref=%g res=%g diff=%g peak=%g "
-                    "rel=%.2e (tol %g)\n",
-                    i, (double) ref[i], (double) res[i], diff, peak, rel, rel_tol);
-            return 0;
-        }
-    }
-    return 1;
+    return checkasm_f32_within_tol(ref, res, (int) n, rel_tol);
 #endif
 }
 
@@ -301,50 +260,15 @@ static inline int resample_buffer_within_tol(const spx_word16_t *ref,
  * reproduce the C kernels bit for bit (exact widening products, wrapping int32
  * accumulation -- associative under any lane split -- and the same scalar
  * MULT16_32_Q15 / SATURATE32PSHR combine), so any difference is a real bug. */
-static inline int resample_buffer_bitexact(const spx_word16_t *ref,
-        const spx_word16_t *res, unsigned n)
-{
-    for (unsigned i = 0; i < n; i++) {
-        if (ref[i] != res[i]) {
-            fprintf(stderr, "FAILED: sample %u ref=%" PRId32 " res=%" PRId32
-                    " (bit-exact required)\n",
-                    i, (int32_t) ref[i], (int32_t) res[i]);
-            return 0;
-        }
-    }
-    return 1;
-}
+#define resample_buffer_bitexact(ref, res, n) checkasm_i16_bitexact(ref, res, (int) (n))
 #endif
 
 /* ------------- Integration output comparison -------------
  * speex_resampler_process_float always writes plain float (even in FIXED_POINT,
- * where it converts), so the integration test cannot reuse the spx_word16_t
- * helper above. Compare relative to the buffer peak (L-infinity), like the
- * float path of resample_buffer_within_tol. */
+ * where it converts), so the integration test compares with
+ * checkasm_f32_within_tol directly. */
 #ifndef DISABLE_FLOAT_API
 #define RESAMPLE_PROCESS_REL_TOL 1e-3   /* full-pipeline C-vs-SIMD, peak-relative */
-
-static inline int resample_float_within_tol(const float *ref, const float *res,
-        unsigned n, double rel_tol)
-{
-    double peak = 0.0;
-    for (unsigned i = 0; i < n; i++) {
-        double v = fabs((double) ref[i]);
-        if (v > peak) peak = v;
-    }
-    for (unsigned i = 0; i < n; i++) {
-        double diff = fabs((double) ref[i] - (double) res[i]);
-        double rel  = peak > 0.0 ? diff / peak : diff;
-        /* NaN-safe: rel > rel_tol would be false for NaN and wrongly pass. */
-        if (!(rel <= rel_tol)) {
-            fprintf(stderr, "FAILED: out[%u] ref=%g res=%g diff=%g peak=%g "
-                    "rel=%.2e (tol %g)\n",
-                    i, (double) ref[i], (double) res[i], diff, peak, rel, rel_tol);
-            return 0;
-        }
-    }
-    return 1;
-}
 
 /* int16 output path (process_int). Random full-range int16 input naturally
  * drives some samples into saturation, exercising WORD2INT. Two bounded effects

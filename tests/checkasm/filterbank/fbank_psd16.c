@@ -54,14 +54,14 @@ void checkasm_check_fbank_psd16(void)
             if (checkasm_check_func(fbank_psd16_rvv, "fbank_psd16_%d_n%d", rate, len)) {
                 checkasm_call_ref(bank, mel, ps_ref);
                 checkasm_call_new(bank, mel, ps_new);
-                if (!fbank_buf_within_tol(ps_ref, ps_new, len, FBANK_PSD16_F32_REL_TOL))
+                if (!checkasm_f32_within_tol(ps_ref, ps_new, len, FBANK_PSD16_F32_REL_TOL))
                     checkasm_fail();
 
                 fbank_fill_gain(aliased_ref + len, NBANDS);
                 memcpy(aliased_new + len, aliased_ref + len, NBANDS * sizeof *aliased_new);
                 checkasm_call_ref(bank, aliased_ref + len, aliased_ref);
                 checkasm_call_new(bank, aliased_new + len, aliased_new);
-                if (!fbank_buf_within_tol(aliased_ref, aliased_new, len, FBANK_PSD16_F32_REL_TOL))
+                if (!checkasm_f32_within_tol(aliased_ref, aliased_new, len, FBANK_PSD16_F32_REL_TOL))
                     checkasm_fail();
 
                 checkasm_bench_new(bank, mel, ps_new);
