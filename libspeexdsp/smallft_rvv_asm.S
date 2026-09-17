@@ -82,7 +82,8 @@ spx_drft_rvv_vlenb:
 
 /* ------------------------------------------------------------------ */
 /* int spx_drft_rvv_compliant(void)
- * Reject draft RVV 0.7.1 hardware (sets VILL on a ta,ma vtype config). */
+ * Reject draft RVV 0.7.1 hardware (sets VILL on a ta,ma vtype config);
+ * see spx_resample_rvv_compliant for the reasoning. */
     .balign 4
     .globl  spx_drft_rvv_compliant
     .hidden spx_drft_rvv_compliant

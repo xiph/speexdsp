@@ -64,8 +64,8 @@ spx_fbank_rvv_vlenb:
 
 /* ------------------------------------------------------------------ */
 /* int spx_fbank_rvv_compliant(void)
- * Reject draft RVV 0.7.1 hardware (sets VILL on a ta,ma vtype config).
- * Mirrors spx_preproc_rvv_compliant. */
+ * Reject draft RVV 0.7.1 hardware (sets VILL on a ta,ma vtype config);
+ * see spx_resample_rvv_compliant for the reasoning. */
     .balign 4
     .globl  spx_fbank_rvv_compliant
     .hidden spx_fbank_rvv_compliant
