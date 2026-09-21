@@ -116,10 +116,12 @@ include_directories(
     ${CMAKE_CURRENT_BINARY_DIR}/include/speex
 )
 
-# Source files (exclude test programs)
+# Source files (exclude test programs and the RISC-V-only probe, added
+# back below under HAS_RVV_ASM)
 file(GLOB SPEEXDSP_SOURCES libspeexdsp/*.c)
 list(REMOVE_ITEM SPEEXDSP_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/libspeexdsp/bench_echo.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/libspeexdsp/rvv_cpu.c
     ${CMAKE_CURRENT_SOURCE_DIR}/libspeexdsp/testdenoise.c
     ${CMAKE_CURRENT_SOURCE_DIR}/libspeexdsp/testecho.c
     ${CMAKE_CURRENT_SOURCE_DIR}/libspeexdsp/testjitter.c
@@ -131,6 +133,7 @@ add_library(speexdsp ${SPEEXDSP_SOURCES})
 
 if(HAS_RVV_ASM)
     enable_language(ASM)
+    target_sources(speexdsp PRIVATE libspeexdsp/rvv_cpu.c)
     target_sources(speexdsp PRIVATE libspeexdsp/resample_rvv_asm.S)
     target_sources(speexdsp PRIVATE libspeexdsp/mdf_rvv_asm.S)
     target_sources(speexdsp PRIVATE libspeexdsp/preprocess_rvv_asm.S)

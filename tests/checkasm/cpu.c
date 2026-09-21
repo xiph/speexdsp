@@ -5,10 +5,8 @@
 #include <asm/hwcap.h>
 #endif
 
-#if defined(__riscv) && defined(__linux__)
-#include <sys/auxv.h>
-/* AT_HWCAP bit for 'V' (asm/hwcap.h may lack the macro) */
-#define SPEEXDSP_RISCV_HWCAP_V (1UL << ('V' - 'A'))
+#if defined(__riscv) && defined(USE_RVV)
+#include "rvv_cpu.h"   /* the library's own probe: HWCAP + RVV 0.7.1 rejection */
 #endif
 
 CheckasmCpu detect_cpu_flags(void)
@@ -35,8 +33,8 @@ CheckasmCpu detect_cpu_flags(void)
         flags |= SPEEXDSP_CPU_FLAG_SSE2;
 #endif
 #elif defined(__riscv)
-#if defined(USE_RVV) && defined(__linux__)
-    if (getauxval(AT_HWCAP) & SPEEXDSP_RISCV_HWCAP_V)
+#if defined(USE_RVV)
+    if (spx_rvv_detect())
         flags |= SPEEXDSP_CPU_FLAG_RVV;
 #endif
 #endif

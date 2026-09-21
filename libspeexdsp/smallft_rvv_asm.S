@@ -69,32 +69,6 @@
 #define SQRT2_BITS  0x3FB504F3   /* 1.414213562373095f */
 #define NSQRT2_BITS 0xBFB504F3
 
-/* ------------------------------------------------------------------ */
-/* unsigned int spx_drft_rvv_vlenb(void) -- VLEN in bytes. */
-    .balign 4
-    .globl  spx_drft_rvv_vlenb
-    .hidden spx_drft_rvv_vlenb
-    .type   spx_drft_rvv_vlenb, @function
-spx_drft_rvv_vlenb:
-    vsetvli a0, zero, e8, m1, ta, ma
-    ret
-    .size spx_drft_rvv_vlenb, . - spx_drft_rvv_vlenb
-
-/* ------------------------------------------------------------------ */
-/* int spx_drft_rvv_compliant(void)
- * Reject draft RVV 0.7.1 hardware (sets VILL on a ta,ma vtype config);
- * see spx_resample_rvv_compliant for the reasoning. */
-    .balign 4
-    .globl  spx_drft_rvv_compliant
-    .hidden spx_drft_rvv_compliant
-    .type   spx_drft_rvv_compliant, @function
-spx_drft_rvv_compliant:
-    vsetvli t0, zero, e8, m1, ta, ma
-    csrr    a0, vtype
-    sgtz    a0, a0
-    ret
-    .size spx_drft_rvv_compliant, . - spx_drft_rvv_compliant
-
 /* Forward complex twiddle (conjugate style used by dradf*):
  *   cr = wr*yr + wi*yi ; ci = wr*yi - wi*yr */
 .macro drft_cmulf cr, ci, wr, wi, yr, yi

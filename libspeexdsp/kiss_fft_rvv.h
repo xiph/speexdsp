@@ -51,10 +51,9 @@
 #ifdef KISS_FFT_RVV_FORCE_ON
 #  define SPX_KF_RVV_ON 1
 #else
-extern int spx_kf_rvv_enabled;       /* defined in kiss_fft.c, detected at alloc */
-unsigned int spx_kf_rvv_vlenb(void);
-int spx_kf_rvv_compliant(void);
-#  define SPX_KF_RVV_ON spx_kf_rvv_enabled
+#include "rvv_cpu.h"
+extern int spx_kf_rvv_enabled;   /* defined in kiss_fft.c: -1 until its first init probes, then 0/1 */
+#  define SPX_KF_RVV_ON (spx_kf_rvv_enabled > 0)
 #  define KISS_FFT_RVV_RUNTIME 1     /* tells kiss_fft.c to define+detect the flag */
 #endif
 

@@ -49,26 +49,8 @@
 #endif
 
 #ifdef SMALLFT_RVV_RUNTIME
-#if defined(__linux__)
-#include <sys/auxv.h>
+int spx_drft_rvv_enabled = -1;   /* -1 until the first init probes */
 #endif
-int spx_drft_rvv_enabled = 0;
-static void drft_detect_rvv(void)
-{
-  static int rvv_probed = 0;
-  if (rvv_probed)
-    return;
-#if defined(__linux__)
-  /* 'V' HWCAP bit, then reject draft RVV 0.7.1 hardware (which also sets
-     it) via the vtype/VILL probe, and require VLEN >= 128 (the kernels'
-     precondition; V mandates Zvl128b, but verify it directly). */
-  if (getauxval(AT_HWCAP) & (1UL << ('V' - 'A')))
-    spx_drft_rvv_enabled = spx_drft_rvv_compliant()
-                        && spx_drft_rvv_vlenb() >= 16;
-#endif
-  rvv_probed = 1;
-}
-#endif /* SMALLFT_RVV_RUNTIME */
 
 static void drfti1(int n, float *wa, int *ifac){
   static const int ntryh[4] = { 4,2,3,5 };
@@ -1277,7 +1259,8 @@ void spx_drft_backward(struct drft_lookup *l,float *data){
 void spx_drft_init(struct drft_lookup *l,int n)
 {
 #ifdef SMALLFT_RVV_RUNTIME
-  drft_detect_rvv();
+  if (spx_drft_rvv_enabled < 0)
+    spx_drft_rvv_enabled = spx_rvv_detect();
 #endif
   l->n=n;
   l->trigcache=(float*)speex_alloc(3*n*sizeof(*l->trigcache));

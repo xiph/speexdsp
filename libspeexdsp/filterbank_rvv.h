@@ -62,10 +62,9 @@
 #ifdef FBANK_RVV_FORCE_ON
 #  define SPX_FBANK_RVV_ON 1
 #else
-extern int spx_fbank_rvv_enabled;  /* defined in filterbank.c, detected at init */
-unsigned int spx_fbank_rvv_vlenb(void);
-int spx_fbank_rvv_compliant(void);
-#  define SPX_FBANK_RVV_ON spx_fbank_rvv_enabled
+#include "rvv_cpu.h"
+extern int spx_fbank_rvv_enabled;   /* defined in filterbank.c: -1 until its first init probes, then 0/1 */
+#  define SPX_FBANK_RVV_ON (spx_fbank_rvv_enabled > 0)
 #  define FBANK_RVV_RUNTIME 1        /* tells filterbank.c to define+detect the flag */
 #endif
 

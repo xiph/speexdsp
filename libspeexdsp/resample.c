@@ -110,26 +110,8 @@ static void speex_free(void *ptr) {free(ptr);}
 #endif
 
 #ifdef RESAMPLE_RVV_RUNTIME
-#if defined(__linux__)
-#include <sys/auxv.h>
+int spx_rvv_enabled = -1;   /* -1 until the first init probes */
 #endif
-int spx_rvv_enabled = 0;
-static void resampler_detect_rvv(void)
-{
-   static int rvv_probed = 0;
-   if (rvv_probed)
-      return;
-#if defined(__linux__)
-   /* 'V' HWCAP bit, then reject draft RVV 0.7.1 hardware (which also sets it)
-      via the vtype/VILL probe, and require VLEN >= 128 (the kernels'
-      precondition; V mandates Zvl128b, but verify it directly). */
-   if (getauxval(AT_HWCAP) & (1UL << ('V' - 'A')))
-      spx_rvv_enabled = spx_resample_rvv_compliant()
-                     && spx_resample_rvv_vlenb() >= 16;
-#endif
-   rvv_probed = 1;
-}
-#endif /* RESAMPLE_RVV_RUNTIME */
 
 /* Number of elements to allocate on the stack */
 #ifdef VAR_ARRAYS
@@ -838,7 +820,8 @@ EXPORT SpeexResamplerState *speex_resampler_init_frac(spx_uint32_t nb_channels, 
       return NULL;
    }
 #ifdef RESAMPLE_RVV_RUNTIME
-   resampler_detect_rvv();
+   if (spx_rvv_enabled < 0)
+      spx_rvv_enabled = spx_rvv_detect();
 #endif
    st = (SpeexResamplerState *)speex_alloc(sizeof(SpeexResamplerState));
    if (!st)
