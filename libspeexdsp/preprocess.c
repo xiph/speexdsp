@@ -389,27 +389,16 @@ static void compute_gain_floor(int noise_suppress, int effective_echo_suppress, 
 
 #endif
 
-#ifdef USE_RVV
-#include "preprocess_rvv.h"
-#endif
-
-#ifdef PREPROC_RVV_RUNTIME
-int spx_preproc_rvv_enabled = -1;   /* -1 until the first init probes */
-#endif
-
 /** Multiply a frame elementwise by the analysis/synthesis window */
-#ifndef OVERRIDE_PREPROC_WINDOW
 static inline void preproc_window(spx_word16_t *frame, const spx_word16_t *window, int len)
 {
    int i;
    for (i=0;i<len;i++)
       frame[i] = MULT16_16_Q15(frame[i], window[i]);
 }
-#endif
 
 /** Power spectrum of the packed FFT of a 2*N frame: ps[0] from the DC bin,
     ps[1..N-1] from the interior complex bins (the Nyquist bin is unused) */
-#ifndef OVERRIDE_PREPROC_POWER_SPECTRUM
 static inline void preproc_power_spectrum(const spx_word16_t *ft, spx_word32_t *ps, int N)
 {
    int i;
@@ -417,10 +406,8 @@ static inline void preproc_power_spectrum(const spx_word16_t *ft, spx_word32_t *
    for (i=1;i<N;i++)
       ps[i]=MULT16_16(ft[2*i-1],ft[2*i-1]) + MULT16_16(ft[2*i],ft[2*i]);
 }
-#endif
 
 /** 3-tap recursive smoothing of the power spectrum (S) */
-#ifndef OVERRIDE_PREPROC_SMOOTH_SPECTRUM
 static inline void preproc_smooth_spectrum(spx_word32_t *S, const spx_word32_t *ps, int N)
 {
    int i;
@@ -430,10 +417,8 @@ static inline void preproc_smooth_spectrum(spx_word32_t *S, const spx_word32_t *
    S[0] =  MULT16_32_Q15(QCONST16(.8f,15),S[0]) + MULT16_32_Q15(QCONST16(.2f,15),ps[0]);
    S[N-1] =  MULT16_32_Q15(QCONST16(.8f,15),S[N-1]) + MULT16_32_Q15(QCONST16(.2f,15),ps[N-1]);
 }
-#endif
 
 /** Minimum statistics tracking, window-restart step */
-#ifndef OVERRIDE_PREPROC_MIN_TRACK_SWAP
 static inline void preproc_min_track_swap(spx_word32_t *Smin, spx_word32_t *Stmp, const spx_word32_t *S, int N)
 {
    int i;
@@ -443,10 +428,8 @@ static inline void preproc_min_track_swap(spx_word32_t *Smin, spx_word32_t *Stmp
       Stmp[i] = S[i];
    }
 }
-#endif
 
 /** Minimum statistics tracking, running-min step */
-#ifndef OVERRIDE_PREPROC_MIN_TRACK
 static inline void preproc_min_track(spx_word32_t *Smin, spx_word32_t *Stmp, const spx_word32_t *S, int N)
 {
    int i;
@@ -456,10 +439,8 @@ static inline void preproc_min_track(spx_word32_t *Smin, spx_word32_t *Stmp, con
       Stmp[i] = MIN32(Stmp[i], S[i]);
    }
 }
-#endif
 
 /** Per-bin speech presence flag for the noise update: .4*S > Smin */
-#ifndef OVERRIDE_PREPROC_UPDATE_PROB
 static inline void preproc_update_prob(const spx_word32_t *S, const spx_word32_t *Smin, int *update_prob, int N)
 {
    int i;
@@ -471,10 +452,8 @@ static inline void preproc_update_prob(const spx_word32_t *S, const spx_word32_t
          update_prob[i] = 0;
    }
 }
-#endif
 
 /** Update the noise estimate for the frequencies where it can be */
-#ifndef OVERRIDE_PREPROC_NOISE_UPDATE
 static inline void preproc_noise_update(const int *update_prob, const spx_word32_t *ps, spx_word32_t *noise, spx_word16_t beta, spx_word16_t beta_1, int N)
 {
    int i;
@@ -484,10 +463,8 @@ static inline void preproc_noise_update(const int *update_prob, const spx_word32
          noise[i] = MAX32(EXTEND32(0),MULT16_32_Q15(beta_1,noise[i]) + MULT16_32_Q15(beta,SHL32(ps[i],NOISE_SHIFT)));
    }
 }
-#endif
 
 /** A posteriori and a priori SNR update */
-#ifndef OVERRIDE_PREPROC_SNR_UPDATE
 static inline void preproc_snr_update(const spx_word32_t *ps, const spx_word32_t *noise, const spx_word32_t *echo_noise, const spx_word32_t *reverb_estimate, const spx_word32_t *old_ps, spx_word16_t *post, spx_word16_t *prior, int len)
 {
    int i;
@@ -510,11 +487,9 @@ static inline void preproc_snr_update(const spx_word32_t *ps, const spx_word32_t
       prior[i]=MIN16(prior[i], QCONST16(100.f,SNR_SHIFT));
    }
 }
-#endif
 
 /** Recursive average of the a priori SNR: 3-tap over the psd bins, flat
     over the filterbank bands */
-#ifndef OVERRIDE_PREPROC_ZETA_SMOOTH
 static inline void preproc_zeta_smooth(spx_word16_t *zeta, const spx_word16_t *prior, int N, int M)
 {
    int i;
@@ -525,10 +500,8 @@ static inline void preproc_zeta_smooth(spx_word16_t *zeta, const spx_word16_t *p
    for (i=N-1;i<N+M;i++)
       zeta[i] = PSHR32(ADD32(MULT16_16(QCONST16(.7f,15),zeta[i]), MULT16_16(QCONST16(.3f,15),prior[i])),15);
 }
-#endif
 
 /** Linear-frequency Ephraim-Malah gain and speech probability update */
-#ifndef OVERRIDE_PREPROC_EM_GAIN
 static inline void preproc_em_gain(const spx_word16_t *prior, const spx_word16_t *post, const spx_word32_t *ps, const spx_word16_t *gain_floor, spx_word16_t *gain, spx_word16_t *gain2, spx_word32_t *old_ps, int N)
 {
    int i;
@@ -576,10 +549,8 @@ static inline void preproc_em_gain(const spx_word16_t *prior, const spx_word16_t
       /*st->gain2[i] = pow(st->gain[i], p) * pow(st->gain_floor[i],1.f-p);*/
    }
 }
-#endif
 
 /** Apply the computed gain to the packed spectrum */
-#ifndef OVERRIDE_PREPROC_APPLY_GAIN
 static inline void preproc_apply_gain(const spx_word16_t *gain2, spx_word16_t *ft, int N)
 {
    int i;
@@ -591,16 +562,23 @@ static inline void preproc_apply_gain(const spx_word16_t *gain2, spx_word16_t *f
    ft[0] = MULT16_16_P15(gain2[0],ft[0]);
    ft[2*N-1] = MULT16_16_P15(gain2[N-1],ft[2*N-1]);
 }
-#endif
 
 /** Overlap-add of the previous frame's tail and conversion to the int16 output */
-#ifndef OVERRIDE_PREPROC_OVERLAP_OUTPUT
 static inline void preproc_overlap_output(spx_int16_t *x, const spx_word16_t *outbuf, const spx_word16_t *frame, int len)
 {
    int i;
    for (i=0;i<len;i++)
       x[i] = WORD2INT(ADD32(EXTEND32(outbuf[i]), EXTEND32(frame[i])));
 }
+
+/* RVV wraps the scalar kernels above with runtime dispatch, so it must
+   come after them; see preprocess_rvv.h. */
+#ifdef USE_RVV
+#include "preprocess_rvv.h"
+#endif
+
+#ifdef PREPROC_RVV_RUNTIME
+int spx_preproc_rvv_enabled = -1;   /* -1 until the first init probes */
 #endif
 
 EXPORT SpeexPreprocessState *speex_preprocess_state_init(int frame_size, int sampling_rate)

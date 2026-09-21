@@ -41,17 +41,7 @@
 #include "math_approx.h"
 #include "os_support.h"
 
-/* RVV picks its kernel at runtime; see filterbank_rvv.h. */
-#ifdef USE_RVV
-#include "filterbank_rvv.h"
-#endif
-
-#ifdef FBANK_RVV_RUNTIME
-int spx_fbank_rvv_enabled = -1;   /* -1 until the first init probes */
-#endif
-
 /** psd16 inner loop: interpolate each bin from its two band energies */
-#ifndef OVERRIDE_FBANK_PSD16
 static inline void fbank_psd16(const int *bank_left, const int *bank_right,
                                const spx_word16_t *filter_left,
                                const spx_word16_t *filter_right,
@@ -66,6 +56,15 @@ static inline void fbank_psd16(const int *bank_left, const int *bank_right,
       ps[i] = EXTRACT16(PSHR32(tmp,15));
    }
 }
+
+/* RVV wraps the scalar kernels above with runtime dispatch, so it must
+   come after them; see filterbank_rvv.h. */
+#ifdef USE_RVV
+#include "filterbank_rvv.h"
+#endif
+
+#ifdef FBANK_RVV_RUNTIME
+int spx_fbank_rvv_enabled = -1;   /* -1 until the first init probes */
 #endif
 
 #ifdef FIXED_POINT
