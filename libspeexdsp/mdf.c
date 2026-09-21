@@ -117,14 +117,6 @@ static const spx_float_t VAR_BACKTRACK = 4.f;
 #endif
 
 
-#ifdef USE_RVV
-#include "mdf_rvv.h"
-#endif
-
-#ifdef MDF_RVV_RUNTIME
-int spx_mdf_rvv_enabled = -1;   /* -1 until the first init probes */
-#endif
-
 #define PLAYBACK_DELAY 2
 
 void speex_echo_get_residual(SpeexEchoState *st, spx_word32_t *Yout, int len);
@@ -217,7 +209,6 @@ static inline void filter_dc_notch16(const spx_int16_t *in, spx_word16_t radius,
 }
 
 /* This inner product is slightly different from the codec version because of fixed-point */
-#ifndef OVERRIDE_MDF_INNER_PROD
 static inline spx_word32_t mdf_inner_prod(const spx_word16_t *x, const spx_word16_t *y, int len)
 {
    spx_word32_t sum=0;
@@ -232,30 +223,24 @@ static inline spx_word32_t mdf_inner_prod(const spx_word16_t *x, const spx_word1
    }
    return sum;
 }
-#endif
 
 /** Windowed copy of the last output, for the residual-echo estimate */
-#ifndef OVERRIDE_MDF_RESIDUAL_WINDOW
 static inline void mdf_residual_window(spx_word16_t *y, const spx_word16_t *window, const spx_word16_t *last_y, int N)
 {
    int i;
    for (i=0;i<N;i++)
       y[i] = MULT16_16_Q15(window[i], last_y[i]);
 }
-#endif
 
 /** Scale the residual-echo spectrum by the leak estimate */
-#ifndef OVERRIDE_MDF_RESIDUAL_SCALE
 static inline void mdf_residual_scale(spx_word32_t *residual_echo, spx_word16_t leak2, int len)
 {
    int i;
    for (i=0;i<len;i++)
       residual_echo[i] = (spx_int32_t)MULT16_32_Q15(leak2,residual_echo[i]);
 }
-#endif
 
 /** Compute power spectrum of a half-complex (packed) vector */
-#ifndef OVERRIDE_MDF_POWER_SPECTRUM
 static inline void power_spectrum(const spx_word16_t *X, spx_word32_t *ps, int N)
 {
    int i, j;
@@ -266,10 +251,8 @@ static inline void power_spectrum(const spx_word16_t *X, spx_word32_t *ps, int N
    }
    ps[j]=MULT16_16(X[i],X[i]);
 }
-#endif
 
 /** Compute power spectrum of a half-complex (packed) vector and accumulate */
-#ifndef OVERRIDE_MDF_POWER_SPECTRUM_ACCUM
 static inline void power_spectrum_accum(const spx_word16_t *X, spx_word32_t *ps, int N)
 {
    int i, j;
@@ -280,11 +263,9 @@ static inline void power_spectrum_accum(const spx_word16_t *X, spx_word32_t *ps,
    }
    ps[j]+=MULT16_16(X[i],X[i]);
 }
-#endif
 
 /** Compute cross-power spectrum of a half-complex (packed) vectors and add to acc */
 #ifdef FIXED_POINT
-#ifndef OVERRIDE_MDF_SPECTRAL_MUL_ACCUM
 static inline void spectral_mul_accum(const spx_word16_t *X, const spx_word32_t *Y, spx_word16_t *acc, int N, int M)
 {
    int i,j;
@@ -312,8 +293,6 @@ static inline void spectral_mul_accum(const spx_word16_t *X, const spx_word32_t 
    }
    acc[N-1] = PSHR32(tmp1,WEIGHT_SHIFT);
 }
-#endif
-#ifndef OVERRIDE_MDF_SPECTRAL_MUL_ACCUM16
 static inline void spectral_mul_accum16(const spx_word16_t *X, const spx_word16_t *Y, spx_word16_t *acc, int N, int M)
 {
    int i,j;
@@ -341,10 +320,8 @@ static inline void spectral_mul_accum16(const spx_word16_t *X, const spx_word16_
    }
    acc[N-1] = PSHR32(tmp1,WEIGHT_SHIFT);
 }
-#endif
 
 #else
-#ifndef OVERRIDE_MDF_SPECTRAL_MUL_ACCUM
 static inline void spectral_mul_accum(const spx_word16_t *X, const spx_word32_t *Y, spx_word16_t *acc, int N, int M)
 {
    int i,j;
@@ -363,12 +340,10 @@ static inline void spectral_mul_accum(const spx_word16_t *X, const spx_word32_t 
       Y += N;
    }
 }
-#endif
 #define spectral_mul_accum16 spectral_mul_accum
 #endif
 
 /** Compute weighted cross-power spectrum of a half-complex (packed) vector with conjugate */
-#ifndef OVERRIDE_MDF_WEIGHTED_SPECTRAL_MUL_CONJ
 static inline void weighted_spectral_mul_conj(const spx_float_t *w, const spx_float_t p, const spx_word16_t *X, const spx_word16_t *Y, spx_word32_t *prod, int N)
 {
    int i, j;
@@ -384,19 +359,15 @@ static inline void weighted_spectral_mul_conj(const spx_float_t *w, const spx_fl
    W = FLOAT_AMULT(p, w[j]);
    prod[i] = FLOAT_MUL32(W,MULT16_16(X[i],Y[i]));
 }
-#endif
 
 /** Add the weight gradient to one block of the adaptive filter */
-#ifndef OVERRIDE_MDF_WEIGHT_UPDATE
 static inline void mdf_weight_update(spx_word32_t *w, const spx_word32_t *phi, int N)
 {
    int i;
    for (i=0;i<N;i++)
       w[i] += phi[i];
 }
-#endif
 
-#ifndef OVERRIDE_MDF_ADJUST_PROP
 static inline void mdf_adjust_prop(const spx_word32_t *W, int N, int M, int P, spx_word16_t *prop)
 {
    int i, j, p;
@@ -428,12 +399,10 @@ static inline void mdf_adjust_prop(const spx_word32_t *W, int N, int M, int P, s
    }
    /*printf ("\n");*/
 }
-#endif
 
 /** De-emphasis on the error signal and conversion to the int16 output:
     out[i*stride] = WORD2INT(input[i] - e[i] + preemph*mem), where mem carries
     the (de-emphasized) previous output sample across calls */
-#ifndef OVERRIDE_MDF_DEEMPH_OUTPUT
 static inline spx_word16_t mdf_deemph_output(spx_int16_t *out, const spx_word16_t *input, const spx_word16_t *e, spx_word16_t preemph, spx_word16_t mem, int len, int stride)
 {
    int i;
@@ -446,6 +415,15 @@ static inline spx_word16_t mdf_deemph_output(spx_int16_t *out, const spx_word16_
    }
    return mem;
 }
+
+/* RVV wraps the scalar kernels above with runtime dispatch, so it must
+   come after them; see mdf_rvv.h. */
+#ifdef USE_RVV
+#include "mdf_rvv.h"
+#endif
+
+#ifdef MDF_RVV_RUNTIME
+int spx_mdf_rvv_enabled = -1;   /* -1 until the first init probes */
 #endif
 
 #ifdef DUMP_ECHO_CANCEL_DATA
