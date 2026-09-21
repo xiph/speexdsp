@@ -122,26 +122,8 @@ static const spx_float_t VAR_BACKTRACK = 4.f;
 #endif
 
 #ifdef MDF_RVV_RUNTIME
-#if defined(__linux__)
-#include <sys/auxv.h>
+int spx_mdf_rvv_enabled = -1;   /* -1 until the first init probes */
 #endif
-int spx_mdf_rvv_enabled = 0;
-static void mdf_detect_rvv(void)
-{
-   static int rvv_probed = 0;
-   if (rvv_probed)
-      return;
-#if defined(__linux__)
-   /* 'V' HWCAP bit, then reject draft RVV 0.7.1 hardware (which also sets it)
-      via the vtype/VILL probe, and require VLEN >= 128 (the kernels'
-      precondition; V mandates Zvl128b, but verify it directly). */
-   if (getauxval(AT_HWCAP) & (1UL << ('V' - 'A')))
-      spx_mdf_rvv_enabled = spx_mdf_rvv_compliant()
-                         && spx_mdf_rvv_vlenb() >= 16;
-#endif
-   rvv_probed = 1;
-}
-#endif /* MDF_RVV_RUNTIME */
 
 #define PLAYBACK_DELAY 2
 
@@ -494,7 +476,8 @@ EXPORT SpeexEchoState *speex_echo_state_init_mc(int frame_size, int filter_lengt
    SpeexEchoState *st;
 
 #ifdef MDF_RVV_RUNTIME
-   mdf_detect_rvv();
+   if (spx_mdf_rvv_enabled < 0)
+      spx_mdf_rvv_enabled = spx_rvv_detect();
 #endif
 
    st = (SpeexEchoState *)speex_alloc(sizeof(SpeexEchoState));

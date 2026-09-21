@@ -52,10 +52,9 @@
 #ifdef SMALLFT_RVV_FORCE_ON
 #  define SPX_DRFT_RVV_ON 1
 #else
-extern int spx_drft_rvv_enabled;     /* defined in smallft.c, detected at init */
-unsigned int spx_drft_rvv_vlenb(void);
-int spx_drft_rvv_compliant(void);
-#  define SPX_DRFT_RVV_ON spx_drft_rvv_enabled
+#include "rvv_cpu.h"
+extern int spx_drft_rvv_enabled;   /* defined in smallft.c: -1 until its first init probes, then 0/1 */
+#  define SPX_DRFT_RVV_ON (spx_drft_rvv_enabled > 0)
 #  define SMALLFT_RVV_RUNTIME 1      /* tells smallft.c to define+detect the flag */
 #endif
 

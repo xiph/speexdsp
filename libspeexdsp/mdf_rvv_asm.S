@@ -60,32 +60,6 @@
     .option arch, +v
     .text
 
-/* ------------------------------------------------------------------ */
-/* unsigned int spx_mdf_rvv_vlenb(void) -- VLEN in bytes. */
-    .balign 4
-    .globl  spx_mdf_rvv_vlenb
-    .hidden spx_mdf_rvv_vlenb
-    .type   spx_mdf_rvv_vlenb, @function
-spx_mdf_rvv_vlenb:
-    vsetvli a0, zero, e8, m1, ta, ma
-    ret
-    .size spx_mdf_rvv_vlenb, . - spx_mdf_rvv_vlenb
-
-/* ------------------------------------------------------------------ */
-/* int spx_mdf_rvv_compliant(void)
- * Reject draft RVV 0.7.1 hardware (sets VILL on a ta,ma vtype config);
- * see spx_resample_rvv_compliant for the reasoning. */
-    .balign 4
-    .globl  spx_mdf_rvv_compliant
-    .hidden spx_mdf_rvv_compliant
-    .type   spx_mdf_rvv_compliant, @function
-spx_mdf_rvv_compliant:
-    vsetvli t0, zero, e8, m1, ta, ma
-    csrr    a0, vtype
-    sgtz    a0, a0
-    ret
-    .size spx_mdf_rvv_compliant, . - spx_mdf_rvv_compliant
-
 /* ================================================================== */
 /*                        float (f32) kernels                         */
 /* ================================================================== */

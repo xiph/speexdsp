@@ -51,10 +51,9 @@
 #  ifdef RESAMPLE_RVV_FORCE_ON
 #    define SPX_RVV_ON 1
 #  else
-extern int spx_rvv_enabled;          /* defined in resample.c, detected at init */
-unsigned int spx_resample_rvv_vlenb(void);
-int spx_resample_rvv_compliant(void);
-#    define SPX_RVV_ON spx_rvv_enabled
+#include "rvv_cpu.h"
+extern int spx_rvv_enabled;   /* defined in resample.c: -1 until its first init probes, then 0/1 */
+#    define SPX_RVV_ON (spx_rvv_enabled > 0)
 #    define RESAMPLE_RVV_RUNTIME 1    /* tells resample.c to define+detect the flag */
 #  endif
 #endif

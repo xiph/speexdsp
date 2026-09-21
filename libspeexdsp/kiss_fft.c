@@ -31,26 +31,8 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
  */
 
 #ifdef KISS_FFT_RVV_RUNTIME
-#if defined(__linux__)
-#include <sys/auxv.h>
+int spx_kf_rvv_enabled = -1;   /* -1 until the first init probes */
 #endif
-int spx_kf_rvv_enabled = 0;
-static void kiss_fft_detect_rvv(void)
-{
-   static int rvv_probed = 0;
-   if (rvv_probed)
-      return;
-#if defined(__linux__)
-   /* 'V' HWCAP bit, then reject draft RVV 0.7.1 hardware (which also sets it)
-      via the vtype/VILL probe, and require VLEN >= 128 (the kernels'
-      precondition; V mandates Zvl128b, but verify it directly). */
-   if (getauxval(AT_HWCAP) & (1UL << ('V' - 'A')))
-      spx_kf_rvv_enabled = spx_kf_rvv_compliant()
-                        && spx_kf_rvv_vlenb() >= 16;
-#endif
-   rvv_probed = 1;
-}
-#endif /* KISS_FFT_RVV_RUNTIME */
 
 static void kf_bfly2(
         kiss_fft_cpx * Fout,
@@ -535,7 +517,8 @@ kiss_fft_cfg kiss_fft_alloc(int nfft,int inverse_fft,void * mem,size_t * lenmem 
         + sizeof(kiss_fft_cpx)*(nfft-1); /* twiddle factors*/
 
 #ifdef KISS_FFT_RVV_RUNTIME
-    kiss_fft_detect_rvv();
+    if (spx_kf_rvv_enabled < 0)
+        spx_kf_rvv_enabled = spx_rvv_detect();
 #endif
 
     if ( lenmem==NULL ) {

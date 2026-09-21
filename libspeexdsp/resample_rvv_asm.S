@@ -60,37 +60,6 @@
     .text
 
 /* ------------------------------------------------------------------ */
-/* unsigned int spx_resample_rvv_vlenb(void)
- * VLEN in bytes (vlmax for e8m1). Call only once the 'V' HWCAP bit confirms V. */
-    .balign 4
-    .globl  spx_resample_rvv_vlenb
-    .hidden spx_resample_rvv_vlenb
-    .type   spx_resample_rvv_vlenb, @function
-spx_resample_rvv_vlenb:
-    vsetvli a0, zero, e8, m1, ta, ma
-    ret
-    .size spx_resample_rvv_vlenb, . - spx_resample_rvv_vlenb
-
-/* ------------------------------------------------------------------ */
-/* int spx_resample_rvv_compliant(void)
- * Reject draft RVV 0.7.1 hardware that also reports 'V' through HWCAP. The
- * tail/mask-agnostic (ta, ma) vtype config was only introduced in RVV 0.9, so
- * 0.7.1 hardware flags it illegal by setting the VILL bit -- vtype's sign bit
- * (XLEN-1) -- while compliant 1.0 hardware leaves it clear, giving a positive
- * vtype. A signed > 0 test thus returns 1 on 1.0 and 0 on 0.7.1. Mirrors
- * dav1d's has_compliant_rvv. Call only once the 'V' HWCAP bit confirms V. */
-    .balign 4
-    .globl  spx_resample_rvv_compliant
-    .hidden spx_resample_rvv_compliant
-    .type   spx_resample_rvv_compliant, @function
-spx_resample_rvv_compliant:
-    vsetvli t0, zero, e8, m1, ta, ma
-    csrr    a0, vtype
-    sgtz    a0, a0
-    ret
-    .size spx_resample_rvv_compliant, . - spx_resample_rvv_compliant
-
-/* ------------------------------------------------------------------ */
 /* float spx_resample_rvv_ip_f32(const float *a, const float *b,
  *                               unsigned int len)
  * Plain f32 dot product. Single-strip small-LMUL paths for short filters,

@@ -47,26 +47,8 @@
 #endif
 
 #ifdef FBANK_RVV_RUNTIME
-#if defined(__linux__)
-#include <sys/auxv.h>
+int spx_fbank_rvv_enabled = -1;   /* -1 until the first init probes */
 #endif
-int spx_fbank_rvv_enabled = 0;
-static void fbank_detect_rvv(void)
-{
-   static int rvv_probed = 0;
-   if (rvv_probed)
-      return;
-#if defined(__linux__)
-   /* 'V' HWCAP bit, then reject draft RVV 0.7.1 hardware (which also sets it)
-      via the vtype/VILL probe, and require VLEN >= 128 (the kernels'
-      precondition; V mandates Zvl128b, but verify it directly). */
-   if (getauxval(AT_HWCAP) & (1UL << ('V' - 'A')))
-      spx_fbank_rvv_enabled = spx_fbank_rvv_compliant()
-                           && spx_fbank_rvv_vlenb() >= 16;
-#endif
-   rvv_probed = 1;
-}
-#endif /* FBANK_RVV_RUNTIME */
 
 /** psd16 inner loop: interpolate each bin from its two band energies */
 #ifndef OVERRIDE_FBANK_PSD16
@@ -105,7 +87,8 @@ FilterBank *filterbank_new(int banks, spx_word32_t sampling, int len, int type)
    int id1;
    int id2;
 #ifdef FBANK_RVV_RUNTIME
-   fbank_detect_rvv();
+   if (spx_fbank_rvv_enabled < 0)
+      spx_fbank_rvv_enabled = spx_rvv_detect();
 #endif
    df = DIV32(SHL32(sampling,15),MULT16_16(2,len));
    max_mel = toBARK(EXTRACT16(sampling/2));

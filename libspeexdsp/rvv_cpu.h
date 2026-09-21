@@ -1,8 +1,7 @@
 /* Copyright (C) 2026 Tristan Matthews */
 /**
-   @file fftwrap_rvv.h
-   @brief fftwrap's forward-FFT scale loop (RISC-V Vector extension,
-          runtime-dispatched)
+   @file rvv_cpu.h
+   @brief Runtime probe shared by the RISC-V Vector (RVV) kernels
 */
 /*
    Redistribution and use in source and binary forms, with or without
@@ -33,22 +32,15 @@
    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-/* fftwrap.c's USE_SMALLFT spx_fft pre-scales its input by 1/n before
- * spx_drft_forward; that loop is per-sample scalar work on every forward
- * FFT. The kernel lives in smallft_rvv_asm.S (always linked alongside the
- * smallft RVV stages) and reuses smallft's runtime detection: fftwrap's
- * spx_fft_init calls spx_drft_init, which probes and sets
- * spx_drft_rvv_enabled before the first spx_fft can run. Bit-exact vs the
- * scalar loop (one multiply per element). */
+#ifndef RVV_CPU_H
+#define RVV_CPU_H
 
-#ifndef FFTWRAP_RVV_H
-#define FFTWRAP_RVV_H
+/* 1 if this CPU can run the RVV 1.0 kernels, else 0. Probes on the first
+ * call and caches the answer; see rvv_cpu.c for what is checked.
+ *
+ * Each runtime-dispatched module keeps its own spx_<mod>_rvv_enabled flag,
+ * initialised to -1 and set from this probe by the module's first init, so
+ * a harness (bench_echo) can override a flag after init and have it stick. */
+int spx_rvv_detect(void);
 
-extern int spx_drft_rvv_enabled;   /* defined in smallft.c: -1 until its first init probes, then 0/1 */
-
-/* out[i] = *scale * in[i]; out == in is allowed. scale is passed by
- * reference to keep the asm float-ABI-independent. */
-void spx_drft_rvv_scale_f32(float *out, const float *in,
-                            const float *scale, int n);
-
-#endif /* FFTWRAP_RVV_H */
+#endif /* RVV_CPU_H */

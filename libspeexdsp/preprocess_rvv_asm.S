@@ -59,32 +59,6 @@
     .text
 
 /* ------------------------------------------------------------------ */
-/* unsigned int spx_preproc_rvv_vlenb(void) -- VLEN in bytes. */
-    .balign 4
-    .globl  spx_preproc_rvv_vlenb
-    .hidden spx_preproc_rvv_vlenb
-    .type   spx_preproc_rvv_vlenb, @function
-spx_preproc_rvv_vlenb:
-    vsetvli a0, zero, e8, m1, ta, ma
-    ret
-    .size spx_preproc_rvv_vlenb, . - spx_preproc_rvv_vlenb
-
-/* ------------------------------------------------------------------ */
-/* int spx_preproc_rvv_compliant(void)
- * Reject draft RVV 0.7.1 hardware (sets VILL on a ta,ma vtype config);
- * see spx_resample_rvv_compliant for the reasoning. */
-    .balign 4
-    .globl  spx_preproc_rvv_compliant
-    .hidden spx_preproc_rvv_compliant
-    .type   spx_preproc_rvv_compliant, @function
-spx_preproc_rvv_compliant:
-    vsetvli t0, zero, e8, m1, ta, ma
-    csrr    a0, vtype
-    sgtz    a0, a0
-    ret
-    .size spx_preproc_rvv_compliant, . - spx_preproc_rvv_compliant
-
-/* ------------------------------------------------------------------ */
 /* void spx_preproc_rvv_window_f32(float *frame, const float *window,
  *                                 int len)
  * frame[i] *= window[i] -- analysis/synthesis windowing. */

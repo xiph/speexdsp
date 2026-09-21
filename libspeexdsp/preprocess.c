@@ -394,26 +394,8 @@ static void compute_gain_floor(int noise_suppress, int effective_echo_suppress, 
 #endif
 
 #ifdef PREPROC_RVV_RUNTIME
-#if defined(__linux__)
-#include <sys/auxv.h>
+int spx_preproc_rvv_enabled = -1;   /* -1 until the first init probes */
 #endif
-int spx_preproc_rvv_enabled = 0;
-static void preproc_detect_rvv(void)
-{
-   static int rvv_probed = 0;
-   if (rvv_probed)
-      return;
-#if defined(__linux__)
-   /* 'V' HWCAP bit, then reject draft RVV 0.7.1 hardware (which also sets it)
-      via the vtype/VILL probe, and require VLEN >= 128 (the kernels'
-      precondition; V mandates Zvl128b, but verify it directly). */
-   if (getauxval(AT_HWCAP) & (1UL << ('V' - 'A')))
-      spx_preproc_rvv_enabled = spx_preproc_rvv_compliant()
-                             && spx_preproc_rvv_vlenb() >= 16;
-#endif
-   rvv_probed = 1;
-}
-#endif /* PREPROC_RVV_RUNTIME */
 
 /** Multiply a frame elementwise by the analysis/synthesis window */
 #ifndef OVERRIDE_PREPROC_WINDOW
@@ -628,7 +610,8 @@ EXPORT SpeexPreprocessState *speex_preprocess_state_init(int frame_size, int sam
 
    SpeexPreprocessState *st = (SpeexPreprocessState *)speex_alloc(sizeof(SpeexPreprocessState));
 #ifdef PREPROC_RVV_RUNTIME
-   preproc_detect_rvv();
+   if (spx_preproc_rvv_enabled < 0)
+      spx_preproc_rvv_enabled = spx_rvv_detect();
 #endif
    st->frame_size = frame_size;
 

@@ -97,6 +97,8 @@ checkasm_extra_libs = [
     ),
 ]
 if has_rvv_asm
+    # cpu.c reuses the library's RVV probe
+    checkasm_sources += files('../libspeexdsp/rvv_cpu.c')
     checkasm_extra_libs += static_library('checkasm_resample_rvv',
         files('checkasm/resample/wrap_resample_rvv.c',
               '../libspeexdsp/resample_rvv_asm.S'),

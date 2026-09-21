@@ -56,7 +56,7 @@ static int rvv_any_enabled(void)
 {
    int i, any = 0;
    for (i = 0; i < N_RVV_FLAGS; i++)
-      if (rvv_flags[i] && *rvv_flags[i])
+      if (rvv_flags[i] && *rvv_flags[i] > 0)
          any = 1;
    return any;
 }
@@ -145,8 +145,8 @@ int main(int argc, char **argv)
       printf("no runtime RVV dispatch in this build; single pass only\n");
    } else {
       int i;
-      /* the hwcap probes run once, inside the first echo-state init;
-       * trigger them now so later writes to the flags stick */
+      /* each flag is probed by its module's first init and never again;
+       * trigger those now so later writes to the flags stick */
       SpeexEchoState *probe = speex_echo_state_init(128, 1024);
       SpeexPreprocessState *dprobe = speex_preprocess_state_init(128, 8000);
       speex_preprocess_state_destroy(dprobe);
