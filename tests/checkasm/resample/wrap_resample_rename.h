@@ -13,12 +13,8 @@
  * The caller must #define CKA_PREFIX to a unique token and include this BEFORE
  * wrap.h, so speex_resampler.h's prototypes are renamed to match the (renamed)
  * definitions and forward-call sites in resample.c. */
-#ifndef CKA_PREFIX
-#  error "define CKA_PREFIX (a unique token) before including wrap_resample_rename.h"
-#endif
-
-#define CKA_CAT2(a, b) a ## b
-#define CKA_CAT(a, b)  CKA_CAT2(a, b)
+#include "../wrap_common.h"
+#define CKA_MODULE_SRC "resample.c"
 
 #define speex_resampler_init                      CKA_CAT(CKA_PREFIX, speex_resampler_init)
 #define speex_resampler_init_frac                 CKA_CAT(CKA_PREFIX, speex_resampler_init_frac)

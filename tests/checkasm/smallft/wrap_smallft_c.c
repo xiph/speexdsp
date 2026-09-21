@@ -2,13 +2,15 @@
  * lookup and stage helpers. #undef USE_RVV keeps the stages scalar; this
  * TU is the benchmark baseline, so it is built with the no-autovec flags
  * (checkasm_c_ref_args in tests/meson.build). */
-#define CKA_PREFIX ckasc_
+#define CKA_PREFIX  ckasc_
+#define CKA_VARIANT c
 #include "wrap_smallft_rename.h"
 #include "wrap.h"
 
 #undef USE_RVV
 
-#include "wrap_smallft_impl.h"
+#include "../wrap_impl.h"
+#include "wrap_smallft_shims.h"
 
 /* ------------- lookup + stage helpers ------------- */
 
@@ -67,42 +69,6 @@ int smallft_stages(struct drft_lookup *l, int backward,
         }
     }
     return cnt;
-}
-
-/* ------------- Stage driver -------------
- * Derives the wa pointers from the lookup exactly as drftf1/drftb1 do
- * and calls the (SPX_DRAD*-dispatched) stage. */
-void smallft_stage_c(struct drft_lookup *l, const struct drft_stage *st,
-                     int backward, float *cc, float *ch)
-{
-    float *wa = l->trigcache + l->n;
-    float *wa1 = wa + st->iw - 1;
-    float *wa2 = wa + st->iw + st->ido - 1;
-    float *wa3 = wa + st->iw + 2 * st->ido - 1;
-
-    if (st->ip == 4) {
-        if (backward)
-            SPX_DRADB4(st->ido, st->l1, cc, ch, wa1, wa2, wa3);
-        else
-            SPX_DRADF4(st->ido, st->l1, cc, ch, wa1, wa2, wa3);
-    } else {
-        if (backward)
-            SPX_DRADB2(st->ido, st->l1, cc, ch, wa1);
-        else
-            SPX_DRADF2(st->ido, st->l1, cc, ch, wa1);
-    }
-}
-
-/* ------------- Whole transform (in place; st/unused ignored) ------------- */
-void smallft_forward_c(struct drft_lookup *l, const struct drft_stage *st,
-                       int backward, float *data, float *unused)
-{
-    (void) st;
-    (void) unused;
-    if (backward)
-        spx_drft_backward(l, data);
-    else
-        spx_drft_forward(l, data);
 }
 
 /* ------------- fftwrap.c's forward-FFT pre-scale, C baseline -------------

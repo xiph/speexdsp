@@ -2,8 +2,9 @@
  * native USE_NEON so resample.c pulls in resample_neon.h. Only the kernels that
  * header overrides (the HAVE_NEON_* gates in wrap.h) differ from the C
  * reference and are exposed; the double-precision ones would be byte-identical
- * to C. See wrap_resample_impl.h for the HAVE_CONFIG_H/rename mechanics. */
-#define CKA_PREFIX ckaneon_
+ * to C. See ../wrap_impl.h for the HAVE_CONFIG_H/rename mechanics. */
+#define CKA_PREFIX  ckaneon_
+#define CKA_VARIANT neon
 #include "wrap_resample_rename.h"
 #include "wrap.h"
 
@@ -13,102 +14,12 @@
 #  endif
 #endif
 
-#include "wrap_resample_impl.h"
+#include "../wrap_impl.h"
+#include "wrap_resample_shims.h"
 
 #ifdef HAVE_NEON_DIRECT_SINGLE
-int resampler_basic_direct_single_neon(SpeexResamplerState *st, spx_uint32_t channel_index,
-        const spx_word16_t *in, spx_uint32_t *in_len, spx_word16_t *out, spx_uint32_t *out_len)
-{
-    st->last_sample[channel_index]   = 0;
-    st->samp_frac_num[channel_index] = 0;
-    return resampler_basic_direct_single(st, channel_index, in, in_len, out, out_len);
-}
+CKA_RESAMPLER_BASIC_SHIM(direct_single)
 #endif
-
 #ifdef HAVE_NEON_INTERPOLATE_SINGLE
-int resampler_basic_interpolate_single_neon(SpeexResamplerState *st, spx_uint32_t channel_index,
-        const spx_word16_t *in, spx_uint32_t *in_len, spx_word16_t *out, spx_uint32_t *out_len)
-{
-    st->last_sample[channel_index]   = 0;
-    st->samp_frac_num[channel_index] = 0;
-    return resampler_basic_interpolate_single(st, channel_index, in, in_len, out, out_len);
-}
-#endif
-
-/* ------------- Integration: full-pipeline wrapper (NEON kernels) -------------
- * A NEON-built state: update_filter (in this TU) points resampler_ptr at the
- * NEON kernels, so the public process_float runs the NEON path. For conversions
- * whose kernel NEON does not override (the double-precision ones), this is
- * byte-identical to the C build -- the comparison still passes and the benchmark
- * simply shows no speedup. See wrap.h for the by-value / zero-state contract. */
-#ifndef DISABLE_FLOAT_API
-SpeexResamplerState *resample_make_state_neon(unsigned in_rate, unsigned out_rate, int quality)
-{
-    int err = RESAMPLER_ERR_SUCCESS;
-    return speex_resampler_init(1, in_rate, out_rate, quality, &err);
-}
-
-SpeexResamplerState *resample_make_state_neon_ch(unsigned in_rate, unsigned out_rate,
-        int quality, unsigned channels)
-{
-    int err = RESAMPLER_ERR_SUCCESS;
-    return speex_resampler_init(channels, in_rate, out_rate, quality, &err);
-}
-
-int resample_process_neon(SpeexResamplerState *st, const float *in,
-        spx_uint32_t in_len, float *out, spx_uint32_t out_len)
-{
-    spx_uint32_t il = in_len, ol = out_len;
-    memset(st->mem, 0, (size_t) st->mem_alloc_size * st->nb_channels * sizeof(spx_word16_t));
-    st->last_sample[0]   = 0;
-    st->samp_frac_num[0] = 0;
-    st->magic_samples[0] = 0;
-    st->started          = 0;
-    speex_resampler_process_float(st, 0, in, &il, out, &ol);
-    return (int) ol;
-}
-
-int resample_process_int_neon(SpeexResamplerState *st, const spx_int16_t *in,
-        spx_uint32_t in_len, spx_int16_t *out, spx_uint32_t out_len)
-{
-    spx_uint32_t il = in_len, ol = out_len;
-    memset(st->mem, 0, (size_t) st->mem_alloc_size * st->nb_channels * sizeof(spx_word16_t));
-    st->last_sample[0]   = 0;
-    st->samp_frac_num[0] = 0;
-    st->magic_samples[0] = 0;
-    st->started          = 0;
-    speex_resampler_process_int(st, 0, in, &il, out, &ol);
-    return (int) ol;
-}
-
-/* Interleaved multi-channel paths (NEON kernels). See wrap_resample_c.c. */
-static void resample_reset_all_neon(SpeexResamplerState *st)
-{
-    spx_uint32_t c;
-    memset(st->mem, 0, (size_t) st->mem_alloc_size * st->nb_channels * sizeof(spx_word16_t));
-    for (c = 0; c < st->nb_channels; c++) {
-        st->last_sample[c]   = 0;
-        st->samp_frac_num[c] = 0;
-        st->magic_samples[c] = 0;
-    }
-    st->started = 0;
-}
-
-int resample_process_il_neon(SpeexResamplerState *st, const float *in,
-        spx_uint32_t in_len, float *out, spx_uint32_t out_len)
-{
-    spx_uint32_t il = in_len, ol = out_len;
-    resample_reset_all_neon(st);
-    speex_resampler_process_interleaved_float(st, in, &il, out, &ol);
-    return (int) ol;
-}
-
-int resample_process_int_il_neon(SpeexResamplerState *st, const spx_int16_t *in,
-        spx_uint32_t in_len, spx_int16_t *out, spx_uint32_t out_len)
-{
-    spx_uint32_t il = in_len, ol = out_len;
-    resample_reset_all_neon(st);
-    speex_resampler_process_interleaved_int(st, in, &il, out, &ol);
-    return (int) ol;
-}
+CKA_RESAMPLER_BASIC_SHIM(interpolate_single)
 #endif

@@ -2,13 +2,10 @@
  * symbols it references, which each TU stubs out) to a per-TU-unique
  * prefix so each wrap_preproc_*.c can #include the whole file without
  * link-time collisions -- same scheme as ../mdf/wrap_mdf_rename.h.
- * #define CKA_PREFIX and include this BEFORE wrap.h. */
-#ifndef CKA_PREFIX
-#  error "define CKA_PREFIX (a unique token) before including wrap_preproc_rename.h"
-#endif
-
-#define CKA_CAT2(a, b) a ## b
-#define CKA_CAT(a, b)  CKA_CAT2(a, b)
+ * #define CKA_PREFIX and include this BEFORE wrap.h; it also names the
+ * module source for ../wrap_impl.h. */
+#include "../wrap_common.h"
+#define CKA_MODULE_SRC "preprocess.c"
 
 #define speex_preprocess_state_init      CKA_CAT(CKA_PREFIX, speex_preprocess_state_init)
 #define speex_preprocess_state_destroy   CKA_CAT(CKA_PREFIX, speex_preprocess_state_destroy)
@@ -18,7 +15,7 @@
 #define speex_preprocess_ctl             CKA_CAT(CKA_PREFIX, speex_preprocess_ctl)
 
 /* fftwrap/filterbank/mdf symbols preprocess.c links against; stubbed in
- * wrap_preproc_impl.h. */
+ * wrap_preproc_stubs.h. */
 #define spx_fft_init                     CKA_CAT(CKA_PREFIX, spx_fft_init)
 #define spx_fft_destroy                  CKA_CAT(CKA_PREFIX, spx_fft_destroy)
 #define spx_fft                          CKA_CAT(CKA_PREFIX, spx_fft)

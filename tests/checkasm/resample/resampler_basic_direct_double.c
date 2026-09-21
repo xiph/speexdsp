@@ -44,7 +44,7 @@ void test_resampler_basic_direct_double(void)
         const unsigned ir = configs[i].in_rate, orr = configs[i].out_rate;
         const int q = configs[i].quality;
 
-        SpeexResamplerState *st = resample_make_state(ir, orr, q);
+        SpeexResamplerState *st = resample_make_state_c(ir, orr, q);
         if (!st) { fprintf(stderr, "%s: init failed %u->%u q%d\n", FUNC_NAME, ir, orr, q); continue; }
         if (resample_kind(st) != RESAMPLE_KIND_DIRECT_DOUBLE) {
             fprintf(stderr, "%s: %u->%u q%d unexpected kind %d (filt_len %u), skipping\n",
