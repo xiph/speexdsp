@@ -103,7 +103,7 @@ void checkasm_check_resample_process(void)
         const unsigned orr = conversions[i].out_rate;
         const int q = conversions[i].quality;
 
-        SpeexResamplerState *st_c = resample_make_state(ir, orr, q);
+        SpeexResamplerState *st_c = resample_make_state_c(ir, orr, q);
         if (!st_c) {
             fprintf(stderr, "resample_process: init failed %u->%u q%d\n", ir, orr, q);
             continue;
@@ -167,7 +167,7 @@ void checkasm_check_resample_process(void)
         const unsigned orr = conversions_mc[i].out_rate;
         const int q = conversions_mc[i].quality;
 
-        SpeexResamplerState *st_c = resample_make_state_ch(ir, orr, q, MAX_CH);
+        SpeexResamplerState *st_c = resample_make_state_c_ch(ir, orr, q, MAX_CH);
         if (!st_c) {
             fprintf(stderr, "resample_process: init failed %uch %u->%u q%d\n", MAX_CH, ir, orr, q);
             continue;

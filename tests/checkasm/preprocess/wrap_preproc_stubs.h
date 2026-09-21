@@ -1,24 +1,8 @@
-/* #includes libspeexdsp/preprocess.c privately into a wrap_preproc_*.c
- * TU. Include AFTER wrap_preproc_rename.h + wrap.h and any per-variant
- * #undef/#define. #undef HAVE_CONFIG_H stops config.h from re-defining
- * the USE_* macros the caller just cleared. */
+/* Link stubs for the fftwrap/filterbank/mdf symbols preprocess.c
+ * references (renamed per TU by wrap_preproc_rename.h). The kernel tests
+ * never run the preprocessor itself, so they are never called. Include
+ * right after ../wrap_impl.h. */
 
-#undef HAVE_CONFIG_H
-
-#if defined(__GNUC__)
-#  pragma GCC diagnostic push
-#  pragma GCC diagnostic ignored "-Wunused-function"
-#endif
-
-#include "../../../libspeexdsp/preprocess.c"
-
-#if defined(__GNUC__)
-#  pragma GCC diagnostic pop
-#endif
-
-/* The kernels under test never touch the FFT, the filterbank or the echo
- * canceller; these (renamed, per-TU) stubs only satisfy the link for
- * preprocess.c's unused public API. */
 void *spx_fft_init(int size) { (void) size; return 0; }
 void spx_fft_destroy(void *table) { (void) table; }
 void spx_fft(void *table, spx_word16_t *in, spx_word16_t *out)

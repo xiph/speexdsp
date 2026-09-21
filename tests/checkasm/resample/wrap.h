@@ -55,13 +55,15 @@ enum resample_kind {
 #endif
 };
 
-/* ------------- State helpers (defined once, in wrap_resample_c.c) -------------
- * Only that TU has both the four static function addresses and the public init
- * API in scope, so it is the sole owner of state construction/inspection. The
- * harness treats SpeexResamplerState as opaque. */
-SpeexResamplerState *resample_make_state(unsigned in_rate, unsigned out_rate, int quality);
-/* Multi-channel state for the interleaved integration path (see below). */
-SpeexResamplerState *resample_make_state_ch(unsigned in_rate, unsigned out_rate,
+/* ------------- State helpers -------------
+ * Every variant TU builds states (resample_make_state_<variant>, and the
+ * multi-channel _ch form for the interleaved integration path below), since
+ * update_filter binds the state to that TU's kernels. Inspection and
+ * destruction live once, in wrap_resample_c.c, which has the four static
+ * function addresses in scope. The harness treats SpeexResamplerState as
+ * opaque. */
+SpeexResamplerState *resample_make_state_c(unsigned in_rate, unsigned out_rate, int quality);
+SpeexResamplerState *resample_make_state_c_ch(unsigned in_rate, unsigned out_rate,
         int quality, unsigned channels);
 void resample_destroy_state(SpeexResamplerState *st);
 enum resample_kind resample_kind(const SpeexResamplerState *st);
@@ -136,7 +138,7 @@ int resampler_basic_interpolate_double_rvv(SpeexResamplerState *st, spx_uint32_t
  * (speex_resampler_process_interleaved_*), exercising the per-channel loop and
  * (for int) the deinterleave/reinterleave that the single-channel path skips.
  * Their in_len/out_len are PER CHANNEL; the return is the per-channel output
- * count. State for these comes from resample_make_state*_ch(.., channels).
+ * count. State for these comes from resample_make_state_<variant>_ch(.., channels).
  *
  * Lengths are passed BY VALUE (process_* overwrites its in_len/out_len, so a
  * by-pointer signature would shrink the work on every benchmark iteration). Each

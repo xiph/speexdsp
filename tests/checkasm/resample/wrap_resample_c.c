@@ -5,14 +5,15 @@
  *
  * We #undef the native USE_SSE/USE_SSE2/USE_NEON/USE_RVV before pulling in
  * resample.c so its #ifdef USE_SSE/USE_NEON/USE_RVV skip the SIMD headers and
- * the inner-product kernels stay the generic C fallbacks. wrap_resample_impl.h
- * then handles the HAVE_CONFIG_H/rename mechanics and includes resample.c.
+ * the inner-product kernels stay the generic C fallbacks. ../wrap_impl.h then
+ * handles the HAVE_CONFIG_H/rename mechanics and includes resample.c.
  *
  * This TU is the scalar baseline every benchmark compares against, so
  * auto-vectorization is disabled for it (checkasm_c_ref_args in
  * tests/meson.build) -- otherwise a toolchain whose default -march carries V
  * could vectorize the baseline and the benchmark would compare RVV against RVV. */
-#define CKA_PREFIX ckac_
+#define CKA_PREFIX  ckac_
+#define CKA_VARIANT c
 #include "wrap_resample_rename.h"
 #include "wrap.h"
 
@@ -21,22 +22,10 @@
 #undef USE_NEON
 #undef USE_RVV
 
-#include "wrap_resample_impl.h"
+#include "../wrap_impl.h"
+#include "wrap_resample_shims.h"
 
 /* ------------- State helpers ------------- */
-
-SpeexResamplerState *resample_make_state(unsigned in_rate, unsigned out_rate, int quality)
-{
-    int err = RESAMPLER_ERR_SUCCESS;
-    return speex_resampler_init(1, in_rate, out_rate, quality, &err);
-}
-
-SpeexResamplerState *resample_make_state_ch(unsigned in_rate, unsigned out_rate,
-        int quality, unsigned channels)
-{
-    int err = RESAMPLER_ERR_SUCCESS;
-    return speex_resampler_init(channels, in_rate, out_rate, quality, &err);
-}
 
 void resample_destroy_state(SpeexResamplerState *st)
 {
@@ -62,102 +51,11 @@ unsigned resample_filt_len(const SpeexResamplerState *st)   { return st->filt_le
 unsigned resample_den_rate(const SpeexResamplerState *st)   { return st->den_rate; }
 unsigned resample_oversample(const SpeexResamplerState *st) { return st->oversample; }
 
-/* ------------- C reference wrappers -------------
- * Reset the per-channel cursor so every call (notably checkasm_bench_new's
- * loop) re-does identical full work. */
-int resampler_basic_direct_single_c(SpeexResamplerState *st, spx_uint32_t channel_index,
-        const spx_word16_t *in, spx_uint32_t *in_len, spx_word16_t *out, spx_uint32_t *out_len)
-{
-    st->last_sample[channel_index]   = 0;
-    st->samp_frac_num[channel_index] = 0;
-    return resampler_basic_direct_single(st, channel_index, in, in_len, out, out_len);
-}
+/* ------------- Functions under test ------------- */
 
-int resampler_basic_interpolate_single_c(SpeexResamplerState *st, spx_uint32_t channel_index,
-        const spx_word16_t *in, spx_uint32_t *in_len, spx_word16_t *out, spx_uint32_t *out_len)
-{
-    st->last_sample[channel_index]   = 0;
-    st->samp_frac_num[channel_index] = 0;
-    return resampler_basic_interpolate_single(st, channel_index, in, in_len, out, out_len);
-}
-
+CKA_RESAMPLER_BASIC_SHIM(direct_single)
+CKA_RESAMPLER_BASIC_SHIM(interpolate_single)
 #ifndef FIXED_POINT
-int resampler_basic_direct_double_c(SpeexResamplerState *st, spx_uint32_t channel_index,
-        const spx_word16_t *in, spx_uint32_t *in_len, spx_word16_t *out, spx_uint32_t *out_len)
-{
-    st->last_sample[channel_index]   = 0;
-    st->samp_frac_num[channel_index] = 0;
-    return resampler_basic_direct_double(st, channel_index, in, in_len, out, out_len);
-}
-
-int resampler_basic_interpolate_double_c(SpeexResamplerState *st, spx_uint32_t channel_index,
-        const spx_word16_t *in, spx_uint32_t *in_len, spx_word16_t *out, spx_uint32_t *out_len)
-{
-    st->last_sample[channel_index]   = 0;
-    st->samp_frac_num[channel_index] = 0;
-    return resampler_basic_interpolate_double(st, channel_index, in, in_len, out, out_len);
-}
-#endif
-
-/* ------------- Integration: full-pipeline wrapper (C kernels) -------------
- * See wrap.h: lengths by value, zero filter memory + reset cursor so every call
- * is identical and deterministic. */
-#ifndef DISABLE_FLOAT_API
-int resample_process_c(SpeexResamplerState *st, const float *in,
-        spx_uint32_t in_len, float *out, spx_uint32_t out_len)
-{
-    spx_uint32_t il = in_len, ol = out_len;
-    memset(st->mem, 0, (size_t) st->mem_alloc_size * st->nb_channels * sizeof(spx_word16_t));
-    st->last_sample[0]   = 0;
-    st->samp_frac_num[0] = 0;
-    st->magic_samples[0] = 0;
-    st->started          = 0;
-    speex_resampler_process_float(st, 0, in, &il, out, &ol);
-    return (int) ol;
-}
-
-int resample_process_int_c(SpeexResamplerState *st, const spx_int16_t *in,
-        spx_uint32_t in_len, spx_int16_t *out, spx_uint32_t out_len)
-{
-    spx_uint32_t il = in_len, ol = out_len;
-    memset(st->mem, 0, (size_t) st->mem_alloc_size * st->nb_channels * sizeof(spx_word16_t));
-    st->last_sample[0]   = 0;
-    st->samp_frac_num[0] = 0;
-    st->magic_samples[0] = 0;
-    st->started          = 0;
-    speex_resampler_process_int(st, 0, in, &il, out, &ol);
-    return (int) ol;
-}
-
-/* Interleaved multi-channel paths. in_len/out_len are per channel; the buffers
- * hold nb_channels * len. Reset every channel so each call redoes equal work. */
-static void resample_reset_all_c(SpeexResamplerState *st)
-{
-    spx_uint32_t c;
-    memset(st->mem, 0, (size_t) st->mem_alloc_size * st->nb_channels * sizeof(spx_word16_t));
-    for (c = 0; c < st->nb_channels; c++) {
-        st->last_sample[c]   = 0;
-        st->samp_frac_num[c] = 0;
-        st->magic_samples[c] = 0;
-    }
-    st->started = 0;
-}
-
-int resample_process_il_c(SpeexResamplerState *st, const float *in,
-        spx_uint32_t in_len, float *out, spx_uint32_t out_len)
-{
-    spx_uint32_t il = in_len, ol = out_len;
-    resample_reset_all_c(st);
-    speex_resampler_process_interleaved_float(st, in, &il, out, &ol);
-    return (int) ol;
-}
-
-int resample_process_int_il_c(SpeexResamplerState *st, const spx_int16_t *in,
-        spx_uint32_t in_len, spx_int16_t *out, spx_uint32_t out_len)
-{
-    spx_uint32_t il = in_len, ol = out_len;
-    resample_reset_all_c(st);
-    speex_resampler_process_interleaved_int(st, in, &il, out, &ol);
-    return (int) ol;
-}
+CKA_RESAMPLER_BASIC_SHIM(direct_double)
+CKA_RESAMPLER_BASIC_SHIM(interpolate_double)
 #endif
