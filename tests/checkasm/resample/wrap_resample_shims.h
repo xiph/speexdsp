@@ -24,7 +24,7 @@ int CKA_SHIM(resampler_basic_##kind)(SpeexResamplerState *st,                 \
     return resampler_basic_##kind(st, channel_index, in, in_len, out, out_len); \
 }
 
-#if !defined(DISABLE_FLOAT_API) && !defined(CKA_KERNEL_SHIMS_ONLY)
+#if !defined(CKA_KERNEL_SHIMS_ONLY)
 SpeexResamplerState *CKA_SHIM(resample_make_state)(unsigned in_rate, unsigned out_rate, int quality)
 {
     int err = RESAMPLER_ERR_SUCCESS;
@@ -37,7 +37,9 @@ SpeexResamplerState *CKA_CAT(CKA_SHIM(resample_make_state), _ch)(unsigned in_rat
     int err = RESAMPLER_ERR_SUCCESS;
     return speex_resampler_init(channels, in_rate, out_rate, quality, &err);
 }
+#endif /* !CKA_KERNEL_SHIMS_ONLY */
 
+#if !defined(DISABLE_FLOAT_API) && !defined(CKA_KERNEL_SHIMS_ONLY)
 int CKA_SHIM(resample_process)(SpeexResamplerState *st, const float *in,
         spx_uint32_t in_len, float *out, spx_uint32_t out_len)
 {

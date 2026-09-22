@@ -145,6 +145,22 @@ int resampler_basic_interpolate_double_rvv(SpeexResamplerState *st, spx_uint32_t
  * wrapper zeroes the filter memory and resets every channel's cursor first, so
  * every call -- the correctness pair and each benchmark iteration -- redoes
  * identical, deterministic work. Returns the number of output samples produced. */
+#ifdef USE_NEON
+SpeexResamplerState *resample_make_state_neon(unsigned in_rate, unsigned out_rate, int quality);
+SpeexResamplerState *resample_make_state_neon_ch(unsigned in_rate, unsigned out_rate,
+        int quality, unsigned channels);
+#endif
+#if defined(USE_SSE) && !defined(FIXED_POINT)
+SpeexResamplerState *resample_make_state_sse(unsigned in_rate, unsigned out_rate, int quality);
+SpeexResamplerState *resample_make_state_sse_ch(unsigned in_rate, unsigned out_rate,
+        int quality, unsigned channels);
+#endif
+#ifdef USE_RVV
+SpeexResamplerState *resample_make_state_rvv(unsigned in_rate, unsigned out_rate, int quality);
+SpeexResamplerState *resample_make_state_rvv_ch(unsigned in_rate, unsigned out_rate,
+        int quality, unsigned channels);
+#endif
+
 #ifndef DISABLE_FLOAT_API
 int resample_process_c(SpeexResamplerState *st, const float *in,
         spx_uint32_t in_len, float *out, spx_uint32_t out_len);
@@ -155,9 +171,6 @@ int resample_process_il_c(SpeexResamplerState *st, const float *in,
 int resample_process_int_il_c(SpeexResamplerState *st, const spx_int16_t *in,
         spx_uint32_t in_len, spx_int16_t *out, spx_uint32_t out_len);
 #ifdef USE_NEON
-SpeexResamplerState *resample_make_state_neon(unsigned in_rate, unsigned out_rate, int quality);
-SpeexResamplerState *resample_make_state_neon_ch(unsigned in_rate, unsigned out_rate,
-        int quality, unsigned channels);
 int resample_process_neon(SpeexResamplerState *st, const float *in,
         spx_uint32_t in_len, float *out, spx_uint32_t out_len);
 int resample_process_int_neon(SpeexResamplerState *st, const spx_int16_t *in,
@@ -168,9 +181,6 @@ int resample_process_int_il_neon(SpeexResamplerState *st, const spx_int16_t *in,
         spx_uint32_t in_len, spx_int16_t *out, spx_uint32_t out_len);
 #endif
 #if defined(USE_SSE) && !defined(FIXED_POINT)
-SpeexResamplerState *resample_make_state_sse(unsigned in_rate, unsigned out_rate, int quality);
-SpeexResamplerState *resample_make_state_sse_ch(unsigned in_rate, unsigned out_rate,
-        int quality, unsigned channels);
 int resample_process_sse(SpeexResamplerState *st, const float *in,
         spx_uint32_t in_len, float *out, spx_uint32_t out_len);
 int resample_process_int_sse(SpeexResamplerState *st, const spx_int16_t *in,
@@ -181,9 +191,6 @@ int resample_process_int_il_sse(SpeexResamplerState *st, const spx_int16_t *in,
         spx_uint32_t in_len, spx_int16_t *out, spx_uint32_t out_len);
 #endif
 #ifdef USE_RVV
-SpeexResamplerState *resample_make_state_rvv(unsigned in_rate, unsigned out_rate, int quality);
-SpeexResamplerState *resample_make_state_rvv_ch(unsigned in_rate, unsigned out_rate,
-        int quality, unsigned channels);
 int resample_process_rvv(SpeexResamplerState *st, const float *in,
         spx_uint32_t in_len, float *out, spx_uint32_t out_len);
 int resample_process_int_rvv(SpeexResamplerState *st, const spx_int16_t *in,
