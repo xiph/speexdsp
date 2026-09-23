@@ -1,7 +1,7 @@
 /* Copyright (C) 2026 Tristan Matthews */
 /**
-   @file rvv_cpu.h
-   @brief Runtime probe shared by the RISC-V Vector (RVV) kernels
+   @file cpu_support.h
+   @brief Runtime selection of the kernel set a state will use
 */
 /*
    Redistribution and use in source and binary forms, with or without
@@ -32,12 +32,34 @@
    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef RVV_CPU_H
-#define RVV_CPU_H
+#ifndef CPU_SUPPORT_H
+#define CPU_SUPPORT_H
 
-/* 1 if this CPU can run the RVV 1.0 kernels, else 0; see rvv_cpu.c.
- * Cheap (an auxv lookup and two instructions), so spx_select_arch() calls
- * it on every state init instead of caching it. */
-int spx_rvv_detect(void);
+/* Per-state kernel selection: each state stores the level spx_select_arch()
+ * picks at init, so there is no global to race on.
+ * Levels are cumulative within a target; dispatch tests arch >= SPX_ARCH_X.
+ * Only RISC-V dispatches at runtime; SSE/NEON stay compile-time. */
 
-#endif /* RVV_CPU_H */
+#define SPX_ARCH_C 0
+
+#if defined(USE_RVV)
+
+#include "rvv_cpu.h"
+
+#define SPX_ARCH_RVV 1
+
+static inline int spx_select_arch(void)
+{
+   return spx_rvv_detect() ? SPX_ARCH_RVV : SPX_ARCH_C;
+}
+
+#else
+
+static inline int spx_select_arch(void)
+{
+   return SPX_ARCH_C;
+}
+
+#endif
+
+#endif /* CPU_SUPPORT_H */

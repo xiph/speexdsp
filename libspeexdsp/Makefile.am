@@ -37,7 +37,7 @@ noinst_HEADERS = 	arch.h 	bfin.h \
 		fftwrap.h \
 	filterbank.h fixed_generic.h os_support.h \
 	pseudofloat.h smallft.h vorbis_psy.h resample_sse.h resample_neon.h resample_rvv.h \
-	kiss_fft_rvv.h mdf_rvv.h preprocess_rvv.h smallft_rvv.h fftwrap_rvv.h filterbank_rvv.h rvv_cpu.h
+	kiss_fft_rvv.h mdf_rvv.h preprocess_rvv.h smallft_rvv.h fftwrap_rvv.h filterbank_rvv.h rvv_cpu.h cpu_support.h
 
 libspeexdsp_la_LDFLAGS = -no-undefined -version-info @SPEEXDSP_LT_CURRENT@:@SPEEXDSP_LT_REVISION@:@SPEEXDSP_LT_AGE@
 libspeexdsp_la_LIBADD = $(LIBM)

@@ -80,17 +80,12 @@ static int rvv_compliant(void)
 
 int spx_rvv_detect(void)
 {
-   static int detected = -1;
-   if (detected < 0)
-   {
-      detected = 0;
 #if defined(__linux__)
-      /* 'V' HWCAP bit, then reject draft RVV 0.7.1 hardware (which also
-         sets it) via the vtype/VILL probe, and require VLEN >= 128 (the
-         kernels' precondition; V mandates Zvl128b, but verify it directly). */
-      if (getauxval(AT_HWCAP) & (1UL << ('V' - 'A')))
-         detected = rvv_compliant() && rvv_vlenb() >= 16;
+   /* 'V' HWCAP bit, then reject draft RVV 0.7.1 hardware (which also
+      sets it) via the vtype/VILL probe, and require VLEN >= 128 (the
+      kernels' precondition; V mandates Zvl128b, but verify it directly). */
+   if (getauxval(AT_HWCAP) & (1UL << ('V' - 'A')))
+      return rvv_compliant() && rvv_vlenb() >= 16;
 #endif
-   }
-   return detected;
+   return 0;
 }
