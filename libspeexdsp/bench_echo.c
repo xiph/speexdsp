@@ -1,9 +1,7 @@
 /* bench_echo.c: end-to-end benchmark of the public echo-canceller +
  * preprocessor pipeline (speex_echo_* followed by speex_preprocess_run,
- * as a voice pipeline would chain them).  Toggles every runtime RVV
- * dispatch flag the build carries (kiss_fft or smallft butterflies, the
- * mdf spectral kernels and the preprocess per-bin kernels) between timed
- * passes so one binary measures the whole-API impact of the RVV kernels.
+ * as a voice pipeline would chain them), timing the library as built.
+ * To measure the RVV kernels, compare against a build with -Drvv=disabled.
  *
  * Needs an optimized build to be meaningful (e.g. meson --buildtype=release);
  * float builds exercise smallft by default, -Dfft=kiss the kiss kernels.
@@ -15,51 +13,6 @@
 #include <time.h>
 #include <speex/speex_echo.h>
 #include <speex/speex_preprocess.h>
-
-/* Runtime kill-switches for the RVV kernels; each is only present in
- * builds with runtime dispatch for that module (the FFT flag depends on
- * the backend compiled in), and hidden in shared-library builds, hence
- * weak so the bench links everywhere.  When none resolve, the A/B
- * comparison degrades to a single absolute-timing pass. */
-#if defined(__GNUC__)
-extern int spx_kf_rvv_enabled __attribute__((weak));      /* kiss_fft */
-extern int spx_drft_rvv_enabled __attribute__((weak));    /* smallft */
-extern int spx_mdf_rvv_enabled __attribute__((weak));     /* mdf */
-extern int spx_preproc_rvv_enabled __attribute__((weak)); /* preprocess */
-extern int spx_fbank_rvv_enabled __attribute__((weak));   /* filterbank */
-#define N_RVV_FLAGS 5
-static int *const rvv_flags[N_RVV_FLAGS] =
-    { &spx_kf_rvv_enabled, &spx_drft_rvv_enabled, &spx_mdf_rvv_enabled,
-      &spx_preproc_rvv_enabled, &spx_fbank_rvv_enabled };
-static const char *const rvv_flag_names[N_RVV_FLAGS] =
-    { "kiss_fft", "smallft", "mdf", "preprocess", "filterbank" };
-#define HAVE_RVV_TOGGLE \
-    (&spx_kf_rvv_enabled != NULL || &spx_drft_rvv_enabled != NULL || \
-     &spx_mdf_rvv_enabled != NULL || &spx_preproc_rvv_enabled != NULL || \
-     &spx_fbank_rvv_enabled != NULL)
-#else
-#define N_RVV_FLAGS 0
-static int *const rvv_flags[1] = { 0 };
-static const char *const rvv_flag_names[1] = { "" };
-#define HAVE_RVV_TOGGLE 0
-#endif
-
-static void rvv_set_all(int on)
-{
-   int i;
-   for (i = 0; i < N_RVV_FLAGS; i++)
-      if (rvv_flags[i])
-         *rvv_flags[i] = on;
-}
-
-static int rvv_any_enabled(void)
-{
-   int i, any = 0;
-   for (i = 0; i < N_RVV_FLAGS; i++)
-      if (rvv_flags[i] && *rvv_flags[i] > 0)
-         any = 1;
-   return any;
-}
 
 static double now_sec(void)
 {
@@ -140,55 +93,17 @@ int main(int argc, char **argv)
    if (frames <= 0) frames = 2000;
    int reps = 3;
 
-   int rvv_avail = 0;
-   if (!HAVE_RVV_TOGGLE) {
-      printf("no runtime RVV dispatch in this build; single pass only\n");
-   } else {
-      int i;
-      /* each flag is probed by its module's first init and never again;
-       * trigger those now so later writes to the flags stick */
-      SpeexEchoState *probe = speex_echo_state_init(128, 1024);
-      SpeexPreprocessState *dprobe = speex_preprocess_state_init(128, 8000);
-      speex_preprocess_state_destroy(dprobe);
-      speex_echo_state_destroy(probe);
-      rvv_avail = rvv_any_enabled();
-      printf("RVV kernel sets in this build:");
-      for (i = 0; i < N_RVV_FLAGS; i++)
-         if (rvv_flags[i])
-            printf(" %s", rvv_flag_names[i]);
-      printf("\n");
-      if (!rvv_avail)
-         printf("note: RVV not usable on this machine; both passes are scalar\n");
-   }
-
-   printf("%d frames/pass, best of %d passes per mode\n\n", frames, reps);
+   printf("%d frames/pass, best of %d passes\n\n", frames, reps);
    for (size_t i = 0; i < sizeof(cfgs)/sizeof(cfgs[0]); i++) {
       const bench_cfg *c = &cfgs[i];
-      double best_on = 1e30, best_off = 1e30;
+      double best = 1e30;
       for (int r = 0; r < reps; r++) {
-         if (HAVE_RVV_TOGGLE) {
-            rvv_set_all(0);
-            double t = run_pass(c, frames);
-            if (t < best_off) best_off = t;
-         }
-         if (HAVE_RVV_TOGGLE)
-            rvv_set_all(rvv_avail);
          double t = run_pass(c, frames);
-         if (t < best_on) best_on = t;
+         if (t < best) best = t;
       }
       double frame_ms = 1000.0*c->frame/c->rate;
-      printf("%s\n", c->label);
-      if (HAVE_RVV_TOGGLE) {
-         printf("  scalar: %8.1f us/frame  (%.1fx realtime)\n",
-                1e6*best_off, frame_ms/(1000.0*best_off));
-         printf("  RVV:    %8.1f us/frame  (%.1fx realtime)\n",
-                1e6*best_on, frame_ms/(1000.0*best_on));
-         printf("  speedup: %.3fx  (%.1f%% of pipeline time saved)\n\n",
-                best_off/best_on, 100.0*(best_off-best_on)/best_off);
-      } else {
-         printf("  %8.1f us/frame  (%.1fx realtime)\n\n",
-                1e6*best_on, frame_ms/(1000.0*best_on));
-      }
+      printf("%s\n  %8.1f us/frame  (%.1fx realtime)\n\n",
+             c->label, 1e6*best, frame_ms/(1000.0*best));
    }
    return 0;
 }
