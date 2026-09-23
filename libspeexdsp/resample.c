@@ -78,6 +78,8 @@ static void speex_free(void *ptr) {free(ptr);}
 #include "os_support.h"
 #endif /* OUTSIDE_SPEEX */
 
+#include "cpu_support.h"
+
 #include <math.h>
 #include <limits.h>
 
@@ -109,10 +111,6 @@ static void speex_free(void *ptr) {free(ptr);}
 #include "resample_rvv.h"
 #endif
 
-#ifdef RESAMPLE_RVV_RUNTIME
-int spx_rvv_enabled = -1;   /* -1 until the first init probes */
-#endif
-
 /* Number of elements to allocate on the stack */
 #ifdef VAR_ARRAYS
 #define FIXED_STACK_ALLOC 8192
@@ -139,6 +137,7 @@ struct SpeexResamplerState_ {
    spx_uint32_t oversample;
    int          initialised;
    int          started;
+   int          arch;   /* SPX_ARCH_* kernel level, set at init (fits the padding here) */
 
    /* These are per-channel */
    spx_int32_t  *last_sample;
@@ -819,10 +818,6 @@ EXPORT SpeexResamplerState *speex_resampler_init_frac(spx_uint32_t nb_channels, 
          *err = RESAMPLER_ERR_INVALID_ARG;
       return NULL;
    }
-#ifdef RESAMPLE_RVV_RUNTIME
-   if (spx_rvv_enabled < 0)
-      spx_rvv_enabled = spx_rvv_detect();
-#endif
    st = (SpeexResamplerState *)speex_alloc(sizeof(SpeexResamplerState));
    if (!st)
    {
@@ -830,6 +825,7 @@ EXPORT SpeexResamplerState *speex_resampler_init_frac(spx_uint32_t nb_channels, 
          *err = RESAMPLER_ERR_ALLOC_FAILED;
       return NULL;
    }
+   st->arch = spx_select_arch();
    st->initialised = 0;
    st->started = 0;
    st->in_rate = 0;

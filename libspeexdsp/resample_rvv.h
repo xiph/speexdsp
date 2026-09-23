@@ -37,9 +37,10 @@
 
 /* Runtime-dispatched RVV inner products. The vector kernels live out-of-line in
  * resample_rvv_asm.S, so this header is plain C and including it keeps
- * resample.c base-ISA. Each OVERRIDE_* leaf calls a kernel only when
- * spx_rvv_enabled, else runs the stock scalar loop -- so one build runs on both
- * V and non-V CPUs.
+ * resample.c base-ISA. Each OVERRIDE_* leaf is a macro that passes
+ * SPX_RESAMPLE_ARCH (the calling resampler_basic_*'s st->arch, or
+ * SPX_ARCH_RVV under checkasm) to a *_dispatch function, which calls the
+ * kernel when the level allows and the stock scalar loop otherwise.
  *
  * The float kernels return in fa0 (lp64d/ilp32d hard-double), so they bind only
  * under __riscv_float_abi_double; other float ABIs get the scalar path. The
@@ -48,13 +49,11 @@
  * checkasm defines RESAMPLE_RVV_FORCE_ON to test the asm unconditionally. */
 
 #if defined(FIXED_POINT) || defined(__riscv_float_abi_double)
+#include "cpu_support.h"
 #  ifdef RESAMPLE_RVV_FORCE_ON
-#    define SPX_RVV_ON 1
+#    define SPX_RESAMPLE_ARCH SPX_ARCH_RVV
 #  else
-#include "rvv_cpu.h"
-extern int spx_rvv_enabled;   /* defined in resample.c: -1 until its first init probes, then 0/1 */
-#    define SPX_RVV_ON (spx_rvv_enabled > 0)
-#    define RESAMPLE_RVV_RUNTIME 1    /* tells resample.c to define+detect the flag */
+#    define SPX_RESAMPLE_ARCH (st->arch)
 #  endif
 #endif
 
@@ -67,10 +66,11 @@ void spx_resample_rvv_interp4_i16(const spx_int16_t *a, const spx_int16_t *b,
                                   spx_int32_t *accum);
 
 #define OVERRIDE_INNER_PRODUCT_SINGLE
-static inline spx_word32_t inner_product_single(const spx_word16_t *a, const spx_word16_t *b, unsigned int len)
+#define inner_product_single(a, b, len) inner_product_single_dispatch(SPX_RESAMPLE_ARCH, a, b, len)
+static inline spx_word32_t inner_product_single_dispatch(int arch, const spx_word16_t *a, const spx_word16_t *b, unsigned int len)
 {
    spx_word32_t sum;
-   if (SPX_RVV_ON)
+   if (arch >= SPX_ARCH_RVV)
       sum = spx_resample_rvv_ip_i16(a, b, len);
    else
    {
@@ -83,11 +83,12 @@ static inline spx_word32_t inner_product_single(const spx_word16_t *a, const spx
 }
 
 #define OVERRIDE_INTERPOLATE_PRODUCT_SINGLE
-static inline spx_word32_t interpolate_product_single(const spx_word16_t *a, const spx_word16_t *b, unsigned int len, const spx_uint32_t oversample, const spx_word16_t *frac)
+#define interpolate_product_single(a, b, len, oversample, frac) interpolate_product_single_dispatch(SPX_RESAMPLE_ARCH, a, b, len, oversample, frac)
+static inline spx_word32_t interpolate_product_single_dispatch(int arch, const spx_word16_t *a, const spx_word16_t *b, unsigned int len, const spx_uint32_t oversample, const spx_word16_t *frac)
 {
    spx_int32_t accum[4];
    spx_word32_t sum;
-   if (SPX_RVV_ON)
+   if (arch >= SPX_ARCH_RVV)
       spx_resample_rvv_interp4_i16(a, b, len, oversample, accum);
    else
    {
@@ -118,9 +119,10 @@ double spx_resample_rvv_interpd_f32(const float *a, const float *b, unsigned int
                                     unsigned int oversample, const float *frac);
 
 #define OVERRIDE_INNER_PRODUCT_SINGLE
-static inline float inner_product_single(const float *a, const float *b, unsigned int len)
+#define inner_product_single(a, b, len) inner_product_single_dispatch(SPX_RESAMPLE_ARCH, a, b, len)
+static inline float inner_product_single_dispatch(int arch, const float *a, const float *b, unsigned int len)
 {
-   if (SPX_RVV_ON)
+   if (arch >= SPX_ARCH_RVV)
       return spx_resample_rvv_ip_f32(a, b, len);
    {
       float sum = 0;
@@ -132,9 +134,10 @@ static inline float inner_product_single(const float *a, const float *b, unsigne
 }
 
 #define OVERRIDE_INNER_PRODUCT_DOUBLE
-static inline double inner_product_double(const float *a, const float *b, unsigned int len)
+#define inner_product_double(a, b, len) inner_product_double_dispatch(SPX_RESAMPLE_ARCH, a, b, len)
+static inline double inner_product_double_dispatch(int arch, const float *a, const float *b, unsigned int len)
 {
-   if (SPX_RVV_ON)
+   if (arch >= SPX_ARCH_RVV)
       return spx_resample_rvv_ipd_f32(a, b, len);
    {
       double accum[4] = {0, 0, 0, 0};
@@ -151,9 +154,10 @@ static inline double inner_product_double(const float *a, const float *b, unsign
 }
 
 #define OVERRIDE_INTERPOLATE_PRODUCT_SINGLE
-static inline float interpolate_product_single(const float *a, const float *b, unsigned int len, const spx_uint32_t oversample, float *frac)
+#define interpolate_product_single(a, b, len, oversample, frac) interpolate_product_single_dispatch(SPX_RESAMPLE_ARCH, a, b, len, oversample, frac)
+static inline float interpolate_product_single_dispatch(int arch, const float *a, const float *b, unsigned int len, const spx_uint32_t oversample, float *frac)
 {
-   if (SPX_RVV_ON)
+   if (arch >= SPX_ARCH_RVV)
       return spx_resample_rvv_interp_f32(a, b, len, oversample, frac);
    {
       float accum[4] = {0, 0, 0, 0};
@@ -173,9 +177,10 @@ static inline float interpolate_product_single(const float *a, const float *b, u
 }
 
 #define OVERRIDE_INTERPOLATE_PRODUCT_DOUBLE
-static inline double interpolate_product_double(const float *a, const float *b, unsigned int len, const spx_uint32_t oversample, float *frac)
+#define interpolate_product_double(a, b, len, oversample, frac) interpolate_product_double_dispatch(SPX_RESAMPLE_ARCH, a, b, len, oversample, frac)
+static inline double interpolate_product_double_dispatch(int arch, const float *a, const float *b, unsigned int len, const spx_uint32_t oversample, float *frac)
 {
-   if (SPX_RVV_ON)
+   if (arch >= SPX_ARCH_RVV)
       return spx_resample_rvv_interpd_f32(a, b, len, oversample, frac);
    {
       double accum[4] = {0, 0, 0, 0};
