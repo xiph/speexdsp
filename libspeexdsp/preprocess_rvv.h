@@ -12,9 +12,10 @@
  * vector code lives out-of-line in preprocess_rvv_asm.S, so this header is
  * plain C and preprocess.c stays base-ISA. preprocess.c includes it right
  * after its scalar kernels: each <kernel>_dispatch wrapper below calls the
- * asm when SPX_PREPROC_RVV_ON (and the frame is at least a few bins) and
- * the scalar kernel otherwise, and `#define <kernel> <kernel>_dispatch`
- * then points every later call site at the wrapper.
+ * asm when its `arch` argument allows (and the frame is at least a few
+ * bins) and the scalar kernel otherwise; the `#define <kernel>(...)` after
+ * it redirects later call sites to the wrapper, passing SPX_PREPROC_ARCH
+ * (the calling function's st->arch, or SPX_ARCH_RVV under checkasm).
  *
  * Float only: the float loops map to plain vector arithmetic (vfdiv,
  * vfsqrt, and an indexed-load gather for the hypergeom_gain table), while
@@ -32,13 +33,12 @@
 
 #if !defined(FIXED_POINT) && defined(__riscv_float_abi_double)
 
+#include "cpu_support.h"
+
 #ifdef PREPROC_RVV_FORCE_ON
-#  define SPX_PREPROC_RVV_ON 1
+#  define SPX_PREPROC_ARCH SPX_ARCH_RVV
 #else
-#include "rvv_cpu.h"
-extern int spx_preproc_rvv_enabled;   /* defined in preprocess.c: -1 until its first init probes, then 0/1 */
-#  define SPX_PREPROC_RVV_ON (spx_preproc_rvv_enabled > 0)
-#  define PREPROC_RVV_RUNTIME 1      /* tells preprocess.c to define+detect the flag */
+#  define SPX_PREPROC_ARCH (st->arch)
 #endif
 
 void spx_preproc_rvv_window_f32(float *frame, const float *window, int len);
@@ -60,18 +60,18 @@ void spx_preproc_rvv_apply_gain_f32(const float *gain2, float *ft, int N);
 void spx_preproc_rvv_word2int_sum_f32(spx_int16_t *x, const float *a,
                                       const float *b, int len);
 
-static inline void preproc_window_dispatch(spx_word16_t *frame, const spx_word16_t *window, int len)
+static inline void preproc_window_dispatch(int arch, spx_word16_t *frame, const spx_word16_t *window, int len)
 {
-   if (SPX_PREPROC_RVV_ON && len >= 4)
+   if (arch >= SPX_ARCH_RVV && len >= 4)
       spx_preproc_rvv_window_f32(frame, window, len);
    else
       preproc_window(frame, window, len);
 }
-#define preproc_window preproc_window_dispatch
+#define preproc_window(frame, window, len) preproc_window_dispatch(SPX_PREPROC_ARCH, frame, window, len)
 
-static inline void preproc_power_spectrum_dispatch(const spx_word16_t *ft, spx_word32_t *ps, int N)
+static inline void preproc_power_spectrum_dispatch(int arch, const spx_word16_t *ft, spx_word32_t *ps, int N)
 {
-   if (SPX_PREPROC_RVV_ON && N >= 4)
+   if (arch >= SPX_ARCH_RVV && N >= 4)
    {
       ps[0]=MULT16_16(ft[0],ft[0]);
       /* interior complex bins: ps[1..N-1] */
@@ -80,11 +80,11 @@ static inline void preproc_power_spectrum_dispatch(const spx_word16_t *ft, spx_w
    else
       preproc_power_spectrum(ft, ps, N);
 }
-#define preproc_power_spectrum preproc_power_spectrum_dispatch
+#define preproc_power_spectrum(ft, ps, N) preproc_power_spectrum_dispatch(SPX_PREPROC_ARCH, ft, ps, N)
 
-static inline void preproc_smooth_spectrum_dispatch(spx_word32_t *S, const spx_word32_t *ps, int N)
+static inline void preproc_smooth_spectrum_dispatch(int arch, spx_word32_t *S, const spx_word32_t *ps, int N)
 {
-   if (SPX_PREPROC_RVV_ON && N >= 4)
+   if (arch >= SPX_ARCH_RVV && N >= 4)
    {
       /* the kernel updates the interior bins S[1..N-2] */
       spx_preproc_rvv_smooth_spectrum_f32(S, ps, N);
@@ -94,56 +94,56 @@ static inline void preproc_smooth_spectrum_dispatch(spx_word32_t *S, const spx_w
    else
       preproc_smooth_spectrum(S, ps, N);
 }
-#define preproc_smooth_spectrum preproc_smooth_spectrum_dispatch
+#define preproc_smooth_spectrum(S, ps, N) preproc_smooth_spectrum_dispatch(SPX_PREPROC_ARCH, S, ps, N)
 
-static inline void preproc_min_track_swap_dispatch(spx_word32_t *Smin, spx_word32_t *Stmp, const spx_word32_t *S, int N)
+static inline void preproc_min_track_swap_dispatch(int arch, spx_word32_t *Smin, spx_word32_t *Stmp, const spx_word32_t *S, int N)
 {
-   if (SPX_PREPROC_RVV_ON && N >= 4)
+   if (arch >= SPX_ARCH_RVV && N >= 4)
       spx_preproc_rvv_min_track_swap_f32(Smin, Stmp, S, N);
    else
       preproc_min_track_swap(Smin, Stmp, S, N);
 }
-#define preproc_min_track_swap preproc_min_track_swap_dispatch
+#define preproc_min_track_swap(Smin, Stmp, S, N) preproc_min_track_swap_dispatch(SPX_PREPROC_ARCH, Smin, Stmp, S, N)
 
-static inline void preproc_min_track_dispatch(spx_word32_t *Smin, spx_word32_t *Stmp, const spx_word32_t *S, int N)
+static inline void preproc_min_track_dispatch(int arch, spx_word32_t *Smin, spx_word32_t *Stmp, const spx_word32_t *S, int N)
 {
-   if (SPX_PREPROC_RVV_ON && N >= 4)
+   if (arch >= SPX_ARCH_RVV && N >= 4)
       spx_preproc_rvv_min_track_f32(Smin, Stmp, S, N);
    else
       preproc_min_track(Smin, Stmp, S, N);
 }
-#define preproc_min_track preproc_min_track_dispatch
+#define preproc_min_track(Smin, Stmp, S, N) preproc_min_track_dispatch(SPX_PREPROC_ARCH, Smin, Stmp, S, N)
 
-static inline void preproc_update_prob_dispatch(const spx_word32_t *S, const spx_word32_t *Smin, int *update_prob, int N)
+static inline void preproc_update_prob_dispatch(int arch, const spx_word32_t *S, const spx_word32_t *Smin, int *update_prob, int N)
 {
-   if (SPX_PREPROC_RVV_ON && N >= 4)
+   if (arch >= SPX_ARCH_RVV && N >= 4)
       spx_preproc_rvv_update_prob_f32(S, Smin, update_prob, N);
    else
       preproc_update_prob(S, Smin, update_prob, N);
 }
-#define preproc_update_prob preproc_update_prob_dispatch
+#define preproc_update_prob(S, Smin, update_prob, N) preproc_update_prob_dispatch(SPX_PREPROC_ARCH, S, Smin, update_prob, N)
 
-static inline void preproc_noise_update_dispatch(const int *update_prob, const spx_word32_t *ps, spx_word32_t *noise, spx_word16_t beta, spx_word16_t beta_1, int N)
+static inline void preproc_noise_update_dispatch(int arch, const int *update_prob, const spx_word32_t *ps, spx_word32_t *noise, spx_word16_t beta, spx_word16_t beta_1, int N)
 {
-   if (SPX_PREPROC_RVV_ON && N >= 4)
+   if (arch >= SPX_ARCH_RVV && N >= 4)
       spx_preproc_rvv_noise_update_f32(update_prob, ps, noise, beta, beta_1, N);
    else
       preproc_noise_update(update_prob, ps, noise, beta, beta_1, N);
 }
-#define preproc_noise_update preproc_noise_update_dispatch
+#define preproc_noise_update(update_prob, ps, noise, beta, beta_1, N) preproc_noise_update_dispatch(SPX_PREPROC_ARCH, update_prob, ps, noise, beta, beta_1, N)
 
-static inline void preproc_snr_update_dispatch(const spx_word32_t *ps, const spx_word32_t *noise, const spx_word32_t *echo_noise, const spx_word32_t *reverb_estimate, const spx_word32_t *old_ps, spx_word16_t *post, spx_word16_t *prior, int len)
+static inline void preproc_snr_update_dispatch(int arch, const spx_word32_t *ps, const spx_word32_t *noise, const spx_word32_t *echo_noise, const spx_word32_t *reverb_estimate, const spx_word32_t *old_ps, spx_word16_t *post, spx_word16_t *prior, int len)
 {
-   if (SPX_PREPROC_RVV_ON && len >= 4)
+   if (arch >= SPX_ARCH_RVV && len >= 4)
       spx_preproc_rvv_snr_f32(ps, noise, echo_noise, reverb_estimate, old_ps, post, prior, len);
    else
       preproc_snr_update(ps, noise, echo_noise, reverb_estimate, old_ps, post, prior, len);
 }
-#define preproc_snr_update preproc_snr_update_dispatch
+#define preproc_snr_update(ps, noise, echo_noise, reverb_estimate, old_ps, post, prior, len) preproc_snr_update_dispatch(SPX_PREPROC_ARCH, ps, noise, echo_noise, reverb_estimate, old_ps, post, prior, len)
 
-static inline void preproc_zeta_smooth_dispatch(spx_word16_t *zeta, const spx_word16_t *prior, int N, int M)
+static inline void preproc_zeta_smooth_dispatch(int arch, spx_word16_t *zeta, const spx_word16_t *prior, int N, int M)
 {
-   if (SPX_PREPROC_RVV_ON && N >= 4)
+   if (arch >= SPX_ARCH_RVV && N >= 4)
    {
       int i;
       zeta[0] = PSHR32(ADD32(MULT16_16(QCONST16(.7f,15),zeta[0]), MULT16_16(QCONST16(.3f,15),prior[0])),15);
@@ -155,20 +155,20 @@ static inline void preproc_zeta_smooth_dispatch(spx_word16_t *zeta, const spx_wo
    else
       preproc_zeta_smooth(zeta, prior, N, M);
 }
-#define preproc_zeta_smooth preproc_zeta_smooth_dispatch
+#define preproc_zeta_smooth(zeta, prior, N, M) preproc_zeta_smooth_dispatch(SPX_PREPROC_ARCH, zeta, prior, N, M)
 
-static inline void preproc_em_gain_dispatch(const spx_word16_t *prior, const spx_word16_t *post, const spx_word32_t *ps, const spx_word16_t *gain_floor, spx_word16_t *gain, spx_word16_t *gain2, spx_word32_t *old_ps, int N)
+static inline void preproc_em_gain_dispatch(int arch, const spx_word16_t *prior, const spx_word16_t *post, const spx_word32_t *ps, const spx_word16_t *gain_floor, spx_word16_t *gain, spx_word16_t *gain2, spx_word32_t *old_ps, int N)
 {
-   if (SPX_PREPROC_RVV_ON && N >= 4)
+   if (arch >= SPX_ARCH_RVV && N >= 4)
       spx_preproc_rvv_em_gain_f32(prior, post, ps, gain_floor, gain, gain2, old_ps, N);
    else
       preproc_em_gain(prior, post, ps, gain_floor, gain, gain2, old_ps, N);
 }
-#define preproc_em_gain preproc_em_gain_dispatch
+#define preproc_em_gain(prior, post, ps, gain_floor, gain, gain2, old_ps, N) preproc_em_gain_dispatch(SPX_PREPROC_ARCH, prior, post, ps, gain_floor, gain, gain2, old_ps, N)
 
-static inline void preproc_apply_gain_dispatch(const spx_word16_t *gain2, spx_word16_t *ft, int N)
+static inline void preproc_apply_gain_dispatch(int arch, const spx_word16_t *gain2, spx_word16_t *ft, int N)
 {
-   if (SPX_PREPROC_RVV_ON && N >= 4)
+   if (arch >= SPX_ARCH_RVV && N >= 4)
    {
       /* the kernel scales the interior complex bins ft[1..2*N-2] */
       spx_preproc_rvv_apply_gain_f32(gain2, ft, N);
@@ -178,20 +178,20 @@ static inline void preproc_apply_gain_dispatch(const spx_word16_t *gain2, spx_wo
    else
       preproc_apply_gain(gain2, ft, N);
 }
-#define preproc_apply_gain preproc_apply_gain_dispatch
+#define preproc_apply_gain(gain2, ft, N) preproc_apply_gain_dispatch(SPX_PREPROC_ARCH, gain2, ft, N)
 
 /* Bit-exact vs the scalar loop: the kernel adds a+b under the ambient
  * rounding mode (matching C's +), then reproduces WORD2INT's
  * floor(.5+x) with a clamp and an frm=RDN add+convert (equivalence
  * proven exhaustively over all floats). */
-static inline void preproc_overlap_output_dispatch(spx_int16_t *x, const spx_word16_t *outbuf, const spx_word16_t *frame, int len)
+static inline void preproc_overlap_output_dispatch(int arch, spx_int16_t *x, const spx_word16_t *outbuf, const spx_word16_t *frame, int len)
 {
-   if (SPX_PREPROC_RVV_ON && len >= 4)
+   if (arch >= SPX_ARCH_RVV && len >= 4)
       spx_preproc_rvv_word2int_sum_f32(x, outbuf, frame, len);
    else
       preproc_overlap_output(x, outbuf, frame, len);
 }
-#define preproc_overlap_output preproc_overlap_output_dispatch
+#define preproc_overlap_output(x, outbuf, frame, len) preproc_overlap_output_dispatch(SPX_PREPROC_ARCH, x, outbuf, frame, len)
 
 #endif /* !FIXED_POINT && __riscv_float_abi_double */
 

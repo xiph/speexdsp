@@ -67,6 +67,7 @@
 #include "filterbank.h"
 #include "math_approx.h"
 #include "os_support.h"
+#include "cpu_support.h"
 
 #define LOUDNESS_EXP 5.f
 #define AMP_SCALE .001f
@@ -196,6 +197,7 @@ struct SpeexPreprocessState_ {
    SpeexEchoState *echo_state;
 
    spx_word16_t	speech_prob;  /**< Probability last frame was speech */
+   int    arch;              /**< SPX_ARCH_* kernel level, set at init (fits the padding here) */
 
    /* DSP-related arrays */
    spx_word16_t *frame;      /**< Processing frame (2*ps_size) */
@@ -577,20 +579,13 @@ static inline void preproc_overlap_output(spx_int16_t *x, const spx_word16_t *ou
 #include "preprocess_rvv.h"
 #endif
 
-#ifdef PREPROC_RVV_RUNTIME
-int spx_preproc_rvv_enabled = -1;   /* -1 until the first init probes */
-#endif
-
 EXPORT SpeexPreprocessState *speex_preprocess_state_init(int frame_size, int sampling_rate)
 {
    int i;
    int N, N3, N4, M;
 
    SpeexPreprocessState *st = (SpeexPreprocessState *)speex_alloc(sizeof(SpeexPreprocessState));
-#ifdef PREPROC_RVV_RUNTIME
-   if (spx_preproc_rvv_enabled < 0)
-      spx_preproc_rvv_enabled = spx_rvv_detect();
-#endif
+   st->arch = spx_select_arch();
    st->frame_size = frame_size;
 
    /* Round ps_size down to the nearest power of two */

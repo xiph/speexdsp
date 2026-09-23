@@ -46,6 +46,7 @@ typedef struct {
 #endif
    int nb_banks;
    int len;
+   int arch;     /**< SPX_ARCH_* kernel level, set at init */
 } FilterBank;
 
 

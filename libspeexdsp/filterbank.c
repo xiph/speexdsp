@@ -40,6 +40,7 @@
 #include <math.h>
 #include "math_approx.h"
 #include "os_support.h"
+#include "cpu_support.h"
 
 /** psd16 inner loop: interpolate each bin from its two band energies */
 static inline void fbank_psd16(const int *bank_left, const int *bank_right,
@@ -63,10 +64,6 @@ static inline void fbank_psd16(const int *bank_left, const int *bank_right,
 #include "filterbank_rvv.h"
 #endif
 
-#ifdef FBANK_RVV_RUNTIME
-int spx_fbank_rvv_enabled = -1;   /* -1 until the first init probes */
-#endif
-
 #ifdef FIXED_POINT
 
 #define toBARK(n)   (MULT16_16(26829,spx_atan(SHR32(MULT16_16(97,n),2))) + MULT16_16(4588,spx_atan(MULT16_32_Q15(20,MULT16_16(n,n)))) + MULT16_16(3355,n))
@@ -85,10 +82,6 @@ FilterBank *filterbank_new(int banks, spx_word32_t sampling, int len, int type)
    int i;
    int id1;
    int id2;
-#ifdef FBANK_RVV_RUNTIME
-   if (spx_fbank_rvv_enabled < 0)
-      spx_fbank_rvv_enabled = spx_rvv_detect();
-#endif
    df = DIV32(SHL32(sampling,15),MULT16_16(2,len));
    max_mel = toBARK(EXTRACT16(sampling/2));
    mel_interval = PDIV32(max_mel,banks-1);
@@ -96,6 +89,7 @@ FilterBank *filterbank_new(int banks, spx_word32_t sampling, int len, int type)
    bank = (FilterBank*)speex_alloc(sizeof(FilterBank));
    bank->nb_banks = banks;
    bank->len = len;
+   bank->arch = spx_select_arch();
    bank->bank_left = (int*)speex_alloc(len*sizeof(int));
    bank->bank_right = (int*)speex_alloc(len*sizeof(int));
    bank->filter_left = (spx_word16_t*)speex_alloc(len*sizeof(spx_word16_t));
