@@ -30,6 +30,7 @@ extern "C" {
 /** Discrete Rotational Fourier Transform lookup */
 struct drft_lookup{
   int n;
+  int arch;   /* SPX_ARCH_* kernel level, set at init (fits the padding here) */
   float *trigcache;
   int *splitcache;
 };

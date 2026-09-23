@@ -106,7 +106,7 @@ void spx_fft(void *table, float *in, float *out)
    if (in==out)
       speex_warning("FFT should not be done in-place");
 #ifdef USE_RVV
-   if (spx_drft_rvv_enabled > 0)
+   if (((struct drft_lookup *)table)->arch >= SPX_ARCH_RVV)
    {
       spx_drft_rvv_scale_f32(out, in, &scale, N);
    } else

@@ -36,20 +36,19 @@
 #include "smallft.h"
 #include "arch.h"
 #include "os_support.h"
+#include "cpu_support.h"
 
 #ifdef USE_RVV
 #include "smallft_rvv.h"
 #endif
 
+/* Radix-2/4 stage calls, overridable by a SIMD header; the scalar stages
+   ignore `arch`. */
 #ifndef SPX_DRADF2
-#define SPX_DRADF2 dradf2
-#define SPX_DRADF4 dradf4
-#define SPX_DRADB2 dradb2
-#define SPX_DRADB4 dradb4
-#endif
-
-#ifdef SMALLFT_RVV_RUNTIME
-int spx_drft_rvv_enabled = -1;   /* -1 until the first init probes */
+#define SPX_DRADF2(arch, ido, l1, cc, ch, wa1) dradf2(ido, l1, cc, ch, wa1)
+#define SPX_DRADF4(arch, ido, l1, cc, ch, wa1, wa2, wa3) dradf4(ido, l1, cc, ch, wa1, wa2, wa3)
+#define SPX_DRADB2(arch, ido, l1, cc, ch, wa1) dradb2(ido, l1, cc, ch, wa1)
+#define SPX_DRADB4(arch, ido, l1, cc, ch, wa1, wa2, wa3) dradb4(ido, l1, cc, ch, wa1, wa2, wa3)
 #endif
 
 static void drfti1(int n, float *wa, int *ifac){
@@ -587,7 +586,7 @@ L119:
   }
 }
 
-static void drftf1(int n,float *c,float *ch,float *wa,int *ifac){
+static void drftf1(int n,float *c,float *ch,float *wa,int *ifac,int arch){
   int i,k1,l1,l2;
   int na,kh,nf;
   int ip,iw,ido,idl1,ix2,ix3;
@@ -611,20 +610,20 @@ static void drftf1(int n,float *c,float *ch,float *wa,int *ifac){
     ix2=iw+ido;
     ix3=ix2+ido;
     if(na!=0)
-      SPX_DRADF4(ido,l1,ch,c,wa+iw-1,wa+ix2-1,wa+ix3-1);
+      SPX_DRADF4(arch,ido,l1,ch,c,wa+iw-1,wa+ix2-1,wa+ix3-1);
     else
-      SPX_DRADF4(ido,l1,c,ch,wa+iw-1,wa+ix2-1,wa+ix3-1);
+      SPX_DRADF4(arch,ido,l1,c,ch,wa+iw-1,wa+ix2-1,wa+ix3-1);
     goto L110;
 
  L102:
     if(ip!=2)goto L104;
     if(na!=0)goto L103;
 
-    SPX_DRADF2(ido,l1,c,ch,wa+iw-1);
+    SPX_DRADF2(arch,ido,l1,c,ch,wa+iw-1);
     goto L110;
 
   L103:
-    SPX_DRADF2(ido,l1,ch,c,wa+iw-1);
+    SPX_DRADF2(arch,ido,l1,ch,c,wa+iw-1);
     goto L110;
 
   L104:
@@ -1168,7 +1167,7 @@ L132:
   }
 }
 
-static void drftb1(int n, float *c, float *ch, float *wa, int *ifac){
+static void drftb1(int n, float *c, float *ch, float *wa, int *ifac, int arch){
   int i,k1,l1,l2;
   int na;
   int nf,ip,iw,ix2,ix3,ido,idl1;
@@ -1188,9 +1187,9 @@ static void drftb1(int n, float *c, float *ch, float *wa, int *ifac){
     ix3=ix2+ido;
 
     if(na!=0)
-      SPX_DRADB4(ido,l1,ch,c,wa+iw-1,wa+ix2-1,wa+ix3-1);
+      SPX_DRADB4(arch,ido,l1,ch,c,wa+iw-1,wa+ix2-1,wa+ix3-1);
     else
-      SPX_DRADB4(ido,l1,c,ch,wa+iw-1,wa+ix2-1,wa+ix3-1);
+      SPX_DRADB4(arch,ido,l1,c,ch,wa+iw-1,wa+ix2-1,wa+ix3-1);
     na=1-na;
     goto L115;
 
@@ -1198,9 +1197,9 @@ static void drftb1(int n, float *c, float *ch, float *wa, int *ifac){
     if(ip!=2)goto L106;
 
     if(na!=0)
-      SPX_DRADB2(ido,l1,ch,c,wa+iw-1);
+      SPX_DRADB2(arch,ido,l1,ch,c,wa+iw-1);
     else
-      SPX_DRADB2(ido,l1,c,ch,wa+iw-1);
+      SPX_DRADB2(arch,ido,l1,c,ch,wa+iw-1);
     na=1-na;
     goto L115;
 
@@ -1248,21 +1247,18 @@ static void drftb1(int n, float *c, float *ch, float *wa, int *ifac){
 
 void spx_drft_forward(struct drft_lookup *l,float *data){
   if(l->n==1)return;
-  drftf1(l->n,data,l->trigcache,l->trigcache+l->n,l->splitcache);
+  drftf1(l->n,data,l->trigcache,l->trigcache+l->n,l->splitcache,l->arch);
 }
 
 void spx_drft_backward(struct drft_lookup *l,float *data){
   if (l->n==1)return;
-  drftb1(l->n,data,l->trigcache,l->trigcache+l->n,l->splitcache);
+  drftb1(l->n,data,l->trigcache,l->trigcache+l->n,l->splitcache,l->arch);
 }
 
 void spx_drft_init(struct drft_lookup *l,int n)
 {
-#ifdef SMALLFT_RVV_RUNTIME
-  if (spx_drft_rvv_enabled < 0)
-    spx_drft_rvv_enabled = spx_rvv_detect();
-#endif
   l->n=n;
+  l->arch=spx_select_arch();
   l->trigcache=(float*)speex_alloc(3*n*sizeof(*l->trigcache));
   l->splitcache=(int*)speex_alloc(32*sizeof(*l->splitcache));
   fdrffti(n, l->trigcache, l->splitcache);

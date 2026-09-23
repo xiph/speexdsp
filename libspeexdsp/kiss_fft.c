@@ -19,6 +19,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 #endif
 
 #include "_kiss_fft_guts.h"
+#include "cpu_support.h"
 #include "arch.h"
 #include "os_support.h"
 
@@ -29,10 +30,6 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 /* The guts header contains all the multiplication and addition macros that are defined for
  fixed or floating point complex numbers.  It also declares the kf_ internal functions.
  */
-
-#ifdef KISS_FFT_RVV_RUNTIME
-int spx_kf_rvv_enabled = -1;   /* -1 until the first init probes */
-#endif
 
 static void kf_bfly2(
         kiss_fft_cpx * Fout,
@@ -516,11 +513,6 @@ kiss_fft_cfg kiss_fft_alloc(int nfft,int inverse_fft,void * mem,size_t * lenmem 
     size_t memneeded = sizeof(struct kiss_fft_state)
         + sizeof(kiss_fft_cpx)*(nfft-1); /* twiddle factors*/
 
-#ifdef KISS_FFT_RVV_RUNTIME
-    if (spx_kf_rvv_enabled < 0)
-        spx_kf_rvv_enabled = spx_rvv_detect();
-#endif
-
     if ( lenmem==NULL ) {
         st = ( kiss_fft_cfg)KISS_FFT_MALLOC( memneeded );
     }else{
@@ -532,6 +524,7 @@ kiss_fft_cfg kiss_fft_alloc(int nfft,int inverse_fft,void * mem,size_t * lenmem 
         int i;
         st->nfft=nfft;
         st->inverse = inverse_fft;
+        st->arch = spx_select_arch();
 #ifdef FIXED_POINT
         for (i=0;i<nfft;++i) {
             spx_word32_t phase = i;

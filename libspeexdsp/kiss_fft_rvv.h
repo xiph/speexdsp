@@ -38,7 +38,8 @@
 /* Runtime-dispatched RVV butterflies for kf_bfly2/3/4/5. The vector kernels
  * live out-of-line in kiss_fft_rvv_asm.S, so this header is plain C and
  * kiss_fft.c stays base-ISA; each kf_bfly* falls back to its scalar loop
- * unless SPX_KF_RVV_ON. Kernels take only pointer/integer args (no float-ABI
+ * unless SPX_KF_RVV_ON (the cfg's st->arch allows it). Kernels take only
+ * pointer/integer args (no float-ABI
  * dependency). Fixed point is bit-exact vs C; float pairs with a checkasm
  * tolerance. checkasm defines KISS_FFT_RVV_FORCE_ON to test the asm
  * unconditionally. */
@@ -48,13 +49,12 @@
 
 #include "kiss_fft.h"
 
+#include "cpu_support.h"
+
 #ifdef KISS_FFT_RVV_FORCE_ON
 #  define SPX_KF_RVV_ON 1
 #else
-#include "rvv_cpu.h"
-extern int spx_kf_rvv_enabled;   /* defined in kiss_fft.c: -1 until its first init probes, then 0/1 */
-#  define SPX_KF_RVV_ON (spx_kf_rvv_enabled > 0)
-#  define KISS_FFT_RVV_RUNTIME 1     /* tells kiss_fft.c to define+detect the flag */
+#  define SPX_KF_RVV_ON (st->arch >= SPX_ARCH_RVV)
 #endif
 
 /* bfly2/bfly4 (and float bfly5) carry kf_work's batching parameters (N

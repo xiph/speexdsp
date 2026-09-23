@@ -15,14 +15,14 @@ void CKA_SHIM(smallft_stage)(struct drft_lookup *l, const struct drft_stage *st,
 
     if (st->ip == 4) {
         if (backward)
-            SPX_DRADB4(st->ido, st->l1, cc, ch, wa1, wa2, wa3);
+            SPX_DRADB4(l->arch, st->ido, st->l1, cc, ch, wa1, wa2, wa3);
         else
-            SPX_DRADF4(st->ido, st->l1, cc, ch, wa1, wa2, wa3);
+            SPX_DRADF4(l->arch, st->ido, st->l1, cc, ch, wa1, wa2, wa3);
     } else {
         if (backward)
-            SPX_DRADB2(st->ido, st->l1, cc, ch, wa1);
+            SPX_DRADB2(l->arch, st->ido, st->l1, cc, ch, wa1);
         else
-            SPX_DRADF2(st->ido, st->l1, cc, ch, wa1);
+            SPX_DRADF2(l->arch, st->ido, st->l1, cc, ch, wa1);
     }
 }
 

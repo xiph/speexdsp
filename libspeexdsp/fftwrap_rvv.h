@@ -36,15 +36,13 @@
 /* fftwrap.c's USE_SMALLFT spx_fft pre-scales its input by 1/n before
  * spx_drft_forward; that loop is per-sample scalar work on every forward
  * FFT. The kernel lives in smallft_rvv_asm.S (always linked alongside the
- * smallft RVV stages) and reuses smallft's runtime detection: fftwrap's
- * spx_fft_init calls spx_drft_init, which probes and sets
- * spx_drft_rvv_enabled before the first spx_fft can run. Bit-exact vs the
- * scalar loop (one multiply per element). */
+ * smallft RVV stages) and dispatches on the drft lookup's arch level.
+ * Bit-exact vs the scalar loop (one multiply per element). */
 
 #ifndef FFTWRAP_RVV_H
 #define FFTWRAP_RVV_H
 
-extern int spx_drft_rvv_enabled;   /* defined in smallft.c: -1 until its first init probes, then 0/1 */
+#include "cpu_support.h"
 
 /* out[i] = *scale * in[i]; out == in is allowed. scale is passed by
  * reference to keep the asm float-ABI-independent. */

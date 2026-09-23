@@ -31,6 +31,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 struct kiss_fft_state{
     int nfft;
     int inverse;
+    int arch;   /* SPX_ARCH_* kernel level, set at alloc */
     int factors[2*MAXFACTORS];
     kiss_fft_cpx twiddles[1];
 };

@@ -40,22 +40,21 @@
  * dradf2/dradb2) stages that power-of-two smallft transforms spend all
  * their time in. The vector code lives out-of-line in smallft_rvv_asm.S,
  * so this header is plain C and smallft.c stays base-ISA. The dradN_rvv
- * wrappers dispatch per call and fall back to smallft.c's scalar stages
- * (forward-declared here, defined later in the same TU); drftf1/drftb1
- * call them through the SPX_DRAD* macros. The kernels reorder float sums
- * and pair with a checkasm tolerance. checkasm defines
- * SMALLFT_RVV_FORCE_ON to test the asm unconditionally. */
+ * wrappers dispatch on their `arch` argument (the lookup's, passed down by
+ * drftf1/drftb1 through the SPX_DRAD* macros) and fall back to smallft.c's
+ * scalar stages, forward-declared here. The kernels reorder float sums and
+ * pair with a checkasm tolerance. checkasm defines SMALLFT_RVV_FORCE_ON to
+ * test the asm unconditionally. */
 
 #ifndef SMALLFT_RVV_H
 #define SMALLFT_RVV_H
 
+#include "cpu_support.h"
+
 #ifdef SMALLFT_RVV_FORCE_ON
-#  define SPX_DRFT_RVV_ON 1
+#  define SPX_DRFT_ARCH_ARG(arch) SPX_ARCH_RVV
 #else
-#include "rvv_cpu.h"
-extern int spx_drft_rvv_enabled;   /* defined in smallft.c: -1 until its first init probes, then 0/1 */
-#  define SPX_DRFT_RVV_ON (spx_drft_rvv_enabled > 0)
-#  define SMALLFT_RVV_RUNTIME 1      /* tells smallft.c to define+detect the flag */
+#  define SPX_DRFT_ARCH_ARG(arch) (arch)
 #endif
 
 void spx_drft_rvv_radf4_f32(int ido, int l1, const float *cc, float *ch,
@@ -80,19 +79,19 @@ static void dradb4(int ido, int l1, float *cc, float *ch, float *wa1,
 /* Small twiddled shapes (4*ido*l1 < 256, i.e. n <= 128 transforms' interior
  * stages) lose to call/strided overhead on real hardware; the ido==1 fast
  * path always wins. */
-static inline void dradf4_rvv(int ido, int l1, float *cc, float *ch,
+static inline void dradf4_rvv(int arch, int ido, int l1, float *cc, float *ch,
                               float *wa1, float *wa2, float *wa3)
 {
-   if (SPX_DRFT_RVV_ON && (ido == 1 || 4*ido*l1 >= 256))
+   if (arch >= SPX_ARCH_RVV && (ido == 1 || 4*ido*l1 >= 256))
       spx_drft_rvv_radf4_f32(ido, l1, cc, ch, wa1, wa2, wa3);
    else
       dradf4(ido, l1, cc, ch, wa1, wa2, wa3);
 }
 
-static inline void dradb4_rvv(int ido, int l1, float *cc, float *ch,
+static inline void dradb4_rvv(int arch, int ido, int l1, float *cc, float *ch,
                               float *wa1, float *wa2, float *wa3)
 {
-   if (SPX_DRFT_RVV_ON && (ido == 1 || 4*ido*l1 >= 256))
+   if (arch >= SPX_ARCH_RVV && (ido == 1 || 4*ido*l1 >= 256))
       spx_drft_rvv_radb4_f32(ido, l1, cc, ch, wa1, wa2, wa3);
    else
       dradb4(ido, l1, cc, ch, wa1, wa2, wa3);
@@ -100,27 +99,31 @@ static inline void dradb4_rvv(int ido, int l1, float *cc, float *ch,
 
 /* drfti1 moves the (single) factor 2 to the front of ifac, so the radix-2
  * stage always runs with l1==1; the kernel only implements that shape. */
-static inline void dradf2_rvv(int ido, int l1, float *cc, float *ch,
+static inline void dradf2_rvv(int arch, int ido, int l1, float *cc, float *ch,
                               float *wa1)
 {
-   if (SPX_DRFT_RVV_ON && l1 == 1 && ido >= 32)
+   if (arch >= SPX_ARCH_RVV && l1 == 1 && ido >= 32)
       spx_drft_rvv_radf2_f32(ido, cc, ch, wa1);
    else
       dradf2(ido, l1, cc, ch, wa1);
 }
 
-static inline void dradb2_rvv(int ido, int l1, float *cc, float *ch,
+static inline void dradb2_rvv(int arch, int ido, int l1, float *cc, float *ch,
                               float *wa1)
 {
-   if (SPX_DRFT_RVV_ON && l1 == 1 && ido >= 32)
+   if (arch >= SPX_ARCH_RVV && l1 == 1 && ido >= 32)
       spx_drft_rvv_radb2_f32(ido, cc, ch, wa1);
    else
       dradb2(ido, l1, cc, ch, wa1);
 }
 
-#define SPX_DRADF2 dradf2_rvv
-#define SPX_DRADF4 dradf4_rvv
-#define SPX_DRADB2 dradb2_rvv
-#define SPX_DRADB4 dradb4_rvv
+#define SPX_DRADF2(arch, ido, l1, cc, ch, wa1) \
+   dradf2_rvv(SPX_DRFT_ARCH_ARG(arch), ido, l1, cc, ch, wa1)
+#define SPX_DRADF4(arch, ido, l1, cc, ch, wa1, wa2, wa3) \
+   dradf4_rvv(SPX_DRFT_ARCH_ARG(arch), ido, l1, cc, ch, wa1, wa2, wa3)
+#define SPX_DRADB2(arch, ido, l1, cc, ch, wa1) \
+   dradb2_rvv(SPX_DRFT_ARCH_ARG(arch), ido, l1, cc, ch, wa1)
+#define SPX_DRADB4(arch, ido, l1, cc, ch, wa1, wa2, wa3) \
+   dradb4_rvv(SPX_DRFT_ARCH_ARG(arch), ido, l1, cc, ch, wa1, wa2, wa3)
 
 #endif /* SMALLFT_RVV_H */
