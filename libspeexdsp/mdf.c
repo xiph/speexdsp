@@ -75,6 +75,7 @@
 #include "pseudofloat.h"
 #include "math_approx.h"
 #include "os_support.h"
+#include "cpu_support.h"
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
@@ -139,6 +140,7 @@ struct SpeexEchoState_ {
    spx_word16_t beta_max;
    spx_word32_t sum_adapt;
    spx_word16_t leak_estimate;
+   int arch;                 /**< SPX_ARCH_* kernel level, set at init (fits the padding here) */
 
    spx_word16_t *e;      /* scratch */
    spx_word16_t *x;      /* Far-end input buffer (2N) */
@@ -422,10 +424,6 @@ static inline spx_word16_t mdf_deemph_output(spx_int16_t *out, const spx_word16_
 #include "mdf_rvv.h"
 #endif
 
-#ifdef MDF_RVV_RUNTIME
-int spx_mdf_rvv_enabled = -1;   /* -1 until the first init probes */
-#endif
-
 #ifdef DUMP_ECHO_CANCEL_DATA
 #include <stdio.h>
 static FILE *rFile=NULL, *pFile=NULL, *oFile=NULL;
@@ -453,12 +451,8 @@ EXPORT SpeexEchoState *speex_echo_state_init_mc(int frame_size, int filter_lengt
    int i,N,M, C, K;
    SpeexEchoState *st;
 
-#ifdef MDF_RVV_RUNTIME
-   if (spx_mdf_rvv_enabled < 0)
-      spx_mdf_rvv_enabled = spx_rvv_detect();
-#endif
-
    st = (SpeexEchoState *)speex_alloc(sizeof(SpeexEchoState));
+   st->arch = spx_select_arch();
 
    st->K = nb_speakers;
    st->C = nb_mic;

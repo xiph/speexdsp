@@ -10,10 +10,11 @@
 /* Runtime-dispatched RVV kernels for mdf.c's O(M*N) spectral loops. The
  * vector code lives out-of-line in mdf_rvv_asm.S, so this header is plain
  * C and mdf.c stays base-ISA. mdf.c includes it right after its scalar
- * kernels: each <kernel>_dispatch wrapper below calls the asm when
- * SPX_MDF_RVV_ON (and the shape is worth vectorizing) and the scalar
- * kernel otherwise, and `#define <kernel> <kernel>_dispatch` then points
- * every later call site at the wrapper. The asm handles the interior
+ * kernels: each <kernel>_dispatch wrapper below calls the asm when its
+ * `arch` argument allows (and the shape is worth vectorizing) and the scalar
+ * kernel otherwise; the `#define <kernel>(...)` after it redirects later
+ * call sites to the wrapper, passing SPX_MDF_ARCH (the calling method's
+ * st->arch, or SPX_ARCH_RVV under checkasm). The asm handles the interior
  * complex bins of the packed spectrum; the two real-only edge bins (0 and
  * N-1) stay in C here. Fixed point is bit-exact vs C; float pairs with a
  * checkasm tolerance (FMAs, reordered sums). checkasm defines
@@ -26,13 +27,12 @@
 
 #if defined(FIXED_POINT) || defined(__riscv_float_abi_double)
 
+#include "cpu_support.h"
+
 #ifdef MDF_RVV_FORCE_ON
-#  define SPX_MDF_RVV_ON 1
+#  define SPX_MDF_ARCH SPX_ARCH_RVV
 #else
-#include "rvv_cpu.h"
-extern int spx_mdf_rvv_enabled;   /* defined in mdf.c: -1 until its first init probes, then 0/1 */
-#  define SPX_MDF_RVV_ON (spx_mdf_rvv_enabled > 0)
-#  define MDF_RVV_RUNTIME 1          /* tells mdf.c to define+detect the flag */
+#  define SPX_MDF_ARCH (st->arch)
 #endif
 
 #ifdef FIXED_POINT
@@ -60,9 +60,9 @@ void spx_mdf_rvv_weight_update_i32(spx_int32_t *w, const spx_int32_t *phi, int N
 #define SPX_MDF_RVV_INNER_PROD(x, y, len) spx_mdf_rvv_inner_prod_i16(x, y, len, 6)
 #define SPX_MDF_RVV_PROP_SUMSQ(w, len)    spx_mdf_rvv_prop_sumsq_i16(w, len, 18)
 
-static inline void spectral_mul_accum_dispatch(const spx_word16_t *X, const spx_word32_t *Y, spx_word16_t *acc, int N, int M)
+static inline void spectral_mul_accum_dispatch(int arch, const spx_word16_t *X, const spx_word32_t *Y, spx_word16_t *acc, int N, int M)
 {
-   if (SPX_MDF_RVV_ON && N > 2 && !(N & 1) && M > 0)
+   if (arch >= SPX_ARCH_RVV && N > 2 && !(N & 1) && M > 0)
    {
       int j;
       spx_word32_t tmp1=0,tmp2=0;
@@ -78,11 +78,11 @@ static inline void spectral_mul_accum_dispatch(const spx_word16_t *X, const spx_
    else
       spectral_mul_accum(X, Y, acc, N, M);
 }
-#define spectral_mul_accum spectral_mul_accum_dispatch
+#define spectral_mul_accum(X, Y, acc, N, M) spectral_mul_accum_dispatch(SPX_MDF_ARCH, X, Y, acc, N, M)
 
-static inline void spectral_mul_accum16_dispatch(const spx_word16_t *X, const spx_word16_t *Y, spx_word16_t *acc, int N, int M)
+static inline void spectral_mul_accum16_dispatch(int arch, const spx_word16_t *X, const spx_word16_t *Y, spx_word16_t *acc, int N, int M)
 {
-   if (SPX_MDF_RVV_ON && N > 2 && !(N & 1) && M > 0)
+   if (arch >= SPX_ARCH_RVV && N > 2 && !(N & 1) && M > 0)
    {
       int j;
       spx_word32_t tmp1=0,tmp2=0;
@@ -98,7 +98,7 @@ static inline void spectral_mul_accum16_dispatch(const spx_word16_t *X, const sp
    else
       spectral_mul_accum16(X, Y, acc, N, M);
 }
-#define spectral_mul_accum16 spectral_mul_accum16_dispatch
+#define spectral_mul_accum16(X, Y, acc, N, M) spectral_mul_accum16_dispatch(SPX_MDF_ARCH, X, Y, acc, N, M)
 
 #else /* FLOATING_POINT && __riscv_float_abi_double */
 
@@ -134,9 +134,9 @@ void  spx_mdf_rvv_weight_update_f32(float *w, const float *phi, int N);
  * statements match the scalar kernel's exactly, and the kernel is
  * bit-exact vs WORD2INT (proven exhaustively over all floats), so RVV
  * output matches C bit for bit. */
-static inline spx_word16_t mdf_deemph_output_dispatch(spx_int16_t *out, const spx_word16_t *input, const spx_word16_t *e, spx_word16_t preemph, spx_word16_t mem, int len, int stride)
+static inline spx_word16_t mdf_deemph_output_dispatch(int arch, spx_int16_t *out, const spx_word16_t *input, const spx_word16_t *e, spx_word16_t preemph, spx_word16_t mem, int len, int stride)
 {
-   if (SPX_MDF_RVV_ON && len >= 8)
+   if (arch >= SPX_ARCH_RVV && len >= 8)
    {
       float tmp[256];
       while (len > 0)
@@ -159,11 +159,11 @@ static inline spx_word16_t mdf_deemph_output_dispatch(spx_int16_t *out, const sp
    }
    return mdf_deemph_output(out, input, e, preemph, mem, len, stride);
 }
-#define mdf_deemph_output mdf_deemph_output_dispatch
+#define mdf_deemph_output(out, input, e, preemph, mem, len, stride) mdf_deemph_output_dispatch(SPX_MDF_ARCH, out, input, e, preemph, mem, len, stride)
 
-static inline void spectral_mul_accum_dispatch(const spx_word16_t *X, const spx_word32_t *Y, spx_word16_t *acc, int N, int M)
+static inline void spectral_mul_accum_dispatch(int arch, const spx_word16_t *X, const spx_word32_t *Y, spx_word16_t *acc, int N, int M)
 {
-   if (SPX_MDF_RVV_ON && N > 2 && !(N & 1) && M > 0)
+   if (arch >= SPX_ARCH_RVV && N > 2 && !(N & 1) && M > 0)
    {
       int j;
       float a0 = 0, aN = 0;
@@ -179,11 +179,11 @@ static inline void spectral_mul_accum_dispatch(const spx_word16_t *X, const spx_
    else
       spectral_mul_accum(X, Y, acc, N, M);
 }
-#define spectral_mul_accum spectral_mul_accum_dispatch
+#define spectral_mul_accum(X, Y, acc, N, M) spectral_mul_accum_dispatch(SPX_MDF_ARCH, X, Y, acc, N, M)
 
-static inline void weighted_spectral_mul_conj_dispatch(const spx_float_t *w, const spx_float_t p, const spx_word16_t *X, const spx_word16_t *Y, spx_word32_t *prod, int N)
+static inline void weighted_spectral_mul_conj_dispatch(int arch, const spx_float_t *w, const spx_float_t p, const spx_word16_t *X, const spx_word16_t *Y, spx_word32_t *prod, int N)
 {
-   if (SPX_MDF_RVV_ON && N > 2 && !(N & 1))
+   if (arch >= SPX_ARCH_RVV && N > 2 && !(N & 1))
    {
       spx_mdf_rvv_wsmul_conj_f32(w, X, Y, prod, N, p);
       prod[0] = p*w[0]*(X[0]*Y[0]);
@@ -192,30 +192,30 @@ static inline void weighted_spectral_mul_conj_dispatch(const spx_float_t *w, con
    else
       weighted_spectral_mul_conj(w, p, X, Y, prod, N);
 }
-#define weighted_spectral_mul_conj weighted_spectral_mul_conj_dispatch
+#define weighted_spectral_mul_conj(w, p, X, Y, prod, N) weighted_spectral_mul_conj_dispatch(SPX_MDF_ARCH, w, p, X, Y, prod, N)
 
 #endif /* FIXED_POINT / float */
 
 /* Wrappers whose C side is the same in both builds: the kernels differ only
  * in element type, selected through the SPX_MDF_RVV_* aliases above. */
 
-static inline spx_word32_t mdf_inner_prod_dispatch(const spx_word16_t *x, const spx_word16_t *y, int len)
+static inline spx_word32_t mdf_inner_prod_dispatch(int arch, const spx_word16_t *x, const spx_word16_t *y, int len)
 {
    /* below ~32 elements the vsetvli/reduction overhead beats the gain */
-   if (SPX_MDF_RVV_ON && len >= 32)
+   if (arch >= SPX_ARCH_RVV && len >= 32)
       return SPX_MDF_RVV_INNER_PROD(x, y, len);
    return mdf_inner_prod(x, y, len);
 }
-#define mdf_inner_prod mdf_inner_prod_dispatch
+#define mdf_inner_prod(x, y, len) mdf_inner_prod_dispatch(SPX_MDF_ARCH, x, y, len)
 
 /* Only the per-block sum of squares is vectorized; the sqrt/normalisation
  * tail of the scalar kernel is repeated here since it follows the sums. */
-static inline void mdf_adjust_prop_dispatch(const spx_word32_t *W, int N, int M, int P, spx_word16_t *prop)
+static inline void mdf_adjust_prop_dispatch(int arch, const spx_word32_t *W, int N, int M, int P, spx_word16_t *prop)
 {
    int i, p;
    spx_word16_t max_sum = 1;
    spx_word32_t prop_sum = 1;
-   if (!SPX_MDF_RVV_ON)
+   if (arch < SPX_ARCH_RVV)
    {
       mdf_adjust_prop(W, N, M, P, prop);
       return;
@@ -243,38 +243,38 @@ static inline void mdf_adjust_prop_dispatch(const spx_word32_t *W, int N, int M,
       prop[i] = DIV32(MULT16_16(QCONST16(.99f,15),prop[i]),prop_sum);
    }
 }
-#define mdf_adjust_prop mdf_adjust_prop_dispatch
+#define mdf_adjust_prop(W, N, M, P, prop) mdf_adjust_prop_dispatch(SPX_MDF_ARCH, W, N, M, P, prop)
 
-static inline void mdf_weight_update_dispatch(spx_word32_t *w, const spx_word32_t *phi, int N)
+static inline void mdf_weight_update_dispatch(int arch, spx_word32_t *w, const spx_word32_t *phi, int N)
 {
-   if (SPX_MDF_RVV_ON && N >= 4)
+   if (arch >= SPX_ARCH_RVV && N >= 4)
       SPX_MDF_RVV_WEIGHT_UPDATE(w, phi, N);
    else
       mdf_weight_update(w, phi, N);
 }
-#define mdf_weight_update mdf_weight_update_dispatch
+#define mdf_weight_update(w, phi, N) mdf_weight_update_dispatch(SPX_MDF_ARCH, w, phi, N)
 
-static inline void mdf_residual_window_dispatch(spx_word16_t *y, const spx_word16_t *window, const spx_word16_t *last_y, int N)
+static inline void mdf_residual_window_dispatch(int arch, spx_word16_t *y, const spx_word16_t *window, const spx_word16_t *last_y, int N)
 {
-   if (SPX_MDF_RVV_ON && N >= 4)
+   if (arch >= SPX_ARCH_RVV && N >= 4)
       SPX_MDF_RVV_RES_WINDOW(y, window, last_y, N);
    else
       mdf_residual_window(y, window, last_y, N);
 }
-#define mdf_residual_window mdf_residual_window_dispatch
+#define mdf_residual_window(y, window, last_y, N) mdf_residual_window_dispatch(SPX_MDF_ARCH, y, window, last_y, N)
 
-static inline void mdf_residual_scale_dispatch(spx_word32_t *residual_echo, spx_word16_t leak2, int len)
+static inline void mdf_residual_scale_dispatch(int arch, spx_word32_t *residual_echo, spx_word16_t leak2, int len)
 {
-   if (SPX_MDF_RVV_ON && len >= 4)
+   if (arch >= SPX_ARCH_RVV && len >= 4)
       SPX_MDF_RVV_RES_SCALE(residual_echo, leak2, len);
    else
       mdf_residual_scale(residual_echo, leak2, len);
 }
-#define mdf_residual_scale mdf_residual_scale_dispatch
+#define mdf_residual_scale(residual_echo, leak2, len) mdf_residual_scale_dispatch(SPX_MDF_ARCH, residual_echo, leak2, len)
 
-static inline void power_spectrum_dispatch(const spx_word16_t *X, spx_word32_t *ps, int N)
+static inline void power_spectrum_dispatch(int arch, const spx_word16_t *X, spx_word32_t *ps, int N)
 {
-   if (SPX_MDF_RVV_ON && N > 2 && !(N & 1))
+   if (arch >= SPX_ARCH_RVV && N > 2 && !(N & 1))
    {
       ps[0]=MULT16_16(X[0],X[0]);
       SPX_MDF_RVV_POWER_SPECTRUM(X, ps, N);
@@ -283,11 +283,11 @@ static inline void power_spectrum_dispatch(const spx_word16_t *X, spx_word32_t *
    else
       power_spectrum(X, ps, N);
 }
-#define power_spectrum power_spectrum_dispatch
+#define power_spectrum(X, ps, N) power_spectrum_dispatch(SPX_MDF_ARCH, X, ps, N)
 
-static inline void power_spectrum_accum_dispatch(const spx_word16_t *X, spx_word32_t *ps, int N)
+static inline void power_spectrum_accum_dispatch(int arch, const spx_word16_t *X, spx_word32_t *ps, int N)
 {
-   if (SPX_MDF_RVV_ON && N > 2 && !(N & 1))
+   if (arch >= SPX_ARCH_RVV && N > 2 && !(N & 1))
    {
       ps[0]+=MULT16_16(X[0],X[0]);
       SPX_MDF_RVV_POWER_SPECTRUM_ACCUM(X, ps, N);
@@ -296,7 +296,7 @@ static inline void power_spectrum_accum_dispatch(const spx_word16_t *X, spx_word
    else
       power_spectrum_accum(X, ps, N);
 }
-#define power_spectrum_accum power_spectrum_accum_dispatch
+#define power_spectrum_accum(X, ps, N) power_spectrum_accum_dispatch(SPX_MDF_ARCH, X, ps, N)
 
 #endif /* FIXED_POINT || __riscv_float_abi_double */
 
