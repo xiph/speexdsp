@@ -16,3 +16,4 @@ speexinclude_HEADERS = speex_echo.h speex_jitter.h speex_preprocess.h speex_resa
 
 noinst_HEADERS=speex_buffer.h
 
+EXTRA_DIST = meson.build

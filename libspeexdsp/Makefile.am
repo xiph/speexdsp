@@ -1,7 +1,7 @@
 # Disable automatic dependency tracking if using other tools than gcc and gmake
 #AUTOMAKE_OPTIONS = no-dependencies
 
-EXTRA_DIST=echo_diagnostic.m
+EXTRA_DIST=echo_diagnostic.m meson.build speexdsp.def
 
 AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_builddir)/include/speex -I$(top_builddir) @FFT_CFLAGS@
 

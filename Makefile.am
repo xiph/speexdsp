@@ -8,7 +8,11 @@ ACLOCAL_AMFLAGS = -I m4
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = speexdsp.pc
 
-EXTRA_DIST = SpeexDSP.spec SpeexDSP.spec.in SpeexDSP.kdevelop speexdsp.pc.in README.blackfin
+EXTRA_DIST = SpeexDSP.spec SpeexDSP.spec.in SpeexDSP.kdevelop speexdsp.pc.in \
+	README.blackfin README.Trimedia README.win32 CONTRIBUTING.md Doxyfile autogen.sh \
+	CMakeLists.txt cmake \
+	meson.build meson_options.txt tests \
+	subprojects/checkasm.wrap subprojects/packagefiles
 
 #Fools KDevelop into including all files
 SUBDIRS = libspeexdsp include doc win32 symbian ti
