@@ -64,6 +64,16 @@
     .option arch, +v
     .text
 
+#if __riscv_xlen == 64
+#define REG_S sd
+#define REG_L ld
+#define SZREG 8
+#else
+#define REG_S sw
+#define REG_L lw
+#define SZREG 4
+#endif
+
 #define HSQT2_BITS  0x3F3504F3   /* 0.70710678118654752f */
 #define NHSQT2_BITS 0xBF3504F3
 #define SQRT2_BITS  0x3FB504F3   /* 1.414213562373095f */
@@ -182,14 +192,14 @@ spx_drft_rvv_radf4_f32:
  * twiddled by wam -> crm/cim; radix-4 butterfly; 4 output pair streams,
  * two of them walking down from the row's mirror point 2ido-i. */
     addi    sp, sp, -64
-    sd      s0, 0(sp)
-    sd      s1, 8(sp)
-    sd      s2, 16(sp)
-    sd      s3, 24(sp)
-    sd      s4, 32(sp)
-    sd      s5, 40(sp)
-    sd      a2, 48(sp)
-    sd      a3, 56(sp)
+    REG_S   s0, 0*SZREG(sp)
+    REG_S   s1, 1*SZREG(sp)
+    REG_S   s2, 2*SZREG(sp)
+    REG_S   s3, 3*SZREG(sp)
+    REG_S   s4, 4*SZREG(sp)
+    REG_S   s5, 5*SZREG(sp)
+    REG_S   a2, 6*SZREG(sp)
+    REG_S   a3, 7*SZREG(sp)
 
     blt     t1, a1, .Lf4_p2_k      /* npairs < l1 -> vectorize across rows */
 
@@ -359,14 +369,14 @@ spx_drft_rvv_radf4_f32:
     bnez    s0, .Lf4_k_pair
 
 .Lf4_p2_done:
-    ld      s0, 0(sp)
-    ld      s1, 8(sp)
-    ld      s2, 16(sp)
-    ld      s3, 24(sp)
-    ld      s4, 32(sp)
-    ld      s5, 40(sp)
-    ld      a2, 48(sp)
-    ld      a3, 56(sp)
+    REG_L   s0, 0*SZREG(sp)
+    REG_L   s1, 1*SZREG(sp)
+    REG_L   s2, 2*SZREG(sp)
+    REG_L   s3, 3*SZREG(sp)
+    REG_L   s4, 4*SZREG(sp)
+    REG_L   s5, 5*SZREG(sp)
+    REG_L   a2, 6*SZREG(sp)
+    REG_L   a3, 7*SZREG(sp)
     addi    sp, sp, 64
     andi    t1, a0, 1
     bnez    t1, .Lf4_ret           /* odd ido: no part 3 */
@@ -521,14 +531,14 @@ spx_drft_rvv_radb4_f32:
 
 /* ---- part 2 ---- */
     addi    sp, sp, -64
-    sd      s0, 0(sp)
-    sd      s1, 8(sp)
-    sd      s2, 16(sp)
-    sd      s3, 24(sp)
-    sd      s4, 32(sp)
-    sd      s5, 40(sp)
-    sd      a2, 48(sp)
-    sd      a3, 56(sp)
+    REG_S   s0, 0*SZREG(sp)
+    REG_S   s1, 1*SZREG(sp)
+    REG_S   s2, 2*SZREG(sp)
+    REG_S   s3, 3*SZREG(sp)
+    REG_S   s4, 4*SZREG(sp)
+    REG_S   s5, 5*SZREG(sp)
+    REG_S   a2, 6*SZREG(sp)
+    REG_S   a3, 7*SZREG(sp)
 
     blt     t1, a1, .Lb4_p2_k
 
@@ -700,14 +710,14 @@ spx_drft_rvv_radb4_f32:
     bnez    s0, .Lb4_k_pair
 
 .Lb4_p2_done:
-    ld      s0, 0(sp)
-    ld      s1, 8(sp)
-    ld      s2, 16(sp)
-    ld      s3, 24(sp)
-    ld      s4, 32(sp)
-    ld      s5, 40(sp)
-    ld      a2, 48(sp)
-    ld      a3, 56(sp)
+    REG_L   s0, 0*SZREG(sp)
+    REG_L   s1, 1*SZREG(sp)
+    REG_L   s2, 2*SZREG(sp)
+    REG_L   s3, 3*SZREG(sp)
+    REG_L   s4, 4*SZREG(sp)
+    REG_L   s5, 5*SZREG(sp)
+    REG_L   a2, 6*SZREG(sp)
+    REG_L   a3, 7*SZREG(sp)
     addi    sp, sp, 64
     andi    t1, a0, 1
     bnez    t1, .Lb4_ret
