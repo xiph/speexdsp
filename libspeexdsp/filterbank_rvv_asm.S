@@ -85,3 +85,8 @@ spx_fbank_rvv_psd16_f32:
     bnez    a6, 1b
     ret
     .size spx_fbank_rvv_psd16_f32, . - spx_fbank_rvv_psd16_f32
+
+#if defined(__ELF__)
+/* Non-executable stack note */
+    .section .note.GNU-stack, "", @progbits
+#endif
