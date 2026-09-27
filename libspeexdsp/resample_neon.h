@@ -416,7 +416,7 @@ static inline float interpolate_product_single(const float *a, const float *b, u
     uint32_t remainder = len & 2u;	/* len is even, so 0 or 2 left after groups of 4 */
     len = len - remainder;
 
-    asm volatile (".fpu neon\n"   /* enable NEON for this block (needed in Thumb) */
+    asm volatile (NEON_ENABLE_FPU
 		  "	 vmov.i32 q0, #0\n"
 		  "	 vmov.i32 q1, #0\n"
 		  "	 vmov.i32 q2, #0\n"
