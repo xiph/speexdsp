@@ -1,7 +1,7 @@
 ## Repository
 Development takes place on our [Gitlab Repository](https://gitlab.xiph.org/xiph/speexdsp). You will need to register an account first and get approval from an admin to be able to fork the repository. If you do not get approval in a timely manner ping on IRC at #xiph or #speex @ irc.libera.chat.
 
-There is also a [Github mirror](https://github.xiph.org/xiph/speexdsp) for visibility/convenience but **pull requests are discouraged**, as it means maintainers will have to recreate them as merge requests on our gitlab to ensure they pass CI.
+There is also a [Github mirror](https://github.com/xiph/speexdsp) for visibility/convenience but **pull requests are discouraged**, as it means maintainers will have to recreate them as merge requests on our gitlab to ensure they pass CI.
 
 ## Development
 
