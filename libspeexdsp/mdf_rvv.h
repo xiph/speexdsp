@@ -34,13 +34,12 @@
    POSSIBILITY OF SUCH DAMAGE.
 */
 
-/* Runtime-dispatched RVV kernels for mdf.c's O(M*N) spectral loops. The
- * vector code lives out-of-line in mdf_rvv_asm.S, so this header is plain
- * C and mdf.c stays base-ISA. mdf.c includes it right after its scalar
- * kernels: each <kernel>_dispatch wrapper below calls the asm when its
- * `arch` argument allows (and the shape is worth vectorizing) and the scalar
- * kernel otherwise; the `#define <kernel>(...)` after it redirects later
- * call sites to the wrapper, passing SPX_MDF_ARCH (the calling method's
+/* Runtime-dispatched RVV kernels (mdf_rvv_asm.S) for mdf.c's O(M*N)
+ * spectral loops. mdf.c includes this right after its scalar kernels: each
+ * <kernel>_dispatch wrapper below calls the asm when its `arch` argument
+ * allows (and the shape is worth vectorizing) and the scalar kernel
+ * otherwise; the `#define <kernel>(...)` after it redirects later call
+ * sites to the wrapper, passing SPX_MDF_ARCH (the calling method's
  * st->arch, or SPX_ARCH_RVV under checkasm). The asm handles the interior
  * complex bins of the packed spectrum; the two real-only edge bins (0 and
  * N-1) stay in C here. Fixed point is bit-exact vs C; float pairs with a

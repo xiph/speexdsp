@@ -38,7 +38,11 @@
 /* Per-state kernel selection: each state stores the level spx_select_arch()
  * picks at init, so there is no global to race on.
  * Levels are cumulative within a target; dispatch tests arch >= SPX_ARCH_X.
- * Only RISC-V dispatches at runtime; SSE/NEON stay compile-time. */
+ * Only RISC-V dispatches at runtime; SSE/NEON stay compile-time.
+ *
+ * The RVV kernels live out-of-line in *_rvv_asm.S, which enable the vector
+ * extension with `.option arch, +v`, so the *_rvv.h dispatch headers are
+ * plain C and the library itself stays base-ISA. */
 
 #define SPX_ARCH_C 0
 

@@ -197,7 +197,7 @@ struct SpeexPreprocessState_ {
    SpeexEchoState *echo_state;
 
    spx_word16_t	speech_prob;  /**< Probability last frame was speech */
-   int    arch;              /**< SPX_ARCH_* kernel level, set at init (fits the padding here) */
+   int    arch;              /**< SPX_ARCH_* kernel level, set at init */
 
    /* DSP-related arrays */
    spx_word16_t *frame;      /**< Processing frame (2*ps_size) */

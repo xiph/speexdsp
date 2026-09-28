@@ -35,14 +35,12 @@
    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-/* Runtime-dispatched RVV butterflies for kf_bfly2/3/4/5. The vector kernels
- * live out-of-line in kiss_fft_rvv_asm.S, so this header is plain C and
- * kiss_fft.c stays base-ISA; each kf_bfly* falls back to its scalar loop
- * unless SPX_KF_RVV_ON (the cfg's st->arch allows it). Kernels take only
- * pointer/integer args (no float-ABI
- * dependency). Fixed point is bit-exact vs C; float pairs with a checkasm
- * tolerance. checkasm defines KISS_FFT_RVV_FORCE_ON to test the asm
- * unconditionally. */
+/* Runtime-dispatched RVV butterflies (kiss_fft_rvv_asm.S) for
+ * kf_bfly2/3/4/5. Each kf_bfly* falls back to its scalar loop unless
+ * SPX_KF_RVV_ON (the cfg's st->arch allows it). Kernels take only
+ * pointer/integer args (no float-ABI dependency). Fixed point is bit-exact
+ * vs C; float pairs with a checkasm tolerance. checkasm defines
+ * KISS_FFT_RVV_FORCE_ON to test the asm unconditionally. */
 
 #ifndef KISS_FFT_RVV_H
 #define KISS_FFT_RVV_H

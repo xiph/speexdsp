@@ -42,9 +42,7 @@
  *
  * `.option arch, +v` makes the file self-contained -- no -march needed: the
  * scalar mul/remu come from the base -march's M extension and flw/fcvt.d.s from
- * the d/f that +v implies. The meson probe just checks that the assembler
- * accepts `.option arch, +v`; if not, RVV is left disabled rather than failing
- * the build.
+ * the d/f that +v implies.
  *
  * All kernels are leaf functions using only caller-saved registers (t*, ft*,
  * a*, v*), so there is no stack frame. len (a2) is >= 8 per resample.c's

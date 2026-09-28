@@ -137,7 +137,7 @@ struct SpeexResamplerState_ {
    spx_uint32_t oversample;
    int          initialised;
    int          started;
-   int          arch;   /* SPX_ARCH_* kernel level, set at init (fits the padding here) */
+   int          arch;   /* SPX_ARCH_* kernel level, set at init */
 
    /* These are per-channel */
    spx_int32_t  *last_sample;

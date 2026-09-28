@@ -34,17 +34,13 @@
    POSSIBILITY OF SUCH DAMAGE.
 */
 
-/* Runtime-dispatched RVV kernel for filterbank_compute_psd16's per-bin
- * gather + weighted sum. The vector code lives out-of-line in
- * filterbank_rvv_asm.S, so this header is plain C and filterbank.c stays
- * base-ISA. filterbank.c includes it right after its scalar fbank_psd16:
- * the dispatch wrapper below calls the kernel when the bank's arch allows and
- * the scalar loop otherwise, and the #define points the call site at it.
+/* Runtime-dispatched RVV kernel (filterbank_rvv_asm.S) for
+ * filterbank_compute_psd16's per-bin gather + weighted sum. filterbank.c
+ * includes this right after its scalar fbank_psd16: the dispatch wrapper
+ * below calls the kernel when the bank's arch allows and the scalar loop
+ * otherwise, and the #define points the call site at it.
  *
- * Float only: matches the preprocess RVV set (psd16's only caller) and
- * the profiled float pipeline. The fixed-point twin would be a
- * vwmul/vwmacc + rounding-narrow port -- straightforward if it ever
- * shows up in a fixed-point profile.
+ * Float only, like the preprocess RVV set (psd16's only caller).
  *
  * The kernel fuses the second multiply-add (vfmacc), so results can
  * differ from the scalar two-rounding sum in the last ulp; checkasm

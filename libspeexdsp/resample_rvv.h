@@ -35,12 +35,11 @@
    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-/* Runtime-dispatched RVV inner products. The vector kernels live out-of-line in
- * resample_rvv_asm.S, so this header is plain C and including it keeps
- * resample.c base-ISA. Each OVERRIDE_* leaf is a macro that passes
- * SPX_RESAMPLE_ARCH (the calling resampler_basic_*'s st->arch, or
- * SPX_ARCH_RVV under checkasm) to a *_dispatch function, which calls the
- * kernel when the level allows and the stock scalar loop otherwise.
+/* Runtime-dispatched RVV inner products (resample_rvv_asm.S). Each
+ * OVERRIDE_* leaf is a macro that passes SPX_RESAMPLE_ARCH (the calling
+ * resampler_basic_*'s st->arch, or SPX_ARCH_RVV under checkasm) to a
+ * *_dispatch function, which calls the kernel when the level allows and the
+ * stock scalar loop otherwise.
  *
  * The float kernels return in fa0 (lp64d/ilp32d hard-double), so they bind only
  * under __riscv_float_abi_double; other float ABIs get the scalar path. The

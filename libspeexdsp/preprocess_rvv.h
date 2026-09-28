@@ -35,14 +35,13 @@
    POSSIBILITY OF SUCH DAMAGE.
 */
 
-/* Runtime-dispatched RVV kernels for preprocess.c's per-bin loops. The
- * vector code lives out-of-line in preprocess_rvv_asm.S, so this header is
- * plain C and preprocess.c stays base-ISA. preprocess.c includes it right
- * after its scalar kernels: each <kernel>_dispatch wrapper below calls the
- * asm when its `arch` argument allows (and the frame is at least a few
- * bins) and the scalar kernel otherwise; the `#define <kernel>(...)` after
- * it redirects later call sites to the wrapper, passing SPX_PREPROC_ARCH
- * (the calling function's st->arch, or SPX_ARCH_RVV under checkasm).
+/* Runtime-dispatched RVV kernels (preprocess_rvv_asm.S) for preprocess.c's
+ * per-bin loops. preprocess.c includes this right after its scalar kernels:
+ * each <kernel>_dispatch wrapper below calls the asm when its `arch`
+ * argument allows (and the frame is at least a few bins) and the scalar
+ * kernel otherwise; the `#define <kernel>(...)` after it redirects later
+ * call sites to the wrapper, passing SPX_PREPROC_ARCH (the calling
+ * function's st->arch, or SPX_ARCH_RVV under checkasm).
  *
  * Float only: the float loops map to plain vector arithmetic (vfdiv,
  * vfsqrt, and an indexed-load gather for the hypergeom_gain table), while

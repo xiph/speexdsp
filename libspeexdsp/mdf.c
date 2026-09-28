@@ -140,7 +140,7 @@ struct SpeexEchoState_ {
    spx_word16_t beta_max;
    spx_word32_t sum_adapt;
    spx_word16_t leak_estimate;
-   int arch;                 /**< SPX_ARCH_* kernel level, set at init (fits the padding here) */
+   int arch;                 /**< SPX_ARCH_* kernel level, set at init */
 
    spx_word16_t *e;      /* scratch */
    spx_word16_t *x;      /* Far-end input buffer (2N) */

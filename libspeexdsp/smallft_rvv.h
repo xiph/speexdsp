@@ -36,15 +36,14 @@
    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-/* Runtime-dispatched RVV kernels for the dradf4/dradb4 (and l1==1
- * dradf2/dradb2) stages that power-of-two smallft transforms spend all
- * their time in. The vector code lives out-of-line in smallft_rvv_asm.S,
- * so this header is plain C and smallft.c stays base-ISA. The dradN_rvv
- * wrappers dispatch on their `arch` argument (the lookup's, passed down by
- * drftf1/drftb1 through the SPX_DRAD* macros) and fall back to smallft.c's
- * scalar stages, forward-declared here. The kernels reorder float sums and
- * pair with a checkasm tolerance. checkasm defines SMALLFT_RVV_FORCE_ON to
- * test the asm unconditionally. */
+/* Runtime-dispatched RVV kernels (smallft_rvv_asm.S) for the dradf4/dradb4
+ * (and l1==1 dradf2/dradb2) stages that power-of-two smallft transforms
+ * spend all their time in. The dradN_rvv wrappers dispatch on their `arch`
+ * argument (the lookup's, passed down by drftf1/drftb1 through the
+ * SPX_DRAD* macros) and fall back to smallft.c's scalar stages,
+ * forward-declared here. The kernels reorder float sums and pair with a
+ * checkasm tolerance. checkasm defines SMALLFT_RVV_FORCE_ON to test the asm
+ * unconditionally. */
 
 #ifndef SMALLFT_RVV_H
 #define SMALLFT_RVV_H
