@@ -46,9 +46,13 @@
 
 static double now_sec(void)
 {
+#ifdef CLOCK_MONOTONIC
    struct timespec ts;
    clock_gettime(CLOCK_MONOTONIC, &ts);
    return ts.tv_sec + 1e-9*ts.tv_nsec;
+#else
+   return (double)clock()/CLOCKS_PER_SEC;
+#endif
 }
 
 static unsigned lcg_state = 0x12345678;
