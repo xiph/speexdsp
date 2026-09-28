@@ -44,7 +44,7 @@
  * complex bins of the packed spectrum; the two real-only edge bins (0 and
  * N-1) stay in C here. Fixed point is bit-exact vs C; float pairs with a
  * checkasm tolerance (FMAs, reordered sums). checkasm defines
- * MDF_RVV_FORCE_ON to test the asm unconditionally. */
+ * MDF_RVV_FORCE_ON to call the asm without reading the state's arch. */
 
 #ifndef MDF_RVV_H
 #define MDF_RVV_H

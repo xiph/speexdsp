@@ -42,8 +42,8 @@
  * argument (the lookup's, passed down by drftf1/drftb1 through the
  * SPX_DRAD* macros) and fall back to smallft.c's scalar stages,
  * forward-declared here. The kernels reorder float sums and pair with a
- * checkasm tolerance. checkasm defines SMALLFT_RVV_FORCE_ON to test the asm
- * unconditionally. */
+ * checkasm tolerance. checkasm defines SMALLFT_RVV_FORCE_ON to call the asm
+ * without reading the lookup's arch. */
 
 #ifndef SMALLFT_RVV_H
 #define SMALLFT_RVV_H

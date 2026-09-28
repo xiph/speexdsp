@@ -3,7 +3,7 @@
  * OVERRIDE_INNER_PRODUCT_DOUBLE / OVERRIDE_INTERPOLATE_PRODUCT_DOUBLE, so the
  * double kernels use the SSE2 intrinsics. No full-pipeline wrappers (the SSE
  * TU's state already runs the SSE2 double kernels), hence
- * CKA_KERNEL_SHIMS_ONLY. See ../wrap_impl.h for the HAVE_CONFIG_H/rename mechanics. */
+ * CKA_KERNEL_SHIMS_ONLY. */
 #define CKA_PREFIX  ckasse2_
 #define CKA_VARIANT sse2
 #include "wrap_resample_rename.h"

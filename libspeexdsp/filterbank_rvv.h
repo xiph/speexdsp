@@ -46,7 +46,8 @@
  * differ from the scalar two-rounding sum in the last ulp; checkasm
  * compares with the standard elementwise relative tolerance.
  *
- * checkasm defines FBANK_RVV_FORCE_ON to test the asm unconditionally. */
+ * checkasm defines FBANK_RVV_FORCE_ON to call the asm without reading the
+ * bank's arch. */
 
 #ifndef FBANK_RVV_H
 #define FBANK_RVV_H

@@ -2,10 +2,9 @@
  * instructions live only in resample_rvv_asm.S (linked in alongside). Keeps the
  * native USE_RVV so resample.c pulls in resample_rvv.h.
  *
- * The library dispatches at runtime on the state's probe result; the harness
- * sets RESAMPLE_RVV_FORCE_ON (=> SPX_RESAMPLE_ARCH == SPX_ARCH_RVV) so checkasm deterministically
- * tests the asm kernel, not whatever the build host's getauxval reports.
- * See ../wrap_impl.h for the rename mechanics. */
+ * RESAMPLE_RVV_FORCE_ON pins SPX_RESAMPLE_ARCH to SPX_ARCH_RVV so the asm is
+ * tested without reading the state's arch. checkasm still runs this variant
+ * only when spx_rvv_detect() passes. */
 #define CKA_PREFIX  ckarvv_
 #define CKA_VARIANT rvv
 #include "wrap_resample_rename.h"

@@ -1,7 +1,8 @@
 /* RVV build of the preprocess.c per-bin kernels for checkasm: base-ISA C,
  * the V instructions live in preprocess_rvv_asm.S (linked alongside).
  * PREPROC_RVV_FORCE_ON pins the dispatch on so the asm is tested
- * deterministically, not per the build host's getauxval. */
+ * without reading the state's arch. checkasm still runs this variant only
+ * when spx_rvv_detect() passes. */
 #define CKA_PREFIX  ckaprvv_
 #define CKA_VARIANT rvv
 #include "wrap_preproc_rename.h"

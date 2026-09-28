@@ -1,7 +1,8 @@
 /* RVV build of the smallft radix stages for checkasm: base-ISA C, the V
  * instructions live in smallft_rvv_asm.S (linked alongside).
  * SMALLFT_RVV_FORCE_ON pins the dispatch on so the asm is tested
- * deterministically, not per the build host's getauxval. */
+ * without reading the state's arch. checkasm still runs this variant only
+ * when spx_rvv_detect() passes. */
 #define CKA_PREFIX  ckasrvv_
 #define CKA_VARIANT rvv
 #include "wrap_smallft_rename.h"

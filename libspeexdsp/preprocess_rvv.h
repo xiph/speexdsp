@@ -49,8 +49,8 @@
  * (DIV32_16_Q8/Q15) and the spx_exp/spx_sqrt polynomials, which have no
  * bit-exact vector mapping worth the maintenance. All float kernels pair
  * with a small checkasm tolerance (FMAs, 1/x refactoring, reordered
- * rounding). checkasm defines PREPROC_RVV_FORCE_ON to test the asm
- * unconditionally. */
+ * rounding). checkasm defines PREPROC_RVV_FORCE_ON to call the asm
+ * without reading the state's arch. */
 
 #ifndef PREPROC_RVV_H
 #define PREPROC_RVV_H

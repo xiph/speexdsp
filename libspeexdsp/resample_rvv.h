@@ -45,7 +45,8 @@
  * under __riscv_float_abi_double; other float ABIs get the scalar path. The
  * int16 kernels return integers and work under every ABI.
  *
- * checkasm defines RESAMPLE_RVV_FORCE_ON to test the asm unconditionally. */
+ * checkasm defines RESAMPLE_RVV_FORCE_ON to call the asm without reading the
+ * state's arch. */
 
 #if defined(FIXED_POINT) || defined(__riscv_float_abi_double)
 #include "cpu_support.h"

@@ -22,8 +22,7 @@
 
 /* ------------- Per-routine SIMD-availability gates -------------
  * resample_neon.h overrides inner_product_single (both modes) and, in floating
- * point, interpolate_product_single; flip more of these on when it grows the
- * double-precision overrides. */
+ * point, interpolate_product_single. */
 #ifdef USE_NEON
 #  define HAVE_NEON_DIRECT_SINGLE 1
 #  ifndef FIXED_POINT
@@ -277,22 +276,11 @@ static inline int resample_buffer_within_tol(const spx_word16_t *ref,
 #ifndef DISABLE_FLOAT_API
 #define RESAMPLE_PROCESS_REL_TOL 1e-3   /* full-pipeline C-vs-SIMD, peak-relative */
 
-/* int16 output path (process_int). Random full-range int16 input naturally
- * drives some samples into saturation, exercising WORD2INT. Two bounded effects
- * make C and SIMD diverge: the float resampling kernel itself differs by
- * ~1e-4 relative (different accumulation order), and the WORD2INT rounding
- * differs (NEON's fcvtas rounds to nearest-ties-away vs the C floor(.5+x)) by at
- * most 1 LSB. Both are small, so the int16 outputs differ by only a few LSB.
- *
- * We therefore gate on an absolute LSB bound rather than a peak-relative one: at
- * full scale the old 1e-3 peak-relative tolerance worked out to ~33 LSB of
- * slack -- loose enough to let a real WORD2INT/saturate regression through while
- * still passing. Measured worst case is 1 LSB on x86 over 30 seeds x 11
- * conversions (x86 shares the C WORD2INT, so only the kernel divergence shows);
- * aarch64 adds at most ~1 LSB more from fcvtas ties-away vs the C floor(.5+x).
- * RESAMPLE_PROCESS_INT_MAX_LSB sits just above that floor: tight enough to trip
- * on a rounding/saturation regression, with a little headroom for the unmeasured
- * NEON path. */
+/* int16 output path (process_int). Random full-range int16 input drives some
+ * samples into saturation, exercising WORD2INT. C and SIMD differ by the
+ * kernel's accumulation order and, on NEON, by fcvtas ties-away vs C's
+ * floor(.5+x), each worth about 1 LSB. An absolute bound catches WORD2INT and
+ * saturation regressions that a peak-relative 1e-3 (~33 LSB) would miss. */
 #define RESAMPLE_PROCESS_INT_MAX_LSB 4   /* absolute int16 LSB, full-pipeline C-vs-SIMD */
 
 static inline void resample_fill_int16(spx_int16_t *buf, unsigned n)

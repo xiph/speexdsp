@@ -40,7 +40,7 @@
  * SPX_KF_RVV_ON (the cfg's st->arch allows it). Kernels take only
  * pointer/integer args (no float-ABI dependency). Fixed point is bit-exact
  * vs C; float pairs with a checkasm tolerance. checkasm defines
- * KISS_FFT_RVV_FORCE_ON to test the asm unconditionally. */
+ * KISS_FFT_RVV_FORCE_ON to call the asm without reading the cfg's arch. */
 
 #ifndef KISS_FFT_RVV_H
 #define KISS_FFT_RVV_H
