@@ -127,7 +127,7 @@ meson no-examples:
 meson tests-checkasm:
   extends: .meson
   variables:
-    MESON_FLAGS: -Dbuildtype=release -Dc_args="-O3" -Dtests=enabled
+    MESON_FLAGS: -Dbuildtype=release -Dtests=enabled
   script:
     - meson setup builddir ${MESON_FLAGS}
     - ninja -C builddir

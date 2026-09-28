@@ -71,13 +71,13 @@ pkg-config is also supported:
 Requires Meson (0.63 or higher), and Ninja.
 
     rm -rf build
-    meson setup build                   # see ./meson_options.txt for options
+    meson setup build --buildtype=release   # see meson_options.txt for options
     ninja -C build
 
 == Running checkasm (SIMD tests/benchmarks) ==
 
     rm -rf build
-    meson setup build -Dbuildtype=release -Dc_args="-O3"
+    meson setup build --buildtype=release
     ninja -C build
     ./build/tests/checkasm --bench --duration=30000 --repeat=3
 
