@@ -92,7 +92,7 @@ has_neon=no
 )
 AC_MSG_RESULT($has_neon)
 
-dnl The RVV kernels in resample_rvv_asm.S enable the vector extension via
+dnl The RVV kernels (*_rvv_asm.S) enable the vector extension via
 dnl ".option arch, +v" rather than a global -march flag, so all we need is an
 dnl assembler that accepts it. RVV 1.0 has no per-instruction subsetting, so a
 dnl single instruction suffices for the probe.

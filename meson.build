@@ -56,7 +56,7 @@ cdata.set('SPEEXDSP_MICRO_VERSION', speexdsp_version_micro,
 cdata.set_quoted('SPEEXDSP_EXTRA_VERSION', speexdsp_version_extra,
           description: 'Version extra (version suffix string)')
 
-# Test whether the compiler supports the C99 varaiable size arrays.
+# Test whether the compiler supports the C99 variable size arrays.
 have_var_arrays = cc.compiles('void func (int n) {int arr[n]; }',
                               name: 'C99 variable-size arrays')
 
@@ -84,7 +84,7 @@ if host_cpu_family in ['x86', 'x86_64'] and get_option('sse').allowed()
     has_sse = true
   endif
 
-  # Mimicing the logic in win32/config.h
+  # Mimicking the logic in win32/config.h
   if cc.get_id() == 'msvc' and host_cpu_family == 'x86'
     m_ix86_fp = cc.get_define('_M_IX86_FP')
     if m_ix86_fp == '' or m_ix86_fp.to_int() < 1
@@ -111,7 +111,7 @@ if host_cpu_family in ['x86', 'x86_64'] and get_option('sse2').allowed()
     has_sse2 = true
   endif
 
-  # Mimicing the logic in win32/config.h
+  # Mimicking the logic in win32/config.h
   if cc.get_id() == 'msvc' and host_cpu_family == 'x86'
     m_ix86_fp = cc.get_define('_M_IX86_FP')
     if m_ix86_fp == '' or m_ix86_fp.to_int() < 2

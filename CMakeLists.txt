@@ -41,7 +41,7 @@ endif()
 # Check endianness
 test_big_endian(WORDS_BIGENDIAN)
 
-# The RVV kernels in resample_rvv_asm.S enable the vector extension via
+# The RVV kernels (*_rvv_asm.S) enable the vector extension via
 # ".option arch, +v" rather than a global -march flag, and dispatch at runtime,
 # so all we need is an assembler that accepts it.
 option(ENABLE_RVV "Enable RISC-V Vector (RVV) optimizations if supported" ON)
