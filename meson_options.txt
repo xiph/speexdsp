@@ -47,6 +47,3 @@ option('arm5e-asm', type: 'feature', value: 'disabled',
 
 option('blackfin-asm', type: 'feature', value: 'disabled',
        description: 'Make use of Blackfin assembly optimizations')
-
-#option('ti-c55x', type: 'feature', value: 'disabled',
-#       description: 'Enable support for TI C55X DSP')

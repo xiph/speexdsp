@@ -231,12 +231,10 @@ cdata.set('USE_RVV', has_rvv_asm)
 opt_arm4_asm = get_option('arm4-asm').enabled()
 opt_arm5e_asm = get_option('arm5e-asm').enabled()
 opt_blackfin_asm = get_option('blackfin-asm').enabled()
-# opt_ti_c55x = get_option('ti-c55x').enabled()
 
 cdata.set('ARM4_ASM', opt_arm4_asm)
 cdata.set('ARM5E_ASM', opt_arm5e_asm)
 cdata.set('BFIN_ASM', opt_blackfin_asm)
-# cdata.set('TI_C55X', opt_ti_c55x) # has_char16=yes
 
 opt_disable_float_api = get_option('float-api').disabled()
 opt_fixed_point_debug = get_option('fixed-point-debug').enabled()
@@ -274,7 +272,6 @@ asms = {
   'opt_arm4_asm': 'ARM4 assembly',
   'opt_arm5e_asm': 'ARMv5e assembly',
   'opt_blackfin_asm': 'Blackfin assembly',
-  #'opt_ti_c55x': 'TI C55X DSP',
 }
 optimizations = []
 foreach var, desc : asms
