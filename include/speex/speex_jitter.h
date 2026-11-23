@@ -90,7 +90,11 @@ struct _JitterBufferPacket {
 #define JITTER_BUFFER_GET_AVALIABLE_COUNT 3
 
 /** Assign a function to destroy unused packet. When setting that, the jitter
-    buffer no longer copies packet data. */
+    buffer no longer copies packet data: jitter_buffer_put() takes ownership of
+    packet->data, and jitter_buffer_get() / jitter_buffer_get_another() return
+    that same pointer and hand ownership back to the caller, who must release
+    it. The callback is only called on packets that are never returned (late,
+    overflowed, or still queued at reset/destroy). */
 #define JITTER_BUFFER_SET_DESTROY_CALLBACK 4
 /**  */
 #define JITTER_BUFFER_GET_DESTROY_CALLBACK 5
