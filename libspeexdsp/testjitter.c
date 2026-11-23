@@ -10,12 +10,11 @@ union jbpdata {
   unsigned char data[4];
 };
 
-void synthIn(JitterBufferPacket *in, int idx, int span) {
-  union jbpdata d;
-  d.idx = idx;
+void synthIn(JitterBufferPacket *in, union jbpdata *d, int idx, int span) {
+  d->idx = idx;
 
-  in->data = d.data;
-  in->len = sizeof(d);
+  in->data = (char*)d->data;
+  in->len = sizeof(*d);
   in->timestamp = idx * 10;
   in->span = span * 10;
   in->sequence = idx;
@@ -25,6 +24,7 @@ void synthIn(JitterBufferPacket *in, int idx, int span) {
 void jitterFill(JitterBuffer *jb) {
    char buffer[65536];
    JitterBufferPacket in, out;
+   union jbpdata d;
    int i;
 
    out.data = buffer;
@@ -32,7 +32,7 @@ void jitterFill(JitterBuffer *jb) {
    jitter_buffer_reset(jb);
 
    for(i=0;i<100;++i) {
-     synthIn(&in, i, 1);
+     synthIn(&in, &d, i, 1);
      jitter_buffer_put(jb, &in);
 
      out.len = 65536;
@@ -50,6 +50,7 @@ int main()
 {
    char buffer[65536];
    JitterBufferPacket in, out;
+   union jbpdata d;
    int i;
 
    JitterBuffer *jb = jitter_buffer_init(10);
@@ -63,7 +64,7 @@ int main()
      jitter_buffer_get(jb, &out, 10, NULL);
      jitter_buffer_tick(jb);
    }
-   synthIn(&in, 100, 1);
+   synthIn(&in, &d, 100, 1);
    jitter_buffer_put(jb, &in);
    out.len = 65536;
    if (jitter_buffer_get(jb, &out, 10, NULL) != JITTER_BUFFER_OK) {
