@@ -22,6 +22,8 @@ void synthIn(JitterBufferPacket *in, union jbpdata *d, int idx, int span) {
   in->user_data = 0;
 }
 
+static int errors;
+
 void jitterFill(JitterBuffer *jb) {
    char buffer[65536];
    JitterBufferPacket in, out;
@@ -39,9 +41,11 @@ void jitterFill(JitterBuffer *jb) {
      out.len = 65536;
      if (jitter_buffer_get(jb, &out, 10, NULL) != JITTER_BUFFER_OK) {
        printf("Fill test failed iteration %d\n", i);
+       errors++;
      }
      if (out.timestamp != i * 10) {
        printf("Fill test expected %d got %d\n", i*10, out.timestamp);
+       errors++;
      }
      jitter_buffer_tick(jb);
    }
@@ -170,10 +174,12 @@ int main()
    out.len = 65536;
    if (jitter_buffer_get(jb, &out, 10, NULL) != JITTER_BUFFER_OK) {
      printf("Failed frozen sender resynchronize\n");
+     errors++;
    } else {
      printf("Frozen sender: Jitter %d\n", out.timestamp - 100*10);
    }
    jitter_buffer_destroy(jb);
 
-   return jitterDestroyCallback() != 0;
+   errors += jitterDestroyCallback();
+   return errors != 0;
 }

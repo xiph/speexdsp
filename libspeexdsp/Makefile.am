@@ -52,6 +52,7 @@ testecho_SOURCES = testecho.c
 testecho_LDADD = libspeexdsp.la @FFT_LIBS@
 testjitter_SOURCES = testjitter.c
 testjitter_LDADD = libspeexdsp.la @FFT_LIBS@
+TESTS = testjitter
 testresample_SOURCES = testresample.c
 testresample_LDADD = libspeexdsp.la @FFT_LIBS@ @LIBM@
 testresample2_SOURCES = testresample2.c
