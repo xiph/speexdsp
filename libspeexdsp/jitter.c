@@ -454,6 +454,9 @@ EXPORT void jitter_buffer_put(JitterBuffer *jitter, const JitterBufferPacket *pa
          jitter->arrival[i] = 0;
       else
          jitter->arrival[i] = jitter->next_stop;
+   } else if (jitter->destroy) {
+      /* Not inserted: we own the data and the caller can't tell, so release it */
+      jitter->destroy(packet->data);
    }
 
 
