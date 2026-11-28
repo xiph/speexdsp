@@ -370,7 +370,11 @@ static inline spx_word32_t hypergeom_gain(spx_word32_t xx)
 
 static inline spx_word16_t qcurve(spx_word16_t x)
 {
-   return 1.f/(1.f+.15f/(SNR_SCALING_1*x));
+   /* Algebraically identical to 1.f/(1.f+.15f/(SNR_SCALING_1*x)), but avoids
+      the division by zero (and the resulting FP exception) when x is 0,
+      which happens on digital silence. */
+   const spx_word16_t xx = SNR_SCALING_1*x;
+   return xx/(xx + .15f);
 }
 
 static void compute_gain_floor(int noise_suppress, int effective_echo_suppress, spx_word32_t *noise, spx_word32_t *echo, spx_word16_t *gain_floor, int len)
